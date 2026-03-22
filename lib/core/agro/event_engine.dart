@@ -1,0 +1,1103 @@
+// lib/core/agro/event_engine.dart
+
+import 'dart:math' as math;
+
+import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/agronomic_event.dart';
+
+/// ============================================================
+/// EVENT ENGINE
+/// ============================================================
+///
+/// Este motor NO dibuja nada.
+/// Este motor NO dispara notificaciones.
+/// Este motor solo responde:
+///
+/// "¿Qué está pasando agronómicamente?"
+///
+/// Devuelve una lista de [AgronomicEvent] farmer-friendly
+/// que luego pueden consumir:
+///
+/// - History
+/// - Dashboard
+/// - Notifications
+/// - Crop Care
+///
+/// ------------------------------------------------------------
+/// Filosofía:
+/// - Inputs normalizados
+/// - Sin dependencia de widgets
+/// - Reusable para varios cultivos
+/// - Fácil de extender
+/// ============================================================
+
+class EventEngine {
+  const EventEngine._();
+
+  /// Punto principal de entrada.
+  static List<AgronomicEvent> build(EventEngineInput input) {
+    final events = <AgronomicEvent>[];
+
+    final now = input.timestamp;
+
+    // =========================================================
+    // 1) CONTEXTO GENERAL
+    // =========================================================
+    if (input.isGenericMode) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.genericMode,
+          severity: AgronomicEventSeverity.info,
+          title: 'Modo genérico',
+          message:
+              'Aún no hay un cultivo configurado para este BioG, por eso la app solo muestra lecturas sin interpretación agronómica específica.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isInformative: true,
+          metadata: const {'source': 'event_engine', 'group': 'context'},
+        ),
+      );
+    }
+
+    if (input.sowingDate != null && input.sowingDate!.isAfter(now)) {
+      final days = input.sowingDate!
+          .difference(DateTime(now.year, now.month, now.day))
+          .inDays;
+
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.preSowing,
+          severity: AgronomicEventSeverity.info,
+          title: 'Pre-siembra',
+          message: days <= 0
+              ? 'El cultivo está marcado como próximo a sembrarse.'
+              : 'La siembra está programada para dentro de $days día${days == 1 ? '' : 's'}.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isInformative: true,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'context',
+            'daysUntilSowing': days,
+          },
+        ),
+      );
+    }
+
+    if (!input.isGenericMode &&
+        input.seedAlias != null &&
+        input.seedAlias!.trim().isNotEmpty &&
+        (input.sowingDate == null || !input.sowingDate!.isAfter(now))) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.cropActivated,
+          severity: AgronomicEventSeverity.info,
+          title: 'Cultivo activo',
+          message:
+              input.stageLabel != null && input.stageLabel!.trim().isNotEmpty
+              ? 'El cultivo ${input.seedAlias} se está interpretando en etapa ${input.stageLabel}.'
+              : 'El cultivo ${input.seedAlias} ya está activo en este BioG.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isInformative: true,
+          metadata: const {'source': 'event_engine', 'group': 'context'},
+        ),
+      );
+    }
+
+    if (_hasStageTransition(input)) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.stageTransition,
+          severity: AgronomicEventSeverity.info,
+          title: 'Cambio de etapa',
+          message:
+              'El cultivo pasó de ${input.previousStageLabel ?? 'la etapa anterior'} a ${input.stageLabel ?? 'una nueva etapa'}.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isInformative: true,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'context',
+            'fromStage': input.previousStageLabel,
+            'toStage': input.stageLabel,
+          },
+        ),
+      );
+    }
+
+    // =========================================================
+    // 2) HUMEDAD
+    // =========================================================
+    final moistureBand = input.bandOf(EventMetricKeys.soilMoisture);
+    if (moistureBand != null) {
+      if (moistureBand.isLowish) {
+        events.add(
+          AgronomicEvent(
+            type: AgronomicEventType.lowMoisture,
+            severity: moistureBand.toSeverity(isLow: true),
+            title: 'Humedad baja',
+            message: input.soilMoisture != null
+                ? 'La humedad de suelo está baja (${_fmt(input.soilMoisture)}%). Conviene revisar riego o retención de humedad.'
+                : 'La humedad de suelo se detecta por debajo del rango esperado.',
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.soilMoisture,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isCritical: moistureBand == AgroBand.critical,
+            metadata: {
+              'source': 'event_engine',
+              'group': 'moisture',
+              'value': input.soilMoisture,
+              'band': moistureBand.name,
+            },
+          ),
+        );
+      } else if (moistureBand.isHighish) {
+        events.add(
+          AgronomicEvent(
+            type: AgronomicEventType.highMoisture,
+            severity: moistureBand.toSeverity(isLow: false),
+            title: 'Humedad alta',
+            message: input.soilMoisture != null
+                ? 'La humedad de suelo está alta (${_fmt(input.soilMoisture)}%). Conviene vigilar exceso de agua o drenaje.'
+                : 'La humedad de suelo se detecta por encima del rango esperado.',
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.soilMoisture,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isCritical: moistureBand == AgroBand.critical,
+            metadata: {
+              'source': 'event_engine',
+              'group': 'moisture',
+              'value': input.soilMoisture,
+              'band': moistureBand.name,
+            },
+          ),
+        );
+      } else if (_isStableMetric(
+        history: input.history,
+        selector: (r) => r.soilMoisture,
+        currentBand: moistureBand,
+        tolerance: input.rules.moistureStableTolerance,
+        minSamples: input.rules.minStableSamples,
+      )) {
+        events.add(
+          AgronomicEvent(
+            type: AgronomicEventType.stableMoisture,
+            severity: AgronomicEventSeverity.info,
+            title: 'Humedad estable',
+            message: 'La humedad se ha mantenido estable recientemente.',
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.soilMoisture,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isInformative: true,
+            metadata: const {'source': 'event_engine', 'group': 'moisture'},
+          ),
+        );
+      }
+    }
+
+    // =========================================================
+    // 3) pH
+    // =========================================================
+    final phBand = input.bandOf(EventMetricKeys.ph);
+    if (phBand != null) {
+      if (phBand.isLowish) {
+        events.add(
+          AgronomicEvent(
+            type: AgronomicEventType.lowPh,
+            severity: phBand.toSeverity(isLow: true),
+            title: 'pH bajo',
+            message: input.ph != null
+                ? 'El pH está por debajo del rango esperado (${_fmt(input.ph)}). Conviene revisar acidez del suelo.'
+                : 'El pH está por debajo del rango esperado.',
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.ph,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isCritical: phBand == AgroBand.critical,
+            metadata: {
+              'source': 'event_engine',
+              'group': 'ph',
+              'value': input.ph,
+              'band': phBand.name,
+            },
+          ),
+        );
+      } else if (phBand.isHighish) {
+        events.add(
+          AgronomicEvent(
+            type: AgronomicEventType.highPh,
+            severity: phBand.toSeverity(isLow: false),
+            title: 'pH alto',
+            message: input.ph != null
+                ? 'El pH está por encima del rango esperado (${_fmt(input.ph)}). Conviene revisar alcalinidad del suelo.'
+                : 'El pH está por encima del rango esperado.',
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.ph,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isCritical: phBand == AgroBand.critical,
+            metadata: {
+              'source': 'event_engine',
+              'group': 'ph',
+              'value': input.ph,
+              'band': phBand.name,
+            },
+          ),
+        );
+      } else if (_isStableMetric(
+        history: input.history,
+        selector: (r) => r.ph,
+        currentBand: phBand,
+        tolerance: input.rules.phStableTolerance,
+        minSamples: input.rules.minStableSamples,
+      )) {
+        events.add(
+          AgronomicEvent(
+            type: AgronomicEventType.stablePh,
+            severity: AgronomicEventSeverity.info,
+            title: 'pH estable',
+            message: 'El pH se ha mantenido estable recientemente.',
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.ph,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isInformative: true,
+            metadata: const {'source': 'event_engine', 'group': 'ph'},
+          ),
+        );
+      }
+    }
+
+    // =========================================================
+    // 4) RESISTENCIA / COMPACTACIÓN
+    // =========================================================
+    final resistanceBand = input.bandOf(EventMetricKeys.resistance);
+    if (resistanceBand != null) {
+      if (resistanceBand.isHighish) {
+        events.add(
+          AgronomicEvent(
+            type: AgronomicEventType.soilCompaction,
+            severity: resistanceBand.toSeverity(isLow: false),
+            title: 'Suelo compacto',
+            message: input.resistance != null
+                ? 'La resistencia del suelo está alta (${_fmt(input.resistance)}). Podría haber compactación que limite raíz o infiltración.'
+                : 'Se detecta una resistencia alta del suelo, posible compactación.',
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.resistance,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isCritical: resistanceBand == AgroBand.critical,
+            metadata: {
+              'source': 'event_engine',
+              'group': 'resistance',
+              'value': input.resistance,
+              'band': resistanceBand.name,
+            },
+          ),
+        );
+      } else if (resistanceBand == AgroBand.optimal &&
+          input.resistance != null &&
+          input.resistance! <= input.rules.goodStructureMaxResistance) {
+        events.add(
+          AgronomicEvent(
+            type: AgronomicEventType.goodSoilStructure,
+            severity: AgronomicEventSeverity.info,
+            title: 'Estructura cómoda',
+            message:
+                'La resistencia del suelo luce cómoda para el desarrollo radicular.',
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.resistance,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isInformative: true,
+            metadata: {
+              'source': 'event_engine',
+              'group': 'resistance',
+              'value': input.resistance,
+              'band': resistanceBand.name,
+            },
+          ),
+        );
+      }
+    }
+
+    // =========================================================
+    // 5) TEMPERATURA DE SUELO
+    // =========================================================
+    final tempBand = input.bandOf(EventMetricKeys.soilTemp);
+    if (tempBand != null) {
+      if (tempBand.isHighish) {
+        events.add(
+          AgronomicEvent(
+            type: AgronomicEventType.heatStress,
+            severity: tempBand.toSeverity(isLow: false),
+            title: 'Calor alto',
+            message: input.soilTemp != null
+                ? 'La temperatura del suelo está elevada (${_fmt(input.soilTemp)}°C). Conviene vigilar estrés térmico.'
+                : 'La temperatura del suelo está por encima del rango esperado.',
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.soilTemp,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isCritical: tempBand == AgroBand.critical,
+            metadata: {
+              'source': 'event_engine',
+              'group': 'soilTemp',
+              'value': input.soilTemp,
+              'band': tempBand.name,
+            },
+          ),
+        );
+      } else if (tempBand.isLowish) {
+        events.add(
+          AgronomicEvent(
+            type: AgronomicEventType.coldStress,
+            severity: tempBand.toSeverity(isLow: true),
+            title: 'Frío en suelo',
+            message: input.soilTemp != null
+                ? 'La temperatura del suelo está baja (${_fmt(input.soilTemp)}°C). Conviene vigilar freno fisiológico.'
+                : 'La temperatura del suelo está por debajo del rango esperado.',
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.soilTemp,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isCritical: tempBand == AgroBand.critical,
+            metadata: {
+              'source': 'event_engine',
+              'group': 'soilTemp',
+              'value': input.soilTemp,
+              'band': tempBand.name,
+            },
+          ),
+        );
+      } else if (_isStableMetric(
+        history: input.history,
+        selector: (r) => r.soilTemp,
+        currentBand: tempBand,
+        tolerance: input.rules.soilTempStableTolerance,
+        minSamples: input.rules.minStableSamples,
+      )) {
+        events.add(
+          AgronomicEvent(
+            type: AgronomicEventType.stableSoilTemp,
+            severity: AgronomicEventSeverity.info,
+            title: 'Temperatura estable',
+            message:
+                'La temperatura del suelo se ha mantenido estable recientemente.',
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.soilTemp,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isInformative: true,
+            metadata: const {'source': 'event_engine', 'group': 'soilTemp'},
+          ),
+        );
+      }
+    }
+
+    // =========================================================
+    // 6) NPK
+    // =========================================================
+    if (input.hasAnyNpk) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.npkReading,
+          severity: AgronomicEventSeverity.info,
+          title: 'Lectura NPK reciente',
+          message:
+              'Se registró lectura nutrimental de NPK${_buildNpkInline(input)}.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: EventMetricKeys.npk,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isInformative: true,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'npk',
+            'n': input.n,
+            'p': input.p,
+            'k': input.k,
+          },
+        ),
+      );
+    }
+
+    final nBand = input.bandOf(EventMetricKeys.n);
+    final pBand = input.bandOf(EventMetricKeys.p);
+    final kBand = input.bandOf(EventMetricKeys.k);
+
+    if (nBand != null && nBand.isLowish) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.nitrogenLow,
+          severity: nBand.toSeverity(isLow: true),
+          title: 'Nitrógeno bajo',
+          message: input.n != null
+              ? 'El nitrógeno aparece por debajo del rango esperado (${_fmt(input.n)} ppm).'
+              : 'El nitrógeno aparece por debajo del rango esperado.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: EventMetricKeys.n,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isCritical: nBand == AgroBand.critical,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'npk',
+            'value': input.n,
+            'band': nBand.name,
+          },
+        ),
+      );
+    }
+
+    if (pBand != null && pBand.isLowish) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.phosphorusLow,
+          severity: pBand.toSeverity(isLow: true),
+          title: 'Fósforo bajo',
+          message: input.p != null
+              ? 'El fósforo aparece por debajo del rango esperado (${_fmt(input.p)} ppm).'
+              : 'El fósforo aparece por debajo del rango esperado.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: EventMetricKeys.p,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isCritical: pBand == AgroBand.critical,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'npk',
+            'value': input.p,
+            'band': pBand.name,
+          },
+        ),
+      );
+    }
+
+    if (kBand != null && kBand.isLowish) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.potassiumLow,
+          severity: kBand.toSeverity(isLow: true),
+          title: 'Potasio bajo',
+          message: input.k != null
+              ? 'El potasio aparece por debajo del rango esperado (${_fmt(input.k)} ppm).'
+              : 'El potasio aparece por debajo del rango esperado.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: EventMetricKeys.k,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isCritical: kBand == AgroBand.critical,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'npk',
+            'value': input.k,
+            'band': kBand.name,
+          },
+        ),
+      );
+    }
+
+    if (_hasNutrientImbalance(nBand, pBand, kBand)) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.nutrientImbalance,
+          severity: _nutrientImbalanceSeverity(nBand, pBand, kBand),
+          title: 'Desbalance nutrimental',
+          message:
+              'Las lecturas NPK muestran desbalance respecto al rango esperado para el cultivo o la etapa.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: EventMetricKeys.npk,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isCritical: [nBand, pBand, kBand].contains(AgroBand.critical),
+          metadata: {
+            'source': 'event_engine',
+            'group': 'npk',
+            'nBand': nBand?.name,
+            'pBand': pBand?.name,
+            'kBand': kBand?.name,
+          },
+        ),
+      );
+    }
+
+    // =========================================================
+    // 7) TENDENCIA Y ESTADO COMBINADO
+    // =========================================================
+    final currentProblemCount = _countProblemMetrics(input.currentBands);
+    final previousProblemCount = _countProblemMetrics(input.previousBands);
+
+    if (_isStableSoil(input)) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.stableSoil,
+          severity: AgronomicEventSeverity.info,
+          title: 'Suelo estable',
+          message:
+              'Las métricas principales del suelo se han mantenido con buen comportamiento reciente.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isInformative: true,
+          metadata: const {'source': 'event_engine', 'group': 'trend'},
+        ),
+      );
+    }
+
+    if (currentProblemCount >= input.rules.minProblemMetricsForCombinedStress) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.combinedStress,
+          severity: currentProblemCount >= 3
+              ? AgronomicEventSeverity.critical
+              : AgronomicEventSeverity.warning,
+          title: 'Estrés combinado',
+          message:
+              'Se detectan varias métricas fuera de rango al mismo tiempo. Conviene revisar el sistema de manera integral.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isCritical: currentProblemCount >= 3,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'trend',
+            'problemCount': currentProblemCount,
+          },
+        ),
+      );
+    }
+
+    if (previousProblemCount > currentProblemCount &&
+        currentProblemCount <= input.rules.maxProblemMetricsForRecovery &&
+        input.history.length >= input.rules.minRecoverySamples) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.recovery,
+          severity: AgronomicEventSeverity.info,
+          title: 'Recuperación',
+          message:
+              'El cultivo muestra señales de recuperación frente a lecturas recientes más comprometidas.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isInformative: true,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'trend',
+            'previousProblemCount': previousProblemCount,
+            'currentProblemCount': currentProblemCount,
+          },
+        ),
+      );
+    }
+
+    // =========================================================
+    // 8) RECOMENDACIONES (eventos tipo recomendación)
+    // =========================================================
+    if (_shouldRecommendIrrigation(input, moistureBand)) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.irrigationRecommended,
+          severity: moistureBand == AgroBand.critical
+              ? AgronomicEventSeverity.critical
+              : AgronomicEventSeverity.caution,
+          title: 'Riego recomendado',
+          message:
+              'La lectura de humedad sugiere que conviene revisar riego o disponibilidad de agua.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: EventMetricKeys.soilMoisture,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'recommendation',
+            'value': input.soilMoisture,
+            'band': moistureBand?.name,
+          },
+        ),
+      );
+    }
+
+    if (_shouldRecommendFertilization(input, nBand, pBand, kBand)) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.fertilizationRecommended,
+          severity: [nBand, pBand, kBand].contains(AgroBand.critical)
+              ? AgronomicEventSeverity.warning
+              : AgronomicEventSeverity.caution,
+          title: 'Fertilización recomendada',
+          message:
+              'Las lecturas nutrimentales sugieren revisar fertilización o estrategia de nutrición.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: EventMetricKeys.npk,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'recommendation',
+            'nBand': nBand?.name,
+            'pBand': pBand?.name,
+            'kBand': kBand?.name,
+          },
+        ),
+      );
+    }
+
+    // =========================================================
+    // LIMPIEZA FINAL
+    // =========================================================
+    return _dedupeAndSort(events);
+  }
+
+  static bool _hasStageTransition(EventEngineInput input) {
+    final prev = input.previousStageLabel?.trim();
+    final curr = input.stageLabel?.trim();
+
+    if (prev == null || prev.isEmpty) return false;
+    if (curr == null || curr.isEmpty) return false;
+    return prev != curr;
+  }
+
+  static bool _isStableMetric({
+    required List<EventTelemetryPoint> history,
+    required double? Function(EventTelemetryPoint point) selector,
+    required AgroBand currentBand,
+    required double tolerance,
+    required int minSamples,
+  }) {
+    if (currentBand != AgroBand.optimal) return false;
+
+    final values = history
+        .map(selector)
+        .whereType<double>()
+        .toList(growable: false);
+
+    if (values.length < minSamples) return false;
+
+    final range = values.reduce(math.max) - values.reduce(math.min);
+    return range <= tolerance;
+  }
+
+  static bool _hasNutrientImbalance(
+    AgroBand? nBand,
+    AgroBand? pBand,
+    AgroBand? kBand,
+  ) {
+    final bands = [nBand, pBand, kBand].whereType<AgroBand>().toList();
+    if (bands.isEmpty) return false;
+
+    final problemCount = bands.where((b) => b != AgroBand.optimal).length;
+    return problemCount >= 2 || bands.contains(AgroBand.critical);
+  }
+
+  static AgronomicEventSeverity _nutrientImbalanceSeverity(
+    AgroBand? nBand,
+    AgroBand? pBand,
+    AgroBand? kBand,
+  ) {
+    final bands = [nBand, pBand, kBand];
+    if (bands.contains(AgroBand.critical)) {
+      return AgronomicEventSeverity.warning;
+    }
+    return AgronomicEventSeverity.caution;
+  }
+
+  static int _countProblemMetrics(Map<String, AgroBand> bands) {
+    return bands.values.where((band) {
+      return band == AgroBand.low ||
+          band == AgroBand.high ||
+          band == AgroBand.critical;
+    }).length;
+  }
+
+  static bool _isStableSoil(EventEngineInput input) {
+    if (input.history.length < input.rules.minStableSamples) return false;
+
+    final optimalCount = input.currentBands.values
+        .where((b) => b == AgroBand.optimal)
+        .length;
+
+    if (optimalCount < input.rules.minOptimalMetricsForStableSoil) {
+      return false;
+    }
+
+    final moistureOk =
+        _rangeOf(
+          input.history.map((e) => e.soilMoisture).whereType<double>(),
+        ) <=
+        input.rules.moistureStableTolerance;
+
+    final phOk =
+        _rangeOf(input.history.map((e) => e.ph).whereType<double>()) <=
+        input.rules.phStableTolerance;
+
+    final tempOk =
+        _rangeOf(input.history.map((e) => e.soilTemp).whereType<double>()) <=
+        input.rules.soilTempStableTolerance;
+
+    return moistureOk && phOk && tempOk;
+  }
+
+  static bool _shouldRecommendIrrigation(
+    EventEngineInput input,
+    AgroBand? moistureBand,
+  ) {
+    if (input.isGenericMode) return false;
+    if (moistureBand == null) return false;
+    return moistureBand == AgroBand.low || moistureBand == AgroBand.critical;
+  }
+
+  static bool _shouldRecommendFertilization(
+    EventEngineInput input,
+    AgroBand? nBand,
+    AgroBand? pBand,
+    AgroBand? kBand,
+  ) {
+    if (input.isGenericMode) return false;
+
+    final bands = [nBand, pBand, kBand].whereType<AgroBand>().toList();
+    if (bands.isEmpty) return false;
+
+    final badCount = bands.where((b) => b.isLowish || b.isHighish).length;
+    return badCount >= 1;
+  }
+
+  static List<AgronomicEvent> _dedupeAndSort(List<AgronomicEvent> events) {
+    final seen = <String>{};
+    final deduped = <AgronomicEvent>[];
+
+    for (final event in events) {
+      final key = [
+        event.type.name,
+        event.severity.name,
+        event.title,
+        event.message,
+        event.metricKey ?? '',
+        event.stageKey ?? '',
+        event.stageLabel ?? '',
+      ].join('|');
+
+      if (seen.add(key)) {
+        deduped.add(event);
+      }
+    }
+
+    deduped.sort((a, b) {
+      final severityCmp = b.severity.rank.compareTo(a.severity.rank);
+      if (severityCmp != 0) return severityCmp;
+      return b.timestamp.compareTo(a.timestamp);
+    });
+
+    return deduped;
+  }
+
+  static double _rangeOf(Iterable<double> values) {
+    final list = values.toList(growable: false);
+    if (list.isEmpty) return 999999;
+    return list.reduce(math.max) - list.reduce(math.min);
+  }
+
+  static String _fmt(double? value) {
+    if (value == null) return '--';
+    final rounded = value.toStringAsFixed(1);
+    if (rounded.endsWith('.0')) {
+      return rounded.substring(0, rounded.length - 2);
+    }
+    return rounded;
+  }
+
+  static String _buildNpkInline(EventEngineInput input) {
+    final chunks = <String>[];
+
+    if (input.n != null) chunks.add('N ${_fmt(input.n)}');
+    if (input.p != null) chunks.add('P ${_fmt(input.p)}');
+    if (input.k != null) chunks.add('K ${_fmt(input.k)}');
+
+    if (chunks.isEmpty) return '';
+    return ' (${chunks.join(' · ')} ppm)';
+  }
+}
+
+/// ============================================================
+/// INPUT NORMALIZADO DEL MOTOR
+/// ============================================================
+
+class EventEngineInput {
+  const EventEngineInput({
+    required this.timestamp,
+    this.deviceId,
+    this.seedProfileId,
+    this.seedAlias,
+    this.sowingDate,
+    this.isGenericMode = false,
+    this.stageKey,
+    this.stageLabel,
+    this.previousStageKey,
+    this.previousStageLabel,
+    this.soilMoisture,
+    this.ph,
+    this.resistance,
+    this.soilTemp,
+    this.n,
+    this.p,
+    this.k,
+    this.currentBands = const <String, AgroBand>{},
+    this.previousBands = const <String, AgroBand>{},
+    this.history = const <EventTelemetryPoint>[],
+    this.rules = const EventEngineRules(),
+  });
+
+  final DateTime timestamp;
+
+  final String? deviceId;
+  final String? seedProfileId;
+  final String? seedAlias;
+  final DateTime? sowingDate;
+
+  final bool isGenericMode;
+
+  final String? stageKey;
+  final String? stageLabel;
+
+  /// Opcional: ayuda a detectar cambios de etapa.
+  final String? previousStageKey;
+  final String? previousStageLabel;
+
+  final double? soilMoisture;
+  final double? ph;
+  final double? resistance;
+  final double? soilTemp;
+  final double? n;
+  final double? p;
+  final double? k;
+
+  /// Bandas actuales ya calculadas por AgroScoreEngine o capa superior.
+  ///
+  /// Keys sugeridas:
+  /// - EventMetricKeys.soilMoisture
+  /// - EventMetricKeys.ph
+  /// - EventMetricKeys.resistance
+  /// - EventMetricKeys.soilTemp
+  /// - EventMetricKeys.n
+  /// - EventMetricKeys.p
+  /// - EventMetricKeys.k
+  final Map<String, AgroBand> currentBands;
+
+  /// Bandas previas opcionales. Útiles para recovery.
+  final Map<String, AgroBand> previousBands;
+
+  /// Historial ya normalizado.
+  final List<EventTelemetryPoint> history;
+
+  /// Reglas de sensibilidad del motor.
+  final EventEngineRules rules;
+
+  AgroBand? bandOf(String key) => currentBands[key];
+
+  bool get hasAnyNpk => n != null || p != null || k != null;
+}
+
+/// ============================================================
+/// PUNTO DE HISTORIAL NORMALIZADO
+/// ============================================================
+
+class EventTelemetryPoint {
+  const EventTelemetryPoint({
+    required this.timestamp,
+    this.soilMoisture,
+    this.ph,
+    this.resistance,
+    this.soilTemp,
+    this.n,
+    this.p,
+    this.k,
+  });
+
+  final DateTime timestamp;
+  final double? soilMoisture;
+  final double? ph;
+  final double? resistance;
+  final double? soilTemp;
+  final double? n;
+  final double? p;
+  final double? k;
+}
+
+/// ============================================================
+/// REGLAS DEL MOTOR
+/// ============================================================
+
+class EventEngineRules {
+  const EventEngineRules({
+    this.minStableSamples = 4,
+    this.minRecoverySamples = 4,
+    this.minOptimalMetricsForStableSoil = 3,
+    this.minProblemMetricsForCombinedStress = 2,
+    this.maxProblemMetricsForRecovery = 1,
+    this.moistureStableTolerance = 6.0,
+    this.phStableTolerance = 0.35,
+    this.soilTempStableTolerance = 3.5,
+    this.goodStructureMaxResistance = 35.0,
+  });
+
+  /// Cuántas muestras mínimas pedimos para declarar estabilidad.
+  final int minStableSamples;
+
+  /// Cuántas muestras mínimas pedimos para declarar recuperación.
+  final int minRecoverySamples;
+
+  /// Cuántas métricas deben estar óptimas para decir "suelo estable".
+  final int minOptimalMetricsForStableSoil;
+
+  /// Cuántas métricas problemáticas al mismo tiempo cuentan como estrés combinado.
+  final int minProblemMetricsForCombinedStress;
+
+  /// Para declarar recovery, cuántas métricas problemáticas máximas debe haber ahora.
+  final int maxProblemMetricsForRecovery;
+
+  /// Tolerancias de estabilidad.
+  final double moistureStableTolerance;
+  final double phStableTolerance;
+  final double soilTempStableTolerance;
+
+  /// Heurística simple de "estructura cómoda".
+  final double goodStructureMaxResistance;
+}
+
+/// ============================================================
+/// KEYS DE MÉTRICAS
+/// ============================================================
+
+abstract final class EventMetricKeys {
+  static const soilMoisture = 'soilMoisture';
+  static const ph = 'ph';
+  static const resistance = 'resistance';
+  static const soilTemp = 'soilTemp';
+  static const n = 'n';
+  static const p = 'p';
+  static const k = 'k';
+  static const npk = 'npk';
+}
+
+/// ============================================================
+/// EXTENSIONS
+/// ============================================================
+
+extension _AgroBandEventX on AgroBand {
+  bool get isLowish => this == AgroBand.low || this == AgroBand.critical;
+
+  bool get isHighish => this == AgroBand.high || this == AgroBand.critical;
+
+  AgronomicEventSeverity toSeverity({required bool isLow}) {
+    switch (this) {
+      case AgroBand.critical:
+        return AgronomicEventSeverity.critical;
+      case AgroBand.low:
+      case AgroBand.high:
+        return AgronomicEventSeverity.warning;
+      case AgroBand.optimal:
+        return AgronomicEventSeverity.info;
+      case AgroBand.unknown:
+        return AgronomicEventSeverity.info;
+    }
+  }
+}
+
+extension _AgronomicSeverityRankX on AgronomicEventSeverity {
+  int get rank {
+    switch (this) {
+      case AgronomicEventSeverity.info:
+        return 0;
+      case AgronomicEventSeverity.caution:
+        return 1;
+      case AgronomicEventSeverity.warning:
+        return 2;
+      case AgronomicEventSeverity.critical:
+        return 3;
+    }
+  }
+}
