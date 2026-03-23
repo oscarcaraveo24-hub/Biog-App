@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:bio_g/core/crops/crop_engine.dart';
 import 'package:bio_g/core/crops/crop_profile_models.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
@@ -17,7 +19,7 @@ class WheatCropEngineAdapter implements CropEngine {
     final effectiveDay = (daySince + stressDelayDays).clamp(1, 999999);
 
     final stage = _resolveStage(wheatProfile, effectiveDay);
-    final expectedEnd = wheatProfile.endWindowDays.mid;
+    final expectedEnd = math.max(1, wheatProfile.endWindowDays.mid);
     final remaining = (expectedEnd - effectiveDay).clamp(0, 999999);
 
     return CropStageResult(
@@ -30,22 +32,22 @@ class WheatCropEngineAdapter implements CropEngine {
   }
 
   static WheatStageKey _resolveStage(WheatProfile p, int day) {
-    final germEnd = p.germinationDays.max;
-    final emergEnd = p.emergenceDays.max;
-    final vegEnd = p.vegEarlyDays.max;
-    final flowerStart = p.floweringDays.min;
-    final flowerEnd = p.floweringDays.max;
-    final endStart = p.endWindowDays.min;
+    final germEnd = math.max(1, p.germinationDays.max);
+    final emergEnd = math.max(germEnd, p.emergenceDays.max);
+    final vegEnd = math.max(emergEnd, p.vegEarlyDays.max);
+    final flowerStart = math.max(vegEnd + 1, p.floweringDays.min);
+    final flowerEnd = math.max(flowerStart, p.floweringDays.max);
+    final endStart = math.max(flowerEnd + 1, p.endWindowDays.min);
 
     if (day <= germEnd) return WheatStageKey.germination;
     if (day <= emergEnd) return WheatStageKey.emergence;
     if (day <= vegEnd) return WheatStageKey.vegEarly;
 
-    final midRange = flowerStart - vegEnd;
-    final tillerEnd = vegEnd + (midRange * 0.30).round();
-    final elongEnd = vegEnd + (midRange * 0.55).round();
-    final bootEnd = vegEnd + (midRange * 0.75).round();
-    final headEnd = flowerStart - 1;
+    final midRange = math.max(1, flowerStart - vegEnd);
+    final tillerEnd = math.max(vegEnd, vegEnd + (midRange * 0.30).round());
+    final elongEnd = math.max(tillerEnd, vegEnd + (midRange * 0.55).round());
+    final bootEnd = math.max(elongEnd, vegEnd + (midRange * 0.75).round());
+    final headEnd = math.max(bootEnd, flowerStart - 1);
 
     if (day <= tillerEnd) return WheatStageKey.tillering;
     if (day <= elongEnd) return WheatStageKey.elongation;
@@ -53,9 +55,9 @@ class WheatCropEngineAdapter implements CropEngine {
     if (day <= headEnd) return WheatStageKey.heading;
     if (day <= flowerEnd) return WheatStageKey.flowering;
 
-    final postFlower = endStart - flowerEnd;
-    final grainEnd = flowerEnd + (postFlower * 0.65).round();
-    final matEnd = endStart - 1;
+    final postFlower = math.max(1, endStart - flowerEnd);
+    final grainEnd = math.max(flowerEnd, flowerEnd + (postFlower * 0.65).round());
+    final matEnd = math.max(grainEnd, endStart - 1);
 
     if (day <= grainEnd) return WheatStageKey.grainFill;
     if (day <= matEnd) return WheatStageKey.physiologicalMaturity;
@@ -64,38 +66,59 @@ class WheatCropEngineAdapter implements CropEngine {
 
   static String _labelEs(WheatStageKey stage) {
     switch (stage) {
-      case WheatStageKey.germination: return 'Germinación';
-      case WheatStageKey.emergence: return 'Emergencia';
-      case WheatStageKey.vegEarly: return 'Vegetativa temprana';
-      case WheatStageKey.tillering: return 'Macollamiento';
-      case WheatStageKey.elongation: return 'Encañe';
-      case WheatStageKey.booting: return 'Embuchamiento';
-      case WheatStageKey.heading: return 'Espigamiento';
-      case WheatStageKey.flowering: return 'Floración / antesis';
-      case WheatStageKey.grainFill: return 'Llenado de grano';
-      case WheatStageKey.physiologicalMaturity: return 'Madurez fisiológica';
-      case WheatStageKey.harvest: return 'Cosecha';
+      case WheatStageKey.germination:
+        return 'Germinación';
+      case WheatStageKey.emergence:
+        return 'Emergencia';
+      case WheatStageKey.vegEarly:
+        return 'Vegetativa temprana';
+      case WheatStageKey.tillering:
+        return 'Macollamiento';
+      case WheatStageKey.elongation:
+        return 'Encañe';
+      case WheatStageKey.booting:
+        return 'Embuchamiento';
+      case WheatStageKey.heading:
+        return 'Espigamiento';
+      case WheatStageKey.flowering:
+        return 'Floración / antesis';
+      case WheatStageKey.grainFill:
+        return 'Llenado de grano';
+      case WheatStageKey.physiologicalMaturity:
+        return 'Madurez fisiológica';
+      case WheatStageKey.harvest:
+        return 'Cosecha';
     }
   }
 
   static String _heroAsset(WheatStageKey stage) {
     switch (stage) {
-      case WheatStageKey.germination: return 'assets/seeds/wheat/wheat_stage_germination.png';
-      case WheatStageKey.emergence: return 'assets/seeds/wheat/wheat_stage_emergence.png';
+      case WheatStageKey.germination:
+        return 'assets/seeds/wheat/wheat_stage_germination.png';
+      case WheatStageKey.emergence:
+        return 'assets/seeds/wheat/wheat_stage_emergence.png';
       case WheatStageKey.vegEarly:
-      case WheatStageKey.tillering: return 'assets/seeds/wheat/wheat_stage_veg.png';
+      case WheatStageKey.tillering:
+        return 'assets/seeds/wheat/wheat_stage_veg.png';
       case WheatStageKey.elongation:
-      case WheatStageKey.booting: return 'assets/seeds/wheat/wheat_stage_elongation.png';
+      case WheatStageKey.booting:
+        return 'assets/seeds/wheat/wheat_stage_elongation.png';
       case WheatStageKey.heading:
-      case WheatStageKey.flowering: return 'assets/seeds/wheat/wheat_stage_flowering.png';
+      case WheatStageKey.flowering:
+        return 'assets/seeds/wheat/wheat_stage_flowering.png';
       case WheatStageKey.grainFill:
-      case WheatStageKey.physiologicalMaturity: return 'assets/seeds/wheat/wheat_stage_maturity.png';
-      case WheatStageKey.harvest: return 'assets/seeds/wheat/wheat_stage_harvest.png';
+      case WheatStageKey.physiologicalMaturity:
+        return 'assets/seeds/wheat/wheat_stage_maturity.png';
+      case WheatStageKey.harvest:
+        return 'assets/seeds/wheat/wheat_stage_harvest.png';
     }
   }
 
   static List<SeedWindowKey> _windows(WheatStageKey stage) {
-    final windows = <SeedWindowKey>[SeedWindowKey.irrigation, SeedWindowKey.scouting];
+    final windows = <SeedWindowKey>[
+      SeedWindowKey.irrigation,
+      SeedWindowKey.scouting,
+    ];
     final nutritionHeavy = stage == WheatStageKey.tillering ||
         stage == WheatStageKey.elongation ||
         stage == WheatStageKey.booting ||

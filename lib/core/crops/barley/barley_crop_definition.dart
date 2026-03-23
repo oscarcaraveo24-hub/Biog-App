@@ -1,5 +1,5 @@
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/barley_agro_score_engine.dart';
+import 'package:bio_g/core/agro/cereal_agro_score_engine.dart';
 import 'package:bio_g/core/crops/barley/barley_crop_engine_adapter.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/crop_engine.dart';
@@ -14,6 +14,12 @@ import 'package:bio_g/widgets/seeds/barley_profiles.dart';
 import 'package:bio_g/widgets/seeds/maize_models.dart';
 
 class BarleyCropDefinition implements CropDefinition {
+  static const Set<String> _criticalStages = {
+    'booting',
+    'heading',
+    'flowering',
+  };
+
   @override
   CropKey get cropKey => CropKey.barley;
 
@@ -59,21 +65,34 @@ class BarleyCropDefinition implements CropDefinition {
   ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluateTelemetry({
     required dynamic telemetry,
     required CropStageResult stage,
+    required CropProfile profile,
+    StageTargets? targetsOverride,
     required AlertsState alertsState,
   }) {
     final bioTelemetry = telemetry as BioGTelemetry;
     final barleyStage = _resolveStage(stage.stageKey);
+    final barleyProfile = profile as BarleyProfile;
+    final weights = barleyUniversalV1.weights[barleyStage];
+    final targets = targetsOverride ?? barleyUniversalV1.byStage[barleyStage];
 
-    final fallbackProfile = barleyProfiles[kCbGen] ?? barleyProfiles.values.first;
+    if (targets == null || weights == null) {
+      final empty = AgroEvalResult(
+        soilControlScore01: 0.0,
+        metrics: const {},
+        alerts: const [],
+        suggestedAlertKeys: const ['stage.unknown'],
+      );
+      return (eval: empty, nextAlertsState: alertsState);
+    }
 
     final seedStage = BarleyStageResult(
-      profile: fallbackProfile,
+      profile: barleyProfile,
       stage: barleyStage,
       daySinceSowing: 0,
-      floweringBand: fallbackProfile.floweringDays,
-      endBand: fallbackProfile.endWindowDays,
-      expectedFloweringDay: fallbackProfile.floweringDays.mid,
-      expectedEndDay: fallbackProfile.endWindowDays.mid,
+      floweringBand: barleyProfile.floweringDays,
+      endBand: barleyProfile.endWindowDays,
+      expectedFloweringDay: barleyProfile.floweringDays.mid,
+      expectedEndDay: barleyProfile.endWindowDays.mid,
       expectedDaysToEnd: stage.expectedDaysToEnd,
       stageProgressPct: 0,
       windowsNow: const [],
@@ -83,12 +102,15 @@ class BarleyCropDefinition implements CropDefinition {
       helperCaption: '',
     );
 
-    return BarleyAgroScoreEngine.evaluate(
+    return CerealAgroScoreEngine.evaluate(
       t: bioTelemetry,
-      stage: seedStage,
-      u: barleyUniversalV1,
+      targets: targets,
+      weights: weights,
+      stageKey: barleyStage.name,
+      criticalStageKeys: _criticalStages,
       alertsState: alertsState,
       cropLabel: 'Cebada',
+      stageLabel: seedStage.stageLabelEs,
     );
   }
 

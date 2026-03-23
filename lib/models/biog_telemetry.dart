@@ -31,10 +31,16 @@ class BioGDevice {
   final String name;
   final String locationName;
 
-  /// Ej: 'DK-2069' o el id que uses en Seeds.
+  /// Campo LEGACY conservado por compatibilidad con flujos viejos.
+  ///
+  /// No debe usarse como fuente de verdad del cultivo activo.
+  /// El contexto real por dispositivo vive en [DeviceCropContext] vía BioGStore.
   final String seedId;
 
-  /// Ej: 'MZG-07' o 'basic_soil'
+  /// Campo LEGACY conservado por compatibilidad con flujos viejos.
+  ///
+  /// No debe usarse como fuente de verdad del perfil activo.
+  /// El perfil real debe resolverse desde [DeviceCropContext].
   final String profileId;
 
   final BioGDeviceStatus status;

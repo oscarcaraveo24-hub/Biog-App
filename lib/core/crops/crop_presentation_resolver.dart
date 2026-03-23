@@ -184,17 +184,7 @@ class CropPresentationResolver {
         .toLowerCase();
 
     if (alias.isNotEmpty) {
-      return alias == 'generic' ||
-          alias == 'generico' ||
-          alias == 'genérico' ||
-          alias == 'perfil genérico' ||
-          alias == 'generic_maize' ||
-          alias == 'generic_corn' ||
-          alias == 'generic_bean' ||
-          alias == 'generic_wheat' ||
-          alias == 'generic_barley' ||
-          alias == 'generic_oat' ||
-          alias.startsWith('generic_');
+      return CropCatalog.isGenericAlias(alias) || alias.startsWith('generic_');
     }
 
     final profile = CropCatalog.profileByAny(
@@ -202,7 +192,7 @@ class CropPresentationResolver {
       cropContext?.profileId ?? seed?.profileId,
     );
     if (profile != null) {
-      return _isGenericProfileId(profile.id);
+      return CropCatalog.isGenericProfileId(profile.id);
     }
 
     return false;
@@ -314,16 +304,6 @@ class CropPresentationResolver {
     }
 
     return _beanPintoIconAsset;
-  }
-
-  static bool _isGenericProfileId(String? profileId) {
-    final normalized = profileId?.trim().toLowerCase() ?? '';
-    return normalized.isNotEmpty &&
-        (normalized.endsWith('_generic') ||
-            normalized == 'fj_gen' ||
-            normalized == 'tr_gen' ||
-            normalized == 'cb_gen' ||
-            normalized == 'av_gen');
   }
 
   static String? _normalizeNullable(String? value) {

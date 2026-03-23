@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
 import 'package:bio_g/crops/maize/maize_universal_profile.dart';
+import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/widgets/seeds/maize_models.dart';
 
@@ -24,10 +25,12 @@ class AgroScoreEngine {
     Calibration? cal,
     Duration alertsCooldown = AlertsEngine.defaultCooldown,
     String? cropLabel,
+    StageTargets? targetsOverride,
+    StageWeights? weightsOverride,
   }) {
     final stageKey = stage.stage;
-    final targets = u.byStage[stageKey];
-    final weights = u.weights[stageKey];
+    final targets = targetsOverride ?? u.byStage[stageKey];
+    final weights = weightsOverride ?? u.weights[stageKey];
 
     if (targets == null || weights == null) {
       final empty = AgroEvalResult(

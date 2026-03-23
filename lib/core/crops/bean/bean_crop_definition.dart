@@ -1,5 +1,5 @@
-import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/bean_agro_score_engine.dart';
+import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/crops/bean/bean_crop_engine_adapter.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/crop_engine.dart';
@@ -59,21 +59,22 @@ class BeanCropDefinition implements CropDefinition {
   ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluateTelemetry({
     required dynamic telemetry,
     required CropStageResult stage,
+    required CropProfile profile,
+    StageTargets? targetsOverride,
     required AlertsState alertsState,
   }) {
     final bioTelemetry = telemetry as BioGTelemetry;
     final beanStage = _resolveStage(stage.stageKey);
-
-    final fallbackProfile = beanProfiles[kFjGen] ?? beanProfiles.values.first;
+    final beanProfile = profile as BeanProfile;
 
     final seedStage = BeanStageResult(
-      profile: fallbackProfile,
+      profile: beanProfile,
       stage: beanStage,
       daySinceSowing: 0,
-      floweringBand: fallbackProfile.floweringDays,
-      endBand: fallbackProfile.endWindowDays,
-      expectedFloweringDay: fallbackProfile.floweringDays.mid,
-      expectedEndDay: fallbackProfile.endWindowDays.mid,
+      floweringBand: beanProfile.floweringDays,
+      endBand: beanProfile.endWindowDays,
+      expectedFloweringDay: beanProfile.floweringDays.mid,
+      expectedEndDay: beanProfile.endWindowDays.mid,
       expectedDaysToEnd: stage.expectedDaysToEnd,
       stageProgressPct: 0,
       windowsNow: const [],
@@ -89,13 +90,14 @@ class BeanCropDefinition implements CropDefinition {
       u: beanUniversalV1,
       alertsState: alertsState,
       cropLabel: 'Frijol',
+      targetsOverride: targetsOverride,
     );
   }
 
   BeanStageKey _resolveStage(String rawStage) {
     return BeanStageKey.values.firstWhere(
       (stage) => stage.name == rawStage,
-      orElse: () => BeanStageKey.vegAdvanced,
+      orElse: () => BeanStageKey.vegEarly,
     );
   }
 

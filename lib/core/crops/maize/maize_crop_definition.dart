@@ -62,6 +62,8 @@ class MaizeCropDefinition implements CropDefinition {
   ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluateTelemetry({
     required dynamic telemetry,
     required CropStageResult stage,
+    required CropProfile profile,
+    StageTargets? targetsOverride,
     required AlertsState alertsState,
   }) {
     final bioTelemetry = telemetry as BioGTelemetry;
@@ -71,17 +73,16 @@ class MaizeCropDefinition implements CropDefinition {
       orElse: () => MaizeStageKey.vegMid,
     );
 
-    final fallbackProfile =
-        maizeProfiles[kMaizeGenericProfileId] ?? maizeProfiles.values.first;
+    final maizeProfile = profile as MaizeProfile;
 
     final seedStage = SeedStageResult(
-      profile: fallbackProfile,
+      profile: maizeProfile,
       stage: maizeStage,
       daySinceSowing: 0,
-      r1Band: fallbackProfile.r1Days,
-      endBand: fallbackProfile.endWindowDays,
-      expectedR1Day: fallbackProfile.r1Days.mid,
-      expectedEndDay: fallbackProfile.endWindowDays.mid,
+      r1Band: maizeProfile.r1Days,
+      endBand: maizeProfile.endWindowDays,
+      expectedR1Day: maizeProfile.r1Days.mid,
+      expectedEndDay: maizeProfile.endWindowDays.mid,
       expectedDaysToEnd: stage.expectedDaysToEnd,
       stageProgressPct: 0,
       windowsNow: const [],
@@ -97,6 +98,7 @@ class MaizeCropDefinition implements CropDefinition {
       u: maizeUniversalV1,
       alertsState: alertsState,
       cropLabel: 'Maíz',
+      targetsOverride: targetsOverride,
     );
   }
 

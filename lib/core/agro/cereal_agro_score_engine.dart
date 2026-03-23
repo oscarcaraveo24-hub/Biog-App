@@ -1,8 +1,8 @@
 // lib/core/agro/cereal_agro_score_engine.dart
 //
 // Motor agronómico compartido para cereales (avena, cebada, trigo).
-// Comparte la misma lógica de scoring que maíz/frijol pero opera
-// sobre StageTargets + StageWeights resueltos externamente.
+// Usa la misma semántica de score continuo que maíz y frijol para mantener
+// consistencia entre cultivos al comparar Soil Control Score y bandas.
 
 import 'dart:math' as math;
 
@@ -29,16 +29,14 @@ class CerealAgroScoreEngine {
     String? cropLabel,
     String? stageLabel,
   }) {
-    // ── Evaluar métricas de suelo ──
-    final moistureEval = _evalMetric(t.soilMoisturePct, targets.moistureRaw);
-    final soilTempEval = _evalMetric(t.soilTempC, targets.soilTemp);
-    final phEval = _evalMetric(t.ph, targets.ph);
-    final ecEval = _evalMetric(t.ec, targets.ec);
-    final resistanceEval = _evalMetric(t.resistance, targets.resistance);
+    final moisture01 = _normalizeMoisture01(t.soilMoisturePct, cal);
+    final moistureRawCal = moisture01 * 100.0;
 
-    // ── Evaluar NPK ──
-    // Igual que maíz/frijol: el score compara un índice 0..100 derivado de ppm
-    // contra los targets nIndex/pIndex/kIndex del universal profile.
+    final soilTemp = t.soilTempC;
+    final ph = t.ph;
+    final ec = t.ec;
+    final resistance = t.resistance;
+
     final nRawPpm = _calibrateValue(t.n, cal?.nMinRaw, cal?.nMaxRaw);
     final pRawPpm = _calibrateValue(t.p, cal?.pMinRaw, cal?.pMaxRaw);
     final kRawPpm = _calibrateValue(t.k, cal?.kMinRaw, cal?.kMaxRaw);
@@ -47,103 +45,68 @@ class CerealAgroScoreEngine {
     final pIndex0to100 = _ppmToIndex0to100(pRawPpm, AgroMetricKey.p);
     final kIndex0to100 = _ppmToIndex0to100(kRawPpm, AgroMetricKey.k);
 
-    final nEval = _evalMetric(nIndex0to100, targets.nIndex);
-    final pEval = _evalMetric(pIndex0to100, targets.pIndex);
-    final kEval = _evalMetric(kIndex0to100, targets.kIndex);
-
-    // ── Scores 0-1 ──
-    final double nScore01 = _bandScore(nEval);
-    final double pScore01 = _bandScore(pEval);
-    final double kScore01 = _bandScore(kEval);
-    final double npkScore01 = (nScore01 + pScore01 + kScore01) / 3.0;
-    final double soilControlScore01 = _weightedSoilScore(
-      moistureScore: _bandScore(moistureEval),
-      resistanceScore: _bandScore(resistanceEval),
-      phScore: _bandScore(phEval),
-      ecScore: _bandScore(ecEval),
-      npkScore: npkScore01,
-      weights: weights,
+    final moistureEval = _eval(
+      value: moistureRawCal,
+      range: targets.moistureRaw,
     );
+    final soilTempEval = _eval(value: soilTemp, range: targets.soilTemp);
+    final phEval = _eval(value: ph, range: targets.ph);
+    final ecEval = _eval(value: ec, range: targets.ec);
+    final resistanceEval = _eval(value: resistance, range: targets.resistance);
+    final nEval = _eval(value: nIndex0to100, range: targets.nIndex);
+    final pEval = _eval(value: pIndex0to100, range: targets.pIndex);
+    final kEval = _eval(value: kIndex0to100, range: targets.kIndex);
 
-    // ── Construir mapa de métricas ──
     final metrics = <AgroMetricKey, AgroMetricEval>{
-      AgroMetricKey.soilMoisture: AgroMetricEval(
-        band: moistureEval,
-        score01: _bandScore(moistureEval),
-        labelEs: _labelEs(moistureEval),
-        value: t.soilMoisturePct,
-      ),
-      AgroMetricKey.soilTemp: AgroMetricEval(
-        band: soilTempEval,
-        score01: _bandScore(soilTempEval),
-        labelEs: _labelEs(soilTempEval),
-        value: t.soilTempC,
-      ),
-      AgroMetricKey.ph: AgroMetricEval(
-        band: phEval,
-        score01: _bandScore(phEval),
-        labelEs: _labelEs(phEval),
-        value: t.ph,
-      ),
-      AgroMetricKey.ec: AgroMetricEval(
-        band: ecEval,
-        score01: _bandScore(ecEval),
-        labelEs: _labelEs(ecEval),
-        value: t.ec,
-      ),
-      AgroMetricKey.resistance: AgroMetricEval(
-        band: resistanceEval,
-        score01: _bandScore(resistanceEval),
-        labelEs: _labelEs(resistanceEval),
-        value: t.resistance,
-      ),
-      AgroMetricKey.n: AgroMetricEval(
-        band: nEval,
-        score01: nScore01,
-        labelEs: _labelEs(nEval),
-        value: nIndex0to100,
-      ),
-      AgroMetricKey.p: AgroMetricEval(
-        band: pEval,
-        score01: pScore01,
-        labelEs: _labelEs(pEval),
-        value: pIndex0to100,
-      ),
-      AgroMetricKey.k: AgroMetricEval(
-        band: kEval,
-        score01: kScore01,
-        labelEs: _labelEs(kEval),
-        value: kIndex0to100,
-      ),
+      AgroMetricKey.soilMoisture: _wrap(moistureEval),
+      AgroMetricKey.soilTemp: _wrap(soilTempEval),
+      AgroMetricKey.ph: _wrap(phEval),
+      AgroMetricKey.ec: _wrap(ecEval),
+      AgroMetricKey.resistance: _wrap(resistanceEval),
+      AgroMetricKey.n: _wrap(nEval),
+      AgroMetricKey.p: _wrap(pEval),
+      AgroMetricKey.k: _wrap(kEval),
     };
 
-    // ── Generar sugerencias de alertas ──
+    final npkScore01 = _avg([nEval.score01, pEval.score01, kEval.score01]);
+    final totalW = math.max(0.0001, weights.sum);
+    final soilControlScore01 =
+        (weights.moisture * moistureEval.score01 +
+            weights.resistance * resistanceEval.score01 +
+            weights.ph * phEval.score01 +
+            weights.ec * ecEval.score01 +
+            weights.npk * npkScore01) /
+        totalW;
+
     final suggestedAlertKeys = <String>[];
     final isCriticalStage = criticalStageKeys.contains(stageKey);
 
-    _pushAlerts(
+    _pushAlertsForMetric(
+      suggestedAlertKeys,
       'soilMoisture',
       moistureEval,
       isCriticalStage,
-      suggestedAlertKeys,
     );
-    _pushAlerts('soilTemp', soilTempEval, isCriticalStage, suggestedAlertKeys);
-    _pushAlerts('ph', phEval, isCriticalStage, suggestedAlertKeys);
-    _pushAlerts('ec', ecEval, isCriticalStage, suggestedAlertKeys);
-    _pushAlerts(
+    _pushAlertsForMetric(
+      suggestedAlertKeys,
+      'soilTemp',
+      soilTempEval,
+      isCriticalStage,
+    );
+    _pushAlertsForMetric(suggestedAlertKeys, 'ph', phEval, isCriticalStage);
+    _pushAlertsForMetric(suggestedAlertKeys, 'ec', ecEval, isCriticalStage);
+    _pushAlertsForMetric(
+      suggestedAlertKeys,
       'resistance',
       resistanceEval,
       isCriticalStage,
-      suggestedAlertKeys,
     );
-    _pushAlerts('npk.n', nEval, isCriticalStage, suggestedAlertKeys);
-    _pushAlerts('npk.p', pEval, isCriticalStage, suggestedAlertKeys);
-    _pushAlerts('npk.k', kEval, isCriticalStage, suggestedAlertKeys);
+    _pushAlertsForMetric(suggestedAlertKeys, 'npk.n', nEval, isCriticalStage);
+    _pushAlertsForMetric(suggestedAlertKeys, 'npk.p', pEval, isCriticalStage);
+    _pushAlertsForMetric(suggestedAlertKeys, 'npk.k', kEval, isCriticalStage);
 
-    // ── Mapear etapa cereal → MaizeStageKey para AlertsEngine ──
     final maizeStage = _mapCerealStageToAlertStage(stageKey);
 
-    // ── Construir alertas ──
     final alertsBuild = AlertsEngine.buildFromSuggestedKeys(
       deviceId: t.deviceId,
       now: t.timestamp,
@@ -155,9 +118,8 @@ class CerealAgroScoreEngine {
       stageLabel: stageLabel,
     );
 
-    // ── Resultado ──
     final agroEval = AgroEvalResult(
-      soilControlScore01: soilControlScore01,
+      soilControlScore01: soilControlScore01.clamp(0.0, 1.0),
       metrics: metrics,
       alerts: alertsBuild.alerts,
       suggestedAlertKeys: suggestedAlertKeys,
@@ -165,10 +127,6 @@ class CerealAgroScoreEngine {
 
     return (eval: agroEval, nextAlertsState: alertsBuild.state);
   }
-
-  // ============================================================================
-  // PRIVATE HELPER METHODS
-  // ============================================================================
 
   static double _ppmCapFor(AgroMetricKey key) {
     switch (key) {
@@ -187,7 +145,6 @@ class CerealAgroScoreEngine {
     return ((ppm / _ppmCapFor(key)) * 100.0).clamp(0.0, 100.0);
   }
 
-  /// Aplica calibración por clamp si hay valores min/max de raw.
   static double _calibrateValue(double value, double? minRaw, double? maxRaw) {
     if (minRaw == null && maxRaw == null) return value;
     final lo = minRaw ?? double.negativeInfinity;
@@ -195,35 +152,13 @@ class CerealAgroScoreEngine {
     return value.clamp(lo, hi);
   }
 
-  /// Evalúa un valor numérico contra un AgroRange y retorna un AgroBand.
-  static AgroBand _evalMetric(double value, AgroRange range) {
-    if (value < range.lowMax) return AgroBand.low;
-    if (value >= range.lowMax && value < range.optimalMin) return AgroBand.low;
-    if (value >= range.optimalMin && value <= range.optimalMax) {
-      return AgroBand.optimal;
-    }
-    if (value > range.optimalMax && value <= range.highMin)
-      return AgroBand.high;
-    if (value > range.highMin) return AgroBand.critical;
-    return AgroBand.unknown;
-  }
+  static AgroMetricEval _wrap(_Eval e) => AgroMetricEval(
+    band: e.band,
+    score01: e.score01,
+    labelEs: _labelEs(e.band),
+    value: e.value,
+  );
 
-  /// Score (0-1) según la banda.
-  static double _bandScore(AgroBand band) {
-    switch (band) {
-      case AgroBand.optimal:
-        return 1.0;
-      case AgroBand.low:
-      case AgroBand.high:
-        return 0.6;
-      case AgroBand.critical:
-        return 0.2;
-      case AgroBand.unknown:
-        return 0.5;
-    }
-  }
-
-  /// Etiqueta en español para la banda.
   static String _labelEs(AgroBand band) {
     switch (band) {
       case AgroBand.optimal:
@@ -235,52 +170,112 @@ class CerealAgroScoreEngine {
       case AgroBand.critical:
         return 'Crítico';
       case AgroBand.unknown:
-        return 'N/A';
+        return '—';
     }
   }
 
-  /// Score ponderado de control edáfico usando StageWeights.
-  static double _weightedSoilScore({
-    required double moistureScore,
-    required double resistanceScore,
-    required double phScore,
-    required double ecScore,
-    required double npkScore,
-    required StageWeights weights,
-  }) {
-    final totalW = math.max(0.0001, weights.sum);
-    return (moistureScore * weights.moisture +
-            resistanceScore * weights.resistance +
-            phScore * weights.ph +
-            ecScore * weights.ec +
-            npkScore * weights.npk) /
-        totalW;
+  static _Eval _eval({required double value, required AgroRange range}) {
+    if (!value.isFinite || value.isNaN) {
+      return _Eval(value: value, band: AgroBand.unknown, score01: 0.0);
+    }
+
+    final lowMax = math.min(range.lowMax, range.optimalMin);
+    final optMin = math.max(range.lowMax, range.optimalMin);
+    final optMax = math.max(range.optimalMax, optMin);
+    final highMin = math.max(range.highMin, optMax);
+
+    AgroBand band;
+    if (value < lowMax) {
+      band = AgroBand.critical;
+    } else if (value < optMin) {
+      band = AgroBand.low;
+    } else if (value <= optMax) {
+      band = AgroBand.optimal;
+    } else if (value <= highMin) {
+      band = AgroBand.high;
+    } else {
+      band = AgroBand.critical;
+    }
+
+    final score01 = _scoreFromRange(value, lowMax, optMin, optMax, highMin);
+    return _Eval(value: value, band: band, score01: score01);
   }
 
-  /// Empuja alert keys según la banda y si es etapa crítica.
-  static void _pushAlerts(
-    String metricKey,
-    AgroBand band,
-    bool isCriticalStage,
-    List<String> out,
+  static double _scoreFromRange(
+    double v,
+    double lowMax,
+    double optMin,
+    double optMax,
+    double highMin,
   ) {
-    switch (band) {
-      case AgroBand.critical:
-        out.add('$metricKey.critical');
-        break;
-      case AgroBand.low:
-        out.add('$metricKey.low');
-        break;
-      case AgroBand.high:
-        out.add('$metricKey.high');
-        break;
-      case AgroBand.optimal:
-      case AgroBand.unknown:
-        break;
+    if (v >= optMin && v <= optMax) return 1.0;
+
+    if (v >= lowMax && v < optMin) {
+      final t = _invLerp(lowMax, optMin, v);
+      return _lerp(0.55, 0.95, t);
+    }
+
+    if (v > optMax && v <= highMin) {
+      final t = _invLerp(optMax, highMin, v);
+      return _lerp(0.95, 0.55, t);
+    }
+
+    if (v < lowMax) {
+      final span = math.max(1e-6, (optMin - lowMax).abs());
+      final d = (lowMax - v) / span;
+      return (0.35 / (1 + d)).clamp(0.05, 0.35);
+    }
+
+    final span = math.max(1e-6, (highMin - optMax).abs());
+    final d = (v - highMin) / span;
+    return (0.35 / (1 + d)).clamp(0.05, 0.35);
+  }
+
+  static void _pushAlertsForMetric(
+    List<String> out,
+    String key,
+    _Eval e,
+    bool isCriticalStage,
+  ) {
+    if (e.band == AgroBand.critical) {
+      out.add('$key.critical');
+      return;
+    }
+
+    if (isCriticalStage && e.band == AgroBand.low) {
+      out.add('$key.low');
+    }
+
+    if (isCriticalStage && e.band == AgroBand.high) {
+      out.add('$key.high');
     }
   }
 
-  /// Mapea etapa cereal (string) a MaizeStageKey para AlertsEngine.
+  static double _normalizeMoisture01(double raw0to100, Calibration? cal) {
+    final dry = cal?.moistureDryRaw;
+    final wet = cal?.moistureWetRaw;
+
+    if (dry != null && wet != null && (wet - dry).abs() > 1e-6) {
+      return ((raw0to100 - dry) / (wet - dry)).clamp(0.0, 1.0);
+    }
+
+    return (raw0to100 / 100.0).clamp(0.0, 1.0);
+  }
+
+  static double _avg(List<double> values) {
+    if (values.isEmpty) return 0.0;
+    final sum = values.fold<double>(0.0, (a, b) => a + b);
+    return (sum / values.length).clamp(0.0, 1.0);
+  }
+
+  static double _lerp(double a, double b, double t) => a + (b - a) * t;
+
+  static double _invLerp(double a, double b, double v) {
+    final denom = (b - a);
+    if (denom.abs() < 1e-9) return 0.0;
+    return ((v - a) / denom).clamp(0.0, 1.0);
+  }
+
   static MaizeStageKey _mapCerealStageToAlertStage(String stageKey) {
     switch (stageKey) {
       case 'germination':
@@ -307,4 +302,12 @@ class CerealAgroScoreEngine {
         return MaizeStageKey.vegMid;
     }
   }
+}
+
+class _Eval {
+  const _Eval({required this.value, required this.band, required this.score01});
+
+  final double value;
+  final AgroBand band;
+  final double score01;
 }

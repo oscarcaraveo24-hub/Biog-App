@@ -136,7 +136,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       case OnboardingStep.cropCategory:
         return _draft.cropCategory?.isNotEmpty ?? false;
       case OnboardingStep.cropDetails:
-        return _draft.cropId?.isNotEmpty ?? false;
+        return (_draft.cropId?.isNotEmpty ?? false) &&
+            ((_draft.varietyId?.isNotEmpty ?? false) ||
+                (_draft.varietyAlias?.isNotEmpty ?? false));
       case OnboardingStep.cropStage:
         return _draft.stage?.isNotEmpty ?? false;
       case OnboardingStep.cropDate:

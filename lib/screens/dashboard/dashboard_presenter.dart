@@ -101,6 +101,7 @@ class DashboardScreenPresenter {
     final AgroEvalResult? effectiveEval = isPlanted
         ? (runtime.eval ?? store.lastAgroEval)
         : null;
+    final bool hasCropAwareEval = effectiveEval != null;
 
     final DateTime? plannedDate =
         runtime.cropContext?.plannedSowingDate ??
@@ -128,7 +129,11 @@ class DashboardScreenPresenter {
     );
 
     final double soilHealth = isPlanted
-        ? _calcSoilHealthRealistic(t: telemetry, eval: effectiveEval)
+        ? _calcSoilHealthRealistic(
+            t: telemetry,
+            eval: effectiveEval,
+            targets: targets,
+          )
         : _calcPreSowingSoilHealth(telemetry);
 
     final String moistureValue = telemetry == null
@@ -143,7 +148,12 @@ class DashboardScreenPresenter {
         ? ((effectiveEval != null)
               ? (effectiveEval.metrics[AgroMetricKey.soilMoisture]?.labelEs ??
                     '—')
-              : _soilMoistureStatus(telemetry.soilMoisturePct))
+              : ((targets != null)
+                    ? _rawMetricStatusFromTargets(
+                          value: telemetry.soilMoisturePct,
+                          range: targets.moistureRaw,
+                        )
+                    : 'Monitoreo'))
         : _preSowingMoistureStatus(telemetry.soilMoisturePct);
 
     final String tempValue = telemetry == null
@@ -154,6 +164,15 @@ class DashboardScreenPresenter {
         ? '—'
         : isGenericMode
         ? 'Lectura actual'
+        : isPlanted
+        ? ((effectiveEval != null)
+              ? (effectiveEval.metrics[AgroMetricKey.soilTemp]?.labelEs ?? '—')
+              : ((targets != null)
+                    ? _rawMetricStatusFromTargets(
+                          value: telemetry.soilTempC,
+                          range: targets.soilTemp,
+                        )
+                    : 'Monitoreo'))
         : _soilTempStatus(telemetry.soilTempC);
 
     final String phValue = telemetry == null
@@ -167,7 +186,12 @@ class DashboardScreenPresenter {
         : isPlanted
         ? ((effectiveEval != null)
               ? (effectiveEval.metrics[AgroMetricKey.ph]?.labelEs ?? '—')
-              : _phStatus(telemetry.ph))
+              : ((targets != null)
+                    ? _rawMetricStatusFromTargets(
+                          value: telemetry.ph,
+                          range: targets.ph,
+                        )
+                    : 'Monitoreo'))
         : _preSowingPhStatus(telemetry.ph);
 
     final String resistanceValue = telemetry == null
@@ -182,19 +206,28 @@ class DashboardScreenPresenter {
         ? ((effectiveEval != null)
               ? (effectiveEval.metrics[AgroMetricKey.resistance]?.labelEs ??
                     '—')
-              : _resistanceStatus(telemetry.resistance))
+              : ((targets != null)
+                    ? _rawMetricStatusFromTargets(
+                          value: telemetry.resistance,
+                          range: targets.resistance,
+                        )
+                    : 'Monitoreo'))
         : _preSowingResistanceStatus(telemetry.resistance);
 
     final String npkTitle = isPlanted
-        ? ((telemetry != null && targets != null)
-              ? _npkTitleFromTargets(t: telemetry, targets: targets)
-              : (telemetry == null ? 'NPK  ·  —' : _npkTitle(telemetry)))
+        ? (hasCropAwareEval
+              ? _npkTitleFromEval(effectiveEval!)
+              : ((telemetry != null && targets != null)
+                    ? _npkTitleFromTargets(t: telemetry, targets: targets)
+                    : 'NPK  ·  Monitoreo pendiente'))
         : 'NPK  ·  Pendiente por etapa';
 
     final String npkSubtitle = isPlanted
-        ? ((telemetry != null && targets != null)
-              ? _npkSubtitleFromTargets(t: telemetry, targets: targets)
-              : (telemetry == null ? '—' : _npkSubtitle(telemetry)))
+        ? (hasCropAwareEval
+              ? _npkSubtitleFromEval(effectiveEval!)
+              : ((telemetry != null && targets != null)
+                    ? _npkSubtitleFromTargets(t: telemetry, targets: targets)
+                    : 'Sin evaluación actual'))
         : (isPlanned ? 'Disponible tras siembra' : 'Modo genérico');
 
     late final String irrigationTitle;
@@ -202,19 +235,29 @@ class DashboardScreenPresenter {
     late final String irrigationTag;
 
     if (isPlanted) {
-      irrigationTitle = (effectiveEval != null)
-          ? _irrigationTitleFromEval(effectiveEval)
-          : (telemetry == null
-                ? 'Recomendación pendiente'
-                : _irrigationTitle(telemetry.soilMoisturePct));
+      irrigationTitle = hasCropAwareEval
+          ? _irrigationTitleFromEval(effectiveEval!)
+          : ((telemetry != null && targets != null)
+                ? _irrigationTitleFromTargets(
+                    soilMoisturePct: telemetry.soilMoisturePct,
+                    targets: targets,
+                  )
+                : 'Recomendación pendiente');
 
-      irrigationSubtitle = 'Basado en humedad del suelo y modelo Bio-G';
+      irrigationSubtitle = hasCropAwareEval
+          ? 'Basado en humedad del suelo y modelo Bio-G'
+          : ((telemetry != null && targets != null)
+                ? 'Basado en humedad del suelo y etapa actual'
+                : 'Sin evaluación agronómica actual');
 
-      irrigationTag = (effectiveEval != null)
-          ? _irrigationTagFromEval(effectiveEval)
-          : (telemetry == null
-                ? '—'
-                : _irrigationTag(telemetry.soilMoisturePct));
+      irrigationTag = hasCropAwareEval
+          ? _irrigationTagFromEval(effectiveEval!)
+          : ((telemetry != null && targets != null)
+                ? _irrigationTagFromTargets(
+                    soilMoisturePct: telemetry.soilMoisturePct,
+                    targets: targets,
+                  )
+                : '—');
     } else if (isPlanned) {
       irrigationTitle = _plannedInsightTitle(plannedDaysLeft, telemetry);
       irrigationSubtitle =
@@ -229,7 +272,7 @@ class DashboardScreenPresenter {
       } else {
         irrigationTitle = 'Configura cultivo para recomendaciones precisas';
         irrigationSubtitle =
-            'Asigna una semilla y calendario para adaptar sensores y alertas';
+            'Asigna un cultivo para adaptar sensores y alertas por etapa';
         irrigationTag = 'Setup';
       }
     }
@@ -560,6 +603,40 @@ class DashboardScreenPresenter {
     return 'Crítico';
   }
 
+
+  String _rawMetricStatusFromTargets({
+    required double value,
+    required AgroRange range,
+  }) {
+    return _labelFromRangeTuned(index0to100: value, range: range);
+  }
+
+  double _scoreFromRawRange({
+    required double value,
+    required AgroRange range,
+  }) {
+    return _scoreFromIndexRange(index0to100: value, range: range);
+  }
+
+  double _scoreFromIndexRange({
+    required double index0to100,
+    required AgroRange range,
+  }) {
+    final double value = index0to100;
+    if (value <= range.lowMax || value >= range.highMin) return 0.0;
+    if (value >= range.optimalMin && value <= range.optimalMax) return 1.0;
+
+    if (value < range.optimalMin) {
+      final double denom = (range.optimalMin - range.lowMax).abs();
+      if (denom <= 0.0001) return 0.0;
+      return ((value - range.lowMax) / denom).clamp(0.0, 1.0);
+    }
+
+    final double denom = (range.highMin - range.optimalMax).abs();
+    if (denom <= 0.0001) return 0.0;
+    return ((range.highMin - value) / denom).clamp(0.0, 1.0);
+  }
+
   String _npkTitleFromTargets({
     required BioGTelemetry t,
     required StageTargets targets,
@@ -608,6 +685,40 @@ class DashboardScreenPresenter {
     return 'Ajuste leve';
   }
 
+  String _npkTitleFromEval(AgroEvalResult eval) {
+    String labelFor(AgroMetricKey key, String channel) {
+      final AgroMetricEval? metric = eval.metrics[key];
+      final String label = metric?.labelEs ?? '—';
+      return '$channel $label';
+    }
+
+    return 'NPK  ·  ${labelFor(AgroMetricKey.n, 'N')} · ${labelFor(AgroMetricKey.p, 'P')} · ${labelFor(AgroMetricKey.k, 'K')}';
+  }
+
+  String _npkSubtitleFromEval(AgroEvalResult eval) {
+    final List<AgroMetricEval?> metrics = <AgroMetricEval?>[
+      eval.metrics[AgroMetricKey.n],
+      eval.metrics[AgroMetricKey.p],
+      eval.metrics[AgroMetricKey.k],
+    ];
+
+    if (metrics.any((metric) => metric?.band == AgroBand.critical)) {
+      return 'Crítico';
+    }
+
+    if (metrics.every((metric) => metric?.band == AgroBand.optimal)) {
+      return 'Óptimo';
+    }
+
+    if (metrics.any(
+      (metric) => metric?.band == AgroBand.low || metric?.band == AgroBand.high,
+    )) {
+      return 'Ajuste leve';
+    }
+
+    return 'Monitoreo';
+  }
+
   String _irrigationTitleFromEval(AgroEvalResult eval) {
     final AgroMetricEval? metric = eval.metrics[AgroMetricKey.soilMoisture];
     if (metric == null) return 'Recomendación pendiente';
@@ -642,35 +753,65 @@ class DashboardScreenPresenter {
     }
   }
 
+
+  String _irrigationTitleFromTargets({
+    required double soilMoisturePct,
+    required StageTargets targets,
+  }) {
+    final String label = _rawMetricStatusFromTargets(
+      value: soilMoisturePct,
+      range: targets.moistureRaw,
+    );
+
+    switch (label) {
+      case 'Crítico':
+      case 'Bajo':
+        return 'Riega dentro de las próximas 24 horas';
+      case 'Alto':
+        return 'Evita riego por ahora';
+      case 'Óptimo':
+        return 'Humedad estable: monitorea';
+      default:
+        return 'Monitorea humedad del suelo';
+    }
+  }
+
+  String _irrigationTagFromTargets({
+    required double soilMoisturePct,
+    required StageTargets targets,
+  }) {
+    final String label = _rawMetricStatusFromTargets(
+      value: soilMoisturePct,
+      range: targets.moistureRaw,
+    );
+
+    switch (label) {
+      case 'Crítico':
+      case 'Bajo':
+        return '24h';
+      case 'Alto':
+        return 'OK';
+      case 'Óptimo':
+        return 'Auto';
+      default:
+        return 'Mon';
+    }
+  }
+
   double _calcSoilHealthRealistic({
     required BioGTelemetry? t,
     required AgroEvalResult? eval,
+    required StageTargets? targets,
   }) {
-    if (t == null && eval == null) return 0.0;
-
-    double score01Legacy(
-      double value,
-      double minOk,
-      double maxOk,
-      double hardMin,
-      double hardMax,
-    ) {
-      if (value <= hardMin || value >= hardMax) return 0.0;
-      if (value >= minOk && value <= maxOk) return 1.0;
-
-      if (value < minOk) {
-        final double x = (value - hardMin) / (minOk - hardMin);
-        return x.clamp(0.0, 1.0);
-      }
-
-      final double x = (hardMax - value) / (hardMax - maxOk);
-      return x.clamp(0.0, 1.0);
-    }
+    if (eval == null && (t == null || targets == null)) return 0.0;
 
     late final double soilMoist01;
     late final double ph01;
     late final double ec01;
     late final double res01;
+    late final double n01;
+    late final double p01;
+    late final double k01;
 
     if (eval != null) {
       soilMoist01 = (eval.metrics[AgroMetricKey.soilMoisture]?.score01 ?? 0.0)
@@ -681,61 +822,56 @@ class DashboardScreenPresenter {
         0.0,
         1.0,
       );
-    } else {
-      final BioGTelemetry telemetry = t!;
-      soilMoist01 = score01Legacy(telemetry.soilMoisturePct, 30, 60, 5, 85);
-      ph01 = score01Legacy(telemetry.ph, 5.8, 7.4, 4.5, 8.8);
-      ec01 = score01Legacy(telemetry.ec, 0.9, 2.2, 0.4, 3.2);
-      res01 = score01Legacy(telemetry.resistance, 0.3, 1.2, 0.1, 2.8);
-    }
-
-    final double soilConditions01 = ((soilMoist01 + ph01 + ec01 + res01) / 4.0)
-        .clamp(0.0, 1.0);
-
-    late final double n01;
-    late final double p01;
-    late final double k01;
-
-    if (eval != null) {
       n01 = (eval.metrics[AgroMetricKey.n]?.score01 ?? 0.0).clamp(0.0, 1.0);
       p01 = (eval.metrics[AgroMetricKey.p]?.score01 ?? 0.0).clamp(0.0, 1.0);
       k01 = (eval.metrics[AgroMetricKey.k]?.score01 ?? 0.0).clamp(0.0, 1.0);
     } else {
       final BioGTelemetry telemetry = t!;
-      n01 = (telemetry.n / 80.0).clamp(0.0, 1.0);
-      p01 = (telemetry.p / 40.0).clamp(0.0, 1.0);
-      k01 = (telemetry.k / 70.0).clamp(0.0, 1.0);
+      final StageTargets stageTargets = targets!;
+      soilMoist01 = _scoreFromRawRange(
+        value: telemetry.soilMoisturePct,
+        range: stageTargets.moistureRaw,
+      );
+      ph01 = _scoreFromRawRange(value: telemetry.ph, range: stageTargets.ph);
+      ec01 = _scoreFromRawRange(value: telemetry.ec, range: stageTargets.ec);
+      res01 = _scoreFromRawRange(
+        value: telemetry.resistance,
+        range: stageTargets.resistance,
+      );
+      n01 = _scoreFromIndexRange(
+        index0to100: _toIndex0to100(telemetry.n.toDouble(), AgroMetricKey.n),
+        range: stageTargets.nIndex,
+      );
+      p01 = _scoreFromIndexRange(
+        index0to100: _toIndex0to100(telemetry.p.toDouble(), AgroMetricKey.p),
+        range: stageTargets.pIndex,
+      );
+      k01 = _scoreFromIndexRange(
+        index0to100: _toIndex0to100(telemetry.k.toDouble(), AgroMetricKey.k),
+        range: stageTargets.kIndex,
+      );
     }
 
-    final double minNpk01 = <double>[
-      n01,
-      p01,
-      k01,
-    ].reduce((a, b) => a < b ? a : b);
-    final double avgNpk01 = ((n01 + p01 + k01) / 3.0).clamp(0.0, 1.0);
+    final double soilConditions01 = ((soilMoist01 + ph01 + ec01 + res01) / 4.0)
+        .clamp(0.0, 1.0);
 
+    final double minNpk01 = <double>[n01, p01, k01].reduce(
+      (a, b) => a < b ? a : b,
+    );
+    final double avgNpk01 = ((n01 + p01 + k01) / 3.0).clamp(0.0, 1.0);
     final double npkComposite01 = (0.70 * minNpk01 + 0.30 * avgNpk01).clamp(
       0.0,
       1.0,
     );
 
-    const double soilW = 0.60;
-    const double npkW = 0.40;
-
-    double base01 = (soilW * soilConditions01 + npkW * npkComposite01).clamp(
+    double base01 = (0.60 * soilConditions01 + 0.40 * npkComposite01).clamp(
       0.0,
       1.0,
     );
 
-    const double threshold = 0.35;
-    const double maxPenalty = 0.15;
-
-    if (minNpk01 < threshold) {
-      final double severity = ((threshold - minNpk01) / threshold).clamp(
-        0.0,
-        1.0,
-      );
-      base01 = (base01 - maxPenalty * severity).clamp(0.0, 1.0);
+    if (minNpk01 < 0.35) {
+      final double severity = ((0.35 - minNpk01) / 0.35).clamp(0.0, 1.0);
+      base01 = (base01 - 0.15 * severity).clamp(0.0, 1.0);
     }
 
     return base01;

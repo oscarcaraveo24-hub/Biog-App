@@ -1,5 +1,5 @@
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/oat_agro_score_engine.dart';
+import 'package:bio_g/core/agro/cereal_agro_score_engine.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/crop_engine.dart';
 import 'package:bio_g/core/crops/crop_profile_models.dart';
@@ -9,11 +9,17 @@ import 'package:bio_g/core/crops/crop_types.dart';
 import 'package:bio_g/core/crops/oat/oat_crop_engine_adapter.dart';
 import 'package:bio_g/crops/oat/oat_universal_profile.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
-import 'package:bio_g/widgets/seeds/maize_models.dart';
 import 'package:bio_g/widgets/seeds/oat_models.dart';
 import 'package:bio_g/widgets/seeds/oat_profiles.dart';
+import 'package:bio_g/widgets/seeds/maize_models.dart';
 
 class OatCropDefinition implements CropDefinition {
+  static const Set<String> _criticalStages = {
+    'booting',
+    'heading',
+    'flowering',
+  };
+
   @override
   CropKey get cropKey => CropKey.oat;
 
@@ -59,21 +65,34 @@ class OatCropDefinition implements CropDefinition {
   ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluateTelemetry({
     required dynamic telemetry,
     required CropStageResult stage,
+    required CropProfile profile,
+    StageTargets? targetsOverride,
     required AlertsState alertsState,
   }) {
     final bioTelemetry = telemetry as BioGTelemetry;
     final oatStage = _resolveStage(stage.stageKey);
+    final oatProfile = profile as OatProfile;
+    final weights = oatUniversalV1.weights[oatStage];
+    final targets = targetsOverride ?? oatUniversalV1.byStage[oatStage];
 
-    final fallbackProfile = oatProfiles[kAvGen] ?? oatProfiles.values.first;
+    if (targets == null || weights == null) {
+      final empty = AgroEvalResult(
+        soilControlScore01: 0.0,
+        metrics: const {},
+        alerts: const [],
+        suggestedAlertKeys: const ['stage.unknown'],
+      );
+      return (eval: empty, nextAlertsState: alertsState);
+    }
 
     final seedStage = OatStageResult(
-      profile: fallbackProfile,
+      profile: oatProfile,
       stage: oatStage,
       daySinceSowing: 0,
-      floweringBand: fallbackProfile.floweringDays,
-      endBand: fallbackProfile.endWindowDays,
-      expectedFloweringDay: fallbackProfile.floweringDays.mid,
-      expectedEndDay: fallbackProfile.endWindowDays.mid,
+      floweringBand: oatProfile.floweringDays,
+      endBand: oatProfile.endWindowDays,
+      expectedFloweringDay: oatProfile.floweringDays.mid,
+      expectedEndDay: oatProfile.endWindowDays.mid,
       expectedDaysToEnd: stage.expectedDaysToEnd,
       stageProgressPct: 0,
       windowsNow: const [],
@@ -83,12 +102,15 @@ class OatCropDefinition implements CropDefinition {
       helperCaption: '',
     );
 
-    return OatAgroScoreEngine.evaluate(
+    return CerealAgroScoreEngine.evaluate(
       t: bioTelemetry,
-      stage: seedStage,
-      u: oatUniversalV1,
+      targets: targets,
+      weights: weights,
+      stageKey: oatStage.name,
+      criticalStageKeys: _criticalStages,
       alertsState: alertsState,
       cropLabel: 'Avena',
+      stageLabel: seedStage.stageLabelEs,
     );
   }
 

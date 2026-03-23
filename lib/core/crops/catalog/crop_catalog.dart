@@ -1,3 +1,5 @@
+import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/core/crops/barley/barley_catalog.dart';
 import 'package:bio_g/core/crops/bean/bean_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
@@ -427,6 +429,197 @@ class CropCatalog {
       return maizeVarietiesByBrandAndMarket(brandId, marketTypeId);
     }
     return maizeVarietiesByBrand(brandId);
+  }
+
+
+  static String? resolveCalendarId({
+    required String cropId,
+    String? requested,
+    String? previousCalendarId,
+  }) {
+    final canonicalCropId = canonicalCropKey(cropId);
+    if (canonicalCropId.isEmpty) return null;
+
+    final requestedId = _canonicalCalendarId(
+      cropId: canonicalCropId,
+      raw: requested,
+    );
+    if (requestedId != null) return requestedId;
+
+    final previousId = _canonicalCalendarId(
+      cropId: canonicalCropId,
+      raw: previousCalendarId,
+    );
+    if (previousId != null) return previousId;
+
+    return defaultCalendarIdForCrop(canonicalCropId);
+  }
+
+  static int phenologyOffsetDaysForCalendar({
+    required String cropId,
+    String? calendarId,
+  }) {
+    final canonical = _canonicalCalendarId(cropId: cropId, raw: calendarId);
+    if (canonical == null) return 0;
+
+    if (canonical.endsWith('_temporal')) return -4;
+    if (canonical.endsWith('_riego')) return 4;
+    return 0;
+  }
+
+  static StageTargets adjustTargetsForCalendar({
+    required String cropId,
+    required String? calendarId,
+    required String stageKey,
+    required StageTargets baseTargets,
+  }) {
+    final canonical = _canonicalCalendarId(cropId: cropId, raw: calendarId);
+    if (canonical == null || canonical.endsWith('_default')) {
+      return baseTargets;
+    }
+
+    final bool isTemporal = canonical.endsWith('_temporal');
+    final bool isIrrigated = canonical.endsWith('_riego');
+    if (!isTemporal && !isIrrigated) return baseTargets;
+
+    final String normalizedStage = stageKey.trim().toLowerCase();
+    final bool isVegetative = _stageMatches(
+      normalizedStage,
+      const <String>['germ', 'emerg', 'veg', 'tiller', 'elong'],
+    );
+    final bool isReproductive = _stageMatches(
+      normalizedStage,
+      const <String>[
+        'boot',
+        'head',
+        'flower',
+        'grain',
+        'fill',
+        'maturity',
+        'harvest',
+        'tassel',
+        'silk',
+        'r1',
+        'r2',
+        'r3',
+        'r4',
+        'r5',
+      ],
+    );
+
+    final double moistureDelta = isTemporal ? 2.0 : 0.0;
+    final double resistanceDelta = isTemporal ? -0.10 : 0.05;
+    final double nDelta = isVegetative
+        ? (isIrrigated ? 4.0 : -4.0)
+        : 0.0;
+    final double kDelta = isReproductive
+        ? (isIrrigated ? 3.0 : -3.0)
+        : 0.0;
+
+    return StageTargets(
+      moistureRaw: _shiftRange(
+        baseTargets.moistureRaw,
+        moistureDelta,
+        min: 0.0,
+        max: 100.0,
+      ),
+      soilTemp: baseTargets.soilTemp,
+      ph: baseTargets.ph,
+      ec: baseTargets.ec,
+      resistance: _shiftRange(
+        baseTargets.resistance,
+        resistanceDelta,
+        min: -1.0,
+        max: 4.0,
+      ),
+      nIndex: _shiftRange(baseTargets.nIndex, nDelta, min: 0.0, max: 100.0),
+      pIndex: baseTargets.pIndex,
+      kIndex: _shiftRange(baseTargets.kIndex, kDelta, min: 0.0, max: 100.0),
+    );
+  }
+
+  static bool isGenericAlias(String? raw) {
+    final normalized = raw?.trim().toLowerCase() ?? '';
+    return normalized.isEmpty ||
+        normalized == 'generic' ||
+        normalized == 'genérico' ||
+        normalized == 'generico' ||
+        normalized == 'perfil genérico' ||
+        normalized == 'generic_maize' ||
+        normalized == 'generic_corn' ||
+        normalized == 'generic_bean' ||
+        normalized == 'generic_wheat' ||
+        normalized == 'generic_barley' ||
+        normalized == 'generic_oat' ||
+        normalized.startsWith('generic_');
+  }
+
+  static bool isGenericProfileId(String? profileId) {
+    final normalized = profileId?.trim().toLowerCase() ?? '';
+    return normalized.isNotEmpty &&
+        (normalized.endsWith('_generic') ||
+            normalized == 'fj_gen' ||
+            normalized == 'tr_gen' ||
+            normalized == 'cb_gen' ||
+            normalized == 'av_gen');
+  }
+
+  static String? _canonicalCalendarId({
+    required String cropId,
+    required String? raw,
+  }) {
+    final normalizedCropId = canonicalCropKeyOrNull(cropId);
+    final normalized = _normalize(raw);
+    if (normalizedCropId == null || normalized == null) return null;
+
+    final explicit = calendarsForCrop(normalizedCropId)
+        .map((calendar) => _normalize(calendar.id))
+        .whereType<String>()
+        .firstWhere(
+          (calendarId) => calendarId == normalized,
+          orElse: () => '',
+        );
+    if (explicit.isNotEmpty) return explicit;
+
+    return switch (normalized) {
+      'default' || 'base' || 'general' || 'general_base' =>
+        defaultCalendarIdForCrop(normalizedCropId),
+      'temporal' || 'rainfed' || 'secano' => '${normalizedCropId}_temporal',
+      'riego' || 'irrigated' => '${normalizedCropId}_riego',
+      _ => null,
+    };
+  }
+
+  static bool _stageMatches(String stageKey, List<String> patterns) {
+    for (final pattern in patterns) {
+      if (stageKey.contains(pattern)) return true;
+    }
+    return false;
+  }
+
+  static AgroRange _shiftRange(
+    AgroRange range,
+    double delta, {
+    required double min,
+    required double max,
+  }) {
+    double clampValue(double value) => value.clamp(min, max).toDouble();
+
+    double lowMax = clampValue(range.lowMax + delta);
+    double optimalMin = clampValue(range.optimalMin + delta);
+    double optimalMax = clampValue(range.optimalMax + delta);
+    double highMin = clampValue(range.highMin + delta);
+
+    if (optimalMin < lowMax) optimalMin = lowMax;
+    if (optimalMax < optimalMin) optimalMax = optimalMin;
+    if (highMin < optimalMax) highMin = optimalMax;
+
+    return AgroRange(
+      lowMax: lowMax,
+      optimalMin: optimalMin,
+      optimalMax: optimalMax,
+      highMin: highMin,
+    );
   }
 
   // ── Crop key canonicalisation ───────────────────────────────────────────────

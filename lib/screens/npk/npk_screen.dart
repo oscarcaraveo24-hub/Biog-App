@@ -70,6 +70,22 @@ class NpkScreen extends StatelessWidget {
     }
   }
 
+
+  _NpkBand _bandFromAgroBand(AgroBand band) {
+    switch (band) {
+      case AgroBand.low:
+        return _NpkBand.low;
+      case AgroBand.optimal:
+        return _NpkBand.optimal;
+      case AgroBand.high:
+        return _NpkBand.high;
+      case AgroBand.critical:
+        return _NpkBand.critical;
+      case AgroBand.unknown:
+        return _NpkBand.unknown;
+    }
+  }
+
   _NpkBand _bandFromPpmUsingIndexRange({
     required NpkChannel ch,
     required double ppm,
@@ -105,6 +121,7 @@ class NpkScreen extends StatelessWidget {
     required List<BioGTelemetry> history7d,
     required StageTargets? targets,
     required bool allowStageInterpretation,
+    AgroMetricEval? evalMetric,
   }) {
     double read(BioGTelemetry t) {
       return switch (channel) {
@@ -151,15 +168,17 @@ class NpkScreen extends StatelessWidget {
         ? _ppmCap(channel).round()
         : _indexToPpm(channel, rIndex.highMin);
 
-    final band = (rIndex == null)
-        ? _NpkBand.unknown
-        : _bandFromPpmUsingIndexRange(
-            ch: channel,
-            ppm: level,
-            indexRange: rIndex,
-          );
+    final _NpkBand band = evalMetric != null
+        ? _bandFromAgroBand(evalMetric.band)
+        : (rIndex == null)
+              ? _NpkBand.unknown
+              : _bandFromPpmUsingIndexRange(
+                  ch: channel,
+                  ppm: level,
+                  indexRange: rIndex,
+                );
 
-    final bandLabel = _bandLabelEs(band);
+    final String bandLabel = evalMetric?.labelEs ?? _bandLabelEs(band);
 
     final targetMinPctPainter = _ppmToPctForPainter(
       ch: channel,
@@ -248,6 +267,7 @@ class NpkScreen extends StatelessWidget {
                           final isPlanted = runtime.isPlanted;
                           final isPlanned = runtime.isPlanned;
                           final targets = runtime.targets;
+                          final eval = runtime.eval;
 
                           final n = _statsForChannel(
                             channel: NpkChannel.n,
@@ -255,6 +275,7 @@ class NpkScreen extends StatelessWidget {
                             history7d: history7d,
                             targets: targets,
                             allowStageInterpretation: isPlanted,
+                            evalMetric: eval?.metrics[AgroMetricKey.n],
                           );
 
                           final p = _statsForChannel(
@@ -263,6 +284,7 @@ class NpkScreen extends StatelessWidget {
                             history7d: history7d,
                             targets: targets,
                             allowStageInterpretation: isPlanted,
+                            evalMetric: eval?.metrics[AgroMetricKey.p],
                           );
 
                           final k = _statsForChannel(
@@ -271,6 +293,7 @@ class NpkScreen extends StatelessWidget {
                             history7d: history7d,
                             targets: targets,
                             allowStageInterpretation: isPlanted,
+                            evalMetric: eval?.metrics[AgroMetricKey.k],
                           );
 
                           final stageLabel = isPlanted

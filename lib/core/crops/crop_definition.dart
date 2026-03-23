@@ -19,6 +19,8 @@ abstract class CropDefinition {
   ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluateTelemetry({
     required dynamic telemetry,
     required CropStageResult stage,
+    required CropProfile profile,
+    StageTargets? targetsOverride,
     required AlertsState alertsState,
   });
 }

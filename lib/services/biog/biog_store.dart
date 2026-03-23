@@ -26,13 +26,7 @@ class BioGStore extends ChangeNotifier {
 
     _subs.add(
       _repo.watchActiveDevice().listen((v) {
-        final previousActiveId = activeDevice?.id;
         activeDevice = v;
-
-        if (previousActiveId != activeDevice?.id) {
-          _resetAgroState();
-        }
-
         notifyListeners();
       }),
     );
@@ -58,9 +52,17 @@ class BioGStore extends ChangeNotifier {
       <StreamSubscription<dynamic>>[];
 
   Future<void> init() async {
+    final loaded = await _cropContextStorage.loadAll();
     _cropByDevice
       ..clear()
-      ..addAll(await _cropContextStorage.loadAll());
+      ..addAll(
+        loaded.map(
+          (deviceId, context) => MapEntry<String, DeviceCropContext>(
+            deviceId,
+            _normalizeContextForStorage(context),
+          ),
+        ),
+      );
     notifyListeners();
   }
 
@@ -71,6 +73,10 @@ class BioGStore extends ChangeNotifier {
 
   final Map<String, DeviceCropContext> _cropByDevice =
       <String, DeviceCropContext>{};
+  final Map<String, AlertsState> _alertsStateByDevice =
+      <String, AlertsState>{};
+  final Map<String, AgroEvalResult> _agroEvalByDevice =
+      <String, AgroEvalResult>{};
 
   DeviceCropContext? get activeCropContext {
     final device = activeDevice;
@@ -117,10 +123,11 @@ class BioGStore extends ChangeNotifier {
   }
 
   Future<void> saveCropContext(DeviceCropContext context) async {
-    _cropByDevice[context.deviceId] = context;
-    await _cropContextStorage.save(context);
+    final normalized = _normalizeContextForStorage(context);
+    _cropByDevice[normalized.deviceId] = normalized;
+    await _cropContextStorage.save(normalized);
 
-    if (activeDevice?.id == context.deviceId) {
+    if (activeDevice?.id == normalized.deviceId) {
       _resetAgroState();
     }
 
@@ -131,6 +138,8 @@ class BioGStore extends ChangeNotifier {
     final removed = _cropByDevice.remove(deviceId);
     if (removed == null) return;
 
+    _alertsStateByDevice.remove(deviceId);
+    _agroEvalByDevice.remove(deviceId);
     await _cropContextStorage.delete(deviceId);
 
     if (activeDevice?.id == deviceId) {
@@ -169,9 +178,11 @@ class BioGStore extends ChangeNotifier {
       timezone: previous?.timezone,
       regionCode: previous?.regionCode,
       cycleLabel: previous?.cycleLabel,
-      calendarTypeId:
-          (sameCrop ? previous?.calendarTypeId : null) ??
-          CropCatalog.defaultCalendarIdForCrop(resolvedCropId),
+      calendarTypeId: CropCatalog.resolveCalendarId(
+        cropId: resolvedCropId,
+        requested: null,
+        previousCalendarId: sameCrop ? previous?.calendarTypeId : null,
+      ),
       sowingModeId: null,
       catalogVersion: CropCatalog.version,
       source: CropConfigSource.wizard,
@@ -207,11 +218,10 @@ class BioGStore extends ChangeNotifier {
 
     final sameCrop = _isSameCanonicalCrop(previous, resolvedCropId);
     final catalogCrop = CropCatalog.cropById(resolvedCropId);
-
     final resolvedProfileId = CropCatalog.resolveProfileId(
       cropId: resolvedCropId,
-      explicitProfileId: sameCrop ? previous?.profileId : null,
       varietyId: null,
+      explicitProfileId: null,
     );
 
     await saveCropContext(
@@ -223,11 +233,14 @@ class BioGStore extends ChangeNotifier {
             CropCatalog.grainCategoryId,
         cropId: resolvedCropId,
         profileId: resolvedProfileId,
+        brandId: null,
         varietyId: null,
         varietyAlias: 'generic',
-        calendarTypeId:
-            (sameCrop ? previous?.calendarTypeId : null) ??
-            CropCatalog.defaultCalendarIdForCrop(resolvedCropId),
+        calendarTypeId: CropCatalog.resolveCalendarId(
+          cropId: resolvedCropId,
+          requested: null,
+          previousCalendarId: sameCrop ? previous?.calendarTypeId : null,
+        ),
         lifecycleStatus: CropLifecycleStatus.fallow,
         sowingDate: null,
         plannedSowingDate: null,
@@ -260,6 +273,8 @@ class BioGStore extends ChangeNotifier {
 
     for (final id in toRemove) {
       _cropByDevice.remove(id);
+      _alertsStateByDevice.remove(id);
+      _agroEvalByDevice.remove(id);
       unawaited(_cropContextStorage.delete(id));
     }
 
@@ -269,21 +284,42 @@ class BioGStore extends ChangeNotifier {
     }
   }
 
-  AlertsState alertsState = const AlertsState();
-  AgroEvalResult? lastAgroEval;
+  AlertsState get alertsState {
+    final String? deviceId = activeDevice?.id;
+    if (deviceId == null) return const AlertsState();
+    return _alertsStateByDevice[deviceId] ?? const AlertsState();
+  }
 
-  void setAgroEval(AgroEvalResult eval) {
-    lastAgroEval = eval;
+  AgroEvalResult? get lastAgroEval {
+    final String? deviceId = activeDevice?.id;
+    if (deviceId == null) return null;
+    return _agroEvalByDevice[deviceId];
+  }
+
+  AlertsState alertsStateForDevice(String deviceId) {
+    return _alertsStateByDevice[deviceId] ?? const AlertsState();
+  }
+
+  AgroEvalResult? agroEvalForDevice(String deviceId) {
+    return _agroEvalByDevice[deviceId];
+  }
+
+  void setAgroEval(AgroEvalResult eval, {String? deviceId}) {
+    final String? resolvedDeviceId = deviceId ?? activeDevice?.id;
+    if (resolvedDeviceId == null) return;
+    _agroEvalByDevice[resolvedDeviceId] = eval;
     notifyListeners();
   }
 
-  void setAlertsState(AlertsState s) {
-    alertsState = s;
+  void setAlertsState(AlertsState s, {String? deviceId}) {
+    final String? resolvedDeviceId = deviceId ?? activeDevice?.id;
+    if (resolvedDeviceId == null) return;
+    _alertsStateByDevice[resolvedDeviceId] = s;
     notifyListeners();
   }
 
-  void clearAgroState() {
-    _resetAgroState();
+  void clearAgroState({String? deviceId}) {
+    _resetAgroState(deviceId: deviceId);
     notifyListeners();
   }
 
@@ -319,6 +355,8 @@ class BioGStore extends ChangeNotifier {
 
   Future<void> removeDevice(String id) async {
     _cropByDevice.remove(id);
+    _alertsStateByDevice.remove(id);
+    _agroEvalByDevice.remove(id);
     await _cropContextStorage.delete(id);
 
     if (activeDevice?.id == id) {
@@ -329,9 +367,11 @@ class BioGStore extends ChangeNotifier {
     await _repo.removeDevice(id);
   }
 
-  void _resetAgroState() {
-    lastAgroEval = null;
-    alertsState = const AlertsState();
+  void _resetAgroState({String? deviceId}) {
+    final String? resolvedDeviceId = deviceId ?? activeDevice?.id;
+    if (resolvedDeviceId == null) return;
+    _agroEvalByDevice.remove(resolvedDeviceId);
+    _alertsStateByDevice.remove(resolvedDeviceId);
   }
 
   String? _normalizeCropKey(String? value) =>
@@ -366,6 +406,127 @@ class BioGStore extends ChangeNotifier {
     }
 
     return resolved;
+  }
+
+  DeviceCropContext _normalizeContextForStorage(DeviceCropContext context) {
+    final String cropId = CropCatalog.canonicalCropKey(context.cropId);
+    if (cropId.isEmpty) return context;
+
+    final cropEntry = CropCatalog.cropById(cropId);
+    final bool isFallow =
+        context.lifecycleStatus == CropLifecycleStatus.fallow;
+
+    final String cropCategoryId =
+        _normalizeNullable(context.cropCategoryId) ??
+        cropEntry?.categoryId ??
+        CropCatalog.grainCategoryId;
+
+    final String? rawVarietyValue =
+        isFallow ? null : (context.varietyId ?? context.varietyAlias);
+
+    final String? resolvedVarietyId = isFallow
+        ? null
+        : CropCatalog.resolveVarietyId(
+            cropId: cropId,
+            rawValue: rawVarietyValue,
+          );
+
+    final String resolvedProfileId = CropCatalog.resolveProfileId(
+      cropId: cropId,
+      varietyId: resolvedVarietyId,
+      explicitProfileId: isFallow ? null : _normalizeNullable(context.profileId),
+    );
+
+    return context.copyWith(
+      cropCategoryId: cropCategoryId,
+      cropId: cropId,
+      profileId: resolvedProfileId,
+      brandId: _resolveBrandId(
+        cropId: cropId,
+        explicitBrandId: isFallow ? null : context.brandId,
+        varietyId: resolvedVarietyId,
+      ),
+      varietyId: resolvedVarietyId,
+      varietyAlias: _resolvedVarietyAlias(
+        cropId: cropId,
+        lifecycleStatus: context.lifecycleStatus,
+        rawVarietyAlias: context.varietyAlias,
+        resolvedVarietyId: resolvedVarietyId,
+        resolvedProfileId: resolvedProfileId,
+      ),
+      calendarTypeId: CropCatalog.resolveCalendarId(
+        cropId: cropId,
+        requested: context.calendarTypeId,
+      ),
+      sowingDate: context.lifecycleStatus == CropLifecycleStatus.planted
+          ? context.sowingDate
+          : null,
+      plannedSowingDate: context.lifecycleStatus == CropLifecycleStatus.planned
+          ? context.plannedSowingDate
+          : null,
+      sowingModeId: _normalizeNullable(context.sowingModeId) ??
+          _defaultSowingModeId(context.lifecycleStatus),
+    );
+  }
+
+  String? _resolveBrandId({
+    required String cropId,
+    required String? explicitBrandId,
+    required String? varietyId,
+  }) {
+    if (varietyId != null && varietyId.isNotEmpty) {
+      final variety = CropCatalog.varietyById(cropId, varietyId);
+      final fromVariety = _normalizeNullable(variety?.brandId);
+      if (fromVariety != null) return fromVariety;
+    }
+
+    final normalizedExplicit = _normalizeNullable(explicitBrandId);
+    if (normalizedExplicit == null) return null;
+
+    final valid = CropCatalog.brandsForCrop(cropId)
+        .any((brand) => brand.id == normalizedExplicit);
+    return valid ? normalizedExplicit : null;
+  }
+
+
+  String? _resolvedVarietyAlias({
+    required String cropId,
+    required CropLifecycleStatus lifecycleStatus,
+    required String? rawVarietyAlias,
+    required String? resolvedVarietyId,
+    required String resolvedProfileId,
+  }) {
+    if (lifecycleStatus == CropLifecycleStatus.fallow) {
+      return 'generic';
+    }
+
+    if (resolvedVarietyId != null) {
+      final variety = CropCatalog.varietyById(cropId, resolvedVarietyId);
+      if (variety != null) {
+        return variety.isGeneric ? 'generic' : variety.label;
+      }
+    }
+
+    if (CropCatalog.isGenericAlias(rawVarietyAlias) || CropCatalog.isGenericProfileId(resolvedProfileId)) {
+      return 'generic';
+    }
+
+    return _normalizeNullable(rawVarietyAlias);
+  }
+
+
+  String _defaultSowingModeId(CropLifecycleStatus status) {
+    return switch (status) {
+      CropLifecycleStatus.planned => 'planned',
+      CropLifecycleStatus.planted => 'planted',
+      CropLifecycleStatus.fallow => 'skip',
+    };
+  }
+
+  String? _normalizeNullable(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) return null;
+    return normalized;
   }
 
   void pauseSync() {

@@ -1,5 +1,3 @@
-// lib/models/seed_install.dart
-
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 
@@ -170,13 +168,19 @@ class SeedInstall {
       SowingStatus.skip => DateConfidence.unknown,
     };
 
-    final normalizedExplicitProfileId = _normalizeNullable(profileId);
-    final rawVarietyAlias = _normalizeNullable(varietyAlias);
+    final normalizedExplicitProfileId = status == SowingStatus.skip
+        ? null
+        : _normalizeNullable(profileId);
+    final rawVarietyAlias = status == SowingStatus.skip
+        ? null
+        : _normalizeNullable(varietyAlias);
 
-    final resolvedVarietyId = CropCatalog.resolveVarietyId(
-      cropId: normalizedCropKey,
-      rawValue: rawVarietyAlias,
-    );
+    final resolvedVarietyId = status == SowingStatus.skip
+        ? null
+        : CropCatalog.resolveVarietyId(
+            cropId: normalizedCropKey,
+            rawValue: rawVarietyAlias,
+          );
 
     final resolvedProfileId = CropCatalog.resolveProfileId(
       cropId: normalizedCropKey,
@@ -184,10 +188,12 @@ class SeedInstall {
       explicitProfileId: normalizedExplicitProfileId,
     );
 
-    final resolvedBrandId = _resolveBrandId(
-      cropId: normalizedCropKey,
-      varietyId: resolvedVarietyId,
-    );
+    final resolvedBrandId = status == SowingStatus.skip
+        ? null
+        : _resolveBrandId(
+            cropId: normalizedCropKey,
+            varietyId: resolvedVarietyId,
+          );
 
     final resolvedVarietyAlias = _resolvedVarietyAliasForContext(
       cropId: normalizedCropKey,
@@ -201,9 +207,10 @@ class SeedInstall {
         ? cropCategoryId.trim()
         : (catalogCrop?.categoryId ?? CropCatalog.grainCategoryId);
 
-    final resolvedCalendarTypeId =
-        _normalizeNullable(calendarTypeId) ??
-        CropCatalog.defaultCalendarIdForCrop(normalizedCropKey);
+    final resolvedCalendarTypeId = CropCatalog.resolveCalendarId(
+      cropId: normalizedCropKey,
+      requested: calendarTypeId,
+    );
 
     final resolvedSowingModeId =
         _normalizeNullable(sowingModeId) ?? _defaultSowingModeId(status);
@@ -262,7 +269,7 @@ class SeedInstall {
 
     final explicitAlias = _normalizeNullable(context.varietyAlias);
     if (explicitAlias != null) {
-      if (_isGenericAlias(explicitAlias)) {
+      if (CropCatalog.isGenericAlias(explicitAlias)) {
         return 'generic';
       }
 
@@ -281,7 +288,7 @@ class SeedInstall {
         }
       }
 
-      if (_isGenericProfileId(context.profileId)) {
+      if (CropCatalog.isGenericProfileId(context.profileId)) {
         return 'generic';
       }
 
@@ -294,7 +301,7 @@ class SeedInstall {
     }
 
     final profile = CropCatalog.profileById(cropId, context.profileId);
-    if (profile != null && _isGenericProfileId(profile.id)) {
+    if (profile != null && CropCatalog.isGenericProfileId(profile.id)) {
       return 'generic';
     }
 
@@ -319,8 +326,8 @@ class SeedInstall {
       }
     }
 
-    if (_isGenericAlias(rawVarietyAlias) ||
-        _isGenericProfileId(resolvedProfileId)) {
+    if (CropCatalog.isGenericAlias(rawVarietyAlias) ||
+        CropCatalog.isGenericProfileId(resolvedProfileId)) {
       return 'generic';
     }
 
@@ -343,30 +350,6 @@ class SeedInstall {
     };
   }
 
-  static bool _isGenericAlias(String? raw) {
-    final normalized = raw?.trim().toLowerCase() ?? '';
-    return normalized.isEmpty ||
-        normalized == 'generic' ||
-        normalized == 'genérico' ||
-        normalized == 'generico' ||
-        normalized == 'perfil genérico' ||
-        normalized == 'generic_maize' ||
-        normalized == 'generic_corn' ||
-        normalized == 'generic_bean' ||
-        normalized == 'generic_wheat' ||
-        normalized == 'generic_barley' ||
-        normalized == 'generic_oat';
-  }
-
-  static bool _isGenericProfileId(String? profileId) {
-    final normalized = profileId?.trim().toLowerCase() ?? '';
-    return normalized.isNotEmpty &&
-        (normalized.endsWith('_generic') ||
-            normalized == 'fj_gen' ||
-            normalized == 'tr_gen' ||
-            normalized == 'cb_gen' ||
-            normalized == 'av_gen');
-  }
 
   static String _canonicalCropKey(String value) {
     final result = CropCatalog.canonicalCropKey(value);

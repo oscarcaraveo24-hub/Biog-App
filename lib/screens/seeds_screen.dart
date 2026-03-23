@@ -151,14 +151,8 @@ class _SeedsScreenState extends State<SeedsScreen>
         resolvedCropId == CropCatalog.maizeCropId &&
         runtime.profile is MaizeProfile;
 
-    final bool isGenericProfile = SeedsScreenLogic.isGenericSelection(
-      cropId: resolvedCropId,
-      cropContext: cropContext,
-      seed: seed,
-      runtime: runtime,
-      fallbackVarietyAlias: resolvedVarietyAlias,
-      hasConfiguredCrop: hasConfiguredCrop,
-    );
+    final bool isGenericProfile =
+        runtime.isGenericMode || !hasConfiguredCrop;
 
     final String topCardTitle = SeedsScreenLogic.topCardTitle(
       runtime: runtime,
@@ -180,13 +174,23 @@ class _SeedsScreenState extends State<SeedsScreen>
       cropId: resolvedCropId,
     );
 
-    final cropScore = SeedsScreenLogic.resolveCropCareScore(
+    final int? cropScore = SeedsScreenLogic.resolveCropCareScore(
       store: store,
       runtimeEval: runtime.eval,
     );
-    final careState = SeedsScreenLogic.careState(cropScore);
-    final careLabel = SeedsScreenLogic.careLabelFromState(careState);
-    final careColor = SeedsScreenLogic.careColor(careState);
+    final bool hasCropCareScore = cropScore != null;
+    final careState = hasCropCareScore
+        ? SeedsScreenLogic.careState(cropScore ?? 0)
+        : CareState.attention;
+    final careLabel = hasCropCareScore
+        ? SeedsScreenLogic.careLabelFromState(careState)
+        : 'Sin evaluación';
+    final careColor = hasCropCareScore
+        ? SeedsScreenLogic.careColor(careState)
+        : const Color(0xFF6F7F79);
+    final String careScoreText = cropScore != null
+        ? '${cropScore.clamp(0, 100)} / 100'
+        : '-- / 100';
 
     late final String stageTitle;
     late final String statusChip;
@@ -508,7 +512,8 @@ class _SeedsScreenState extends State<SeedsScreen>
                           horizontal: SeedsScreenLayout.carePadH,
                           vertical: SeedsScreenLayout.carePadV,
                         ),
-                        careScore: cropScore,
+                        careScore: cropScore ?? 0,
+                        careScoreText: careScoreText,
                         careLabel: careLabel,
                         careColor: careColor,
                         dayPrefix: dayPrefix,
@@ -516,7 +521,9 @@ class _SeedsScreenState extends State<SeedsScreen>
                         daySuffix: daySuffix,
                         harvestText: harvestText,
                         windowText: windowText,
-                        progress: cropScore / 100.0,
+                        progress: hasCropCareScore
+                            ? (cropScore! / 100.0)
+                            : 0.0,
                         headerSize: SeedsScreenLayout.careHeaderSize,
                         headerIconSize: SeedsScreenLayout.careHeaderIconSize,
                         scoreSize: SeedsScreenLayout.careScoreSize,
@@ -635,15 +642,15 @@ class SeedsScreenLayout {
 }
 
 class SeedsScreenLogic {
-  static int resolveCropCareScore({
+  static int? resolveCropCareScore({
     required BioGStore store,
     AgroEvalResult? runtimeEval,
   }) {
     final eval = runtimeEval ?? store.lastAgroEval;
-    if (eval == null) return 73;
+    if (eval == null) return null;
 
     final score = (eval.soilControlScore01 * 100).round();
-    return score.clamp(0, 100);
+    return score.clamp(0, 100).toInt();
   }
 
   static String? routeVarietyAlias({
@@ -694,30 +701,7 @@ class SeedsScreenLogic {
         seed?.cropKey ??
         (runtimeCropKeyName.trim().isNotEmpty ? runtimeCropKeyName : null);
 
-    final normalized = raw?.trim().toLowerCase();
-    if (normalized == null || normalized.isEmpty) return '';
-
-    switch (normalized) {
-      case 'maize':
-      case 'maiz':
-      case 'corn':
-        return CropCatalog.maizeCropId;
-      case 'bean':
-      case 'beans':
-      case 'frijol':
-        return CropCatalog.beanCropId;
-      case 'wheat':
-      case 'trigo':
-        return CropCatalog.wheatCropId;
-      case 'barley':
-      case 'cebada':
-        return CropCatalog.barleyCropId;
-      case 'oat':
-      case 'avena':
-        return CropCatalog.oatCropId;
-      default:
-        return normalized;
-    }
+    return CropCatalog.canonicalCropKeyOrNull(raw) ?? '';
   }
 
   static String cropDisplayName({required String cropId}) {
@@ -801,17 +785,7 @@ class SeedsScreenLogic {
             .toLowerCase();
 
     if (alias.isNotEmpty) {
-      return alias == 'generic' ||
-          alias == 'generico' ||
-          alias == 'genérico' ||
-          alias == 'perfil genérico' ||
-          alias == 'generic_maize' ||
-          alias == 'generic_corn' ||
-          alias == 'generic_bean' ||
-          alias == 'generic_wheat' ||
-          alias == 'generic_barley' ||
-          alias == 'generic_oat' ||
-          alias.startsWith('generic_');
+      return CropCatalog.isGenericAlias(alias) || alias.startsWith('generic_');
     }
 
     final profile = CropCatalog.profileByAny(
@@ -819,20 +793,10 @@ class SeedsScreenLogic {
       cropContext?.profileId ?? seed?.profileId,
     );
     if (profile != null) {
-      return _isGenericProfileId(profile.id);
+      return CropCatalog.isGenericProfileId(profile.id);
     }
 
     return false;
-  }
-
-  static bool _isGenericProfileId(String? profileId) {
-    final normalized = profileId?.trim().toLowerCase() ?? '';
-    return normalized.isNotEmpty &&
-        (normalized.endsWith('_generic') ||
-            normalized == 'fj_gen' ||
-            normalized == 'tr_gen' ||
-            normalized == 'cb_gen' ||
-            normalized == 'av_gen');
   }
 
   static String topCardTitle({
@@ -1008,6 +972,48 @@ class SeedsScreenLogic {
         );
         variants.add(
           candidate.replaceAll('assets/seeds/oat/', 'assets/seeds/Oat/'),
+        );
+      }
+
+      for (final candidate in List<String>.from(variants)) {
+        variants.add(
+          candidate.replaceAll(
+            'oat_stage_tasseling.png',
+            'oat_stage_flower_set.png',
+          ),
+        );
+        variants.add(
+          candidate.replaceAll(
+            'oat_stage_veg_advanced.png',
+            'oat_stage_elongation.png',
+          ),
+        );
+      }
+
+      for (final candidate in variants) {
+        add(candidate);
+      }
+    }
+
+    if (cropId == CropCatalog.wheatCropId ||
+        cropId == CropCatalog.barleyCropId) {
+      final variants = <String>{primaryAsset.trim()};
+
+      for (final candidate in List<String>.from(variants)) {
+        variants.add(
+          candidate.replaceAll('_stage_veg.png', '_stage_veg_early.png'),
+        );
+        variants.add(
+          candidate.replaceAll('_stage_flowering.png', '_stage_heading.png'),
+        );
+        variants.add(
+          candidate.replaceAll('_stage_maturity.png', '_stage_grain_fill.png'),
+        );
+        variants.add(
+          candidate.replaceAll(
+            '_stage_maturity.png',
+            '_stage_physiological_maturity.png',
+          ),
         );
       }
 
@@ -1514,6 +1520,7 @@ class _CareCardInner extends StatelessWidget {
   final EdgeInsets padding;
 
   final int careScore;
+  final String careScoreText;
   final String careLabel;
   final Color careColor;
 
@@ -1549,6 +1556,7 @@ class _CareCardInner extends StatelessWidget {
     required this.revealController,
     required this.padding,
     required this.careScore,
+    required this.careScoreText,
     required this.careLabel,
     required this.careColor,
     required this.dayPrefix,
@@ -1621,7 +1629,7 @@ class _CareCardInner extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '$careScore / 100',
+                    careScoreText,
                     style: TextStyle(
                       fontSize: scoreSize,
                       fontWeight: FontWeight.w900,

@@ -23,33 +23,36 @@ class CropRuntimeResolver {
     DateTime? now,
   }) {
     final DateTime today = now ?? DateTime.now();
+    final DeviceCropContext? normalizedContext = _normalizeContext(cropContext);
+    final SeedInstall? effectiveSeed = normalizedContext != null
+        ? SeedInstall.fromDeviceCropContext(normalizedContext)
+        : seed;
 
     final SowingStatus sowingStatus = _resolveSowingStatus(
-      seed: seed,
-      cropContext: cropContext,
+      seed: effectiveSeed,
+      cropContext: normalizedContext,
     );
 
-    final bool hasSeed = seed != null || cropContext != null;
+    final bool hasSeed = effectiveSeed != null || normalizedContext != null;
 
     final String cropKeyName = _canonicalCropKey(
-      cropContext?.cropId ?? seed?.cropKey,
+      normalizedContext?.cropId ?? effectiveSeed?.cropKey,
     );
 
-    final CropDefinition? definition = cropKeyName.isEmpty
-        ? null
-        : CropRegistry.byKeyName(cropKeyName);
+    final CropDefinition? definition =
+        cropKeyName.isEmpty ? null : CropRegistry.byKeyName(cropKeyName);
 
     final CropProfile? profile = _resolveProfile(
-      seed: seed,
-      cropContext: cropContext,
+      seed: effectiveSeed,
+      cropContext: normalizedContext,
       definition: definition,
       cropKeyName: cropKeyName,
       sowingStatus: sowingStatus,
     );
 
     final DateTime? plantedDate = _resolvePlantedDate(
-      seed: seed,
-      cropContext: cropContext,
+      seed: effectiveSeed,
+      cropContext: normalizedContext,
     );
 
     final bool isPlanted =
@@ -58,8 +61,8 @@ class CropRuntimeResolver {
     final bool isPlanned = sowingStatus == SowingStatus.planned;
 
     final presentation = CropPresentationResolver.resolve(
-      cropContext: cropContext,
-      seed: seed,
+      cropContext: normalizedContext,
+      seed: effectiveSeed,
       definition: definition,
       explicitCropId: cropKeyName,
     );
@@ -70,21 +73,35 @@ class CropRuntimeResolver {
     AlertsState nextAlertsState = alertsState;
 
     if (isPlanted && definition != null && profile != null) {
-      final DateTime effectivePlantedDate = plantedDate;
+      final DateTime effectiveSowingDate = _effectiveSowingDateForCalendar(
+        cropId: cropKeyName,
+        calendarTypeId: normalizedContext?.calendarTypeId,
+        plantedDate: plantedDate!,
+      );
 
       stageResult = definition.engine.compute(
-        sowingDate: effectivePlantedDate,
+        sowingDate: effectiveSowingDate,
         today: today,
         profile: profile,
         stressDelayDays: 0,
       );
 
-      targets = definition.resolveTargets(stageResult);
+      final StageTargets? baseTargets = definition.resolveTargets(stageResult);
+      if (baseTargets != null) {
+        targets = CropCatalog.adjustTargetsForCalendar(
+          cropId: cropKeyName,
+          calendarId: normalizedContext?.calendarTypeId,
+          stageKey: stageResult.stageKey,
+          baseTargets: baseTargets,
+        );
+      }
 
       if (live != null) {
         final out = definition.evaluateTelemetry(
           telemetry: live,
           stage: stageResult,
+          profile: profile,
+          targetsOverride: targets,
           alertsState: alertsState,
         );
         eval = out.eval;
@@ -92,14 +109,11 @@ class CropRuntimeResolver {
       }
     }
 
-    final SeedInstall? effectiveSeed =
-        seed ?? _legacySeedFromContext(cropContext);
-
     return CropRuntimeSnapshot(
       device: device,
       live: live,
       seed: effectiveSeed,
-      cropContext: cropContext,
+      cropContext: normalizedContext,
       definition: definition,
       profile: profile,
       stageResult: stageResult,
@@ -124,11 +138,6 @@ class CropRuntimeResolver {
     );
   }
 
-  static SeedInstall? _legacySeedFromContext(DeviceCropContext? cropContext) {
-    if (cropContext == null) return null;
-    return SeedInstall.fromDeviceCropContext(cropContext);
-  }
-
   static CropProfile? _resolveProfile({
     required SeedInstall? seed,
     required DeviceCropContext? cropContext,
@@ -141,9 +150,7 @@ class CropRuntimeResolver {
     if (sowingStatus == SowingStatus.skip) return null;
 
     final String? rawVarietyValue =
-        cropContext?.varietyId ??
-        cropContext?.varietyAlias ??
-        seed?.varietyAlias;
+        cropContext?.varietyId ?? cropContext?.varietyAlias ?? seed?.varietyAlias;
 
     final String? resolvedVarietyId = CropCatalog.resolveVarietyId(
       cropId: cropKeyName,
@@ -196,6 +203,20 @@ class CropRuntimeResolver {
   static String _canonicalCropKey(String? raw) =>
       CropCatalog.canonicalCropKey(raw);
 
+  static DateTime _effectiveSowingDateForCalendar({
+    required String cropId,
+    required String? calendarTypeId,
+    required DateTime plantedDate,
+  }) {
+    final int offsetDays = CropCatalog.phenologyOffsetDaysForCalendar(
+      cropId: cropId,
+      calendarId: calendarTypeId,
+    );
+
+    if (offsetDays == 0) return plantedDate;
+    return plantedDate.subtract(Duration(days: offsetDays));
+  }
+
   static String _buildStageLabel({
     required SowingStatus sowingStatus,
     required CropStageResult? stageResult,
@@ -224,6 +245,125 @@ class CropRuntimeResolver {
     }
 
     return 'Descanso del suelo';
+  }
+
+  static DeviceCropContext? _normalizeContext(DeviceCropContext? cropContext) {
+    if (cropContext == null) return null;
+
+    final String cropId = CropCatalog.canonicalCropKey(cropContext.cropId);
+    if (cropId.isEmpty) {
+      return cropContext;
+    }
+
+    final cropEntry = CropCatalog.cropById(cropId);
+    final String cropCategoryId = _normalizeNullable(cropContext.cropCategoryId) ??
+        cropEntry?.categoryId ??
+        CropCatalog.grainCategoryId;
+
+    final bool isFallow = cropContext.lifecycleStatus == CropLifecycleStatus.fallow;
+    final String? rawVarietyValue =
+        isFallow ? null : (cropContext.varietyId ?? cropContext.varietyAlias);
+
+    final String? resolvedVarietyId = isFallow
+        ? null
+        : CropCatalog.resolveVarietyId(
+            cropId: cropId,
+            rawValue: rawVarietyValue,
+          );
+
+    final String resolvedProfileId = CropCatalog.resolveProfileId(
+      cropId: cropId,
+      varietyId: resolvedVarietyId,
+      explicitProfileId: isFallow ? null : _normalizeNullable(cropContext.profileId),
+    );
+
+    final resolvedVarietyAlias = _resolvedVarietyAlias(
+      cropId: cropId,
+      lifecycleStatus: cropContext.lifecycleStatus,
+      rawVarietyAlias: cropContext.varietyAlias,
+      resolvedVarietyId: resolvedVarietyId,
+      resolvedProfileId: resolvedProfileId,
+    );
+
+    return cropContext.copyWith(
+      cropCategoryId: cropCategoryId,
+      cropId: cropId,
+      profileId: resolvedProfileId,
+      brandId: _resolveBrandId(
+        cropId: cropId,
+        explicitBrandId: isFallow ? null : cropContext.brandId,
+        varietyId: resolvedVarietyId,
+      ),
+      varietyId: resolvedVarietyId,
+      varietyAlias: resolvedVarietyAlias,
+      calendarTypeId: CropCatalog.resolveCalendarId(
+        cropId: cropId,
+        requested: cropContext.calendarTypeId,
+      ),
+      sowingDate: cropContext.lifecycleStatus == CropLifecycleStatus.planted
+          ? cropContext.sowingDate
+          : null,
+      plannedSowingDate: cropContext.lifecycleStatus == CropLifecycleStatus.planned
+          ? cropContext.plannedSowingDate
+          : null,
+      sowingModeId: _normalizeNullable(cropContext.sowingModeId) ??
+          _defaultSowingModeId(cropContext.lifecycleStatus),
+    );
+  }
+
+  static String? _resolveBrandId({
+    required String cropId,
+    required String? explicitBrandId,
+    required String? varietyId,
+  }) {
+    if (varietyId != null && varietyId.isNotEmpty) {
+      final variety = CropCatalog.varietyById(cropId, varietyId);
+      final fromVariety = _normalizeNullable(variety?.brandId);
+      if (fromVariety != null) {
+        return fromVariety;
+      }
+    }
+
+    final normalizedExplicit = _normalizeNullable(explicitBrandId);
+    if (normalizedExplicit == null) return null;
+
+    final valid = CropCatalog.brandsForCrop(cropId)
+        .any((brand) => brand.id == normalizedExplicit);
+    return valid ? normalizedExplicit : null;
+  }
+
+  static String? _resolvedVarietyAlias({
+    required String cropId,
+    required CropLifecycleStatus lifecycleStatus,
+    required String? rawVarietyAlias,
+    required String? resolvedVarietyId,
+    required String resolvedProfileId,
+  }) {
+    if (lifecycleStatus == CropLifecycleStatus.fallow) {
+      return 'generic';
+    }
+
+    if (resolvedVarietyId != null) {
+      final variety = CropCatalog.varietyById(cropId, resolvedVarietyId);
+      if (variety != null) {
+        return variety.isGeneric ? 'generic' : variety.label;
+      }
+    }
+
+    if (CropCatalog.isGenericAlias(rawVarietyAlias) ||
+        CropCatalog.isGenericProfileId(resolvedProfileId)) {
+      return 'generic';
+    }
+
+    return _normalizeNullable(rawVarietyAlias);
+  }
+
+  static String _defaultSowingModeId(CropLifecycleStatus status) {
+    return switch (status) {
+      CropLifecycleStatus.planned => 'planned',
+      CropLifecycleStatus.planted => 'planted',
+      CropLifecycleStatus.fallow => 'skip',
+    };
   }
 
   static String? _normalizeNullable(String? value) {

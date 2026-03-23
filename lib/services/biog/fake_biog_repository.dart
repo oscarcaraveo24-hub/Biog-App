@@ -439,9 +439,11 @@ class FakeBioGRepository implements BioGRepository {
     if (device == null) return;
 
     final CropDefinition? definition = _resolveCropDefinition(device);
+    final CropProfile? profile = _resolveCropProfile(device);
     final CropStageResult? stage = _resolveCropStageResult(device, today);
+    final StageTargets? targets = _resolveStageTargets(device, today);
 
-    if (definition == null || stage == null) return;
+    if (definition == null || profile == null || stage == null) return;
 
     final AlertsState prevState =
         _alertsStateByDevice[deviceId] ?? const AlertsState();
@@ -449,6 +451,8 @@ class FakeBioGRepository implements BioGRepository {
     final out = definition.evaluateTelemetry(
       telemetry: t,
       stage: stage,
+      profile: profile,
+      targetsOverride: targets,
       alertsState: prevState,
     );
 

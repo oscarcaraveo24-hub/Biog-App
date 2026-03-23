@@ -171,30 +171,7 @@ class _BootstrapGateState extends State<BootstrapGate> {
   }
 
   String? _normalizeCropId(String? value) {
-    final normalized = value?.trim().toLowerCase();
-    if (normalized == null || normalized.isEmpty) return null;
-
-    switch (normalized) {
-      case 'maize':
-      case 'maiz':
-      case 'corn':
-        return CropCatalog.maizeCropId;
-      case 'bean':
-      case 'beans':
-      case 'frijol':
-        return CropCatalog.beanCropId;
-      case 'wheat':
-      case 'trigo':
-        return CropCatalog.wheatCropId;
-      case 'barley':
-      case 'cebada':
-        return CropCatalog.barleyCropId;
-      case 'oat':
-      case 'avena':
-        return CropCatalog.oatCropId;
-      default:
-        return normalized;
-    }
+    return CropCatalog.canonicalCropKeyOrNull(value);
   }
 
   void _handleOnboardingExited() {
