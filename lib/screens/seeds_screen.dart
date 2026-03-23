@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
@@ -179,7 +180,10 @@ class _SeedsScreenState extends State<SeedsScreen>
       cropId: resolvedCropId,
     );
 
-    final cropScore = SeedsScreenLogic.resolveCropCareScore(store);
+    final cropScore = SeedsScreenLogic.resolveCropCareScore(
+      store: store,
+      runtimeEval: runtime.eval,
+    );
     final careState = SeedsScreenLogic.careState(cropScore);
     final careLabel = SeedsScreenLogic.careLabelFromState(careState);
     final careColor = SeedsScreenLogic.careColor(careState);
@@ -555,6 +559,15 @@ class SeedsScreenLayout {
   static const String beanIconAsset = 'assets/icons/wizard/ic_frijol.png';
   static const double beanIconScale = 2.55;
 
+  static const String wheatIconAsset = 'assets/icons/wizard/ic_trigo.png';
+  static const double wheatIconScale = 2.65;
+
+  static const String barleyIconAsset = 'assets/icons/wizard/ic_cebada.png';
+  static const double barleyIconScale = 2.65;
+
+  static const String oatIconAsset = 'assets/icons/wizard/ic_avena.png';
+  static const double oatIconScale = 2.65;
+
   static const String bgAsset = 'assets/images/bg_image_seeds.png';
   static const double topBgHeightFactor = 1.0;
   static const double topBgDy = -20;
@@ -622,8 +635,11 @@ class SeedsScreenLayout {
 }
 
 class SeedsScreenLogic {
-  static int resolveCropCareScore(BioGStore store) {
-    final eval = store.lastAgroEval;
+  static int resolveCropCareScore({
+    required BioGStore store,
+    AgroEvalResult? runtimeEval,
+  }) {
+    final eval = runtimeEval ?? store.lastAgroEval;
     if (eval == null) return 73;
 
     final score = (eval.soilControlScore01 * 100).round();
@@ -696,6 +712,9 @@ class SeedsScreenLogic {
       case 'barley':
       case 'cebada':
         return CropCatalog.barleyCropId;
+      case 'oat':
+      case 'avena':
+        return CropCatalog.oatCropId;
       default:
         return normalized;
     }
@@ -714,6 +733,8 @@ class SeedsScreenLogic {
         return 'Trigo';
       case 'barley':
         return 'Cebada';
+      case 'oat':
+        return 'Avena';
       case '':
         return 'Cultivo';
       default:
@@ -784,6 +805,12 @@ class SeedsScreenLogic {
           alias == 'generico' ||
           alias == 'genérico' ||
           alias == 'perfil genérico' ||
+          alias == 'generic_maize' ||
+          alias == 'generic_corn' ||
+          alias == 'generic_bean' ||
+          alias == 'generic_wheat' ||
+          alias == 'generic_barley' ||
+          alias == 'generic_oat' ||
           alias.startsWith('generic_');
     }
 
@@ -792,10 +819,20 @@ class SeedsScreenLogic {
       cropContext?.profileId ?? seed?.profileId,
     );
     if (profile != null) {
-      return profile.id.endsWith('_generic') || profile.id == 'fj_gen';
+      return _isGenericProfileId(profile.id);
     }
 
     return false;
+  }
+
+  static bool _isGenericProfileId(String? profileId) {
+    final normalized = profileId?.trim().toLowerCase() ?? '';
+    return normalized.isNotEmpty &&
+        (normalized.endsWith('_generic') ||
+            normalized == 'fj_gen' ||
+            normalized == 'tr_gen' ||
+            normalized == 'cb_gen' ||
+            normalized == 'av_gen');
   }
 
   static String topCardTitle({
@@ -846,6 +883,12 @@ class SeedsScreenLogic {
           return SeedsScreenLayout.maizeIconAsset;
         case CropCatalog.beanCropId:
           return SeedsScreenLayout.beanIconAsset;
+        case CropCatalog.wheatCropId:
+          return SeedsScreenLayout.wheatIconAsset;
+        case CropCatalog.barleyCropId:
+          return SeedsScreenLayout.barleyIconAsset;
+        case CropCatalog.oatCropId:
+          return SeedsScreenLayout.oatIconAsset;
         default:
           return SeedsScreenLayout.genericPlantIconAsset;
       }
@@ -856,6 +899,12 @@ class SeedsScreenLogic {
         return SeedsScreenLayout.maizeIconAsset;
       case CropCatalog.beanCropId:
         return SeedsScreenLayout.beanIconAsset;
+      case CropCatalog.wheatCropId:
+        return SeedsScreenLayout.wheatIconAsset;
+      case CropCatalog.barleyCropId:
+        return SeedsScreenLayout.barleyIconAsset;
+      case CropCatalog.oatCropId:
+        return SeedsScreenLayout.oatIconAsset;
       default:
         return SeedsScreenLayout.genericPlantIconAsset;
     }
@@ -873,6 +922,21 @@ class SeedsScreenLogic {
     if (asset == SeedsScreenLayout.beanIconAsset ||
         cropId == CropCatalog.beanCropId) {
       return SeedsScreenLayout.beanIconScale;
+    }
+
+    if (asset == SeedsScreenLayout.wheatIconAsset ||
+        cropId == CropCatalog.wheatCropId) {
+      return SeedsScreenLayout.wheatIconScale;
+    }
+
+    if (asset == SeedsScreenLayout.barleyIconAsset ||
+        cropId == CropCatalog.barleyCropId) {
+      return SeedsScreenLayout.barleyIconScale;
+    }
+
+    if (asset == SeedsScreenLayout.oatIconAsset ||
+        cropId == CropCatalog.oatCropId) {
+      return SeedsScreenLayout.oatIconScale;
     }
 
     return SeedsScreenLayout.genericPlantIconScale;
@@ -927,6 +991,23 @@ class SeedsScreenLogic {
             'bean_stage_grain_fill.png',
             'bean_stage_maturity_senescence.png',
           ),
+        );
+      }
+
+      for (final candidate in variants) {
+        add(candidate);
+      }
+    }
+
+    if (cropId == CropCatalog.oatCropId) {
+      final variants = <String>{primaryAsset.trim()};
+
+      for (final candidate in List<String>.from(variants)) {
+        variants.add(
+          candidate.replaceAll('assets/seeds/Oat/', 'assets/seeds/oat/'),
+        );
+        variants.add(
+          candidate.replaceAll('assets/seeds/oat/', 'assets/seeds/Oat/'),
         );
       }
 

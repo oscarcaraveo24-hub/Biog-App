@@ -13,6 +13,7 @@ class OnboardingUiAssets {
   static const String maize = 'assets/icons/wizard/ic_maiz.png';
   static const String wheat = 'assets/icons/wizard/ic_trigo.png';
   static const String barley = 'assets/icons/wizard/ic_cebada.png';
+  static const String oat = 'assets/icons/wizard/ic_avena.png';
   static const String bean = 'assets/icons/wizard/ic_frijol.png';
   static const String variety = 'assets/icons/wizard/ic_variedad.png';
   static const String configureCrop =
@@ -61,6 +62,9 @@ class OnboardingUiAssets {
       case 'barley':
       case 'cebada':
         return barley;
+      case 'oat':
+      case 'avena':
+        return oat;
       case 'bean':
       case 'frijol':
         return bean;

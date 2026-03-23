@@ -226,6 +226,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
                   WizardTopChrome(
                     showBack: _page != WizardPage.category,
                     currentIndex: _currentStepIndex,
+                    totalSteps: _cropUsesBrands ? 5 : 4,
                     onBack: _handleBack,
                     onClose: () {
                       final navigator = Navigator.of(context);
@@ -711,12 +712,22 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         normalizedCropId,
         cropContext.profileId,
       );
-      if (genericProfile != null && genericProfile.id.endsWith('_generic')) {
+      if (_isGenericProfileId(genericProfile?.id ?? cropContext.profileId)) {
         return genericVarietyId;
       }
     }
 
     return null;
+  }
+
+  bool _isGenericProfileId(String? profileId) {
+    final normalized = profileId?.trim().toLowerCase() ?? '';
+    return normalized.isNotEmpty &&
+        (normalized.endsWith('_generic') ||
+            normalized == 'fj_gen' ||
+            normalized == 'tr_gen' ||
+            normalized == 'cb_gen' ||
+            normalized == 'av_gen');
   }
 
   String? _genericVarietyIdForCrop(String cropId) {
@@ -761,6 +772,9 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
       case 'barley':
       case 'cebada':
         return CropCatalog.barleyCropId;
+      case 'oat':
+      case 'avena':
+        return CropCatalog.oatCropId;
       default:
         return normalized;
     }
@@ -818,6 +832,8 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return ConfigureSeedWizardAssets.cropWheat;
       case CropCatalog.barleyCropId:
         return ConfigureSeedWizardAssets.cropBarley;
+      case CropCatalog.oatCropId:
+        return ConfigureSeedWizardAssets.cropOat;
       case CropCatalog.beanCropId:
         return ConfigureSeedWizardAssets.cropBean;
       default:

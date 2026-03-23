@@ -401,6 +401,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       _draft.copyWith(
         cropCategory: value,
         cropId: changed ? null : _draft.cropId,
+        brandId: changed ? null : _draft.brandId,
+        varietyId: changed ? null : _draft.varietyId,
         varietyAlias: changed ? null : _draft.varietyAlias,
         stage: changed ? null : _draft.stage,
         selectedDate: changed ? null : _draft.selectedDate,
@@ -443,6 +445,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     _updateDraft(
       _draft.copyWith(
         cropId: result,
+        brandId: changed ? null : _draft.brandId,
+        varietyId: changed ? null : _draft.varietyId,
         varietyAlias: changed ? null : _draft.varietyAlias,
         stage: changed ? null : _draft.stage,
         selectedDate: changed ? null : _draft.selectedDate,
@@ -492,9 +496,13 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
     if (result == null) return;
 
+    final selectedVariety = CropCatalog.varietyById(cropId, result);
+
     _updateDraft(
       _draft.copyWith(
-        varietyAlias: result,
+        brandId: selectedVariety?.brandId,
+        varietyId: selectedVariety?.id ?? result,
+        varietyAlias: selectedVariety?.label ?? result,
         stage: null,
         selectedDate: null,
         useFlexibleDate: false,
@@ -536,7 +544,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     final cropId = _draft.cropId;
     if (cropId == null) return 'Seleccionar';
 
-    final variety = CropCatalog.varietyByAny(cropId, value);
+    final variety = CropCatalog.varietyByAny(cropId, _draft.varietyId ?? value);
     if (variety != null) return variety.label;
 
     final profile = CropCatalog.profileByAny(cropId, value);
@@ -579,6 +587,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return ConfigureSeedWizardAssets.cropWheat;
       case CropCatalog.barleyCropId:
         return ConfigureSeedWizardAssets.cropBarley;
+      case CropCatalog.oatCropId:
+        return ConfigureSeedWizardAssets.cropOat;
       case CropCatalog.beanCropId:
         return ConfigureSeedWizardAssets.cropBean;
       default:
@@ -594,6 +604,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return ConfigureSeedWizardAssets.cropWheat;
       case 'Cebada':
         return ConfigureSeedWizardAssets.cropBarley;
+      case 'Avena':
+        return ConfigureSeedWizardAssets.cropOat;
       case 'Frijol':
         return ConfigureSeedWizardAssets.cropBean;
       default:
@@ -746,9 +758,14 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
     final selectedVariety = cropId == null
         ? null
-        : CropCatalog.varietyByAny(cropId, _draft.varietyAlias);
+        : CropCatalog.varietyByAny(
+            cropId,
+            _draft.varietyId ?? _draft.varietyAlias,
+          );
 
-    final selectedVarietyLabel = _varietyLabel(_draft.varietyAlias);
+    final selectedVarietyLabel = _varietyLabel(
+      _draft.varietyId ?? _draft.varietyAlias,
+    );
 
     final selectedVarietyIconPath = cropId == CropCatalog.maizeCropId
         ? ConfigureSeedWizardAssets.maizeIconForVariety(
@@ -827,7 +844,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               iconPath: selectedVarietyIconPath,
               title: 'Variedad / perfil',
               value: selectedVarietyLabel,
-              selected: _draft.varietyAlias != null,
+              selected: _draft.varietyId != null || _draft.varietyAlias != null,
               onTap: cropId != null ? _openVarietySelector : null,
             ),
           ),

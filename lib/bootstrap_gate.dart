@@ -160,6 +160,8 @@ class _BootstrapGateState extends State<BootstrapGate> {
                 : DateConfidence.exact),
       now: now,
       previous: previous,
+      brandId: draft.brandId,
+      varietyId: draft.varietyId,
       varietyAlias: draft.varietyAlias,
       selectedDate: selectedDate,
       timezone: draft.timezone ?? previous?.timezone,
@@ -187,6 +189,9 @@ class _BootstrapGateState extends State<BootstrapGate> {
       case 'barley':
       case 'cebada':
         return CropCatalog.barleyCropId;
+      case 'oat':
+      case 'avena':
+        return CropCatalog.oatCropId;
       default:
         return normalized;
     }
@@ -302,18 +307,14 @@ class _DebugScreenGallery extends StatelessWidget {
           _GalleryTile(
             icon: Icons.login_rounded,
             label: 'Sign In',
-            onTap: () => _push(
-              context,
-              const AuthScreen(initialMode: AuthMode.signIn),
-            ),
+            onTap: () =>
+                _push(context, const AuthScreen(initialMode: AuthMode.signIn)),
           ),
           _GalleryTile(
             icon: Icons.person_add_rounded,
             label: 'Sign Up',
-            onTap: () => _push(
-              context,
-              const AuthScreen(initialMode: AuthMode.signUp),
-            ),
+            onTap: () =>
+                _push(context, const AuthScreen(initialMode: AuthMode.signUp)),
           ),
           const SizedBox(height: 16),
           const _GallerySection(title: 'Onboarding'),
@@ -361,9 +362,7 @@ class _DebugScreenGallery extends StatelessWidget {
   }
 
   void _push(BuildContext context, Widget screen) {
-    Navigator.of(context).push(
-      BioGPageRoute<void>(builder: (_) => screen),
-    );
+    Navigator.of(context).push(BioGPageRoute<void>(builder: (_) => screen));
   }
 }
 

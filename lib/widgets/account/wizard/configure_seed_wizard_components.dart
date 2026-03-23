@@ -99,12 +99,14 @@ class WizardTopChrome extends StatelessWidget {
     super.key,
     required this.showBack,
     required this.currentIndex,
+    this.totalSteps = 4,
     required this.onBack,
     required this.onClose,
   });
 
   final bool showBack;
   final int currentIndex;
+  final int totalSteps;
   final VoidCallback onBack;
   final VoidCallback onClose;
 
@@ -121,7 +123,7 @@ class WizardTopChrome extends StatelessWidget {
             onTap: showBack ? onBack : onClose,
           ),
           const Spacer(),
-          _ProgressDots(currentIndex: currentIndex),
+          _ProgressDots(currentIndex: currentIndex, totalSteps: totalSteps),
           const Spacer(),
           const SizedBox(width: 42, height: 42),
         ],
@@ -154,9 +156,10 @@ class _ChromeCircleButton extends StatelessWidget {
 }
 
 class _ProgressDots extends StatelessWidget {
-  const _ProgressDots({required this.currentIndex});
+  const _ProgressDots({required this.currentIndex, required this.totalSteps});
 
   final int currentIndex;
+  final int totalSteps;
 
   @override
   Widget build(BuildContext context) {
@@ -166,12 +169,12 @@ class _ProgressDots extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: List.generate(
-          4,
+          totalSteps,
           (index) => AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             width: index == currentIndex ? 18 : 7,
             height: 7,
-            margin: EdgeInsets.only(right: index == 3 ? 0 : 6),
+            margin: EdgeInsets.only(right: index == totalSteps - 1 ? 0 : 6),
             decoration: BoxDecoration(
               color: index == currentIndex
                   ? const Color(0xFF82A775)

@@ -72,7 +72,7 @@ flutter:
     - assets/icons/weather/
     - assets/icons/wizard/
     - assets/seeds/bean/
-    
+    - assets/seeds/Oat/
     
   fonts:
     - family: Inter

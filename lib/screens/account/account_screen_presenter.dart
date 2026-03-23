@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/crop_presentation_resolver.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
@@ -123,46 +124,20 @@ class AccountScreenPresenter {
     required DeviceCropContext? cropContext,
     required SeedInstall? seed,
   }) {
-    return cropContext != null || seed != null;
+    return CropPresentationResolver.resolve(
+      cropContext: cropContext,
+      seed: seed,
+    ).hasConfiguredCrop;
   }
 
   String cropHeadline({
     required DeviceCropContext? cropContext,
     required SeedInstall? seed,
   }) {
-    if (!hasConfiguredCrop(cropContext: cropContext, seed: seed)) {
-      return 'Sin cultivo configurado';
-    }
-
-    if (isFallowMode(cropContext: cropContext, seed: seed)) {
-      return 'Descanso del suelo';
-    }
-
-    final cropId = normalizedCropId(cropContext?.cropId ?? seed?.cropKey);
-    final cropLabel = cropDisplayName(cropId);
-
-    final String? rawVarietyKey = cropContext?.varietyId ?? seed?.varietyAlias;
-    final variety = cropId.isEmpty
-        ? null
-        : CropCatalog.varietyByAny(cropId, rawVarietyKey);
-
-    if (variety != null) {
-      if (variety.isGeneric) {
-        return '$cropLabel · Perfil genérico';
-      }
-      return '$cropLabel · ${variety.label}';
-    }
-
-    final legacyAlias = seed?.varietyAlias.trim() ?? '';
-    if (isLegacyGenericAlias(legacyAlias)) {
-      return '$cropLabel · Perfil genérico';
-    }
-
-    if (legacyAlias.isNotEmpty) {
-      return '$cropLabel · $legacyAlias';
-    }
-
-    return cropLabel;
+    return CropPresentationResolver.resolve(
+      cropContext: cropContext,
+      seed: seed,
+    ).headlineLabel;
   }
 
   String cropStageLabel({
@@ -424,7 +399,8 @@ class AccountScreenPresenter {
         normalized == 'perfil genérico' ||
         normalized == 'generic_bean' ||
         normalized == 'generic_wheat' ||
-        normalized == 'generic_barley';
+        normalized == 'generic_barley' ||
+        normalized == 'generic_oat';
   }
 
   bool isFallowMode({

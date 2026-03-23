@@ -1,8 +1,14 @@
+import 'package:bio_g/core/crops/barley/barley_catalog.dart';
 import 'package:bio_g/core/crops/bean/bean_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
+import 'package:bio_g/core/crops/oat/oat_catalog.dart';
+import 'package:bio_g/core/crops/wheat/wheat_catalog.dart';
+import 'package:bio_g/widgets/seeds/barley_profiles.dart';
 import 'package:bio_g/widgets/seeds/bean_profiles.dart';
 import 'package:bio_g/widgets/seeds/maize_profiles.dart';
+import 'package:bio_g/widgets/seeds/oat_profiles.dart';
+import 'package:bio_g/widgets/seeds/wheat_profiles.dart';
 
 class CropCatalog {
   static const String version = 'v1';
@@ -13,6 +19,7 @@ class CropCatalog {
   static const String wheatCropId = 'wheat';
   static const String barleyCropId = 'barley';
   static const String beanCropId = 'bean';
+  static const String oatCropId = 'oat';
 
   // ── Maize catalog constants ─────────────────────────────────────────────────
   // Legacy IDs kept for backward compat (may exist in SharedPrefs).
@@ -22,6 +29,9 @@ class CropCatalog {
 
   static const String maizeDefaultCalendarId = 'maize_default';
   static const String beanDefaultCalendarId = kBeanDefaultCalendarId;
+  static const String oatDefaultCalendarId = kOatDefaultCalendarId;
+  static const String barleyDefaultCalendarId = kBarleyDefaultCalendarId;
+  static const String wheatDefaultCalendarId = kWheatDefaultCalendarId;
 
   // ── Categories ──────────────────────────────────────────────────────────────
 
@@ -66,11 +76,22 @@ class CropCatalog {
       cropId: wheatCropId,
       categoryId: grainCategoryId,
       label: 'Trigo',
-      subtitle: 'Próximamente',
-      enabled: false,
-      varieties: <CropVarietyEntry>[],
-      profiles: <CropProfileEntry>[],
-      calendars: <CropCalendarEntry>[],
+      subtitle: 'Disponible ahora',
+      enabled: true,
+      defaultProfileId: kTrGen,
+      defaultCalendarId: wheatDefaultCalendarId,
+      varieties: wheatVarieties,
+      profiles: wheatProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: wheatDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: wheatCropId,
+          subtitle: 'Ciclo general de referencia',
+          enabled: true,
+          isDefault: true,
+        ),
+      ],
     ),
 
     // ── CEBADA ────────────────────────────────────────────────────────────────
@@ -78,11 +99,46 @@ class CropCatalog {
       cropId: barleyCropId,
       categoryId: grainCategoryId,
       label: 'Cebada',
-      subtitle: 'Próximamente',
-      enabled: false,
-      varieties: <CropVarietyEntry>[],
-      profiles: <CropProfileEntry>[],
-      calendars: <CropCalendarEntry>[],
+      subtitle: 'Disponible ahora',
+      enabled: true,
+      defaultProfileId: kCbGen,
+      defaultCalendarId: barleyDefaultCalendarId,
+      varieties: barleyVarieties,
+      profiles: barleyProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: barleyDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: barleyCropId,
+          subtitle: 'Ciclo general de referencia',
+          enabled: true,
+          isDefault: true,
+        ),
+      ],
+    ),
+
+    // ── AVENA ─────────────────────────────────────────────────────────────────
+    CropCatalogEntry(
+      cropId: oatCropId,
+      categoryId: grainCategoryId,
+      label: 'Avena',
+      subtitle: 'Disponible ahora',
+      enabled: true,
+      defaultProfileId: kAvGen,
+      defaultCalendarId: oatDefaultCalendarId,
+      brands: oatBrands,
+      varieties: oatVarieties,
+      profiles: oatProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: oatDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: oatCropId,
+          subtitle: 'Ciclo general de referencia',
+          enabled: true,
+          isDefault: true,
+        ),
+      ],
     ),
 
     // ── FRIJOL ────────────────────────────────────────────────────────────────
@@ -388,7 +444,7 @@ class CropCatalog {
       'bean' || 'beans' || 'frijol' => beanCropId,
       'wheat' || 'trigo' => wheatCropId,
       'barley' || 'cebada' => barleyCropId,
-      'oat' || 'avena' => 'oat',
+      'oat' || 'avena' => oatCropId,
       _ => value,
     };
   }
@@ -406,11 +462,11 @@ class CropCatalog {
 
   static String _fallbackDisplayName(String cropId) {
     return switch (cropId) {
-      'maize' => 'Maíz',
-      'bean' => 'Frijol',
-      'wheat' => 'Trigo',
-      'barley' => 'Cebada',
-      'oat' => 'Avena',
+      maizeCropId => 'Maíz',
+      beanCropId => 'Frijol',
+      wheatCropId => 'Trigo',
+      barleyCropId => 'Cebada',
+      oatCropId => 'Avena',
       _ => 'Cultivo',
     };
   }

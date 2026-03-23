@@ -1,0 +1,120 @@
+// lib/widgets/seeds/wheat_models.dart
+// Modelos puros (Dart) para Trigo. NO depende de Flutter.
+
+import 'package:bio_g/core/crops/crop_profile_models.dart';
+import 'package:bio_g/core/crops/crop_types.dart';
+import 'package:bio_g/widgets/seeds/maize_models.dart';
+
+// ---------------------------------------------------------------------------
+// Tipo de uso del perfil — para filtrar en wizard y label de acción final.
+// ---------------------------------------------------------------------------
+enum WheatUseType {
+  bread,       // Harinero / Panificable → acción final: 'Cosecha'
+  durum,       // Cristalino / Durum     → acción final: 'Cosecha'
+  forage,      // Forraje temprano       → acción final: 'Corte'
+}
+
+enum WheatStageKey {
+  germination,
+  emergence,
+  vegEarly,
+  tillering,
+  elongation,
+  booting,
+  heading,
+  flowering,
+  grainFill,
+  physiologicalMaturity,
+  harvest,
+}
+
+class WheatProfile extends CropProfile {
+  /// Días a floración/antesis desde siembra.
+  final RangeInt floweringDays;
+
+  /// Días a acción final (cosecha) desde siembra.
+  final RangeInt endWindowDays;
+
+  /// Etiqueta de la acción final: 'Cosecha'.
+  final String endActionLabel;
+
+  final RangeDouble plantHeightM;
+
+  /// Altura de la espiga.
+  final RangeDouble spikeHeightM;
+
+  final RangeInt germinationDays;
+  final RangeInt emergenceDays;
+  final RangeInt vegEarlyDays;
+
+  final WheatUseType wheatUseType;
+
+  const WheatProfile({
+    required super.id,
+    required super.label,
+    required super.useType,
+    this.wheatUseType = WheatUseType.bread,
+    this.floweringDays = const RangeInt(0, 0),
+    this.endWindowDays = const RangeInt(0, 0),
+    this.endActionLabel = '',
+    this.plantHeightM = const RangeDouble(0, 0),
+    this.spikeHeightM = const RangeDouble(0, 0),
+    this.germinationDays = const RangeInt(0, 0),
+    this.emergenceDays = const RangeInt(0, 0),
+    this.vegEarlyDays = const RangeInt(0, 0),
+  }) : super(cropKey: CropKey.wheat);
+}
+
+class WheatStageBounds {
+  final WheatStageKey key;
+  final int startDay;
+  final int endDay;
+
+  const WheatStageBounds({
+    required this.key,
+    required this.startDay,
+    required this.endDay,
+  }) : assert(startDay >= 1),
+       assert(startDay <= endDay);
+
+  bool contains(int day) => day >= startDay && day <= endDay;
+}
+
+class WheatStageResult {
+  final WheatProfile profile;
+  final WheatStageKey stage;
+  final int daySinceSowing;
+
+  final RangeInt floweringBand;
+  final RangeInt endBand;
+
+  final int expectedFloweringDay;
+  final int expectedEndDay;
+
+  final int expectedDaysToEnd;
+  final double stageProgressPct;
+  final List<SeedWindowKey> windowsNow;
+
+  final RangeDouble expectedPlantHeightTodayM;
+
+  final String stageLabelEs;
+  final String heroAsset;
+  final String helperCaption;
+
+  const WheatStageResult({
+    required this.profile,
+    required this.stage,
+    required this.daySinceSowing,
+    required this.floweringBand,
+    required this.endBand,
+    required this.expectedFloweringDay,
+    required this.expectedEndDay,
+    required this.expectedDaysToEnd,
+    required this.stageProgressPct,
+    required this.windowsNow,
+    required this.expectedPlantHeightTodayM,
+    required this.stageLabelEs,
+    required this.heroAsset,
+    required this.helperCaption,
+  });
+}

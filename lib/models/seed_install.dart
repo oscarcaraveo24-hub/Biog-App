@@ -354,12 +354,18 @@ class SeedInstall {
         normalized == 'generic_corn' ||
         normalized == 'generic_bean' ||
         normalized == 'generic_wheat' ||
-        normalized == 'generic_barley';
+        normalized == 'generic_barley' ||
+        normalized == 'generic_oat';
   }
 
   static bool _isGenericProfileId(String? profileId) {
     final normalized = profileId?.trim().toLowerCase() ?? '';
-    return normalized.isNotEmpty && normalized.endsWith('_generic');
+    return normalized.isNotEmpty &&
+        (normalized.endsWith('_generic') ||
+            normalized == 'fj_gen' ||
+            normalized == 'tr_gen' ||
+            normalized == 'cb_gen' ||
+            normalized == 'av_gen');
   }
 
   static String _canonicalCropKey(String value) {

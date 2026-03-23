@@ -1,7 +1,11 @@
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
 import 'package:bio_g/models/device_crop_context.dart';
+import 'package:bio_g/widgets/seeds/barley_profiles.dart';
+import 'package:bio_g/widgets/seeds/bean_profiles.dart';
 import 'package:bio_g/widgets/seeds/maize_profiles.dart';
+import 'package:bio_g/widgets/seeds/oat_profiles.dart';
+import 'package:bio_g/widgets/seeds/wheat_profiles.dart';
 
 class WizardCropContextResolver {
   const WizardCropContextResolver();
@@ -30,23 +34,22 @@ class WizardCropContextResolver {
 
     final normalizedCropId = cropId.trim().isEmpty
         ? CropCatalog.maizeCropId
-        : cropId.trim().toLowerCase();
+        : CropCatalog.canonicalCropKey(cropId);
 
     final rawVarietySelection = _normalizeVarietyAlias(varietyAlias);
 
-    // Primary: use canonical varietyId if provided directly (new catalog path).
-    // Fallback: resolve from alias (legacy / onboarding path).
-    final resolvedVarietyId =
-        varietyId ??
-        _resolveVarietyId(
-          cropId: normalizedCropId,
-          varietyAlias: rawVarietySelection,
-        );
+    final resolvedVarietyId = _resolveCanonicalVarietyId(
+      cropId: normalizedCropId,
+      varietyId: varietyId,
+      varietyAlias: rawVarietySelection,
+    );
 
-    // Resolve brandId: explicit > from variety entry > previous > null.
-    final resolvedBrandId = brandId ??
-        _resolveBrandIdFromVariety(normalizedCropId, resolvedVarietyId) ??
-        previous?.brandId;
+    final resolvedBrandId = _resolveCanonicalBrandId(
+      cropId: normalizedCropId,
+      explicitBrandId: brandId,
+      varietyId: resolvedVarietyId,
+      previous: previous,
+    );
 
     final resolvedVarietyAlias = _resolveVisibleVarietyAlias(
       cropId: normalizedCropId,
@@ -54,7 +57,6 @@ class WizardCropContextResolver {
       resolvedVarietyId: resolvedVarietyId,
     );
 
-    // New chain: varietyId → defaultProfileId first, then alias map fallback.
     final resolvedExplicitProfileId = _resolveExplicitProfileId(
       cropId: normalizedCropId,
       varietyId: resolvedVarietyId,
@@ -68,9 +70,9 @@ class WizardCropContextResolver {
     );
 
     final resolvedCalendarTypeId =
-        calendarTypeId ??
+        _normalizeNullable(calendarTypeId) ??
         previous?.calendarTypeId ??
-        _defaultCalendarTypeIdForCrop(normalizedCropId);
+        CropCatalog.defaultCalendarIdForCrop(normalizedCropId);
 
     final resolvedTimezone =
         (timezone ?? previous?.timezone ?? 'America/Mexico_City').trim();
@@ -106,12 +108,17 @@ class WizardCropContextResolver {
     );
   }
 
-  // ── Private helpers ─────────────────────────────────────────────────────────
-
-  String? _resolveVarietyId({
+  String? _resolveCanonicalVarietyId({
     required String cropId,
+    required String? varietyId,
     required String? varietyAlias,
   }) {
+    final normalizedVarietyId = _normalizeNullable(varietyId);
+    if (normalizedVarietyId != null) {
+      final direct = CropCatalog.varietyById(cropId, normalizedVarietyId);
+      if (direct != null) return direct.id;
+    }
+
     if (varietyAlias == null || varietyAlias.isEmpty) return null;
     return CropCatalog.varietyByAny(cropId, varietyAlias)?.id;
   }
@@ -134,46 +141,85 @@ class WizardCropContextResolver {
     return rawValue;
   }
 
-  /// Resolves the explicit profile ID for the given crop context.
-  ///
-  /// Resolution order (maize only):
-  ///   1. `varietyEntry.defaultProfileId` — canonical, most accurate.
-  ///   2. Alias-map lookup via [resolveCanonicalMaizeProfileId] — covers
-  ///      legacy short aliases like "DK-2069", "MZF-03", "ANTÍLOPE FORRAJE".
-  ///
-  /// Returns null for non-maize crops (CropCatalog resolves those generically).
   String? _resolveExplicitProfileId({
     required String cropId,
     required String? varietyId,
     required String? varietyAlias,
   }) {
-    if (cropId != CropCatalog.maizeCropId) return null;
-
-    // 1. Primary: variety entry's defaultProfileId (new catalog-based path).
-    if (varietyId != null && varietyId.isNotEmpty) {
-      final profileId = maizeVarietyById(varietyId)?.defaultProfileId;
-      if (profileId != null && profileId.isNotEmpty) return profileId;
-    }
-
-    // 2. Fallback: alias-map resolution (legacy DK-2069, short codes, etc.).
-    if (varietyAlias != null && varietyAlias.isNotEmpty) {
-      return resolveCanonicalMaizeProfileId(varietyAlias);
-    }
-
-    return null;
-  }
-
-  String? _defaultCalendarTypeIdForCrop(String cropId) {
+    // ── Maize ────────────────────────────────────────────────────────────────
     if (cropId == CropCatalog.maizeCropId) {
-      return CropCatalog.maizeDefaultCalendarId;
+      if (varietyId != null && varietyId.isNotEmpty) {
+        final profileId = maizeVarietyById(varietyId)?.defaultProfileId;
+        if (profileId != null && profileId.isNotEmpty) return profileId;
+      }
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalMaizeProfileId(varietyAlias);
+      }
+      return null;
     }
+
+    // ── Bean ─────────────────────────────────────────────────────────────────
+    if (cropId == CropCatalog.beanCropId) {
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalBeanProfileId(varietyAlias);
+      }
+      return null;
+    }
+
+    // ── Oat ──────────────────────────────────────────────────────────────────
+    if (cropId == CropCatalog.oatCropId) {
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalOatProfileId(varietyAlias);
+      }
+      return null;
+    }
+
+    // ── Barley ───────────────────────────────────────────────────────────────
+    if (cropId == CropCatalog.barleyCropId) {
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalBarleyProfileId(varietyAlias);
+      }
+      return null;
+    }
+
+    // ── Wheat ────────────────────────────────────────────────────────────────
+    if (cropId == CropCatalog.wheatCropId) {
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalWheatProfileId(varietyAlias);
+      }
+      return null;
+    }
+
     return null;
   }
 
-  String? _resolveBrandIdFromVariety(String cropId, String? varietyId) {
-    if (varietyId == null || varietyId.isEmpty) return null;
-    final variety = CropCatalog.varietyById(cropId, varietyId);
-    return variety?.brandId;
+  String? _resolveCanonicalBrandId({
+    required String cropId,
+    required String? explicitBrandId,
+    required String? varietyId,
+    required DeviceCropContext? previous,
+  }) {
+    final normalizedBrandId = _normalizeNullable(explicitBrandId);
+    if (normalizedBrandId != null) {
+      final brands = CropCatalog.brandsForCrop(cropId);
+      final isValidBrand = brands.any((brand) => brand.id == normalizedBrandId);
+      if (isValidBrand) {
+        return normalizedBrandId;
+      }
+    }
+
+    if (varietyId != null && varietyId.isNotEmpty) {
+      final variety = CropCatalog.varietyById(cropId, varietyId);
+      if (variety?.brandId != null && variety!.brandId!.trim().isNotEmpty) {
+        return variety.brandId;
+      }
+    }
+
+    if (previous != null && previous.cropId == cropId) {
+      return previous.brandId;
+    }
+
+    return null;
   }
 
   String _sowingModeIdFromLifecycle(CropLifecycleStatus status) {
@@ -187,6 +233,12 @@ class WizardCropContextResolver {
   String? _normalizeVarietyAlias(String? value) {
     final normalized = (value ?? '').trim();
     if (normalized.isEmpty) return null;
+    return normalized;
+  }
+
+  String? _normalizeNullable(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) return null;
     return normalized;
   }
 }
