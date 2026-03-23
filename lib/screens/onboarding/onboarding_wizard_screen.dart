@@ -301,9 +301,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
   Future<void> _handleScanQr() async {
     final result = await Navigator.of(context).push<Map<String, dynamic>>(
-      BioGPageRoute<Map<String, dynamic>>(
-        builder: (_) => const QrScanScreen(),
-      ),
+      BioGPageRoute<Map<String, dynamic>>(builder: (_) => const QrScanScreen()),
     );
 
     if (result == null || !mounted) return;
@@ -475,7 +473,17 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                             ? 'Recomendado si no sabes la variedad'
                             : 'Disponible ahora')
                       : 'Próximamente'),
-              iconPath: ConfigureSeedWizardAssets.variety,
+              iconPath: cropId == CropCatalog.maizeCropId
+                  ? ConfigureSeedWizardAssets.maizeIconForVariety(
+                      useTypeId: variety.useTypeId,
+                      marketTypeId: variety.marketTypeId,
+                    )
+                  : cropId == CropCatalog.beanCropId
+                  ? ConfigureSeedWizardAssets.beanIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : ConfigureSeedWizardAssets.variety,
               enabled: variety.enabled,
             ),
           )
@@ -497,7 +505,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   }
 
   void _onSelectStage(String value) {
-    final bool isRestStage = value == 'fallow' || value == 'dormant' || value == 'skip';
+    final bool isRestStage =
+        value == 'fallow' || value == 'dormant' || value == 'skip';
     _updateDraft(
       _draft.copyWith(
         stage: value,
@@ -512,7 +521,6 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       _animateToStep(OnboardingStep.cropDate);
     }
   }
-
 
   // ─── Labels ───
 
@@ -663,7 +671,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               style: TextStyle(
                 fontSize: 14.4,
                 height: 1.34,
-                color: Colors.black.withValues(alpha:0.45),
+                color: Colors.black.withValues(alpha: 0.45),
               ),
             ),
           ),
@@ -733,7 +741,26 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   }
 
   Widget _buildCropVarietyPage() {
-    final cropLabel = _cropLabel(_draft.cropId);
+    final cropId = _draft.cropId;
+    final cropLabel = _cropLabel(cropId);
+
+    final selectedVariety = cropId == null
+        ? null
+        : CropCatalog.varietyByAny(cropId, _draft.varietyAlias);
+
+    final selectedVarietyLabel = _varietyLabel(_draft.varietyAlias);
+
+    final selectedVarietyIconPath = cropId == CropCatalog.maizeCropId
+        ? ConfigureSeedWizardAssets.maizeIconForVariety(
+            useTypeId: selectedVariety?.useTypeId,
+            marketTypeId: selectedVariety?.marketTypeId,
+          )
+        : cropId == CropCatalog.beanCropId
+        ? ConfigureSeedWizardAssets.beanIconForVariety(
+            varietyId: selectedVariety?.id ?? _draft.varietyAlias,
+            label: selectedVariety?.label ?? selectedVarietyLabel,
+          )
+        : ConfigureSeedWizardAssets.variety;
 
     return CenteredWizardPage(
       horizontalPadding: 4,
@@ -765,7 +792,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               style: TextStyle(
                 fontSize: 14.4,
                 height: 1.34,
-                color: Colors.black.withValues(alpha:0.45),
+                color: Colors.black.withValues(alpha: 0.45),
               ),
             ),
           ),
@@ -787,7 +814,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               iconPath: _cropIconPathFromLabel(cropLabel),
               title: 'Cultivo',
               value: cropLabel,
-              selected: _draft.cropId != null,
+              selected: cropId != null,
               onTap: _draft.cropCategory == CropCatalog.grainCategoryId
                   ? _openCropSelector
                   : null,
@@ -797,11 +824,11 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           StaggerIn(
             delay: 205,
             child: _selectionPill(
-              iconPath: ConfigureSeedWizardAssets.variety,
+              iconPath: selectedVarietyIconPath,
               title: 'Variedad / perfil',
-              value: _varietyLabel(_draft.varietyAlias),
+              value: selectedVarietyLabel,
               selected: _draft.varietyAlias != null,
-              onTap: cropLabel == 'Maíz' ? _openVarietySelector : null,
+              onTap: cropId != null ? _openVarietySelector : null,
             ),
           ),
           const SizedBox(height: 18),
@@ -813,7 +840,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               style: TextStyle(
                 fontSize: 13.6,
                 height: 1.32,
-                color: Colors.black.withValues(alpha:0.48),
+                color: Colors.black.withValues(alpha: 0.48),
               ),
             ),
           ),
@@ -981,7 +1008,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.45,
-                        color: Colors.black.withValues(alpha:0.58),
+                        color: Colors.black.withValues(alpha: 0.58),
                       ),
                     ),
                   ),
@@ -1007,11 +1034,11 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   }) {
     final borderColor = selected
         ? const Color(0xFF8EB07C)
-        : Colors.white.withValues(alpha:0.94);
+        : Colors.white.withValues(alpha: 0.94);
 
     final bgColor = selected
-        ? const Color(0xFFF0F7EE).withValues(alpha:0.96)
-        : const Color(0xFFF7F8F8).withValues(alpha:0.94);
+        ? const Color(0xFFF0F7EE).withValues(alpha: 0.96)
+        : const Color(0xFFF7F8F8).withValues(alpha: 0.94);
 
     return Opacity(
       opacity: enabled ? 1 : 0.62,
@@ -1054,7 +1081,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                         subtitle,
                         style: TextStyle(
                           fontSize: 13.6,
-                          color: Colors.black.withValues(alpha:0.44),
+                          color: Colors.black.withValues(alpha: 0.44),
                         ),
                       ),
                     ],
@@ -1087,8 +1114,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     required bool selected,
     required VoidCallback? onTap,
   }) {
-    final selectedBg = const Color(0xFFF0F7EE).withValues(alpha:0.96);
-    final normalBg = const Color(0xFFF7F8F8).withValues(alpha:0.94);
+    final selectedBg = const Color(0xFFF0F7EE).withValues(alpha: 0.96);
+    final normalBg = const Color(0xFFF7F8F8).withValues(alpha: 0.94);
 
     return Opacity(
       opacity: onTap == null && !selected ? 0.84 : 1,
@@ -1099,7 +1126,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           backgroundColor: selected ? selectedBg : normalBg,
           borderColor: selected
               ? const Color(0xFF8EB07C)
-              : Colors.white.withValues(alpha:0.94),
+              : Colors.white.withValues(alpha: 0.94),
           padding: const EdgeInsets.fromLTRB(18, 13, 16, 13),
           child: Row(
             children: [
@@ -1158,7 +1185,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                       value,
                       style: TextStyle(
                         fontSize: 14.0,
-                        color: Colors.black.withValues(alpha:0.50),
+                        color: Colors.black.withValues(alpha: 0.50),
                       ),
                     ),
                   ],
@@ -1250,7 +1277,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             ),
             Padding(
               padding: EdgeInsets.fromLTRB(
-                8, 0, 8,
+                8,
+                0,
+                8,
                 12 + MediaQuery.of(context).padding.bottom * 0.25,
               ),
               child: Column(
@@ -1370,8 +1399,8 @@ class _WizardTopBar extends StatelessWidget {
                     color: index == currentStepIndex
                         ? const Color(0xFF82A775)
                         : index < currentStepIndex
-                            ? const Color(0xFF82A775).withValues(alpha:0.40)
-                            : Colors.black.withValues(alpha:0.10),
+                        ? const Color(0xFF82A775).withValues(alpha: 0.40)
+                        : Colors.black.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),

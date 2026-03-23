@@ -71,6 +71,7 @@ flutter:
     - assets/seeds/
     - assets/icons/weather/
     - assets/icons/wizard/
+    - assets/seeds/bean/
     
     
   fonts:

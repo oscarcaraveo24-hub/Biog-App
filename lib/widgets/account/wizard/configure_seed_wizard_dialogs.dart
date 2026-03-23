@@ -19,7 +19,7 @@ Future<void> showWizardAnimatedDialog({
     context: context,
     barrierDismissible: true,
     barrierLabel: barrierLabel,
-    barrierColor: Colors.black.withValues(alpha:barrierOpacity),
+    barrierColor: Colors.black.withValues(alpha: barrierOpacity),
     transitionDuration: const Duration(milliseconds: 280),
     pageBuilder: (context, animation, secondaryAnimation) {
       return WizardAnimatedDialog(
@@ -58,8 +58,11 @@ Future<T?> showWizardSelectionSheet<T>({
   return showModalBottomSheet<T>(
     context: context,
     backgroundColor: Colors.transparent,
-    isScrollControlled: false,
+    isScrollControlled: true,
     builder: (context) {
+      final media = MediaQuery.of(context);
+      final maxSheetHeight = media.size.height * 0.58;
+
       return SafeArea(
         top: false,
         child: Padding(
@@ -67,59 +70,84 @@ Future<T?> showWizardSelectionSheet<T>({
           child: BioGGlassCard(
             radius: 28,
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 42,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha:0.10),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                const Text(
-                  'Selecciona',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.35,
-                    color: Color(0xFF7C8A86),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
-                    color: Color(0xFF213431),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                ...List.generate(
-                  options.length,
-                  (index) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: StaggerIn(
-                      delay: 40 + (index * 55),
-                      child: WizardSheetSelectionTile<T>(
-                        option: options[index],
-                        onTap: options[index].enabled
-                            ? () => Navigator.of(
-                                context,
-                              ).pop(options[index].value)
-                            : null,
+            backgroundColor: const Color(0xFFF3F6F4).withValues(alpha: 0.97),
+            boxShadows: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.10),
+                blurRadius: 26,
+                spreadRadius: 0,
+                offset: const Offset(0, 12),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 48,
+                spreadRadius: 0,
+                offset: const Offset(0, 22),
+              ),
+            ],
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxSheetHeight),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(999),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Selecciona',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.35,
+                      color: Color(0xFF7C8A86),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                      color: Color(0xFF213431),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Flexible(
+                    child: Scrollbar(
+                      thumbVisibility: options.length > 5,
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: options.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final option = options[index];
+                          return StaggerIn(
+                            delay: 40 + (index * 45),
+                            child: WizardSheetSelectionTile<T>(
+                              option: option,
+                              onTap: option.enabled
+                                  ? () =>
+                                        Navigator.of(context).pop(option.value)
+                                  : null,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -277,7 +305,7 @@ class _WizardAnimatedDialogState extends State<WizardAnimatedDialog>
                         style: TextStyle(
                           fontSize: 13.8,
                           height: 1.38,
-                          color: Colors.black.withValues(alpha:0.60),
+                          color: Colors.black.withValues(alpha: 0.60),
                         ),
                       ),
                       const SizedBox(height: 16),

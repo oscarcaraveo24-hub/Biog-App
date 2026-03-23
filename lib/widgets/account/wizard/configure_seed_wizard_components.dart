@@ -25,15 +25,17 @@ class ConfigureSeedWizardAssets {
 
   static const String variety = 'assets/icons/wizard/ic_variedad.png';
 
+  static const String beanPinto = 'assets/icons/wizard/ic_frijol.png';
+  static const String beanRed = 'assets/icons/wizard/ic_frijol_rojo.png';
+  static const String beanBlack = 'assets/icons/wizard/ic_frijol_negro.png';
+  static const String beanWhite = 'assets/icons/wizard/ic_frijol_blanco.png';
+
   static const String maizeWhite = 'assets/icons/wizard/ic_maiz_blanco.png';
   static const String maizeYellow = 'assets/icons/wizard/ic_maiz.png';
   static const String maizeForage = 'assets/icons/wizard/ic_maiz_forrajero.png';
   static const String maizeElote = 'assets/icons/wizard/ic_maiz_elotero.png';
 
-  static String maizeIconForVariety({
-    String? useTypeId,
-    String? marketTypeId,
-  }) {
+  static String maizeIconForVariety({String? useTypeId, String? marketTypeId}) {
     if (useTypeId == 'elote') return maizeElote;
     if (useTypeId == 'forage') {
       // Forrajero blanco → ícono blanco; forrajero amarillo → ícono forrajero.
@@ -44,6 +46,46 @@ class ConfigureSeedWizardAssets {
     if (marketTypeId == 'white') return maizeWhite;
     if (marketTypeId == 'yellow') return maizeYellow;
     return cropMaize;
+  }
+
+  static String beanIconForVariety({
+    String? varietyId,
+    String? label,
+    bool genericFallbackToPinto = true,
+  }) {
+    switch (varietyId) {
+      case 'bean_negro_temprano':
+      case 'bean_negro':
+        return beanBlack;
+      case 'bean_pinto':
+        return beanPinto;
+      case 'bean_flor_mayo_junio':
+        return beanRed;
+      case 'bean_bayo_azufrado_blanco':
+        return beanWhite;
+      case 'bean_generic':
+        return genericFallbackToPinto ? beanPinto : variety;
+    }
+
+    final normalized = (label ?? '').trim().toLowerCase();
+
+    if (normalized.contains('negro')) return beanBlack;
+    if (normalized.contains('pinto')) return beanPinto;
+    if (normalized.contains('flor de mayo') ||
+        normalized.contains('flor de junio') ||
+        normalized.contains('rojo')) {
+      return beanRed;
+    }
+    if (normalized.contains('bayo') ||
+        normalized.contains('azufrado') ||
+        normalized.contains('blanco')) {
+      return beanWhite;
+    }
+    if (normalized.contains('gen')) {
+      return genericFallbackToPinto ? beanPinto : variety;
+    }
+
+    return beanPinto;
   }
 
   static const String stagePlanned =
@@ -133,7 +175,7 @@ class _ProgressDots extends StatelessWidget {
             decoration: BoxDecoration(
               color: index == currentIndex
                   ? const Color(0xFF82A775)
-                  : Colors.black.withValues(alpha:0.10),
+                  : Colors.black.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(99),
             ),
           ),
@@ -164,7 +206,12 @@ class CenteredWizardPage extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520),
         child: Padding(
-          padding: EdgeInsets.fromLTRB(horizontalPadding, topPadding, horizontalPadding, 12),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            topPadding,
+            horizontalPadding,
+            12,
+          ),
           child: child,
         ),
       ),
@@ -208,7 +255,9 @@ class MiniStateChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFEAF7EE),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFF95B488).withValues(alpha:0.50)),
+        border: Border.all(
+          color: const Color(0xFF95B488).withValues(alpha: 0.50),
+        ),
       ),
       child: Text(
         label,
@@ -244,11 +293,11 @@ class WizardLongPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final borderColor = selected
         ? const Color(0xFF8EB07C)
-        : Colors.white.withValues(alpha:0.94);
+        : Colors.white.withValues(alpha: 0.94);
 
     final bgColor = selected
-        ? const Color(0xFFF0F7EE).withValues(alpha:0.96)
-        : const Color(0xFFF7F8F8).withValues(alpha:0.94);
+        ? const Color(0xFFF0F7EE).withValues(alpha: 0.96)
+        : const Color(0xFFF7F8F8).withValues(alpha: 0.94);
 
     return Opacity(
       opacity: enabled ? 1 : 0.62,
@@ -291,7 +340,7 @@ class WizardLongPill extends StatelessWidget {
                         subtitle,
                         style: TextStyle(
                           fontSize: 13.6,
-                          color: Colors.black.withValues(alpha:0.44),
+                          color: Colors.black.withValues(alpha: 0.44),
                         ),
                       ),
                     ],
@@ -336,8 +385,8 @@ class SelectionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedBg = const Color(0xFFF0F7EE).withValues(alpha:0.96);
-    final normalBg = const Color(0xFFF7F8F8).withValues(alpha:0.94);
+    final selectedBg = const Color(0xFFF0F7EE).withValues(alpha: 0.96);
+    final normalBg = const Color(0xFFF7F8F8).withValues(alpha: 0.94);
 
     return Opacity(
       opacity: onTap == null && !selected ? 0.84 : 1,
@@ -348,7 +397,7 @@ class SelectionPill extends StatelessWidget {
           backgroundColor: selected ? selectedBg : normalBg,
           borderColor: selected
               ? const Color(0xFF8EB07C)
-              : Colors.white.withValues(alpha:0.94),
+              : Colors.white.withValues(alpha: 0.94),
           padding: const EdgeInsets.fromLTRB(18, 13, 16, 13),
           child: Row(
             children: [
@@ -390,7 +439,7 @@ class SelectionPill extends StatelessWidget {
                       value,
                       style: TextStyle(
                         fontSize: 14.0,
-                        color: Colors.black.withValues(alpha:0.50),
+                        color: Colors.black.withValues(alpha: 0.50),
                       ),
                     ),
                   ],
@@ -437,11 +486,11 @@ class FlexibleDateCard extends StatelessWidget {
       child: BioGGlassCard(
         radius: 22,
         backgroundColor: selected
-            ? const Color(0xFFF0F7EE).withValues(alpha:0.98)
-            : const Color(0xFFF7F8F8).withValues(alpha:0.94),
+            ? const Color(0xFFF0F7EE).withValues(alpha: 0.98)
+            : const Color(0xFFF7F8F8).withValues(alpha: 0.94),
         borderColor: selected
             ? const Color(0xFF8EB07C)
-            : Colors.white.withValues(alpha:0.94),
+            : Colors.white.withValues(alpha: 0.94),
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,12 +502,12 @@ class FlexibleDateCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? const Color(0xFFEAF7EE)
-                    : Colors.white.withValues(alpha:0.74),
+                    : Colors.white.withValues(alpha: 0.74),
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(
                   color: selected
                       ? const Color(0xFF9DB691)
-                      : Colors.black.withValues(alpha:0.10),
+                      : Colors.black.withValues(alpha: 0.10),
                 ),
               ),
               child: selected
@@ -516,7 +565,7 @@ class FlexibleDateCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13.4,
                         height: 1.34,
-                        color: Colors.black.withValues(alpha:0.50),
+                        color: Colors.black.withValues(alpha: 0.50),
                       ),
                     ),
                   ],
@@ -565,6 +614,8 @@ class WizardSheetSelectionTile<T> extends StatelessWidget {
         child: BioGGlassCard(
           radius: 20,
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          boxShadows: const <BoxShadow>[],
+          backgroundColor: const Color(0xFFF4F7F6).withValues(alpha: 0.96),
           child: Row(
             children: [
               WizardAssetIcon(
@@ -594,7 +645,7 @@ class WizardSheetSelectionTile<T> extends StatelessWidget {
                       option.subtitle,
                       style: TextStyle(
                         fontSize: 13.4,
-                        color: Colors.black.withValues(alpha:0.50),
+                        color: Colors.black.withValues(alpha: 0.50),
                       ),
                     ),
                   ],

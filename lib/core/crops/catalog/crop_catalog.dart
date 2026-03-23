@@ -1,5 +1,7 @@
+import 'package:bio_g/core/crops/bean/bean_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
+import 'package:bio_g/widgets/seeds/bean_profiles.dart';
 import 'package:bio_g/widgets/seeds/maize_profiles.dart';
 
 class CropCatalog {
@@ -14,11 +16,12 @@ class CropCatalog {
 
   // ── Maize catalog constants ─────────────────────────────────────────────────
   // Legacy IDs kept for backward compat (may exist in SharedPrefs).
-  static const String maizeDemoVarietyId    = 'dk_2069';
+  static const String maizeDemoVarietyId = 'dk_2069';
   static const String maizeGenericVarietyId = 'generic_maize';
   static const String maizeGenericProfileId = kMaizeGenericProfileId;
 
   static const String maizeDefaultCalendarId = 'maize_default';
+  static const String beanDefaultCalendarId = kBeanDefaultCalendarId;
 
   // ── Categories ──────────────────────────────────────────────────────────────
 
@@ -41,7 +44,7 @@ class CropCatalog {
       label: 'Maíz',
       subtitle: 'Disponible ahora',
       enabled: true,
-      defaultProfileId: kMzgGenB,         // genérico blanco/grano como fallback
+      defaultProfileId: kMzgGenB,
       defaultCalendarId: maizeDefaultCalendarId,
       brands: maizeBrands,
       varieties: maizeVarieties,
@@ -57,6 +60,7 @@ class CropCatalog {
         ),
       ],
     ),
+
     // ── TRIGO ─────────────────────────────────────────────────────────────────
     CropCatalogEntry(
       cropId: wheatCropId,
@@ -68,6 +72,7 @@ class CropCatalog {
       profiles: <CropProfileEntry>[],
       calendars: <CropCalendarEntry>[],
     ),
+
     // ── CEBADA ────────────────────────────────────────────────────────────────
     CropCatalogEntry(
       cropId: barleyCropId,
@@ -79,16 +84,28 @@ class CropCatalog {
       profiles: <CropProfileEntry>[],
       calendars: <CropCalendarEntry>[],
     ),
+
     // ── FRIJOL ────────────────────────────────────────────────────────────────
     CropCatalogEntry(
       cropId: beanCropId,
       categoryId: grainCategoryId,
       label: 'Frijol',
-      subtitle: 'Próximamente',
-      enabled: false,
-      varieties: <CropVarietyEntry>[],
-      profiles: <CropProfileEntry>[],
-      calendars: <CropCalendarEntry>[],
+      subtitle: 'Disponible ahora',
+      enabled: true,
+      defaultProfileId: kFjGen,
+      defaultCalendarId: beanDefaultCalendarId,
+      varieties: beanVarieties,
+      profiles: beanProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: beanDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: beanCropId,
+          subtitle: 'Ciclo general de referencia',
+          enabled: true,
+          isDefault: true,
+        ),
+      ],
     ),
   ];
 
@@ -356,11 +373,11 @@ class CropCatalog {
     return maizeVarietiesByBrand(brandId);
   }
 
-  // ── Crop key canonicalisation ────────────────────────────────────────────────
+  // ── Crop key canonicalisation ───────────────────────────────────────────────
 
   /// Canonical crop key from any known alias (e.g. 'corn' → 'maize').
   ///
-  /// Returns empty string for null/blank input.  Non-nullable so callers
+  /// Returns empty string for null/blank input. Non-nullable so callers
   /// can compare directly without `?` chains.
   static String canonicalCropKey(String? raw) {
     final value = raw?.trim().toLowerCase() ?? '';

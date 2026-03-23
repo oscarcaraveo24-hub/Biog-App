@@ -342,11 +342,11 @@ class CropRuntimeResolver {
       cropKeyName,
       cropContext?.profileId ?? seed?.profileId,
     );
-    if (profile != null && profile.id.endsWith('_generic')) {
-      return true;
+    if (profile != null) {
+      return profile.id.endsWith('_generic') || profile.id == 'fj_gen';
     }
 
-    return true;
+    return false;
   }
 
   static String _fallbackDisplayName(String? cropKey) =>
@@ -368,36 +368,118 @@ class CropRuntimeResolver {
     }
 
     switch (cropKeyName) {
-      case 'maize':
-        return _resolveMaizeIcon(cropContext);
-      case 'bean':
-        return 'assets/icons/wizard/ic_frijol.png';
+      case CropCatalog.maizeCropId:
+        return _resolveMaizeIcon(seed: seed, cropContext: cropContext);
+      case CropCatalog.beanCropId:
+        return _resolveBeanIcon(seed: seed, cropContext: cropContext);
       default:
         return 'assets/icons/wizard/ic_planta_generica.png';
     }
   }
 
-  static String _resolveMaizeIcon(DeviceCropContext? cropContext) {
-    const fallback = 'assets/icons/wizard/ic_maiz.png';
-    if (cropContext == null) return fallback;
+  static String _resolveMaizeIcon({
+    required SeedInstall? seed,
+    required DeviceCropContext? cropContext,
+  }) {
+    const String fallback = 'assets/icons/wizard/ic_maiz.png';
 
-    final varietyId = cropContext.varietyId;
-    if (varietyId == null || varietyId.trim().isEmpty) return fallback;
+    final String? rawVarietyValue =
+        cropContext?.varietyId ??
+        cropContext?.varietyAlias ??
+        seed?.varietyAlias;
 
-    final variety = CropCatalog.varietyById(cropContext.cropId, varietyId);
+    if (rawVarietyValue == null || rawVarietyValue.trim().isEmpty) {
+      return fallback;
+    }
+
+    final variety = CropCatalog.varietyByAny(
+      CropCatalog.maizeCropId,
+      rawVarietyValue,
+    );
     if (variety == null) return fallback;
 
-    final useTypeId = variety.useTypeId;
-    final marketTypeId = variety.marketTypeId;
+    final String? useTypeId = variety.useTypeId;
+    final String? marketTypeId = variety.marketTypeId;
 
-    if (useTypeId == 'elote') return 'assets/icons/wizard/ic_maiz_elotero.png';
+    if (useTypeId == 'elote') {
+      return 'assets/icons/wizard/ic_maiz_elotero.png';
+    }
+
     if (useTypeId == 'forage') {
-      if (marketTypeId == 'white') return 'assets/icons/wizard/ic_maiz_blanco.png';
+      if (marketTypeId == 'white') {
+        return 'assets/icons/wizard/ic_maiz_blanco.png';
+      }
       return 'assets/icons/wizard/ic_maiz_forrajero.png';
     }
-    if (marketTypeId == 'white') return 'assets/icons/wizard/ic_maiz_blanco.png';
-    if (marketTypeId == 'yellow') return 'assets/icons/wizard/ic_maiz.png';
+
+    if (marketTypeId == 'white') {
+      return 'assets/icons/wizard/ic_maiz_blanco.png';
+    }
+
+    if (marketTypeId == 'yellow') {
+      return 'assets/icons/wizard/ic_maiz.png';
+    }
+
     return fallback;
+  }
+
+  static String _resolveBeanIcon({
+    required SeedInstall? seed,
+    required DeviceCropContext? cropContext,
+  }) {
+    const String pinto = 'assets/icons/wizard/ic_frijol.png';
+    const String red = 'assets/icons/wizard/ic_frijol_rojo.png';
+    const String black = 'assets/icons/wizard/ic_frijol_negro.png';
+    const String white = 'assets/icons/wizard/ic_frijol_blanco.png';
+
+    final String? rawVarietyValue =
+        cropContext?.varietyId ??
+        cropContext?.varietyAlias ??
+        seed?.varietyAlias;
+
+    final variety = CropCatalog.varietyByAny(
+      CropCatalog.beanCropId,
+      rawVarietyValue,
+    );
+
+    final String? varietyId = variety?.id;
+    final String normalizedLabel = (variety?.label ?? rawVarietyValue ?? '')
+        .trim()
+        .toLowerCase();
+
+    switch (varietyId) {
+      case 'bean_negro_temprano':
+      case 'bean_negro':
+        return black;
+      case 'bean_pinto':
+        return pinto;
+      case 'bean_flor_mayo_junio':
+        return red;
+      case 'bean_bayo_azufrado_blanco':
+        return white;
+      case 'bean_generic':
+        return pinto;
+    }
+
+    if (normalizedLabel.contains('negro')) return black;
+
+    if (normalizedLabel.contains('flor de mayo') ||
+        normalizedLabel.contains('flor de junio') ||
+        normalizedLabel.contains('rojo')) {
+      return red;
+    }
+
+    if (normalizedLabel.contains('bayo') ||
+        normalizedLabel.contains('azufrado') ||
+        normalizedLabel.contains('blanco')) {
+      return white;
+    }
+
+    if (normalizedLabel.contains('pinto') || normalizedLabel.contains('gen')) {
+      return pinto;
+    }
+
+    return pinto;
   }
 
   static String? _normalizeNullable(String? value) {

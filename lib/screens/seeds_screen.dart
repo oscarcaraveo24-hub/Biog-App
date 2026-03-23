@@ -306,6 +306,12 @@ class _SeedsScreenState extends State<SeedsScreen>
       heroAsset = null;
     }
 
+    final List<String> heroAssetCandidates =
+        SeedsScreenLogic.heroAssetCandidates(
+          cropId: resolvedCropId,
+          primaryAsset: heroAsset,
+        );
+
     final size = MediaQuery.of(context).size;
     final topBgHeight = (size.height * SeedsScreenLayout.topBgHeightFactor)
         .clamp(240.0, size.height);
@@ -404,7 +410,7 @@ class _SeedsScreenState extends State<SeedsScreen>
                   ),
                 ),
               ),
-              if (heroAsset != null)
+              if (heroAssetCandidates.isNotEmpty)
                 Positioned(
                   left: 0,
                   right: 0,
@@ -448,12 +454,10 @@ class _SeedsScreenState extends State<SeedsScreen>
                                     ).createShader(rect);
                                   },
                                   blendMode: BlendMode.dstIn,
-                                  child: Image.asset(
-                                    heroAsset,
+                                  child: _AssetFallbackImage(
+                                    assetCandidates: heroAssetCandidates,
                                     fit: BoxFit.contain,
                                     alignment: Alignment.topCenter,
-                                    errorBuilder: (context, error, stack) =>
-                                        const SizedBox.shrink(),
                                   ),
                                 ),
                               ),
@@ -787,9 +791,11 @@ class SeedsScreenLogic {
       cropId,
       cropContext?.profileId ?? seed?.profileId,
     );
-    if (profile != null && profile.id.endsWith('_generic')) return true;
+    if (profile != null) {
+      return profile.id.endsWith('_generic') || profile.id == 'fj_gen';
+    }
 
-    return true;
+    return false;
   }
 
   static String topCardTitle({
@@ -825,18 +831,30 @@ class SeedsScreenLogic {
     required bool isGenericSelection,
     required bool hasConfiguredCrop,
   }) {
-    if (!hasConfiguredCrop || runtime.isFallowMode || isGenericSelection) {
+    if (!hasConfiguredCrop || runtime.isFallowMode) {
       return SeedsScreenLayout.genericPlantIconAsset;
     }
 
-    if (runtime.cropIconAsset.trim().isNotEmpty) {
+    if (runtime.cropIconAsset.trim().isNotEmpty &&
+        runtime.cropIconAsset != SeedsScreenLayout.genericPlantIconAsset) {
       return runtime.cropIconAsset;
     }
 
+    if (isGenericSelection) {
+      switch (cropId) {
+        case CropCatalog.maizeCropId:
+          return SeedsScreenLayout.maizeIconAsset;
+        case CropCatalog.beanCropId:
+          return SeedsScreenLayout.beanIconAsset;
+        default:
+          return SeedsScreenLayout.genericPlantIconAsset;
+      }
+    }
+
     switch (cropId) {
-      case 'maize':
+      case CropCatalog.maizeCropId:
         return SeedsScreenLayout.maizeIconAsset;
-      case 'bean':
+      case CropCatalog.beanCropId:
         return SeedsScreenLayout.beanIconAsset;
       default:
         return SeedsScreenLayout.genericPlantIconAsset;
@@ -858,6 +876,66 @@ class SeedsScreenLogic {
     }
 
     return SeedsScreenLayout.genericPlantIconScale;
+  }
+
+  static List<String> heroAssetCandidates({
+    required String cropId,
+    required String? primaryAsset,
+  }) {
+    final out = <String>[];
+
+    void add(String? asset) {
+      final normalized = asset?.trim();
+      if (normalized == null || normalized.isEmpty) return;
+      if (!out.contains(normalized)) {
+        out.add(normalized);
+      }
+    }
+
+    add(primaryAsset);
+    if (primaryAsset == null || primaryAsset.trim().isEmpty) {
+      return out;
+    }
+
+    if (cropId == CropCatalog.beanCropId) {
+      final variants = <String>{primaryAsset.trim()};
+
+      for (final candidate in List<String>.from(variants)) {
+        variants.add(
+          candidate.replaceAll('assets/seeds/bean/', 'assets/seeds/Bean/'),
+        );
+        variants.add(
+          candidate.replaceAll('assets/seeds/Bean/', 'assets/seeds/bean/'),
+        );
+      }
+
+      for (final candidate in List<String>.from(variants)) {
+        variants.add(
+          candidate.replaceAll(
+            'bean_stage_tasseling.png',
+            'bean_stage_flower_set.png',
+          ),
+        );
+        variants.add(
+          candidate.replaceAll(
+            'bean_stage_veg_advanced.png',
+            'bean_stage_maturity_senescence.png',
+          ),
+        );
+        variants.add(
+          candidate.replaceAll(
+            'bean_stage_grain_fill.png',
+            'bean_stage_maturity_senescence.png',
+          ),
+        );
+      }
+
+      for (final candidate in variants) {
+        add(candidate);
+      }
+    }
+
+    return out;
   }
 
   static CareState careState(int score) {
@@ -971,6 +1049,56 @@ class SeedsScreenArgs {
   final String varietyAlias;
 
   const SeedsScreenArgs({required this.sowingDate, required this.varietyAlias});
+}
+
+class _AssetFallbackImage extends StatefulWidget {
+  final List<String> assetCandidates;
+  final BoxFit fit;
+  final Alignment alignment;
+
+  const _AssetFallbackImage({
+    required this.assetCandidates,
+    required this.fit,
+    required this.alignment,
+  });
+
+  @override
+  State<_AssetFallbackImage> createState() => _AssetFallbackImageState();
+}
+
+class _AssetFallbackImageState extends State<_AssetFallbackImage> {
+  int _assetIndex = 0;
+  bool _queuedAdvance = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.assetCandidates.isEmpty ||
+        _assetIndex >= widget.assetCandidates.length) {
+      return const SizedBox.shrink();
+    }
+
+    final asset = widget.assetCandidates[_assetIndex];
+
+    return Image.asset(
+      asset,
+      fit: widget.fit,
+      alignment: widget.alignment,
+      errorBuilder: (context, error, stackTrace) {
+        if (!_queuedAdvance &&
+            _assetIndex < widget.assetCandidates.length - 1) {
+          _queuedAdvance = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            setState(() {
+              _assetIndex += 1;
+              _queuedAdvance = false;
+            });
+          });
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
 }
 
 class _SeedsReveal extends StatelessWidget {

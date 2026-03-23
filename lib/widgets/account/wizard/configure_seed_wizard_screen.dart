@@ -303,7 +303,9 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           varietyIconPath: _varietyId != null ? _resolvedCropIconPath : null,
           summary: _buildSelectionSummary(),
           onTapCrop: _openCropSelector,
-          onTapVariety: _cropUsesBrands ? _openBrandSelector : _openVarietySelector,
+          onTapVariety: _cropUsesBrands
+              ? _openBrandSelector
+              : _openVarietySelector,
         );
 
       case WizardPage.brand:
@@ -502,6 +504,11 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
                   ? ConfigureSeedWizardAssets.maizeIconForVariety(
                       useTypeId: variety.useTypeId,
                       marketTypeId: variety.marketTypeId,
+                    )
+                  : cropId == CropCatalog.beanCropId
+                  ? ConfigureSeedWizardAssets.beanIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
                     )
                   : ConfigureSeedWizardAssets.variety,
               enabled: variety.enabled,
@@ -824,13 +831,21 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     final cropId = _crop;
     if (cropId == null) return _genericCropIconPath;
 
-    if (cropId == CropCatalog.maizeCropId && _varietyId != null) {
+    if (_varietyId != null) {
       final variety = CropCatalog.varietyById(cropId, _varietyId);
       if (variety != null) {
-        return ConfigureSeedWizardAssets.maizeIconForVariety(
-          useTypeId: variety.useTypeId,
-          marketTypeId: variety.marketTypeId,
-        );
+        if (cropId == CropCatalog.maizeCropId) {
+          return ConfigureSeedWizardAssets.maizeIconForVariety(
+            useTypeId: variety.useTypeId,
+            marketTypeId: variety.marketTypeId,
+          );
+        }
+        if (cropId == CropCatalog.beanCropId) {
+          return ConfigureSeedWizardAssets.beanIconForVariety(
+            varietyId: variety.id,
+            label: variety.label,
+          );
+        }
       }
     }
 

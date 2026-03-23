@@ -1,3 +1,4 @@
+import 'package:bio_g/core/crops/bean/bean_crop_definition.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/crop_types.dart';
 import 'package:bio_g/core/crops/maize/maize_crop_definition.dart';
@@ -7,6 +8,7 @@ class CropRegistry {
 
   static final Map<CropKey, CropDefinition> _definitions = {
     CropKey.maize: MaizeCropDefinition(),
+    CropKey.bean: BeanCropDefinition(),
   };
 
   static CropDefinition? byKey(CropKey key) => _definitions[key];

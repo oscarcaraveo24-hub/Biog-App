@@ -27,6 +27,10 @@ class BioGGlassCard extends StatelessWidget {
   /// Blur override (si no, usa el de MetricCard)
   final double blurSigma;
 
+  /// Permite suavizar o quitar sombras en contextos como modals/sheets
+  /// donde la sombra default puede verse demasiado pesada.
+  final List<BoxShadow>? boxShadows;
+
   const BioGGlassCard({
     super.key,
     required this.child,
@@ -36,38 +40,42 @@ class BioGGlassCard extends StatelessWidget {
     this.backgroundColor,
     this.borderColor,
     this.blurSigma = 8,
+    this.boxShadows,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bg = backgroundColor ?? const Color(0xFFF2F4F6).withValues(alpha:0.92);
-    final br = borderColor ?? Colors.white.withValues(alpha:0.96);
-
-    return Container(
-      margin: margin,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius),
-        // ✅ EXACTAMENTE los 3 shadows de MetricCard
-        boxShadow: [
+    final bg =
+        backgroundColor ?? const Color(0xFFF2F4F6).withValues(alpha: 0.92);
+    final br = borderColor ?? Colors.white.withValues(alpha: 0.96);
+    final resolvedShadows =
+        boxShadows ??
+        <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.18),
+            color: Colors.black.withValues(alpha: 0.18),
             blurRadius: 34,
             spreadRadius: 0,
             offset: const Offset(0, 18),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.10),
+            color: Colors.black.withValues(alpha: 0.10),
             blurRadius: 90,
             spreadRadius: 0,
             offset: const Offset(0, 46),
           ),
           BoxShadow(
-            color: const Color(0xFF00BCD4).withValues(alpha:0.10),
+            color: const Color(0xFF00BCD4).withValues(alpha: 0.10),
             blurRadius: 110,
             spreadRadius: 0,
             offset: const Offset(0, 56),
           ),
-        ],
+        ];
+
+    return Container(
+      margin: margin,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: resolvedShadows,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius),
