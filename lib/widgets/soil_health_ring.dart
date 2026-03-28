@@ -27,28 +27,19 @@ class _SoilHealthRingState extends State<SoilHealthRing>
   void initState() {
     super.initState();
 
-   _controller = AnimationController(
-  vsync: this,
-  duration: const Duration(milliseconds: 2200),
-);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
 
-_anim = Tween<double>(
-  begin: 0.0,
-  end: widget.percent.clamp(0.0, 1.0),
-).animate(
-  CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic),
-);
+    _anim = Tween<double>(
+      begin: 0.0,
+      end: widget.percent.clamp(0.0, 1.0),
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic),
+    );
 
-_controller.forward();
-
-
-    // ✅ dispara la animación al entrar
-    Future.delayed(const Duration(milliseconds: 1000), () {
-  if (mounted) {
     _controller.forward();
-  }
-});
-
   }
 
   @override
@@ -58,12 +49,11 @@ _controller.forward();
     final newEnd = widget.percent.clamp(0.0, 1.0);
     if (oldWidget.percent != widget.percent) {
       _anim = Tween<double>(begin: _anim.value, end: newEnd).animate(
-  CurvedAnimation(parent: _controller, curve: Curves.easeOutExpo),
-);
-_controller
-  ..reset()
-  ..forward();
-
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+      );
+      _controller
+        ..reset()
+        ..forward();
     }
   }
 

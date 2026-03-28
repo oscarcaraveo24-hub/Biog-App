@@ -9,20 +9,69 @@ class BeanUniversalProfile {
   final Map<BeanStageKey, StageWeights> weights;
 }
 
-const AgroRange _beanPh = AgroRange(
-  lowMax: 5.5,
+// ── pH diferenciado por grupo de etapa ──────────────────────────
+// Germinación/emergencia: plántula sensible
+const AgroRange _beanPhEarly = AgroRange(
+  lowMax: 5.6,
   optimalMin: 6.0,
-  optimalMax: 7.5,
-  highMin: 8.0,
+  optimalMax: 6.8,
+  highMin: 7.2,
 );
 
-const AgroRange _beanEc = AgroRange(
-  lowMax: 0.6,
+// Vegetativo: rango estándar frijol
+const AgroRange _beanPhVeg = AgroRange(
+  lowMax: 5.5,
+  optimalMin: 5.8,
+  optimalMax: 7.0,
+  highMin: 7.5,
+);
+
+// Floración/podSet: frijol es MÁS sensible a pH extremo aquí
+const AgroRange _beanPhFlowering = AgroRange(
+  lowMax: 5.8,
+  optimalMin: 6.0,
+  optimalMax: 6.8,
+  highMin: 7.0,
+);
+
+// Madurez/cosecha: planta tolerante
+const AgroRange _beanPhLate = AgroRange(
+  lowMax: 5.3,
+  optimalMin: 5.6,
+  optimalMax: 7.2,
+  highMin: 7.8,
+);
+
+// ── EC diferenciado — frijol MUY sensible a salinidad en emergencia ─
+const AgroRange _beanEcGerm = AgroRange(
+  lowMax: 0.4,
+  optimalMin: 0.5,
+  optimalMax: 0.8,
+  highMin: 1.2,
+);
+
+const AgroRange _beanEcVeg = AgroRange(
+  lowMax: 0.5,
   optimalMin: 0.6,
   optimalMax: 1.0,
   highMin: 1.5,
 );
 
+const AgroRange _beanEcFlowering = AgroRange(
+  lowMax: 0.5,
+  optimalMin: 0.6,
+  optimalMax: 0.9,
+  highMin: 1.3,
+);
+
+const AgroRange _beanEcLate = AgroRange(
+  lowMax: 0.5,
+  optimalMin: 0.6,
+  optimalMax: 1.2,
+  highMin: 1.8,
+);
+
+// ── Resistencia (MPa) ───────────────────────────────────────────
 const AgroRange _beanResistanceEarly = AgroRange(
   lowMax: -1.0,
   optimalMin: 0.0,
@@ -39,6 +88,9 @@ const AgroRange _beanResistanceLate = AgroRange(
 
 const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
   byStage: {
+    // =========================
+    // GERMINATION / EMERGENCE
+    // =========================
     BeanStageKey.germination: StageTargets(
       moistureRaw: AgroRange(
         lowMax: 18,
@@ -52,8 +104,8 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         optimalMax: 28,
         highMin: 32,
       ),
-      ph: _beanPh,
-      ec: _beanEc,
+      ph: _beanPhEarly,
+      ec: _beanEcGerm,
       resistance: _beanResistanceEarly,
       nIndex: AgroRange(
         lowMax: 20,
@@ -87,8 +139,8 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         optimalMax: 28,
         highMin: 32,
       ),
-      ph: _beanPh,
-      ec: _beanEc,
+      ph: _beanPhEarly,
+      ec: _beanEcGerm,
       resistance: _beanResistanceEarly,
       nIndex: AgroRange(
         lowMax: 22,
@@ -109,6 +161,10 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         highMin: 72,
       ),
     ),
+
+    // =========================
+    // VEGETATIVE
+    // =========================
     BeanStageKey.vegEarly: StageTargets(
       moistureRaw: AgroRange(
         lowMax: 16,
@@ -122,8 +178,8 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         optimalMax: 28,
         highMin: 32,
       ),
-      ph: _beanPh,
-      ec: _beanEc,
+      ph: _beanPhVeg,
+      ec: _beanEcVeg,
       resistance: _beanResistanceEarly,
       nIndex: AgroRange(
         lowMax: 25,
@@ -157,8 +213,8 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         optimalMax: 28,
         highMin: 31,
       ),
-      ph: _beanPh,
-      ec: _beanEc,
+      ph: _beanPhVeg,
+      ec: _beanEcVeg,
       resistance: _beanResistanceEarly,
       nIndex: AgroRange(
         lowMax: 28,
@@ -179,6 +235,10 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         highMin: 82,
       ),
     ),
+
+    // =========================
+    // REPRODUCTIVE
+    // =========================
     BeanStageKey.flowering: StageTargets(
       moistureRaw: AgroRange(
         lowMax: 20,
@@ -192,8 +252,8 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         optimalMax: 28,
         highMin: 30,
       ),
-      ph: _beanPh,
-      ec: _beanEc,
+      ph: _beanPhFlowering,
+      ec: _beanEcFlowering,
       resistance: _beanResistanceLate,
       nIndex: AgroRange(
         lowMax: 25,
@@ -215,11 +275,12 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
       ),
     ),
     BeanStageKey.podSet: StageTargets(
+      // ✅ Rango de humedad ampliado: optimalMin 38 (era 42), optimalMax 76 (era 72)
       moistureRaw: AgroRange(
-        lowMax: 22,
-        optimalMin: 42,
-        optimalMax: 72,
-        highMin: 80,
+        lowMax: 20,
+        optimalMin: 38,
+        optimalMax: 76,
+        highMin: 85,
       ),
       soilTemp: AgroRange(
         lowMax: 15,
@@ -227,8 +288,8 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         optimalMax: 28,
         highMin: 30,
       ),
-      ph: _beanPh,
-      ec: _beanEc,
+      ph: _beanPhFlowering,
+      ec: _beanEcFlowering,
       resistance: _beanResistanceLate,
       nIndex: AgroRange(
         lowMax: 24,
@@ -249,6 +310,10 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         highMin: 92,
       ),
     ),
+
+    // =========================
+    // LATE SEASON
+    // =========================
     BeanStageKey.grainFill: StageTargets(
       moistureRaw: AgroRange(
         lowMax: 18,
@@ -262,8 +327,8 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         optimalMax: 28,
         highMin: 31,
       ),
-      ph: _beanPh,
-      ec: _beanEc,
+      ph: _beanPhVeg,
+      ec: _beanEcVeg,
       resistance: _beanResistanceLate,
       nIndex: AgroRange(
         lowMax: 20,
@@ -297,8 +362,8 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         optimalMax: 26,
         highMin: 30,
       ),
-      ph: _beanPh,
-      ec: _beanEc,
+      ph: _beanPhLate,
+      ec: _beanEcLate,
       resistance: _beanResistanceLate,
       nIndex: AgroRange(
         lowMax: 12,
@@ -332,8 +397,8 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
         optimalMax: 26,
         highMin: 30,
       ),
-      ph: _beanPh,
-      ec: _beanEc,
+      ph: _beanPhLate,
+      ec: _beanEcLate,
       resistance: _beanResistanceLate,
       nIndex: AgroRange(
         lowMax: 10,
@@ -355,69 +420,82 @@ const BeanUniversalProfile beanUniversalV1 = BeanUniversalProfile(
       ),
     ),
   },
+
+  // ── Pesos para el ring (control del suelo) ────────────────────
+  // ✅ BUG FIX: physiologicalMaturity sumaba 0.72, harvest 0.70 → ahora suman 1.0
   weights: {
+    // soilTemp: frijol sensible a temp suelo en germinación (C3 tropical)
     BeanStageKey.germination: StageWeights(
-      moisture: 0.34,
-      resistance: 0.20,
-      ph: 0.12,
-      ec: 0.10,
-      npk: 0.24,
-    ),
-    BeanStageKey.emergence: StageWeights(
-      moisture: 0.34,
-      resistance: 0.20,
-      ph: 0.12,
-      ec: 0.10,
-      npk: 0.24,
-    ),
-    BeanStageKey.vegEarly: StageWeights(
-      moisture: 0.28,
+      moisture: 0.30,
+      soilTemp: 0.08,
       resistance: 0.18,
       ph: 0.12,
       ec: 0.10,
-      npk: 0.32,
+      npk: 0.22,
+    ),
+    BeanStageKey.emergence: StageWeights(
+      moisture: 0.30,
+      soilTemp: 0.08,
+      resistance: 0.18,
+      ph: 0.12,
+      ec: 0.10,
+      npk: 0.22,
+    ),
+    BeanStageKey.vegEarly: StageWeights(
+      moisture: 0.26,
+      soilTemp: 0.06,
+      resistance: 0.16,
+      ph: 0.12,
+      ec: 0.10,
+      npk: 0.30,
     ),
     BeanStageKey.vegAdvanced: StageWeights(
-      moisture: 0.30,
-      resistance: 0.14,
+      moisture: 0.28,
+      soilTemp: 0.06,
+      resistance: 0.12,
       ph: 0.10,
       ec: 0.10,
-      npk: 0.36,
+      npk: 0.34,
     ),
     BeanStageKey.flowering: StageWeights(
-      moisture: 0.42,
-      resistance: 0.10,
+      moisture: 0.38,
+      soilTemp: 0.06,
+      resistance: 0.08,
       ph: 0.08,
       ec: 0.10,
       npk: 0.30,
     ),
     BeanStageKey.podSet: StageWeights(
-      moisture: 0.42,
-      resistance: 0.10,
+      moisture: 0.38,
+      soilTemp: 0.06,
+      resistance: 0.08,
       ph: 0.08,
       ec: 0.10,
       npk: 0.30,
     ),
     BeanStageKey.grainFill: StageWeights(
-      moisture: 0.38,
-      resistance: 0.10,
+      moisture: 0.34,
+      soilTemp: 0.06,
+      resistance: 0.08,
       ph: 0.08,
       ec: 0.10,
       npk: 0.34,
     ),
     BeanStageKey.physiologicalMaturity: StageWeights(
-      moisture: 0.20,
-      resistance: 0.12,
-      ph: 0.10,
-      ec: 0.12,
-      npk: 0.18,
+      moisture: 0.26,
+      soilTemp: 0.04,
+      resistance: 0.14,
+      ph: 0.14,
+      ec: 0.14,
+      npk: 0.28,
     ),
     BeanStageKey.harvest: StageWeights(
-      moisture: 0.18,
-      resistance: 0.12,
-      ph: 0.10,
-      ec: 0.12,
-      npk: 0.18,
+      moisture: 0.22,
+      soilTemp: 0.04,
+      resistance: 0.14,
+      ph: 0.16,
+      ec: 0.14,
+      npk: 0.30,
     ),
   },
 );

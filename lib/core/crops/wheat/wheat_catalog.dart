@@ -37,6 +37,13 @@ const List<CropProfileEntry> wheatProfileEntries = [
     aliases: ['TR-03', 'TR03', 'Largo', 'Cristalino', 'Durum'],
   ),
   CropProfileEntry(
+    id: kTrFor,
+    label: 'TR-FOR · Forrajero',
+    cropId: kCropWheat,
+    subtitle: 'Corte temprano / pastoreo',
+    aliases: ['TR-FOR', 'TRFOR', 'Forrajero'],
+  ),
+  CropProfileEntry(
     id: kTrGen,
     label: 'TR-GEN · Intermedio Conservador',
     cropId: kCropWheat,
@@ -188,6 +195,48 @@ const List<CropVarietyEntry> wheatVarieties = [
     subtitle: 'Cristalino · INIFAP/CIMMYT',
     defaultProfileId: kTr03,
     aliases: ['Seri M82', 'Seri'],
+  ),
+
+  // ── Durum modernos noroeste (Sonora, Baja California) ────────────────────
+  CropVarietyEntry(
+    id: 'wheat_huatabampo_durum_c2017',
+    label: 'Huatabampo Durum C2017',
+    cropId: kCropWheat,
+    subtitle: 'Cristalino · INIFAP/CIMMYT',
+    defaultProfileId: kTr03,
+    aliases: ['Huatabampo Durum C2017', 'Huatabampo Durum', 'Huatabampo'],
+  ),
+  CropVarietyEntry(
+    id: 'wheat_quetchehueca_oro_c2013',
+    label: 'Quetchehueca Oro C2013',
+    cropId: kCropWheat,
+    subtitle: 'Cristalino · INIFAP/CIMMYT',
+    defaultProfileId: kTr03,
+    aliases: ['Quetchehueca Oro C2013', 'Quetchehueca Oro', 'Quetchehueca'],
+  ),
+  CropVarietyEntry(
+    id: 'wheat_movas_c2015',
+    label: 'Movas C2015',
+    cropId: kCropWheat,
+    subtitle: 'Cristalino · INIFAP/CIMMYT',
+    defaultProfileId: kTr03,
+    aliases: ['Movas C2015', 'Movas'],
+  ),
+
+  // ── Forrajero ──────────────────────────────────────────────────────────
+  CropVarietyEntry(
+    id: 'wheat_forrajero',
+    label: 'Trigo forrajero',
+    cropId: kCropWheat,
+    subtitle: 'Corte temprano',
+    defaultProfileId: kTrFor,
+    aliases: [
+      'Trigo forrajero',
+      'Trigo forraje',
+      'Trigo corte',
+      'TR-FOR',
+      'TRFOR',
+    ],
   ),
 
   // ── Genérica ─────────────────────────────────────────────────────────────

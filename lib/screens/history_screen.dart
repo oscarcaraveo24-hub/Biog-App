@@ -9,6 +9,7 @@ import 'package:bio_g/screens/history/history_presenter.dart';
 import 'package:bio_g/screens/history/history_sections.dart';
 import 'package:bio_g/screens/history/history_series_builder.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
+import 'package:bio_g/screens/notifications_screen.dart';
 import 'package:bio_g/widgets/bottom_nav.dart';
 import 'package:bio_g/widgets/history/history_chart_card.dart';
 import 'package:bio_g/widgets/history/history_events_list.dart';
@@ -254,7 +255,18 @@ class _HistoryScreenState extends State<HistoryScreen>
                             yOffset: 16,
                             shadowOpacityBegin: 0.00,
                             shadowOpacityEnd: 0.08,
-                            child: HistoryEventsList(events: events),
+                            child: HistoryEventsList(
+                              events: events,
+                              onViewAll: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => NotificationsScreen(
+                                      events: events,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ],
                       ),

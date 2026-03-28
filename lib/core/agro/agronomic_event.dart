@@ -38,6 +38,12 @@ enum AgronomicEventType {
   combinedStress,
   recovery,
 
+  // Ambiente
+  frostWarning,
+  highAirTemp,
+  lowAirHumidity,
+  highAirHumidity,
+
   // Recomendaciones / calendario
   irrigationRecommended,
   fertilizationRecommended,

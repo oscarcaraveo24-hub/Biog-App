@@ -7,18 +7,16 @@ import 'history_event_tile.dart';
 
 class HistoryEventsList extends StatefulWidget {
   final List<AgronomicEvent> events;
+  final VoidCallback? onViewAll;
 
-  const HistoryEventsList({super.key, required this.events});
+  const HistoryEventsList({super.key, required this.events, this.onViewAll});
 
   @override
   State<HistoryEventsList> createState() => _HistoryEventsListState();
 }
 
 class _HistoryEventsListState extends State<HistoryEventsList> {
-  static const int _collapsedCount = 3;
-  static const int _expandedCount = 10;
-
-  bool _expanded = false;
+  static const int _visibleCount = 3;
 
   static const String _kRiegoIcon = 'assets/icons/metrics/ic_riego.png';
   static const String _kBalanceIcon = 'assets/icons/metrics/ic_balance.png';
@@ -28,14 +26,19 @@ class _HistoryEventsListState extends State<HistoryEventsList> {
       'assets/icons/metrics/ic_resistance.png';
   static const String _kNpkIcon = 'assets/icons/metrics/ic_npk.png';
   static const String _kMoistureIcon = 'assets/icons/metrics/ic_moisture.png';
+  static const String _kNitrogenIcon = 'assets/icons/metrics/ic_nitrogen.png';
+  static const String _kPhosphorusIcon =
+      'assets/icons/metrics/ic_phosphorus.png';
+  static const String _kPotassiumIcon =
+      'assets/icons/metrics/ic_potassium.png';
+  static const String _kProtectionIcon =
+      'assets/icons/metrics/ic_protection.png';
+  static const String _kAlertIcon = 'assets/icons/metrics/ic_alert.png';
 
   @override
   Widget build(BuildContext context) {
     final mapped = widget.events.map(_mapEventToVm).toList();
-
-    final visible = _expanded
-        ? mapped.take(_expandedCount).toList()
-        : mapped.take(_collapsedCount).toList();
+    final visible = mapped.take(_visibleCount).toList();
 
     return Column(
       children: [
@@ -46,11 +49,8 @@ class _HistoryEventsListState extends State<HistoryEventsList> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
             const Spacer(),
-            if (mapped.length > _collapsedCount)
-              _MoreChip(
-                expanded: _expanded,
-                onTap: () => setState(() => _expanded = !_expanded),
-              ),
+            if (widget.onViewAll != null && mapped.isNotEmpty)
+              _MoreChip(onTap: widget.onViewAll!),
           ],
         ),
         const SizedBox(height: 12),
@@ -137,23 +137,37 @@ class _HistoryEventsListState extends State<HistoryEventsList> {
       case AgronomicEventType.heatStress:
       case AgronomicEventType.coldStress:
       case AgronomicEventType.stableSoilTemp:
+      case AgronomicEventType.frostWarning:
+      case AgronomicEventType.highAirTemp:
         return _kTempIcon;
+
+      case AgronomicEventType.lowAirHumidity:
+      case AgronomicEventType.highAirHumidity:
+        return _kMoistureIcon;
+
+      case AgronomicEventType.nitrogenLow:
+        return _kNitrogenIcon;
+      case AgronomicEventType.phosphorusLow:
+        return _kPhosphorusIcon;
+      case AgronomicEventType.potassiumLow:
+        return _kPotassiumIcon;
 
       case AgronomicEventType.npkReading:
       case AgronomicEventType.nutrientImbalance:
-      case AgronomicEventType.nitrogenLow:
-      case AgronomicEventType.phosphorusLow:
-      case AgronomicEventType.potassiumLow:
       case AgronomicEventType.fertilizationRecommended:
         return _kNpkIcon;
+
+      case AgronomicEventType.combinedStress:
+        return _kAlertIcon;
+
+      case AgronomicEventType.stableSoil:
+      case AgronomicEventType.recovery:
+        return _kProtectionIcon;
 
       case AgronomicEventType.genericMode:
       case AgronomicEventType.preSowing:
       case AgronomicEventType.cropActivated:
       case AgronomicEventType.stageTransition:
-      case AgronomicEventType.stableSoil:
-      case AgronomicEventType.combinedStress:
-      case AgronomicEventType.recovery:
         return _kBalanceIcon;
     }
   }
@@ -222,6 +236,18 @@ class _HistoryEventsListState extends State<HistoryEventsList> {
 
       case AgronomicEventType.recovery:
         return Icons.restart_alt_rounded;
+
+      case AgronomicEventType.frostWarning:
+        return Icons.ac_unit_rounded;
+
+      case AgronomicEventType.highAirTemp:
+        return Icons.thermostat_rounded;
+
+      case AgronomicEventType.lowAirHumidity:
+        return Icons.air_rounded;
+
+      case AgronomicEventType.highAirHumidity:
+        return Icons.cloud_rounded;
 
       case AgronomicEventType.irrigationRecommended:
         return Icons.water_drop_rounded;
@@ -320,10 +346,9 @@ class _HistoryEventVM {
 }
 
 class _MoreChip extends StatelessWidget {
-  final bool expanded;
   final VoidCallback onTap;
 
-  const _MoreChip({required this.expanded, required this.onTap});
+  const _MoreChip({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -332,13 +357,13 @@ class _MoreChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha:0.95),
+          color: Colors.white.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: Colors.black12),
         ),
-        child: Text(
-          expanded ? 'Ver menos' : 'Ver más',
-          style: const TextStyle(
+        child: const Text(
+          'Ver más',
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w800,
             color: Colors.black54,

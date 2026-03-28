@@ -18,6 +18,7 @@ import 'package:bio_g/widgets/seeds/wheat_models.dart';
 const String kTr01  = 'tr_01';
 const String kTr02  = 'tr_02';
 const String kTr03  = 'tr_03';
+const String kTrFor = 'tr_for';
 const String kTrGen = 'tr_gen';
 
 // ─── Perfiles ───────────────────────────────────────────────────────────────
@@ -74,6 +75,23 @@ const Map<String, WheatProfile> wheatProfiles = {
     vegEarlyDays: RangeInt(12, 30),
   ),
 
+  // ── TR-FOR Forrajero ─────────────────────────────────────────────────────
+  // Trigo para corte temprano / pastoreo. Cosecha antes de llenado de grano.
+  kTrFor: WheatProfile(
+    id: kTrFor,
+    label: 'TR-FOR · Forrajero',
+    useType: 'Forraje',
+    wheatUseType: WheatUseType.forage,
+    floweringDays: RangeInt(60, 75),
+    endWindowDays: RangeInt(70, 90),
+    endActionLabel: 'Corte',
+    plantHeightM: RangeDouble(0.70, 1.00),
+    spikeHeightM: RangeDouble(0.0, 0.0),
+    germinationDays: RangeInt(4, 7),
+    emergenceDays: RangeInt(7, 10),
+    vegEarlyDays: RangeInt(10, 20),
+  ),
+
   // ── TR-GEN Genérico / General ────────────────────────────────────────────
   // Perfil conservador activado por SKIP.
   // Supuesto base: trigo harinero intermedio, manejo estándar, sin extremos.
@@ -123,6 +141,14 @@ const Map<String, String> _wheatProfileAliasToCanonical = {
   'trigo durum': kTr03,
   'trigo largo': kTr03,
   'alto potencial': kTr03,
+
+  // TR-FOR Forrajero
+  'tr-for': kTrFor,
+  'trfor': kTrFor,
+  'forrajero': kTrFor,
+  'trigo forrajero': kTrFor,
+  'trigo forraje': kTrFor,
+  'trigo corte': kTrFor,
 
   // TR-GEN Genérico
   'tr-gen': kTrGen,

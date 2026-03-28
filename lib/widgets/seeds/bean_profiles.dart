@@ -4,6 +4,7 @@ import 'package:bio_g/widgets/seeds/maize_models.dart';
 const String kFj01 = 'fj_01';
 const String kFj02 = 'fj_02';
 const String kFj03 = 'fj_03';
+const String kFj04 = 'fj_04';
 const String kFjGen = 'fj_gen';
 
 const Map<String, BeanProfile> beanProfiles = {
@@ -49,6 +50,20 @@ const Map<String, BeanProfile> beanProfiles = {
     emergenceDays: RangeInt(7, 12),
     vegEarlyDays: RangeInt(12, 30),
   ),
+  kFj04: BeanProfile(
+    id: kFj04,
+    label: 'FJ-04 · Temporal largo',
+    useType: 'Grano',
+    beanUseType: BeanUseType.grain,
+    floweringDays: RangeInt(58, 68),
+    endWindowDays: RangeInt(115, 135),
+    endActionLabel: 'Cosecha',
+    plantHeightM: RangeDouble(0.70, 1.10),
+    lowerPodHeightM: RangeDouble(0.25, 0.40),
+    germinationDays: RangeInt(5, 8),
+    emergenceDays: RangeInt(8, 13),
+    vegEarlyDays: RangeInt(13, 34),
+  ),
   kFjGen: BeanProfile(
     id: kFjGen,
     label: 'FJ-GEN · Intermedio conservador',
@@ -89,6 +104,15 @@ const Map<String, String> _beanProfileAliasToCanonical = {
   'flor de mayo': kFj03,
   'flor de junio': kFj03,
   'flor de mayo / flor de junio': kFj03,
+
+  'fj-04': kFj04,
+  'fj04': kFj04,
+  'temporal largo': kFj04,
+  'frijol temporal largo': kFj04,
+  'peruano': kFj04,
+  'frijol peruano': kFj04,
+  'canario': kFj04,
+  'frijol canario': kFj04,
 
   'fj-gen': kFjGen,
   'fjgen': kFjGen,

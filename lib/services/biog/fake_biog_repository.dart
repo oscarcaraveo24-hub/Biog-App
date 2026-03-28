@@ -11,16 +11,22 @@ import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/services/biog/biog_repository.dart';
+import 'package:bio_g/services/biog/storage/telemetry_local_storage.dart';
+import 'package:bio_g/services/biog/storage/telemetry_supabase_sync.dart';
 
 enum NpkNutrient { n, p, k }
 
 class FakeBioGRepository implements BioGRepository {
   FakeBioGRepository({
-    this.tick = const Duration(seconds: 2),
+    this.tick = const Duration(seconds: 1),
     int historyCap = 2000,
     SeedInstall? Function(String deviceId)? seedResolver,
+    TelemetryLocalStorage? localStorage,
+    TelemetrySupabaseSync? supabaseSync,
   }) : _historyCap = historyCap,
-       _seedResolver = seedResolver {
+       _seedResolver = seedResolver,
+       _localStorage = localStorage ?? TelemetryLocalStorage(),
+       _supabaseSync = supabaseSync ?? TelemetrySupabaseSync() {
     final d0 = BioGDevice(
       id: 'BIOG-DEMO-001',
       name: 'BioG Demo',
@@ -43,6 +49,8 @@ class FakeBioGRepository implements BioGRepository {
 
   final Duration tick;
   final int _historyCap;
+  final TelemetryLocalStorage _localStorage;
+  final TelemetrySupabaseSync _supabaseSync;
 
   SeedInstall? Function(String deviceId)? _seedResolver;
 
@@ -72,9 +80,44 @@ class FakeBioGRepository implements BioGRepository {
       StreamController<List<BioGAlert>>.broadcast();
 
   bool _started = false;
+  int _ticksSinceLastSave = 0;
+  int _ticksSinceLastSync = 0;
+  bool _savingLocal = false;
+  bool _syncingRemote = false;
+
+  /// How many ticks between local saves (~60s at 1s tick).
+  static const int _saveEveryNTicks = 60;
+
+  /// How many ticks between Supabase syncs (~120s at 1s tick).
+  static const int _syncEveryNTicks = 120;
 
   void attachSeedResolver(SeedInstall? Function(String deviceId) resolver) {
     _seedResolver = resolver;
+  }
+
+  /// Loads persisted history from local storage, falling back to Supabase
+  /// if local is empty. Call this before [start].
+  Future<void> loadPersistedHistory() async {
+    for (final device in _devices) {
+      _ensureDeviceState(device.id);
+
+      List<BioGTelemetry> local = await _localStorage.load(device.id);
+
+      if (local.isEmpty) {
+        // Fallback: try to recover from Supabase backup.
+        local = await _supabaseSync.download(device.id);
+        if (local.isNotEmpty) {
+          await _localStorage.save(device.id, local);
+        }
+      }
+
+      if (local.isNotEmpty) {
+        _historyByDevice[device.id] = local;
+        _lastByDevice[device.id] = local.last;
+      }
+    }
+
+    _emitActiveDeviceSnapshots();
   }
 
   void start() {
@@ -276,6 +319,51 @@ class FakeBioGRepository implements BioGRepository {
     }
 
     _emitActiveDeviceSnapshots();
+
+    // Periodic local save.
+    _ticksSinceLastSave++;
+    if (_ticksSinceLastSave >= _saveEveryNTicks) {
+      _ticksSinceLastSave = 0;
+      _persistAllLocal();
+    }
+
+    // Periodic Supabase sync.
+    _ticksSinceLastSync++;
+    if (_ticksSinceLastSync >= _syncEveryNTicks) {
+      _ticksSinceLastSync = 0;
+      _syncAllToSupabase();
+    }
+  }
+
+  Future<void> _persistAllLocal() async {
+    if (_savingLocal) return; // previous save still running
+    _savingLocal = true;
+    try {
+      for (final device in _devices) {
+        final hist = _historyByDevice[device.id];
+        if (hist != null && hist.isNotEmpty) {
+          await _localStorage.save(device.id, hist);
+        }
+      }
+    } finally {
+      _savingLocal = false;
+    }
+  }
+
+  Future<void> _syncAllToSupabase() async {
+    if (_syncingRemote) return; // previous sync still running
+    _syncingRemote = true;
+    try {
+      for (final device in _devices) {
+        final hist = _historyByDevice[device.id];
+        if (hist != null && hist.isNotEmpty) {
+          // Upload only the last reading as a single-row sync.
+          _supabaseSync.uploadBatch([hist.last]);
+        }
+      }
+    } finally {
+      _syncingRemote = false;
+    }
   }
 
   void _tickDevice(BioGDevice device, DateTime now) {
@@ -287,7 +375,7 @@ class FakeBioGRepository implements BioGRepository {
 
     final BioGTelemetry? prev = _lastByDevice[deviceId];
 
-    final double phase = (_phaseByDevice[deviceId] ?? 0.0) + 0.12;
+    final double phase = (_phaseByDevice[deviceId] ?? 0.0) + 0.06;
     _phaseByDevice[deviceId] = phase;
 
     final StageTargets? targets = _resolveStageTargets(device, now);
@@ -590,6 +678,9 @@ class FakeBioGRepository implements BioGRepository {
     _alertsStateByDevice.remove(deviceId);
     _phaseByDevice.remove(deviceId);
 
+    _localStorage.delete(deviceId);
+    _supabaseSync.delete(deviceId);
+
     if (_activeDeviceId == deviceId) {
       _activeDeviceId = _devices.first.id;
       _activeDeviceCtrl.add(_devices.first);
@@ -602,6 +693,9 @@ class FakeBioGRepository implements BioGRepository {
   @override
   void dispose() {
     _timer?.cancel();
+    // Final save before shutdown.
+    _persistAllLocal();
+    _syncAllToSupabase();
     _devicesCtrl.close();
     _activeDeviceCtrl.close();
     _liveCtrl.close();

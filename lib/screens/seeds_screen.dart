@@ -151,8 +151,7 @@ class _SeedsScreenState extends State<SeedsScreen>
         resolvedCropId == CropCatalog.maizeCropId &&
         runtime.profile is MaizeProfile;
 
-    final bool isGenericProfile =
-        runtime.isGenericMode || !hasConfiguredCrop;
+    final bool isGenericProfile = runtime.isGenericMode || !hasConfiguredCrop;
 
     final String topCardTitle = SeedsScreenLogic.topCardTitle(
       runtime: runtime,
@@ -521,9 +520,7 @@ class _SeedsScreenState extends State<SeedsScreen>
                         daySuffix: daySuffix,
                         harvestText: harvestText,
                         windowText: windowText,
-                        progress: hasCropCareScore
-                            ? (cropScore! / 100.0)
-                            : 0.0,
+                        progress: hasCropCareScore ? (cropScore! / 100.0) : 0.0,
                         headerSize: SeedsScreenLayout.careHeaderSize,
                         headerIconSize: SeedsScreenLayout.careHeaderIconSize,
                         scoreSize: SeedsScreenLayout.careScoreSize,

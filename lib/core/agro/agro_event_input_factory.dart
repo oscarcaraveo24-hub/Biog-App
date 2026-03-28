@@ -83,6 +83,8 @@ class AgroEventInputFactory {
       ph: live?.ph,
       resistance: live?.resistance,
       soilTemp: live?.soilTempC,
+      airTemp: live?.airTempC,
+      airHumidity: live?.airHumidityPct,
       n: live?.n.toDouble(),
       p: live?.p.toDouble(),
       k: live?.k.toDouble(),

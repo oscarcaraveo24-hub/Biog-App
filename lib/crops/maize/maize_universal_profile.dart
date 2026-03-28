@@ -34,17 +34,19 @@ const maizeUniversalV1 = MaizeUniversalProfile(
         optimalMax: 28,
         highMin: 34,
       ),
+      // ✅ Germinación: plántula sensible a pH extremo → rango más estrecho
       ph: AgroRange(
-        lowMax: 5.6,
-        optimalMin: 5.8,
-        optimalMax: 6.8,
-        highMin: 7.2,
+        lowMax: 5.8,
+        optimalMin: 6.0,
+        optimalMax: 6.5,
+        highMin: 7.0,
       ),
+      // ✅ Germinación: raíz incipiente muy sensible a salinidad
       ec: AgroRange(
-        lowMax: 0.7,
-        optimalMin: 0.7,
-        optimalMax: 1.7,
-        highMin: 2.6,
+        lowMax: 0.4,
+        optimalMin: 0.5,
+        optimalMax: 1.2,
+        highMin: 2.0,
       ),
       // ✅ MPa: no hay “crítico por bajo”; crítico solo por arriba de highMin
       resistance: AgroRange(
@@ -86,17 +88,19 @@ const maizeUniversalV1 = MaizeUniversalProfile(
         optimalMax: 28,
         highMin: 34,
       ),
+      // ✅ Emergencia: plántula aún sensible a pH extremo
       ph: AgroRange(
-        lowMax: 5.6,
-        optimalMin: 5.8,
-        optimalMax: 6.8,
-        highMin: 7.2,
+        lowMax: 5.8,
+        optimalMin: 6.0,
+        optimalMax: 6.5,
+        highMin: 7.0,
       ),
+      // ✅ Emergencia: raíz joven, sensible a salinidad
       ec: AgroRange(
-        lowMax: 0.7,
-        optimalMin: 0.7,
-        optimalMax: 1.7,
-        highMin: 2.6,
+        lowMax: 0.4,
+        optimalMin: 0.5,
+        optimalMax: 1.3,
+        highMin: 2.0,
       ),
       resistance: AgroRange(
         lowMax: -1.0,
@@ -141,17 +145,19 @@ const maizeUniversalV1 = MaizeUniversalProfile(
         optimalMax: 30,
         highMin: 36,
       ),
+      // ✅ Veg temprana: raíz en expansión, pH estándar maíz
       ph: AgroRange(
         lowMax: 5.6,
         optimalMin: 5.8,
         optimalMax: 6.8,
         highMin: 7.2,
       ),
+      // ✅ Veg temprana: tolerancia intermedia a salinidad
       ec: AgroRange(
-        lowMax: 0.7,
-        optimalMin: 0.7,
-        optimalMax: 1.7,
-        highMin: 2.6,
+        lowMax: 0.5,
+        optimalMin: 0.6,
+        optimalMax: 1.5,
+        highMin: 2.3,
       ),
       resistance: AgroRange(
         lowMax: -1.0,
@@ -298,17 +304,19 @@ const maizeUniversalV1 = MaizeUniversalProfile(
         optimalMax: 30,
         highMin: 35,
       ),
+      // ✅ Tasseling: etapa crítica reproductiva → pH más estrecho
       ph: AgroRange(
-        lowMax: 5.6,
-        optimalMin: 5.8,
+        lowMax: 5.8,
+        optimalMin: 6.0,
         optimalMax: 6.8,
-        highMin: 7.2,
+        highMin: 7.0,
       ),
+      // ✅ Tasseling: sensibilidad moderada a salinidad
       ec: AgroRange(
-        lowMax: 0.7,
+        lowMax: 0.6,
         optimalMin: 0.7,
-        optimalMax: 1.7,
-        highMin: 2.6,
+        optimalMax: 1.6,
+        highMin: 2.4,
       ),
       resistance: AgroRange(
         lowMax: -1.0,
@@ -351,17 +359,19 @@ const maizeUniversalV1 = MaizeUniversalProfile(
         optimalMax: 30,
         highMin: 35,
       ),
+      // ✅ FlowerSet: máxima sensibilidad reproductiva → pH estrecho
       ph: AgroRange(
-        lowMax: 5.6,
-        optimalMin: 5.8,
+        lowMax: 5.8,
+        optimalMin: 6.0,
         optimalMax: 6.8,
-        highMin: 7.2,
+        highMin: 7.0,
       ),
+      // ✅ FlowerSet: salinidad moderada-baja para no estresar polinización
       ec: AgroRange(
-        lowMax: 0.7,
+        lowMax: 0.6,
         optimalMin: 0.7,
-        optimalMax: 1.7,
-        highMin: 2.6,
+        optimalMax: 1.5,
+        highMin: 2.3,
       ),
       resistance: AgroRange(
         lowMax: -1.0,
@@ -405,17 +415,19 @@ const maizeUniversalV1 = MaizeUniversalProfile(
         optimalMax: 30,
         highMin: 35,
       ),
+      // ✅ Madurez: planta más tolerante, rango pH más amplio
       ph: AgroRange(
-        lowMax: 5.6,
-        optimalMin: 5.8,
-        optimalMax: 6.8,
-        highMin: 7.2,
+        lowMax: 5.4,
+        optimalMin: 5.6,
+        optimalMax: 7.0,
+        highMin: 7.4,
       ),
+      // ✅ Madurez: mayor tolerancia a salinidad
       ec: AgroRange(
-        lowMax: 0.7,
+        lowMax: 0.6,
         optimalMin: 0.7,
-        optimalMax: 1.7,
-        highMin: 2.6,
+        optimalMax: 2.0,
+        highMin: 3.0,
       ),
       resistance: AgroRange(
         lowMax: -1.0,
@@ -456,17 +468,19 @@ const maizeUniversalV1 = MaizeUniversalProfile(
         optimalMax: 30,
         highMin: 36,
       ),
+      // ✅ Cosecha: máxima tolerancia, planta ya senescente
       ph: AgroRange(
-        lowMax: 5.6,
-        optimalMin: 5.8,
-        optimalMax: 6.8,
-        highMin: 7.2,
+        lowMax: 5.2,
+        optimalMin: 5.5,
+        optimalMax: 7.2,
+        highMin: 7.5,
       ),
+      // ✅ Cosecha: EC muy tolerante, planta no absorbe activamente
       ec: AgroRange(
-        lowMax: 0.7,
+        lowMax: 0.5,
         optimalMin: 0.7,
-        optimalMax: 1.7,
-        highMin: 2.6,
+        optimalMax: 2.2,
+        highMin: 3.2,
       ),
       resistance: AgroRange(
         lowMax: -1.0,
@@ -497,68 +511,78 @@ const maizeUniversalV1 = MaizeUniversalProfile(
 
   // Pesos para el ring (control del suelo).
   weights: {
+    // soilTemp: maíz C4 muy sensible a temp de suelo en germinación
     MaizeStageKey.germination: StageWeights(
-      moisture: 0.30,
-      resistance: 0.30,
-      ph: 0.15,
+      moisture: 0.26,
+      soilTemp: 0.10,
+      resistance: 0.26,
+      ph: 0.14,
       ec: 0.10,
-      npk: 0.15,
+      npk: 0.14,
     ),
     MaizeStageKey.emergence: StageWeights(
-      moisture: 0.30,
-      resistance: 0.30,
-      ph: 0.15,
+      moisture: 0.26,
+      soilTemp: 0.10,
+      resistance: 0.26,
+      ph: 0.14,
       ec: 0.10,
-      npk: 0.15,
+      npk: 0.14,
     ),
 
     MaizeStageKey.vegEarly: StageWeights(
-      moisture: 0.25,
-      resistance: 0.25,
-      ph: 0.15,
+      moisture: 0.23,
+      soilTemp: 0.06,
+      resistance: 0.23,
+      ph: 0.14,
       ec: 0.10,
-      npk: 0.25,
+      npk: 0.24,
     ),
     MaizeStageKey.vegMid: StageWeights(
-      moisture: 0.25,
-      resistance: 0.25,
-      ph: 0.15,
+      moisture: 0.23,
+      soilTemp: 0.06,
+      resistance: 0.23,
+      ph: 0.14,
       ec: 0.10,
-      npk: 0.25,
+      npk: 0.24,
     ),
     MaizeStageKey.vegAdvanced: StageWeights(
-      moisture: 0.25,
-      resistance: 0.25,
-      ph: 0.15,
+      moisture: 0.23,
+      soilTemp: 0.06,
+      resistance: 0.23,
+      ph: 0.14,
       ec: 0.10,
-      npk: 0.25,
+      npk: 0.24,
     ),
 
     MaizeStageKey.tasseling: StageWeights(
-      moisture: 0.27,
-      resistance: 0.20,
-      ph: 0.13,
+      moisture: 0.25,
+      soilTemp: 0.05,
+      resistance: 0.18,
+      ph: 0.12,
       ec: 0.10,
       npk: 0.30,
     ),
     MaizeStageKey.flowerSet: StageWeights(
-      moisture: 0.30,
-      resistance: 0.20,
-      ph: 0.10,
+      moisture: 0.28,
+      soilTemp: 0.05,
+      resistance: 0.18,
+      ph: 0.09,
       ec: 0.10,
       npk: 0.30,
     ),
 
     MaizeStageKey.maturitySenescence: StageWeights(
-      moisture: 0.22,
-      resistance: 0.22,
+      moisture: 0.20,
+      soilTemp: 0.04,
+      resistance: 0.20,
       ph: 0.18,
       ec: 0.10,
       npk: 0.28,
     ),
     MaizeStageKey.harvest: StageWeights(
-      moisture: 0.20,
-      resistance: 0.20,
+      moisture: 0.18,
+      soilTemp: 0.04,
+      resistance: 0.18,
       ph: 0.20,
       ec: 0.10,
       npk: 0.30,

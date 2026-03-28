@@ -4,6 +4,7 @@ class CropStageResult {
   final int expectedDaysToEnd;
   final List<dynamic> windowsNow;
   final String heroAsset;
+  final String helperCaption;
 
   const CropStageResult({
     required this.stageKey,
@@ -11,5 +12,6 @@ class CropStageResult {
     required this.expectedDaysToEnd,
     required this.windowsNow,
     required this.heroAsset,
+    this.helperCaption = '',
   });
 }

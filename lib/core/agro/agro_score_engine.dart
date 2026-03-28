@@ -9,6 +9,13 @@ import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/widgets/seeds/maize_models.dart';
 
 class AgroScoreEngine {
+  /// Etapas críticas de maíz para severity bump en alertas.
+  static const Set<MaizeStageKey> _criticalStages = {
+    MaizeStageKey.flowerSet,
+  };
+  static const Set<MaizeStageKey> _semiCriticalStages = {
+    MaizeStageKey.tasseling,
+  };
   /// Evalúa telemetría + etapa y regresa score + métricas + alertas.
   ///
   /// - NO incluye Weather en el ring.
@@ -94,6 +101,7 @@ class AgroScoreEngine {
     final wSum = math.max(0.0001, weights.sum);
     final soilControlScore01 =
         (weights.moisture * moistureEval.score01 +
+            weights.soilTemp * soilTempEval.score01 +
             weights.resistance * resEval.score01 +
             weights.ph * phEval.score01 +
             weights.ec * ecEval.score01 +
@@ -112,11 +120,20 @@ class AgroScoreEngine {
     _pushAlertsForMetric(suggested, 'npk.p', pEval, stageKey);
     _pushAlertsForMetric(suggested, 'npk.k', kEval, stageKey);
 
+    // ── Alertas ambientales (no participan en score) ──
+    _pushEnvironmentalAlerts(suggested, t, stageKey);
+
     // ---------- Build BioGAlert real (anti-spam) ----------
+    final int severityBump = _criticalStages.contains(stageKey)
+        ? 2
+        : _semiCriticalStages.contains(stageKey)
+            ? 1
+            : 0;
+
     final built = AlertsEngine.buildFromSuggestedKeys(
       deviceId: t.deviceId,
       now: t.timestamp,
-      stageKey: stageKey,
+      severityBump: severityBump,
       suggestedKeys: suggested,
       prev: alertsState,
       cooldown: alertsCooldown,
@@ -241,7 +258,8 @@ class AgroScoreEngine {
     _Eval e,
     MaizeStageKey stage,
   ) {
-    final isCriticalStage = stage == MaizeStageKey.flowerSet;
+    final isCriticalStage =
+        _criticalStages.contains(stage) || _semiCriticalStages.contains(stage);
 
     if (e.band == AgroBand.critical) {
       out.add('$key.critical');
@@ -251,6 +269,40 @@ class AgroScoreEngine {
     // En etapa crítica, también alertamos low/high (pero no spameamos por cooldown).
     if (isCriticalStage && e.band == AgroBand.low) out.add('$key.low');
     if (isCriticalStage && e.band == AgroBand.high) out.add('$key.high');
+  }
+
+  /// Alertas ambientales para maíz (C4, tropical).
+  /// Polen muere con airTemp>35°C. Heladas letales en cualquier etapa.
+  static void _pushEnvironmentalAlerts(
+    List<String> out,
+    BioGTelemetry t,
+    MaizeStageKey stage,
+  ) {
+    final airTemp = t.airTempC;
+    final airHum = t.airHumidityPct;
+    final isReproductive = _criticalStages.contains(stage) ||
+        _semiCriticalStages.contains(stage);
+
+    // Maíz: helada siempre letal
+    if (airTemp <= 0) {
+      out.add('airTemp.frost');
+    } else if (airTemp < 4) {
+      out.add('airTemp.cold');
+    }
+
+    // Maíz C4: polen muere >35°C, daño severo >40°C
+    if (airTemp > 40) {
+      out.add('airTemp.extreme_heat');
+    } else if (airTemp > 35 || (isReproductive && airTemp > 33)) {
+      out.add('airTemp.heat');
+    }
+
+    // HR alta: favorece enfermedades foliares (tizón, roya)
+    if (airHum > 90) {
+      out.add('airHumidity.critical');
+    } else if (airHum > 80) {
+      out.add('airHumidity.high');
+    }
   }
 
   static double _normalizeMoisture01(double raw0to100, Calibration? cal) {

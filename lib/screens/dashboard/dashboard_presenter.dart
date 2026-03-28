@@ -53,6 +53,7 @@ class DashboardViewData {
   final DashboardMetricUiData ph;
   final DashboardMetricUiData resistance;
   final DashboardInsightUiData irrigation;
+  final List<AgronomicEvent> events;
 
   const DashboardViewData({
     required this.fieldLabel,
@@ -67,6 +68,7 @@ class DashboardViewData {
     required this.ph,
     required this.resistance,
     required this.irrigation,
+    this.events = const <AgronomicEvent>[],
   });
 }
 
@@ -320,6 +322,7 @@ class DashboardScreenPresenter {
         subtitle: irrigationSubtitle,
         tag: irrigationTag,
       ),
+      events: dashboardEvents,
     );
   }
 

@@ -13,6 +13,8 @@ enum BioGAlertType {
   tempExtreme,
   sensorOffline,
   stageEvent,
+  airTempExtreme,
+  highHumidity,
 }
 
 @immutable
@@ -108,6 +110,42 @@ class BioGTelemetry {
   // Estado dispositivo
   final double batteryPct; // %
   final int signalRssi; // dBm (ejemplo -40 bueno, -90 malo)
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'device_id': deviceId,
+    'timestamp': timestamp.toIso8601String(),
+    'air_temp_c': airTempC,
+    'air_humidity_pct': airHumidityPct,
+    'soil_moisture_pct': soilMoisturePct,
+    'soil_temp_c': soilTempC,
+    'ph': ph,
+    'ec': ec,
+    'resistance': resistance,
+    'n': n,
+    'p': p,
+    'k': k,
+    'battery_pct': batteryPct,
+    'signal_rssi': signalRssi,
+  };
+
+  factory BioGTelemetry.fromJson(Map<String, dynamic> json) {
+    return BioGTelemetry(
+      deviceId: json['device_id'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      airTempC: (json['air_temp_c'] as num).toDouble(),
+      airHumidityPct: (json['air_humidity_pct'] as num).toDouble(),
+      soilMoisturePct: (json['soil_moisture_pct'] as num).toDouble(),
+      soilTempC: (json['soil_temp_c'] as num).toDouble(),
+      ph: (json['ph'] as num).toDouble(),
+      ec: (json['ec'] as num).toDouble(),
+      resistance: (json['resistance'] as num).toDouble(),
+      n: (json['n'] as num).toDouble(),
+      p: (json['p'] as num).toDouble(),
+      k: (json['k'] as num).toDouble(),
+      batteryPct: (json['battery_pct'] as num).toDouble(),
+      signalRssi: (json['signal_rssi'] as num).toInt(),
+    );
+  }
 
   BioGTelemetry copyWith({
     String? deviceId,

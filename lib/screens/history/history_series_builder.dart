@@ -169,7 +169,15 @@ class HistorySeriesBuilder {
         });
 
       case HistoryRange.d7:
-        labels = const <String>['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+        const List<String> dayAbbr = <String>[
+          'L',
+          'M',
+          'M',
+          'J',
+          'V',
+          'S',
+          'D',
+        ];
         bucketEnds = List<DateTime>.generate(7, (i) {
           final int daysBack = 6 - i;
           final DateTime day = DateTime(
@@ -179,6 +187,7 @@ class HistorySeriesBuilder {
           ).subtract(Duration(days: daysBack));
           return day.add(const Duration(hours: 23, minutes: 59));
         });
+        labels = bucketEnds.map((dt) => dayAbbr[dt.weekday - 1]).toList();
 
       case HistoryRange.d30:
         final List<int> ticks = <int>[];
@@ -201,7 +210,7 @@ class HistorySeriesBuilder {
         });
 
       case HistoryRange.all:
-        labels = const <String>[
+        const List<String> monthAbbr = <String>[
           'E',
           'F',
           'M',
@@ -228,6 +237,7 @@ class HistorySeriesBuilder {
             1,
           ).subtract(const Duration(seconds: 1));
         });
+        labels = bucketEnds.map((dt) => monthAbbr[dt.month - 1]).toList();
     }
 
     return _HistoryAxis(labels: labels, bucketEnds: bucketEnds);

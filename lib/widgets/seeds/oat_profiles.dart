@@ -18,6 +18,7 @@ import 'package:bio_g/widgets/seeds/oat_models.dart';
 
 const String kAvf01 = 'avf_01';
 const String kAvf02 = 'avf_02';
+const String kAvf03 = 'avf_03';
 const String kAvg01 = 'avg_01';
 const String kAvd01 = 'avd_01';
 const String kAvGen = 'av_gen';
@@ -85,6 +86,22 @@ const Map<String, OatProfile> oatProfiles = {
     vegEarlyDays: RangeInt(10, 25),
   ),
 
+  // ── Forrajera Ciclo Largo ────────────────────────────────────────────────
+  // Común en Chihuahua/Durango bajo riego. Ciclo >100 días.
+  kAvf03: OatProfile(
+    id: kAvf03,
+    label: 'AVF-03 · Forrajera Ciclo Largo',
+    useType: 'Forraje',
+    oatUseType: OatUseType.forage,
+    floweringDays: RangeInt(78, 92),
+    endWindowDays: RangeInt(100, 120),
+    endActionLabel: 'Corte',
+    plantHeightM: RangeDouble(1.20, 1.60),
+    germinationDays: RangeInt(4, 7),
+    emergenceDays: RangeInt(7, 11),
+    vegEarlyDays: RangeInt(11, 28),
+  ),
+
   // ── Genérico / General ───────────────────────────────────────────────────
   // Perfil conservador activado por SKIP. Cubre avena criolla, regional,
   // INIFAP sin identificar, temporal. ~80-90 % de casos reales.
@@ -118,6 +135,14 @@ const Map<String, String> _oatProfileAliasToCanonical = {
   'forrajera intermedia': kAvf02,
   'forrajera': kAvf02,
   'avena forrajera': kAvf02,
+
+  // AVF-03 Forrajera Ciclo Largo
+  'avf-03': kAvf03,
+  'avf03': kAvf03,
+  'forrajera ciclo largo': kAvf03,
+  'forrajera largo': kAvf03,
+  'avena forrajera riego': kAvf03,
+  'avena riego largo': kAvf03,
 
   // AVG-01 Grano
   'avg-01': kAvg01,

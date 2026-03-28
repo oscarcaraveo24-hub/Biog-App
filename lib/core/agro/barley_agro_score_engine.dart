@@ -33,6 +33,8 @@ class BarleyAgroScoreEngine {
       return (eval: empty, nextAlertsState: alertsState);
     }
 
+    // ✅ Cebada: N cap más bajo que trigo (100 vs 120).
+    // Cebada maltera requiere N controlado — exceso sube proteína y daña calidad maltera.
     return CerealAgroScoreEngine.evaluate(
       t: t,
       targets: targets,
@@ -44,6 +46,9 @@ class BarleyAgroScoreEngine {
       alertsCooldown: alertsCooldown,
       cropLabel: cropLabel,
       stageLabel: stage.stageLabelEs,
+      nCapPpm: 100.0,
+      pCapPpm: 80.0,
+      kCapPpm: 140.0,
     );
   }
 }

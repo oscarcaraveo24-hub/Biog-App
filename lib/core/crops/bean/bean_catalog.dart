@@ -27,6 +27,13 @@ const List<CropProfileEntry> beanProfileEntries = [
     aliases: ['FJ-03', 'FJ03', 'Intermedio largo'],
   ),
   CropProfileEntry(
+    id: kFj04,
+    label: 'FJ-04 · Temporal largo',
+    cropId: kCropBean,
+    subtitle: 'Peruano / Canario / >115 días',
+    aliases: ['FJ-04', 'FJ04', 'Temporal largo'],
+  ),
+  CropProfileEntry(
     id: kFjGen,
     label: 'FJ-GEN · Intermedio conservador',
     cropId: kCropBean,
@@ -125,6 +132,31 @@ const List<CropVarietyEntry> beanVarieties = [
       'Aluyori',
       'FJ-02',
       'FJ02',
+    ],
+  ),
+  CropVarietyEntry(
+    id: 'bean_peruano',
+    label: 'Frijol peruano',
+    cropId: kCropBean,
+    subtitle: 'Tipo · Temporal largo',
+    defaultProfileId: kFj04,
+    aliases: [
+      'Peruano',
+      'Frijol peruano',
+      'Peruano Bola',
+    ],
+  ),
+  CropVarietyEntry(
+    id: 'bean_canario',
+    label: 'Frijol canario',
+    cropId: kCropBean,
+    subtitle: 'Tipo · Temporal largo',
+    defaultProfileId: kFj04,
+    aliases: [
+      'Canario',
+      'Frijol canario',
+      'Mayocoba',
+      'Frijol Mayocoba',
     ],
   ),
   CropVarietyEntry(

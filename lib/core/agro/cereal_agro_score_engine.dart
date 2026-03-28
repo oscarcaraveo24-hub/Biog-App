@@ -10,13 +10,13 @@ import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
-import 'package:bio_g/widgets/seeds/maize_models.dart';
 
 class CerealAgroScoreEngine {
   /// Evalúa telemetría contra targets/weights ya resueltos por etapa.
   /// [stageKey] es el nombre del enum (e.g. "flowering").
   /// [targets] y [weights] vienen del universal profile del cultivo.
   /// [criticalStageKeys] indica cuáles etapas son críticas para alertas extra.
+  /// [nCapPpm], [pCapPpm], [kCapPpm] permiten configurar los caps de NPK por cultivo.
   static ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluate({
     required BioGTelemetry t,
     required StageTargets targets,
@@ -28,6 +28,9 @@ class CerealAgroScoreEngine {
     Duration alertsCooldown = AlertsEngine.defaultCooldown,
     String? cropLabel,
     String? stageLabel,
+    double nCapPpm = 120.0,
+    double pCapPpm = 80.0,
+    double kCapPpm = 140.0,
   }) {
     final moisture01 = _normalizeMoisture01(t.soilMoisturePct, cal);
     final moistureRawCal = moisture01 * 100.0;
@@ -41,9 +44,9 @@ class CerealAgroScoreEngine {
     final pRawPpm = _calibrateValue(t.p, cal?.pMinRaw, cal?.pMaxRaw);
     final kRawPpm = _calibrateValue(t.k, cal?.kMinRaw, cal?.kMaxRaw);
 
-    final nIndex0to100 = _ppmToIndex0to100(nRawPpm, AgroMetricKey.n);
-    final pIndex0to100 = _ppmToIndex0to100(pRawPpm, AgroMetricKey.p);
-    final kIndex0to100 = _ppmToIndex0to100(kRawPpm, AgroMetricKey.k);
+    final nIndex0to100 = _ppmToIndex0to100(nRawPpm, nCapPpm);
+    final pIndex0to100 = _ppmToIndex0to100(pRawPpm, pCapPpm);
+    final kIndex0to100 = _ppmToIndex0to100(kRawPpm, kCapPpm);
 
     final moistureEval = _eval(
       value: moistureRawCal,
@@ -72,6 +75,7 @@ class CerealAgroScoreEngine {
     final totalW = math.max(0.0001, weights.sum);
     final soilControlScore01 =
         (weights.moisture * moistureEval.score01 +
+            weights.soilTemp * soilTempEval.score01 +
             weights.resistance * resistanceEval.score01 +
             weights.ph * phEval.score01 +
             weights.ec * ecEval.score01 +
@@ -105,12 +109,16 @@ class CerealAgroScoreEngine {
     _pushAlertsForMetric(suggestedAlertKeys, 'npk.p', pEval, isCriticalStage);
     _pushAlertsForMetric(suggestedAlertKeys, 'npk.k', kEval, isCriticalStage);
 
-    final maizeStage = _mapCerealStageToAlertStage(stageKey);
+    // ── Alertas ambientales (no participan en score, solo notificaciones) ──
+    _pushEnvironmentalAlerts(suggestedAlertKeys, t, isCriticalStage);
+
+    // severityBump: 2=full (flowering-like), 1=partial (tasseling-like), 0=normal
+    final int severityBump = isCriticalStage ? 2 : 0;
 
     final alertsBuild = AlertsEngine.buildFromSuggestedKeys(
       deviceId: t.deviceId,
       now: t.timestamp,
-      stageKey: maizeStage,
+      severityBump: severityBump,
       suggestedKeys: suggestedAlertKeys,
       prev: alertsState,
       cooldown: alertsCooldown,
@@ -128,21 +136,8 @@ class CerealAgroScoreEngine {
     return (eval: agroEval, nextAlertsState: alertsBuild.state);
   }
 
-  static double _ppmCapFor(AgroMetricKey key) {
-    switch (key) {
-      case AgroMetricKey.n:
-        return 120.0;
-      case AgroMetricKey.p:
-        return 80.0;
-      case AgroMetricKey.k:
-        return 140.0;
-      default:
-        return 100.0;
-    }
-  }
-
-  static double _ppmToIndex0to100(double ppm, AgroMetricKey key) {
-    return ((ppm / _ppmCapFor(key)) * 100.0).clamp(0.0, 100.0);
+  static double _ppmToIndex0to100(double ppm, double cap) {
+    return ((ppm / cap) * 100.0).clamp(0.0, 100.0);
   }
 
   static double _calibrateValue(double value, double? minRaw, double? maxRaw) {
@@ -268,39 +263,45 @@ class CerealAgroScoreEngine {
     return (sum / values.length).clamp(0.0, 1.0);
   }
 
+  /// Alertas ambientales basadas en airTempC y airHumidityPct.
+  /// No participan en el score (solo notificaciones/avisos).
+  /// Umbrales genéricos para cereales C3 — trigo/cebada/avena.
+  static void _pushEnvironmentalAlerts(
+    List<String> out,
+    BioGTelemetry t,
+    bool isCriticalStage,
+  ) {
+    final airTemp = t.airTempC;
+    final airHum = t.airHumidityPct;
+
+    // Helada: <2 °C siempre alerta; en etapa crítica, <4 °C
+    if (airTemp <= 0) {
+      out.add('airTemp.frost');
+    } else if (airTemp < 2 || (isCriticalStage && airTemp < 4)) {
+      out.add('airTemp.cold');
+    }
+
+    // Calor: >35 °C warning, >40 °C critical
+    if (airTemp > 40) {
+      out.add('airTemp.extreme_heat');
+    } else if (airTemp > 35) {
+      out.add('airTemp.heat');
+    }
+
+    // Humedad relativa alta: >90 critical, >80 warning
+    if (airHum > 90) {
+      out.add('airHumidity.critical');
+    } else if (airHum > 80) {
+      out.add('airHumidity.high');
+    }
+  }
+
   static double _lerp(double a, double b, double t) => a + (b - a) * t;
 
   static double _invLerp(double a, double b, double v) {
     final denom = (b - a);
     if (denom.abs() < 1e-9) return 0.0;
     return ((v - a) / denom).clamp(0.0, 1.0);
-  }
-
-  static MaizeStageKey _mapCerealStageToAlertStage(String stageKey) {
-    switch (stageKey) {
-      case 'germination':
-        return MaizeStageKey.germination;
-      case 'emergence':
-        return MaizeStageKey.emergence;
-      case 'vegEarly':
-        return MaizeStageKey.vegEarly;
-      case 'tillering':
-        return MaizeStageKey.vegMid;
-      case 'elongation':
-        return MaizeStageKey.vegAdvanced;
-      case 'booting':
-      case 'heading':
-        return MaizeStageKey.tasseling;
-      case 'flowering':
-        return MaizeStageKey.flowerSet;
-      case 'grainFill':
-      case 'physiologicalMaturity':
-        return MaizeStageKey.maturitySenescence;
-      case 'harvest':
-        return MaizeStageKey.harvest;
-      default:
-        return MaizeStageKey.vegMid;
-    }
   }
 }
 

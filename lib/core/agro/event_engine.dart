@@ -670,7 +670,111 @@ class EventEngine {
     }
 
     // =========================================================
-    // 8) RECOMENDACIONES (eventos tipo recomendación)
+    // 8) AMBIENTE (aire)
+    // =========================================================
+    if (input.airTemp != null && input.airTemp! <= input.rules.frostThresholdC) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.frostWarning,
+          severity: input.airTemp! <= 0
+              ? AgronomicEventSeverity.critical
+              : AgronomicEventSeverity.warning,
+          title: 'Riesgo de helada',
+          message: 'La temperatura ambiente es de ${_fmt(input.airTemp)}°C. '
+              'Temperaturas cercanas o bajo cero pueden dañar tejidos vegetales y raíces superficiales.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: 'airTemp',
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isCritical: input.airTemp! <= 0,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'environment',
+            'value': input.airTemp,
+          },
+        ),
+      );
+    } else if (input.airTemp != null &&
+        input.airTemp! >= input.rules.highAirTempThresholdC) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.highAirTemp,
+          severity: input.airTemp! >= 42
+              ? AgronomicEventSeverity.critical
+              : AgronomicEventSeverity.warning,
+          title: 'Temperatura ambiente alta',
+          message: 'La temperatura ambiente es de ${_fmt(input.airTemp)}°C. '
+              'El calor extremo puede provocar estrés hídrico y reducir la fotosíntesis.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: 'airTemp',
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isCritical: input.airTemp! >= 42,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'environment',
+            'value': input.airTemp,
+          },
+        ),
+      );
+    }
+
+    if (input.airHumidity != null &&
+        input.airHumidity! <= input.rules.lowAirHumidityThresholdPct) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.lowAirHumidity,
+          severity: AgronomicEventSeverity.caution,
+          title: 'Humedad ambiente baja',
+          message: 'La humedad relativa del aire es de ${_fmt(input.airHumidity)}%. '
+              'Niveles bajos aceleran la evapotranspiración y pueden requerir más riego.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: 'airHumidity',
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'environment',
+            'value': input.airHumidity,
+          },
+        ),
+      );
+    } else if (input.airHumidity != null &&
+        input.airHumidity! >= input.rules.highAirHumidityThresholdPct) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.highAirHumidity,
+          severity: AgronomicEventSeverity.caution,
+          title: 'Humedad ambiente alta',
+          message: 'La humedad relativa del aire es de ${_fmt(input.airHumidity)}%. '
+              'Niveles altos favorecen enfermedades fúngicas y dificultan la transpiración.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: 'airHumidity',
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'environment',
+            'value': input.airHumidity,
+          },
+        ),
+      );
+    }
+
+    // =========================================================
+    // 9) RECOMENDACIONES (eventos tipo recomendación)
     // =========================================================
     if (_shouldRecommendIrrigation(input, moistureBand)) {
       events.add(
@@ -922,6 +1026,8 @@ class EventEngineInput {
     this.ph,
     this.resistance,
     this.soilTemp,
+    this.airTemp,
+    this.airHumidity,
     this.n,
     this.p,
     this.k,
@@ -951,6 +1057,8 @@ class EventEngineInput {
   final double? ph;
   final double? resistance;
   final double? soilTemp;
+  final double? airTemp;
+  final double? airHumidity;
   final double? n;
   final double? p;
   final double? k;
@@ -1022,6 +1130,10 @@ class EventEngineRules {
     this.phStableTolerance = 0.35,
     this.soilTempStableTolerance = 3.5,
     this.goodStructureMaxResistance = 35.0,
+    this.frostThresholdC = 4.0,
+    this.highAirTempThresholdC = 38.0,
+    this.lowAirHumidityThresholdPct = 20.0,
+    this.highAirHumidityThresholdPct = 90.0,
   });
 
   /// Cuántas muestras mínimas pedimos para declarar estabilidad.
@@ -1046,6 +1158,12 @@ class EventEngineRules {
 
   /// Heurística simple de "estructura cómoda".
   final double goodStructureMaxResistance;
+
+  /// Umbrales de ambiente.
+  final double frostThresholdC;
+  final double highAirTempThresholdC;
+  final double lowAirHumidityThresholdPct;
+  final double highAirHumidityThresholdPct;
 }
 
 /// ============================================================

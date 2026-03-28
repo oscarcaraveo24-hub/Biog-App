@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/screens/dashboard/dashboard_presenter.dart';
 import 'package:bio_g/screens/dashboard/dashboard_sections.dart';
+import 'package:bio_g/screens/notifications_screen.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/widgets/bottom_nav.dart';
 import 'package:bio_g/widgets/shared/connectivity_banner.dart';
@@ -162,6 +163,16 @@ class _DashboardScreenState extends State<DashboardScreen>
                           cropLabel: viewData.cropLabel,
                           fieldLabel: viewData.fieldLabel,
                           cropIconAsset: viewData.cropIconAsset,
+                          hasNotifications: viewData.events.isNotEmpty,
+                          onNotificationTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => NotificationsScreen(
+                                  events: viewData.events,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(height: 12),

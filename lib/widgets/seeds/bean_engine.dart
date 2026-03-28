@@ -234,8 +234,7 @@ class BeanEngine {
       expectedPlantHeightTodayM: heightToday,
       stageLabelEs: labelEs(current.key),
       heroAsset: heroAssetForStage(current.key),
-      helperCaption:
-          'Estimación por perfil y fecha. Puede variar por manejo, clima y densidad.',
+      helperCaption: _helperCaption(current.key),
     );
   }
 
@@ -246,4 +245,36 @@ class BeanEngine {
   }
 
   static int _endAtLeast(int end, int start) => end < start ? start : end;
+
+  static String _helperCaption(BeanStageKey s) {
+    switch (s) {
+      case BeanStageKey.germination:
+        return 'Mantén humedad uniforme sin encharcamiento. '
+            'Frijol es muy sensible a salinidad en esta etapa.';
+      case BeanStageKey.emergence:
+        return 'Vigila costra superficial y compactación. '
+            'Plántula hipogea frágil, evita EC alta.';
+      case BeanStageKey.vegEarly:
+        return 'Desarrollo radical activo. '
+            'Asegura P disponible para fijación de nódulos.';
+      case BeanStageKey.vegAdvanced:
+        return 'Pre-floración: la planta define potencial de vainas. '
+            'N moderado para no inhibir nodulación.';
+      case BeanStageKey.flowering:
+        return 'Etapa crítica: estrés hídrico o térmico causa '
+            'aborto floral. Mantén humedad estable.';
+      case BeanStageKey.podSet:
+        return 'Máxima sensibilidad al estrés. '
+            'Mantén humedad alta y K disponible para llenado.';
+      case BeanStageKey.grainFill:
+        return 'Llenado activo de grano. '
+            'K es prioritario; reducción gradual de riego.';
+      case BeanStageKey.physiologicalMaturity:
+        return 'Planta en senescencia. '
+            'Reducir riego para favorecer secado uniforme.';
+      case BeanStageKey.harvest:
+        return 'Grano en secado. '
+            'Humedad objetivo: 12–14 % para trilla.';
+    }
+  }
 }

@@ -28,6 +28,7 @@ class BarleyCropEngineAdapter implements CropEngine {
       expectedDaysToEnd: remaining,
       windowsNow: _windows(stage),
       heroAsset: _heroAsset(stage),
+      helperCaption: _helperCaption(stage),
     );
   }
 
@@ -81,7 +82,7 @@ class BarleyCropEngineAdapter implements CropEngine {
       case BarleyStageKey.heading:
         return 'Espigamiento';
       case BarleyStageKey.flowering:
-        return 'Floración';
+        return 'Floración / antesis';
       case BarleyStageKey.grainFill:
         return 'Llenado de grano';
       case BarleyStageKey.physiologicalMaturity:
@@ -98,17 +99,19 @@ class BarleyCropEngineAdapter implements CropEngine {
       case BarleyStageKey.emergence:
         return 'assets/seeds/barley/barley_stage_emergence.png';
       case BarleyStageKey.vegEarly:
+        return 'assets/seeds/barley/barley_stage_veg_early.png';
       case BarleyStageKey.tillering:
-        return 'assets/seeds/barley/barley_stage_veg.png';
+        return 'assets/seeds/barley/barley_stage_veg_mid.png';
       case BarleyStageKey.elongation:
       case BarleyStageKey.booting:
-        return 'assets/seeds/barley/barley_stage_elongation.png';
+        return 'assets/seeds/barley/barley_stage_tasseling.png';
       case BarleyStageKey.heading:
       case BarleyStageKey.flowering:
-        return 'assets/seeds/barley/barley_stage_flowering.png';
+        return 'assets/seeds/barley/barley_stage_flower_set.png';
       case BarleyStageKey.grainFill:
+        return 'assets/seeds/barley/barley_stage_veg_advanced.png';
       case BarleyStageKey.physiologicalMaturity:
-        return 'assets/seeds/barley/barley_stage_maturity.png';
+        return 'assets/seeds/barley/barley_stage_maturity_senescence.png';
       case BarleyStageKey.harvest:
         return 'assets/seeds/barley/barley_stage_harvest.png';
     }
@@ -132,5 +135,32 @@ class BarleyCropEngineAdapter implements CropEngine {
       windows.add(SeedWindowKey.critical);
     }
     return windows;
+  }
+
+  static String _helperCaption(BarleyStageKey stage) {
+    switch (stage) {
+      case BarleyStageKey.germination:
+        return 'Mantén humedad constante. Temp suelo >4 °C para germinar, óptimo 12-25 °C.';
+      case BarleyStageKey.emergence:
+        return 'Vigila costra superficial. Cebada emerge rápido con buen contacto suelo-semilla.';
+      case BarleyStageKey.vegEarly:
+        return 'Inicio de macollamiento — N disponible define potencial de macollos.';
+      case BarleyStageKey.tillering:
+        return 'Macollamiento activo. Aplicación de N fraccionada. Cebada macolla más que trigo.';
+      case BarleyStageKey.elongation:
+        return 'Encañe — demanda hídrica sube. Vigila roya y oídio.';
+      case BarleyStageKey.booting:
+        return 'Embuchamiento — etapa crítica. Estrés reduce espigas fértiles.';
+      case BarleyStageKey.heading:
+        return 'Espigamiento — sensible a heladas y estrés hídrico.';
+      case BarleyStageKey.flowering:
+        return 'Antesis — polinización. Cebada es autógama pero sensible a calor extremo.';
+      case BarleyStageKey.grainFill:
+        return 'Llenado de grano — mantén humedad. En maltera, evita N excesivo (baja calidad).';
+      case BarleyStageKey.physiologicalMaturity:
+        return 'Madurez fisiológica — reduce riego. Grano secando en planta.';
+      case BarleyStageKey.harvest:
+        return 'Cosecha — humedad de grano <13% ideal. Maltera requiere grano uniforme.';
+    }
   }
 }

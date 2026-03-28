@@ -6,7 +6,6 @@ import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/crops/bean/bean_universal_profile.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/widgets/seeds/bean_models.dart';
-import 'package:bio_g/widgets/seeds/maize_models.dart';
 
 class BeanAgroScoreEngine {
   static ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluate({
@@ -75,6 +74,7 @@ class BeanAgroScoreEngine {
     final wSum = math.max(0.0001, weights.sum);
     final soilControlScore01 =
         (weights.moisture * moistureEval.score01 +
+            weights.soilTemp * soilTempEval.score01 +
             weights.resistance * resEval.score01 +
             weights.ph * phEval.score01 +
             weights.ec * ecEval.score01 +
@@ -91,10 +91,18 @@ class BeanAgroScoreEngine {
     _pushAlertsForMetric(suggested, 'npk.p', pEval, stageKey);
     _pushAlertsForMetric(suggested, 'npk.k', kEval, stageKey);
 
+    final isCriticalStage =
+        stageKey == BeanStageKey.flowering || stageKey == BeanStageKey.podSet;
+
+    // ── Alertas ambientales (no participan en score) ──
+    _pushEnvironmentalAlerts(suggested, t, isCriticalStage);
+
+    final int severityBump = isCriticalStage ? 2 : 0;
+
     final built = AlertsEngine.buildFromSuggestedKeys(
       deviceId: t.deviceId,
       now: t.timestamp,
-      stageKey: _mapBeanStageToAlertStage(stageKey),
+      severityBump: severityBump,
       suggestedKeys: suggested,
       prev: alertsState,
       cooldown: alertsCooldown,
@@ -112,31 +120,11 @@ class BeanAgroScoreEngine {
     return (eval: eval, nextAlertsState: built.state);
   }
 
-  static MaizeStageKey _mapBeanStageToAlertStage(BeanStageKey stage) {
-    switch (stage) {
-      case BeanStageKey.germination:
-        return MaizeStageKey.germination;
-      case BeanStageKey.emergence:
-        return MaizeStageKey.emergence;
-      case BeanStageKey.vegEarly:
-        return MaizeStageKey.vegEarly;
-      case BeanStageKey.vegAdvanced:
-        return MaizeStageKey.vegAdvanced;
-      case BeanStageKey.flowering:
-      case BeanStageKey.podSet:
-        return MaizeStageKey.flowerSet;
-      case BeanStageKey.grainFill:
-      case BeanStageKey.physiologicalMaturity:
-        return MaizeStageKey.maturitySenescence;
-      case BeanStageKey.harvest:
-        return MaizeStageKey.harvest;
-    }
-  }
-
+  // ✅ Leguminosas: N cap más bajo (fijación simbiótica → menos N externo)
   static double _ppmCapFor(AgroMetricKey key) {
     switch (key) {
       case AgroMetricKey.n:
-        return 120.0;
+        return 80.0;
       case AgroMetricKey.p:
         return 80.0;
       case AgroMetricKey.k:
@@ -156,6 +144,38 @@ class BeanAgroScoreEngine {
     labelEs: _labelEs(e.band),
     value: e.value,
   );
+
+  /// Alertas ambientales para frijol (C3, tropical).
+  /// Antracnosis con HR>80%. Heladas letales. Calor >32°C daña floración.
+  static void _pushEnvironmentalAlerts(
+    List<String> out,
+    BioGTelemetry t,
+    bool isCriticalStage,
+  ) {
+    final airTemp = t.airTempC;
+    final airHum = t.airHumidityPct;
+
+    // Frijol: muy sensible a heladas
+    if (airTemp <= 0) {
+      out.add('airTemp.frost');
+    } else if (airTemp < 4) {
+      out.add('airTemp.cold');
+    }
+
+    // Frijol: floración se cae con calor >32°C
+    if (airTemp > 38) {
+      out.add('airTemp.extreme_heat');
+    } else if (airTemp > 32 || (isCriticalStage && airTemp > 30)) {
+      out.add('airTemp.heat');
+    }
+
+    // Frijol: MUY sensible a HR alta (antracnosis, roya, tizón)
+    if (airHum > 85) {
+      out.add('airHumidity.critical');
+    } else if (airHum > 75) {
+      out.add('airHumidity.high');
+    }
+  }
 
   static String _labelEs(AgroBand band) {
     switch (band) {

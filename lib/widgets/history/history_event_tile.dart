@@ -21,7 +21,14 @@ class HistoryEventTile extends StatelessWidget {
     this.subtleDots = false,
   });
 
-  // ✅ RUTAS CORRECTAS
+  /// Exposed so other screens can reuse the icon rendering.
+  static Widget buildIconBase({
+    required String? assetIcon,
+    required IconData? icon,
+    required bool isAlert,
+  }) {
+    return _EventIconBase(assetIcon: assetIcon, icon: icon, isAlert: isAlert);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,14 +44,14 @@ class HistoryEventTile extends StatelessWidget {
             children: [
               // ✅ Slot fijo (no infla el card)
               SizedBox(
-                width: 34,
-                height: 34,
+                width: 38,
+                height: 38,
                 child: Center(
                   child: OverflowBox(
-                    maxWidth: 90,
-                    maxHeight: 90,
+                    maxWidth: 98,
+                    maxHeight: 98,
                     child: Transform.scale(
-                      scale: 2.6, // 👈 aquí controlas tamaño real
+                      scale: 2.86,
                       child: _EventIconBase(
                         assetIcon: assetIcon,
                         icon: icon,
@@ -109,7 +116,7 @@ class _EventIconBase extends StatelessWidget {
   Widget build(BuildContext context) {
     final String? effectiveAsset = isAlert ? _kAlertIcon : assetIcon;
 
-    const double base = 22;
+    const double base = 24;
 
     if (effectiveAsset != null) {
       return Image.asset(

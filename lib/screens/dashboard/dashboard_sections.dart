@@ -114,12 +114,16 @@ class DashboardHeaderSection extends StatelessWidget {
   final String cropLabel;
   final String fieldLabel;
   final String cropIconAsset;
+  final bool hasNotifications;
+  final VoidCallback? onNotificationTap;
 
   const DashboardHeaderSection({
     super.key,
     required this.cropLabel,
     required this.fieldLabel,
     required this.cropIconAsset,
+    this.hasNotifications = false,
+    this.onNotificationTap,
   });
 
   @override
@@ -127,17 +131,34 @@ class DashboardHeaderSection extends StatelessWidget {
     return Column(
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: ClipRect(
-            child: Align(
+          padding: const EdgeInsets.only(top: 2),
+          child: SizedBox(
+            height: 100,
+            width: double.infinity,
+            child: Stack(
+              clipBehavior: Clip.none,
               alignment: Alignment.center,
-              widthFactor: 0.60,
-              heightFactor: 0.60,
-              child: Image.asset(
-                'assets/images/logo_bio_g.png',
-                height: 150,
-                fit: BoxFit.contain,
-              ),
+              children: <Widget>[
+                Center(
+                  child: Transform.scale(
+                    scale: 1.5,
+                    child: Image.asset(
+                      'assets/images/logo_bio_g.png',
+                      height: 150,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                if (onNotificationTap != null)
+                  Positioned(
+                    right: 17,
+                    top: 24,
+                    child: _NotificationBellButton(
+                      hasNotifications: hasNotifications,
+                      onTap: onNotificationTap!,
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -365,6 +386,118 @@ class DashboardInsightSection extends StatelessWidget {
       title: insight.title,
       subtitle: insight.subtitle,
       tag: insight.tag,
+    );
+  }
+}
+
+/// Animated notification bell that shakes when there are active notifications.
+class _NotificationBellButton extends StatefulWidget {
+  final bool hasNotifications;
+  final VoidCallback onTap;
+
+  const _NotificationBellButton({
+    required this.hasNotifications,
+    required this.onTap,
+  });
+
+  @override
+  State<_NotificationBellButton> createState() =>
+      _NotificationBellButtonState();
+}
+
+class _NotificationBellButtonState extends State<_NotificationBellButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shakeController;
+  late final Animation<double> _shakeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _shakeAnimation = TweenSequence<double>(
+      [
+        TweenSequenceItem(tween: Tween(begin: 0, end: 0.15), weight: 1),
+        TweenSequenceItem(tween: Tween(begin: 0.15, end: -0.12), weight: 1),
+        TweenSequenceItem(tween: Tween(begin: -0.12, end: 0.08), weight: 1),
+        TweenSequenceItem(tween: Tween(begin: 0.08, end: -0.05), weight: 1),
+        TweenSequenceItem(tween: Tween(begin: -0.05, end: 0), weight: 1),
+      ],
+    ).animate(CurvedAnimation(parent: _shakeController, curve: Curves.easeOut));
+
+    if (widget.hasNotifications) {
+      _startShakeLoop();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _NotificationBellButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.hasNotifications && !oldWidget.hasNotifications) {
+      _startShakeLoop();
+    } else if (!widget.hasNotifications) {
+      _shakeController.stop();
+      _shakeController.reset();
+    }
+  }
+
+  void _startShakeLoop() {
+    _shakeController.forward(from: 0).then((_) {
+      if (!mounted || !widget.hasNotifications) return;
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted && widget.hasNotifications) _startShakeLoop();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      child: AnimatedBuilder(
+        animation: _shakeAnimation,
+        builder: (context, child) {
+          return Transform.rotate(angle: _shakeAnimation.value, child: child);
+        },
+        child: SizedBox(
+          width: 54,
+          height: 54,
+          child: Center(
+            child: Transform.scale(
+              scale: 1.9,
+              child: Container(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.10),
+                      blurRadius: 12,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Opacity(
+                  opacity: 0.75,
+                  child: Image.asset(
+                    'assets/icons/metrics/ic_notification.png',
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

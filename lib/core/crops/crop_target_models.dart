@@ -25,6 +25,7 @@ class StageTargets {
 class StageWeights {
   const StageWeights({
     required this.moisture,
+    required this.soilTemp,
     required this.resistance,
     required this.ph,
     required this.ec,
@@ -32,10 +33,11 @@ class StageWeights {
   });
 
   final double moisture;
+  final double soilTemp;
   final double resistance;
   final double ph;
   final double ec;
   final double npk;
 
-  double get sum => moisture + resistance + ph + ec + npk;
+  double get sum => moisture + soilTemp + resistance + ph + ec + npk;
 }

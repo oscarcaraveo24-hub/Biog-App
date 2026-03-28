@@ -7,8 +7,9 @@ import 'package:bio_g/widgets/seeds/wheat_models.dart';
 class WheatAgroScoreEngine {
   /// Etapas críticas para trigo: heading, flowering (GS 50–69).
   /// En trigo, antesis + llenado temprano son las más críticas.
+  // ✅ FIX: booting añadido como critical (consistente con adapter windows)
   static const Set<String> _criticalStages = {
-    'heading', 'flowering', 'grainFill',
+    'booting', 'heading', 'flowering', 'grainFill',
   };
 
   static ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluate({

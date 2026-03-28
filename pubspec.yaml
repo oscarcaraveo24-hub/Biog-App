@@ -73,6 +73,9 @@ flutter:
     - assets/icons/wizard/
     - assets/seeds/bean/
     - assets/seeds/Oat/
+    - assets/seeds/Maize/
+    - assets/seeds/barley/
+    - assets/seeds/wheat/
     
   fonts:
     - family: Inter

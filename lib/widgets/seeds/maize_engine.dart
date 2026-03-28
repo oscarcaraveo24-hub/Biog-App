@@ -85,7 +85,9 @@ class MaizeEngine {
         s == MaizeStageKey.flowerSet;
 
     if (isVegOrRepro) list.add(SeedWindowKey.nutrition);
-    if (s == MaizeStageKey.flowerSet) list.add(SeedWindowKey.critical);
+    if (s == MaizeStageKey.tasseling || s == MaizeStageKey.flowerSet) {
+      list.add(SeedWindowKey.critical);
+    }
 
     return list;
   }
@@ -211,9 +213,40 @@ class MaizeEngine {
       expectedPlantHeightTodayM: heightToday,
       stageLabelEs: labelEs(current.key),
       heroAsset: heroAssetForStage(current.key),
-      helperCaption:
-          'Estimación por perfil y fecha. Puede variar por manejo, clima y densidad.',
+      helperCaption: _helperCaption(current.key),
     );
+  }
+
+  static String _helperCaption(MaizeStageKey s) {
+    switch (s) {
+      case MaizeStageKey.germination:
+        return 'Mantén humedad uniforme para asegurar imbibición. '
+            'Evita costras en el suelo.';
+      case MaizeStageKey.emergence:
+        return 'Vigila compactación superficial: la plántula es frágil. '
+            'Rango de temp. óptimo: 18–28 °C.';
+      case MaizeStageKey.vegEarly:
+        return 'Fase de desarrollo radical rápido. '
+            'Asegura N disponible y humedad constante.';
+      case MaizeStageKey.vegMid:
+        return 'Máxima tasa de crecimiento foliar. '
+            'Déficit hídrico aquí reduce área foliar final.';
+      case MaizeStageKey.vegAdvanced:
+        return 'Pre-espigado: la planta define potencial de mazorca. '
+            'N y K son críticos.';
+      case MaizeStageKey.tasseling:
+        return 'Etapa crítica: estrés hídrico o térmico reduce '
+            'polinización y cuajado de grano.';
+      case MaizeStageKey.flowerSet:
+        return 'Máxima sensibilidad al estrés. '
+            'Mantén humedad alta y nutrientes estables.';
+      case MaizeStageKey.maturitySenescence:
+        return 'Llenado de grano activo. '
+            'Reducción gradual de riego; vigila sanidad foliar.';
+      case MaizeStageKey.harvest:
+        return 'Cultivo en secado. '
+            'Humedad de grano objetivo: 14–15 % para cosecha.';
+    }
   }
 
   static int _clampInt(int v, {required int min, required int max}) {

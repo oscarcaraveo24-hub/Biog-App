@@ -1,15 +1,18 @@
 // lib/core/agro/alerts_engine.dart
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
-import 'package:bio_g/widgets/seeds/maize_models.dart';
 
 class AlertsEngine {
   static const Duration defaultCooldown = Duration(minutes: 60);
 
+  /// [severityBump] controla el ajuste de severidad por etapa crítica:
+  ///   0 = sin ajuste (etapa normal)
+  ///   1 = parcial (info → warning)
+  ///   2 = completo (info → warning, warning → critical)
   static AlertsBuildResult buildFromSuggestedKeys({
     required String deviceId,
     required DateTime now,
-    required MaizeStageKey stageKey,
+    required int severityBump,
     required List<String> suggestedKeys,
     required AlertsState prev,
     Duration cooldown = defaultCooldown,
@@ -19,7 +22,7 @@ class AlertsEngine {
     final out = <BioGAlert>[];
     final nextMap = Map<BioGAlertType, DateTime>.from(prev.lastByType);
     final crop = cropLabel ?? 'tu cultivo';
-    final stage = stageLabel ?? _stageDisplayName(stageKey);
+    final stage = stageLabel ?? 'etapa actual';
 
     for (final k in suggestedKeys) {
       final mapped = _mapKeyToAlert(k, crop: crop, stage: stage);
@@ -28,12 +31,9 @@ class AlertsEngine {
       final type = mapped.type;
       var severity = mapped.severity;
 
-      // En flowerSet (etapa crítica) subimos severidad.
-      if (stageKey == MaizeStageKey.flowerSet) {
+      if (severityBump >= 2) {
         severity = _bumpSeverity(severity);
-      }
-      // En tasseling también es sensible.
-      if (stageKey == MaizeStageKey.tasseling) {
+      } else if (severityBump == 1) {
         if (severity == BioGAlertSeverity.info) {
           severity = BioGAlertSeverity.warning;
         }
@@ -74,29 +74,6 @@ class AlertsEngine {
         return BioGAlertSeverity.critical;
       case BioGAlertSeverity.critical:
         return BioGAlertSeverity.critical;
-    }
-  }
-
-  static String _stageDisplayName(MaizeStageKey key) {
-    switch (key) {
-      case MaizeStageKey.germination:
-        return 'Germinación';
-      case MaizeStageKey.emergence:
-        return 'Emergencia';
-      case MaizeStageKey.vegEarly:
-        return 'Vegetativa temprana';
-      case MaizeStageKey.vegMid:
-        return 'Vegetativa media';
-      case MaizeStageKey.vegAdvanced:
-        return 'Vegetativa avanzada';
-      case MaizeStageKey.tasseling:
-        return 'Espigamiento';
-      case MaizeStageKey.flowerSet:
-        return 'Floración';
-      case MaizeStageKey.maturitySenescence:
-        return 'Madurez';
-      case MaizeStageKey.harvest:
-        return 'Cosecha';
     }
   }
 
@@ -355,6 +332,74 @@ class AlertsEngine {
         body:
             'El K disponible es alto para $crop. Puede interferir con '
             'absorción de calcio y magnesio.',
+      );
+    }
+
+    // ── Temperatura ambiental ──
+    if (key == 'airTemp.frost') {
+      return _AlertTemplate(
+        type: BioGAlertType.airTempExtreme,
+        severity: BioGAlertSeverity.critical,
+        title: 'Riesgo de helada',
+        body:
+            'La temperatura ambiental está cerca o bajo 0 °C. Para $crop '
+            'en $stage esto puede ser devastador — especialmente en '
+            'espigamiento y floración. Evalúa protección anti-helada.',
+      );
+    }
+    if (key == 'airTemp.cold') {
+      return _AlertTemplate(
+        type: BioGAlertType.airTempExtreme,
+        severity: BioGAlertSeverity.warning,
+        title: 'Temperatura ambiental baja',
+        body:
+            'La temperatura ambiental es baja para $crop en $stage. '
+            'El crecimiento se ralentiza y puede haber daño por frío.',
+      );
+    }
+    if (key == 'airTemp.heat') {
+      return _AlertTemplate(
+        type: BioGAlertType.airTempExtreme,
+        severity: BioGAlertSeverity.warning,
+        title: 'Golpe de calor',
+        body:
+            'La temperatura ambiental es alta para $crop en $stage. '
+            'En etapas reproductivas, el polen puede perder viabilidad '
+            'y reducir la fecundación.',
+      );
+    }
+    if (key == 'airTemp.extreme_heat') {
+      return _AlertTemplate(
+        type: BioGAlertType.airTempExtreme,
+        severity: BioGAlertSeverity.critical,
+        title: 'Calor extremo',
+        body:
+            'La temperatura ambiental excede los límites seguros para '
+            '$crop. Riesgo de aborto floral, quemaduras foliares y '
+            'estrés severo.',
+      );
+    }
+
+    // ── Humedad relativa ──
+    if (key == 'airHumidity.high') {
+      return _AlertTemplate(
+        type: BioGAlertType.highHumidity,
+        severity: BioGAlertSeverity.warning,
+        title: 'Humedad relativa alta',
+        body:
+            'La HR es alta (>80%). Para $crop en $stage, esto favorece '
+            'enfermedades fúngicas como roya, antracnosis y tizón. '
+            'Vigila follaje y considera aplicación preventiva.',
+      );
+    }
+    if (key == 'airHumidity.critical') {
+      return _AlertTemplate(
+        type: BioGAlertType.highHumidity,
+        severity: BioGAlertSeverity.critical,
+        title: 'Humedad relativa muy alta',
+        body:
+            'La HR supera 90%. Condiciones ideales para patógenos en '
+            '$crop. Riesgo alto de enfermedades foliares y de espiga.',
       );
     }
 

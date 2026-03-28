@@ -28,6 +28,7 @@ class WheatCropEngineAdapter implements CropEngine {
       expectedDaysToEnd: remaining,
       windowsNow: _windows(stage),
       heroAsset: _heroAsset(stage),
+      helperCaption: _helperCaption(stage),
     );
   }
 
@@ -98,17 +99,19 @@ class WheatCropEngineAdapter implements CropEngine {
       case WheatStageKey.emergence:
         return 'assets/seeds/wheat/wheat_stage_emergence.png';
       case WheatStageKey.vegEarly:
+        return 'assets/seeds/wheat/wheat_stage_veg_early.png';
       case WheatStageKey.tillering:
-        return 'assets/seeds/wheat/wheat_stage_veg.png';
+        return 'assets/seeds/wheat/wheat_stage_veg_mid.png';
       case WheatStageKey.elongation:
       case WheatStageKey.booting:
-        return 'assets/seeds/wheat/wheat_stage_elongation.png';
+        return 'assets/seeds/wheat/wheat_stage_tasseling.png';
       case WheatStageKey.heading:
       case WheatStageKey.flowering:
-        return 'assets/seeds/wheat/wheat_stage_flowering.png';
+        return 'assets/seeds/wheat/wheat_stage_flower_set.png';
       case WheatStageKey.grainFill:
+        return 'assets/seeds/wheat/wheat_stage_veg_advanced.png';
       case WheatStageKey.physiologicalMaturity:
-        return 'assets/seeds/wheat/wheat_stage_maturity.png';
+        return 'assets/seeds/wheat/wheat_stage_maturity_senescence.png';
       case WheatStageKey.harvest:
         return 'assets/seeds/wheat/wheat_stage_harvest.png';
     }
@@ -126,9 +129,40 @@ class WheatCropEngineAdapter implements CropEngine {
         stage == WheatStageKey.flowering ||
         stage == WheatStageKey.grainFill;
     if (nutritionHeavy) windows.add(SeedWindowKey.nutrition);
-    if (stage == WheatStageKey.heading || stage == WheatStageKey.flowering) {
+    // ✅ FIX: booting + grainFill también critical (consistente con score engine)
+    if (stage == WheatStageKey.booting ||
+        stage == WheatStageKey.heading ||
+        stage == WheatStageKey.flowering ||
+        stage == WheatStageKey.grainFill) {
       windows.add(SeedWindowKey.critical);
     }
     return windows;
+  }
+
+  static String _helperCaption(WheatStageKey stage) {
+    switch (stage) {
+      case WheatStageKey.germination:
+        return 'Mantén humedad constante para imbibición. Temp suelo >10 °C acelera emergencia.';
+      case WheatStageKey.emergence:
+        return 'Vigila costra superficial. Plántula sensible a salinidad.';
+      case WheatStageKey.vegEarly:
+        return 'Inicio de macollamiento — N disponible define potencial de macollos.';
+      case WheatStageKey.tillering:
+        return 'Macollamiento activo. Aplicación de N fraccionada. Monitorea compactación.';
+      case WheatStageKey.elongation:
+        return 'Encañe — demanda hídrica sube. Vigila enfermedades foliares.';
+      case WheatStageKey.booting:
+        return 'Embuchamiento — etapa crítica. Estrés aquí reduce espigas fértiles.';
+      case WheatStageKey.heading:
+        return 'Espigamiento — máxima sensibilidad a heladas y estrés hídrico.';
+      case WheatStageKey.flowering:
+        return 'Antesis — polinización activa. Evita estrés térmico e hídrico.';
+      case WheatStageKey.grainFill:
+        return 'Llenado de grano — mantén humedad. Calor excesivo reduce peso de grano.';
+      case WheatStageKey.physiologicalMaturity:
+        return 'Madurez fisiológica — reduce riego. Grano secando en planta.';
+      case WheatStageKey.harvest:
+        return 'Cosecha — humedad de grano <14% ideal. Evita lluvias post-madurez.';
+    }
   }
 }

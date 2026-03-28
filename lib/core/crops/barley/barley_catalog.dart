@@ -205,6 +205,37 @@ const List<CropVarietyEntry> barleyVarieties = [
     aliases: ['Estelar-OH', 'Estelar OH', 'Estelar'],
   ),
 
+  // ── Forrajera ─────────────────────────────────────────────────────────────
+  CropVarietyEntry(
+    id: 'barley_forrajera_inifap',
+    label: 'Cebada forrajera INIFAP',
+    cropId: kCropBarley,
+    subtitle: 'Forrajera · INIFAP',
+    defaultProfileId: kCb04,
+    aliases: [
+      'Cebada forrajera',
+      'Cebada forraje',
+      'Cebada corte',
+      'Forrajera INIFAP',
+    ],
+  ),
+  CropVarietyEntry(
+    id: 'barley_cerro_prieto',
+    label: 'Cerro Prieto',
+    cropId: kCropBarley,
+    subtitle: 'Forrajera · INIFAP',
+    defaultProfileId: kCb04,
+    aliases: ['Cerro Prieto', 'Cebada Cerro Prieto'],
+  ),
+  CropVarietyEntry(
+    id: 'barley_puebla',
+    label: 'Puebla',
+    cropId: kCropBarley,
+    subtitle: 'Forrajera',
+    defaultProfileId: kCb04,
+    aliases: ['Puebla', 'Cebada Puebla'],
+  ),
+
   // ── Genérica ─────────────────────────────────────────────────────────────
   CropVarietyEntry(
     id: 'barley_generic',

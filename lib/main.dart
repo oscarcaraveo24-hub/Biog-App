@@ -31,6 +31,9 @@ Future<void> main() async {
   // que sigue usando el repo fake.
   repo.attachSeedResolver((deviceId) => store.seedInstallForDevice(deviceId));
 
+  // Carga historial persistido (local → Supabase fallback).
+  await repo.loadPersistedHistory();
+
   // Respeta el estado de sincronización persistido.
   final prefs = await SharedPreferences.getInstance();
   final syncActive = prefs.getBool(ProfileLocalService.kSyncActiveKey) ?? true;

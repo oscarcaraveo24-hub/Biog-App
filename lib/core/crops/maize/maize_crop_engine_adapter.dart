@@ -27,6 +27,7 @@ class MaizeCropEngineAdapter implements CropEngine {
       expectedDaysToEnd: result.expectedDaysToEnd,
       windowsNow: result.windowsNow,
       heroAsset: result.heroAsset,
+      helperCaption: result.helperCaption,
     );
   }
 }
