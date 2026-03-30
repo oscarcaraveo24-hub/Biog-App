@@ -1,7 +1,13 @@
+import 'dart:math' as math;
+import 'dart:ui' show Color;
+
 import 'package:bio_g/core/agro/agro_event_input_factory.dart';
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/agronomic_event.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
+import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/crop_stage_models.dart';
+import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -24,6 +30,7 @@ class HistoryMetricChartUiData {
   final double minSpan;
   final double zoomRadius;
   final List<double> bandStops;
+  final List<Color>? bandColors;
 
   const HistoryMetricChartUiData({
     required this.title,
@@ -33,6 +40,7 @@ class HistoryMetricChartUiData {
     required this.minSpan,
     required this.zoomRadius,
     required this.bandStops,
+    this.bandColors,
   });
 }
 
@@ -81,7 +89,9 @@ class HistoryScreenPresenter {
     required int rangeIndex,
     required BioGTelemetry? live,
     required HistorySeriesBuilder seriesBuilder,
+    StageTargets? targets,
   }) {
+    final bands = _resolveBands(metric, targets);
     return HistoryMetricChartUiData(
       title:
           '${_metricTitleForChart(metric)} (${_rangeTitleForChart(rangeIndex)})',
@@ -90,7 +100,8 @@ class HistoryScreenPresenter {
       isPercentScale: _isPercentMetric(metric),
       minSpan: _minSpanForMetric(metric),
       zoomRadius: _zoomRadiusForMetric(metric),
-      bandStops: _bandStopsForMetric(metric),
+      bandStops: bands.stops,
+      bandColors: bands.colors,
     );
   }
 
@@ -105,7 +116,15 @@ class HistoryScreenPresenter {
     required CropRuntimeSnapshot runtime,
     required List<BioGTelemetry> telemetry,
   }) {
-    final DateTime now = DateTime.now();
+    final List<BioGTelemetry> sortedTelemetry = [...telemetry]
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final DateTime now = runtime.live?.timestamp ??
+        (sortedTelemetry.isNotEmpty ? sortedTelemetry.last.timestamp : DateTime.now());
+
+    final _PreviousEventContext previousContext = _resolvePreviousContext(
+      runtime: runtime,
+      telemetry: sortedTelemetry,
+    );
 
     final EventEngineInput input = AgroEventInputFactory.build(
       timestamp: now,
@@ -116,11 +135,71 @@ class HistoryScreenPresenter {
       effectiveEval: runtime.eval,
       stageResult: runtime.stageResult,
       isGenericMode: runtime.isGenericMode,
-      history: _historyToEventPoints(telemetry),
-      previousBands: const <String, AgroBand>{},
+      history: _historyToEventPoints(sortedTelemetry),
+      previousBands: previousContext.previousBands,
+      previousStageKey: previousContext.previousStage?.stageKey,
+      previousStageLabel: previousContext.previousStage?.stageLabelEs,
     );
 
     return EventEngine.build(input);
+  }
+
+
+  _PreviousEventContext _resolvePreviousContext({
+    required CropRuntimeSnapshot runtime,
+    required List<BioGTelemetry> telemetry,
+  }) {
+    if (!runtime.isPlanted) return const _PreviousEventContext();
+
+    final definition = runtime.definition;
+    final profile = runtime.profile;
+    final sowingDate = runtime.engineSowingDate ?? runtime.effectiveLifecycleDate;
+    if (definition == null || profile == null || sowingDate == null) {
+      return const _PreviousEventContext();
+    }
+
+    final BioGTelemetry? previousTelemetry = telemetry.length >= 2
+        ? telemetry[telemetry.length - 2]
+        : null;
+    if (previousTelemetry == null) {
+      return const _PreviousEventContext();
+    }
+
+    final CropStageResult previousStage = definition.engine.compute(
+      sowingDate: sowingDate,
+      today: previousTelemetry.timestamp,
+      profile: profile,
+      stressDelayDays: 0,
+    );
+
+    StageTargets? previousTargets = definition.resolveTargets(previousStage);
+    if (previousTargets != null) {
+      previousTargets = CropCatalog.adjustTargetsForCalendar(
+        cropId: runtime.cropKeyName,
+        calendarId: runtime.cropContext?.calendarTypeId,
+        stageKey: previousStage.stageKey,
+        baseTargets: previousTargets,
+      );
+    }
+
+    final Map<String, AgroBand> previousBands;
+    if (previousTargets != null) {
+      final previousEvalOut = definition.evaluateTelemetry(
+        telemetry: previousTelemetry,
+        stage: previousStage,
+        profile: profile,
+        targetsOverride: previousTargets,
+        alertsState: const AlertsState(),
+      );
+      previousBands = AgroEventInputFactory.safeCurrentBands(previousEvalOut.eval);
+    } else {
+      previousBands = const <String, AgroBand>{};
+    }
+
+    return _PreviousEventContext(
+      previousStage: previousStage,
+      previousBands: previousBands,
+    );
   }
 
   List<EventTelemetryPoint> _historyToEventPoints(
@@ -168,7 +247,7 @@ class HistoryScreenPresenter {
   String Function(double) _valueFormatterForMetric(String metric) =>
       switch (metric) {
         'Humedad' => (v) => '${v.round()}%',
-        'NPK' => (v) => '${v.round()} ppm',
+        'NPK' => (v) => '${v.round()} mg/kg',
         'pH' => (v) => v.toStringAsFixed(1),
         'Temp' => (v) => '${v.round()}°C',
         'RT' => (v) => '${v.toStringAsFixed(1)} MPa',
@@ -208,6 +287,53 @@ class HistoryScreenPresenter {
     _ => const <double>[0, 15, 30, 50, 70, 85, 100],
   };
 
+  // ── Bandas dinámicas según el cultivo seleccionado ──
+  // Verde = Óptimo, Amarillo = Alto/Bajo, Rojo = Crítico
+
+  static const Color _red = Color(0xFFE85B5B);
+  static const Color _yellow = Color(0xFFF2C94C);
+  static const Color _green = Color(0xFF4CAF50);
+
+  ({List<double> stops, List<Color>? colors}) _resolveBands(
+    String metric,
+    StageTargets? targets,
+  ) {
+    if (targets == null) {
+      return (stops: _bandStopsForMetric(metric), colors: null);
+    }
+
+    final AgroRange? range = switch (metric) {
+      'Humedad' => targets.moistureRaw,
+      'pH' => targets.ph,
+      'Temp' => targets.soilTemp,
+      'RT' => targets.resistance,
+      _ => null,
+    };
+
+    if (range == null) {
+      return (stops: _bandStopsForMetric(metric), colors: null);
+    }
+
+    final fc = _metricFloorCeil(metric);
+    final floor = fc.$1;
+    final ceil = fc.$2;
+    final lowMax = math.max(floor + 0.001, range.lowMax);
+    final optMin = math.max(lowMax + 0.001, range.optimalMin);
+
+    return (
+      stops: [floor, lowMax, optMin, range.optimalMax, range.highMin, ceil],
+      colors: [_red, _yellow, _green, _green, _yellow, _red],
+    );
+  }
+
+  static (double, double) _metricFloorCeil(String metric) => switch (metric) {
+    'Humedad' => (0.0, 100.0),
+    'pH' => (3.0, 10.0),
+    'Temp' => (0.0, 45.0),
+    'RT' => (0.0, 3.0),
+    _ => (0.0, 100.0),
+  };
+
   String _historyModeLabel(SeedInstall? seed, DeviceCropContext? cropContext) {
     if (cropContext != null) {
       return switch (cropContext.lifecycleStatus) {
@@ -225,4 +351,15 @@ class HistoryScreenPresenter {
       SowingStatus.skip => 'Descanso del suelo',
     };
   }
+}
+
+
+class _PreviousEventContext {
+  final CropStageResult? previousStage;
+  final Map<String, AgroBand> previousBands;
+
+  const _PreviousEventContext({
+    this.previousStage,
+    this.previousBands = const <String, AgroBand>{},
+  });
 }

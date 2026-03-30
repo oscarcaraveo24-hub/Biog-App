@@ -1,6 +1,7 @@
 // lib/core/agro/oat_agro_score_engine.dart
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/cereal_agro_score_engine.dart';
+import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/crops/oat/oat_universal_profile.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/widgets/seeds/oat_models.dart';
@@ -19,10 +20,12 @@ class OatAgroScoreEngine {
     Calibration? cal,
     Duration alertsCooldown = const Duration(minutes: 60),
     String? cropLabel,
+    StageTargets? targetsOverride,
+    StageWeights? weightsOverride,
   }) {
     final stageKey = stage.stage;
-    final targets = u.byStage[stageKey];
-    final weights = u.weights[stageKey];
+    final targets = targetsOverride ?? u.byStage[stageKey];
+    final weights = weightsOverride ?? u.weights[stageKey];
 
     if (targets == null || weights == null) {
       final empty = AgroEvalResult(

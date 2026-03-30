@@ -489,7 +489,7 @@ class EventEngine {
           severity: nBand.toSeverity(isLow: true),
           title: 'Nitrógeno bajo',
           message: input.n != null
-              ? 'El nitrógeno aparece por debajo del rango esperado (${_fmt(input.n)} ppm).'
+              ? 'El nitrógeno aparece por debajo del rango esperado (${_fmt(input.n)} mg/kg).'
               : 'El nitrógeno aparece por debajo del rango esperado.',
           timestamp: now,
           deviceId: input.deviceId,
@@ -516,7 +516,7 @@ class EventEngine {
           severity: pBand.toSeverity(isLow: true),
           title: 'Fósforo bajo',
           message: input.p != null
-              ? 'El fósforo aparece por debajo del rango esperado (${_fmt(input.p)} ppm).'
+              ? 'El fósforo aparece por debajo del rango esperado (${_fmt(input.p)} mg/kg).'
               : 'El fósforo aparece por debajo del rango esperado.',
           timestamp: now,
           deviceId: input.deviceId,
@@ -543,7 +543,7 @@ class EventEngine {
           severity: kBand.toSeverity(isLow: true),
           title: 'Potasio bajo',
           message: input.k != null
-              ? 'El potasio aparece por debajo del rango esperado (${_fmt(input.k)} ppm).'
+              ? 'El potasio aparece por debajo del rango esperado (${_fmt(input.k)} mg/kg).'
               : 'El potasio aparece por debajo del rango esperado.',
           timestamp: now,
           deviceId: input.deviceId,
@@ -784,8 +784,7 @@ class EventEngine {
               ? AgronomicEventSeverity.critical
               : AgronomicEventSeverity.caution,
           title: 'Riego recomendado',
-          message:
-              'La lectura de humedad sugiere que conviene revisar riego o disponibilidad de agua.',
+          message: _irrigationRecommendationMessage(input, moistureBand),
           timestamp: now,
           deviceId: input.deviceId,
           metricKey: EventMetricKeys.soilMoisture,
@@ -811,8 +810,7 @@ class EventEngine {
               ? AgronomicEventSeverity.warning
               : AgronomicEventSeverity.caution,
           title: 'Fertilización recomendada',
-          message:
-              'Las lecturas nutrimentales sugieren revisar fertilización o estrategia de nutrición.',
+          message: _fertilizationRecommendationMessage(input, nBand, pBand, kBand),
           timestamp: now,
           deviceId: input.deviceId,
           metricKey: EventMetricKeys.npk,
@@ -950,6 +948,81 @@ class EventEngine {
     return badCount >= 1;
   }
 
+  static String _irrigationRecommendationMessage(
+    EventEngineInput input,
+    AgroBand? moistureBand,
+  ) {
+    final stage = input.stageLabel?.trim();
+    final value = input.soilMoisture != null
+        ? ' (${_fmt(input.soilMoisture)}%)'
+        : '';
+
+    if (stage != null && stage.isNotEmpty) {
+      if (_containsAny(stage.toLowerCase(), const <String>['flor', 'cuaj', 'vaina', 'espig', 'antes', 'llenado'])) {
+        return 'La humedad$value sugiere proteger la etapa $stage. Conviene revisar riego hoy y evitar oscilaciones bruscas de humedad.';
+      }
+      if (_containsAny(stage.toLowerCase(), const <String>['germin', 'emerg'])) {
+        return 'La humedad$value sugiere revisar un riego ligero o la retención superficial. En $stage conviene evitar tanto secado como encharcamiento.';
+      }
+      return 'La humedad$value sugiere revisar riego o disponibilidad de agua para mantener estable la etapa $stage.';
+    }
+
+    return 'La lectura de humedad$value sugiere que conviene revisar riego o disponibilidad de agua.';
+  }
+
+  static String _fertilizationRecommendationMessage(
+    EventEngineInput input,
+    AgroBand? nBand,
+    AgroBand? pBand,
+    AgroBand? kBand,
+  ) {
+    final stage = input.stageLabel?.trim();
+    final shortages = <String>[];
+    final excesses = <String>[];
+
+    void pushMetric(String label, AgroBand? band) {
+      if (band == null) return;
+      if (band.isLowish) shortages.add(label);
+      if (band.isHighish) excesses.add(label);
+    }
+
+    pushMetric('N', nBand);
+    pushMetric('P', pBand);
+    pushMetric('K', kBand);
+
+    final issueText = [
+      if (shortages.isNotEmpty) 'bajos en ${shortages.join('/')}',
+      if (excesses.isNotEmpty) 'altos en ${excesses.join('/')}',
+    ].join(' y ');
+
+    if (stage != null && stage.isNotEmpty) {
+      if (_containsAny(stage.toLowerCase(), const <String>['germin', 'emerg', 'tempr', 'macoll', 'veg'])) {
+        return issueText.isEmpty
+            ? 'Las lecturas nutrimentales sugieren revisar fertilización de arranque o nutrición vegetativa en $stage.'
+            : 'Las lecturas nutrimentales muestran niveles $issueText. Conviene revisar fertilización de arranque o nutrición vegetativa en $stage.';
+      }
+      if (_containsAny(stage.toLowerCase(), const <String>['flor', 'cuaj', 'vaina', 'espig', 'antes', 'llenado'])) {
+        return issueText.isEmpty
+            ? 'Las lecturas nutrimentales sugieren revisar nutrición de soporte para $stage y evitar estrés durante esta fase crítica.'
+            : 'Las lecturas nutrimentales muestran niveles $issueText. Conviene ajustar la estrategia nutricional para sostener $stage.';
+      }
+      return issueText.isEmpty
+          ? 'Las lecturas nutrimentales sugieren revisar fertilización o estrategia de nutrición para $stage.'
+          : 'Las lecturas nutrimentales muestran niveles $issueText. Conviene revisar fertilización o estrategia de nutrición para $stage.';
+    }
+
+    return issueText.isEmpty
+        ? 'Las lecturas nutrimentales sugieren revisar fertilización o estrategia de nutrición.'
+        : 'Las lecturas nutrimentales muestran niveles $issueText. Conviene revisar fertilización o estrategia de nutrición.';
+  }
+
+  static bool _containsAny(String value, List<String> patterns) {
+    for (final pattern in patterns) {
+      if (value.contains(pattern)) return true;
+    }
+    return false;
+  }
+
   static List<AgronomicEvent> _dedupeAndSort(List<AgronomicEvent> events) {
     final seen = <String>{};
     final deduped = <AgronomicEvent>[];
@@ -1002,7 +1075,7 @@ class EventEngine {
     if (input.k != null) chunks.add('K ${_fmt(input.k)}');
 
     if (chunks.isEmpty) return '';
-    return ' (${chunks.join(' · ')} ppm)';
+    return ' (${chunks.join(' · ')} mg/kg)';
   }
 }
 
@@ -1014,6 +1087,7 @@ class EventEngineInput {
   const EventEngineInput({
     required this.timestamp,
     this.deviceId,
+    this.cropId,
     this.seedProfileId,
     this.seedAlias,
     this.sowingDate,
@@ -1040,6 +1114,7 @@ class EventEngineInput {
   final DateTime timestamp;
 
   final String? deviceId;
+  final String? cropId;
   final String? seedProfileId;
   final String? seedAlias;
   final DateTime? sowingDate;

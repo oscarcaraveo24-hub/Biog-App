@@ -70,6 +70,7 @@ class CropRuntimeResolver {
     CropStageResult? stageResult;
     StageTargets? targets;
     AgroEvalResult? eval;
+    DateTime? engineSowingDate;
     AlertsState nextAlertsState = alertsState;
 
     if (isPlanted && definition != null && profile != null) {
@@ -78,6 +79,7 @@ class CropRuntimeResolver {
         calendarTypeId: normalizedContext?.calendarTypeId,
         plantedDate: plantedDate!,
       );
+      engineSowingDate = effectiveSowingDate;
 
       stageResult = definition.engine.compute(
         sowingDate: effectiveSowingDate,
@@ -131,6 +133,7 @@ class CropRuntimeResolver {
         hasResolvedProfile: profile != null,
       ),
       sowingStatus: sowingStatus,
+      engineSowingDate: engineSowingDate,
       hasSeed: hasSeed,
       isPlanted: isPlanted,
       isPlanned: isPlanned,

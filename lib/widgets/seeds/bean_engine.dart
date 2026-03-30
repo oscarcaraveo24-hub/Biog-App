@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:bio_g/widgets/seeds/bean_models.dart';
 import 'package:bio_g/widgets/seeds/maize_models.dart';
 
@@ -111,25 +113,19 @@ class BeanEngine {
     final harvestEnd = _endAtLeast(profile.endWindowDays.max, harvestStart);
 
     final podSetStart = floweringEnd + 1;
-    final podSetEnd = _clampInt(
-      floweringEnd + 14,
-      min: podSetStart,
-      max: harvestStart - 10,
+    final postFlowerWindow = math.max(3, harvestStart - podSetStart);
+    final allocation = _allocatePostFlowerWindow(
+      totalDays: postFlowerWindow,
+      useType: profile.beanUseType,
     );
+
+    final podSetEnd = podSetStart + allocation.podSetDays - 1;
 
     final grainFillStart = podSetEnd + 1;
-    final grainFillEnd = _clampInt(
-      harvestStart - 8,
-      min: grainFillStart,
-      max: harvestStart - 2,
-    );
+    final grainFillEnd = grainFillStart + allocation.grainFillDays - 1;
 
     final maturityStart = grainFillEnd + 1;
-    final maturityEnd = _clampInt(
-      harvestStart - 1,
-      min: maturityStart,
-      max: harvestStart - 1,
-    );
+    final maturityEnd = math.max(maturityStart, harvestStart - 1);
 
     return <BeanStageBounds>[
       BeanStageBounds(
@@ -235,6 +231,45 @@ class BeanEngine {
       stageLabelEs: labelEs(current.key),
       heroAsset: heroAssetForStage(current.key),
       helperCaption: _helperCaption(current.key),
+    );
+  }
+
+  static ({int podSetDays, int grainFillDays, int maturityDays}) _allocatePostFlowerWindow({
+    required int totalDays,
+    required BeanUseType useType,
+  }) {
+    final normalizedTotal = math.max(3, totalDays);
+
+    final double podRatio = useType == BeanUseType.snap ? 0.45 : 0.30;
+    final double grainRatio = useType == BeanUseType.snap ? 0.35 : 0.45;
+
+    int podSetDays = math.max(1, (normalizedTotal * podRatio).round());
+    int grainFillDays = math.max(1, (normalizedTotal * grainRatio).round());
+    int maturityDays = math.max(1, normalizedTotal - podSetDays - grainFillDays);
+
+    while (podSetDays + grainFillDays + maturityDays > normalizedTotal) {
+      if (grainFillDays > 1) {
+        grainFillDays -= 1;
+      } else if (podSetDays > 1) {
+        podSetDays -= 1;
+      } else {
+        maturityDays = math.max(1, normalizedTotal - podSetDays - grainFillDays);
+        break;
+      }
+    }
+
+    while (podSetDays + grainFillDays + maturityDays < normalizedTotal) {
+      if (useType == BeanUseType.snap) {
+        podSetDays += 1;
+      } else {
+        grainFillDays += 1;
+      }
+    }
+
+    return (
+      podSetDays: podSetDays,
+      grainFillDays: grainFillDays,
+      maturityDays: maturityDays,
     );
   }
 

@@ -77,14 +77,16 @@ class MaizeEngine {
       SeedWindowKey.scouting,
     ];
 
-    final isVegOrRepro =
+    final hasActiveNutritionWindow =
         s == MaizeStageKey.vegEarly ||
         s == MaizeStageKey.vegMid ||
         s == MaizeStageKey.vegAdvanced ||
         s == MaizeStageKey.tasseling ||
-        s == MaizeStageKey.flowerSet;
+        s == MaizeStageKey.flowerSet ||
+        s == MaizeStageKey.maturitySenescence ||
+        s == MaizeStageKey.harvest;
 
-    if (isVegOrRepro) list.add(SeedWindowKey.nutrition);
+    if (hasActiveNutritionWindow) list.add(SeedWindowKey.nutrition);
     if (s == MaizeStageKey.tasseling || s == MaizeStageKey.flowerSet) {
       list.add(SeedWindowKey.critical);
     }
@@ -171,7 +173,7 @@ class MaizeEngine {
         (today.difference(sowingDate).inDays + 1);
 
     final effectiveDay = _clampInt(
-      daySince + stressDelayDays,
+      daySince - stressDelayDays,
       min: 1,
       max: 999999,
     );
@@ -196,7 +198,7 @@ class MaizeEngine {
       profile.plantHeightM.max * pct.max,
     );
 
-    final expectedEnd = profile.endWindowDays.mid;
+    final expectedEnd = profile.endWindowDays.max;
     final remaining = (expectedEnd - effectiveDay).clamp(0, 999999);
 
     return SeedStageResult(
@@ -213,11 +215,11 @@ class MaizeEngine {
       expectedPlantHeightTodayM: heightToday,
       stageLabelEs: labelEs(current.key),
       heroAsset: heroAssetForStage(current.key),
-      helperCaption: _helperCaption(current.key),
+      helperCaption: _helperCaption(current.key, profile),
     );
   }
 
-  static String _helperCaption(MaizeStageKey s) {
+  static String _helperCaption(MaizeStageKey s, MaizeProfile profile) {
     switch (s) {
       case MaizeStageKey.germination:
         return 'Mantén humedad uniforme para asegurar imbibición. '
@@ -241,11 +243,29 @@ class MaizeEngine {
         return 'Máxima sensibilidad al estrés. '
             'Mantén humedad alta y nutrientes estables.';
       case MaizeStageKey.maturitySenescence:
-        return 'Llenado de grano activo. '
-            'Reducción gradual de riego; vigila sanidad foliar.';
+        switch (profile.maizeUseType) {
+          case MaizeUseType.forage:
+            return 'Acumulación final de biomasa. '
+                'Mantén humedad funcional y vigila sanidad foliar antes del corte.';
+          case MaizeUseType.elote:
+            return 'Llenado comercial de mazorca. '
+                'Mantén humedad uniforme y vigila calidad antes de cosecha de elote.';
+          case MaizeUseType.grain:
+            return 'Llenado de grano activo. '
+                'Reducción gradual de riego; vigila sanidad foliar.';
+        }
       case MaizeStageKey.harvest:
-        return 'Cultivo en secado. '
-            'Humedad de grano objetivo: 14–15 % para cosecha.';
+        switch (profile.maizeUseType) {
+          case MaizeUseType.forage:
+            return 'Ventana de corte cercana. '
+                'Define momento por calidad de forraje, humedad y sanidad.';
+          case MaizeUseType.elote:
+            return 'Ventana de cosecha de elote. '
+                'Busca uniformidad comercial y punto tierno de mazorca.';
+          case MaizeUseType.grain:
+            return 'Cultivo en secado. '
+                'Humedad de grano objetivo: 14–15 % para cosecha.';
+        }
     }
   }
 

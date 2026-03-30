@@ -71,16 +71,30 @@ class CerealAgroScoreEngine {
       AgroMetricKey.k: _wrap(kEval),
     };
 
-    final npkScore01 = _avg([nEval.score01, pEval.score01, kEval.score01]);
     final totalW = math.max(0.0001, weights.sum);
-    final soilControlScore01 =
+    final rawScore =
         (weights.moisture * moistureEval.score01 +
             weights.soilTemp * soilTempEval.score01 +
             weights.resistance * resistanceEval.score01 +
             weights.ph * phEval.score01 +
             weights.ec * ecEval.score01 +
-            weights.npk * npkScore01) /
+            weights.nutrientN * nEval.score01 +
+            weights.nutrientP * pEval.score01 +
+            weights.nutrientK * kEval.score01) /
         totalW;
+
+    // ── Penalización por métricas en estado crítico ──
+    double criticalPenalty = 1.0;
+    if (moistureEval.band == AgroBand.critical) criticalPenalty *= 0.45;
+    if (soilTempEval.band == AgroBand.critical) criticalPenalty *= 0.50;
+    if (phEval.band == AgroBand.critical) criticalPenalty *= 0.45;
+    if (ecEval.band == AgroBand.critical) criticalPenalty *= 0.65;
+    if (resistanceEval.band == AgroBand.critical) criticalPenalty *= 0.85;
+    if (nEval.band == AgroBand.critical) criticalPenalty *= 0.70;
+    if (pEval.band == AgroBand.critical) criticalPenalty *= 0.70;
+    if (kEval.band == AgroBand.critical) criticalPenalty *= 0.70;
+
+    final soilControlScore01 = rawScore * criticalPenalty;
 
     final suggestedAlertKeys = <String>[];
     final isCriticalStage = criticalStageKeys.contains(stageKey);

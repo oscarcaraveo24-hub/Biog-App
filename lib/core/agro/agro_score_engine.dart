@@ -3,27 +3,20 @@ import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
-import 'package:bio_g/crops/maize/maize_universal_profile.dart';
+import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
+import 'package:bio_g/crops/maize/maize_universal_profile.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/widgets/seeds/maize_models.dart';
 
 class AgroScoreEngine {
   /// Etapas críticas de maíz para severity bump en alertas.
-  static const Set<MaizeStageKey> _criticalStages = {
-    MaizeStageKey.flowerSet,
-  };
+  static const Set<MaizeStageKey> _criticalStages = {MaizeStageKey.flowerSet};
+
   static const Set<MaizeStageKey> _semiCriticalStages = {
     MaizeStageKey.tasseling,
   };
-  /// Evalúa telemetría + etapa y regresa score + métricas + alertas.
-  ///
-  /// - NO incluye Weather en el ring.
-  /// - SoilHealthRing = “controlable del suelo” (humedad, pH, EC, resistencia, NPK).
-  ///
-  /// ✅ IMPORTANTE (v2 de tu app):
-  /// - NPK se evalúa contra rangos por etapa del Universal Profile.
-  ///   (En este profile, esos rangos son ÍNDICE 0..100 normalizado desde ppm).
+
   static ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluateMaize({
     required BioGTelemetry t,
     required SeedStageResult stage,
@@ -42,6 +35,8 @@ class AgroScoreEngine {
     if (targets == null || weights == null) {
       final empty = AgroEvalResult(
         soilControlScore01: 0.0,
+        nutrientPriorityScore01: 0.0,
+        primaryScoreKind: AgroScoreKind.nutrientPriority,
         metrics: const {},
         alerts: const [],
         suggestedAlertKeys: const ['stage.unknown'],
@@ -49,86 +44,147 @@ class AgroScoreEngine {
       return (eval: empty, nextAlertsState: alertsState);
     }
 
-    // ---------- Normalización v1 ----------
-    final moisture01 = _normalizeMoisture01(t.soilMoisturePct, cal); // 0..1
+    final moisture01 = _normalizeMoisture01(t.soilMoisturePct, cal);
     final moistureRawCal = moisture01 * 100.0;
 
     final soilTemp = t.soilTempC;
     final ph = t.ph;
     final ec = t.ec;
-
-    // ✅ MPa directo (compactación / resistencia a penetración)
     final resistanceMpa = t.resistance;
 
-    // ✅ NPK (ppm -> índice 0..100) para comparar contra targets.nIndex/pIndex/kIndex
-    final nIndex0to100 = _ppmToIndex0to100(t.n.toDouble(), AgroMetricKey.n);
-    final pIndex0to100 = _ppmToIndex0to100(t.p.toDouble(), AgroMetricKey.p);
-    final kIndex0to100 = _ppmToIndex0to100(t.k.toDouble(), AgroMetricKey.k);
+    final nRaw = t.n.toDouble();
+    final pRaw = t.p.toDouble();
+    final kRaw = t.k.toDouble();
 
-    // ---------- Evaluaciones ----------
-    final moistureEval = _eval(
+    final moistureEval = _evalLegacy(
       value: moistureRawCal,
       range: targets.moistureRaw,
     );
-    final soilTempEval = _eval(value: soilTemp, range: targets.soilTemp);
-    final phEval = _eval(value: ph, range: targets.ph);
-    final ecEval = _eval(value: ec, range: targets.ec);
+    final soilTempEval = _evalLegacy(value: soilTemp, range: targets.soilTemp);
+    final phEval = _evalLegacy(value: ph, range: targets.ph);
+    final ecEval = _evalLegacy(value: ec, range: targets.ec);
+    final resEval = _evalLegacy(
+      value: resistanceMpa,
+      range: targets.resistance,
+    );
 
-    final resEval = _eval(value: resistanceMpa, range: targets.resistance);
+    final nMetric = _interpretMaizeNutrient(
+      metricKey: AgroMetricKey.n,
+      rawMgKg: nRaw,
+      stageKey: stageKey,
+      targets: targets,
+      weights: weights,
+      ph: ph,
+      ec: ec,
+      soilMoisturePct: t.soilMoisturePct,
+    );
 
-    // ✅ AHORA sí: comparar índice 0..100 contra rangos índice 0..100
-    final nEval = _eval(value: nIndex0to100, range: targets.nIndex);
-    final pEval = _eval(value: pIndex0to100, range: targets.pIndex);
-    final kEval = _eval(value: kIndex0to100, range: targets.kIndex);
+    final pMetric = _interpretMaizeNutrient(
+      metricKey: AgroMetricKey.p,
+      rawMgKg: pRaw,
+      stageKey: stageKey,
+      targets: targets,
+      weights: weights,
+      ph: ph,
+      ec: ec,
+      soilMoisturePct: t.soilMoisturePct,
+    );
+
+    final kMetric = _interpretMaizeNutrient(
+      metricKey: AgroMetricKey.k,
+      rawMgKg: kRaw,
+      stageKey: stageKey,
+      targets: targets,
+      weights: weights,
+      ph: ph,
+      ec: ec,
+      soilMoisturePct: t.soilMoisturePct,
+    );
 
     final metrics = <AgroMetricKey, AgroMetricEval>{
-      AgroMetricKey.soilMoisture: _wrap(moistureEval),
-      AgroMetricKey.soilTemp: _wrap(soilTempEval),
-      AgroMetricKey.ph: _wrap(phEval),
-      AgroMetricKey.ec: _wrap(ecEval),
-      AgroMetricKey.resistance: _wrap(resEval),
-
-      // ✅ value aquí ya es índice 0..100 (no ppm)
-      AgroMetricKey.n: _wrap(nEval),
-      AgroMetricKey.p: _wrap(pEval),
-      AgroMetricKey.k: _wrap(kEval),
+      AgroMetricKey.soilMoisture: _wrapLegacy(
+        moistureEval,
+        displayValue: moistureRawCal,
+      ),
+      AgroMetricKey.soilTemp: _wrapLegacy(soilTempEval, displayValue: soilTemp),
+      AgroMetricKey.ph: _wrapLegacy(phEval, displayValue: ph),
+      AgroMetricKey.ec: _wrapLegacy(ecEval, displayValue: ec),
+      AgroMetricKey.resistance: _wrapLegacy(
+        resEval,
+        displayValue: resistanceMpa,
+      ),
+      AgroMetricKey.n: nMetric,
+      AgroMetricKey.p: pMetric,
+      AgroMetricKey.k: kMetric,
     };
 
-    // NPK score compuesto:
-    final npkScore01 = _avg([nEval.score01, pEval.score01, kEval.score01]);
+    final nHealthScore = _nutrientHealthScore(nMetric);
+    final pHealthScore = _nutrientHealthScore(pMetric);
+    final kHealthScore = _nutrientHealthScore(kMetric);
 
-    // SoilControlScore (ring):
     final wSum = math.max(0.0001, weights.sum);
-    final soilControlScore01 =
+
+    final rawSoilControlScore =
         (weights.moisture * moistureEval.score01 +
             weights.soilTemp * soilTempEval.score01 +
             weights.resistance * resEval.score01 +
             weights.ph * phEval.score01 +
             weights.ec * ecEval.score01 +
-            weights.npk * npkScore01) /
+            weights.nutrientN * nHealthScore +
+            weights.nutrientP * pHealthScore +
+            weights.nutrientK * kHealthScore) /
         wSum;
 
-    // ---------- Suggested alert keys ----------
+    double criticalPenalty = 1.0;
+    if (moistureEval.band == AgroBand.critical) criticalPenalty *= 0.45;
+    if (soilTempEval.band == AgroBand.critical) criticalPenalty *= 0.50;
+    if (phEval.band == AgroBand.critical) criticalPenalty *= 0.45;
+    if (ecEval.band == AgroBand.critical) criticalPenalty *= 0.65;
+    if (resEval.band == AgroBand.critical) criticalPenalty *= 0.85;
+    criticalPenalty *= _nutrientPenaltyFactor(nMetric.priorityLabel);
+    criticalPenalty *= _nutrientPenaltyFactor(pMetric.priorityLabel);
+    criticalPenalty *= _nutrientPenaltyFactor(kMetric.priorityLabel);
+
+    final soilControlScore01 = (rawSoilControlScore * criticalPenalty).clamp(
+      0.0,
+      1.0,
+    );
+
+    final nutrientWeightSum = math.max(
+      0.0001,
+      weights.nutrientN + weights.nutrientP + weights.nutrientK,
+    );
+
+    final nutrientPriorityScore01 =
+        ((weights.nutrientN * _nutrientSeverityScore(nMetric)) +
+            (weights.nutrientP * _nutrientSeverityScore(pMetric)) +
+            (weights.nutrientK * _nutrientSeverityScore(kMetric))) /
+        nutrientWeightSum;
+
     final suggested = <String>[];
-    _pushAlertsForMetric(suggested, 'soilMoisture', moistureEval, stageKey);
-    _pushAlertsForMetric(suggested, 'soilTemp', soilTempEval, stageKey);
-    _pushAlertsForMetric(suggested, 'ph', phEval, stageKey);
-    _pushAlertsForMetric(suggested, 'ec', ecEval, stageKey);
-    _pushAlertsForMetric(suggested, 'resistance', resEval, stageKey);
 
-    _pushAlertsForMetric(suggested, 'npk.n', nEval, stageKey);
-    _pushAlertsForMetric(suggested, 'npk.p', pEval, stageKey);
-    _pushAlertsForMetric(suggested, 'npk.k', kEval, stageKey);
+    _pushLegacyAlertsForMetric(
+      suggested,
+      'soilMoisture',
+      moistureEval,
+      stageKey,
+    );
+    _pushLegacyAlertsForMetric(suggested, 'soilTemp', soilTempEval, stageKey);
+    _pushLegacyAlertsForMetric(suggested, 'ph', phEval, stageKey);
+    _pushLegacyAlertsForMetric(suggested, 'ec', ecEval, stageKey);
+    _pushLegacyAlertsForMetric(suggested, 'resistance', resEval, stageKey);
 
-    // ── Alertas ambientales (no participan en score) ──
+    _pushNutrientAlertsForMetric(suggested, 'npk.n', nMetric, stageKey);
+    _pushNutrientAlertsForMetric(suggested, 'npk.p', pMetric, stageKey);
+    _pushNutrientAlertsForMetric(suggested, 'npk.k', kMetric, stageKey);
+
     _pushEnvironmentalAlerts(suggested, t, stageKey);
 
-    // ---------- Build BioGAlert real (anti-spam) ----------
     final int severityBump = _criticalStages.contains(stageKey)
         ? 2
         : _semiCriticalStages.contains(stageKey)
-            ? 1
-            : 0;
+        ? 1
+        : 0;
 
     final built = AlertsEngine.buildFromSuggestedKeys(
       deviceId: t.deviceId,
@@ -138,10 +194,13 @@ class AgroScoreEngine {
       prev: alertsState,
       cooldown: alertsCooldown,
       cropLabel: cropLabel,
+      stageLabel: _stageLabelEs(stageKey),
     );
 
     final eval = AgroEvalResult(
-      soilControlScore01: soilControlScore01.clamp(0.0, 1.0),
+      soilControlScore01: soilControlScore01,
+      nutrientPriorityScore01: nutrientPriorityScore01.clamp(0.0, 1.0),
+      primaryScoreKind: AgroScoreKind.nutrientPriority,
       metrics: metrics,
       alerts: built.alerts,
       suggestedAlertKeys: suggested,
@@ -150,56 +209,58 @@ class AgroScoreEngine {
     return (eval: eval, nextAlertsState: built.state);
   }
 
-  // -------------------------
-  // Internals
-  // -------------------------
+  static AgroMetricEval _wrapLegacy(_Eval e, {required double displayValue}) {
+    return AgroMetricEval(
+      band: e.band,
+      score01: e.score01,
+      labelEs: e.band.labelEs,
+      value: displayValue,
+    );
+  }
 
-  // ✅ Misma lógica/caps que usas en Dashboard (_ppmCapFor)
-  static double _ppmCapFor(AgroMetricKey k) {
-    switch (k) {
-      case AgroMetricKey.n:
-        return 120.0;
-      case AgroMetricKey.p:
-        return 80.0;
-      case AgroMetricKey.k:
-        return 140.0;
-      default:
-        return 100.0;
+
+  static double _nutrientSeverityScore(AgroMetricEval metric) {
+    final label = metric.priorityLabel;
+    if (label == null) return 0.0;
+    return label.severityScore01(
+      stagePressure01: metric.stagePressure01 ?? 0.0,
+    );
+  }
+
+  static double _nutrientHealthScore(AgroMetricEval metric) {
+    final label = metric.priorityLabel;
+    if (label == null) return metric.score01.clamp(0.0, 1.0);
+    return label.healthScore01(
+      stagePressure01: metric.stagePressure01 ?? 0.0,
+    );
+  }
+
+  static double _nutrientPenaltyFactor(NutrientPriorityLabel? label) {
+    if (label == null) return 1.0;
+    switch (label) {
+      case NutrientPriorityLabel.actionRecommended:
+        return 0.78;
+      case NutrientPriorityLabel.reviewAccumulation:
+        return 0.82;
+      case NutrientPriorityLabel.reviewManagement:
+        return 0.86;
+      case NutrientPriorityLabel.highPriority:
+      case NutrientPriorityLabel.possibleExcess:
+        return 0.90;
+      case NutrientPriorityLabel.mediumPriority:
+        return 0.96;
+      case NutrientPriorityLabel.lowPriority:
+      case NutrientPriorityLabel.noPriority:
+      case NutrientPriorityLabel.unknown:
+        return 1.0;
     }
   }
 
-  static double _ppmToIndex0to100(double ppm, AgroMetricKey k) {
-    return ((ppm / _ppmCapFor(k)) * 100.0).clamp(0.0, 100.0);
-  }
-
-  static AgroMetricEval _wrap(_Eval e) => AgroMetricEval(
-    band: e.band,
-    score01: e.score01,
-    labelEs: _labelEs(e.band),
-    value: e.value,
-  );
-
-  static String _labelEs(AgroBand b) {
-    switch (b) {
-      case AgroBand.low:
-        return 'Bajo';
-      case AgroBand.optimal:
-        return 'Óptimo';
-      case AgroBand.high:
-        return 'Alto';
-      case AgroBand.critical:
-        return 'Crítico';
-      case AgroBand.unknown:
-        return '—';
-    }
-  }
-
-  static _Eval _eval({required double value, required AgroRange range}) {
+  static _Eval _evalLegacy({required double value, required AgroRange range}) {
     if (!value.isFinite || value.isNaN) {
       return _Eval(value: value, band: AgroBand.unknown, score01: 0.0);
     }
 
-    // sanea rangos por seguridad
     final lowMax = math.min(range.lowMax, range.optimalMin);
     final optMin = math.max(range.lowMax, range.optimalMin);
     final optMax = math.max(range.optimalMax, optMin);
@@ -218,11 +279,18 @@ class AgroScoreEngine {
       band = AgroBand.critical;
     }
 
-    final score01 = _scoreFromRange(value, lowMax, optMin, optMax, highMin);
+    final score01 = _scoreFromLegacyRange(
+      value,
+      lowMax,
+      optMin,
+      optMax,
+      highMin,
+    );
+
     return _Eval(value: value, band: band, score01: score01);
   }
 
-  static double _scoreFromRange(
+  static double _scoreFromLegacyRange(
     double v,
     double lowMax,
     double optMin,
@@ -252,7 +320,52 @@ class AgroScoreEngine {
     }
   }
 
-  static void _pushAlertsForMetric(
+  static AgroMetricEval _interpretMaizeNutrient({
+    required AgroMetricKey metricKey,
+    required double rawMgKg,
+    required MaizeStageKey stageKey,
+    required StageTargets targets,
+    required StageWeights weights,
+    required double ph,
+    required double ec,
+    required double soilMoisturePct,
+  }) {
+    final interpretation = NutrientRecommendationEngine.interpret(
+      nutrient: metricKey,
+      rawPpm: rawMgKg,
+      cropKey: 'maize',
+      stageKey: stageKey.name,
+      targets: targets,
+      weights: weights,
+      ph: ph,
+      ec: ec,
+      soilMoisturePct: soilMoisturePct,
+      trendPct: null,
+    );
+
+    return AgroMetricEval(
+      band: interpretation.label.agroBand,
+      score01: interpretation.label
+          .severityScore01(stagePressure01: interpretation.stagePressure01)
+          .clamp(0.0, 1.0),
+      labelEs: interpretation.labelEs,
+      value: rawMgKg,
+      priorityLabel: interpretation.label,
+      stageKey: stageKey.name,
+      stageLabelEs: _stageLabelEs(stageKey),
+      demandWindowLabelEs: interpretation.demandWindowLabel,
+      shortRecommendationEs: interpretation.shortRecommendation,
+      practicalRecommendationEs: interpretation.practicalRecommendation,
+      doseGuideEs: interpretation.doseGuideEs,
+      fertilizerEquivalentEs: interpretation.fertilizerEquivalentEs,
+      justificationEs: interpretation.justification,
+      stagePressure01: interpretation.stagePressure01,
+      contextModifier01: interpretation.contextModifier01,
+      trendModifier01: interpretation.trendModifier01,
+    );
+  }
+
+  static void _pushLegacyAlertsForMetric(
     List<String> out,
     String key,
     _Eval e,
@@ -266,13 +379,48 @@ class AgroScoreEngine {
       return;
     }
 
-    // En etapa crítica, también alertamos low/high (pero no spameamos por cooldown).
     if (isCriticalStage && e.band == AgroBand.low) out.add('$key.low');
     if (isCriticalStage && e.band == AgroBand.high) out.add('$key.high');
   }
 
-  /// Alertas ambientales para maíz (C4, tropical).
-  /// Polen muere con airTemp>35°C. Heladas letales en cualquier etapa.
+  static void _pushNutrientAlertsForMetric(
+    List<String> out,
+    String key,
+    AgroMetricEval metric,
+    MaizeStageKey stage,
+  ) {
+    final label = metric.priorityLabel;
+    if (label == null) return;
+
+    switch (label) {
+      case NutrientPriorityLabel.actionRecommended:
+        out.add('$key.action');
+        return;
+      case NutrientPriorityLabel.reviewManagement:
+        out.add('$key.review');
+        return;
+      case NutrientPriorityLabel.highPriority:
+        out.add('$key.high_priority');
+        return;
+      case NutrientPriorityLabel.possibleExcess:
+        out.add('$key.possible_excess');
+        return;
+      case NutrientPriorityLabel.reviewAccumulation:
+        out.add('$key.review_accumulation');
+        return;
+      case NutrientPriorityLabel.mediumPriority:
+        if (_criticalStages.contains(stage) ||
+            _semiCriticalStages.contains(stage)) {
+          out.add('$key.medium_priority');
+        }
+        return;
+      case NutrientPriorityLabel.lowPriority:
+      case NutrientPriorityLabel.noPriority:
+      case NutrientPriorityLabel.unknown:
+        return;
+    }
+  }
+
   static void _pushEnvironmentalAlerts(
     List<String> out,
     BioGTelemetry t,
@@ -280,24 +428,21 @@ class AgroScoreEngine {
   ) {
     final airTemp = t.airTempC;
     final airHum = t.airHumidityPct;
-    final isReproductive = _criticalStages.contains(stage) ||
-        _semiCriticalStages.contains(stage);
+    final isReproductive =
+        _criticalStages.contains(stage) || _semiCriticalStages.contains(stage);
 
-    // Maíz: helada siempre letal
     if (airTemp <= 0) {
       out.add('airTemp.frost');
     } else if (airTemp < 4) {
       out.add('airTemp.cold');
     }
 
-    // Maíz C4: polen muere >35°C, daño severo >40°C
     if (airTemp > 40) {
       out.add('airTemp.extreme_heat');
     } else if (airTemp > 35 || (isReproductive && airTemp > 33)) {
       out.add('airTemp.heat');
     }
 
-    // HR alta: favorece enfermedades foliares (tizón, roya)
     if (airHum > 90) {
       out.add('airHumidity.critical');
     } else if (airHum > 80) {
@@ -315,10 +460,170 @@ class AgroScoreEngine {
     return (raw0to100 / 100.0).clamp(0.0, 1.0);
   }
 
-  static double _avg(List<double> xs) {
-    if (xs.isEmpty) return 0.0;
-    final s = xs.fold<double>(0.0, (a, b) => a + b);
-    return (s / xs.length).clamp(0.0, 1.0);
+  static String _stageLabelEs(MaizeStageKey stageKey) {
+    switch (stageKey) {
+      case MaizeStageKey.germination:
+        return 'Germinación';
+      case MaizeStageKey.emergence:
+        return 'Emergencia';
+      case MaizeStageKey.vegEarly:
+        return 'Vegetativa temprana';
+      case MaizeStageKey.vegMid:
+        return 'Vegetativa media';
+      case MaizeStageKey.vegAdvanced:
+        return 'Vegetativa avanzada';
+      case MaizeStageKey.tasseling:
+        return 'Espigado';
+      case MaizeStageKey.flowerSet:
+        return 'Floración y cuajado';
+      case MaizeStageKey.maturitySenescence:
+        return 'Maduración / senescencia';
+      case MaizeStageKey.harvest:
+        return 'Cosecha';
+    }
+  }
+
+  static bool _isEstablishmentStage(MaizeStageKey stageKey) {
+    return stageKey == MaizeStageKey.germination ||
+        stageKey == MaizeStageKey.emergence ||
+        stageKey == MaizeStageKey.vegEarly;
+  }
+
+  static String _defaultDemandWindow(
+    AgroMetricKey metricKey,
+    MaizeStageKey stageKey,
+  ) {
+    switch (metricKey) {
+      case AgroMetricKey.n:
+        if (stageKey == MaizeStageKey.vegMid ||
+            stageKey == MaizeStageKey.vegAdvanced ||
+            stageKey == MaizeStageKey.tasseling ||
+            stageKey == MaizeStageKey.flowerSet) {
+          return 'Tramo fuerte de N (V6 a floración)';
+        }
+        if (_isEstablishmentStage(stageKey)) {
+          return 'Base de arranque de N';
+        }
+        if (stageKey == MaizeStageKey.maturitySenescence) {
+          return 'Cierre y trazabilidad de N';
+        }
+        return 'Seguimiento de N';
+
+      case AgroMetricKey.p:
+        if (_isEstablishmentStage(stageKey)) {
+          return 'Arranque, raíces y energía';
+        }
+        if (stageKey == MaizeStageKey.vegMid ||
+            stageKey == MaizeStageKey.vegAdvanced) {
+          return 'Soporte de crecimiento';
+        }
+        return 'Balance de P';
+
+      case AgroMetricKey.k:
+        if (stageKey == MaizeStageKey.tasseling ||
+            stageKey == MaizeStageKey.flowerSet ||
+            stageKey == MaizeStageKey.maturitySenescence) {
+          return 'Agua, tallo y balance';
+        }
+        return 'Balance fisiológico de K';
+
+      default:
+        return '';
+    }
+  }
+
+  static String _defaultShortRecommendation({
+    required AgroMetricKey metricKey,
+    required NutrientPriorityLabel label,
+  }) {
+    final nutrientName = metricKey.labelEs.toLowerCase();
+
+    switch (label) {
+      case NutrientPriorityLabel.actionRecommended:
+        return '¡Urge aplicar $nutrientName! El cultivo lo necesita ya.';
+      case NutrientPriorityLabel.reviewManagement:
+        return 'Revisa tu manejo de $nutrientName. Hay desajuste.';
+      case NutrientPriorityLabel.highPriority:
+        return 'El cultivo necesita $nutrientName. Conviene actuar.';
+      case NutrientPriorityLabel.mediumPriority:
+        return 'El nivel de $nutrientName empieza a bajar. Vigila.';
+      case NutrientPriorityLabel.lowPriority:
+        return 'Por ahora $nutrientName no es la prioridad.';
+      case NutrientPriorityLabel.noPriority:
+        return 'Todo bien con $nutrientName. Tierra nutrida.';
+      case NutrientPriorityLabel.possibleExcess:
+        return 'Frena la aplicación. Tienes $nutrientName de más.';
+      case NutrientPriorityLabel.reviewAccumulation:
+        return 'Exceso fuerte de $nutrientName. Podrías dañar el suelo.';
+      case NutrientPriorityLabel.unknown:
+        return 'Faltan datos para evaluar $nutrientName.';
+    }
+  }
+
+  static String _defaultPracticalRecommendation({
+    required NutrientPriorityLabel label,
+    String? plannerHint,
+  }) {
+    if (plannerHint != null && plannerHint.trim().isNotEmpty) {
+      return plannerHint;
+    }
+
+    switch (label) {
+      case NutrientPriorityLabel.actionRecommended:
+        return 'El cultivo necesita este nutriente ya. Conviene aplicar pronto para no perder rendimiento.';
+      case NutrientPriorityLabel.reviewManagement:
+        return 'Revisa tu plan de fertilización: algo no cuadra entre lo que aplicaste y lo que la planta está recibiendo.';
+      case NutrientPriorityLabel.highPriority:
+        return 'Conviene actuar. La planta va a necesitar más de este nutriente pronto.';
+      case NutrientPriorityLabel.mediumPriority:
+        return 'El nivel va bajando. Ve preparando la próxima aplicación para no quedarte corto.';
+      case NutrientPriorityLabel.lowPriority:
+        return 'Todo en orden por ahora. Sigue vigilando sin apresurarte a aplicar.';
+      case NutrientPriorityLabel.noPriority:
+        return 'Niveles bien. No apliques de más solo por costumbre: cuida tu bolsillo.';
+      case NutrientPriorityLabel.possibleExcess:
+        return 'Tienes de sobra. Frena la aplicación para no desbalancear el suelo.';
+      case NutrientPriorityLabel.reviewAccumulation:
+        return 'Niveles muy altos. Pausa el fertilizante y deja que la tierra se equilibre.';
+      case NutrientPriorityLabel.unknown:
+        return 'No hay datos suficientes para hacer una recomendación.';
+    }
+  }
+
+  static String _defaultJustification({
+    required AgroMetricKey metricKey,
+    required MaizeStageKey stageKey,
+  }) {
+    switch (metricKey) {
+      case AgroMetricKey.n:
+        if (stageKey == MaizeStageKey.vegMid ||
+            stageKey == MaizeStageKey.vegAdvanced ||
+            stageKey == MaizeStageKey.tasseling ||
+            stageKey == MaizeStageKey.flowerSet) {
+          return 'En maíz, la captura de nitrógeno se acelera fuerte desde V6 y gana máximo peso alrededor de espigamiento y floración.';
+        }
+        if (_isEstablishmentStage(stageKey)) {
+          return 'En arranque, el maíz usa solo una fracción menor del N total; la presión real sube conforme entra a V6 y prefloración.';
+        }
+        return 'En cierre de ciclo, el N se interpreta más como trazabilidad y aprendizaje del lote que como una corrección agresiva tardía.';
+
+      case AgroMetricKey.p:
+        if (_isEstablishmentStage(stageKey)) {
+          return 'El fósforo pesa mucho al arranque por su relación con raíces, energía y uniformidad del establecimiento.';
+        }
+        return 'El fósforo sostiene procesos clave, pero su mayor retorno suele estar en llegar bien colocado desde arranque.';
+
+      case AgroMetricKey.k:
+        if (stageKey == MaizeStageKey.tasseling ||
+            stageKey == MaizeStageKey.flowerSet ||
+            stageKey == MaizeStageKey.maturitySenescence) {
+          return 'El potasio gana peso hacia etapas reproductivas por su papel en agua, tallo, transporte y estabilidad del cultivo.';
+        }
+        return 'El potasio acompaña balance hídrico, vigor y estabilidad fisiológica durante el ciclo del cultivo.';
+
+      default:
+        return 'La interpretación depende de la etapa y del contexto del cultivo.';
+    }
   }
 
   static double _lerp(double a, double b, double t) => a + (b - a) * t;

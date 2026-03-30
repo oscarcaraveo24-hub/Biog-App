@@ -126,6 +126,7 @@ class _HistoryScreenState extends State<HistoryScreen>
               rangeIndex: _rangeIndex,
               live: live,
               seriesBuilder: _seriesBuilder,
+              targets: runtime.targets,
             );
 
         final HistoryNpkChartUiData npkChartData = _presenter.buildNpkChart(
@@ -238,6 +239,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                                     minSpan: metricChartData.minSpan,
                                     zoomRadius: metricChartData.zoomRadius,
                                     bandStops: metricChartData.bandStops,
+                                    bandColors: metricChartData.bandColors,
                                   )
                                 : HistoryNpkChartCard(
                                     title: npkChartData.title,

@@ -1,0 +1,472 @@
+import 'dart:math' as math;
+import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/npk_caps.dart';
+import 'package:bio_g/core/crops/crop_target_models.dart';
+
+class NutrientDoseGuide {
+  const NutrientDoseGuide({
+    required this.doseGuideEs,
+    this.fertilizerEquivalentEs,
+    this.requiresConfirmation = true,
+  });
+
+  final String doseGuideEs;
+  final String? fertilizerEquivalentEs;
+  final bool requiresConfirmation;
+}
+
+/// =========================================================================
+/// FERTILIZATION PLANNER
+/// =========================================================================
+///
+/// Convierte el déficit de nutrientes (mg/kg) a dosis práctica por escala.
+///
+/// FÓRMULA PUENTE (mg/kg → kg/ha):
+///   kg/ha = (Δ mg/kg × densidad_aparente × profundidad_cm) / 10
+///
+/// Defaults conservadores (suelo mineral mexicano promedio):
+///   densidad aparente = 1.2 g/cm³
+///   profundidad       = 20 cm
+///
+/// Con estos defaults:
+///   1 mg/kg ≈ 2.4 kg/ha  →  kg/ha = Δ mg/kg × 2.4
+///
+/// Derivación inversa (para contexto de código):
+///   Δ mg/kg = (kg/ha × 10) / (densidad × profundidad)
+///
+/// Factores de escala:
+///   campo abierto → kg/ha  (1 ha = 10,000 m²)
+///   huerto / cama → g/m²   (1 kg/ha = 0.1 g/m²)
+///   maceta        → g/maceta (asumimos 15 kg de sustrato, fórmula directa)
+///   planta / árbol → g/planta (asumimos 5 kg de zona radicular efectiva)
+///
+/// Ley fertilizante (fracción de nutriente puro en fuente comercial):
+///   Urea (46-0-0):  N = 0.46
+///   DAP  (18-46-0): P₂O₅ = 0.46
+///   MAP  (11-52-0): P₂O₅ = 0.52
+///   MOP / KCl (0-0-60): K₂O = 0.60
+/// =========================================================================
+class FertilizationPlanner {
+  FertilizationPlanner._();
+
+  // Constantes agronómicas base.
+  static const double _densidadAparente = 1.2; // g/cm³
+  static const double _profundidadCm = 20.0; // cm
+  /// 1 mg/kg ≈ 2.4 kg/ha con los defaults anteriores.
+  static const double _mgkgToKgHa =
+      (_densidadAparente * _profundidadCm) / 10.0; // = 2.4
+
+  // Ley fertilizante (fracción de nutriente puro).
+  static const double _leyUrea = 0.46; // 46% N
+  static const double _leyDap = 0.46; // 46% P₂O₅
+  static const double _leyMop = 0.60; // 60% K₂O
+
+  // Masa de suelo por escala (kg).
+  static const double _masaMacetaKg = 15.0;
+  static const double _masaPlantaKg = 5.0;
+
+  static NutrientDoseGuide? buildGuide({
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required double rawPpm,
+    required String? cropKey,
+    required String? stageKey,
+    String? profileId,
+    StageTargets? targets,
+    String? cultivationScaleId,
+  }) {
+    if (label == NutrientPriorityLabel.unknown ||
+        label == NutrientPriorityLabel.noPriority ||
+        label == NutrientPriorityLabel.lowPriority) {
+      return null;
+    }
+
+    final crop = (cropKey ?? '').trim().toLowerCase();
+
+    if (label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation) {
+      if ((crop == 'barley' || crop == 'cebada') &&
+          nutrient == AgroMetricKey.n &&
+          _isBarleyMalt(profileId)) {
+        return const NutrientDoseGuide(
+          doseGuideEs:
+              '¡NO APLIQUES MÁS NITRÓGENO! Te van a rechazar el grano en la maltera por exceso de proteína.',
+        );
+      }
+      return const NutrientDoseGuide(
+        doseGuideEs:
+            'Niveles altos detectados en el suelo. Pausa las aplicaciones de este nutriente para evitar bloqueos en la tierra.',
+      );
+    }
+
+    final deficitPpm = _calculateDeficitPpm(nutrient, rawPpm, cropKey, targets);
+    if (deficitPpm == null || deficitPpm < 2.0) return null;
+
+    if (crop == 'maize' || crop == 'maiz' || crop == 'corn')
+      return _maizeGuide(nutrient, stageKey, deficitPpm, cultivationScaleId);
+    if (crop == 'bean' || crop == 'frijol')
+      return _beanGuide(nutrient, stageKey, deficitPpm, cultivationScaleId);
+    if (crop == 'barley' || crop == 'cebada')
+      return _barleyGuide(
+        nutrient,
+        stageKey,
+        profileId,
+        deficitPpm,
+        cultivationScaleId,
+      );
+
+    return _genericGuide(nutrient, deficitPpm, cultivationScaleId);
+  }
+
+  // ==========================================
+  // CÁLCULO DE DÉFICIT REAL (mg/kg)
+  // ==========================================
+  /// Compara la lectura cruda contra el punto medio del rango óptimo
+  /// de la etapa actual y devuelve el déficit en mg/kg.
+  static double? _calculateDeficitPpm(
+    AgroMetricKey nutrient,
+    double rawPpm,
+    String? cropKey,
+    StageTargets? targets,
+  ) {
+    if (targets == null) return null;
+
+    final range = switch (nutrient) {
+      AgroMetricKey.n => targets.nIndex,
+      AgroMetricKey.p => targets.pIndex,
+      AgroMetricKey.k => targets.kIndex,
+      _ => null,
+    };
+    if (range == null) return null;
+
+    final cap = NpkCaps.forCropMetric(cropKey: cropKey, metricKey: nutrient);
+    final targetMidPpm =
+        ((range.optimalMin + range.optimalMax) / 2.0 / 100.0) * cap;
+
+    return math.max(0.0, targetMidPpm - rawPpm);
+  }
+
+  // ==========================================
+  // CONVERSIÓN: DÉFICIT (mg/kg) → DOSIS PRÁCTICA
+  // ==========================================
+  /// Convierte el déficit de nutriente a la escala del usuario.
+  ///
+  /// Paso 1: mg/kg → kg/ha de nutriente puro (fórmula puente).
+  /// Paso 2: kg/ha puro → kg/ha fuente comercial (÷ ley fertilizante).
+  /// Paso 3: kg/ha → escala del usuario (g/m², g/maceta, g/planta).
+  static String _formatDoseText(
+    double deficitPpm,
+    double leyFertilizante,
+    String sourceName,
+    String? scaleId,
+  ) {
+    final scale = (scaleId ?? '').toLowerCase();
+
+    if (scale.contains('maceta') ||
+        scale.contains('pot')) {
+      // MACETA: g = (Δ mg/kg × masa_suelo_kg) / 1000 / ley
+      final gPuros = (deficitPpm * _masaMacetaKg) / 1000.0;
+      final gComercial = gPuros / leyFertilizante;
+      return '${gComercial.toStringAsFixed(1)} g de $sourceName por maceta';
+    } else if (scale.contains('planta') ||
+        scale.contains('arbol') ||
+        scale.contains('árbol')) {
+      // PLANTA / ÁRBOL: g = (Δ mg/kg × masa_zona_radicular_kg) / 1000 / ley
+      final gPuros = (deficitPpm * _masaPlantaKg) / 1000.0;
+      final gComercial = gPuros / leyFertilizante;
+      return '${gComercial.toStringAsFixed(1)} g de $sourceName por planta';
+    } else if (scale.contains('huerto') ||
+        scale.contains('cama') ||
+        scale.contains('m2') ||
+        scale.contains('orchard')) {
+      // HUERTO / CAMA (g/m²): kg/ha × 0.1 = g/m²
+      final kgHaPuros = deficitPpm * _mgkgToKgHa;
+      final gM2Comercial = (kgHaPuros * 0.1) / leyFertilizante;
+      return '${gM2Comercial.toStringAsFixed(1)} g/m² de $sourceName';
+    } else {
+      // CAMPO ABIERTO (kg/ha)
+      // kg/ha = Δ mg/kg × 2.4 (densidad 1.2 g/cm³ × profundidad 20 cm ÷ 10)
+      final kgHaPuros = deficitPpm * _mgkgToKgHa;
+      final kgHaComercial =
+          ((kgHaPuros / leyFertilizante) / 5).round() * 5; // Redondeo a 5 kg
+      return '~$kgHaComercial kg/ha de $sourceName';
+    }
+  }
+
+  // ==========================================
+  // GUÍAS POR CULTIVO
+  // ==========================================
+
+  static NutrientDoseGuide _maizeGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    double deficitPpm,
+    String? scale,
+  ) {
+    final stage = (stageKey ?? '').toLowerCase();
+    final isPeakN = _isPeakNitrogenStage(stage);
+    final isEarly = _isEarlyStage(stage);
+    final isLate = _isLateStage(stage);
+
+    if (isLate) {
+      return const NutrientDoseGuide(
+        doseGuideEs:
+            'El ciclo ya cerró. Usa esta lectura del suelo para planear tu pre-siembra del próximo ciclo.',
+        fertilizerEquivalentEs:
+            'Aplicar fertilizante en madurez/cosecha es un desperdicio económico.',
+      );
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        final eqUrea = _formatDoseText(deficitPpm, _leyUrea, 'Urea (46-0-0)', scale);
+        final puroText = _formatDoseText(deficitPpm, 1.0, 'Nitrógeno puro', scale);
+        if (isPeakN)
+          return NutrientDoseGuide(
+            doseGuideEs:
+                '¡Viene el estirón de la milpa! Aplica $puroText para que la mazorca llene.',
+            fertilizerEquivalentEs: 'Equivale a aplicar $eqUrea.',
+          );
+        if (isEarly)
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arrancador de N: aplica $puroText para que la plántula agarre fuerza.',
+            fertilizerEquivalentEs: 'Con $eqUrea la armas.',
+          );
+        return NutrientDoseGuide(
+          doseGuideEs: 'Para emparejar tu tierra a la meta, aplica $puroText.',
+          fertilizerEquivalentEs: 'Con $eqUrea la armas.',
+        );
+
+      case AgroMetricKey.p:
+        final eqDap = _formatDoseText(deficitPpm, _leyDap, 'DAP (18-46-0)', scale);
+        final puroText = _formatDoseText(deficitPpm, 1.0, 'Fósforo (P₂O₅)', scale);
+        if (isEarly)
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arranque vital: aplica $puroText al lado de la semilla para que eche raíz.',
+            fertilizerEquivalentEs: 'Equivale a aplicar $eqDap.',
+          );
+        return NutrientDoseGuide(
+          doseGuideEs: 'Aplica $puroText para que no se atrase la milpa.',
+          fertilizerEquivalentEs: 'Aplícale $eqDap.',
+        );
+
+      case AgroMetricKey.k:
+        final eqMop = _formatDoseText(deficitPpm, _leyMop, 'KCl (0-0-60)', scale);
+        final puroText = _formatDoseText(deficitPpm, 1.0, 'Potasio (K₂O)', scale);
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText para fortalecer la caña y evitar que se acame.',
+          fertilizerEquivalentEs: 'Equivale a aplicar $eqMop.',
+        );
+
+      default:
+        return const NutrientDoseGuide(doseGuideEs: 'Falta nutriente.');
+    }
+  }
+
+  static NutrientDoseGuide _beanGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    double deficitPpm,
+    String? scale,
+  ) {
+    final stage = (stageKey ?? '').toLowerCase();
+    final isEarly = _isEarlyStage(stage);
+    final isFlowering = stage.contains('flower') || stage.contains('flor');
+    final isPodFill = stage.contains('pod') ||
+        stage.contains('grain') ||
+        stage.contains('vaina') ||
+        stage.contains('llenado');
+    final isLate = _isLateStage(stage);
+
+    if (isLate)
+      return const NutrientDoseGuide(
+        doseGuideEs:
+            'El frijol ya está en fase final. Deja secar la vaina y guarda esta lectura para planear el próximo ciclo.',
+        fertilizerEquivalentEs: null,
+      );
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        final eqUrea = _formatDoseText(deficitPpm, _leyUrea, 'Urea', scale);
+        final puroText = _formatDoseText(deficitPpm, 1.0, 'N puro', scale);
+        if (isEarly)
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arrancador: aplica $puroText mientras la planta todavía no fija su propio nitrógeno.',
+            fertilizerEquivalentEs: 'Equivale a $eqUrea.',
+          );
+        if (isFlowering)
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'La planta está en floración y no alcanza a fijar suficiente N. Aplica $puroText para evitar aborto de flor.',
+            fertilizerEquivalentEs: 'Equivale a $eqUrea.',
+          );
+        return NutrientDoseGuide(
+          doseGuideEs: 'Aplica $puroText para complementar la fijación biológica.',
+          fertilizerEquivalentEs: 'Equivale a $eqUrea.',
+        );
+
+      case AgroMetricKey.p:
+        final eqDap = _formatDoseText(deficitPpm, _leyDap, 'DAP', scale);
+        final puroText = _formatDoseText(deficitPpm, 1.0, 'P₂O₅', scale);
+        if (isEarly)
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Fósforo VITAL para nodular. Aplica $puroText al sembrar, enterrado al lado de la semilla.',
+            fertilizerEquivalentEs: 'Equivale a $eqDap.',
+          );
+        return NutrientDoseGuide(
+          doseGuideEs: 'Aplica $puroText para reforzar raíz y nodulación.',
+          fertilizerEquivalentEs: 'Equivale a $eqDap.',
+        );
+
+      case AgroMetricKey.k:
+        final eqMop = _formatDoseText(deficitPpm, _leyMop, 'KCl', scale);
+        final puroText = _formatDoseText(deficitPpm, 1.0, 'K₂O', scale);
+        if (isFlowering || isPodFill)
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Llenado de vaina: aplica $puroText para que el grano pese en la báscula.',
+            fertilizerEquivalentEs: 'Equivale a $eqMop.',
+          );
+        return NutrientDoseGuide(
+          doseGuideEs: 'Aplica $puroText para preparar reservas de Potasio.',
+          fertilizerEquivalentEs: 'Equivale a $eqMop.',
+        );
+
+      default:
+        return const NutrientDoseGuide(doseGuideEs: 'Falta nutriente.');
+    }
+  }
+
+  static NutrientDoseGuide _barleyGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    String? profileId,
+    double deficitPpm,
+    String? scale,
+  ) {
+    final isMalt = _isBarleyMalt(profileId);
+    final stage = (stageKey ?? '').toLowerCase();
+    final isEarly = _isEarlyStage(stage);
+    final isTillering = stage.contains('tiller') || stage.contains('macoll');
+    final isLate = _isLateStage(stage);
+
+    if (isLate)
+      return const NutrientDoseGuide(
+        doseGuideEs:
+            'El ciclo de la cebada ya cerró. Usa esta lectura para planear tu pre-siembra.',
+      );
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        final eqUrea = _formatDoseText(deficitPpm, _leyUrea, 'Urea', scale);
+        final puroText = _formatDoseText(deficitPpm, 1.0, 'N puro', scale);
+        if (isMalt && (stage.contains('head') || stage.contains('espig') ||
+            stage.contains('flower') || stage.contains('flor') ||
+            stage.contains('grain') || stage.contains('llenado')))
+          return const NutrientDoseGuide(
+            doseGuideEs:
+                'Prohibido aplicar N tarde en cebada maltera: sube la proteína y te rechazan el grano.',
+          );
+        if (isEarly || isTillering)
+          return NutrientDoseGuide(
+            doseGuideEs: isMalt
+                ? 'Aplica $puroText en macollamiento para amarrar espigas sin subir proteína al final.'
+                : 'Aplica $puroText temprano para maximizar macollos y forraje.',
+            fertilizerEquivalentEs: 'Equivale a $eqUrea.',
+          );
+        return NutrientDoseGuide(
+          doseGuideEs: 'Aplica $puroText para ajustar la meta de la etapa.',
+          fertilizerEquivalentEs: 'Equivale a $eqUrea.',
+        );
+
+      case AgroMetricKey.p:
+        final eqDap = _formatDoseText(deficitPpm, _leyDap, 'DAP', scale);
+        final puroText = _formatDoseText(deficitPpm, 1.0, 'P₂O₅', scale);
+        if (isEarly || isTillering)
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'La cebada necesita P para echar raíz fuerte. Aplica $puroText lo antes posible.',
+            fertilizerEquivalentEs: 'Equivale a $eqDap.',
+          );
+        return const NutrientDoseGuide(
+          doseGuideEs:
+              'La corrección de Fósforo fuera de la etapa temprana es poco eficiente. Si puedes, aplícalo en pre-siembra del próximo ciclo.',
+        );
+
+      case AgroMetricKey.k:
+        final eqMop = _formatDoseText(deficitPpm, _leyMop, 'KCl', scale);
+        final puroText = _formatDoseText(deficitPpm, 1.0, 'K₂O', scale);
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText para prevenir encamado y fortalecer el tallo.',
+          fertilizerEquivalentEs: 'Equivale a $eqMop.',
+        );
+
+      default:
+        return const NutrientDoseGuide(doseGuideEs: 'Falta nutriente.');
+    }
+  }
+
+  static NutrientDoseGuide _genericGuide(
+    AgroMetricKey nutrient,
+    double deficitPpm,
+    String? scale,
+  ) {
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica ${_formatDoseText(deficitPpm, 1.0, 'Nitrógeno puro', scale)}.',
+          fertilizerEquivalentEs:
+              'Equivale a ${_formatDoseText(deficitPpm, _leyUrea, 'Urea', scale)}.',
+        );
+      case AgroMetricKey.p:
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica ${_formatDoseText(deficitPpm, 1.0, 'Fósforo', scale)}.',
+          fertilizerEquivalentEs:
+              'Equivale a ${_formatDoseText(deficitPpm, _leyDap, 'DAP', scale)}.',
+        );
+      case AgroMetricKey.k:
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica ${_formatDoseText(deficitPpm, 1.0, 'Potasio', scale)}.',
+          fertilizerEquivalentEs:
+              'Equivale a ${_formatDoseText(deficitPpm, _leyMop, 'KCl', scale)}.',
+        );
+      default:
+        return const NutrientDoseGuide(doseGuideEs: 'Aplica fertilizante.');
+    }
+  }
+
+  // ==========================================
+  // HELPERS
+  // ==========================================
+
+  static bool _isBarleyMalt(String? profileId) =>
+      profileId != null &&
+      (profileId.toLowerCase().contains('cb02') ||
+          profileId.toLowerCase().contains('malt'));
+  static bool _isEarlyStage(String stage) =>
+      stage.contains('germin') ||
+      stage.contains('emerg') ||
+      stage.contains('vegearly') ||
+      stage.contains('early');
+  static bool _isPeakNitrogenStage(String stage) =>
+      stage.contains('vegmid') ||
+      stage.contains('vegadvanced') ||
+      stage.contains('tass') ||
+      stage.contains('elong') ||
+      stage.contains('boot');
+  static bool _isLateStage(String stage) =>
+      stage.contains('matur') ||
+      stage.contains('senesc') ||
+      stage.contains('harvest') ||
+      stage.contains('cosech') ||
+      stage.contains('late');
+}

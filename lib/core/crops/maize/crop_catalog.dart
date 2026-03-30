@@ -23,8 +23,8 @@ class CropCatalog {
   static const String oatCropId = 'oat';
 
   // ── Maize catalog constants ─────────────────────────────────────────────────
-  static const String maizeDemoVarietyId = 'dk_2069';
-  static const String maizeGenericVarietyId = 'generic_maize';
+  static const String maizeDemoVarietyId = 'dekalb_dk2069_grain';
+  static const String maizeGenericVarietyId = 'generic_maize_white_grain';
   static const String maizeDefaultProfileId = 'mzg_gen_b';
   static const String maizeGenericProfileId = 'maize_generic';
 
@@ -592,6 +592,10 @@ class CropCatalog {
     return normalized.isNotEmpty &&
         (normalized.endsWith('_generic') ||
             normalized == 'maize_generic' ||
+            normalized == 'mzg_gen_b' ||
+            normalized == 'mzg_gen_a' ||
+            normalized == 'mzf_gen' ||
+            normalized == 'mze_gen' ||
             normalized == 'fj_gen' ||
             normalized == 'tr_gen' ||
             normalized == 'cb_gen' ||

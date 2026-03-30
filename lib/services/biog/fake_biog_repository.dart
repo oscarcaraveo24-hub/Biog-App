@@ -309,6 +309,21 @@ class FakeBioGRepository implements BioGRepository {
     return prev + d.sign * maxStep;
   }
 
+  double _roundTo(double value, int decimals) {
+    final double mod = math.pow(10, decimals).toDouble();
+    return (value * mod).roundToDouble() / mod;
+  }
+
+  double _boundedDelta({
+    required double prev,
+    required double next,
+    required double maxDelta,
+  }) {
+    final double delta = next - prev;
+    if (delta.abs() <= maxDelta) return next;
+    return prev + delta.sign * maxDelta;
+  }
+
   void _tickAllDevices() {
     if (_devices.isEmpty) return;
 
@@ -375,27 +390,96 @@ class FakeBioGRepository implements BioGRepository {
 
     final BioGTelemetry? prev = _lastByDevice[deviceId];
 
-    final double phase = (_phaseByDevice[deviceId] ?? 0.0) + 0.06;
+    final double phase = (_phaseByDevice[deviceId] ?? 0.0) + 0.025;
     _phaseByDevice[deviceId] = phase;
 
     final StageTargets? targets = _resolveStageTargets(device, now);
 
-    final double baseAirT = 26 + 3 * math.sin(phase * 0.6) + noise(0.4);
-    final double baseAirH = 58 + 8 * math.sin(phase * 0.35 + 1.1) + noise(1.2);
+    final double airTempTarget =
+        26.0 + 1.8 * math.sin(phase * 0.35) + noise(0.15);
 
-    final double baseSoilT = 24 + 2 * math.sin(phase * 0.5 + 0.8) + noise(0.3);
-    final double baseSoilM =
-        (prev?.soilMoisturePct ?? (45 + 6 * math.sin(phase * 0.25))) +
-        noise(1.4);
+    final double airHumidityTarget =
+        60.0 + 4.5 * math.sin(phase * 0.22 + 1.1) + noise(0.5);
 
-    final double basePh =
-        (prev?.ph ?? (6.4 + 0.25 * math.sin(phase * 0.12))) + noise(0.03);
-    final double baseEc =
-        (prev?.ec ?? (1.3 + 0.35 * math.sin(phase * 0.15 + 0.4))) + noise(0.04);
+    final double soilTempTarget =
+        23.5 + 1.2 * math.sin(phase * 0.28 + 0.8) + noise(0.12);
 
-    final double baseResMpa =
-        (prev?.resistance ?? (1.10 + 0.25 * math.sin(phase * 0.18 + 2.0))) +
-        noise(0.05);
+    final double soilMoistureTarget =
+        46.0 + 3.0 * math.sin(phase * 0.16 + 0.5) + noise(0.6);
+
+    final double phTarget = 6.45 + 0.10 * math.sin(phase * 0.08) + noise(0.01);
+
+    final double ecTarget =
+        1.25 + 0.12 * math.sin(phase * 0.10 + 0.4) + noise(0.015);
+
+    final double resistanceTarget =
+        1.10 + 0.10 * math.sin(phase * 0.12 + 2.0) + noise(0.015);
+
+    final double prevAirT = prev?.airTempC ?? 26.0;
+    final double prevAirH = prev?.airHumidityPct ?? 60.0;
+    final double prevSoilT = prev?.soilTempC ?? 23.5;
+    final double prevSoilM = prev?.soilMoisturePct ?? 46.0;
+    final double prevPh = prev?.ph ?? 6.45;
+    final double prevEc = prev?.ec ?? 1.25;
+    final double prevRes = prev?.resistance ?? 1.10;
+
+    final double airTemp = _boundedDelta(
+      prev: prevAirT,
+      next: _smoothToward(prev: prevAirT, target: airTempTarget, maxStep: 0.18),
+      maxDelta: 0.22,
+    );
+
+    final double airHumidity = _boundedDelta(
+      prev: prevAirH,
+      next: _smoothToward(
+        prev: prevAirH,
+        target: airHumidityTarget,
+        maxStep: 0.7,
+      ),
+      maxDelta: 0.9,
+    );
+
+    final double soilTemp = _boundedDelta(
+      prev: prevSoilT,
+      next: _smoothToward(
+        prev: prevSoilT,
+        target: soilTempTarget,
+        maxStep: 0.10,
+      ),
+      maxDelta: 0.14,
+    );
+
+    final double soilMoisture = _boundedDelta(
+      prev: prevSoilM,
+      next: _smoothToward(
+        prev: prevSoilM,
+        target: soilMoistureTarget,
+        maxStep: 0.7,
+      ),
+      maxDelta: 0.9,
+    );
+
+    final double ph = _boundedDelta(
+      prev: prevPh,
+      next: _smoothToward(prev: prevPh, target: phTarget, maxStep: 0.015),
+      maxDelta: 0.02,
+    );
+
+    final double ec = _boundedDelta(
+      prev: prevEc,
+      next: _smoothToward(prev: prevEc, target: ecTarget, maxStep: 0.025),
+      maxDelta: 0.03,
+    );
+
+    final double resistance = _boundedDelta(
+      prev: prevRes,
+      next: _smoothToward(
+        prev: prevRes,
+        target: resistanceTarget,
+        maxStep: 0.02,
+      ),
+      maxDelta: 0.025,
+    );
 
     final double nTarget = targets == null
         ? 60.0
@@ -408,76 +492,76 @@ class FakeBioGRepository implements BioGRepository {
         : _targetPpmForStage(targets, NpkNutrient.k);
 
     final double nAmp = targets == null
-        ? 6.0
-        : _ampPpmForStage(targets, NpkNutrient.n);
+        ? 3.0
+        : (_ampPpmForStage(targets, NpkNutrient.n) * 0.45).clamp(2.0, 5.0);
     final double pAmp = targets == null
-        ? 4.0
-        : _ampPpmForStage(targets, NpkNutrient.p);
+        ? 2.0
+        : (_ampPpmForStage(targets, NpkNutrient.p) * 0.45).clamp(1.5, 4.0);
     final double kAmp = targets == null
-        ? 6.0
-        : _ampPpmForStage(targets, NpkNutrient.k);
+        ? 3.0
+        : (_ampPpmForStage(targets, NpkNutrient.k) * 0.45).clamp(2.0, 5.0);
 
-    final double prevN = prev?.n.toDouble() ?? (nTarget + noise(nAmp));
-    final double prevP = prev?.p.toDouble() ?? (pTarget + noise(pAmp));
-    final double prevK = prev?.k.toDouble() ?? (kTarget + noise(kAmp));
+    final double prevN = prev?.n.toDouble() ?? nTarget;
+    final double prevP = prev?.p.toDouble() ?? pTarget;
+    final double prevK = prev?.k.toDouble() ?? kTarget;
 
-    final double nNext =
-        _smoothToward(
-          prev: prevN,
-          target:
-              nTarget +
-              math.sin(phase * 0.10) * (nAmp * 0.9) +
-              noise(nAmp * 0.35),
-          maxStep: 1.6,
-        ) +
-        noise(0.25);
+    final double nNext = _boundedDelta(
+      prev: prevN,
+      next: _smoothToward(
+        prev: prevN,
+        target: nTarget + math.sin(phase * 0.07) * nAmp + noise(nAmp * 0.12),
+        maxStep: 0.8,
+      ),
+      maxDelta: 1.0,
+    );
 
-    final double pNext =
-        _smoothToward(
-          prev: prevP,
-          target:
-              pTarget +
-              math.sin(phase * 0.09 + 0.6) * (pAmp * 0.9) +
-              noise(pAmp * 0.35),
-          maxStep: 1.0,
-        ) +
-        noise(0.18);
+    final double pNext = _boundedDelta(
+      prev: prevP,
+      next: _smoothToward(
+        prev: prevP,
+        target:
+            pTarget + math.sin(phase * 0.065 + 0.6) * pAmp + noise(pAmp * 0.12),
+        maxStep: 0.55,
+      ),
+      maxDelta: 0.7,
+    );
 
-    final double kNext =
-        _smoothToward(
-          prev: prevK,
-          target:
-              kTarget +
-              math.sin(phase * 0.11 + 1.7) * (kAmp * 0.9) +
-              noise(kAmp * 0.35),
-          maxStep: 1.8,
-        ) +
-        noise(0.25);
+    final double kNext = _boundedDelta(
+      prev: prevK,
+      next: _smoothToward(
+        prev: prevK,
+        target:
+            kTarget + math.sin(phase * 0.075 + 1.7) * kAmp + noise(kAmp * 0.12),
+        maxStep: 0.9,
+      ),
+      maxDelta: 1.1,
+    );
 
     final double battery = clamp(
-      (prev?.batteryPct ?? 96.0) - 0.03 + noise(0.02),
-      10,
+      (prev?.batteryPct ?? 96.0) - 0.01 + noise(0.005),
+      20,
       100,
     );
-    final int rssi = ((prev?.signalRssi ?? -55) + noise(2.0).round()).clamp(
-      -95,
-      -35,
+
+    final int rssi = ((prev?.signalRssi ?? -55) + noise(1.0).round()).clamp(
+      -75,
+      -40,
     );
 
     final BioGTelemetry t = BioGTelemetry(
       deviceId: deviceId,
       timestamp: now,
-      airTempC: clamp(baseAirT, 10, 45),
-      airHumidityPct: clamp(baseAirH, 10, 100),
-      soilMoisturePct: clamp(baseSoilM, 5, 85),
-      soilTempC: clamp(baseSoilT, 8, 40),
-      ph: clamp(basePh, 4.5, 8.8),
-      ec: clamp(baseEc, 0.4, 3.2),
-      resistance: clamp(baseResMpa, 0.20, 2.80),
-      n: clamp(nNext, 5, 120),
-      p: clamp(pNext, 2, 80),
-      k: clamp(kNext, 5, 140),
-      batteryPct: battery,
+      airTempC: _roundTo(clamp(airTemp, 18, 34), 1),
+      airHumidityPct: _roundTo(clamp(airHumidity, 35, 80), 1),
+      soilMoisturePct: _roundTo(clamp(soilMoisture, 25, 65), 1),
+      soilTempC: _roundTo(clamp(soilTemp, 16, 30), 1),
+      ph: _roundTo(clamp(ph, 5.8, 7.2), 2),
+      ec: _roundTo(clamp(ec, 0.8, 2.0), 2),
+      resistance: _roundTo(clamp(resistance, 0.7, 1.8), 2),
+      n: _roundTo(clamp(nNext, 8, 120), 1),
+      p: _roundTo(clamp(pNext, 4, 80), 1),
+      k: _roundTo(clamp(kNext, 8, 140), 1),
+      batteryPct: _roundTo(battery, 1),
       signalRssi: rssi,
     );
 

@@ -28,6 +28,8 @@ class BeanCropEngineAdapter implements CropEngine {
       windowsNow: result.windowsNow,
       heroAsset: result.heroAsset,
       helperCaption: result.helperCaption,
+      daySinceSowing: result.daySinceSowing,
+      stageProgressPct: result.stageProgressPct,
     );
   }
 }

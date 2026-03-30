@@ -949,7 +949,7 @@ const List<CropProfileEntry> maizeProfileEntries = [
     id: kMzg07,
     label: 'Grano intermedio corto invernal',
     cropId: kCropMaize,
-    aliases: <String>['MZG-07', 'MAIZE_GENERIC'],
+    aliases: <String>['MZG-07'],
   ),
   CropProfileEntry(id: kMzg08, label: 'Grano tardío extendido',             cropId: kCropMaize),
   CropProfileEntry(id: kMzg09, label: 'Grano largo de riego',               cropId: kCropMaize),

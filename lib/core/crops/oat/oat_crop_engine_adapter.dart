@@ -1,4 +1,3 @@
-// lib/core/crops/oat/oat_crop_engine_adapter.dart
 import 'package:bio_g/core/crops/crop_engine.dart';
 import 'package:bio_g/core/crops/crop_profile_models.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
@@ -29,6 +28,8 @@ class OatCropEngineAdapter implements CropEngine {
       windowsNow: result.windowsNow,
       heroAsset: result.heroAsset,
       helperCaption: result.helperCaption,
+      daySinceSowing: result.daySinceSowing,
+      stageProgressPct: result.stageProgressPct,
     );
   }
 }

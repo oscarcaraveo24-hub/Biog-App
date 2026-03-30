@@ -82,6 +82,42 @@ class AlertsEngine {
     required String crop,
     required String stage,
   }) {
+    final nutrientPriorityMatch = RegExp(
+      r'^npk\.(n|p|k)\.(action|review|high_priority|medium_priority|possible_excess|review_accumulation)$',
+    ).firstMatch(key);
+
+    if (nutrientPriorityMatch != null) {
+      return _nutrientPriorityAlert(
+        nutrientCode: nutrientPriorityMatch.group(1)!,
+        stateCode: nutrientPriorityMatch.group(2)!,
+        crop: crop,
+        stage: stage,
+      );
+    }
+
+    if (key == 'stage.fallback') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Etapa estimada por respaldo',
+        body:
+            'BIO-G no pudo mapear con precisión la etapa del cultivo y usó '
+            'una etapa de respaldo para $crop. Conviene revisar configuración '
+            'de perfil, variedad y fecha de siembra.',
+      );
+    }
+    if (key == 'stage.unknown') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Etapa no interpretada',
+        body:
+            'BIO-G no pudo interpretar la etapa actual de $crop. Revisa '
+            'configuración del cultivo y datos disponibles para evitar '
+            'diagnósticos incompletos.',
+      );
+    }
+
     // ── Humedad ──
     if (key == 'soilMoisture.critical') {
       return _AlertTemplate(
@@ -235,105 +271,6 @@ class AlertsEngine {
       );
     }
 
-    // ── Nitrógeno ──
-    if (key == 'npk.n.critical') {
-      return _AlertTemplate(
-        type: BioGAlertType.stageEvent,
-        severity: BioGAlertSeverity.warning,
-        title: 'Nitrógeno fuera de rango',
-        body:
-            'El nitrógeno disponible está fuera del rango esperado para '
-            '$crop en $stage. Es el nutriente más demandado en etapas '
-            'vegetativas — verifica la dosificación de fertilizante '
-            'nitrogenado.',
-      );
-    }
-    if (key == 'npk.n.low') {
-      return _AlertTemplate(
-        type: BioGAlertType.stageEvent,
-        severity: BioGAlertSeverity.info,
-        title: 'Nitrógeno bajo',
-        body:
-            'El N disponible es bajo para $crop. Esto puede causar '
-            'hojas amarillentas y menor crecimiento.',
-      );
-    }
-    if (key == 'npk.n.high') {
-      return _AlertTemplate(
-        type: BioGAlertType.stageEvent,
-        severity: BioGAlertSeverity.info,
-        title: 'Nitrógeno alto',
-        body:
-            'El N disponible es alto para $crop. Exceso puede causar '
-            'crecimiento vegetativo excesivo y retrasar madurez.',
-      );
-    }
-
-    // ── Fósforo ──
-    if (key == 'npk.p.critical') {
-      return _AlertTemplate(
-        type: BioGAlertType.stageEvent,
-        severity: BioGAlertSeverity.warning,
-        title: 'Fósforo fuera de rango',
-        body:
-            'El fósforo disponible está fuera de rango para $crop en '
-            '$stage. Es esencial para el desarrollo radicular y la '
-            'floración. Revisa aplicación de fosfato.',
-      );
-    }
-    if (key == 'npk.p.low') {
-      return _AlertTemplate(
-        type: BioGAlertType.stageEvent,
-        severity: BioGAlertSeverity.info,
-        title: 'Fósforo bajo',
-        body:
-            'El P disponible es bajo para $crop. Puede limitar el '
-            'enraizamiento y la fijación de fruto.',
-      );
-    }
-    if (key == 'npk.p.high') {
-      return _AlertTemplate(
-        type: BioGAlertType.stageEvent,
-        severity: BioGAlertSeverity.info,
-        title: 'Fósforo alto',
-        body:
-            'El P disponible es alto para $crop. Exceso puede bloquear '
-            'absorción de zinc y hierro.',
-      );
-    }
-
-    // ── Potasio ──
-    if (key == 'npk.k.critical') {
-      return _AlertTemplate(
-        type: BioGAlertType.stageEvent,
-        severity: BioGAlertSeverity.warning,
-        title: 'Potasio fuera de rango',
-        body:
-            'El potasio disponible está fuera de rango para $crop en '
-            '$stage. Es clave para el transporte de azúcares y la '
-            'resistencia a enfermedades.',
-      );
-    }
-    if (key == 'npk.k.low') {
-      return _AlertTemplate(
-        type: BioGAlertType.stageEvent,
-        severity: BioGAlertSeverity.info,
-        title: 'Potasio bajo',
-        body:
-            'El K disponible es bajo para $crop. Puede debilitar la '
-            'resistencia a plagas y afectar calidad de grano.',
-      );
-    }
-    if (key == 'npk.k.high') {
-      return _AlertTemplate(
-        type: BioGAlertType.stageEvent,
-        severity: BioGAlertSeverity.info,
-        title: 'Potasio alto',
-        body:
-            'El K disponible es alto para $crop. Puede interferir con '
-            'absorción de calcio y magnesio.',
-      );
-    }
 
     // ── Temperatura ambiental ──
     if (key == 'airTemp.frost') {
@@ -404,6 +341,158 @@ class AlertsEngine {
     }
 
     return null;
+  }
+
+  static _AlertTemplate _nutrientPriorityAlert({
+    required String nutrientCode,
+    required String stateCode,
+    required String crop,
+    required String stage,
+  }) {
+    final nutrientName = switch (nutrientCode) {
+      'n' => 'nitrógeno',
+      'p' => 'fósforo',
+      'k' => 'potasio',
+      _ => 'nutriente',
+    };
+
+    final shortName = switch (nutrientCode) {
+      'n' => 'N',
+      'p' => 'P',
+      'k' => 'K',
+      _ => 'NPK',
+    };
+
+    final isMaize = crop.toLowerCase().contains('maíz') ||
+        crop.toLowerCase().contains('maiz') ||
+        crop.toLowerCase().contains('corn') ||
+        crop.toLowerCase().contains('maize');
+    final stageLc = stage.toLowerCase();
+
+    final nutrientWhy = _nutrientWhy(
+      nutrientCode: nutrientCode,
+      isMaize: isMaize,
+      stageLc: stageLc,
+    );
+
+    switch (stateCode) {
+      case 'action':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: '¡Urge aplicar $nutrientName!',
+          body:
+              'El cultivo de $crop en $stage necesita $shortName ya. '
+              '$nutrientWhy Conviene corregir ahora para no perder '
+              'rendimiento.',
+        );
+      case 'review':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Revisa tu manejo de $nutrientName',
+          body:
+              'Algo no cuadra con $shortName en $crop durante $stage. '
+              '$nutrientWhy Revisa qué aplicaste, cuándo y en qué dosis '
+              'antes de agregar más.',
+        );
+      case 'high_priority':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Falta $nutrientName en el cultivo',
+          body:
+              'El $crop en $stage necesita más $shortName. '
+              '$nutrientWhy Conviene actuar pronto para no afectar '
+              'el rendimiento.',
+        );
+      case 'medium_priority':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: '$nutrientName va bajando',
+          body:
+              'El nivel de $shortName en $crop durante $stage empieza a '
+              'bajar. $nutrientWhy Vigila y prepara la aplicación si '
+              'la tendencia continúa.',
+        );
+      case 'possible_excess':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: '$nutrientName de más en la tierra',
+          body:
+              'El nivel de $shortName en $crop está por encima de lo que '
+              'la planta necesita. Pausa la aplicación y revisa el balance '
+              'con los otros nutrientes antes de agregar más.',
+        );
+      case 'review_accumulation':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: 'Exceso de $nutrientName detectado',
+          body:
+              'BIO-G detecta que el nivel de $shortName en $crop está muy '
+              'alto. Frena la aplicación de este nutriente para no dañar '
+              'el suelo ni bloquear otros elementos.',
+        );
+      default:
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: 'Evento nutricional',
+          body: 'Se detectó un evento nutricional en $crop para $stage.',
+        );
+    }
+  }
+
+  static String _nutrientWhy({
+    required String nutrientCode,
+    required bool isMaize,
+    required String stageLc,
+  }) {
+    final earlyStage = stageLc.contains('germin') ||
+        stageLc.contains('emerg') ||
+        stageLc.contains('tempr') ||
+        stageLc.contains('early');
+    final peakNitrogenStage = stageLc.contains('media') ||
+        stageLc.contains('avanz') ||
+        stageLc.contains('espig') ||
+        stageLc.contains('tass');
+    final reproductiveStage = stageLc.contains('flor') ||
+        stageLc.contains('llen') ||
+        stageLc.contains('grain') ||
+        stageLc.contains('madur');
+
+    if (!isMaize) {
+      return 'Este nutriente puede cambiar de prioridad según etapa y contexto del cultivo.';
+    }
+
+    switch (nutrientCode) {
+      case 'n':
+        if (earlyStage) {
+          return 'En maíz, solo una fracción menor del N total se usa antes de V6, así que lo crítico es no llegar corto al tramo que viene.';
+        }
+        if (peakNitrogenStage) {
+          return 'En maíz, la mayor captura de N ocurre desde V6 hacia espigamiento y floración, por eso esta lectura pesa mucho más aquí.';
+        }
+        if (reproductiveStage) {
+          return 'En maíz, todavía hay demanda de N cerca de floración y llenado temprano, aunque la utilidad de corregir cae cuando el ciclo ya viene muy avanzado.';
+        }
+        return 'En cierre de ciclo, el N sirve más para trazabilidad y aprendizaje del siguiente plan que para empujar tarde por rutina.';
+      case 'p':
+        if (earlyStage) {
+          return 'El P pesa más al arranque por su relación con raíces, energía y uniformidad; la respuesta suele ser más probable en suelos bajos en P, fríos o con residuo alto.';
+        }
+        return 'En maíz, el P sigue importando, pero normalmente su mejor retorno está en llegar bien colocado desde arranque y no en sobrecorregir tarde.';
+      case 'k':
+        if (reproductiveStage || peakNitrogenStage) {
+          return 'En maíz, K ayuda a sostener agua, tallo y estabilidad fisiológica, especialmente cuando sube el estrés térmico o hídrico.';
+        }
+        return 'K acompaña balance fisiológico durante todo el ciclo y puede volverse limitante antes en suelos arenosos o de baja CEC.';
+      default:
+        return 'Este nutriente merece seguimiento según etapa y contexto del lote.';
+    }
   }
 }
 

@@ -31,7 +31,6 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
   Widget build(BuildContext context) {
     final enabled = widget.onTap != null;
 
-    // ✅ Animación: “pop” al presionar (sin cambiar layout)
     final scale = _pressed ? 1.02 : 1.0;
     final opacity = _pressed ? 0.96 : 1.0;
 
@@ -48,19 +47,19 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha:0.18),
+                color: Colors.black.withValues(alpha: 0.18),
                 blurRadius: 34,
                 spreadRadius: 0,
                 offset: const Offset(0, 18),
               ),
               BoxShadow(
-                color: Colors.black.withValues(alpha:0.10),
+                color: Colors.black.withValues(alpha: 0.10),
                 blurRadius: 90,
                 spreadRadius: 0,
                 offset: const Offset(0, 46),
               ),
               BoxShadow(
-                color: const Color(0xFF00BCD4).withValues(alpha:0.08),
+                color: const Color(0xFF00BCD4).withValues(alpha: 0.08),
                 blurRadius: 110,
                 spreadRadius: 0,
                 offset: const Offset(0, 56),
@@ -72,24 +71,27 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ), // Un poquito más de aire vertical
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
-                  color: const Color(0xFFF0F2F5).withValues(alpha:0.94),
-                  border: Border.all(color: Colors.white.withValues(alpha:0.96)),
+                  color: const Color(0xFFF0F2F5).withValues(alpha: 0.94),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.96),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // ✅ Icono: un poquito a la derecha para que no toque el borde
                     Padding(
-                      padding: const EdgeInsets.only(left: 3), // 👈 aire lateral
+                      padding: const EdgeInsets.only(left: 3),
                       child: SizedBox(
-                        width: 26, // tamaño lógico (no cambia altura del card)
+                        width: 26,
                         height: 26,
                         child: Transform.scale(
-                          scale: 2.8, // 👈 grande visual SIN agrandar card
+                          scale: 2.8,
                           child: Image.asset(
                             widget.assetIcon,
                             fit: BoxFit.contain,
@@ -100,10 +102,7 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
                         ),
                       ),
                     ),
-
-                    // ✅ Texto un poco más a la derecha (controlado aquí)
                     const SizedBox(width: 16),
-
                     Expanded(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -123,24 +122,24 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
                           const SizedBox(height: 3),
                           Text(
                             widget.subtitle,
-                            maxLines: 1,
+                            // ✅ FIX: Le permitimos 2 líneas para que la recomendación en kg/ha se lea completa
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 12.0,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black.withValues(alpha:0.58),
-                              height: 1.05,
+                              color: Colors.black.withValues(alpha: 0.58),
+                              height: 1.2, // Mejor interlineado para 2 líneas
                             ),
                           ),
                         ],
                       ),
                     ),
-
                     const SizedBox(width: 6),
                     Icon(
                       Icons.chevron_right,
                       size: 20,
-                      color: Colors.black.withValues(alpha:0.32),
+                      color: Colors.black.withValues(alpha: 0.32),
                     ),
                   ],
                 ),

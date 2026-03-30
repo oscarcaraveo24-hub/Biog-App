@@ -1,5 +1,6 @@
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
+import 'package:bio_g/core/agro/event_engine_rules_resolver.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -67,18 +68,23 @@ class AgroEventInputFactory {
     required bool isGenericMode,
     List<EventTelemetryPoint> history = const <EventTelemetryPoint>[],
     Map<String, AgroBand> previousBands = const <String, AgroBand>{},
+    String? previousStageKey,
+    String? previousStageLabel,
   }) {
+    final String? cropId = cropContext?.cropId ?? seed?.cropKey;
+
     return EventEngineInput(
       timestamp: timestamp,
       deviceId: deviceId,
+      cropId: cropId,
       seedProfileId: cropContext?.profileId ?? seed?.profileId,
       seedAlias: cropContext?.varietyAlias ?? seed?.varietyAlias,
       sowingDate: eventContextDate(seed, cropContext),
       isGenericMode: isGenericMode,
       stageKey: stageResult?.stageKey,
       stageLabel: stageResult?.stageLabelEs,
-      previousStageKey: null,
-      previousStageLabel: null,
+      previousStageKey: previousStageKey,
+      previousStageLabel: previousStageLabel,
       soilMoisture: live?.soilMoisturePct,
       ph: live?.ph,
       resistance: live?.resistance,
@@ -93,6 +99,10 @@ class AgroEventInputFactory {
           : safeCurrentBands(effectiveEval),
       previousBands: previousBands,
       history: history,
+      rules: EventEngineRulesResolver.resolve(
+        cropId: cropId,
+        stageKey: stageResult?.stageKey,
+      ),
     );
   }
 }

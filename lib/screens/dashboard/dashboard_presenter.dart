@@ -1,9 +1,12 @@
+// lib/screens/dashboard/dashboard_presenter.dart
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_event_input_factory.dart';
+import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/agronomic_event.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
+import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart'; // <-- IMPORTANTE: Lo usamos para las dosis en vivo
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
@@ -135,12 +138,22 @@ class DashboardScreenPresenter {
             t: telemetry,
             eval: effectiveEval,
             targets: targets,
+            cropKey: runtime.cropKeyName,
           )
         : _calcPreSowingSoilHealth(telemetry);
 
     final String moistureValue = telemetry == null
         ? '--'
         : '${telemetry.soilMoisturePct.toStringAsFixed(0)}%';
+    final String tempValue = telemetry == null
+        ? '--'
+        : '${telemetry.soilTempC.toStringAsFixed(0)}°C';
+    final String phValue = telemetry == null
+        ? '--'
+        : telemetry.ph.toStringAsFixed(1);
+    final String resistanceValue = telemetry == null
+        ? '--'
+        : '${telemetry.resistance.toStringAsFixed(1)} MPa';
 
     final String moistureStatus = telemetry == null
         ? '—'
@@ -152,15 +165,11 @@ class DashboardScreenPresenter {
                     '—')
               : ((targets != null)
                     ? _rawMetricStatusFromTargets(
-                          value: telemetry.soilMoisturePct,
-                          range: targets.moistureRaw,
-                        )
+                        value: telemetry.soilMoisturePct,
+                        range: targets.moistureRaw,
+                      )
                     : 'Monitoreo'))
         : _preSowingMoistureStatus(telemetry.soilMoisturePct);
-
-    final String tempValue = telemetry == null
-        ? '--'
-        : '${telemetry.soilTempC.toStringAsFixed(0)}°C';
 
     final String tempStatus = telemetry == null
         ? '—'
@@ -171,15 +180,11 @@ class DashboardScreenPresenter {
               ? (effectiveEval.metrics[AgroMetricKey.soilTemp]?.labelEs ?? '—')
               : ((targets != null)
                     ? _rawMetricStatusFromTargets(
-                          value: telemetry.soilTempC,
-                          range: targets.soilTemp,
-                        )
+                        value: telemetry.soilTempC,
+                        range: targets.soilTemp,
+                      )
                     : 'Monitoreo'))
         : _soilTempStatus(telemetry.soilTempC);
-
-    final String phValue = telemetry == null
-        ? '--'
-        : telemetry.ph.toStringAsFixed(1);
 
     final String phStatus = telemetry == null
         ? '—'
@@ -190,15 +195,11 @@ class DashboardScreenPresenter {
               ? (effectiveEval.metrics[AgroMetricKey.ph]?.labelEs ?? '—')
               : ((targets != null)
                     ? _rawMetricStatusFromTargets(
-                          value: telemetry.ph,
-                          range: targets.ph,
-                        )
+                        value: telemetry.ph,
+                        range: targets.ph,
+                      )
                     : 'Monitoreo'))
         : _preSowingPhStatus(telemetry.ph);
-
-    final String resistanceValue = telemetry == null
-        ? '--'
-        : '${telemetry.resistance.toStringAsFixed(1)} MPa';
 
     final String resistanceStatus = telemetry == null
         ? '—'
@@ -210,27 +211,67 @@ class DashboardScreenPresenter {
                     '—')
               : ((targets != null)
                     ? _rawMetricStatusFromTargets(
-                          value: telemetry.resistance,
-                          range: targets.resistance,
-                        )
+                        value: telemetry.resistance,
+                        range: targets.resistance,
+                      )
                     : 'Monitoreo'))
         : _preSowingResistanceStatus(telemetry.resistance);
 
-    final String npkTitle = isPlanted
-        ? (hasCropAwareEval
-              ? _npkTitleFromEval(effectiveEval!)
-              : ((telemetry != null && targets != null)
-                    ? _npkTitleFromTargets(t: telemetry, targets: targets)
-                    : 'NPK  ·  Monitoreo pendiente'))
-        : 'NPK  ·  Pendiente por etapa';
+    // ==========================================
+    // NUEVA LÓGICA DE TEXTOS NPK EN DASHBOARD
+    // ==========================================
+    String npkTitle = 'Nutrición (NPK)';
+    String npkSubtitle = 'Sin evaluación actual';
 
-    final String npkSubtitle = isPlanted
-        ? (hasCropAwareEval
-              ? _npkSubtitleFromEval(effectiveEval!)
-              : ((telemetry != null && targets != null)
-                    ? _npkSubtitleFromTargets(t: telemetry, targets: targets)
-                    : 'Sin evaluación actual'))
-        : (isPlanned ? 'Disponible tras siembra' : 'Modo genérico');
+    if (isPlanted && telemetry != null) {
+      final nInt = NutrientRecommendationEngine.interpret(
+        nutrient: AgroMetricKey.n,
+        rawPpm: telemetry.n.toDouble(),
+        cropKey: runtime.cropKeyName,
+        stageKey: stageResult?.stageKey,
+        profileId: runtime.profile?.id,
+        targets: targets,
+      );
+      final pInt = NutrientRecommendationEngine.interpret(
+        nutrient: AgroMetricKey.p,
+        rawPpm: telemetry.p.toDouble(),
+        cropKey: runtime.cropKeyName,
+        stageKey: stageResult?.stageKey,
+        profileId: runtime.profile?.id,
+        targets: targets,
+      );
+      final kInt = NutrientRecommendationEngine.interpret(
+        nutrient: AgroMetricKey.k,
+        rawPpm: telemetry.k.toDouble(),
+        cropKey: runtime.cropKeyName,
+        stageKey: stageResult?.stageKey,
+        profileId: runtime.profile?.id,
+        targets: targets,
+      );
+
+      // Usamos las etiquetas premium cortas para el title
+      npkTitle = 'N: ${nInt.labelEs} · P: ${pInt.labelEs} · K: ${kInt.labelEs}';
+
+      // Buscamos el nutriente con más urgencia
+      final allInts = [nInt, pInt, kInt]
+        ..sort((a, b) => b.priorityScore01.compareTo(a.priorityScore01));
+      final top = allInts.first;
+
+      // Si hay una guía de dosis matemática, la mostramos. Si no, mostramos la alerta.
+      if (top.doseGuideEs != null && top.doseGuideEs!.isNotEmpty) {
+        npkSubtitle =
+            top.doseGuideEs!.split('.').first +
+            '.'; // Extrae la frase exacta "Aplica ~45 kg/ha..."
+      } else {
+        npkSubtitle = top.shortRecommendation;
+      }
+    } else if (isPlanned) {
+      npkSubtitle = 'Disponible tras la siembra';
+    } else {
+      npkSubtitle = 'Modo genérico activo';
+    }
+
+    // ==========================================
 
     late final String irrigationTitle;
     late final String irrigationSubtitle;
@@ -245,13 +286,11 @@ class DashboardScreenPresenter {
                     targets: targets,
                   )
                 : 'Recomendación pendiente');
-
       irrigationSubtitle = hasCropAwareEval
           ? 'Basado en humedad del suelo y modelo Bio-G'
           : ((telemetry != null && targets != null)
                 ? 'Basado en humedad del suelo y etapa actual'
                 : 'Sin evaluación agronómica actual');
-
       irrigationTag = hasCropAwareEval
           ? _irrigationTagFromEval(effectiveEval!)
           : ((telemetry != null && targets != null)
@@ -331,22 +370,14 @@ class DashboardScreenPresenter {
     required AgroEvalResult? resolvedEval,
     required AlertsState nextAlertsState,
   }) {
-    if (resolvedEval == null) {
+    if (resolvedEval == null)
       return const DashboardSyncPlan(
         shouldSetEval: false,
         shouldSetAlerts: false,
       );
-    }
-
-    final bool shouldSetEval = !_sameAgroEval(store.lastAgroEval, resolvedEval);
-    final bool shouldSetAlerts = !_sameAlertsState(
-      store.alertsState,
-      nextAlertsState,
-    );
-
     return DashboardSyncPlan(
-      shouldSetEval: shouldSetEval,
-      shouldSetAlerts: shouldSetAlerts,
+      shouldSetEval: !_sameAgroEval(store.lastAgroEval, resolvedEval),
+      shouldSetAlerts: !_sameAlertsState(store.alertsState, nextAlertsState),
     );
   }
 
@@ -369,9 +400,29 @@ class DashboardScreenPresenter {
       isGenericMode: isGenericMode,
       history: const <EventTelemetryPoint>[],
       previousBands: const <String, AgroBand>{},
+      previousStageKey: _previousDashboardStage(runtime, now)?.stageKey,
+      previousStageLabel: _previousDashboardStage(runtime, now)?.stageLabelEs,
     );
-
     return EventEngine.build(input);
+  }
+
+  CropStageResult? _previousDashboardStage(
+    CropRuntimeSnapshot runtime,
+    DateTime now,
+  ) {
+    if (!runtime.isPlanted) return null;
+    final definition = runtime.definition;
+    final profile = runtime.profile;
+    final sowingDate =
+        runtime.engineSowingDate ?? runtime.effectiveLifecycleDate;
+    if (definition == null || profile == null || sowingDate == null)
+      return null;
+    return definition.engine.compute(
+      sowingDate: sowingDate,
+      today: now.subtract(const Duration(days: 1)),
+      profile: profile,
+      stressDelayDays: 0,
+    );
   }
 
   AgronomicEvent? _pickPrimaryDashboardEvent(List<AgronomicEvent> events) {
@@ -387,11 +438,9 @@ class DashboardScreenPresenter {
         return event;
       }
     }
-
     for (final AgronomicEvent event in events) {
       if (event.type != AgronomicEventType.genericMode) return event;
     }
-
     return events.isEmpty ? null : events.first;
   }
 
@@ -411,321 +460,157 @@ class DashboardScreenPresenter {
   bool _sameAgroEval(AgroEvalResult? a, AgroEvalResult? b) {
     if (identical(a, b)) return true;
     if (a == null || b == null) return a == b;
-
-    if ((a.soilControlScore01 - b.soilControlScore01).abs() > 0.0001) {
+    if ((a.soilControlScore01 - b.soilControlScore01).abs() > 0.0001)
       return false;
-    }
-
     if (a.metrics.length != b.metrics.length) return false;
     if (a.alerts.length != b.alerts.length) return false;
-    if (a.suggestedAlertKeys.length != b.suggestedAlertKeys.length) {
+    if (a.suggestedAlertKeys.length != b.suggestedAlertKeys.length)
       return false;
-    }
-
-    for (int i = 0; i < a.alerts.length; i++) {
+    for (int i = 0; i < a.alerts.length; i++)
       if (a.alerts[i].id != b.alerts[i].id) return false;
-    }
-
-    for (int i = 0; i < a.suggestedAlertKeys.length; i++) {
+    for (int i = 0; i < a.suggestedAlertKeys.length; i++)
       if (a.suggestedAlertKeys[i] != b.suggestedAlertKeys[i]) return false;
-    }
-
     for (final AgroMetricKey key in a.metrics.keys) {
       final AgroMetricEval? av = a.metrics[key];
       final AgroMetricEval? bv = b.metrics[key];
-
       if (av == null || bv == null) return false;
       if (av.band != bv.band) return false;
       if (av.labelEs != bv.labelEs) return false;
       if ((av.score01 - bv.score01).abs() > 0.0001) return false;
-
-      final double? aValue = av.value;
-      final double? bValue = bv.value;
-
-      if (aValue == null || bValue == null) {
-        if (aValue != bValue) return false;
-      } else if ((aValue - bValue).abs() > 0.0001) {
-        return false;
-      }
+      if (av.value != bv.value) return false;
     }
-
     return true;
   }
 
   bool _sameAlertsState(AlertsState a, AlertsState b) {
     if (identical(a, b)) return true;
     if (a.lastByType.length != b.lastByType.length) return false;
-
     for (final MapEntry<BioGAlertType, DateTime> entry
         in a.lastByType.entries) {
-      final DateTime? other = b.lastByType[entry.key];
-      if (other == null) return false;
-      if (other != entry.value) return false;
+      if (b.lastByType[entry.key] != entry.value) return false;
     }
-
     return true;
   }
 
   String _buildFieldLabel(BioGDevice? device) {
     if (device == null) return 'Sin BioG';
-
-    final String name = device.name.trim();
-    if (name.isNotEmpty) return name;
-
-    final String location = device.locationName.trim();
-    if (location.isNotEmpty) return location;
-
+    if (device.name.trim().isNotEmpty) return device.name.trim();
+    if (device.locationName.trim().isNotEmpty)
+      return device.locationName.trim();
     return 'BioG';
   }
 
   double _calcPreSowingSoilHealth(BioGTelemetry? telemetry) {
     if (telemetry == null) return 0.0;
-
-    double score01Legacy(
-      double value,
-      double minOk,
-      double maxOk,
-      double hardMin,
-      double hardMax,
+    double score(
+      double val,
+      double okMin,
+      double okMax,
+      double hMin,
+      double hMax,
     ) {
-      if (value <= hardMin || value >= hardMax) return 0.0;
-      if (value >= minOk && value <= maxOk) return 1.0;
-
-      if (value < minOk) {
-        final double x = (value - hardMin) / (minOk - hardMin);
-        return x.clamp(0.0, 1.0);
-      }
-
-      final double x = (hardMax - value) / (hardMax - maxOk);
-      return x.clamp(0.0, 1.0);
+      if (val <= hMin || val >= hMax) return 0.0;
+      if (val >= okMin && val <= okMax) return 1.0;
+      if (val < okMin) return ((val - hMin) / (okMin - hMin)).clamp(0.0, 1.0);
+      return ((hMax - val) / (hMax - okMax)).clamp(0.0, 1.0);
     }
 
-    final double moisture01 = score01Legacy(
-      telemetry.soilMoisturePct,
-      28,
-      55,
-      5,
-      85,
-    );
-    final double ph01 = score01Legacy(telemetry.ph, 5.8, 7.2, 4.5, 8.8);
-    final double resistance01 = score01Legacy(
-      telemetry.resistance,
-      0.3,
-      1.2,
-      0.1,
-      2.8,
-    );
-    final double ec01 = score01Legacy(telemetry.ec, 0.8, 2.0, 0.4, 3.2);
-
-    return ((moisture01 + ph01 + resistance01 + ec01) / 4.0).clamp(0.0, 1.0);
+    return ((score(telemetry.soilMoisturePct, 28, 55, 5, 85) +
+                score(telemetry.ph, 5.8, 7.2, 4.5, 8.8) +
+                score(telemetry.resistance, 0.3, 1.2, 0.1, 2.8) +
+                score(telemetry.ec, 0.8, 2.0, 0.4, 3.2)) /
+            4.0)
+        .clamp(0.0, 1.0);
   }
 
-  String _preSowingMoistureStatus(double value) {
-    if (value < 25) return 'Seco';
-    if (value > 65) return 'Húmedo';
-    return 'Apta';
-  }
-
-  String _preSowingPhStatus(double value) {
-    if (value < 5.8) return 'Bajo';
-    if (value > 7.2) return 'Alto';
-    return 'Apto';
-  }
-
-  String _preSowingResistanceStatus(double value) {
-    if (value > 2.0) return 'Compactado';
-    if (value < 0.25) return 'Suelto';
-    return 'Apto';
-  }
+  String _preSowingMoistureStatus(double value) => value < 25
+      ? 'Seco'
+      : value > 65
+      ? 'Húmedo'
+      : 'Apta';
+  String _preSowingPhStatus(double value) => value < 5.8
+      ? 'Bajo'
+      : value > 7.2
+      ? 'Alto'
+      : 'Apto';
+  String _preSowingResistanceStatus(double value) => value > 2.0
+      ? 'Compactado'
+      : value < 0.25
+      ? 'Suelto'
+      : 'Apto';
 
   String _plannedInsightTitle(int plannedDaysLeft, BioGTelemetry? telemetry) {
-    if (telemetry == null) {
+    if (telemetry == null)
       return plannedDaysLeft <= 0
           ? 'Valida el suelo antes de sembrar'
           : 'Monitorea condiciones antes de la siembra';
-    }
-
-    if (telemetry.resistance > 2.0) {
+    if (telemetry.resistance > 2.0)
       return 'La resistencia del suelo sigue alta para siembra';
-    }
-
-    if (telemetry.soilMoisturePct < 25) {
+    if (telemetry.soilMoisturePct < 25)
       return 'Aumenta humedad antes de sembrar';
-    }
-
-    if (plannedDaysLeft <= 0) {
+    if (plannedDaysLeft <= 0)
       return 'Condiciones cercanas para iniciar siembra';
-    }
-
     return 'Sigue preparando el suelo para la siembra';
   }
 
-  double _ppmCapFor(AgroMetricKey key) {
-    switch (key) {
-      case AgroMetricKey.n:
-        return 120.0;
-      case AgroMetricKey.p:
-        return 80.0;
-      case AgroMetricKey.k:
-        return 140.0;
-      default:
-        return 100.0;
-    }
-  }
-
-  double _toIndex0to100(double ppm, AgroMetricKey key) {
-    return ((ppm / _ppmCapFor(key)) * 100.0).clamp(0.0, 100.0);
-  }
+  double _ppmCapFor({required String? cropKey, required AgroMetricKey key}) =>
+      NpkCaps.forCropMetric(cropKey: cropKey, metricKey: key);
+  double _toIndex0to100(
+    double ppm,
+    AgroMetricKey key, {
+    required String? cropKey,
+  }) => ((ppm / _ppmCapFor(cropKey: cropKey, key: key)) * 100.0).clamp(
+    0.0,
+    100.0,
+  );
 
   String _labelFromRangeTuned({
     required double index0to100,
     required AgroRange range,
   }) {
-    final double value = index0to100;
-
-    final double lowSpan = (range.optimalMin - range.lowMax).abs();
-    final double highSpan = (range.highMin - range.optimalMax).abs();
-
-    final double nearLow = lowSpan <= 0.0001 ? 0.0 : (lowSpan * 0.10);
-    final double nearHigh = highSpan <= 0.0001 ? 0.0 : (highSpan * 0.10);
-
-    if (value < range.lowMax) return 'Crítico';
-
-    if (value < range.optimalMin) {
-      final double delta = (range.optimalMin - value).abs();
-      return (delta <= nearLow) ? 'Ajuste leve' : 'Bajo';
-    }
-
-    if (value <= range.optimalMax) return 'Óptimo';
-
-    if (value <= range.highMin) {
-      final double delta = (value - range.optimalMax).abs();
-      return (delta <= nearHigh) ? 'Ajuste leve' : 'Alto';
-    }
-
+    if (index0to100 < range.lowMax) return 'Crítico';
+    if (index0to100 < range.optimalMin)
+      return (range.optimalMin - index0to100).abs() <=
+              ((range.optimalMin - range.lowMax).abs() * 0.10)
+          ? 'Ajuste leve'
+          : 'Bajo';
+    if (index0to100 <= range.optimalMax) return 'Óptimo';
+    if (index0to100 <= range.highMin)
+      return (index0to100 - range.optimalMax).abs() <=
+              ((range.highMin - range.optimalMax).abs() * 0.10)
+          ? 'Ajuste leve'
+          : 'Alto';
     return 'Crítico';
   }
-
 
   String _rawMetricStatusFromTargets({
     required double value,
     required AgroRange range,
-  }) {
-    return _labelFromRangeTuned(index0to100: value, range: range);
-  }
-
+  }) => _labelFromRangeTuned(index0to100: value, range: range);
   double _scoreFromRawRange({
     required double value,
     required AgroRange range,
-  }) {
-    return _scoreFromIndexRange(index0to100: value, range: range);
-  }
+  }) => _scoreFromIndexRange(index0to100: value, range: range);
 
   double _scoreFromIndexRange({
     required double index0to100,
     required AgroRange range,
   }) {
-    final double value = index0to100;
-    if (value <= range.lowMax || value >= range.highMin) return 0.0;
-    if (value >= range.optimalMin && value <= range.optimalMax) return 1.0;
-
-    if (value < range.optimalMin) {
-      final double denom = (range.optimalMin - range.lowMax).abs();
-      if (denom <= 0.0001) return 0.0;
-      return ((value - range.lowMax) / denom).clamp(0.0, 1.0);
-    }
-
-    final double denom = (range.highMin - range.optimalMax).abs();
-    if (denom <= 0.0001) return 0.0;
-    return ((range.highMin - value) / denom).clamp(0.0, 1.0);
-  }
-
-  String _npkTitleFromTargets({
-    required BioGTelemetry t,
-    required StageTargets targets,
-  }) {
-    final String nLab = _labelFromRangeTuned(
-      index0to100: _toIndex0to100(t.n.toDouble(), AgroMetricKey.n),
-      range: targets.nIndex,
-    );
-    final String pLab = _labelFromRangeTuned(
-      index0to100: _toIndex0to100(t.p.toDouble(), AgroMetricKey.p),
-      range: targets.pIndex,
-    );
-    final String kLab = _labelFromRangeTuned(
-      index0to100: _toIndex0to100(t.k.toDouble(), AgroMetricKey.k),
-      range: targets.kIndex,
-    );
-
-    return 'NPK  ·  N $nLab · P $pLab · K $kLab';
-  }
-
-  String _npkSubtitleFromTargets({
-    required BioGTelemetry t,
-    required StageTargets targets,
-  }) {
-    final String nLab = _labelFromRangeTuned(
-      index0to100: _toIndex0to100(t.n.toDouble(), AgroMetricKey.n),
-      range: targets.nIndex,
-    );
-    final String pLab = _labelFromRangeTuned(
-      index0to100: _toIndex0to100(t.p.toDouble(), AgroMetricKey.p),
-      range: targets.pIndex,
-    );
-    final String kLab = _labelFromRangeTuned(
-      index0to100: _toIndex0to100(t.k.toDouble(), AgroMetricKey.k),
-      range: targets.kIndex,
-    );
-
-    final bool anyCritical =
-        nLab == 'Crítico' || pLab == 'Crítico' || kLab == 'Crítico';
-    if (anyCritical) return 'Crítico';
-
-    final bool allOptimal =
-        nLab == 'Óptimo' && pLab == 'Óptimo' && kLab == 'Óptimo';
-    if (allOptimal) return 'Óptimo';
-
-    return 'Ajuste leve';
-  }
-
-  String _npkTitleFromEval(AgroEvalResult eval) {
-    String labelFor(AgroMetricKey key, String channel) {
-      final AgroMetricEval? metric = eval.metrics[key];
-      final String label = metric?.labelEs ?? '—';
-      return '$channel $label';
-    }
-
-    return 'NPK  ·  ${labelFor(AgroMetricKey.n, 'N')} · ${labelFor(AgroMetricKey.p, 'P')} · ${labelFor(AgroMetricKey.k, 'K')}';
-  }
-
-  String _npkSubtitleFromEval(AgroEvalResult eval) {
-    final List<AgroMetricEval?> metrics = <AgroMetricEval?>[
-      eval.metrics[AgroMetricKey.n],
-      eval.metrics[AgroMetricKey.p],
-      eval.metrics[AgroMetricKey.k],
-    ];
-
-    if (metrics.any((metric) => metric?.band == AgroBand.critical)) {
-      return 'Crítico';
-    }
-
-    if (metrics.every((metric) => metric?.band == AgroBand.optimal)) {
-      return 'Óptimo';
-    }
-
-    if (metrics.any(
-      (metric) => metric?.band == AgroBand.low || metric?.band == AgroBand.high,
-    )) {
-      return 'Ajuste leve';
-    }
-
-    return 'Monitoreo';
+    if (index0to100 <= range.lowMax || index0to100 >= range.highMin) return 0.0;
+    if (index0to100 >= range.optimalMin && index0to100 <= range.optimalMax)
+      return 1.0;
+    if (index0to100 < range.optimalMin)
+      return ((index0to100 - range.lowMax) /
+              (range.optimalMin - range.lowMax).abs())
+          .clamp(0.0, 1.0);
+    return ((range.highMin - index0to100) /
+            (range.highMin - range.optimalMax).abs())
+        .clamp(0.0, 1.0);
   }
 
   String _irrigationTitleFromEval(AgroEvalResult eval) {
-    final AgroMetricEval? metric = eval.metrics[AgroMetricKey.soilMoisture];
+    final metric = eval.metrics[AgroMetricKey.soilMoisture];
     if (metric == null) return 'Recomendación pendiente';
-
     switch (metric.band) {
       case AgroBand.critical:
       case AgroBand.low:
@@ -740,9 +625,8 @@ class DashboardScreenPresenter {
   }
 
   String _irrigationTagFromEval(AgroEvalResult eval) {
-    final AgroMetricEval? metric = eval.metrics[AgroMetricKey.soilMoisture];
+    final metric = eval.metrics[AgroMetricKey.soilMoisture];
     if (metric == null) return '—';
-
     switch (metric.band) {
       case AgroBand.critical:
       case AgroBand.low:
@@ -756,17 +640,14 @@ class DashboardScreenPresenter {
     }
   }
 
-
   String _irrigationTitleFromTargets({
     required double soilMoisturePct,
     required StageTargets targets,
   }) {
-    final String label = _rawMetricStatusFromTargets(
+    switch (_rawMetricStatusFromTargets(
       value: soilMoisturePct,
       range: targets.moistureRaw,
-    );
-
-    switch (label) {
+    )) {
       case 'Crítico':
       case 'Bajo':
         return 'Riega dentro de las próximas 24 horas';
@@ -783,12 +664,10 @@ class DashboardScreenPresenter {
     required double soilMoisturePct,
     required StageTargets targets,
   }) {
-    final String label = _rawMetricStatusFromTargets(
+    switch (_rawMetricStatusFromTargets(
       value: soilMoisturePct,
       range: targets.moistureRaw,
-    );
-
-    switch (label) {
+    )) {
       case 'Crítico':
       case 'Bajo':
         return '24h';
@@ -805,142 +684,59 @@ class DashboardScreenPresenter {
     required BioGTelemetry? t,
     required AgroEvalResult? eval,
     required StageTargets? targets,
+    required String? cropKey,
   }) {
-    if (eval == null && (t == null || targets == null)) return 0.0;
-
-    late final double soilMoist01;
-    late final double ph01;
-    late final double ec01;
-    late final double res01;
-    late final double n01;
-    late final double p01;
-    late final double k01;
-
-    if (eval != null) {
-      soilMoist01 = (eval.metrics[AgroMetricKey.soilMoisture]?.score01 ?? 0.0)
-          .clamp(0.0, 1.0);
-      ph01 = (eval.metrics[AgroMetricKey.ph]?.score01 ?? 0.0).clamp(0.0, 1.0);
-      ec01 = (eval.metrics[AgroMetricKey.ec]?.score01 ?? 0.0).clamp(0.0, 1.0);
-      res01 = (eval.metrics[AgroMetricKey.resistance]?.score01 ?? 0.0).clamp(
-        0.0,
-        1.0,
-      );
-      n01 = (eval.metrics[AgroMetricKey.n]?.score01 ?? 0.0).clamp(0.0, 1.0);
-      p01 = (eval.metrics[AgroMetricKey.p]?.score01 ?? 0.0).clamp(0.0, 1.0);
-      k01 = (eval.metrics[AgroMetricKey.k]?.score01 ?? 0.0).clamp(0.0, 1.0);
-    } else {
-      final BioGTelemetry telemetry = t!;
-      final StageTargets stageTargets = targets!;
-      soilMoist01 = _scoreFromRawRange(
-        value: telemetry.soilMoisturePct,
-        range: stageTargets.moistureRaw,
-      );
-      ph01 = _scoreFromRawRange(value: telemetry.ph, range: stageTargets.ph);
-      ec01 = _scoreFromRawRange(value: telemetry.ec, range: stageTargets.ec);
-      res01 = _scoreFromRawRange(
-        value: telemetry.resistance,
-        range: stageTargets.resistance,
-      );
-      n01 = _scoreFromIndexRange(
-        index0to100: _toIndex0to100(telemetry.n.toDouble(), AgroMetricKey.n),
-        range: stageTargets.nIndex,
-      );
-      p01 = _scoreFromIndexRange(
-        index0to100: _toIndex0to100(telemetry.p.toDouble(), AgroMetricKey.p),
-        range: stageTargets.pIndex,
-      );
-      k01 = _scoreFromIndexRange(
-        index0to100: _toIndex0to100(telemetry.k.toDouble(), AgroMetricKey.k),
-        range: stageTargets.kIndex,
-      );
-    }
-
-    final double soilConditions01 = ((soilMoist01 + ph01 + ec01 + res01) / 4.0)
+    if (eval != null) return eval.soilControlScore01.clamp(0.0, 1.0);
+    if (t == null || targets == null) return 0.0;
+    return (((_scoreFromRawRange(
+                      value: t.soilMoisturePct,
+                      range: targets.moistureRaw,
+                    ) +
+                    _scoreFromRawRange(
+                      value: t.soilTempC,
+                      range: targets.soilTemp,
+                    ) +
+                    _scoreFromRawRange(value: t.ph, range: targets.ph) +
+                    _scoreFromRawRange(value: t.ec, range: targets.ec) +
+                    _scoreFromRawRange(
+                      value: t.resistance,
+                      range: targets.resistance,
+                    )) /
+                5.0) +
+            ((_scoreFromIndexRange(
+                          index0to100: _toIndex0to100(
+                            t.n.toDouble(),
+                            AgroMetricKey.n,
+                            cropKey: cropKey,
+                          ),
+                          range: targets.nIndex,
+                        ) +
+                        _scoreFromIndexRange(
+                          index0to100: _toIndex0to100(
+                            t.p.toDouble(),
+                            AgroMetricKey.p,
+                            cropKey: cropKey,
+                          ),
+                          range: targets.pIndex,
+                        ) +
+                        _scoreFromIndexRange(
+                          index0to100: _toIndex0to100(
+                            t.k.toDouble(),
+                            AgroMetricKey.k,
+                            cropKey: cropKey,
+                          ),
+                          range: targets.kIndex,
+                        )) /
+                    3.0) /
+                2.0)
         .clamp(0.0, 1.0);
-
-    final double minNpk01 = <double>[n01, p01, k01].reduce(
-      (a, b) => a < b ? a : b,
-    );
-    final double avgNpk01 = ((n01 + p01 + k01) / 3.0).clamp(0.0, 1.0);
-    final double npkComposite01 = (0.70 * minNpk01 + 0.30 * avgNpk01).clamp(
-      0.0,
-      1.0,
-    );
-
-    double base01 = (0.60 * soilConditions01 + 0.40 * npkComposite01).clamp(
-      0.0,
-      1.0,
-    );
-
-    if (minNpk01 < 0.35) {
-      final double severity = ((0.35 - minNpk01) / 0.35).clamp(0.0, 1.0);
-      base01 = (base01 - 0.15 * severity).clamp(0.0, 1.0);
-    }
-
-    return base01;
   }
 
-  String _soilMoistureStatus(double value) {
-    if (value < 25) return 'Bajo';
-    if (value > 70) return 'Alto';
-    return 'Óptima';
-  }
-
-  String _soilTempStatus(double value) {
-    if (value < 14) return 'Baja';
-    if (value > 36) return 'Alta';
-    return 'Óptima';
-  }
-
-  String _phStatus(double value) {
-    if (value < 5.8) return 'Bajo';
-    if (value > 7.4) return 'Alto';
-    return 'Óptimo';
-  }
-
-  String _resistanceStatus(double value) {
-    if (value < 0.3) return 'Baja';
-    if (value > 2.0) return 'Alta';
-    return 'Óptima';
-  }
-
-  String _bandLabel(String channel, double value, double low, double high) {
-    if (value < low) return '$channel Bajo';
-    if (value > high) return '$channel Alto';
-    return '$channel Medio';
-  }
-
-  String _npkTitle(BioGTelemetry telemetry) {
-    final String nLabel = _bandLabel('N', telemetry.n, 40, 70);
-    final String pLabel = _bandLabel('P', telemetry.p, 18, 32);
-    final String kLabel = _bandLabel('K', telemetry.k, 35, 55);
-    return 'NPK  ·  $nLabel · $pLabel · $kLabel';
-  }
-
-  String _npkSubtitle(BioGTelemetry telemetry) {
-    final bool nOk = telemetry.n >= 40 && telemetry.n <= 70;
-    final bool pOk = telemetry.p >= 18 && telemetry.p <= 32;
-    final bool kOk = telemetry.k >= 35 && telemetry.k <= 55;
-
-    if (nOk && pOk && kOk) return 'Balanceado';
-    return 'Desequilibrado';
-  }
-
-  String _irrigationTitle(double soilMoisturePct) {
-    if (soilMoisturePct < 24) {
-      return 'Riega dentro de las próximas 24 horas';
-    }
-    if (soilMoisturePct < 30) return 'Considera riego hoy';
-    if (soilMoisturePct > 72) return 'Evita riego por ahora';
-    return 'Humedad estable: monitorea';
-  }
-
-  String _irrigationTag(double soilMoisturePct) {
-    if (soilMoisturePct < 24) return '24h';
-    if (soilMoisturePct < 30) return 'Hoy';
-    if (soilMoisturePct > 72) return 'OK';
-    return 'Auto';
-  }
+  String _soilTempStatus(double value) => value < 14
+      ? 'Baja'
+      : value > 36
+      ? 'Alta'
+      : 'Óptima';
 }
 
 extension on DashboardMetricUiData {

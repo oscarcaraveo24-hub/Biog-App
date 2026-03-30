@@ -58,6 +58,13 @@ class CropDetailsStep extends StatelessWidget {
       }
     }
 
+    // Resolve variety-aware icon for bean crops.
+    final String resolvedCropAsset = (selectedCropId == 'bean' &&
+            selectedVarietyId != null)
+        ? OnboardingUiAssets.assetForBeanVariety(selectedVarietyId)
+        : (selectedOption?.assetPath ??
+            OnboardingUiAssets.assetForCategory(cropCategory));
+
     final Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -74,9 +81,7 @@ class CropDetailsStep extends StatelessWidget {
               _SummaryRow(
                 label: 'Cultivo',
                 value: selectedOption?.title ?? 'Selecciona un cultivo',
-                assetPath:
-                    selectedOption?.assetPath ??
-                    OnboardingUiAssets.assetForCategory(cropCategory),
+                assetPath: resolvedCropAsset,
               ),
               const Divider(height: 20, color: Color(0x1F76828A)),
               _SummaryRow(

@@ -15,6 +15,9 @@ class OnboardingUiAssets {
   static const String barley = 'assets/icons/wizard/ic_cebada.png';
   static const String oat = 'assets/icons/wizard/ic_avena.png';
   static const String bean = 'assets/icons/wizard/ic_frijol.png';
+  static const String beanBlack = 'assets/icons/wizard/ic_frijol_negro.png';
+  static const String beanRed = 'assets/icons/wizard/ic_frijol_rojo.png';
+  static const String beanWhite = 'assets/icons/wizard/ic_frijol_blanco.png';
   static const String variety = 'assets/icons/wizard/ic_variedad.png';
   static const String configureCrop =
       'assets/icons/wizard/ic_configurar_cultivo.png';
@@ -84,6 +87,25 @@ class OnboardingUiAssets {
         return ornamental;
       default:
         return assetForCategory(category);
+    }
+  }
+
+  /// Resuelve el ícono correcto de frijol según la variedad seleccionada.
+  static String assetForBeanVariety(String? varietyId) {
+    switch (varietyId) {
+      case 'bean_negro_temprano':
+      case 'bean_negro':
+        return beanBlack;
+      case 'bean_flor_mayo_junio':
+        return beanRed;
+      case 'bean_bayo_azufrado_blanco':
+        return beanWhite;
+      case 'bean_pinto':
+      case 'bean_peruano':
+      case 'bean_canario':
+      case 'bean_generic':
+      default:
+        return bean;
     }
   }
 

@@ -1,5 +1,5 @@
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/cereal_agro_score_engine.dart';
+import 'package:bio_g/core/agro/wheat_agro_score_engine.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/crop_engine.dart';
 import 'package:bio_g/core/crops/crop_profile_models.dart';
@@ -14,12 +14,6 @@ import 'package:bio_g/widgets/seeds/wheat_models.dart';
 import 'package:bio_g/widgets/seeds/wheat_profiles.dart';
 
 class WheatCropDefinition implements CropDefinition {
-  static const Set<String> _criticalStages = {
-    'booting',
-    'heading',
-    'flowering',
-  };
-
   @override
   CropKey get cropKey => CropKey.wheat;
 
@@ -57,8 +51,8 @@ class WheatCropDefinition implements CropDefinition {
 
   @override
   StageTargets? resolveTargets(CropStageResult stage) {
-    final wheatStage = _resolveStage(stage.stageKey);
-    return wheatUniversalV1.byStage[wheatStage];
+    final stageResolution = _resolveStage(stage.stageKey);
+    return wheatUniversalV1.byStage[stageResolution.stage];
   }
 
   @override
@@ -70,54 +64,104 @@ class WheatCropDefinition implements CropDefinition {
     required AlertsState alertsState,
   }) {
     final bioTelemetry = telemetry as BioGTelemetry;
-    final wheatStage = _resolveStage(stage.stageKey);
+    final stageResolution = _resolveStage(stage.stageKey);
+    final wheatStage = stageResolution.stage;
     final wheatProfile = profile as WheatProfile;
-    final weights = wheatUniversalV1.weights[wheatStage];
-    final targets = targetsOverride ?? wheatUniversalV1.byStage[wheatStage];
-
-    if (targets == null || weights == null) {
-      final empty = AgroEvalResult(
-        soilControlScore01: 0.0,
-        metrics: const {},
-        alerts: const [],
-        suggestedAlertKeys: const ['stage.unknown'],
-      );
-      return (eval: empty, nextAlertsState: alertsState);
-    }
 
     final seedStage = WheatStageResult(
       profile: wheatProfile,
       stage: wheatStage,
-      daySinceSowing: 0,
+      daySinceSowing: stage.daySinceSowing ?? 0,
       floweringBand: wheatProfile.floweringDays,
       endBand: wheatProfile.endWindowDays,
       expectedFloweringDay: wheatProfile.floweringDays.mid,
       expectedEndDay: wheatProfile.endWindowDays.mid,
       expectedDaysToEnd: stage.expectedDaysToEnd,
-      stageProgressPct: 0,
-      windowsNow: const [],
+      stageProgressPct: stage.stageProgressPct ?? 0,
+      windowsNow: stage.windowsNow.whereType<SeedWindowKey>().toList(growable: false),
       expectedPlantHeightTodayM: const RangeDouble(0, 0),
       stageLabelEs: stage.stageLabelEs,
       heroAsset: stage.heroAsset,
-      helperCaption: '',
+      helperCaption: stage.helperCaption,
     );
 
-    return CerealAgroScoreEngine.evaluate(
+    final out = WheatAgroScoreEngine.evaluate(
       t: bioTelemetry,
-      targets: targets,
-      weights: weights,
-      stageKey: wheatStage.name,
-      criticalStageKeys: _criticalStages,
+      stage: seedStage,
+      u: wheatUniversalV1,
       alertsState: alertsState,
       cropLabel: 'Trigo',
-      stageLabel: seedStage.stageLabelEs,
+      targetsOverride: targetsOverride,
+    );
+
+    return _withStageFallbackDiagnostic(out, stageResolution.usedFallback);
+  }
+
+  _ResolvedWheatStage _resolveStage(String rawStage) {
+    final normalized = rawStage.trim().toLowerCase();
+    for (final stage in WheatStageKey.values) {
+      if (stage.name.toLowerCase() == normalized) {
+        return _ResolvedWheatStage(stage: stage, usedFallback: false);
+      }
+    }
+
+    if (normalized.contains('germin')) {
+      return const _ResolvedWheatStage(stage: WheatStageKey.germination, usedFallback: false);
+    }
+    if (normalized.contains('emerg')) {
+      return const _ResolvedWheatStage(stage: WheatStageKey.emergence, usedFallback: false);
+    }
+    if (normalized.contains('tempr')) {
+      return const _ResolvedWheatStage(stage: WheatStageKey.vegEarly, usedFallback: false);
+    }
+    if (normalized.contains('tiller') || normalized.contains('macoll')) {
+      return const _ResolvedWheatStage(stage: WheatStageKey.tillering, usedFallback: false);
+    }
+    if (normalized.contains('elong') || normalized.contains('encañ') || normalized.contains('encane')) {
+      return const _ResolvedWheatStage(stage: WheatStageKey.elongation, usedFallback: false);
+    }
+    if (normalized.contains('boot') || normalized.contains('embuch')) {
+      return const _ResolvedWheatStage(stage: WheatStageKey.booting, usedFallback: false);
+    }
+    if (normalized.contains('head') || normalized.contains('espig')) {
+      return const _ResolvedWheatStage(stage: WheatStageKey.heading, usedFallback: false);
+    }
+    if (normalized.contains('flower') || normalized.contains('flor') || normalized.contains('antes')) {
+      return const _ResolvedWheatStage(stage: WheatStageKey.flowering, usedFallback: false);
+    }
+    if (normalized.contains('grain') || normalized.contains('llen')) {
+      return const _ResolvedWheatStage(stage: WheatStageKey.grainFill, usedFallback: false);
+    }
+    if (normalized.contains('matur')) {
+      return const _ResolvedWheatStage(stage: WheatStageKey.physiologicalMaturity, usedFallback: false);
+    }
+    if (normalized.contains('harvest') || normalized.contains('cosech')) {
+      return const _ResolvedWheatStage(stage: WheatStageKey.harvest, usedFallback: false);
+    }
+
+    return const _ResolvedWheatStage(
+      stage: WheatStageKey.tillering,
+      usedFallback: true,
     );
   }
 
-  WheatStageKey _resolveStage(String rawStage) {
-    return WheatStageKey.values.firstWhere(
-      (stage) => stage.name == rawStage,
-      orElse: () => WheatStageKey.tillering,
+  ({AgroEvalResult eval, AlertsState nextAlertsState}) _withStageFallbackDiagnostic(
+    ({AgroEvalResult eval, AlertsState nextAlertsState}) out,
+    bool usedFallback,
+  ) {
+    if (!usedFallback) return out;
+
+    return (
+      eval: AgroEvalResult(
+        soilControlScore01: out.eval.soilControlScore01,
+        metrics: out.eval.metrics,
+        alerts: out.eval.alerts,
+        suggestedAlertKeys: <String>[
+          ...out.eval.suggestedAlertKeys,
+          'stage.fallback',
+        ],
+      ),
+      nextAlertsState: out.nextAlertsState,
     );
   }
 
@@ -137,4 +181,11 @@ class WheatCropDefinition implements CropDefinition {
 
     return null;
   }
+}
+
+class _ResolvedWheatStage {
+  final WheatStageKey stage;
+  final bool usedFallback;
+
+  const _ResolvedWheatStage({required this.stage, required this.usedFallback});
 }

@@ -79,12 +79,10 @@ class DashboardReveal extends StatelessWidget {
       begin: 0.0,
       end: 1.0,
     ).animate(opacityCurveAnim);
-
     final Animation<double> translateY = Tween<double>(
       begin: yOffset,
       end: 0.0,
     ).animate(positionCurve);
-
     final Animation<double> scale = Tween<double>(
       begin: beginScale,
       end: 1.0,
@@ -260,18 +258,16 @@ class DashboardNpkSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
-      child: SizedBox(
-        height: 65,
-        child: NpkInsightCard(
-          assetIcon: 'assets/icons/metrics/ic_npk.png',
-          title: title,
-          subtitle: subtitle,
-          onTap: () {
-            Navigator.of(
-              context,
-            ).push(BioGPageRoute(builder: (_) => const NpkScreen()));
-          },
-        ),
+      // ✅ FIX: Quitamos el SizedBox estricto de 65 de altura que cortaba los textos largos
+      child: NpkInsightCard(
+        assetIcon: 'assets/icons/metrics/ic_npk.png',
+        title: title,
+        subtitle: subtitle,
+        onTap: () {
+          Navigator.of(
+            context,
+          ).push(BioGPageRoute(builder: (_) => const NpkScreen()));
+        },
       ),
     );
   }
@@ -375,7 +371,6 @@ class DashboardMetricsGridSection extends StatelessWidget {
 
 class DashboardInsightSection extends StatelessWidget {
   final DashboardInsightUiData insight;
-
   const DashboardInsightSection({super.key, required this.insight});
 
   @override
@@ -390,7 +385,6 @@ class DashboardInsightSection extends StatelessWidget {
   }
 }
 
-/// Animated notification bell that shakes when there are active notifications.
 class _NotificationBellButton extends StatefulWidget {
   final bool hasNotifications;
   final VoidCallback onTap;
@@ -406,17 +400,23 @@ class _NotificationBellButton extends StatefulWidget {
 }
 
 class _NotificationBellButtonState extends State<_NotificationBellButton>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _shakeController;
   late final Animation<double> _shakeAnimation;
+
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseScale;
+  late final Animation<double> _pulseOpacity;
 
   @override
   void initState() {
     super.initState();
+
     _shakeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+
     _shakeAnimation = TweenSequence<double>(
       [
         TweenSequenceItem(tween: Tween(begin: 0, end: 0.15), weight: 1),
@@ -427,19 +427,38 @@ class _NotificationBellButtonState extends State<_NotificationBellButton>
       ],
     ).animate(CurvedAnimation(parent: _shakeController, curve: Curves.easeOut));
 
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+
+    _pulseScale = Tween<double>(begin: 1.0, end: 1.22).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _pulseOpacity = Tween<double>(
+      begin: 0.28,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeOut));
+
     if (widget.hasNotifications) {
       _startShakeLoop();
+      _pulseController.repeat();
     }
   }
 
   @override
   void didUpdateWidget(covariant _NotificationBellButton oldWidget) {
     super.didUpdateWidget(oldWidget);
+
     if (widget.hasNotifications && !oldWidget.hasNotifications) {
       _startShakeLoop();
-    } else if (!widget.hasNotifications) {
+      _pulseController.repeat();
+    } else if (!widget.hasNotifications && oldWidget.hasNotifications) {
       _shakeController.stop();
       _shakeController.reset();
+      _pulseController.stop();
+      _pulseController.reset();
     }
   }
 
@@ -455,6 +474,7 @@ class _NotificationBellButtonState extends State<_NotificationBellButton>
   @override
   void dispose() {
     _shakeController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -464,39 +484,99 @@ class _NotificationBellButtonState extends State<_NotificationBellButton>
       behavior: HitTestBehavior.opaque,
       onTap: widget.onTap,
       child: AnimatedBuilder(
-        animation: _shakeAnimation,
+        animation: Listenable.merge(<Listenable>[
+          _shakeAnimation,
+          _pulseController,
+        ]),
         builder: (context, child) {
-          return Transform.rotate(angle: _shakeAnimation.value, child: child);
-        },
-        child: SizedBox(
-          width: 54,
-          height: 54,
-          child: Center(
-            child: Transform.scale(
-              scale: 1.9,
-              child: Container(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.10),
-                      blurRadius: 12,
-                      offset: const Offset(0, 1),
+          return Transform.rotate(
+            angle: _shakeAnimation.value,
+            child: SizedBox(
+              width: 54,
+              height: 54,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: <Widget>[
+                  Center(
+                    child: Transform.scale(
+                      scale: 1.9,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.10),
+                              blurRadius: 12,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Opacity(
+                          opacity: 0.75,
+                          child: Image.asset(
+                            'assets/icons/metrics/ic_notification_dashboard.png',
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-                child: Opacity(
-                  opacity: 0.75,
-                  child: Image.asset(
-                    'assets/icons/metrics/ic_notification.png',
-                    width: 40,
-                    height: 40,
-                    fit: BoxFit.contain,
                   ),
-                ),
+
+                  if (widget.hasNotifications)
+                    Positioned(
+                      right: 7,
+                      top: 7,
+                      child: SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: <Widget>[
+                            Transform.scale(
+                              scale: _pulseScale.value,
+                              child: Opacity(
+                                opacity: _pulseOpacity.value,
+                                child: Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFFF4D4F),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: 9,
+                              height: 9,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF4D4F),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1.2,
+                                ),
+                                boxShadow: <BoxShadow>[
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFFFF4D4F,
+                                    ).withValues(alpha: 0.45),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

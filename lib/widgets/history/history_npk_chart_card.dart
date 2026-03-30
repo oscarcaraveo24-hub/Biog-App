@@ -16,6 +16,7 @@ class HistoryNpkChartCard extends StatelessWidget {
     this.lastReadingText,
   });
 
+  /// Límite inferior de la meta de la etapa
   final String title;
   final List<String> labels;
   final List<double> nValues;
@@ -207,7 +208,7 @@ class _StatusInlineDot extends StatelessWidget {
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: color.withValues(alpha:0.85),
+            color: color.withValues(alpha: 0.85),
             shape: BoxShape.circle,
           ),
         ),
@@ -217,7 +218,7 @@ class _StatusInlineDot extends StatelessWidget {
           style: TextStyle(
             fontSize: 15.5,
             fontWeight: FontWeight.w900,
-            color: color.withValues(alpha:0.95),
+            color: color.withValues(alpha: 0.95),
             height: 1.0,
           ),
         ),
@@ -235,7 +236,7 @@ class _LastReadingRow extends StatelessWidget {
     final style = TextStyle(
       fontSize: 12.5,
       fontWeight: FontWeight.w700,
-      color: Colors.black.withValues(alpha:0.45),
+      color: Colors.black.withValues(alpha: 0.45),
       height: 1.0,
     );
 
@@ -244,7 +245,7 @@ class _LastReadingRow extends StatelessWidget {
         Icon(
           Icons.schedule_rounded,
           size: 14,
-          color: Colors.black.withValues(alpha:0.35),
+          color: Colors.black.withValues(alpha: 0.35),
         ),
         const SizedBox(width: 6),
         Flexible(
@@ -291,12 +292,12 @@ class _NpkWideChips extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha:0.75),
+          color: Colors.white.withValues(alpha: 0.75),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha:0.55)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.55)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 14,
               offset: const Offset(0, 10),
               spreadRadius: 0,
@@ -484,14 +485,14 @@ class _TrendArrowPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final p = Paint()
-      ..color = color.withValues(alpha:0.85)
+      ..color = color.withValues(alpha: 0.85)
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
     final glow = Paint()
-      ..color = Colors.white.withValues(alpha:0.22)
+      ..color = Colors.white.withValues(alpha: 0.22)
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke + 2.0
       ..strokeCap = StrokeCap.round
@@ -593,9 +594,9 @@ class _NpkChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          _n.withValues(alpha:0.18),
-          _p.withValues(alpha:0.14),
-          _p.withValues(alpha:0.11),
+          _n.withValues(alpha: 0.18),
+          _p.withValues(alpha: 0.14),
+          _p.withValues(alpha: 0.11),
         ],
         stops: const [0.0, 0.55, 1.0],
       ).createShader(plot);
@@ -608,8 +609,8 @@ class _NpkChartPainter extends CustomPainter {
         end: Alignment.centerRight,
         colors: [
           Colors.transparent,
-          Colors.white.withValues(alpha:0.10),
-          Colors.white.withValues(alpha:0.10),
+          Colors.white.withValues(alpha: 0.10),
+          Colors.white.withValues(alpha: 0.10),
           Colors.transparent,
         ],
         stops: const [0.0, 0.18, 0.82, 1.0],
@@ -621,9 +622,9 @@ class _NpkChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Colors.white.withValues(alpha:0.14),
+          Colors.white.withValues(alpha: 0.14),
           Colors.transparent,
-          Colors.white.withValues(alpha:0.10),
+          Colors.white.withValues(alpha: 0.10),
         ],
         stops: const [0.0, 0.75, 1.0],
       ).createShader(plot);
@@ -632,7 +633,7 @@ class _NpkChartPainter extends CustomPainter {
 
   void _drawGrid(Canvas canvas, Rect plot) {
     final grid = Paint()
-      ..color = Colors.black.withValues(alpha:0.03)
+      ..color = Colors.black.withValues(alpha: 0.03)
       ..strokeWidth = 1;
 
     final ys = [
@@ -650,14 +651,14 @@ class _NpkChartPainter extends CustomPainter {
     if (pts.isEmpty) return;
 
     final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha:0.045)
+      ..color = Colors.black.withValues(alpha: 0.045)
       ..strokeWidth = 4
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
     final linePaint = Paint()
-      ..color = color.withValues(alpha:0.78)
+      ..color = color.withValues(alpha: 0.78)
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
@@ -678,9 +679,9 @@ class _NpkChartPainter extends CustomPainter {
     if (geom.basePoints.isNotEmpty) {
       final basePts = geom.basePoints;
 
-      final dotFill = Paint()..color = Colors.white.withValues(alpha:0.92);
+      final dotFill = Paint()..color = Colors.white.withValues(alpha: 0.92);
       final dotStroke = Paint()
-        ..color = color.withValues(alpha:0.88)
+        ..color = color.withValues(alpha: 0.88)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2;
 
@@ -690,7 +691,7 @@ class _NpkChartPainter extends CustomPainter {
       }
 
       final last = basePts.last;
-      final lastHalo = Paint()..color = color.withValues(alpha:0.12);
+      final lastHalo = Paint()..color = color.withValues(alpha: 0.12);
       canvas.drawCircle(last, 12, lastHalo);
     }
   }
@@ -717,7 +718,7 @@ class _NpkChartPainter extends CustomPainter {
     final style = TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w800,
-      color: Colors.black.withValues(alpha:0.35),
+      color: Colors.black.withValues(alpha: 0.35),
     );
     if (labels.length < 2) return;
 

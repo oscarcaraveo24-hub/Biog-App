@@ -5,6 +5,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/npk_caps.dart';
+import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -32,26 +34,29 @@ class NpkScreen extends StatelessWidget {
     return ((a - b) / b) * 100.0;
   }
 
-  double _ppmCap(NpkChannel ch) {
-    switch (ch) {
-      case NpkChannel.n:
-        return 120.0;
-      case NpkChannel.p:
-        return 80.0;
-      case NpkChannel.k:
-        return 140.0;
-    }
+  double _ppmCap(NpkChannel ch, {required String? cropKey}) {
+    final AgroMetricKey metricKey = switch (ch) {
+      NpkChannel.n => AgroMetricKey.n,
+      NpkChannel.p => AgroMetricKey.p,
+      NpkChannel.k => AgroMetricKey.k,
+    };
+
+    return NpkCaps.forCropMetric(cropKey: cropKey, metricKey: metricKey);
   }
 
-  int _indexToPpm(NpkChannel ch, double index0to100) {
-    final cap = _ppmCap(ch);
+  int _indexToPpm(
+    NpkChannel ch,
+    double index0to100, {
+    required String? cropKey,
+  }) {
+    final cap = _ppmCap(ch, cropKey: cropKey);
     final v = (index0to100.clamp(0.0, 100.0) / 100.0) * cap;
     return v.round();
   }
 
-  double _ppmToGauge01(NpkChannel ch, double ppm) {
+  double _ppmToGauge01(NpkChannel ch, double ppm, {required String? cropKey}) {
     if (!ppm.isFinite) return 0.0;
-    final cap = _ppmCap(ch);
+    final cap = _ppmCap(ch, cropKey: cropKey);
     return (ppm / cap).clamp(0.0, 1.0);
   }
 
@@ -70,6 +75,25 @@ class NpkScreen extends StatelessWidget {
     }
   }
 
+  InsightTone _toneForInterpretation(
+    NutrientInterpretationResult? interpretation,
+  ) {
+    switch (interpretation?.label) {
+      case NutrientPriorityLabel.actionRecommended:
+      case NutrientPriorityLabel.highPriority:
+        return InsightTone.warn;
+      case NutrientPriorityLabel.possibleExcess:
+      case NutrientPriorityLabel.reviewAccumulation:
+      case NutrientPriorityLabel.reviewManagement:
+        return InsightTone.bad;
+      case NutrientPriorityLabel.mediumPriority:
+      case NutrientPriorityLabel.lowPriority:
+      case NutrientPriorityLabel.noPriority:
+      case NutrientPriorityLabel.unknown:
+      case null:
+        return InsightTone.ok;
+    }
+  }
 
   _NpkBand _bandFromAgroBand(AgroBand band) {
     switch (band) {
@@ -90,8 +114,9 @@ class NpkScreen extends StatelessWidget {
     required NpkChannel ch,
     required double ppm,
     required AgroRange indexRange,
+    required String? cropKey,
   }) {
-    final cap = _ppmCap(ch);
+    final cap = _ppmCap(ch, cropKey: cropKey);
 
     double t(double idx) => (idx.clamp(0.0, 100.0) / 100.0) * cap;
 
@@ -109,8 +134,12 @@ class NpkScreen extends StatelessWidget {
     return _NpkBand.critical;
   }
 
-  int _ppmToPctForPainter({required NpkChannel ch, required int ppm}) {
-    final cap = _ppmCap(ch);
+  int _ppmToPctForPainter({
+    required NpkChannel ch,
+    required int ppm,
+    required String? cropKey,
+  }) {
+    final cap = _ppmCap(ch, cropKey: cropKey);
     final pct = (ppm / cap) * 100.0;
     return pct.round().clamp(0, 100);
   }
@@ -121,7 +150,9 @@ class NpkScreen extends StatelessWidget {
     required List<BioGTelemetry> history7d,
     required StageTargets? targets,
     required bool allowStageInterpretation,
+    required String? cropKey,
     AgroMetricEval? evalMetric,
+    NutrientInterpretationResult? interpretation,
   }) {
     double read(BioGTelemetry t) {
       return switch (channel) {
@@ -146,7 +177,7 @@ class NpkScreen extends StatelessWidget {
     final maxV = series.isEmpty ? 0.0 : series.reduce(math.max);
 
     final trendPct = _trendPctFromSeries(series);
-    final gaugePercent = _ppmToGauge01(channel, level);
+    final gaugePercent = _ppmToGauge01(channel, level, cropKey: cropKey);
 
     final rIndex = (!allowStageInterpretation || targets == null)
         ? null
@@ -157,37 +188,45 @@ class NpkScreen extends StatelessWidget {
           };
 
     final targetMinPpm = (rIndex == null)
-        ? 0
-        : _indexToPpm(channel, rIndex.optimalMin);
+        ? null
+        : _indexToPpm(channel, rIndex.optimalMin, cropKey: cropKey);
 
     final targetMaxPpm = (rIndex == null)
-        ? 0
-        : _indexToPpm(channel, rIndex.optimalMax);
+        ? null
+        : _indexToPpm(channel, rIndex.optimalMax, cropKey: cropKey);
 
-    final capPpm = (rIndex == null)
-        ? _ppmCap(channel).round()
-        : _indexToPpm(channel, rIndex.highMin);
+    final capPpm = _ppmCap(channel, cropKey: cropKey).round();
 
     final _NpkBand band = evalMetric != null
         ? _bandFromAgroBand(evalMetric.band)
         : (rIndex == null)
-              ? _NpkBand.unknown
-              : _bandFromPpmUsingIndexRange(
-                  ch: channel,
-                  ppm: level,
-                  indexRange: rIndex,
-                );
+        ? _NpkBand.unknown
+        : _bandFromPpmUsingIndexRange(
+            ch: channel,
+            ppm: level,
+            indexRange: rIndex,
+            cropKey: cropKey,
+          );
 
-    final String bandLabel = evalMetric?.labelEs ?? _bandLabelEs(band);
+    final String bandLabel =
+        interpretation?.labelEs ?? evalMetric?.labelEs ?? _bandLabelEs(band);
 
-    final targetMinPctPainter = _ppmToPctForPainter(
-      ch: channel,
-      ppm: targetMinPpm,
-    );
-    final targetMaxPctPainter = _ppmToPctForPainter(
-      ch: channel,
-      ppm: targetMaxPpm,
-    );
+    // ✅ FIX: Solo pintamos la sombra (target) si la etiqueta de prioridad exige atención.
+    // Si está Óptimo (noPriority) u otra cosa leve, apagamos la sombra para que se vea limpio.
+    final bool hideShadow =
+        interpretation?.label == NutrientPriorityLabel.noPriority ||
+        interpretation?.label == NutrientPriorityLabel.lowPriority;
+
+    final targetMinPctPainter =
+        (allowStageInterpretation && !hideShadow && targetMinPpm != null)
+        ? _ppmToPctForPainter(ch: channel, ppm: targetMinPpm, cropKey: cropKey)
+        : null;
+    final targetMaxPctPainter =
+        (allowStageInterpretation && !hideShadow && targetMaxPpm != null)
+        ? _ppmToPctForPainter(ch: channel, ppm: targetMaxPpm, cropKey: cropKey)
+        : null;
+
+    // ... el resto se queda igual ...
 
     return _NpkStats(
       levelPpm: _roundInt(level),
@@ -227,7 +266,7 @@ class NpkScreen extends StatelessWidget {
             icon: Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 18,
-              color: Colors.black.withValues(alpha:0.65),
+              color: Colors.black.withValues(alpha: 0.65),
             ),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
@@ -268,6 +307,82 @@ class NpkScreen extends StatelessWidget {
                           final isPlanned = runtime.isPlanned;
                           final targets = runtime.targets;
                           final eval = runtime.eval;
+                          final stageKey = runtime.stageResult?.stageKey;
+
+                          final nBase = _statsForChannel(
+                            channel: NpkChannel.n,
+                            live: live,
+                            history7d: history7d,
+                            targets: targets,
+                            allowStageInterpretation: isPlanted,
+                            cropKey: runtime.cropKeyName,
+                            evalMetric: eval?.metrics[AgroMetricKey.n],
+                          );
+
+                          final pBase = _statsForChannel(
+                            channel: NpkChannel.p,
+                            live: live,
+                            history7d: history7d,
+                            targets: targets,
+                            allowStageInterpretation: isPlanted,
+                            cropKey: runtime.cropKeyName,
+                            evalMetric: eval?.metrics[AgroMetricKey.p],
+                          );
+
+                          final kBase = _statsForChannel(
+                            channel: NpkChannel.k,
+                            live: live,
+                            history7d: history7d,
+                            targets: targets,
+                            allowStageInterpretation: isPlanted,
+                            cropKey: runtime.cropKeyName,
+                            evalMetric: eval?.metrics[AgroMetricKey.k],
+                          );
+
+                          final nInterpretation = isPlanted && live != null
+                              ? NutrientRecommendationEngine.interpret(
+                                  nutrient: AgroMetricKey.n,
+                                  rawPpm: live.n.toDouble(),
+                                  cropKey: runtime.cropKeyName,
+                                  stageKey: stageKey,
+                                  profileId: runtime.profile?.id,
+                                  targets: targets,
+                                  ph: live.ph,
+                                  ec: live.ec,
+                                  soilMoisturePct: live.soilMoisturePct,
+                                  trendPct: nBase.avgTrendPct,
+                                )
+                              : null;
+
+                          final pInterpretation = isPlanted && live != null
+                              ? NutrientRecommendationEngine.interpret(
+                                  nutrient: AgroMetricKey.p,
+                                  rawPpm: live.p.toDouble(),
+                                  cropKey: runtime.cropKeyName,
+                                  stageKey: stageKey,
+                                  profileId: runtime.profile?.id,
+                                  targets: targets,
+                                  ph: live.ph,
+                                  ec: live.ec,
+                                  soilMoisturePct: live.soilMoisturePct,
+                                  trendPct: pBase.avgTrendPct,
+                                )
+                              : null;
+
+                          final kInterpretation = isPlanted && live != null
+                              ? NutrientRecommendationEngine.interpret(
+                                  nutrient: AgroMetricKey.k,
+                                  rawPpm: live.k.toDouble(),
+                                  cropKey: runtime.cropKeyName,
+                                  stageKey: stageKey,
+                                  profileId: runtime.profile?.id,
+                                  targets: targets,
+                                  ph: live.ph,
+                                  ec: live.ec,
+                                  soilMoisturePct: live.soilMoisturePct,
+                                  trendPct: kBase.avgTrendPct,
+                                )
+                              : null;
 
                           final n = _statsForChannel(
                             channel: NpkChannel.n,
@@ -275,7 +390,9 @@ class NpkScreen extends StatelessWidget {
                             history7d: history7d,
                             targets: targets,
                             allowStageInterpretation: isPlanted,
+                            cropKey: runtime.cropKeyName,
                             evalMetric: eval?.metrics[AgroMetricKey.n],
+                            interpretation: nInterpretation,
                           );
 
                           final p = _statsForChannel(
@@ -284,7 +401,9 @@ class NpkScreen extends StatelessWidget {
                             history7d: history7d,
                             targets: targets,
                             allowStageInterpretation: isPlanted,
+                            cropKey: runtime.cropKeyName,
                             evalMetric: eval?.metrics[AgroMetricKey.p],
+                            interpretation: pInterpretation,
                           );
 
                           final k = _statsForChannel(
@@ -293,7 +412,9 @@ class NpkScreen extends StatelessWidget {
                             history7d: history7d,
                             targets: targets,
                             allowStageInterpretation: isPlanted,
+                            cropKey: runtime.cropKeyName,
                             evalMetric: eval?.metrics[AgroMetricKey.k],
+                            interpretation: kInterpretation,
                           );
 
                           final stageLabel = isPlanted
@@ -303,38 +424,92 @@ class NpkScreen extends StatelessWidget {
                               : 'Modo genérico';
 
                           final insightN = isPlanted
-                              ? 'En esta etapa conviene ajustar N para sostener vigor.'
+                              ? (nInterpretation?.shortRecommendation ??
+                                    'Lectura real de N disponible.')
                               : isPlanned
-                              ? 'Lectura general de N antes de siembra.'
+                              ? 'Lectura real de N en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final insightP = isPlanted
-                              ? 'Mantén P disponible para raíz y energía.'
+                              ? (pInterpretation?.shortRecommendation ??
+                                    'Lectura real de P disponible.')
                               : isPlanned
-                              ? 'Lectura general de P antes de siembra.'
+                              ? 'Lectura real de P en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final insightK = isPlanted
-                              ? 'K estable ayuda mucho contra estrés hídrico.'
+                              ? (kInterpretation?.shortRecommendation ??
+                                    'Lectura real de K disponible.')
                               : isPlanned
-                              ? 'Lectura general de K antes de siembra.'
+                              ? 'Lectura real de K en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final descN = isPlanted
-                              ? 'El nitrógeno es esencial para el crecimiento vegetativo y el desarrollo del follaje. Una deficiencia puede causar hojas amarillentas y bajo vigor.'
-                              : 'Lectura actual de nitrógeno del suelo. Asigna un cultivo para comparar contra objetivos por etapa.';
+                              ? (nInterpretation?.justification ??
+                                    'Lectura actual de nitrógeno del suelo.')
+                              : 'Lectura real de nitrógeno del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
 
                           final descP = isPlanted
-                              ? 'El fósforo favorece el desarrollo de raíces y la energía de la planta. En etapas tempranas es clave para un arranque fuerte.'
-                              : 'Lectura actual de fósforo del suelo. Asigna un cultivo para comparar contra objetivos por etapa.';
+                              ? (pInterpretation?.justification ??
+                                    'Lectura actual de fósforo del suelo.')
+                              : 'Lectura real de fósforo del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
 
                           final descK = isPlanted
-                              ? 'El potasio ayuda a regular el balance hídrico, la resistencia al estrés y la calidad del cultivo. Un nivel estable mejora tolerancia a sequía.'
-                              : 'Lectura actual de potasio del suelo. Asigna un cultivo para comparar contra objetivos por etapa.';
+                              ? (kInterpretation?.justification ??
+                                    'Lectura actual de potasio del suelo.')
+                              : 'Lectura real de potasio del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
 
-                          final statusN = isPlanted ? n.bandLabel : 'General';
-                          final statusP = isPlanted ? p.bandLabel : 'General';
-                          final statusK = isPlanted ? k.bandLabel : 'General';
+                          final actionN = isPlanted
+                              ? (nInterpretation?.practicalRecommendation ??
+                                    'Revisa el plan nutricional del lote.')
+                              : isPlanned
+                              ? 'Úsalo como línea base antes de sembrar.'
+                              : 'Configura un cultivo para ver prioridad nutricional.';
+
+                          final actionP = isPlanted
+                              ? (pInterpretation?.practicalRecommendation ??
+                                    'Revisa el plan nutricional del lote.')
+                              : isPlanned
+                              ? 'Úsalo como línea base antes de sembrar.'
+                              : 'Configura un cultivo para ver prioridad nutricional.';
+
+                          final actionK = isPlanted
+                              ? (kInterpretation?.practicalRecommendation ??
+                                    'Revisa el plan nutricional del lote.')
+                              : isPlanned
+                              ? 'Úsalo como línea base antes de sembrar.'
+                              : 'Configura un cultivo para ver prioridad nutricional.';
+
+                          final windowN = isPlanted
+                              ? (nInterpretation?.demandWindowLabel ??
+                                    'Ventana activa')
+                              : isPlanned
+                              ? 'Pre-siembra'
+                              : 'Sin cultivo';
+
+                          final windowP = isPlanted
+                              ? (pInterpretation?.demandWindowLabel ??
+                                    'Ventana activa')
+                              : isPlanned
+                              ? 'Pre-siembra'
+                              : 'Sin cultivo';
+
+                          final windowK = isPlanted
+                              ? (kInterpretation?.demandWindowLabel ??
+                                    'Ventana activa')
+                              : isPlanned
+                              ? 'Pre-siembra'
+                              : 'Sin cultivo';
+
+                          final statusN = isPlanted
+                              ? n.bandLabel
+                              : 'Lectura real';
+                          final statusP = isPlanted
+                              ? p.bandLabel
+                              : 'Lectura real';
+                          final statusK = isPlanted
+                              ? k.bandLabel
+                              : 'Lectura real';
 
                           return _NpkContentCardShell(
                             child: TabBarView(
@@ -347,9 +522,12 @@ class NpkScreen extends StatelessWidget {
                                   description: descN,
                                   stageLabel: stageLabel,
                                   insight: insightN,
-                                  tone: isPlanted
-                                      ? InsightTone.warn
-                                      : InsightTone.ok,
+                                  tone: _toneForInterpretation(nInterpretation),
+                                  windowLabel: windowN,
+                                  actionText: actionN,
+                                  doseGuideText: nInterpretation?.doseGuideEs,
+                                  fertilizerEquivalentText:
+                                      nInterpretation?.fertilizerEquivalentEs,
                                   targetMinPctPainter: n.targetMinPctPainter,
                                   targetMaxPctPainter: n.targetMaxPctPainter,
                                   targetMinPpm: n.targetMinPpm,
@@ -369,7 +547,12 @@ class NpkScreen extends StatelessWidget {
                                   description: descP,
                                   stageLabel: stageLabel,
                                   insight: insightP,
-                                  tone: InsightTone.ok,
+                                  tone: _toneForInterpretation(pInterpretation),
+                                  windowLabel: windowP,
+                                  actionText: actionP,
+                                  doseGuideText: pInterpretation?.doseGuideEs,
+                                  fertilizerEquivalentText:
+                                      pInterpretation?.fertilizerEquivalentEs,
                                   targetMinPctPainter: p.targetMinPctPainter,
                                   targetMaxPctPainter: p.targetMaxPctPainter,
                                   targetMinPpm: p.targetMinPpm,
@@ -389,7 +572,12 @@ class NpkScreen extends StatelessWidget {
                                   description: descK,
                                   stageLabel: stageLabel,
                                   insight: insightK,
-                                  tone: InsightTone.ok,
+                                  tone: _toneForInterpretation(kInterpretation),
+                                  windowLabel: windowK,
+                                  actionText: actionK,
+                                  doseGuideText: kInterpretation?.doseGuideEs,
+                                  fertilizerEquivalentText:
+                                      kInterpretation?.fertilizerEquivalentEs,
                                   targetMinPctPainter: k.targetMinPctPainter,
                                   targetMaxPctPainter: k.targetMaxPctPainter,
                                   targetMinPpm: k.targetMinPpm,
@@ -430,10 +618,10 @@ class _NpkStats {
   final double? avgTrendPct;
   final double gaugePercent;
   final int capPpm;
-  final int targetMinPpm;
-  final int targetMaxPpm;
-  final int targetMinPctPainter;
-  final int targetMaxPctPainter;
+  final int? targetMinPpm;
+  final int? targetMaxPpm;
+  final int? targetMinPctPainter;
+  final int? targetMaxPctPainter;
   final _NpkBand band;
   final String bandLabel;
 
@@ -464,12 +652,12 @@ class _NpkTabsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.10),
+            color: Colors.black.withValues(alpha: 0.10),
             blurRadius: 22,
             offset: const Offset(0, 14),
           ),
           BoxShadow(
-            color: const Color(0xFF3FAF6E).withValues(alpha:0.12),
+            color: const Color(0xFF3FAF6E).withValues(alpha: 0.12),
             blurRadius: 70,
             offset: const Offset(0, 34),
           ),
@@ -483,14 +671,16 @@ class _NpkTabsCard extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
-              color: Colors.white.withValues(alpha:0.78),
-              border: Border.all(color: Colors.white.withValues(alpha:0.92)),
+              color: Colors.white.withValues(alpha: 0.78),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.92)),
             ),
             child: TabBar(
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               labelColor: Colors.white,
-              unselectedLabelColor: const Color(0xFF0E1A16).withValues(alpha:0.60),
+              unselectedLabelColor: const Color(
+                0xFF0E1A16,
+              ).withValues(alpha: 0.60),
               labelStyle: const TextStyle(
                 fontWeight: FontWeight.w900,
                 fontSize: 13.5,
@@ -535,13 +725,13 @@ class _NpkContentCardShell extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.10),
+            color: Colors.black.withValues(alpha: 0.10),
             blurRadius: 34,
             offset: const Offset(0, 18),
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: const Color(0xFF3FAF6E).withValues(alpha:0.12),
+            color: const Color(0xFF3FAF6E).withValues(alpha: 0.12),
             blurRadius: 90,
             offset: const Offset(0, 46),
             spreadRadius: 0,
@@ -556,8 +746,8 @@ class _NpkContentCardShell extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
-              color: Colors.white.withValues(alpha:0.86),
-              border: Border.all(color: Colors.white.withValues(alpha:0.92)),
+              color: Colors.white.withValues(alpha: 0.86),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.92)),
             ),
             child: child,
           ),
@@ -575,10 +765,10 @@ class _NpkTabContent extends StatelessWidget {
   final String stageLabel;
   final String insight;
   final InsightTone tone;
-  final int targetMinPctPainter;
-  final int targetMaxPctPainter;
-  final int targetMinPpm;
-  final int targetMaxPpm;
+  final int? targetMinPctPainter;
+  final int? targetMaxPctPainter;
+  final int? targetMinPpm;
+  final int? targetMaxPpm;
   final int levelPpm;
   final int avg7Ppm;
   final int rangeMin;
@@ -586,6 +776,10 @@ class _NpkTabContent extends StatelessWidget {
   final double? avgTrendPct;
   final String statusLabel;
   final bool showStageTargets;
+  final String windowLabel;
+  final String actionText;
+  final String? doseGuideText;
+  final String? fertilizerEquivalentText;
 
   const _NpkTabContent({
     required this.channel,
@@ -605,6 +799,10 @@ class _NpkTabContent extends StatelessWidget {
     required this.rangeMax,
     required this.statusLabel,
     required this.showStageTargets,
+    required this.windowLabel,
+    required this.actionText,
+    this.doseGuideText,
+    this.fertilizerEquivalentText,
     this.avgTrendPct,
   });
 
@@ -628,105 +826,166 @@ class _NpkTabContent extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        color: Colors.white.withValues(alpha:0.60),
-        border: Border.all(color: Colors.white.withValues(alpha:0.70)),
+        color: Colors.white.withValues(alpha: 0.60),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.70)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            height: 300,
-            child: NpkGaugeCard(
-              channel: channel,
-              percent: percent,
-              title: title,
-              description: description,
-              showDescription: false,
-              targetMin: targetMinPctPainter,
-              targetMax: targetMaxPctPainter,
-              statusLabel: statusLabel,
-              centerValue: levelPpm,
-              centerUnit: 'ppm',
-            ),
-          ),
-          const SizedBox(height: 0),
-          _TechWaveScanDivider(accent: accent),
-          const SizedBox(height: 10),
-          _StageInsightPill(
-            accent: accent,
-            headline: insight,
-            stageLabel: stageLabel,
-            tone: tone,
-          ),
-          const SizedBox(height: 8),
-          _TargetLinePpm(
-            accent: accent,
-            minPpm: targetMinPpm,
-            maxPpm: targetMaxPpm,
-            showTargets: showStageTargets,
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 25),
-                child: Text(
-                  description,
-                  textAlign: TextAlign.center,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    height: 1.30,
-                    color: Colors.black.withValues(alpha:0.60),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        height: 286,
+                        child: NpkGaugeCard(
+                          channel: channel,
+                          percent: percent,
+                          title: title,
+                          description: description,
+                          showDescription: false,
+                          targetMin: targetMinPctPainter,
+                          targetMax: targetMaxPctPainter,
+                          statusLabel: statusLabel,
+                          centerValue: levelPpm,
+                          centerUnit: 'mg/kg',
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      _TechWaveScanDivider(accent: accent),
+                      const SizedBox(height: 8),
+                      _StageInsightPill(
+                        accent: accent,
+                        headline: insight,
+                        stageLabel: stageLabel,
+                        tone: tone,
+                      ),
+                      const SizedBox(height: 6),
+                      _TargetLinePpm(
+                        accent: accent,
+                        minPpm: targetMinPpm,
+                        maxPpm: targetMaxPpm,
+                        showTargets: showStageTargets,
+                        windowLabel: windowLabel,
+                      ),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+                        child: Column(
+                          children: [
+                            Text(
+                              actionText,
+                              textAlign: TextAlign.center,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13.2,
+                                fontWeight: FontWeight.w900,
+                                height: 1.28,
+                                color: Colors.black.withValues(alpha: 0.68),
+                              ),
+                            ),
+                            if ((doseGuideText ?? '').trim().isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                doseGuideText!.trim(),
+                                textAlign: TextAlign.center,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12.2,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.24,
+                                  color: accent.withValues(alpha: 0.88),
+                                ),
+                              ),
+                            ],
+                            if ((fertilizerEquivalentText ?? '')
+                                .trim()
+                                .isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                fertilizerEquivalentText!.trim(),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.8,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.20,
+                                  color: Colors.black.withValues(alpha: 0.54),
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            Text(
+                              description,
+                              textAlign: TextAlign.center,
+                              maxLines: 4,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12.8,
+                                fontWeight: FontWeight.w700,
+                                height: 1.30,
+                                color: Colors.black.withValues(alpha: 0.58),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _MiniMetric(
+                          accent: accent,
+                          value: '$levelPpm',
+                          unit: 'mg/kg',
+                          label: 'Nivel',
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        height: 46,
+                        color: Colors.black.withValues(alpha: 0.06),
+                      ),
+                      Expanded(
+                        child: _MiniMetric(
+                          accent: accent,
+                          value: '$avg7Ppm',
+                          unit: 'mg/kg',
+                          label: 'Promedio 7 días',
+                          trendPct: avgTrendPct,
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        height: 46,
+                        color: Colors.black.withValues(alpha: 0.06),
+                      ),
+                      Expanded(
+                        child: _MiniMetric(
+                          accent: accent,
+                          value: '$rangeMin–$rangeMax',
+                          unit: 'mg/kg',
+                          label: 'Variación',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _MiniMetric(
-                  accent: accent,
-                  value: '$levelPpm',
-                  unit: 'ppm',
-                  label: 'Nivel',
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 46,
-                color: Colors.black.withValues(alpha:0.06),
-              ),
-              Expanded(
-                child: _MiniMetric(
-                  accent: accent,
-                  value: '$avg7Ppm',
-                  unit: 'ppm',
-                  label: 'Promedio 7 días',
-                  trendPct: avgTrendPct,
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 46,
-                color: Colors.black.withValues(alpha:0.06),
-              ),
-              Expanded(
-                child: _MiniMetric(
-                  accent: accent,
-                  value: '$rangeMin–$rangeMax',
-                  unit: 'ppm',
-                  label: 'Variación',
-                ),
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -748,23 +1007,22 @@ class _StageInsightPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = tone == InsightTone.bad
-        ? Colors.black.withValues(alpha:0.06)
+        ? Colors.black.withValues(alpha: 0.06)
         : tone == InsightTone.warn
-        ? accent.withValues(alpha:0.10)
-        : accent.withValues(alpha:0.08);
-
+        ? accent.withValues(alpha: 0.10)
+        : accent.withValues(alpha: 0.08);
     final dot = tone == InsightTone.bad
-        ? Colors.black.withValues(alpha:0.45)
+        ? Colors.black.withValues(alpha: 0.45)
         : tone == InsightTone.warn
-        ? accent.withValues(alpha:0.95)
-        : accent.withValues(alpha:0.90);
+        ? accent.withValues(alpha: 0.95)
+        : accent.withValues(alpha: 0.90);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         color: bg,
-        border: Border.all(color: Colors.white.withValues(alpha:0.70)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.70)),
       ),
       child: Row(
         children: [
@@ -776,7 +1034,7 @@ class _StageInsightPill extends StatelessWidget {
               color: dot,
               boxShadow: [
                 BoxShadow(
-                  color: dot.withValues(alpha:0.45),
+                  color: dot.withValues(alpha: 0.45),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -793,7 +1051,7 @@ class _StageInsightPill extends StatelessWidget {
                 fontSize: 12.8,
                 fontWeight: FontWeight.w900,
                 height: 1.15,
-                color: Colors.black.withValues(alpha:0.62),
+                color: Colors.black.withValues(alpha: 0.62),
               ),
             ),
           ),
@@ -803,15 +1061,15 @@ class _StageInsightPill extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(999),
-                color: Colors.white.withValues(alpha:0.55),
-                border: Border.all(color: Colors.white.withValues(alpha:0.75)),
+                color: Colors.white.withValues(alpha: 0.55),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.75)),
               ),
               child: Text(
                 stageLabel,
                 style: TextStyle(
                   fontSize: 11.0,
                   fontWeight: FontWeight.w900,
-                  color: Colors.black.withValues(alpha:0.55),
+                  color: Colors.black.withValues(alpha: 0.55),
                 ),
               ),
             ),
@@ -823,30 +1081,34 @@ class _StageInsightPill extends StatelessWidget {
 
 class _TargetLinePpm extends StatelessWidget {
   final Color accent;
-  final int minPpm;
-  final int maxPpm;
+  final int? minPpm;
+  final int? maxPpm;
   final bool showTargets;
+  final String windowLabel;
 
   const _TargetLinePpm({
     required this.accent,
     required this.minPpm,
     required this.maxPpm,
     required this.showTargets,
+    required this.windowLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    final text = !showTargets || (minPpm == 0 && maxPpm == 0)
-        ? 'Objetivo por etapa: no disponible'
-        : 'Objetivo etapa: $minPpm–$maxPpm ppm';
+    final text = windowLabel.isEmpty
+        ? ((!showTargets || minPpm == null || maxPpm == null)
+              ? 'Ventana actual: no disponible'
+              : 'Referencia heredada: $minPpm–$maxPpm mg/kg')
+        : 'Ventana actual: $windowLabel';
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(
-          Icons.track_changes_rounded,
+          Icons.timeline_rounded,
           size: 16,
-          color: accent.withValues(alpha:0.70),
+          color: accent.withValues(alpha: 0.70),
         ),
         const SizedBox(width: 6),
         Text(
@@ -854,7 +1116,7 @@ class _TargetLinePpm extends StatelessWidget {
           style: TextStyle(
             fontSize: 12.0,
             fontWeight: FontWeight.w900,
-            color: Colors.black.withValues(alpha:0.55),
+            color: Colors.black.withValues(alpha: 0.55),
           ),
         ),
       ],
@@ -896,11 +1158,9 @@ class _TechWaveScanDividerState extends State<_TechWaveScanDivider>
       width: double.infinity,
       child: AnimatedBuilder(
         animation: _c,
-        builder: (_, __) {
-          return CustomPaint(
-            painter: _TechWaveScanPainter(t: _c.value, accent: widget.accent),
-          );
-        },
+        builder: (_, __) => CustomPaint(
+          painter: _TechWaveScanPainter(t: _c.value, accent: widget.accent),
+        ),
       ),
     );
   }
@@ -909,7 +1169,6 @@ class _TechWaveScanDividerState extends State<_TechWaveScanDivider>
 class _TechWaveScanPainter extends CustomPainter {
   final double t;
   final Color accent;
-
   _TechWaveScanPainter({required this.t, required this.accent});
 
   @override
@@ -917,7 +1176,6 @@ class _TechWaveScanPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
     final midY = h / 2;
-
     final amp = 7.2;
     final freq = 2.0;
     final phase = t * math.pi * 2;
@@ -926,11 +1184,10 @@ class _TechWaveScanPainter extends CustomPainter {
     for (int i = 0; i <= 160; i++) {
       final x = w * (i / 160);
       final y = midY + math.sin((x / w) * (math.pi * 2 * freq) + phase) * amp;
-      if (i == 0) {
+      if (i == 0)
         path.moveTo(x, y);
-      } else {
+      else
         path.lineTo(x, y);
-      }
     }
 
     final glow = Paint()
@@ -938,22 +1195,20 @@ class _TechWaveScanPainter extends CustomPainter {
       ..strokeWidth = 10.0
       ..strokeCap = StrokeCap.round
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 30)
-      ..color = accent.withValues(alpha:0.70);
-
+      ..color = accent.withValues(alpha: 0.70);
     final core = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0
       ..strokeCap = StrokeCap.round
-      ..color = accent.withValues(alpha:0.96);
+      ..color = accent.withValues(alpha: 0.96);
 
     canvas.drawPath(path, glow);
     canvas.drawPath(path, core);
   }
 
   @override
-  bool shouldRepaint(covariant _TechWaveScanPainter oldDelegate) {
-    return oldDelegate.t != t || oldDelegate.accent != accent;
-  }
+  bool shouldRepaint(covariant _TechWaveScanPainter old) =>
+      old.t != t || old.accent != accent;
 }
 
 class _MiniMetric extends StatelessWidget {
@@ -998,7 +1253,7 @@ class _MiniMetric extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 12.0,
-                  color: Colors.black.withValues(alpha:0.42),
+                  color: Colors.black.withValues(alpha: 0.42),
                   height: 1.0,
                 ),
               ),
@@ -1015,14 +1270,14 @@ class _MiniMetric extends StatelessWidget {
                     ? Icons.arrow_drop_up_rounded
                     : Icons.arrow_drop_down_rounded,
                 size: 18,
-                color: trendColor.withValues(alpha:0.95),
+                color: trendColor.withValues(alpha: 0.95),
               ),
               Text(
                 '${up ? '+' : ''}${trendPct!.toStringAsFixed(1)}%',
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w900,
-                  color: trendColor.withValues(alpha:0.95),
+                  color: trendColor.withValues(alpha: 0.95),
                   height: 1.0,
                 ),
               ),
@@ -1037,7 +1292,7 @@ class _MiniMetric extends StatelessWidget {
           style: TextStyle(
             fontSize: 10.8,
             fontWeight: FontWeight.w900,
-            color: accent.withValues(alpha:0.82),
+            color: accent.withValues(alpha: 0.82),
             height: 1.05,
           ),
         ),
@@ -1048,7 +1303,6 @@ class _MiniMetric extends StatelessWidget {
 
 class _NpkSoftBackground extends StatelessWidget {
   const _NpkSoftBackground();
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1085,11 +1339,8 @@ class _NpkSoftBackground extends StatelessWidget {
 class _GlowBlob extends StatelessWidget {
   final double size;
   final double opacity;
-
   const _GlowBlob({required this.size, required this.opacity});
-
   static const Color _brandMid = Color(0xFF3FAF6E);
-
   @override
   Widget build(BuildContext context) {
     return ImageFiltered(
@@ -1099,7 +1350,7 @@ class _GlowBlob extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: _brandMid.withValues(alpha:opacity),
+          color: _brandMid.withValues(alpha: opacity),
         ),
       ),
     );

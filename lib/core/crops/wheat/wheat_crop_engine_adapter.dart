@@ -18,51 +18,104 @@ class WheatCropEngineAdapter implements CropEngine {
     final daySince = today.difference(sowingDate).inDays + 1;
     final effectiveDay = (daySince + stressDelayDays).clamp(1, 999999);
 
-    final stage = _resolveStage(wheatProfile, effectiveDay);
+    final bounds = _bounds(wheatProfile);
+    final current = bounds.firstWhere(
+      (b) => b.contains(effectiveDay),
+      orElse: () => bounds.last,
+    );
     final expectedEnd = math.max(1, wheatProfile.endWindowDays.mid);
     final remaining = (expectedEnd - effectiveDay).clamp(0, 999999);
+    final span = math.max(1, current.endDay - current.startDay + 1);
+    final stageProgressPct =
+        ((effectiveDay - current.startDay + 1) / span).clamp(0.0, 1.0);
 
     return CropStageResult(
-      stageKey: stage.name,
-      stageLabelEs: _labelEs(stage),
+      stageKey: current.key.name,
+      stageLabelEs: _labelEs(current.key),
       expectedDaysToEnd: remaining,
-      windowsNow: _windows(stage),
-      heroAsset: _heroAsset(stage),
-      helperCaption: _helperCaption(stage),
+      windowsNow: _windows(current.key),
+      heroAsset: _heroAsset(current.key),
+      helperCaption: _helperCaption(current.key),
+      daySinceSowing: daySince,
+      stageProgressPct: stageProgressPct,
     );
   }
 
-  static WheatStageKey _resolveStage(WheatProfile p, int day) {
+  static List<WheatStageBounds> _bounds(WheatProfile p) {
     final germEnd = math.max(1, p.germinationDays.max);
-    final emergEnd = math.max(germEnd, p.emergenceDays.max);
-    final vegEnd = math.max(emergEnd, p.vegEarlyDays.max);
-    final flowerStart = math.max(vegEnd + 1, p.floweringDays.min);
+    final emergEnd = math.max(germEnd + 1, p.emergenceDays.max);
+    final vegEnd = math.max(emergEnd + 1, p.vegEarlyDays.max);
+    final flowerStart = math.max(vegEnd + 4, p.floweringDays.min);
     final flowerEnd = math.max(flowerStart, p.floweringDays.max);
     final endStart = math.max(flowerEnd + 1, p.endWindowDays.min);
 
-    if (day <= germEnd) return WheatStageKey.germination;
-    if (day <= emergEnd) return WheatStageKey.emergence;
-    if (day <= vegEnd) return WheatStageKey.vegEarly;
+    final midRange = math.max(4, flowerStart - vegEnd);
+    final tillerEnd = vegEnd + (midRange * 0.30).round();
+    final elongEnd = vegEnd + (midRange * 0.55).round();
+    final bootEnd = vegEnd + (midRange * 0.75).round();
+    final headEnd = math.max(bootEnd + 1, flowerStart - 1);
 
-    final midRange = math.max(1, flowerStart - vegEnd);
-    final tillerEnd = math.max(vegEnd, vegEnd + (midRange * 0.30).round());
-    final elongEnd = math.max(tillerEnd, vegEnd + (midRange * 0.55).round());
-    final bootEnd = math.max(elongEnd, vegEnd + (midRange * 0.75).round());
-    final headEnd = math.max(bootEnd, flowerStart - 1);
+    final postFlower = math.max(3, endStart - flowerEnd);
+    final grainEnd = flowerEnd + (postFlower * 0.65).round();
+    final matEnd = math.max(grainEnd + 1, endStart - 1);
 
-    if (day <= tillerEnd) return WheatStageKey.tillering;
-    if (day <= elongEnd) return WheatStageKey.elongation;
-    if (day <= bootEnd) return WheatStageKey.booting;
-    if (day <= headEnd) return WheatStageKey.heading;
-    if (day <= flowerEnd) return WheatStageKey.flowering;
-
-    final postFlower = math.max(1, endStart - flowerEnd);
-    final grainEnd = math.max(flowerEnd, flowerEnd + (postFlower * 0.65).round());
-    final matEnd = math.max(grainEnd, endStart - 1);
-
-    if (day <= grainEnd) return WheatStageKey.grainFill;
-    if (day <= matEnd) return WheatStageKey.physiologicalMaturity;
-    return WheatStageKey.harvest;
+    return <WheatStageBounds>[
+      WheatStageBounds(
+        key: WheatStageKey.germination,
+        startDay: 1,
+        endDay: germEnd,
+      ),
+      WheatStageBounds(
+        key: WheatStageKey.emergence,
+        startDay: germEnd + 1,
+        endDay: emergEnd,
+      ),
+      WheatStageBounds(
+        key: WheatStageKey.vegEarly,
+        startDay: emergEnd + 1,
+        endDay: vegEnd,
+      ),
+      WheatStageBounds(
+        key: WheatStageKey.tillering,
+        startDay: vegEnd + 1,
+        endDay: math.max(vegEnd + 1, tillerEnd),
+      ),
+      WheatStageBounds(
+        key: WheatStageKey.elongation,
+        startDay: math.max(vegEnd + 2, tillerEnd + 1),
+        endDay: math.max(math.max(vegEnd + 2, tillerEnd + 1), elongEnd),
+      ),
+      WheatStageBounds(
+        key: WheatStageKey.booting,
+        startDay: math.max(vegEnd + 3, elongEnd + 1),
+        endDay: math.max(math.max(vegEnd + 3, elongEnd + 1), bootEnd),
+      ),
+      WheatStageBounds(
+        key: WheatStageKey.heading,
+        startDay: math.max(vegEnd + 4, bootEnd + 1),
+        endDay: math.max(math.max(vegEnd + 4, bootEnd + 1), headEnd),
+      ),
+      WheatStageBounds(
+        key: WheatStageKey.flowering,
+        startDay: math.max(headEnd + 1, flowerStart),
+        endDay: flowerEnd,
+      ),
+      WheatStageBounds(
+        key: WheatStageKey.grainFill,
+        startDay: flowerEnd + 1,
+        endDay: math.max(flowerEnd + 1, grainEnd),
+      ),
+      WheatStageBounds(
+        key: WheatStageKey.physiologicalMaturity,
+        startDay: math.max(flowerEnd + 2, grainEnd + 1),
+        endDay: math.max(math.max(flowerEnd + 2, grainEnd + 1), matEnd),
+      ),
+      WheatStageBounds(
+        key: WheatStageKey.harvest,
+        startDay: math.max(matEnd + 1, endStart),
+        endDay: math.max(math.max(matEnd + 1, endStart), p.endWindowDays.max),
+      ),
+    ];
   }
 
   static String _labelEs(WheatStageKey stage) {
@@ -122,14 +175,14 @@ class WheatCropEngineAdapter implements CropEngine {
       SeedWindowKey.irrigation,
       SeedWindowKey.scouting,
     ];
-    final nutritionHeavy = stage == WheatStageKey.tillering ||
+    final nutritionHeavy =
+        stage == WheatStageKey.tillering ||
         stage == WheatStageKey.elongation ||
         stage == WheatStageKey.booting ||
         stage == WheatStageKey.heading ||
         stage == WheatStageKey.flowering ||
         stage == WheatStageKey.grainFill;
     if (nutritionHeavy) windows.add(SeedWindowKey.nutrition);
-    // ✅ FIX: booting + grainFill también critical (consistente con score engine)
     if (stage == WheatStageKey.booting ||
         stage == WheatStageKey.heading ||
         stage == WheatStageKey.flowering ||

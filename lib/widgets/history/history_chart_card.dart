@@ -27,6 +27,9 @@ class HistoryChartCard extends StatelessWidget {
     /// bandas por métrica (stops en unidades reales: % / pH / °C / RT)
     this.bandStops,
 
+    /// colores explícitos para las bandas (derivados del cultivo)
+    this.bandColors,
+
     this.forceFullRangeIfSpanOver = 40,
     this.roundZoomTo5 = true,
   });
@@ -43,6 +46,7 @@ class HistoryChartCard extends StatelessWidget {
   final double zoomRadius;
   final double minSpan;
   final List<double>? bandStops;
+  final List<Color>? bandColors;
 
   final double forceFullRangeIfSpanOver;
   final bool roundZoomTo5;
@@ -119,6 +123,7 @@ class HistoryChartCard extends StatelessWidget {
                         valueFormatter: valueFormatter,
                         isPercentScale: isPercentScale,
                         bandStops: bandStops,
+                        bandColors: bandColors,
                       ),
                       child: const SizedBox.expand(),
                     ),
@@ -502,6 +507,7 @@ class _HistoryChartPainter extends CustomPainter {
   final String Function(double)? valueFormatter;
   final bool isPercentScale;
   final List<double>? bandStops;
+  final List<Color>? bandColors;
 
   const _HistoryChartPainter({
     required this.labels,
@@ -510,6 +516,7 @@ class _HistoryChartPainter extends CustomPainter {
     required this.valueFormatter,
     required this.isPercentScale,
     required this.bandStops,
+    this.bandColors,
   });
 
   @override
@@ -649,7 +656,7 @@ class _HistoryChartPainter extends CustomPainter {
 
   void _drawBands(Canvas canvas, Rect plot) {
     final stopsRaw = bandStops ?? const [0, 15, 30, 50, 70, 85, 100];
-    final colorsRaw = _paletteForStops(stopsRaw);
+    final colorsRaw = bandColors ?? _paletteForStops(stopsRaw);
 
     final colors = (colorsRaw.length == stopsRaw.length)
         ? colorsRaw
@@ -663,7 +670,7 @@ class _HistoryChartPainter extends CustomPainter {
     final span = (yRange.end - yRange.start).abs().clamp(0.0001, 99999999.0);
 
     final stops = <double>[];
-    final bandColors = <Color>[];
+    final gradientColors = <Color>[];
 
     for (int i = 0; i < stopsRaw.length; i++) {
       final v = stopsRaw[i];
@@ -673,14 +680,14 @@ class _HistoryChartPainter extends CustomPainter {
       final stop = (1.0 - t).clamp(0.0, 1.0);
 
       stops.add(stop);
-      bandColors.add(colors[i].withValues(alpha:0.34));
+      gradientColors.add(colors[i].withValues(alpha:0.34));
     }
 
     if (stops.length < 2) {
       stops
         ..clear()
         ..addAll([0.0, 1.0]);
-      bandColors
+      gradientColors
         ..clear()
         ..addAll([
           const Color(0xFF5BC8A4).withValues(alpha:0.24),
@@ -689,12 +696,12 @@ class _HistoryChartPainter extends CustomPainter {
     } else {
       final zipped = List.generate(
         stops.length,
-        (i) => (stops[i], bandColors[i]),
+        (i) => (stops[i], gradientColors[i]),
       )..sort((a, b) => a.$1.compareTo(b.$1));
       stops
         ..clear()
         ..addAll(zipped.map((e) => e.$1));
-      bandColors
+      gradientColors
         ..clear()
         ..addAll(zipped.map((e) => e.$2));
     }
@@ -703,7 +710,7 @@ class _HistoryChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: bandColors,
+        colors: gradientColors,
         stops: stops,
       ).createShader(plot);
 

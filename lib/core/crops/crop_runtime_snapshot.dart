@@ -38,6 +38,10 @@ class CropRuntimeSnapshot {
 
   final SowingStatus sowingStatus;
 
+  /// Fecha real de siembra usada por el motor fenológico después de aplicar
+  /// offsets del calendario (temporal/riego/base).
+  final DateTime? engineSowingDate;
+
   /// Compatibilidad legacy.
   ///
   /// Aunque el nombre histórico es `hasSeed`, en la práctica significa:
@@ -65,6 +69,7 @@ class CropRuntimeSnapshot {
     required this.cropIconAsset,
     required this.stageLabel,
     required this.sowingStatus,
+    required this.engineSowingDate,
     required this.hasSeed,
     required this.isPlanted,
     required this.isPlanned,

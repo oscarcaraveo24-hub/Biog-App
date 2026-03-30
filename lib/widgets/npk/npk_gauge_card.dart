@@ -16,7 +16,7 @@ class NpkGaugeCard extends StatelessWidget {
     this.targetMax,
     this.statusLabel,
     required this.centerValue,
-    this.centerUnit = 'ppm',
+    this.centerUnit = 'mg/kg',
   });
 
   final NpkChannel channel;
