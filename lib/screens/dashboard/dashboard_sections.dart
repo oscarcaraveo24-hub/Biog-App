@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:bio_g/screens/dashboard/dashboard_presenter.dart';
 import 'package:bio_g/screens/npk/npk_screen.dart';
+import 'package:bio_g/widgets/dashboard/dashboard_quick_action_card.dart';
 import 'package:bio_g/widgets/insight_card.dart';
 import 'package:bio_g/widgets/metric_card.dart';
 import 'package:bio_g/widgets/npk_insight_card.dart';
@@ -79,10 +80,12 @@ class DashboardReveal extends StatelessWidget {
       begin: 0.0,
       end: 1.0,
     ).animate(opacityCurveAnim);
+
     final Animation<double> translateY = Tween<double>(
       begin: yOffset,
       end: 0.0,
     ).animate(positionCurve);
+
     final Animation<double> scale = Tween<double>(
       begin: beginScale,
       end: 1.0,
@@ -258,7 +261,6 @@ class DashboardNpkSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
-      // ✅ FIX: Quitamos el SizedBox estricto de 65 de altura que cortaba los textos largos
       child: NpkInsightCard(
         assetIcon: 'assets/icons/metrics/ic_npk.png',
         title: title,
@@ -369,8 +371,84 @@ class DashboardMetricsGridSection extends StatelessWidget {
   }
 }
 
+class DashboardQuickActionsSection extends StatelessWidget {
+  final VoidCallback onExportTap;
+  final VoidCallback onCropJourneyTap;
+  final VoidCallback onClimateTap;
+
+  const DashboardQuickActionsSection({
+    super.key,
+    required this.onExportTap,
+    required this.onCropJourneyTap,
+    required this.onClimateTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const Padding(
+          padding: EdgeInsets.only(left: 2),
+          child: Text(
+            'Herramientas',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 90,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Expanded(
+                child: DashboardQuickActionCard(
+                  assetIconPath: 'assets/icons/metrics/ic_pdf_report.png',
+                  title: 'Exportar\nPDF',
+                  assetScale: 4.2,
+                  assetWidth: 22,
+                  assetHeight: 22,
+                  onTap: onExportTap,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: DashboardQuickActionCard(
+                  assetIconPath: 'assets/icons/metrics/ic_plant_growth.png',
+                  title: 'Viaje del\ncultivo',
+                  assetScale: 4.2,
+                  assetWidth: 22,
+                  assetHeight: 22,
+                  onTap: onCropJourneyTap,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: DashboardQuickActionCard(
+                  assetIconPath: 'assets/icons/metrics/ic_smart_time.png',
+                  title: 'Clima\ninteligente',
+                  assetScale: 4.2,
+                  assetWidth: 22,
+                  assetHeight: 22,
+                  onTap: onClimateTap,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class DashboardInsightSection extends StatelessWidget {
   final DashboardInsightUiData insight;
+
   const DashboardInsightSection({super.key, required this.insight});
 
   @override
@@ -522,7 +600,6 @@ class _NotificationBellButtonState extends State<_NotificationBellButton>
                       ),
                     ),
                   ),
-
                   if (widget.hasNotifications)
                     Positioned(
                       right: 7,

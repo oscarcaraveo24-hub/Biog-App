@@ -42,28 +42,6 @@ class NutrientInterpretationResult {
   final bool isExcessSide;
 }
 
-/// =========================================================================
-/// MOTOR DE RECOMENDACIÓN NUTRICIONAL
-/// =========================================================================
-///
-/// Principios agronómicos integrados:
-///
-/// LEY DEL MÍNIMO (Liebig):
-///   El rendimiento está limitado por el nutriente más escaso.
-///   → El sistema asigna priorityScore01 proporcional al déficit real,
-///     permitiendo que la UI destaque el nutriente que más limita.
-///
-/// LEY DEL ANTICIPO:
-///   Anticipar la demanda antes de que se vuelva crisis.
-///   → Cuando stagePressure01 > 0.6 y se acerca una etapa de alta demanda,
-///     los umbrales se endurecen y los mensajes anticipan la necesidad.
-///
-/// LÓGICA 4R (Right source, Right rate, Right time, Right place):
-///   → Fuente correcta: mensajes recomiendan Urea/DAP/MOP según nutriente.
-///   → Dosis correcta: el planner calcula déficit real en mg/kg → kg/ha.
-///   → Momento correcto: mensajes cambian según etapa fenológica.
-///   → Forma correcta: dosis se ajusta a la escala del usuario.
-/// =========================================================================
 class NutrientRecommendationEngine {
   NutrientRecommendationEngine._();
 
@@ -107,6 +85,7 @@ class NutrientRecommendationEngine {
       nutrient: nutrient,
       cropKey: cropKey,
       stageKey: stageKey,
+      targets: targets,
     );
 
     final range = switch (nutrient) {
@@ -145,6 +124,7 @@ class NutrientRecommendationEngine {
       stageKey: stageKey,
       trendPct: trendPct,
       stagePressure01: stagePressure01,
+      targets: targets,
     );
 
     final practicalRecommendation = _mergePracticalAndDose(
@@ -169,6 +149,7 @@ class NutrientRecommendationEngine {
         label: label,
         cropKey: cropKey,
         stageKey: stageKey,
+        targets: targets,
       ),
       practicalRecommendation: practicalRecommendation,
       doseGuideEs: doseGuide?.doseGuideEs,
@@ -201,14 +182,17 @@ class NutrientRecommendationEngine {
       AgroMetricKey.k => targets?.kIndex,
       _ => null,
     };
+
     final targetPriority01 = (targets?.resolvedPriorityFor(nutrient) ?? 0.50)
         .clamp(0.0, 1.0);
+
     final double rangeMid01 = range == null
         ? 0.50
         : (((range.optimalMin + range.optimalMax) / 2.0) / 100.0).clamp(
             0.0,
             1.0,
           );
+
     final double weightShare01;
     if (weights == null || weights.nutrientsSum <= 0) {
       weightShare01 = 0.50;
@@ -221,6 +205,7 @@ class NutrientRecommendationEngine {
       };
       weightShare01 = (nutrientWeight / weights.nutrientsSum).clamp(0.0, 1.0);
     }
+
     return (targetPriority01 * 0.70 + rangeMid01 * 0.18 + weightShare01 * 0.12)
         .clamp(0.0, 1.0);
   }
@@ -235,18 +220,22 @@ class NutrientRecommendationEngine {
     double? soilMoisturePct,
   }) {
     double modifier = 0.0;
+
     if (ph != null) {
       if (ph < 5.8 || ph > 7.2) {
         modifier += nutrient == AgroMetricKey.p ? 0.10 : 0.04;
       }
       if (ph < 5.5 || ph > 7.5) modifier += 0.04;
     }
+
     if (ec != null && ec > 2.2) {
       modifier += nutrient == AgroMetricKey.k ? 0.03 : 0.05;
     }
+
     if (soilMoisturePct != null && soilMoisturePct < 28) {
       modifier += nutrient == AgroMetricKey.k ? 0.07 : 0.04;
     }
+
     return modifier.clamp(0.0, 0.22);
   }
 
@@ -259,13 +248,8 @@ class NutrientRecommendationEngine {
   }
 
   // =========================================================================
-  // ETIQUETA DE PRIORIDAD (matemática pura contra target)
+  // ETIQUETA DE PRIORIDAD
   // =========================================================================
-  /// LEY DEL MÍNIMO: el label refleja qué tan lejos está la lectura del
-  /// óptimo real de esta etapa. Nunca grita "Urge" si estás en banda óptima.
-  ///
-  /// LEY DEL ANTICIPO: si stagePressure01 > 0.6 (etapa de alta demanda
-  /// inminente), los umbrales se endurecen para anticipar la necesidad.
   static NutrientPriorityLabel _resolveLabel({
     required double rawPpm,
     required double cap,
@@ -280,21 +264,17 @@ class NutrientRecommendationEngine {
     final highMin = (range.highMin / 100.0) * cap;
     final lowMax = (range.lowMax / 100.0) * cap;
 
-    // 1. Excesos matemáticos.
     if (rawPpm >= highMin) return NutrientPriorityLabel.reviewAccumulation;
     if (rawPpm > targetMax) return NutrientPriorityLabel.possibleExcess;
 
-    // 2. Banda óptima → JAMÁS puede ser "Urge aplicar".
     if (rawPpm >= targetMin && rawPpm <= targetMax) {
       return NutrientPriorityLabel.noPriority;
     }
 
-    // 3. Déficit matemático.
     final deficit = targetMid - rawPpm;
     if (deficit <= 0) return NutrientPriorityLabel.noPriority;
 
     final deficitPct = deficit / targetMid;
-    // Ley del anticipo: etapa de alta demanda endurece los umbrales.
     final isCritical = stagePressure01 > 0.6;
 
     if (rawPpm <= lowMax) return NutrientPriorityLabel.actionRecommended;
@@ -329,6 +309,7 @@ class NutrientRecommendationEngine {
       NutrientPriorityLabel.reviewAccumulation => 0.72,
       NutrientPriorityLabel.unknown => 0.0,
     };
+
     return (base + (stagePressure01 * 0.10)).clamp(0.0, 1.0);
   }
 
@@ -342,21 +323,39 @@ class NutrientRecommendationEngine {
   }
 
   // =========================================================================
-  // HEADLINE (shortRecommendation) — Se ve en la pastilla de insight
+  // HEADLINE
   // =========================================================================
-  /// Tono persuasivo: calma cuando no es prioridad, empuje cuando sí.
   static String _shortRecommendation({
     required AgroMetricKey nutrient,
     required NutrientPriorityLabel label,
     required String? cropKey,
     required String? stageKey,
+    StageTargets? targets,
   }) {
+    final fromProfile = targets?.shortGuidanceFor(nutrient);
+    if (fromProfile != null && fromProfile.trim().isNotEmpty) {
+      if (label == NutrientPriorityLabel.noPriority) {
+        return 'Todo bien con ${_nutrientShortName(nutrient)}. Tierra nutrida.';
+      }
+      if (label == NutrientPriorityLabel.lowPriority) {
+        return 'Por ahora ${_nutrientShortName(nutrient)} no es la prioridad.';
+      }
+      if (label == NutrientPriorityLabel.possibleExcess ||
+          label == NutrientPriorityLabel.reviewAccumulation) {
+        if (nutrient == AgroMetricKey.n) {
+          return 'Frena el nitrógeno. Hay reserva de sobra.';
+        }
+        return '¡Alto! Tienes ${_nutrientShortName(nutrient)} de más en la tierra.';
+      }
+      return fromProfile;
+    }
+
     final nutrientName = _nutrientShortName(nutrient);
     final crop = (cropKey ?? '').toLowerCase();
-    final isExcess = label == NutrientPriorityLabel.possibleExcess ||
+    final isExcess =
+        label == NutrientPriorityLabel.possibleExcess ||
         label == NutrientPriorityLabel.reviewAccumulation;
 
-    // ── Exceso ──
     if (isExcess) {
       if (nutrient == AgroMetricKey.n) {
         return 'Frena el nitrógeno. Hay reserva de sobra.';
@@ -364,7 +363,6 @@ class NutrientRecommendationEngine {
       return '¡Alto! Tienes $nutrientName de más en la tierra.';
     }
 
-    // ── Óptimo / sin prioridad ──
     if (label == NutrientPriorityLabel.noPriority) {
       return 'Todo bien con $nutrientName. Tierra nutrida.';
     }
@@ -372,21 +370,17 @@ class NutrientRecommendationEngine {
       return 'Por ahora $nutrientName no es la prioridad.';
     }
 
-    // ── Atención media ──
     if (label == NutrientPriorityLabel.mediumPriority) {
-      // Ley del anticipo: si viene etapa fuerte, anticipa.
       if (_isPrePeakStage(stageKey, crop)) {
         return 'Ojo: viene una etapa fuerte y $nutrientName va bajando.';
       }
       return 'El nivel de $nutrientName empieza a bajar. Vigila.';
     }
 
-    // ── Alta prioridad ──
     if (label == NutrientPriorityLabel.highPriority) {
       return 'El cultivo necesita $nutrientName. Conviene actuar.';
     }
 
-    // ── Acción recomendada / urge ──
     if (label == NutrientPriorityLabel.actionRecommended) {
       if (_isLateStage(stageKey)) {
         return 'Falta $nutrientName, pero el ciclo ya está cerrando.';
@@ -402,7 +396,7 @@ class NutrientRecommendationEngine {
   }
 
   // =========================================================================
-  // RECOMENDACIÓN PRÁCTICA — Texto principal de la NpkScreen
+  // RECOMENDACIÓN PRÁCTICA
   // =========================================================================
   static String _practicalRecommendation({
     required AgroMetricKey nutrient,
@@ -411,21 +405,44 @@ class NutrientRecommendationEngine {
     required String? stageKey,
     double? trendPct,
     double? stagePressure01,
+    StageTargets? targets,
   }) {
     final stage = (stageKey ?? '').toLowerCase();
     final crop = (cropKey ?? '').toLowerCase();
 
     if (crop == 'maize' || crop == 'maiz' || crop == 'corn') {
       return _maizePracticalRecommendation(
-          nutrient, label, stage, trendPct, stagePressure01);
+        nutrient,
+        label,
+        stage,
+        trendPct,
+        stagePressure01,
+      );
     }
     if (crop == 'bean' || crop == 'frijol') {
       return _beanPracticalRecommendation(
-          nutrient, label, stage, stagePressure01);
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+      );
     }
     if (crop == 'barley' || crop == 'cebada') {
       return _barleyPracticalRecommendation(
-          nutrient, label, stage, stagePressure01);
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+      );
+    }
+    if (crop == 'oat' || crop == 'avena') {
+      return _oatPracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+        targets,
+      );
     }
 
     return _genericPracticalRecommendation(nutrient, label);
@@ -447,12 +464,10 @@ class NutrientRecommendationEngine {
 
     switch (nutrient) {
       case AgroMetricKey.n:
-        // Exceso.
         if (label == NutrientPriorityLabel.possibleExcess ||
             label == NutrientPriorityLabel.reviewAccumulation) {
           return 'Frena el nitrógeno. Hay reserva suficiente y aplicar más aquí sería gastar de más. Guarda para cuando la milpa de verdad lo pida.';
         }
-        // Óptimo.
         if (label == NutrientPriorityLabel.noPriority) {
           if (isEarly) {
             return 'El arranque va bien. La plántula tiene el nitrógeno que necesita para echar raíz y hoja.';
@@ -462,15 +477,12 @@ class NutrientRecommendationEngine {
           }
           return 'Aquí no hace falta correr. El nitrógeno está en su punto para esta etapa.';
         }
-        // Bajo / sin urgencia todavía.
         if (label == NutrientPriorityLabel.lowPriority) {
           if (isVeg && (stagePressure01 ?? 0) > 0.5) {
-            // Ley del anticipo: viene etapa fuerte.
             return 'Por ahora el nivel alcanza, pero se acerca una etapa de alta demanda. Conviene ir preparando la aplicación.';
           }
           return 'Por ahora este nutriente no es la prioridad. El cultivo puede seguir avanzando sin apurarse con esta aplicación.';
         }
-        // Medio.
         if (label == NutrientPriorityLabel.mediumPriority) {
           if (isDroppingFast) {
             return 'OJO: El nivel está bajando rapidísimo. La milpa se lo está comiendo. Prepárate para aplicar Urea pronto.';
@@ -480,7 +492,6 @@ class NutrientRecommendationEngine {
           }
           return 'El nivel va bajando. Ve preparando la próxima fertilizada para no quedarte corto.';
         }
-        // Alto / acción.
         if (label == NutrientPriorityLabel.highPriority ||
             label == NutrientPriorityLabel.actionRecommended) {
           if (isPeak) {
@@ -546,7 +557,8 @@ class NutrientRecommendationEngine {
   ) {
     final isEarly = _isEarlyStage(stage);
     final isFlowering = stage.contains('flower') || stage.contains('flor');
-    final isPodFill = stage.contains('pod') ||
+    final isPodFill =
+        stage.contains('pod') ||
         stage.contains('grain') ||
         stage.contains('vaina') ||
         stage.contains('llenado');
@@ -555,12 +567,10 @@ class NutrientRecommendationEngine {
 
     switch (nutrient) {
       case AgroMetricKey.n:
-        // Exceso.
         if (label == NutrientPriorityLabel.possibleExcess ||
             label == NutrientPriorityLabel.reviewAccumulation) {
           return 'Demasiado nitrógeno. El frijol fija el suyo del aire; el exceso provoca mucha hoja y poca vaina. Frena la aplicación.';
         }
-        // Óptimo.
         if (label == NutrientPriorityLabel.noPriority) {
           if (isEarly) {
             return 'Buen arranque. La plántula tiene nitrógeno para echar su primera raíz y hoja mientras empieza a nodular.';
@@ -576,14 +586,12 @@ class NutrientRecommendationEngine {
           }
           return 'Por ahora el nitrógeno no es la prioridad del frijol. La fijación biológica debería cubrir la demanda.';
         }
-        // Medio-alto.
         if (label == NutrientPriorityLabel.mediumPriority) {
           if (isFlowering) {
             return 'El frijol está en flor y no alcanza a fijar suficiente N. Vigila de cerca: si sigue bajando, conviene aplicar un apoyo.';
           }
           return 'El nitrógeno va bajando. Puede que la nodulación no esté funcionando al 100%. Vigila.';
         }
-        // Acción.
         if (label == NutrientPriorityLabel.highPriority ||
             label == NutrientPriorityLabel.actionRecommended) {
           if (isLate) {
@@ -751,6 +759,146 @@ class NutrientRecommendationEngine {
     }
   }
 
+  // ── AVENA ─────────────────────────────────────────────────────────────────
+  static String _oatPracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    double? stagePressure01,
+    StageTargets? targets,
+  ) {
+    final isEarly = _isEarlyStage(stage);
+    final isTillering = stage.contains('tiller') || stage.contains('macoll');
+    final isElongation = stage.contains('elong');
+    final isBooting = stage.contains('boot') || stage.contains('embuch');
+    final isHeading = stage.contains('head') || stage.contains('espig');
+    final isFlowering = stage.contains('flower') || stage.contains('flor');
+    final isGrainFill = stage.contains('grain') || stage.contains('llenado');
+    final isLate = _isLateStage(stage);
+    final isPeakN = isTillering || isElongation || isBooting;
+    final isReproductive = isHeading || isFlowering || isGrainFill;
+
+    final profileHint = targets?.plannerHintFor(nutrient);
+    final windowLabel = targets?.windowLabelFor(nutrient);
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return 'Frena el nitrógeno. La avena ya tiene reserva suficiente y seguir cargando N puede desbalancear el manejo.';
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isPeakN) {
+            return 'La avena está bien nutrida justo en su ventana fuerte de nitrógeno. Mantén el manejo sin sobreaplicar.';
+          }
+          if (isEarly) {
+            return 'Buen arranque. La avena tiene N suficiente sin sobrecargar la etapa temprana.';
+          }
+          return 'El nitrógeno está en rango para esta etapa. No hace falta correr con otra aplicación.';
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isPeakN || (stagePressure01 ?? 0) > 0.60) {
+            return 'Se acerca o ya arrancó la etapa fuerte de N en avena. Conviene vigilar de cerca para no quedarte corto.';
+          }
+          return 'Por ahora el N no es la urgencia principal, pero no lo pierdas de vista.';
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isPeakN) {
+            return 'La avena ya está entrando en presión de N. Conviene preparar la corrección para sostener macollamiento y empuje vegetativo.';
+          }
+          if (isReproductive) {
+            return 'Hay presión de N, pero la etapa ya va avanzada. Revisa el plan con prudencia y no persigas un número a cualquier costo.';
+          }
+          return 'El N va bajando y conviene revisar el plan antes de llegar a la etapa fuerte.';
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isPeakN) {
+            return 'Aquí sí conviene actuar: la avena está en macollamiento / elongación / embuche, la ventana donde más pesa llegar bien con N.';
+          }
+          if (isLate || isReproductive) {
+            return 'Falta N, pero la avena ya va cerrando etapa. Revisa manejo y evita perseguir nitrógeno tardío como si tuviera la misma eficiencia.';
+          }
+          if (isEarly) {
+            return 'Le falta N para sostener un arranque parejo. Corrige con moderación y guarda margen para el macollamiento.';
+          }
+          return 'Le falta nitrógeno para sostener el desarrollo. Conviene corregir antes de que la avena pierda empuje.';
+        }
+        return profileHint ??
+            windowLabel ??
+            'Vigila el nitrógeno de la avena y ajusta con criterio según la etapa.';
+
+      case AgroMetricKey.p:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return 'Fósforo de sobra. Pausa la aplicación y evita seguir cargando una corrección que ya no hace falta.';
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isEarly) {
+            return 'Buen nivel de fósforo para raíz y establecimiento. La avena arranca con una base favorable.';
+          }
+          return 'El fósforo está en nivel suficiente para esta etapa.';
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          return isEarly
+              ? 'El fósforo todavía acompaña el arranque, pero la presión operativa sigue siendo baja por ahora.'
+              : 'El fósforo no es la urgencia principal en esta etapa.';
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          return isEarly
+              ? 'El fósforo empieza a quedarse corto justo donde más pesa: raíz y establecimiento. Conviene vigilarlo de cerca.'
+              : 'La lectura sugiere revisar la base de P, aunque fuera de etapa temprana la corrección ya no rinde igual.';
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isEarly) {
+            return 'El fósforo sí merece atención en avena al arranque. Sin buena disponibilidad de P, la raíz y el establecimiento se frenan.';
+          }
+          return 'Falta fósforo, pero la eficiencia de corregirlo tarde ya no es la misma. Úsalo también para fortalecer la base del siguiente ciclo.';
+        }
+        return profileHint ??
+            windowLabel ??
+            'Revisa el fósforo de la avena, sobre todo si la etapa todavía es temprana.';
+
+      case AgroMetricKey.k:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return 'Potasio de sobra. Pausa las aplicaciones para no desbalancear el manejo del cultivo.';
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isReproductive) {
+            return 'Buen nivel de K justo cuando la avena necesita balance y sostén en su fase avanzada.';
+          }
+          return 'El potasio está dentro de rango y sostiene bien el balance del cultivo.';
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isHeading || isFlowering || isGrainFill) {
+            return 'El K todavía alcanza, pero ya está entrando en la fase donde empieza a pesar más.';
+          }
+          return 'Por ahora el K no es la urgencia principal, aunque conviene mantenerlo disponible.';
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isHeading || isFlowering || isGrainFill) {
+            return 'El potasio empieza a hacer falta justo en una etapa donde aporta balance, firmeza y sostén. Conviene revisarlo con atención.';
+          }
+          return 'El K va bajando y puede volverse más relevante conforme avance la etapa.';
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isHeading || isFlowering || isGrainFill) {
+            return 'Aquí el K sí toma protagonismo en avena. Conviene actuar para sostener balance, firmeza y llenado.';
+          }
+          return 'Le falta potasio. Corrige para sostener estabilidad fisiológica y evitar que el cultivo llegue desbalanceado a etapas posteriores.';
+        }
+        return profileHint ??
+            windowLabel ??
+            'Vigila el potasio como nutriente de balance y sostén en avena.';
+
+      default:
+        return 'Revisa tu manejo de nutrientes.';
+    }
+  }
+
   // ── GENÉRICO ──────────────────────────────────────────────────────────────
   static String _genericPracticalRecommendation(
     AgroMetricKey nutrient,
@@ -772,7 +920,7 @@ class NutrientRecommendationEngine {
   }
 
   // =========================================================================
-  // JUSTIFICACIÓN — Texto descriptivo bajo la recomendación
+  // JUSTIFICACIÓN
   // =========================================================================
   static String _justification({
     required AgroMetricKey nutrient,
@@ -815,17 +963,22 @@ class NutrientRecommendationEngine {
   }
 
   // =========================================================================
-  // VENTANA DE DEMANDA — Etiqueta de contexto por etapa
+  // VENTANA DE DEMANDA
   // =========================================================================
   static String _demandWindowLabel({
     required AgroMetricKey nutrient,
     required String? cropKey,
     required String? stageKey,
+    StageTargets? targets,
   }) {
+    final fromProfile = targets?.windowLabelFor(nutrient);
+    if (fromProfile != null && fromProfile.trim().isNotEmpty) {
+      return fromProfile;
+    }
+
     final crop = (cropKey ?? '').toLowerCase();
     final stage = (stageKey ?? '').toLowerCase();
 
-    // ── Maíz ──
     if (crop == 'maize' || crop == 'maiz') {
       if (nutrient == AgroMetricKey.n) {
         if (_isEarlyStage(stage)) return 'Arranque y Establecimiento';
@@ -845,7 +998,6 @@ class NutrientRecommendationEngine {
       }
     }
 
-    // ── Cebada ──
     if (crop == 'barley' || crop == 'cebada') {
       if (nutrient == AgroMetricKey.n) {
         if (_isEarlyStage(stage) ||
@@ -853,8 +1005,10 @@ class NutrientRecommendationEngine {
             stage.contains('macoll')) {
           return 'Macollamiento y Espigas';
         }
-        if (stage.contains('boot') || stage.contains('head') ||
-            stage.contains('espig') || stage.contains('embuch')) {
+        if (stage.contains('boot') ||
+            stage.contains('head') ||
+            stage.contains('espig') ||
+            stage.contains('embuch')) {
           return 'Espigamiento';
         }
         return 'Crecimiento General';
@@ -863,7 +1017,6 @@ class NutrientRecommendationEngine {
       if (nutrient == AgroMetricKey.k) return 'Tallo y Anti-encame';
     }
 
-    // ── Frijol ──
     if (crop == 'bean' || crop == 'frijol') {
       if (nutrient == AgroMetricKey.n) {
         if (_isEarlyStage(stage)) return 'Arranque (pre-nodulación)';
@@ -877,11 +1030,48 @@ class NutrientRecommendationEngine {
         return 'Reserva de Fósforo';
       }
       if (nutrient == AgroMetricKey.k) {
-        if (stage.contains('pod') || stage.contains('grain') ||
-            stage.contains('vaina') || stage.contains('llenado')) {
+        if (stage.contains('pod') ||
+            stage.contains('grain') ||
+            stage.contains('vaina') ||
+            stage.contains('llenado')) {
           return 'Llenado de Vaina';
         }
         return 'Reserva de Potasio';
+      }
+    }
+
+    if (crop == 'oat' || crop == 'avena') {
+      if (nutrient == AgroMetricKey.n) {
+        if (_isEarlyStage(stage)) return 'Arranque moderado';
+        if (stage.contains('tiller') ||
+            stage.contains('macoll') ||
+            stage.contains('elong') ||
+            stage.contains('boot') ||
+            stage.contains('embuch')) {
+          return 'Macollamiento y empuje vegetativo';
+        }
+        if (stage.contains('head') ||
+            stage.contains('espig') ||
+            stage.contains('flower') ||
+            stage.contains('flor')) {
+          return 'Cierre de N';
+        }
+        return 'Demanda de N por etapa';
+      }
+      if (nutrient == AgroMetricKey.p) {
+        if (_isEarlyStage(stage)) return 'Arranque y raíz';
+        return 'Base de fósforo';
+      }
+      if (nutrient == AgroMetricKey.k) {
+        if (stage.contains('head') ||
+            stage.contains('espig') ||
+            stage.contains('flower') ||
+            stage.contains('flor') ||
+            stage.contains('grain') ||
+            stage.contains('llenado')) {
+          return 'Balance, firmeza y llenado';
+        }
+        return 'Balance vegetativo';
       }
     }
 
@@ -913,8 +1103,6 @@ class NutrientRecommendationEngine {
         s.contains('boot');
   }
 
-  /// Ley del anticipo: detecta si estamos justo ANTES de una etapa de
-  /// alta demanda, para poder anticipar en el mensaje.
   static bool _isPrePeakStage(String? stageKey, String crop) {
     final s = (stageKey ?? '').toLowerCase();
     if (crop == 'maize' || crop == 'maiz') {
@@ -924,6 +1112,11 @@ class NutrientRecommendationEngine {
       return s.contains('vegadvanced') || s.contains('veg');
     }
     if (crop == 'barley' || crop == 'cebada') {
+      return s.contains('vegearly') ||
+          s.contains('tiller') ||
+          s.contains('macoll');
+    }
+    if (crop == 'oat' || crop == 'avena') {
       return s.contains('vegearly') ||
           s.contains('tiller') ||
           s.contains('macoll');
@@ -947,11 +1140,10 @@ class NutrientRecommendationEngine {
         _ => 'nutriente',
       };
 
-  static String _nutrientLongName(AgroMetricKey nutrient) =>
-      switch (nutrient) {
-        AgroMetricKey.n => 'Nitrógeno',
-        AgroMetricKey.p => 'Fósforo',
-        AgroMetricKey.k => 'Potasio',
-        _ => 'el nutriente',
-      };
+  static String _nutrientLongName(AgroMetricKey nutrient) => switch (nutrient) {
+    AgroMetricKey.n => 'Nitrógeno',
+    AgroMetricKey.p => 'Fósforo',
+    AgroMetricKey.k => 'Potasio',
+    _ => 'el nutriente',
+  };
 }

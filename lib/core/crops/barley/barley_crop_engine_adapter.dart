@@ -26,8 +26,8 @@ class BarleyCropEngineAdapter implements CropEngine {
     final expectedEnd = math.max(1, barleyProfile.endWindowDays.mid);
     final remaining = (expectedEnd - effectiveDay).clamp(0, 999999);
     final span = math.max(1, current.endDay - current.startDay + 1);
-    final stageProgressPct =
-        ((effectiveDay - current.startDay + 1) / span).clamp(0.0, 1.0);
+    final stageProgressPct = ((effectiveDay - current.startDay + 1) / span)
+        .clamp(0.0, 1.0);
 
     return CropStageResult(
       stageKey: current.key.name,
@@ -162,7 +162,7 @@ class BarleyCropEngineAdapter implements CropEngine {
       case BarleyStageKey.flowering:
         return 'assets/seeds/barley/barley_stage_flower_set.png';
       case BarleyStageKey.grainFill:
-        return 'assets/seeds/barley/barley_stage_veg_advanced.png';
+        return 'assets/seeds/barley/barley_stage_maturity_senescence.png';
       case BarleyStageKey.physiologicalMaturity:
         return 'assets/seeds/barley/barley_stage_maturity_senescence.png';
       case BarleyStageKey.harvest:

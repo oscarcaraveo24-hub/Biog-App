@@ -10,12 +10,17 @@ import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/services/biog/biog_repository.dart';
 import 'package:bio_g/services/biog/fake_biog_repository.dart';
 import 'package:bio_g/services/biog/storage/crop_context_storage.dart';
+import 'package:bio_g/services/biog/storage/crop_context_supabase_sync.dart';
 import 'package:bio_g/services/biog/storage/shared_prefs_crop_context_storage.dart';
 
 class BioGStore extends ChangeNotifier {
-  BioGStore(this._repo, {CropContextStorage? cropContextStorage})
-    : _cropContextStorage =
-          cropContextStorage ?? SharedPrefsCropContextStorage() {
+  BioGStore(
+    this._repo, {
+    CropContextStorage? cropContextStorage,
+    CropContextSupabaseSync? cropContextSync,
+  })  : _cropContextStorage =
+            cropContextStorage ?? SharedPrefsCropContextStorage(),
+        _cropContextSync = cropContextSync ?? CropContextSupabaseSync() {
     _subs.add(
       _repo.watchDevices().listen((v) {
         devices = v;
@@ -48,11 +53,25 @@ class BioGStore extends ChangeNotifier {
 
   final BioGRepository _repo;
   final CropContextStorage _cropContextStorage;
+  final CropContextSupabaseSync _cropContextSync;
   final List<StreamSubscription<dynamic>> _subs =
       <StreamSubscription<dynamic>>[];
 
   Future<void> init() async {
-    final loaded = await _cropContextStorage.loadAll();
+    Map<String, DeviceCropContext> loaded = await _cropContextStorage.loadAll();
+
+    // Fallback: if local is empty, try to recover from Supabase.
+    if (loaded.isEmpty) {
+      final remote = await _cropContextSync.downloadAll();
+      if (remote.isNotEmpty) {
+        loaded = remote;
+        // Persist recovered data locally.
+        for (final context in remote.values) {
+          await _cropContextStorage.save(context);
+        }
+      }
+    }
+
     _cropByDevice
       ..clear()
       ..addAll(
@@ -63,6 +82,12 @@ class BioGStore extends ChangeNotifier {
           ),
         ),
       );
+
+    // Sync local state to Supabase (best-effort).
+    if (_cropByDevice.isNotEmpty) {
+      unawaited(_cropContextSync.uploadAll(_cropByDevice));
+    }
+
     notifyListeners();
   }
 
@@ -126,6 +151,7 @@ class BioGStore extends ChangeNotifier {
     final normalized = _normalizeContextForStorage(context);
     _cropByDevice[normalized.deviceId] = normalized;
     await _cropContextStorage.save(normalized);
+    unawaited(_cropContextSync.upload(normalized));
 
     if (activeDevice?.id == normalized.deviceId) {
       _resetAgroState();
@@ -141,6 +167,7 @@ class BioGStore extends ChangeNotifier {
     _alertsStateByDevice.remove(deviceId);
     _agroEvalByDevice.remove(deviceId);
     await _cropContextStorage.delete(deviceId);
+    unawaited(_cropContextSync.delete(deviceId));
 
     if (activeDevice?.id == deviceId) {
       _resetAgroState();

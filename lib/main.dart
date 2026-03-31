@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bio_g/bootstrap_gate.dart';
 
 import 'package:bio_g/core/config/supabase_config.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/services/biog/fake_biog_repository.dart';
-import 'package:bio_g/services/profile/profile_local_service.dart';
 import 'package:bio_g/theme/app_theme.dart';
 
 Future<void> main() async {
@@ -24,7 +22,7 @@ Future<void> main() async {
   final repo = FakeBioGRepository();
   final store = BioGStore(repo);
 
-  // Carga primero el contexto persistido por dispositivo.
+  // Carga primero el contexto persistido por dispositivo (local → Supabase fallback).
   await store.init();
 
   // Ya con el store hidratado, conectamos el resolver legacy
@@ -34,13 +32,8 @@ Future<void> main() async {
   // Carga historial persistido (local → Supabase fallback).
   await repo.loadPersistedHistory();
 
-  // Respeta el estado de sincronización persistido.
-  final prefs = await SharedPreferences.getInstance();
-  final syncActive = prefs.getBool(ProfileLocalService.kSyncActiveKey) ?? true;
-
-  // Ahora sí arrancamos el motor fake.
+  // Arrancamos el motor — sync siempre activa.
   repo.start();
-  if (!syncActive) repo.pause();
 
   runApp(BioGScope(store: store, child: const BioGApp()));
 }

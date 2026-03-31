@@ -1,6 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
+import 'package:bio_g/features/reporting/pdf_preview_screen.dart';
+import 'package:bio_g/features/reporting/pdf_report_builder.dart';
+import 'package:bio_g/features/reporting/quick_report_builder.dart';
 import 'package:bio_g/screens/dashboard/dashboard_presenter.dart';
 import 'package:bio_g/screens/dashboard/dashboard_sections.dart';
 import 'package:bio_g/screens/notifications_screen.dart';
@@ -101,6 +106,71 @@ class _DashboardScreenState extends State<DashboardScreen>
     });
   }
 
+  Future<void> _handleExportTap() async {
+    final BioGStore store = BioGScope.of(context);
+    final DateTime now = DateTime.now();
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Row(
+          children: <Widget>[
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Expanded(child: Text('Generando PDF\u2026')),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final runtime = CropRuntimeResolver.resolve(
+        device: store.activeDevice,
+        seed: store.activeSeed,
+        cropContext: store.activeCropContext,
+        live: store.live,
+        alertsState: store.alertsState,
+        now: now,
+      );
+
+      final reportData = await const QuickReportBuilder().build(
+        store: store,
+        runtime: runtime,
+        now: now,
+      );
+
+      final Uint8List pdfBytes = await const PdfReportBuilder().build(
+        data: reportData,
+        telemetry: store.live,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => PdfPreviewScreen(
+            pdfBytes: pdfBytes,
+            fileName:
+                'BioG_Reporte_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}.pdf',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('Error al generar el reporte: $error'),
+          ),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final BioGStore store = BioGScope.of(context);
@@ -150,81 +220,84 @@ class _DashboardScreenState extends State<DashboardScreen>
                   bottom: false,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(18, 6, 18, 140),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      DashboardReveal(
-                        controller: _entranceController,
-                        intervalStart: 0.00,
-                        intervalEnd: 0.16,
-                        yOffset: 16,
-                        beginScale: 0.988,
-                        child: DashboardHeaderSection(
-                          cropLabel: viewData.cropLabel,
-                          fieldLabel: viewData.fieldLabel,
-                          cropIconAsset: viewData.cropIconAsset,
-                          hasNotifications: viewData.events.isNotEmpty,
-                          onNotificationTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => NotificationsScreen(
-                                  events: viewData.events,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        DashboardReveal(
+                          controller: _entranceController,
+                          intervalStart: 0.00,
+                          intervalEnd: 0.16,
+                          yOffset: 16,
+                          beginScale: 0.988,
+                          child: DashboardHeaderSection(
+                            cropLabel: viewData.cropLabel,
+                            fieldLabel: viewData.fieldLabel,
+                            cropIconAsset: viewData.cropIconAsset,
+                            hasNotifications: viewData.events.isNotEmpty,
+                            onNotificationTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => NotificationsScreen(
+                                    events: viewData.events,
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      DashboardReveal(
-                        controller: _entranceController,
-                        intervalStart: 0.08,
-                        intervalEnd: 0.34,
-                        yOffset: 18,
-                        beginScale: 0.978,
-                        child: DashboardSoilHealthSection(
-                          percent: viewData.soilHealth,
-                          label: viewData.soilHealthLabel,
+                        const SizedBox(height: 12),
+                        DashboardReveal(
+                          controller: _entranceController,
+                          intervalStart: 0.08,
+                          intervalEnd: 0.34,
+                          yOffset: 18,
+                          beginScale: 0.978,
+                          child: DashboardSoilHealthSection(
+                            percent: viewData.soilHealth,
+                            label: viewData.soilHealthLabel,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      DashboardReveal(
-                        controller: _entranceController,
-                        intervalStart: 0.32,
-                        intervalEnd: 0.50,
-                        yOffset: 18,
-                        beginScale: 0.984,
-                        child: DashboardNpkSection(
-                          title: viewData.npkTitle,
-                          subtitle: viewData.npkSubtitle,
+                        const SizedBox(height: 10),
+                        DashboardReveal(
+                          controller: _entranceController,
+                          intervalStart: 0.32,
+                          intervalEnd: 0.50,
+                          yOffset: 18,
+                          beginScale: 0.984,
+                          child: DashboardNpkSection(
+                            title: viewData.npkTitle,
+                            subtitle: viewData.npkSubtitle,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 13),
-                      DashboardMetricsGridSection(
-                        moisture: viewData.moisture,
-                        temperature: viewData.temperature,
-                        ph: viewData.ph,
-                        resistance: viewData.resistance,
-                        controller: _entranceController,
-                      ),
-                      const SizedBox(height: 10),
-                      DashboardReveal(
-                        controller: _entranceController,
-                        intervalStart: 0.78,
-                        intervalEnd: 1.00,
-                        yOffset: 18,
-                        beginScale: 0.983,
-                        child: DashboardInsightSection(
-                          insight: viewData.irrigation,
+                        const SizedBox(height: 13),
+                        DashboardMetricsGridSection(
+                          moisture: viewData.moisture,
+                          temperature: viewData.temperature,
+                          ph: viewData.ph,
+                          resistance: viewData.resistance,
+                          controller: _entranceController,
                         ),
-                      ),
-                      SizedBox(
-                        height: 24 + MediaQuery.of(context).viewPadding.bottom,
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        DashboardReveal(
+                          controller: _entranceController,
+                          intervalStart: 0.78,
+                          intervalEnd: 1.00,
+                          yOffset: 18,
+                          beginScale: 0.983,
+                          child: DashboardQuickActionsSection(
+                            onExportTap: _handleExportTap,
+                            onCropJourneyTap: () => widget.onNavTap(2),
+                            onClimateTap: () => widget.onNavTap(3),
+                          ),
+                        ),
+                        SizedBox(
+                          height:
+                              24 + MediaQuery.of(context).viewPadding.bottom,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
               ],
             ),
           ),

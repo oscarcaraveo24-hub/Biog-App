@@ -9,7 +9,6 @@ import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ✅ Pantallas
-import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/widgets/account/location_screen.dart';
 import 'package:bio_g/widgets/account/telephone_screen.dart';
 import 'package:bio_g/widgets/shared/bio_g_page_route.dart';
@@ -254,29 +253,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   // ===========================
-  // ✅ Sync confirm (Mail-like)
+  // ✅ Sync always-on — portal-only toggle
   // ===========================
-  Future<void> _handleSyncToggle(bool v) async {
-    if (v == true) {
-      setState(() => _syncActive = true);
-      BioGScope.of(context).resumeSync();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_kPrefSync, true);
-      return;
+  void _handleSyncToggle(bool v) {
+    if (v == false) {
+      showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (_) => const _SyncPortalOnlyAlert(),
+      );
     }
-
-    final ok = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => const _DisableSyncAlert(),
-    );
-
-    if (ok == true && mounted) {
-      setState(() => _syncActive = false);
-      BioGScope.of(context).pauseSync();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_kPrefSync, false);
-    }
+    // Sync is always on — ignore the toggle value.
   }
 
   Future<void> _confirmDeleteAccount() async {
@@ -1099,6 +1086,180 @@ class _DisableSyncAlertState extends State<_DisableSyncAlert>
                         color: Color(0xFFB2554E),
                         fontWeight: FontWeight.w900,
                       ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* ===================== SYNC PORTAL-ONLY ALERT ===================== */
+
+class _SyncPortalOnlyAlert extends StatefulWidget {
+  const _SyncPortalOnlyAlert();
+
+  @override
+  State<_SyncPortalOnlyAlert> createState() => _SyncPortalOnlyAlertState();
+}
+
+class _SyncPortalOnlyAlertState extends State<_SyncPortalOnlyAlert>
+    with TickerProviderStateMixin {
+  static const String _kIconPath = 'assets/icons/metrics/ic_alert.png';
+
+  static const double _kW = 0.90;
+  static const double _kH = 0.50;
+  static const double _kIconBaseScale = 4.2;
+  static const double _kDialogScale = 1.10;
+
+  late final AnimationController _dialogC;
+  late final Animation<double> _fade;
+  late final Animation<double> _scale;
+
+  late final AnimationController _iconC;
+  late final Animation<double> _iconScale;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _dialogC = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _fade = CurvedAnimation(parent: _dialogC, curve: Curves.easeOutCubic);
+    _scale = Tween<double>(
+      begin: 0.92,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _dialogC, curve: Curves.easeOutCubic));
+
+    _iconC = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 520),
+    );
+    _iconScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: 1.12)
+            .chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 60,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.12, end: 0.98)
+            .chain(CurveTween(curve: Curves.easeInOutCubic)),
+        weight: 25,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.98, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 15,
+      ),
+    ]).animate(_iconC);
+
+    Future.delayed(const Duration(milliseconds: 40), () {
+      if (!mounted) return;
+      _dialogC.forward();
+    });
+
+    Future.delayed(const Duration(milliseconds: 170), () {
+      if (!mounted) return;
+      _iconC.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _dialogC.dispose();
+    _iconC.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    return FadeTransition(
+      opacity: _fade,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 18,
+          ),
+          child: Transform.scale(
+            scale: _kDialogScale,
+            child: SizedBox(
+              width: size.width * _kW,
+              height: size.height * _kH,
+              child: AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
+                contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 0),
+                actionsPadding: const EdgeInsets.fromLTRB(18, 6, 18, 14),
+                title: Column(
+                  children: [
+                    AnimatedBuilder(
+                      animation: _iconC,
+                      builder: (context, _) {
+                        return Opacity(
+                          opacity: (_iconC.value == 0) ? 0.0 : 1.0,
+                          child: Transform.scale(
+                            scale: _iconScale.value * _kIconBaseScale,
+                            child: Image.asset(
+                              _kIconPath,
+                              width: 26,
+                              height: 26,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Sincronización activa',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      height: 1,
+                      width: double.infinity,
+                      color: Colors.black.withValues(alpha: 0.06),
+                    ),
+                  ],
+                ),
+                content: Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    'La sincronización protege tus datos de cultivo, '
+                    'telemetría y configuración.\n\n'
+                    'Solo puedes desactivarla desde el portal web de BIO-G.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.35,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black.withValues(alpha: 0.68),
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      'Entendido',
+                      style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                   ),
                 ],

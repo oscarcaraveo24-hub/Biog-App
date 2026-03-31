@@ -363,16 +363,18 @@ class AlertsEngine {
       _ => 'NPK',
     };
 
-    final isMaize = crop.toLowerCase().contains('maíz') ||
-        crop.toLowerCase().contains('maiz') ||
-        crop.toLowerCase().contains('corn') ||
-        crop.toLowerCase().contains('maize');
+    final cropLc = crop.toLowerCase();
+    final isMaize = cropLc.contains('maíz') ||
+        cropLc.contains('maiz') ||
+        cropLc.contains('corn') ||
+        cropLc.contains('maize');
     final stageLc = stage.toLowerCase();
 
     final nutrientWhy = _nutrientWhy(
       nutrientCode: nutrientCode,
       isMaize: isMaize,
       stageLc: stageLc,
+      cropLc: cropLc,
     );
 
     switch (stateCode) {
@@ -450,6 +452,7 @@ class AlertsEngine {
     required String nutrientCode,
     required bool isMaize,
     required String stageLc,
+    required String cropLc,
   }) {
     final earlyStage = stageLc.contains('germin') ||
         stageLc.contains('emerg') ||
@@ -463,33 +466,133 @@ class AlertsEngine {
         stageLc.contains('llen') ||
         stageLc.contains('grain') ||
         stageLc.contains('madur');
+    final tilleringStage = stageLc.contains('macol') ||
+        stageLc.contains('tiller');
 
-    if (!isMaize) {
-      return 'Este nutriente puede cambiar de prioridad según etapa y contexto del cultivo.';
+    if (isMaize) {
+      return _maizeWhy(nutrientCode, earlyStage, peakNitrogenStage, reproductiveStage);
     }
 
-    switch (nutrientCode) {
+    final isWheat = cropLc.contains('trigo') || cropLc.contains('wheat');
+    final isBarley = cropLc.contains('cebada') || cropLc.contains('barley');
+    final isOat = cropLc.contains('avena') || cropLc.contains('oat');
+    final isBean = cropLc.contains('frijol') || cropLc.contains('bean') ||
+        cropLc.contains('legum');
+
+    if (isBean) {
+      return _beanWhy(nutrientCode, earlyStage, reproductiveStage);
+    }
+    if (isBarley) {
+      return _barleyWhy(nutrientCode, earlyStage, tilleringStage, reproductiveStage);
+    }
+    if (isWheat) {
+      return _wheatWhy(nutrientCode, earlyStage, tilleringStage, reproductiveStage);
+    }
+    if (isOat) {
+      return _oatWhy(nutrientCode, earlyStage, tilleringStage, reproductiveStage);
+    }
+
+    return _genericCropWhy(nutrientCode, earlyStage, reproductiveStage);
+  }
+
+  static String _maizeWhy(String n, bool early, bool peak, bool repro) {
+    switch (n) {
       case 'n':
-        if (earlyStage) {
-          return 'En maíz, solo una fracción menor del N total se usa antes de V6, así que lo crítico es no llegar corto al tramo que viene.';
-        }
-        if (peakNitrogenStage) {
-          return 'En maíz, la mayor captura de N ocurre desde V6 hacia espigamiento y floración, por eso esta lectura pesa mucho más aquí.';
-        }
-        if (reproductiveStage) {
-          return 'En maíz, todavía hay demanda de N cerca de floración y llenado temprano, aunque la utilidad de corregir cae cuando el ciclo ya viene muy avanzado.';
-        }
+        if (early) return 'En maíz, solo una fracción menor del N total se usa antes de V6, así que lo crítico es no llegar corto al tramo que viene.';
+        if (peak) return 'En maíz, la mayor captura de N ocurre desde V6 hacia espigamiento y floración, por eso esta lectura pesa mucho más aquí.';
+        if (repro) return 'En maíz, todavía hay demanda de N cerca de floración y llenado temprano, aunque la utilidad de corregir cae cuando el ciclo ya viene muy avanzado.';
         return 'En cierre de ciclo, el N sirve más para trazabilidad y aprendizaje del siguiente plan que para empujar tarde por rutina.';
       case 'p':
-        if (earlyStage) {
-          return 'El P pesa más al arranque por su relación con raíces, energía y uniformidad; la respuesta suele ser más probable en suelos bajos en P, fríos o con residuo alto.';
-        }
+        if (early) return 'El P pesa más al arranque por su relación con raíces, energía y uniformidad; la respuesta suele ser más probable en suelos bajos en P, fríos o con residuo alto.';
         return 'En maíz, el P sigue importando, pero normalmente su mejor retorno está en llegar bien colocado desde arranque y no en sobrecorregir tarde.';
       case 'k':
-        if (reproductiveStage || peakNitrogenStage) {
-          return 'En maíz, K ayuda a sostener agua, tallo y estabilidad fisiológica, especialmente cuando sube el estrés térmico o hídrico.';
-        }
+        if (repro || peak) return 'En maíz, K ayuda a sostener agua, tallo y estabilidad fisiológica, especialmente cuando sube el estrés térmico o hídrico.';
         return 'K acompaña balance fisiológico durante todo el ciclo y puede volverse limitante antes en suelos arenosos o de baja CEC.';
+      default:
+        return 'Este nutriente merece seguimiento según etapa y contexto del lote.';
+    }
+  }
+
+  static String _beanWhy(String n, bool early, bool repro) {
+    switch (n) {
+      case 'n':
+        if (early) return 'El frijol fija N del aire vía nódulos, pero al arranque aún no tiene esa capacidad — un déficit temprano frena el establecimiento.';
+        if (repro) return 'En floración y llenado de vaina, el frijol necesita N para formar proteína. Si los nódulos no alcanzan, el rendimiento baja.';
+        return 'El frijol depende de fijación biológica para N; un exceso externo puede inhibir la nodulación y ser contraproducente.';
+      case 'p':
+        if (early) return 'El P es vital para que el frijol nodule bien desde el arranque. Sin P suficiente, la fijación biológica de N se reduce.';
+        return 'El frijol sigue usando P para energía y llenado de vaina, pero la ventana óptima de aplicación es al inicio del ciclo.';
+      case 'k':
+        if (repro) return 'K ayuda al frijol a regular agua y resistir estrés durante floración y llenado, donde la planta es más vulnerable.';
+        return 'K aporta resistencia general al frijol y mejora calidad de grano, pero su demanda principal es en etapa reproductiva.';
+      default:
+        return 'Este nutriente influye en el rendimiento del frijol según la etapa del cultivo.';
+    }
+  }
+
+  static String _barleyWhy(String n, bool early, bool tillering, bool repro) {
+    switch (n) {
+      case 'n':
+        if (early || tillering) return 'En cebada, el N define el número de macollos y espigas. Aplicar justo en macollamiento maximiza el potencial de rendimiento.';
+        if (repro) return 'En cebada, aplicar N tarde puede subir la proteína del grano — en cebada maltera esto causa rechazo. Mucho cuidado aquí.';
+        return 'En cebada, el N tardío suele ser contraproducente, especialmente si es para malta. Mejor planear bien el siguiente ciclo.';
+      case 'p':
+        if (early) return 'P al arranque ayuda a la cebada a enraizar fuerte y establecer macollos uniformes desde temprano.';
+        return 'El P en cebada tiene su mayor retorno al inicio del ciclo. Corregir tarde rara vez se justifica.';
+      case 'k':
+        if (repro) return 'K ayuda a la cebada a mantener tallo firme y resistir acame, especialmente cuando viene la espiga pesada.';
+        return 'K contribuye a la resistencia del tallo y calidad del grano en cebada durante todo el ciclo.';
+      default:
+        return 'Este nutriente influye en el rendimiento de la cebada según la etapa fenológica.';
+    }
+  }
+
+  static String _wheatWhy(String n, bool early, bool tillering, bool repro) {
+    switch (n) {
+      case 'n':
+        if (early || tillering) return 'En trigo, el N durante macollamiento define cuántas espigas se forman. Es la ventana más crítica para aplicar.';
+        if (repro) return 'En trigo, N cerca de espigamiento todavía puede mejorar proteína del grano, pero con riesgo de acame si se excede.';
+        return 'En trigo, corregir N muy tarde tiene poco impacto en rendimiento. Mejor documentar para planear el siguiente ciclo.';
+      case 'p':
+        if (early) return 'P al arranque ayuda al trigo a desarrollar raíces fuertes y macollamiento vigoroso desde temprano.';
+        return 'En trigo, el P rinde más cuando se coloca bien desde siembra. Aplicar tarde es menos eficiente.';
+      case 'k':
+        if (repro) return 'K ayuda al trigo a mantener turgencia y resistir estrés hídrico y térmico durante llenado de grano.';
+        return 'K en trigo acompaña la firmeza del tallo y calidad de grano, con mayor impacto en suelos ligeros.';
+      default:
+        return 'Este nutriente influye en el rendimiento del trigo según la etapa fenológica.';
+    }
+  }
+
+  static String _oatWhy(String n, bool early, bool tillering, bool repro) {
+    switch (n) {
+      case 'n':
+        if (early || tillering) return 'En avena, N durante macollamiento impulsa la formación de panículas. Es donde más retorno tiene la aplicación.';
+        if (repro) return 'En avena, N cerca de espigamiento puede mejorar proteína pero aumenta riesgo de acame si el tallo no es fuerte.';
+        return 'En avena, el N tardío rara vez compensa. Mejor registrar la lectura para ajustar el plan del siguiente ciclo.';
+      case 'p':
+        if (early) return 'P al arranque favorece el enraizamiento y vigor temprano de la avena, especialmente en suelos fríos.';
+        return 'En avena, P tiene su mejor momento al inicio. La corrección tardía no suele justificarse económicamente.';
+      case 'k':
+        if (repro) return 'K ayuda a la avena a resistir estrés y mantener calidad de grano durante llenado, sobre todo en suelos arenosos.';
+        return 'K en avena contribuye a la salud general del cultivo y resistencia al acame durante todo el ciclo.';
+      default:
+        return 'Este nutriente influye en el rendimiento de la avena según la etapa fenológica.';
+    }
+  }
+
+  static String _genericCropWhy(String n, bool early, bool repro) {
+    switch (n) {
+      case 'n':
+        if (early) return 'Al arranque, el N define el vigor inicial y capacidad fotosintética del cultivo.';
+        if (repro) return 'En etapa reproductiva, la demanda de N se enfoca en llenado y calidad. Corregir tarde pierde eficiencia.';
+        return 'El N acompaña el crecimiento vegetativo; su impacto varía según la etapa en que se aplique.';
+      case 'p':
+        if (early) return 'P al arranque fortalece raíces y energía celular, con mayor respuesta en suelos deficientes.';
+        return 'El P tiene su mejor ventana de aplicación al inicio del ciclo.';
+      case 'k':
+        if (repro) return 'K ayuda a regular agua y resistir estrés en la etapa más sensible del cultivo.';
+        return 'K contribuye al balance fisiológico y resistencia general del cultivo.';
       default:
         return 'Este nutriente merece seguimiento según etapa y contexto del lote.';
     }
