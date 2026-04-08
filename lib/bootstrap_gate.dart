@@ -165,6 +165,7 @@ class _BootstrapGateState extends State<BootstrapGate> {
       varietyAlias: draft.varietyAlias,
       selectedDate: selectedDate,
       timezone: draft.timezone ?? previous?.timezone,
+      cultivationScaleId: draft.cultivationScale,
     );
 
     await store.saveCropContext(resolvedContext);

@@ -64,10 +64,6 @@ class PdfReportBuilder {
     return doc.save();
   }
 
-  // ──────────────────────────────────────────────────────────────────
-  // Header & Footer
-  // ──────────────────────────────────────────────────────────────────
-
   pw.Widget _header(QuickReportData data, pw.MemoryImage logo) {
     return pw.Container(
       padding: const pw.EdgeInsets.only(bottom: 14),
@@ -119,30 +115,74 @@ class PdfReportBuilder {
               ],
             ),
           ),
+          pw.SizedBox(width: 12),
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: <pw.Widget>[
-              pw.Text(
-                'Generado',
-                style: const pw.TextStyle(fontSize: 8, color: _subtle),
+              _headerPrimaryStamp(
+                label: 'Lectura',
+                value: data.readingAt,
+                emptyLabel: 'Sin lectura actual',
               ),
-              pw.SizedBox(height: 2),
-              pw.Text(
-                _fmtDate(data.generatedAt),
-                style: pw.TextStyle(
-                  fontSize: 10,
-                  fontWeight: pw.FontWeight.bold,
-                  color: _ink,
+              if (data.generatedAt != null) ...<pw.Widget>[
+                pw.SizedBox(height: 5),
+                _headerSecondaryStamp(
+                  label: 'Generado',
+                  value: data.generatedAt!,
                 ),
-              ),
-              pw.Text(
-                _fmtTime(data.generatedAt),
-                style: const pw.TextStyle(fontSize: 9, color: _subtle),
-              ),
+              ],
             ],
           ),
         ],
       ),
+    );
+  }
+
+  pw.Widget _headerPrimaryStamp({
+    required String label,
+    required DateTime? value,
+    String emptyLabel = '—',
+  }) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.end,
+      children: <pw.Widget>[
+        pw.Text(label, style: const pw.TextStyle(fontSize: 8, color: _subtle)),
+        pw.SizedBox(height: 2),
+        if (value == null)
+          pw.Text(
+            emptyLabel,
+            style: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: pw.FontWeight.bold,
+              color: _ink,
+            ),
+          )
+        else ...<pw.Widget>[
+          pw.Text(
+            _fmtDate(value),
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: _ink,
+            ),
+          ),
+          pw.Text(
+            _fmtTime(value),
+            style: const pw.TextStyle(fontSize: 9, color: _subtle),
+          ),
+        ],
+      ],
+    );
+  }
+
+  pw.Widget _headerSecondaryStamp({
+    required String label,
+    required DateTime value,
+  }) {
+    return pw.Text(
+      '$label: ${_fmtDate(value)} · ${_fmtTime(value)}',
+      style: const pw.TextStyle(fontSize: 7, color: _subtle),
+      textAlign: pw.TextAlign.right,
     );
   }
 
@@ -167,10 +207,6 @@ class PdfReportBuilder {
       ),
     );
   }
-
-  // ──────────────────────────────────────────────────────────────────
-  // Sections
-  // ──────────────────────────────────────────────────────────────────
 
   pw.Widget _sectionBar(String title) {
     return pw.Container(
@@ -375,10 +411,6 @@ class PdfReportBuilder {
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────
-  // Shared helpers
-  // ──────────────────────────────────────────────────────────────────
-
   pw.Widget _cell(String text, {bool header = false}) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -449,10 +481,6 @@ class PdfReportBuilder {
       ),
     );
   }
-
-  // ──────────────────────────────────────────────────────────────────
-  // Formatters
-  // ──────────────────────────────────────────────────────────────────
 
   String _fmtPpm(double v) => v <= 0 ? '—' : v.toStringAsFixed(1);
 

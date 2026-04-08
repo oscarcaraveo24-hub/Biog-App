@@ -1,5 +1,6 @@
 enum OnboardingStep {
   location,
+  cultivationScale,
   cropCategory,
   cropDetails,
   cropStage,

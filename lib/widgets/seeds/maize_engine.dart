@@ -48,26 +48,28 @@ class MaizeEngine {
     }
   }
 
-  static RangeDouble _heightPct(MaizeStageKey s) {
+  static (double, double) _heightPctBounds(MaizeStageKey s) {
+    // Based on Ritchie & Hanway maize growth model (Iowa State / CIMMYT).
+    // Plant reaches ~95% at VT, 100% at R1, no growth after silking.
     switch (s) {
       case MaizeStageKey.germination:
-        return const RangeDouble(0.00, 0.02);
+        return (0.00, 0.02);
       case MaizeStageKey.emergence:
-        return const RangeDouble(0.02, 0.05);
+        return (0.02, 0.05);
       case MaizeStageKey.vegEarly:
-        return const RangeDouble(0.10, 0.30);
+        return (0.05, 0.20);
       case MaizeStageKey.vegMid:
-        return const RangeDouble(0.30, 0.55);
+        return (0.20, 0.50);
       case MaizeStageKey.vegAdvanced:
-        return const RangeDouble(0.55, 0.70);
+        return (0.50, 0.90);
       case MaizeStageKey.tasseling:
-        return const RangeDouble(0.70, 0.85);
+        return (0.90, 0.98);
       case MaizeStageKey.flowerSet:
-        return const RangeDouble(0.80, 0.90);
+        return (0.98, 1.00);
       case MaizeStageKey.maturitySenescence:
-        return const RangeDouble(0.90, 1.00);
+        return (1.00, 1.00);
       case MaizeStageKey.harvest:
-        return const RangeDouble(0.95, 1.00);
+        return (0.95, 1.00);
     }
   }
 
@@ -192,10 +194,11 @@ class MaizeEngine {
       1.0,
     );
 
-    final pct = _heightPct(current.key);
+    final (startPct, endPct) = _heightPctBounds(current.key);
+    final pct = startPct + (endPct - startPct) * progress;
     final heightToday = RangeDouble(
-      profile.plantHeightM.min * pct.min,
-      profile.plantHeightM.max * pct.max,
+      profile.plantHeightM.min * pct,
+      profile.plantHeightM.max * pct,
     );
 
     final expectedEnd = profile.endWindowDays.max;

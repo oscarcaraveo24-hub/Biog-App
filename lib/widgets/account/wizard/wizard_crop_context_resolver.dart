@@ -27,6 +27,7 @@ class WizardCropContextResolver {
     String? regionCode,
     String? cycleLabel,
     String? sowingModeId,
+    String? cultivationScaleId,
   }) {
     final normalizedCropId = _canonicalCropKey(
       cropId.trim().isEmpty ? CropCatalog.maizeCropId : cropId,
@@ -95,6 +96,10 @@ class WizardCropContextResolver {
     final String resolvedRegionCode =
         (regionCode ?? previous?.regionCode ?? 'MX').trim();
 
+    final resolvedScaleId = cultivationScaleId?.trim().isNotEmpty == true
+        ? cultivationScaleId!.trim()
+        : previous?.cultivationScaleId;
+
     return DeviceCropContext(
       deviceId: deviceId,
       cropCategoryId: normalizedCropCategoryId,
@@ -112,6 +117,7 @@ class WizardCropContextResolver {
           ? selectedDate
           : null,
       sowingDateConfidence: dateConfidence,
+      cultivationScaleId: resolvedScaleId,
       sowingModeId: sowingModeId ?? _sowingModeIdFromLifecycle(lifecycleStatus),
       timezone: resolvedTimezone,
       regionCode: resolvedRegionCode,

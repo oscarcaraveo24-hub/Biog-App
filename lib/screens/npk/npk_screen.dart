@@ -144,6 +144,43 @@ class NpkScreen extends StatelessWidget {
     return pct.round().clamp(0, 100);
   }
 
+  String? _resolveCultivationScaleId(DeviceCropContext? cropContext) {
+    if (cropContext == null) return null;
+    final v = cropContext.cultivationScaleId;
+    return (v != null && v.trim().isNotEmpty) ? v.trim() : null;
+  }
+
+  /// Intenta tomar pesos de etapa si runtime los expone.
+  StageWeights? _resolveRuntimeWeights(dynamic runtime) {
+    try {
+      final w = runtime.weights;
+      if (w is StageWeights) return w;
+    } catch (_) {}
+    return null;
+  }
+
+  /// practicalRecommendation ya puede venir fusionada con doseGuideEs.
+  /// Aquí limpiamos la parte repetida para que la UI no la pinte dos veces.
+  String _cleanMergedActionText(String? actionText, String? doseGuideText) {
+    var text = (actionText ?? '').trim();
+    final dose = (doseGuideText ?? '').trim();
+
+    if (text.isEmpty) return text;
+    if (dose.isEmpty) return text;
+
+    final normalizedText = text.replaceAll('\r\n', '\n');
+    final normalizedDose = dose.replaceAll('\r\n', '\n');
+
+    if (normalizedText.contains('\n\n$normalizedDose')) {
+      text = normalizedText.replaceFirst('\n\n$normalizedDose', '').trim();
+    } else if (normalizedText.contains(normalizedDose)) {
+      text = normalizedText.replaceFirst(normalizedDose, '').trim();
+    }
+
+    text = text.replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
+    return text;
+  }
+
   _NpkStats _statsForChannel({
     required NpkChannel channel,
     required BioGTelemetry? live,
@@ -211,8 +248,6 @@ class NpkScreen extends StatelessWidget {
     final String bandLabel =
         interpretation?.labelEs ?? evalMetric?.labelEs ?? _bandLabelEs(band);
 
-    // ✅ FIX: Solo pintamos la sombra (target) si la etiqueta de prioridad exige atención.
-    // Si está Óptimo (noPriority) u otra cosa leve, apagamos la sombra para que se vea limpio.
     final bool hideShadow =
         interpretation?.label == NutrientPriorityLabel.noPriority ||
         interpretation?.label == NutrientPriorityLabel.lowPriority;
@@ -225,8 +260,6 @@ class NpkScreen extends StatelessWidget {
         (allowStageInterpretation && !hideShadow && targetMaxPpm != null)
         ? _ppmToPctForPainter(ch: channel, ppm: targetMaxPpm, cropKey: cropKey)
         : null;
-
-    // ... el resto se queda igual ...
 
     return _NpkStats(
       levelPpm: _roundInt(level),
@@ -308,6 +341,10 @@ class NpkScreen extends StatelessWidget {
                           final targets = runtime.targets;
                           final eval = runtime.eval;
                           final stageKey = runtime.stageResult?.stageKey;
+                          final weights = _resolveRuntimeWeights(runtime);
+                          final cultivationScaleId = _resolveCultivationScaleId(
+                            cropContext,
+                          );
 
                           final nBase = _statsForChannel(
                             channel: NpkChannel.n,
@@ -347,6 +384,8 @@ class NpkScreen extends StatelessWidget {
                                   stageKey: stageKey,
                                   profileId: runtime.profile?.id,
                                   targets: targets,
+                                  weights: weights,
+                                  cultivationScaleId: cultivationScaleId,
                                   ph: live.ph,
                                   ec: live.ec,
                                   soilMoisturePct: live.soilMoisturePct,
@@ -362,6 +401,8 @@ class NpkScreen extends StatelessWidget {
                                   stageKey: stageKey,
                                   profileId: runtime.profile?.id,
                                   targets: targets,
+                                  weights: weights,
+                                  cultivationScaleId: cultivationScaleId,
                                   ph: live.ph,
                                   ec: live.ec,
                                   soilMoisturePct: live.soilMoisturePct,
@@ -377,6 +418,8 @@ class NpkScreen extends StatelessWidget {
                                   stageKey: stageKey,
                                   profileId: runtime.profile?.id,
                                   targets: targets,
+                                  weights: weights,
+                                  cultivationScaleId: cultivationScaleId,
                                   ph: live.ph,
                                   ec: live.ec,
                                   soilMoisturePct: live.soilMoisturePct,
@@ -459,26 +502,39 @@ class NpkScreen extends StatelessWidget {
                                     'Lectura actual de potasio del suelo.')
                               : 'Lectura real de potasio del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
 
-                          final actionN = isPlanted
+                          final actionNRaw = isPlanted
                               ? (nInterpretation?.practicalRecommendation ??
                                     'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'
                               : 'Configura un cultivo para ver prioridad nutricional.';
 
-                          final actionP = isPlanted
+                          final actionPRaw = isPlanted
                               ? (pInterpretation?.practicalRecommendation ??
                                     'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'
                               : 'Configura un cultivo para ver prioridad nutricional.';
 
-                          final actionK = isPlanted
+                          final actionKRaw = isPlanted
                               ? (kInterpretation?.practicalRecommendation ??
                                     'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'
                               : 'Configura un cultivo para ver prioridad nutricional.';
+
+                          final actionN = _cleanMergedActionText(
+                            actionNRaw,
+                            nInterpretation?.doseGuideEs,
+                          );
+                          final actionP = _cleanMergedActionText(
+                            actionPRaw,
+                            pInterpretation?.doseGuideEs,
+                          );
+                          final actionK = _cleanMergedActionText(
+                            actionKRaw,
+                            kInterpretation?.doseGuideEs,
+                          );
 
                           final windowN = isPlanted
                               ? (nInterpretation?.demandWindowLabel ??
@@ -539,6 +595,7 @@ class NpkScreen extends StatelessWidget {
                                   avgTrendPct: n.avgTrendPct,
                                   statusLabel: statusN,
                                   showStageTargets: isPlanted,
+                                  capPpm: n.capPpm,
                                 ),
                                 _NpkTabContent(
                                   channel: NpkChannel.p,
@@ -564,6 +621,7 @@ class NpkScreen extends StatelessWidget {
                                   avgTrendPct: p.avgTrendPct,
                                   statusLabel: statusP,
                                   showStageTargets: isPlanted,
+                                  capPpm: p.capPpm,
                                 ),
                                 _NpkTabContent(
                                   channel: NpkChannel.k,
@@ -589,6 +647,7 @@ class NpkScreen extends StatelessWidget {
                                   avgTrendPct: k.avgTrendPct,
                                   statusLabel: statusK,
                                   showStageTargets: isPlanted,
+                                  capPpm: k.capPpm,
                                 ),
                               ],
                             ),
@@ -780,6 +839,7 @@ class _NpkTabContent extends StatelessWidget {
   final String actionText;
   final String? doseGuideText;
   final String? fertilizerEquivalentText;
+  final int capPpm;
 
   const _NpkTabContent({
     required this.channel,
@@ -804,6 +864,7 @@ class _NpkTabContent extends StatelessWidget {
     this.doseGuideText,
     this.fertilizerEquivalentText,
     this.avgTrendPct,
+    required this.capPpm,
   });
 
   Color _accent() {
@@ -855,6 +916,7 @@ class _NpkTabContent extends StatelessWidget {
                           statusLabel: statusLabel,
                           centerValue: levelPpm,
                           centerUnit: 'mg/kg',
+                          cropCapPpm: capPpm.toDouble(),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -882,8 +944,6 @@ class _NpkTabContent extends StatelessWidget {
                             Text(
                               actionText,
                               textAlign: TextAlign.center,
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 13.2,
                                 fontWeight: FontWeight.w900,
@@ -896,8 +956,6 @@ class _NpkTabContent extends StatelessWidget {
                               Text(
                                 doseGuideText!.trim(),
                                 textAlign: TextAlign.center,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 12.2,
                                   fontWeight: FontWeight.w900,
@@ -913,8 +971,6 @@ class _NpkTabContent extends StatelessWidget {
                               Text(
                                 fertilizerEquivalentText!.trim(),
                                 textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 11.8,
                                   fontWeight: FontWeight.w800,
@@ -927,8 +983,6 @@ class _NpkTabContent extends StatelessWidget {
                             Text(
                               description,
                               textAlign: TextAlign.center,
-                              maxLines: 4,
-                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12.8,
                                 fontWeight: FontWeight.w700,
@@ -1184,10 +1238,11 @@ class _TechWaveScanPainter extends CustomPainter {
     for (int i = 0; i <= 160; i++) {
       final x = w * (i / 160);
       final y = midY + math.sin((x / w) * (math.pi * 2 * freq) + phase) * amp;
-      if (i == 0)
+      if (i == 0) {
         path.moveTo(x, y);
-      else
+      } else {
         path.lineTo(x, y);
+      }
     }
 
     final glow = Paint()

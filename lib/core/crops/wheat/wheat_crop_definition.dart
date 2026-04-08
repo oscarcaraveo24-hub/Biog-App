@@ -79,7 +79,11 @@ class WheatCropDefinition implements CropDefinition {
       expectedDaysToEnd: stage.expectedDaysToEnd,
       stageProgressPct: stage.stageProgressPct ?? 0,
       windowsNow: stage.windowsNow.whereType<SeedWindowKey>().toList(growable: false),
-      expectedPlantHeightTodayM: const RangeDouble(0, 0),
+      expectedPlantHeightTodayM: _expectedHeightForStage(
+        profile: wheatProfile,
+        stage: wheatStage,
+        stageProgress: stage.stageProgressPct ?? 0.5,
+      ),
       stageLabelEs: stage.stageLabelEs,
       heroAsset: stage.heroAsset,
       helperCaption: stage.helperCaption,
@@ -162,6 +166,34 @@ class WheatCropDefinition implements CropDefinition {
         ],
       ),
       nextAlertsState: out.nextAlertsState,
+    );
+  }
+
+  RangeDouble _expectedHeightForStage({
+    required WheatProfile profile,
+    required WheatStageKey stage,
+    double stageProgress = 0.5,
+  }) {
+    final (double startPct, double endPct) = switch (stage) {
+      WheatStageKey.germination => (0.00, 0.02),
+      WheatStageKey.emergence => (0.02, 0.05),
+      WheatStageKey.vegEarly => (0.05, 0.15),
+      WheatStageKey.tillering => (0.15, 0.30),
+      WheatStageKey.elongation => (0.30, 0.65),
+      WheatStageKey.booting => (0.65, 0.85),
+      WheatStageKey.heading => (0.85, 0.95),
+      WheatStageKey.flowering => (0.95, 1.00),
+      WheatStageKey.grainFill => (0.95, 1.00),
+      WheatStageKey.physiologicalMaturity => (0.95, 1.00),
+      WheatStageKey.harvest => (0.95, 1.00),
+    };
+
+    final p = stageProgress.clamp(0.0, 1.0);
+    final pct = startPct + (endPct - startPct) * p;
+
+    return RangeDouble(
+      profile.plantHeightM.min * pct,
+      profile.plantHeightM.max * pct,
     );
   }
 

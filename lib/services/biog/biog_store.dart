@@ -7,20 +7,34 @@ import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
+import 'package:bio_g/models/yield_projection_config.dart';
 import 'package:bio_g/services/biog/biog_repository.dart';
 import 'package:bio_g/services/biog/fake_biog_repository.dart';
 import 'package:bio_g/services/biog/storage/crop_context_storage.dart';
 import 'package:bio_g/services/biog/storage/crop_context_supabase_sync.dart';
 import 'package:bio_g/services/biog/storage/shared_prefs_crop_context_storage.dart';
+import 'package:bio_g/services/biog/storage/shared_prefs_yield_projection_storage.dart';
+import 'package:bio_g/services/biog/storage/crop_care_history_sync.dart';
+import 'package:bio_g/services/biog/storage/yield_projection_storage.dart';
+import 'package:bio_g/services/biog/storage/yield_projection_supabase_sync.dart';
 
 class BioGStore extends ChangeNotifier {
   BioGStore(
     this._repo, {
     CropContextStorage? cropContextStorage,
     CropContextSupabaseSync? cropContextSync,
-  })  : _cropContextStorage =
-            cropContextStorage ?? SharedPrefsCropContextStorage(),
-        _cropContextSync = cropContextSync ?? CropContextSupabaseSync() {
+    YieldProjectionStorage? yieldProjectionStorage,
+    YieldProjectionSupabaseSync? yieldProjectionSync,
+    CropCareHistorySync? cropCareHistorySync,
+  }) : _cropContextStorage =
+           cropContextStorage ?? SharedPrefsCropContextStorage(),
+       _cropContextSync = cropContextSync ?? CropContextSupabaseSync(),
+       _yieldProjectionStorage =
+           yieldProjectionStorage ?? SharedPrefsYieldProjectionStorage(),
+       _yieldProjectionSync =
+           yieldProjectionSync ?? YieldProjectionSupabaseSync(),
+       _cropCareHistorySync =
+           cropCareHistorySync ?? CropCareHistorySync() {
     _subs.add(
       _repo.watchDevices().listen((v) {
         devices = v;
@@ -54,6 +68,9 @@ class BioGStore extends ChangeNotifier {
   final BioGRepository _repo;
   final CropContextStorage _cropContextStorage;
   final CropContextSupabaseSync _cropContextSync;
+  final YieldProjectionStorage _yieldProjectionStorage;
+  final YieldProjectionSupabaseSync _yieldProjectionSync;
+  final CropCareHistorySync _cropCareHistorySync;
   final List<StreamSubscription<dynamic>> _subs =
       <StreamSubscription<dynamic>>[];
 
@@ -65,7 +82,6 @@ class BioGStore extends ChangeNotifier {
       final remote = await _cropContextSync.downloadAll();
       if (remote.isNotEmpty) {
         loaded = remote;
-        // Persist recovered data locally.
         for (final context in remote.values) {
           await _cropContextStorage.save(context);
         }
@@ -83,9 +99,38 @@ class BioGStore extends ChangeNotifier {
         ),
       );
 
-    // Sync local state to Supabase (best-effort).
+    Map<String, YieldProjectionConfig> loadedYield =
+        await _yieldProjectionStorage.loadAll();
+
+    if (loadedYield.isEmpty) {
+      final remoteYield = await _yieldProjectionSync.downloadAll();
+      if (remoteYield.isNotEmpty) {
+        loadedYield = remoteYield;
+        for (final config in remoteYield.values) {
+          await _yieldProjectionStorage.save(config);
+        }
+      }
+    }
+
+    _yieldByDevice
+      ..clear()
+      ..addAll(
+        loadedYield.map(
+          (deviceId, config) => MapEntry<String, YieldProjectionConfig>(
+            deviceId,
+            _normalizeYieldConfigForStorage(config),
+          ),
+        ),
+      );
+
+    _dropYieldConfigsWithoutCropContext();
+
     if (_cropByDevice.isNotEmpty) {
       unawaited(_cropContextSync.uploadAll(_cropByDevice));
+    }
+
+    if (_yieldByDevice.isNotEmpty) {
+      unawaited(_yieldProjectionSync.uploadAll(_yieldByDevice));
     }
 
     notifyListeners();
@@ -98,10 +143,12 @@ class BioGStore extends ChangeNotifier {
 
   final Map<String, DeviceCropContext> _cropByDevice =
       <String, DeviceCropContext>{};
-  final Map<String, AlertsState> _alertsStateByDevice =
-      <String, AlertsState>{};
+  final Map<String, YieldProjectionConfig> _yieldByDevice =
+      <String, YieldProjectionConfig>{};
+  final Map<String, AlertsState> _alertsStateByDevice = <String, AlertsState>{};
   final Map<String, AgroEvalResult> _agroEvalByDevice =
       <String, AgroEvalResult>{};
+  final Map<String, double> _cropCareAvgByDevice = <String, double>{};
 
   DeviceCropContext? get activeCropContext {
     final device = activeDevice;
@@ -109,13 +156,29 @@ class BioGStore extends ChangeNotifier {
     return _cropByDevice[device.id];
   }
 
+  YieldProjectionConfig? get activeYieldProjectionConfig {
+    final device = activeDevice;
+    if (device == null) return null;
+    return _yieldByDevice[device.id];
+  }
+
   bool get hasSeedInstalled => activeCropContext != null;
+
+  bool get hasActiveYieldProjection =>
+      activeYieldProjectionConfig?.isReadyForProjection ?? false;
 
   Map<String, DeviceCropContext> get cropByDevice =>
       Map<String, DeviceCropContext>.unmodifiable(_cropByDevice);
 
+  Map<String, YieldProjectionConfig> get yieldProjectionByDevice =>
+      Map<String, YieldProjectionConfig>.unmodifiable(_yieldByDevice);
+
   DeviceCropContext? cropContextForDevice(String deviceId) {
     return _cropByDevice[deviceId];
+  }
+
+  YieldProjectionConfig? yieldProjectionForDevice(String deviceId) {
+    return _yieldByDevice[deviceId];
   }
 
   SeedInstall? get activeSeed {
@@ -148,10 +211,24 @@ class BioGStore extends ChangeNotifier {
   }
 
   Future<void> saveCropContext(DeviceCropContext context) async {
+    final previous = _cropByDevice[context.deviceId];
     final normalized = _normalizeContextForStorage(context);
     _cropByDevice[normalized.deviceId] = normalized;
     await _cropContextStorage.save(normalized);
     unawaited(_cropContextSync.upload(normalized));
+
+    final previousCropId = _normalizeCropKey(previous?.cropId);
+    final nextCropId = _normalizeCropKey(normalized.cropId);
+
+    final cropChanged =
+        previousCropId != null &&
+        nextCropId != null &&
+        previousCropId != nextCropId;
+
+    if (cropChanged ||
+        normalized.lifecycleStatus == CropLifecycleStatus.fallow) {
+      await clearYieldProjectionConfig(normalized.deviceId, notify: false);
+    }
 
     if (activeDevice?.id == normalized.deviceId) {
       _resetAgroState();
@@ -166,14 +243,62 @@ class BioGStore extends ChangeNotifier {
 
     _alertsStateByDevice.remove(deviceId);
     _agroEvalByDevice.remove(deviceId);
+    _cropCareAvgByDevice.remove(deviceId);
     await _cropContextStorage.delete(deviceId);
     unawaited(_cropContextSync.delete(deviceId));
+    await clearYieldProjectionConfig(deviceId, notify: false);
 
     if (activeDevice?.id == deviceId) {
       _resetAgroState();
     }
 
     notifyListeners();
+  }
+
+  Future<void> saveYieldProjectionConfig(YieldProjectionConfig config) async {
+    final normalized = _normalizeYieldConfigForStorage(config);
+    final context = _cropByDevice[normalized.deviceId];
+
+    if (context == null) {
+      throw StateError(
+        'No se puede guardar YieldProjectionConfig sin DeviceCropContext.',
+      );
+    }
+
+    final normalizedCropId = _normalizeCropKey(normalized.cropId);
+    final contextCropId = _normalizeCropKey(context.cropId);
+
+    if (normalizedCropId == null || contextCropId == null) {
+      throw StateError(
+        'YieldProjectionConfig requiere cropId canónico válido.',
+      );
+    }
+
+    if (normalizedCropId != contextCropId) {
+      throw StateError(
+        'YieldProjectionConfig.cropId no coincide con el cultivo activo del dispositivo.',
+      );
+    }
+
+    _yieldByDevice[normalized.deviceId] = normalized;
+    await _yieldProjectionStorage.save(normalized);
+    unawaited(_yieldProjectionSync.upload(normalized));
+    notifyListeners();
+  }
+
+  Future<void> clearYieldProjectionConfig(
+    String deviceId, {
+    bool notify = true,
+  }) async {
+    final removed = _yieldByDevice.remove(deviceId);
+    if (removed == null) return;
+
+    await _yieldProjectionStorage.delete(deviceId);
+    unawaited(_yieldProjectionSync.delete(deviceId));
+
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   Future<void> setSeedForDevice(String deviceId, SeedInstall seed) async {
@@ -292,22 +417,42 @@ class BioGStore extends ChangeNotifier {
 
   void _cleanupMissingDeviceSeeds(List<BioGDevice> currentDevices) {
     final validIds = currentDevices.map((d) => d.id).toSet();
-    final toRemove = _cropByDevice.keys
-        .where((id) => !validIds.contains(id))
-        .toList();
+    final toRemove = <String>{
+      ..._cropByDevice.keys.where((id) => !validIds.contains(id)),
+      ..._yieldByDevice.keys.where((id) => !validIds.contains(id)),
+    }.toList();
 
     if (toRemove.isEmpty) return;
 
     for (final id in toRemove) {
       _cropByDevice.remove(id);
+      _yieldByDevice.remove(id);
       _alertsStateByDevice.remove(id);
       _agroEvalByDevice.remove(id);
+      _cropCareAvgByDevice.remove(id);
       unawaited(_cropContextStorage.delete(id));
+      unawaited(_yieldProjectionStorage.delete(id));
+      unawaited(_cropContextSync.delete(id));
+      unawaited(_yieldProjectionSync.delete(id));
     }
 
     final activeId = activeDevice?.id;
     if (activeId != null && !validIds.contains(activeId)) {
       _resetAgroState();
+    }
+  }
+
+  void _dropYieldConfigsWithoutCropContext() {
+    final orphanIds = _yieldByDevice.keys
+        .where((deviceId) => !_cropByDevice.containsKey(deviceId))
+        .toList();
+
+    if (orphanIds.isEmpty) return;
+
+    for (final deviceId in orphanIds) {
+      _yieldByDevice.remove(deviceId);
+      unawaited(_yieldProjectionStorage.delete(deviceId));
+      unawaited(_yieldProjectionSync.delete(deviceId));
     }
   }
 
@@ -336,6 +481,57 @@ class BioGStore extends ChangeNotifier {
     if (resolvedDeviceId == null) return;
     _agroEvalByDevice[resolvedDeviceId] = eval;
     notifyListeners();
+
+    // Upload today's score and refresh the lifetime average.
+    final cropContext = _cropByDevice[resolvedDeviceId];
+    if (cropContext != null) {
+      unawaited(_syncCropCareScore(
+        resolvedDeviceId,
+        cropContext.cropId,
+        eval.soilControlScore01,
+      ));
+    }
+  }
+
+  Future<void> _syncCropCareScore(
+    String deviceId,
+    String cropId,
+    double score01,
+  ) async {
+    await _cropCareHistorySync.uploadDailyScore(
+      deviceId: deviceId,
+      cropId: cropId,
+      score01: score01,
+    );
+    final avg = await _cropCareHistorySync.fetchLifetimeAverage(
+      deviceId: deviceId,
+      cropId: cropId,
+    );
+    if (avg != null) {
+      _cropCareAvgByDevice[deviceId] = avg;
+      notifyListeners();
+    }
+  }
+
+  /// Lifetime average crop care score (0.0–1.0) for the active device.
+  ///
+  /// Returns `null` while the average hasn't been fetched yet.
+  double? get cropCareAverage {
+    final String? deviceId = activeDevice?.id;
+    if (deviceId == null) return null;
+    return _cropCareAvgByDevice[deviceId];
+  }
+
+  /// Preload the lifetime average for a device+crop from Supabase.
+  Future<void> loadCropCareAverage(String deviceId, String cropId) async {
+    final avg = await _cropCareHistorySync.fetchLifetimeAverage(
+      deviceId: deviceId,
+      cropId: cropId,
+    );
+    if (avg != null) {
+      _cropCareAvgByDevice[deviceId] = avg;
+      notifyListeners();
+    }
   }
 
   void setAlertsState(AlertsState s, {String? deviceId}) {
@@ -382,9 +578,14 @@ class BioGStore extends ChangeNotifier {
 
   Future<void> removeDevice(String id) async {
     _cropByDevice.remove(id);
+    _yieldByDevice.remove(id);
     _alertsStateByDevice.remove(id);
     _agroEvalByDevice.remove(id);
+    _cropCareAvgByDevice.remove(id);
     await _cropContextStorage.delete(id);
+    await _yieldProjectionStorage.delete(id);
+    unawaited(_cropContextSync.delete(id));
+    unawaited(_yieldProjectionSync.delete(id));
 
     if (activeDevice?.id == id) {
       _resetAgroState();
@@ -440,16 +641,16 @@ class BioGStore extends ChangeNotifier {
     if (cropId.isEmpty) return context;
 
     final cropEntry = CropCatalog.cropById(cropId);
-    final bool isFallow =
-        context.lifecycleStatus == CropLifecycleStatus.fallow;
+    final bool isFallow = context.lifecycleStatus == CropLifecycleStatus.fallow;
 
     final String cropCategoryId =
         _normalizeNullable(context.cropCategoryId) ??
         cropEntry?.categoryId ??
         CropCatalog.grainCategoryId;
 
-    final String? rawVarietyValue =
-        isFallow ? null : (context.varietyId ?? context.varietyAlias);
+    final String? rawVarietyValue = isFallow
+        ? null
+        : (context.varietyId ?? context.varietyAlias);
 
     final String? resolvedVarietyId = isFallow
         ? null
@@ -461,7 +662,9 @@ class BioGStore extends ChangeNotifier {
     final String resolvedProfileId = CropCatalog.resolveProfileId(
       cropId: cropId,
       varietyId: resolvedVarietyId,
-      explicitProfileId: isFallow ? null : _normalizeNullable(context.profileId),
+      explicitProfileId: isFallow
+          ? null
+          : _normalizeNullable(context.profileId),
     );
 
     return context.copyWith(
@@ -491,8 +694,22 @@ class BioGStore extends ChangeNotifier {
       plannedSowingDate: context.lifecycleStatus == CropLifecycleStatus.planned
           ? context.plannedSowingDate
           : null,
-      sowingModeId: _normalizeNullable(context.sowingModeId) ??
+      sowingModeId:
+          _normalizeNullable(context.sowingModeId) ??
           _defaultSowingModeId(context.lifecycleStatus),
+    );
+  }
+
+  YieldProjectionConfig _normalizeYieldConfigForStorage(
+    YieldProjectionConfig config,
+  ) {
+    final normalizedCropId = _normalizeCropKey(config.cropId) ?? config.cropId;
+    return config.copyWith(
+      deviceId: config.deviceId.trim(),
+      cropId: normalizedCropId.trim(),
+      cultivationScaleId: _normalizeNullable(config.cultivationScaleId),
+      notes: _normalizeNullable(config.notes),
+      updatedAt: config.updatedAt,
     );
   }
 
@@ -510,11 +727,11 @@ class BioGStore extends ChangeNotifier {
     final normalizedExplicit = _normalizeNullable(explicitBrandId);
     if (normalizedExplicit == null) return null;
 
-    final valid = CropCatalog.brandsForCrop(cropId)
-        .any((brand) => brand.id == normalizedExplicit);
+    final valid = CropCatalog.brandsForCrop(
+      cropId,
+    ).any((brand) => brand.id == normalizedExplicit);
     return valid ? normalizedExplicit : null;
   }
-
 
   String? _resolvedVarietyAlias({
     required String cropId,
@@ -534,13 +751,13 @@ class BioGStore extends ChangeNotifier {
       }
     }
 
-    if (CropCatalog.isGenericAlias(rawVarietyAlias) || CropCatalog.isGenericProfileId(resolvedProfileId)) {
+    if (CropCatalog.isGenericAlias(rawVarietyAlias) ||
+        CropCatalog.isGenericProfileId(resolvedProfileId)) {
       return 'generic';
     }
 
     return _normalizeNullable(rawVarietyAlias);
   }
-
 
   String _defaultSowingModeId(CropLifecycleStatus status) {
     return switch (status) {

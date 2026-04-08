@@ -39,6 +39,7 @@ class QuickReportBuilder {
         stageLabel: runtime.stageLabel,
         daySinceSowing: runtime.stageResult?.daySinceSowing,
         generatedAt: now,
+        readingAt: null,
         nValue: 0,
         pValue: 0,
         kValue: 0,
@@ -58,6 +59,8 @@ class QuickReportBuilder {
       );
     }
 
+    final String? scaleId = runtime.cropContext?.cultivationScaleId;
+
     final NutrientInterpretationResult nInterpretation =
         NutrientRecommendationEngine.interpret(
           nutrient: AgroMetricKey.n,
@@ -66,6 +69,7 @@ class QuickReportBuilder {
           stageKey: runtime.stageResult?.stageKey,
           profileId: runtime.profile?.id,
           targets: runtime.targets,
+          cultivationScaleId: scaleId,
           ph: live.ph,
           ec: live.ec,
           soilMoisturePct: live.soilMoisturePct,
@@ -79,6 +83,7 @@ class QuickReportBuilder {
           stageKey: runtime.stageResult?.stageKey,
           profileId: runtime.profile?.id,
           targets: runtime.targets,
+          cultivationScaleId: scaleId,
           ph: live.ph,
           ec: live.ec,
           soilMoisturePct: live.soilMoisturePct,
@@ -92,6 +97,7 @@ class QuickReportBuilder {
           stageKey: runtime.stageResult?.stageKey,
           profileId: runtime.profile?.id,
           targets: runtime.targets,
+          cultivationScaleId: scaleId,
           ph: live.ph,
           ec: live.ec,
           soilMoisturePct: live.soilMoisturePct,
@@ -105,6 +111,10 @@ class QuickReportBuilder {
         ]..sort((a, b) => b.priorityScore01.compareTo(a.priorityScore01));
 
     final NutrientInterpretationResult top = ordered.first;
+    final MapEntry<String, String>? climateBanner = _buildClimateBanner(
+      runtime: runtime,
+      live: live,
+    );
 
     return QuickReportData(
       deviceName: deviceName,
@@ -114,6 +124,7 @@ class QuickReportBuilder {
       stageLabel: runtime.stageLabel,
       daySinceSowing: runtime.stageResult?.daySinceSowing,
       generatedAt: now,
+      readingAt: live.timestamp,
       nValue: live.n,
       pValue: live.p,
       kValue: live.k,
@@ -141,6 +152,8 @@ class QuickReportBuilder {
       historyK: _normalizeDoubleList(historySeries.kValues),
       recommendationTitle: _buildRecommendationTitle(top),
       recommendationBody: _buildRecommendationBody(top: top, runtime: runtime),
+      climateBannerTitle: climateBanner?.key,
+      climateBannerBody: climateBanner?.value,
     );
   }
 
@@ -184,8 +197,114 @@ class QuickReportBuilder {
 
     if (runtime.isGenericMode) return 'Perfil genérico';
     if (runtime.isPlanned) return 'Configuración planeada';
+    if (runtime.hasConfiguredCrop) {
+      return 'Configuración activa sin variedad definida';
+    }
 
-    return 'Perfil activo';
+    return 'Sin perfil definido';
+  }
+
+  MapEntry<String, String>? _buildClimateBanner({
+    required CropRuntimeSnapshot runtime,
+    required BioGTelemetry live,
+  }) {
+    final List<BioGAlert> alerts = runtime.eval?.alerts ?? const <BioGAlert>[];
+    final List<BioGAlert> environmentAlerts = alerts
+        .where((BioGAlert alert) => _isEnvironmentAlert(alert.type))
+        .toList();
+
+    if (environmentAlerts.isNotEmpty) {
+      environmentAlerts.sort((BioGAlert a, BioGAlert b) {
+        final int bySeverity = _alertSeverityRank(
+          b.severity,
+        ).compareTo(_alertSeverityRank(a.severity));
+        if (bySeverity != 0) return bySeverity;
+        return b.timestamp.compareTo(a.timestamp);
+      });
+
+      final BioGAlert top = environmentAlerts.first;
+      final String body = top.body.trim();
+      if (body.isEmpty) return null;
+      return MapEntry(
+        top.title.trim().isEmpty ? 'Contexto ambiental' : top.title.trim(),
+        body,
+      );
+    }
+
+    final List<String> drivers = <String>[];
+
+    if (live.airTempC >= 35) {
+      drivers.add(
+        'temperatura ambiente alta (${live.airTempC.toStringAsFixed(1)} °C)',
+      );
+    } else if (live.airTempC <= 5) {
+      drivers.add(
+        'temperatura ambiente baja (${live.airTempC.toStringAsFixed(1)} °C)',
+      );
+    }
+
+    if (live.airHumidityPct >= 85) {
+      drivers.add(
+        'humedad ambiental elevada (${live.airHumidityPct.toStringAsFixed(1)} %)',
+      );
+    }
+
+    if (live.soilMoisturePct <= 15) {
+      drivers.add('suelo seco (${live.soilMoisturePct.toStringAsFixed(1)} %)');
+    } else if (live.soilMoisturePct >= 80) {
+      drivers.add(
+        'suelo con humedad excesiva (${live.soilMoisturePct.toStringAsFixed(1)} %)',
+      );
+    }
+
+    if (drivers.isEmpty) return null;
+
+    final String title = live.airHumidityPct >= 85 && live.airTempC >= 28
+        ? 'Ambiente favorable para presión sanitaria'
+        : 'Contexto ambiental a vigilar';
+
+    return MapEntry(
+      title,
+      'La lectura actual muestra ${_joinHumanList(drivers)}. Conviene interpretar la recomendación principal junto con estas condiciones antes de intervenir el lote.',
+    );
+  }
+
+  bool _isEnvironmentAlert(BioGAlertType type) {
+    switch (type) {
+      case BioGAlertType.lowSoilMoisture:
+      case BioGAlertType.highSoilMoisture:
+      case BioGAlertType.tempExtreme:
+      case BioGAlertType.airTempExtreme:
+      case BioGAlertType.highHumidity:
+        return true;
+      case BioGAlertType.phOutOfRange:
+      case BioGAlertType.ecOutOfRange:
+      case BioGAlertType.sensorOffline:
+      case BioGAlertType.stageEvent:
+        return false;
+    }
+  }
+
+  int _alertSeverityRank(BioGAlertSeverity severity) {
+    switch (severity) {
+      case BioGAlertSeverity.info:
+        return 1;
+      case BioGAlertSeverity.warning:
+        return 2;
+      case BioGAlertSeverity.critical:
+        return 3;
+    }
+  }
+
+  String _joinHumanList(List<String> values) {
+    if (values.isEmpty) return '';
+    if (values.length == 1) return values.first;
+    if (values.length == 2) {
+      return '${values.first} y ${values.last}';
+    }
+
+    final String head = values.sublist(0, values.length - 1).join(', ');
+    return '$head y ${values.last}';
   }
 
   double _normalizeNpkPercent({

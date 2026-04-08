@@ -25,6 +25,7 @@ class BioGDevice {
     required this.locationName,
     required this.seedId,
     required this.profileId,
+    this.deviceModelId,
     this.status = BioGDeviceStatus.active,
     this.createdAt,
   });
@@ -45,6 +46,9 @@ class BioGDevice {
   /// El perfil real debe resolverse desde [DeviceCropContext].
   final String profileId;
 
+  /// Modelo comercial del dispositivo (`campo`, `huerto`, `maceta`).
+  final String? deviceModelId;
+
   final BioGDeviceStatus status;
   final DateTime? createdAt;
 
@@ -54,6 +58,7 @@ class BioGDevice {
     String? locationName,
     String? seedId,
     String? profileId,
+    Object? deviceModelId = _bioGDeviceSentinel,
     BioGDeviceStatus? status,
     DateTime? createdAt,
   }) {
@@ -63,11 +68,16 @@ class BioGDevice {
       locationName: locationName ?? this.locationName,
       seedId: seedId ?? this.seedId,
       profileId: profileId ?? this.profileId,
+      deviceModelId: identical(deviceModelId, _bioGDeviceSentinel)
+          ? this.deviceModelId
+          : deviceModelId as String?,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
     );
   }
 }
+
+const Object _bioGDeviceSentinel = Object();
 
 @immutable
 class BioGTelemetry {

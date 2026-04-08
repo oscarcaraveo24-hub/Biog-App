@@ -304,10 +304,13 @@ class _NotificationExpandableTileState
         return _kMoistureIcon;
 
       case AgronomicEventType.nitrogenLow:
+      case AgronomicEventType.nitrogenHigh:
         return _kNitrogenIcon;
       case AgronomicEventType.phosphorusLow:
+      case AgronomicEventType.phosphorusHigh:
         return _kPhosphorusIcon;
       case AgronomicEventType.potassiumLow:
+      case AgronomicEventType.potassiumHigh:
         return _kPotassiumIcon;
 
       case AgronomicEventType.npkReading:
@@ -368,6 +371,9 @@ class _NotificationExpandableTileState
       case AgronomicEventType.nitrogenLow:
       case AgronomicEventType.phosphorusLow:
       case AgronomicEventType.potassiumLow:
+      case AgronomicEventType.nitrogenHigh:
+      case AgronomicEventType.phosphorusHigh:
+      case AgronomicEventType.potassiumHigh:
         return Icons.warning_amber_rounded;
       case AgronomicEventType.stableSoil:
         return Icons.trending_up_rounded;

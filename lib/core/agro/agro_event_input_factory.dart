@@ -30,6 +30,22 @@ class AgroEventInputFactory {
     };
   }
 
+  /// Devuelve el set de claves de nutrientes cuya interpretación es exceso.
+  static Set<String> safeExcessNutrientKeys(AgroEvalResult? eval) {
+    if (eval == null) return const <String>{};
+    final keys = <String>{};
+    if (eval.metrics[AgroMetricKey.n]?.priorityLabel?.isExcessSide == true) {
+      keys.add(EventMetricKeys.n);
+    }
+    if (eval.metrics[AgroMetricKey.p]?.priorityLabel?.isExcessSide == true) {
+      keys.add(EventMetricKeys.p);
+    }
+    if (eval.metrics[AgroMetricKey.k]?.priorityLabel?.isExcessSide == true) {
+      keys.add(EventMetricKeys.k);
+    }
+    return keys;
+  }
+
   static DateTime? eventContextDate(
     SeedInstall? seed,
     DeviceCropContext? cropContext,
@@ -97,6 +113,9 @@ class AgroEventInputFactory {
       currentBands: isGenericMode
           ? const <String, AgroBand>{}
           : safeCurrentBands(effectiveEval),
+      excessNutrientKeys: isGenericMode
+          ? const <String>{}
+          : safeExcessNutrientKeys(effectiveEval),
       previousBands: previousBands,
       history: history,
       rules: EventEngineRulesResolver.resolve(

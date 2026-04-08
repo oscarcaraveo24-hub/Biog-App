@@ -15,6 +15,7 @@ import 'package:bio_g/widgets/account/location_screen.dart';
 import 'package:bio_g/widgets/account/qr_scan_screen.dart';
 import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_components.dart';
 import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_dialogs.dart';
+import 'package:bio_g/screens/onboarding/steps/cultivation_scale_step.dart';
 import 'package:bio_g/widgets/shared/bio_g_button.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 import 'package:bio_g/widgets/shared/bio_g_page_route.dart';
@@ -45,6 +46,7 @@ class OnboardingWizardScreen extends StatefulWidget {
 class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   static const List<OnboardingStep> _steps = <OnboardingStep>[
     OnboardingStep.location,
+    OnboardingStep.cultivationScale,
     OnboardingStep.cropCategory,
     OnboardingStep.cropDetails,
     OnboardingStep.cropStage,
@@ -133,6 +135,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       case OnboardingStep.location:
         return (_draft.locationSource?.isNotEmpty ?? false) ||
             (_draft.locationLabel?.isNotEmpty ?? false);
+      case OnboardingStep.cultivationScale:
+        return _draft.cultivationScale?.isNotEmpty ?? false;
       case OnboardingStep.cropCategory:
         return _draft.cropCategory?.isNotEmpty ?? false;
       case OnboardingStep.cropDetails:
@@ -627,6 +631,16 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           showContinueButton: false,
           onUseCurrentLocation: _handleUseCurrentLocation,
           onPickOnMap: _handlePickOnMap,
+        );
+
+      case OnboardingStep.cultivationScale:
+        return CultivationScaleStep(
+          selectedScale: controller.draft.cultivationScale,
+          showScaffold: false,
+          showContinueButton: false,
+          onChanged: (value) {
+            _updateDraft(_draft.copyWith(cultivationScale: value));
+          },
         );
 
       case OnboardingStep.cropCategory:

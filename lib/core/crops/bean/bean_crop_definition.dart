@@ -79,7 +79,11 @@ class BeanCropDefinition implements CropDefinition {
       expectedDaysToEnd: stage.expectedDaysToEnd,
       stageProgressPct: stage.stageProgressPct ?? 0,
       windowsNow: stage.windowsNow.whereType<SeedWindowKey>().toList(growable: false),
-      expectedPlantHeightTodayM: const RangeDouble(0, 0),
+      expectedPlantHeightTodayM: _expectedHeightForStage(
+        profile: beanProfile,
+        stage: beanStage,
+        stageProgress: stage.stageProgressPct ?? 0.5,
+      ),
       stageLabelEs: stage.stageLabelEs,
       heroAsset: stage.heroAsset,
       helperCaption: stage.helperCaption,
@@ -158,6 +162,32 @@ class BeanCropDefinition implements CropDefinition {
         ],
       ),
       nextAlertsState: out.nextAlertsState,
+    );
+  }
+
+  RangeDouble _expectedHeightForStage({
+    required BeanProfile profile,
+    required BeanStageKey stage,
+    double stageProgress = 0.5,
+  }) {
+    final (double startPct, double endPct) = switch (stage) {
+      BeanStageKey.germination => (0.00, 0.02),
+      BeanStageKey.emergence => (0.02, 0.06),
+      BeanStageKey.vegEarly => (0.06, 0.28),
+      BeanStageKey.vegAdvanced => (0.28, 0.65),
+      BeanStageKey.flowering => (0.65, 0.85),
+      BeanStageKey.podSet => (0.85, 0.95),
+      BeanStageKey.grainFill => (0.95, 1.00),
+      BeanStageKey.physiologicalMaturity => (0.95, 1.00),
+      BeanStageKey.harvest => (0.95, 1.00),
+    };
+
+    final p = stageProgress.clamp(0.0, 1.0);
+    final pct = startPct + (endPct - startPct) * p;
+
+    return RangeDouble(
+      profile.plantHeightM.min * pct,
+      profile.plantHeightM.max * pct,
     );
   }
 

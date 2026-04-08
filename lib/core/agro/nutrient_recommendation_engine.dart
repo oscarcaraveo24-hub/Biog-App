@@ -53,6 +53,7 @@ class NutrientRecommendationEngine {
     String? profileId,
     StageTargets? targets,
     StageWeights? weights,
+    String? cultivationScaleId,
     double? ph,
     double? ec,
     double? soilMoisturePct,
@@ -68,18 +69,26 @@ class NutrientRecommendationEngine {
     final cap = NpkCaps.forCropMetric(cropKey: cropKey, metricKey: nutrient);
     final rawRatio01 = cap <= 0 ? 0.0 : (rawPpm / cap).clamp(0.0, 1.25);
 
-    final stagePressure01 = _resolveStagePressure01(
+    final baseStagePressure01 = _resolveStagePressure01(
       nutrient: nutrient,
       targets: targets,
       weights: weights,
     );
+
     final contextModifier01 = _resolveContextModifier01(
       nutrient: nutrient,
       ph: ph,
       ec: ec,
       soilMoisturePct: soilMoisturePct,
     );
+
     final trendModifier01 = _resolveTrendModifier01(trendPct);
+
+    final effectiveStagePressure01 = _combineStagePressure01(
+      baseStagePressure01: baseStagePressure01,
+      contextModifier01: contextModifier01,
+      trendModifier01: trendModifier01,
+    );
 
     final demandWindowLabel = _demandWindowLabel(
       nutrient: nutrient,
@@ -99,12 +108,14 @@ class NutrientRecommendationEngine {
       rawPpm: rawPpm,
       cap: cap,
       range: range,
-      stagePressure01: stagePressure01,
+      stagePressure01: effectiveStagePressure01,
     );
 
     final priorityScore01 = _priorityScore01(
       label: label,
-      stagePressure01: stagePressure01,
+      stagePressure01: effectiveStagePressure01,
+      contextModifier01: contextModifier01,
+      trendModifier01: trendModifier01,
     );
 
     final doseGuide = FertilizationPlanner.buildGuide(
@@ -115,6 +126,7 @@ class NutrientRecommendationEngine {
       stageKey: stageKey,
       profileId: profileId,
       targets: targets,
+      cultivationScaleId: cultivationScaleId,
     );
 
     final practicalBase = _practicalRecommendation(
@@ -123,7 +135,7 @@ class NutrientRecommendationEngine {
       cropKey: cropKey,
       stageKey: stageKey,
       trendPct: trendPct,
-      stagePressure01: stagePressure01,
+      stagePressure01: effectiveStagePressure01,
       targets: targets,
     );
 
@@ -138,7 +150,7 @@ class NutrientRecommendationEngine {
       rawPpm: rawPpm,
       rawRatio01: rawRatio01,
       priorityScore01: priorityScore01,
-      stagePressure01: stagePressure01,
+      stagePressure01: effectiveStagePressure01,
       contextModifier01: contextModifier01,
       trendModifier01: trendModifier01,
       label: label,
@@ -207,6 +219,17 @@ class NutrientRecommendationEngine {
     }
 
     return (targetPriority01 * 0.70 + rangeMid01 * 0.18 + weightShare01 * 0.12)
+        .clamp(0.0, 1.0);
+  }
+
+  static double _combineStagePressure01({
+    required double baseStagePressure01,
+    required double contextModifier01,
+    required double trendModifier01,
+  }) {
+    return (baseStagePressure01 +
+            (contextModifier01 * 0.45) +
+            (trendModifier01 * 0.65))
         .clamp(0.0, 1.0);
   }
 
@@ -297,6 +320,8 @@ class NutrientRecommendationEngine {
   static double _priorityScore01({
     required NutrientPriorityLabel label,
     required double stagePressure01,
+    required double contextModifier01,
+    required double trendModifier01,
   }) {
     final double base = switch (label) {
       NutrientPriorityLabel.noPriority => 0.14,
@@ -310,7 +335,11 @@ class NutrientRecommendationEngine {
       NutrientPriorityLabel.unknown => 0.0,
     };
 
-    return (base + (stagePressure01 * 0.10)).clamp(0.0, 1.0);
+    return (base +
+            (stagePressure01 * 0.08) +
+            (contextModifier01 * 0.35) +
+            (trendModifier01 * 0.45))
+        .clamp(0.0, 1.0);
   }
 
   static String _mergePracticalAndDose({
@@ -433,6 +462,15 @@ class NutrientRecommendationEngine {
         label,
         stage,
         stagePressure01,
+      );
+    }
+    if (crop == 'wheat' || crop == 'trigo') {
+      return _wheatPracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+        targets,
       );
     }
     if (crop == 'oat' || crop == 'avena') {
@@ -759,6 +797,163 @@ class NutrientRecommendationEngine {
     }
   }
 
+  // ── TRIGO ─────────────────────────────────────────────────────────────────
+  static String _wheatPracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    double? stagePressure01,
+    StageTargets? targets,
+  ) {
+    final isEarly = _isEarlyStage(stage);
+    final isTillering = stage.contains('tiller') || stage.contains('macoll');
+    final isElongation =
+        stage.contains('elong') ||
+        stage.contains('encañ') ||
+        stage.contains('encane');
+    final isBooting = stage.contains('boot') || stage.contains('embuch');
+    final isHeading = stage.contains('head') || stage.contains('espig');
+    final isFlowering =
+        stage.contains('flower') ||
+        stage.contains('flor') ||
+        stage.contains('antes');
+    final isGrainFill = stage.contains('grain') || stage.contains('llenado');
+    final isLate = _isLateStage(stage);
+
+    final isPeakN = isTillering || isElongation || isBooting;
+    final isProteinWindow = isHeading || isFlowering;
+    final isReproductive = isProteinWindow || isGrainFill;
+
+    final profileHint = targets?.plannerHintFor(nutrient);
+    final windowLabel = targets?.windowLabelFor(nutrient);
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return 'Frena el nitrógeno. El trigo ya tiene reserva suficiente y seguir cargando N puede empujar proteína de más, acame o gasto innecesario.';
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isPeakN) {
+            return 'El trigo está bien nutrido justo en su ventana fuerte de N. Mantén el manejo sin sobreaplicar.';
+          }
+          if (isEarly) {
+            return 'Buen arranque. El trigo tiene N suficiente sin sobrecargar la siembra.';
+          }
+          if (isProteinWindow) {
+            return 'El N está en rango para la fase de espigamiento/antesis. No hace falta perseguir una corrección de rutina.';
+          }
+          return 'El nitrógeno está en rango para esta etapa. No hace falta correr con otra aplicación.';
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isPeakN || (stagePressure01 ?? 0) > 0.60) {
+            return 'Se acerca o ya arrancó la ventana fuerte de N en trigo. Conviene vigilar de cerca para no quedarte corto en macollamiento/encañe.';
+          }
+          return 'Por ahora el N no es la urgencia principal, pero no lo pierdas de vista.';
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isPeakN) {
+            return 'El trigo ya está entrando en presión de N. Conviene preparar la corrección para no perder macollos, espigas y empuje vegetativo.';
+          }
+          if (isProteinWindow) {
+            return 'Hay presión de N, pero en esta etapa el retorno va más a calidad/proteína que a subir mucho el rendimiento.';
+          }
+          if (isReproductive) {
+            return 'La lectura marca presión de N, pero la etapa ya va avanzada. Úsala con prudencia y no como si valiera lo mismo que en macollaje.';
+          }
+          return 'El N va bajando y conviene revisar el plan antes de llegar a la etapa fuerte.';
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isPeakN) {
+            return 'Aquí sí conviene actuar: el trigo está en macollamiento / encañe / embuche, la ventana donde más pesa llegar bien con N.';
+          }
+          if (isProteinWindow) {
+            return 'Falta N, pero ya vas en espigamiento/antesis. Corrige con criterio: esta etapa mueve más calidad que puro rendimiento.';
+          }
+          if (isLate || isReproductive) {
+            return 'Falta N, pero el trigo ya va cerrando etapa. Revisa manejo y evita perseguir nitrógeno tardío como si tuviera la misma eficiencia.';
+          }
+          if (isEarly) {
+            return 'Le falta N para sostener un arranque parejo, pero no cargues toda la corrección aquí. En trigo conviene dejar margen para macollamiento.';
+          }
+          return 'Le falta nitrógeno para sostener el desarrollo. Conviene corregir antes de que el trigo llegue corto a su tramo fuerte.';
+        }
+        return profileHint ??
+            windowLabel ??
+            'Vigila el nitrógeno del trigo y ajusta con criterio según la etapa.';
+
+      case AgroMetricKey.p:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return 'Fósforo de sobra. Pausa la aplicación y evita seguir cargando una corrección que ya no hace falta.';
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isEarly || isTillering) {
+            return 'Buen nivel de fósforo para raíz, implantación y macollaje parejo. El trigo arranca con una base favorable.';
+          }
+          return 'El fósforo está en nivel suficiente para esta etapa.';
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          return isEarly || isTillering
+              ? 'El fósforo todavía acompaña bien el arranque, pero conviene no descuidarlo porque trigo responde más temprano que tarde.'
+              : 'El fósforo no es la urgencia principal en esta etapa.';
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          return isEarly || isTillering
+              ? 'El fósforo empieza a quedarse corto justo donde más pesa: raíz, implantación y macollaje inicial. Conviene vigilarlo de cerca.'
+              : 'La lectura sugiere revisar la base de P, aunque fuera de etapa temprana la corrección ya no rinde igual.';
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isEarly || isTillering) {
+            return 'El fósforo sí merece atención al arranque del trigo. Sin buena disponibilidad de P, la raíz y la implantación se frenan desde temprano.';
+          }
+          return 'Falta fósforo, pero la eficiencia de corregirlo tarde ya no es la misma. Úsalo también para fortalecer la base del siguiente ciclo.';
+        }
+        return profileHint ??
+            windowLabel ??
+            'Revisa el fósforo del trigo, sobre todo si la etapa todavía es temprana.';
+
+      case AgroMetricKey.k:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return 'Potasio de sobra. Pausa las aplicaciones para no desbalancear el manejo del cultivo.';
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isProteinWindow || isGrainFill) {
+            return 'Buen nivel de K justo cuando el trigo necesita balance, turgencia y sostén de tallo/llenado.';
+          }
+          return 'El potasio está dentro de rango y sostiene bien el balance del cultivo.';
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isProteinWindow || isGrainFill) {
+            return 'El K todavía alcanza, pero ya está entrando en la fase donde puede volverse más relevante como nutriente de balance y sostén.';
+          }
+          return 'Por ahora el K no es la urgencia principal, aunque conviene mantenerlo disponible.';
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isProteinWindow || isGrainFill) {
+            return 'El potasio empieza a hacer falta justo en una etapa donde aporta balance, firmeza de tallo y sostén bajo estrés. Conviene revisarlo con atención.';
+          }
+          return 'El K va bajando y puede volverse más relevante conforme avance la etapa, sobre todo si el suelo viene corto.';
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isProteinWindow || isGrainFill) {
+            return 'Aquí el K puede volverse relevante en trigo como nutriente de balance y sostén. Conviene actuar si la lectura realmente confirma un suelo corto.';
+          }
+          return 'Le falta potasio. Corrige para sostener estabilidad fisiológica y evitar que el trigo llegue desbalanceado a etapas posteriores.';
+        }
+        return profileHint ??
+            windowLabel ??
+            'Vigila el potasio como nutriente de balance y sostén en trigo.';
+
+      default:
+        return 'Revisa tu manejo de nutrientes.';
+    }
+  }
+
   // ── AVENA ─────────────────────────────────────────────────────────────────
   static String _oatPracticalRecommendation(
     AgroMetricKey nutrient,
@@ -1017,6 +1212,52 @@ class NutrientRecommendationEngine {
       if (nutrient == AgroMetricKey.k) return 'Tallo y Anti-encame';
     }
 
+    if (crop == 'wheat' || crop == 'trigo') {
+      if (nutrient == AgroMetricKey.n) {
+        if (_isEarlyStage(stage)) return 'Arranque moderado';
+        if (stage.contains('tiller') ||
+            stage.contains('macoll') ||
+            stage.contains('elong') ||
+            stage.contains('encañ') ||
+            stage.contains('encane') ||
+            stage.contains('boot') ||
+            stage.contains('embuch')) {
+          return 'Macollamiento y encañe';
+        }
+        if (stage.contains('head') ||
+            stage.contains('espig') ||
+            stage.contains('flower') ||
+            stage.contains('flor') ||
+            stage.contains('antes')) {
+          return 'Proteína y calidad';
+        }
+        if (stage.contains('grain') || stage.contains('llenado')) {
+          return 'Cierre de N';
+        }
+        return 'Demanda de N por etapa';
+      }
+      if (nutrient == AgroMetricKey.p) {
+        if (_isEarlyStage(stage) ||
+            stage.contains('tiller') ||
+            stage.contains('macoll')) {
+          return 'Raíz y macollaje';
+        }
+        return 'Base fosfatada';
+      }
+      if (nutrient == AgroMetricKey.k) {
+        if (stage.contains('head') ||
+            stage.contains('espig') ||
+            stage.contains('flower') ||
+            stage.contains('flor') ||
+            stage.contains('antes') ||
+            stage.contains('grain') ||
+            stage.contains('llenado')) {
+          return 'Balance, firmeza y llenado';
+        }
+        return 'Balance y tallo';
+      }
+    }
+
     if (crop == 'bean' || crop == 'frijol') {
       if (nutrient == AgroMetricKey.n) {
         if (_isEarlyStage(stage)) return 'Arranque (pre-nodulación)';
@@ -1105,6 +1346,7 @@ class NutrientRecommendationEngine {
 
   static bool _isPrePeakStage(String? stageKey, String crop) {
     final s = (stageKey ?? '').toLowerCase();
+
     if (crop == 'maize' || crop == 'maiz') {
       return s.contains('vegearly') || s.contains('vegmid');
     }
@@ -1113,6 +1355,13 @@ class NutrientRecommendationEngine {
     }
     if (crop == 'barley' || crop == 'cebada') {
       return s.contains('vegearly') ||
+          s.contains('tiller') ||
+          s.contains('macoll');
+    }
+    if (crop == 'wheat' || crop == 'trigo') {
+      return s.contains('emerg') ||
+          s.contains('vegearly') ||
+          s.contains('early') ||
           s.contains('tiller') ||
           s.contains('macoll');
     }
@@ -1129,7 +1378,8 @@ class NutrientRecommendationEngine {
     return s.contains('matur') ||
         s.contains('senesc') ||
         s.contains('harvest') ||
-        s.contains('cosech');
+        s.contains('cosech') ||
+        s.contains('late');
   }
 
   static String _nutrientShortName(AgroMetricKey nutrient) =>

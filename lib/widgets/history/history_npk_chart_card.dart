@@ -14,6 +14,9 @@ class HistoryNpkChartCard extends StatelessWidget {
     required this.kValues,
     this.yMax,
     this.lastReadingText,
+    this.liveN,
+    this.liveP,
+    this.liveK,
   });
 
   /// Límite inferior de la meta de la etapa
@@ -29,19 +32,27 @@ class HistoryNpkChartCard extends StatelessWidget {
   /// Ej: "Hoy · 2:14 pm"
   final String? lastReadingText;
 
+  /// Valor live actual del sensor. Cuando se provee, los chips muestran
+  /// este valor en vez del último bucket promediado del historial,
+  /// garantizando consistencia con Dashboard y NPK screen.
+  final double? liveN;
+  final double? liveP;
+  final double? liveK;
+
   static const String _icN = 'assets/icons/metrics/ic_nitrogen.png';
   static const String _icP = 'assets/icons/metrics/ic_phosphorus.png';
   static const String _icK = 'assets/icons/metrics/ic_potassium.png';
 
   @override
   Widget build(BuildContext context) {
-    final nNow = (nValues.isNotEmpty ? nValues.last : 0)
+    // Usa el valor live del sensor si existe; si no, cae al último bucket.
+    final nNow = (liveN ?? (nValues.isNotEmpty ? nValues.last : 0))
         .clamp(0, 999999)
         .toDouble();
-    final pNow = (pValues.isNotEmpty ? pValues.last : 0)
+    final pNow = (liveP ?? (pValues.isNotEmpty ? pValues.last : 0))
         .clamp(0, 999999)
         .toDouble();
-    final kNow = (kValues.isNotEmpty ? kValues.last : 0)
+    final kNow = (liveK ?? (kValues.isNotEmpty ? kValues.last : 0))
         .clamp(0, 999999)
         .toDouble();
 

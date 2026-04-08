@@ -79,7 +79,11 @@ class BarleyCropDefinition implements CropDefinition {
       expectedDaysToEnd: stage.expectedDaysToEnd,
       stageProgressPct: stage.stageProgressPct ?? 0,
       windowsNow: stage.windowsNow.whereType<SeedWindowKey>().toList(growable: false),
-      expectedPlantHeightTodayM: const RangeDouble(0, 0),
+      expectedPlantHeightTodayM: _expectedHeightForStage(
+        profile: barleyProfile,
+        stage: barleyStage,
+        stageProgress: stage.stageProgressPct ?? 0.5,
+      ),
       stageLabelEs: stage.stageLabelEs,
       heroAsset: stage.heroAsset,
       helperCaption: stage.helperCaption,
@@ -162,6 +166,34 @@ class BarleyCropDefinition implements CropDefinition {
         ],
       ),
       nextAlertsState: out.nextAlertsState,
+    );
+  }
+
+  RangeDouble _expectedHeightForStage({
+    required BarleyProfile profile,
+    required BarleyStageKey stage,
+    double stageProgress = 0.5,
+  }) {
+    final (double startPct, double endPct) = switch (stage) {
+      BarleyStageKey.germination => (0.00, 0.02),
+      BarleyStageKey.emergence => (0.02, 0.05),
+      BarleyStageKey.vegEarly => (0.05, 0.15),
+      BarleyStageKey.tillering => (0.15, 0.30),
+      BarleyStageKey.elongation => (0.30, 0.65),
+      BarleyStageKey.booting => (0.65, 0.85),
+      BarleyStageKey.heading => (0.85, 0.95),
+      BarleyStageKey.flowering => (0.95, 1.00),
+      BarleyStageKey.grainFill => (0.95, 1.00),
+      BarleyStageKey.physiologicalMaturity => (0.95, 1.00),
+      BarleyStageKey.harvest => (0.95, 1.00),
+    };
+
+    final p = stageProgress.clamp(0.0, 1.0);
+    final pct = startPct + (endPct - startPct) * p;
+
+    return RangeDouble(
+      profile.plantHeightM.min * pct,
+      profile.plantHeightM.max * pct,
     );
   }
 

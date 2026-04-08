@@ -83,6 +83,7 @@ class MaizeCropDefinition implements CropDefinition {
       expectedPlantHeightTodayM: _expectedHeightForStage(
         profile: maizeProfile,
         stage: maizeStage,
+        stageProgress: stage.stageProgressPct ?? 0.5,
       ),
       stageLabelEs: stage.stageLabelEs,
       heroAsset: stage.heroAsset,
@@ -198,26 +199,32 @@ class MaizeCropDefinition implements CropDefinition {
     );
   }
 
-
   RangeDouble _expectedHeightForStage({
     required MaizeProfile profile,
     required MaizeStageKey stage,
+    double stageProgress = 0.5,
   }) {
-    final pct = switch (stage) {
-      MaizeStageKey.germination => const RangeDouble(0.00, 0.02),
-      MaizeStageKey.emergence => const RangeDouble(0.02, 0.05),
-      MaizeStageKey.vegEarly => const RangeDouble(0.10, 0.30),
-      MaizeStageKey.vegMid => const RangeDouble(0.30, 0.55),
-      MaizeStageKey.vegAdvanced => const RangeDouble(0.55, 0.70),
-      MaizeStageKey.tasseling => const RangeDouble(0.70, 0.85),
-      MaizeStageKey.flowerSet => const RangeDouble(0.80, 0.90),
-      MaizeStageKey.maturitySenescence => const RangeDouble(0.90, 1.00),
-      MaizeStageKey.harvest => const RangeDouble(0.95, 1.00),
+    // Start/end percentages of max height for each stage boundary.
+    // Based on Ritchie & Hanway maize growth model (Iowa State / CIMMYT).
+    // Plant reaches ~95% at VT, 100% at R1, no growth after silking.
+    final (double startPct, double endPct) = switch (stage) {
+      MaizeStageKey.germination => (0.00, 0.02),
+      MaizeStageKey.emergence => (0.02, 0.05),
+      MaizeStageKey.vegEarly => (0.05, 0.20),
+      MaizeStageKey.vegMid => (0.20, 0.50),
+      MaizeStageKey.vegAdvanced => (0.50, 0.90),
+      MaizeStageKey.tasseling => (0.90, 0.98),
+      MaizeStageKey.flowerSet => (0.98, 1.00),
+      MaizeStageKey.maturitySenescence => (1.00, 1.00),
+      MaizeStageKey.harvest => (0.95, 1.00),
     };
 
+    final p = stageProgress.clamp(0.0, 1.0);
+    final pct = startPct + (endPct - startPct) * p;
+
     return RangeDouble(
-      profile.plantHeightM.min * pct.min,
-      profile.plantHeightM.max * pct.max,
+      profile.plantHeightM.min * pct,
+      profile.plantHeightM.max * pct,
     );
   }
 

@@ -224,6 +224,8 @@ class DashboardScreenPresenter {
     String npkSubtitle = 'Sin evaluación actual';
 
     if (isPlanted && telemetry != null) {
+      final scaleId = runtime.cropContext?.cultivationScaleId;
+
       final nInt = NutrientRecommendationEngine.interpret(
         nutrient: AgroMetricKey.n,
         rawPpm: telemetry.n.toDouble(),
@@ -231,6 +233,7 @@ class DashboardScreenPresenter {
         stageKey: stageResult?.stageKey,
         profileId: runtime.profile?.id,
         targets: targets,
+        cultivationScaleId: scaleId,
       );
       final pInt = NutrientRecommendationEngine.interpret(
         nutrient: AgroMetricKey.p,
@@ -239,6 +242,7 @@ class DashboardScreenPresenter {
         stageKey: stageResult?.stageKey,
         profileId: runtime.profile?.id,
         targets: targets,
+        cultivationScaleId: scaleId,
       );
       final kInt = NutrientRecommendationEngine.interpret(
         nutrient: AgroMetricKey.k,
@@ -247,6 +251,7 @@ class DashboardScreenPresenter {
         stageKey: stageResult?.stageKey,
         profileId: runtime.profile?.id,
         targets: targets,
+        cultivationScaleId: scaleId,
       );
 
       // Usamos las etiquetas premium cortas para el title

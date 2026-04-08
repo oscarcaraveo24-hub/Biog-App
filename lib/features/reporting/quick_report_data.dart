@@ -6,6 +6,7 @@ class QuickReportData {
   final String stageLabel;
   final int? daySinceSowing;
   final DateTime generatedAt;
+  final DateTime? readingAt;
 
   final double nValue;
   final double pValue;
@@ -44,6 +45,7 @@ class QuickReportData {
     required this.stageLabel,
     required this.daySinceSowing,
     required this.generatedAt,
+    this.readingAt,
     required this.nValue,
     required this.pValue,
     required this.kValue,
@@ -84,6 +86,7 @@ class QuickReportData {
     String? stageLabel,
     int? daySinceSowing,
     DateTime? generatedAt,
+    DateTime? readingAt,
     double? nValue,
     double? pValue,
     double? kValue,
@@ -110,6 +113,7 @@ class QuickReportData {
       stageLabel: stageLabel ?? this.stageLabel,
       daySinceSowing: daySinceSowing ?? this.daySinceSowing,
       generatedAt: generatedAt ?? this.generatedAt,
+      readingAt: readingAt ?? this.readingAt,
       nValue: nValue ?? this.nValue,
       pValue: pValue ?? this.pValue,
       kValue: kValue ?? this.kValue,

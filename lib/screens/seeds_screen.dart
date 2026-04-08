@@ -100,6 +100,11 @@ class _SeedsScreenState extends State<SeedsScreen>
     final seed = store.activeSeed;
     final today = DateTime.now();
 
+    // Preload the historical crop-care average if not cached yet.
+    if (activeDevice != null && cropContext != null && store.cropCareAverage == null) {
+      store.loadCropCareAverage(activeDevice.id, cropContext.cropId);
+    }
+
     final runtime = CropRuntimeResolver.resolve(
       device: activeDevice,
       seed: seed,
@@ -643,6 +648,13 @@ class SeedsScreenLogic {
     required BioGStore store,
     AgroEvalResult? runtimeEval,
   }) {
+    // Prefer the historical lifetime average from Supabase.
+    final double? historicalAvg = store.cropCareAverage;
+    if (historicalAvg != null) {
+      return (historicalAvg * 100).round().clamp(0, 100);
+    }
+
+    // Fallback: use today's score while the average loads.
     final eval = runtimeEval ?? store.lastAgroEval;
     if (eval == null) return null;
 
@@ -1099,18 +1111,22 @@ class SeedsScreenLogic {
     required int daySinceSowing,
     required int expectedDaysToEnd,
   }) {
-    final daysEnd = expectedDaysToEnd <= 0 ? 1 : expectedDaysToEnd;
-    final p = (daySinceSowing / daysEnd).clamp(0.0, 1.0);
+    final totalCycleDays = daySinceSowing + expectedDaysToEnd;
+    if (totalCycleDays <= 0) {
+      return const _Estimation(heightCm: 0, growthCmPerWeek: 0);
+    }
 
-    double easeOut(double x) => 1 - (1 - x) * (1 - x);
+    final p = (daySinceSowing / totalCycleDays).clamp(0.0, 1.0);
 
-    final minM = profile.plantHeightM.min;
-    final maxM = profile.plantHeightM.max;
-    final nowM = minM + (maxM - minM) * easeOut(p);
+    // S-curve (smoothstep): slow start, rapid mid-growth, plateau at maturity.
+    double sCurve(double x) => x * x * (3.0 - 2.0 * x);
+
+    final avgMaxM = (profile.plantHeightM.min + profile.plantHeightM.max) / 2;
+    final nowM = avgMaxM * sCurve(p);
 
     final prevDay = (daySinceSowing - 7).clamp(1, 1000000);
-    final pp = (prevDay / daysEnd).clamp(0.0, 1.0);
-    final prevM = minM + (maxM - minM) * easeOut(pp);
+    final pp = (prevDay / totalCycleDays).clamp(0.0, 1.0);
+    final prevM = avgMaxM * sCurve(pp);
 
     final heightCm = (nowM * 100).round();
     final growthWeekCm = ((nowM - prevM) * 100).round();

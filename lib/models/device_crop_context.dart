@@ -24,6 +24,9 @@ class DeviceCropContext {
   final DateTime? plannedSowingDate;
   final DateConfidence sowingDateConfidence;
 
+  // escala operativa
+  final String? cultivationScaleId; // field, bed, pot
+
   // contexto adicional
   final String? sowingModeId; // rainfed / irrigated
   final String? timezone;
@@ -53,6 +56,7 @@ class DeviceCropContext {
     this.calendarTypeId,
     this.sowingDate,
     this.plannedSowingDate,
+    this.cultivationScaleId,
     this.sowingModeId,
     this.timezone,
     this.regionCode,
@@ -72,6 +76,7 @@ class DeviceCropContext {
     Object? sowingDate = _sentinel,
     Object? plannedSowingDate = _sentinel,
     DateConfidence? sowingDateConfidence,
+    Object? cultivationScaleId = _sentinel,
     Object? sowingModeId = _sentinel,
     Object? timezone = _sentinel,
     Object? regionCode = _sentinel,
@@ -106,6 +111,9 @@ class DeviceCropContext {
           ? this.plannedSowingDate
           : plannedSowingDate as DateTime?,
       sowingDateConfidence: sowingDateConfidence ?? this.sowingDateConfidence,
+      cultivationScaleId: identical(cultivationScaleId, _sentinel)
+          ? this.cultivationScaleId
+          : cultivationScaleId as String?,
       sowingModeId: identical(sowingModeId, _sentinel)
           ? this.sowingModeId
           : sowingModeId as String?,
@@ -139,6 +147,7 @@ class DeviceCropContext {
       'sowingDate': sowingDate?.toIso8601String(),
       'plannedSowingDate': plannedSowingDate?.toIso8601String(),
       'sowingDateConfidence': sowingDateConfidence.name,
+      'cultivationScaleId': cultivationScaleId,
       'sowingModeId': sowingModeId,
       'timezone': timezone,
       'regionCode': regionCode,
@@ -172,6 +181,7 @@ class DeviceCropContext {
       sowingDateConfidence: DateConfidence.values.byName(
         json['sowingDateConfidence'] as String,
       ),
+      cultivationScaleId: json['cultivationScaleId'] as String?,
       sowingModeId: json['sowingModeId'] as String?,
       timezone: json['timezone'] as String?,
       regionCode: json['regionCode'] as String?,

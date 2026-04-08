@@ -17,6 +17,7 @@ class NpkGaugeCard extends StatelessWidget {
     this.statusLabel,
     required this.centerValue,
     this.centerUnit = 'mg/kg',
+    this.cropCapPpm,
   });
 
   final NpkChannel channel;
@@ -34,6 +35,9 @@ class NpkGaugeCard extends StatelessWidget {
   final int centerValue;
   final String centerUnit;
 
+  /// Cap de ppm específico por cultivo. Si es null, usa el cap genérico.
+  final double? cropCapPpm;
+
   Color _accent() {
     switch (channel) {
       case NpkChannel.n:
@@ -50,7 +54,9 @@ class NpkGaugeCard extends StatelessWidget {
     return [a.withValues(alpha:0.85), a.withValues(alpha:0.98), a.withValues(alpha:0.92)];
   }
 
-  double _ppmCap() {
+  /// Cap efectivo: usa el del cultivo si viene, si no, el genérico del canal.
+  double _effectiveCapPpm() {
+    if (cropCapPpm != null && cropCapPpm! > 0) return cropCapPpm!;
     switch (channel) {
       case NpkChannel.n:
         return 120.0;
@@ -97,7 +103,7 @@ class NpkGaugeCard extends StatelessWidget {
                       gradient: _gradient(),
                       targetMin: targetMin,
                       targetMax: targetMax,
-                      capPpm: _ppmCap(),
+                      capPpm: _effectiveCapPpm(),
                     ),
                     child: _GaugeCenter(
                       bigText: '$centerValue',

@@ -9,6 +9,8 @@ import 'package:bio_g/features/reporting/quick_report_builder.dart';
 import 'package:bio_g/screens/dashboard/dashboard_presenter.dart';
 import 'package:bio_g/screens/dashboard/dashboard_sections.dart';
 import 'package:bio_g/screens/notifications_screen.dart';
+import 'package:bio_g/screens/plant_health/crop_risk_intro_screen.dart';
+import 'package:bio_g/screens/yield/yield_projection_setup_screen.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/widgets/bottom_nav.dart';
 import 'package:bio_g/widgets/shared/connectivity_banner.dart';
@@ -109,66 +111,54 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _handleExportTap() async {
     final BioGStore store = BioGScope.of(context);
     final DateTime now = DateTime.now();
+    final String fileName =
+        'BioG_Reporte_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}.pdf';
 
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const AlertDialog(
-        content: Row(
-          children: <Widget>[
-            CircularProgressIndicator(),
-            SizedBox(width: 20),
-            Expanded(child: Text('Generando PDF\u2026')),
-          ],
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PdfPreviewScreen.generate(
+          fileName: fileName,
+          minimumLoadingDuration: const Duration(seconds: 3),
+          onLoadPdf: () async {
+            final runtime = CropRuntimeResolver.resolve(
+              device: store.activeDevice,
+              seed: store.activeSeed,
+              cropContext: store.activeCropContext,
+              live: store.live,
+              alertsState: store.alertsState,
+              now: now,
+            );
+
+            final reportData = await const QuickReportBuilder().build(
+              store: store,
+              runtime: runtime,
+              now: now,
+            );
+
+            final Uint8List pdfBytes = await const PdfReportBuilder().build(
+              data: reportData,
+              telemetry: runtime.live ?? store.live,
+            );
+
+            return pdfBytes;
+          },
         ),
       ),
     );
+  }
 
-    try {
-      final runtime = CropRuntimeResolver.resolve(
-        device: store.activeDevice,
-        seed: store.activeSeed,
-        cropContext: store.activeCropContext,
-        live: store.live,
-        alertsState: store.alertsState,
-        now: now,
-      );
+  Future<void> _handleYieldProjectionTap() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const YieldProjectionSetupScreen(),
+      ),
+    );
+  }
 
-      final reportData = await const QuickReportBuilder().build(
-        store: store,
-        runtime: runtime,
-        now: now,
-      );
-
-      final Uint8List pdfBytes = await const PdfReportBuilder().build(
-        data: reportData,
-        telemetry: store.live,
-      );
-
-      if (!mounted) return;
-      Navigator.of(context).pop();
-
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => PdfPreviewScreen(
-            pdfBytes: pdfBytes,
-            fileName:
-                'BioG_Reporte_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}.pdf',
-          ),
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      Navigator.of(context).pop();
-
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text('Error al generar el reporte: $error'),
-          ),
-        );
-    }
+  Future<void> _handlePlantHealthTap() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const CropRiskIntroScreen()),
+    );
   }
 
   @override
@@ -286,8 +276,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                           beginScale: 0.983,
                           child: DashboardQuickActionsSection(
                             onExportTap: _handleExportTap,
-                            onCropJourneyTap: () => widget.onNavTap(2),
-                            onClimateTap: () => widget.onNavTap(3),
+                            onCropJourneyTap: _handleYieldProjectionTap,
+                            onClimateTap: _handlePlantHealthTap,
                           ),
                         ),
                         SizedBox(

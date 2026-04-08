@@ -30,8 +30,11 @@ enum AgronomicEventType {
   npkReading,
   nutrientImbalance,
   nitrogenLow,
+  nitrogenHigh,
   phosphorusLow,
+  phosphorusHigh,
   potassiumLow,
+  potassiumHigh,
 
   // Tendencia / estado combinado
   stableSoil,

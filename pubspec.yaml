@@ -74,6 +74,7 @@ flutter:
     - assets/seeds/
     - assets/icons/weather/
     - assets/icons/wizard/
+    - assets/icons/plant_health/
     - assets/seeds/bean/
     - assets/seeds/Oat/
     - assets/seeds/Maize/

@@ -79,7 +79,11 @@ class OatCropDefinition implements CropDefinition {
       expectedDaysToEnd: stage.expectedDaysToEnd,
       stageProgressPct: stage.stageProgressPct ?? 0,
       windowsNow: stage.windowsNow.whereType<SeedWindowKey>().toList(growable: false),
-      expectedPlantHeightTodayM: const RangeDouble(0, 0),
+      expectedPlantHeightTodayM: _expectedHeightForStage(
+        profile: oatProfile,
+        stage: oatStage,
+        stageProgress: stage.stageProgressPct ?? 0.5,
+      ),
       stageLabelEs: stage.stageLabelEs,
       heroAsset: stage.heroAsset,
       helperCaption: stage.helperCaption,
@@ -162,6 +166,34 @@ class OatCropDefinition implements CropDefinition {
         ],
       ),
       nextAlertsState: out.nextAlertsState,
+    );
+  }
+
+  RangeDouble _expectedHeightForStage({
+    required OatProfile profile,
+    required OatStageKey stage,
+    double stageProgress = 0.5,
+  }) {
+    final (double startPct, double endPct) = switch (stage) {
+      OatStageKey.germination => (0.00, 0.02),
+      OatStageKey.emergence => (0.02, 0.05),
+      OatStageKey.vegEarly => (0.05, 0.18),
+      OatStageKey.tillering => (0.18, 0.38),
+      OatStageKey.elongation => (0.38, 0.65),
+      OatStageKey.booting => (0.65, 0.82),
+      OatStageKey.heading => (0.82, 0.95),
+      OatStageKey.flowering => (0.95, 1.00),
+      OatStageKey.grainFill => (0.95, 1.00),
+      OatStageKey.physiologicalMaturity => (0.95, 1.00),
+      OatStageKey.harvest => (0.95, 1.00),
+    };
+
+    final p = stageProgress.clamp(0.0, 1.0);
+    final pct = startPct + (endPct - startPct) * p;
+
+    return RangeDouble(
+      profile.plantHeightM.min * pct,
+      profile.plantHeightM.max * pct,
     );
   }
 

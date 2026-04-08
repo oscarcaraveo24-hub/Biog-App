@@ -155,32 +155,25 @@ class OatEngine {
     OatStageKey stage,
     double progress,
   ) {
-    final maxHeight = p.plantHeightM.max;
-    final minHeight = p.plantHeightM.min;
-    switch (stage) {
-      case OatStageKey.germination:
-        return const RangeDouble(0.00, 0.01);
-      case OatStageKey.emergence:
-        return const RangeDouble(0.01, 0.05);
-      case OatStageKey.vegEarly:
-        return RangeDouble(0.05, maxHeight * 0.28);
-      case OatStageKey.tillering:
-        return RangeDouble(maxHeight * 0.18, maxHeight * 0.45);
-      case OatStageKey.elongation:
-        return RangeDouble(maxHeight * 0.38, maxHeight * 0.70);
-      case OatStageKey.booting:
-        return RangeDouble(maxHeight * 0.60, maxHeight * 0.88);
-      case OatStageKey.heading:
-        return RangeDouble(maxHeight * 0.75, maxHeight * 0.98);
-      case OatStageKey.flowering:
-        return RangeDouble(minHeight * 0.92, maxHeight);
-      case OatStageKey.grainFill:
-        return RangeDouble(minHeight * 0.92, maxHeight);
-      case OatStageKey.physiologicalMaturity:
-        return RangeDouble(minHeight * 0.88, maxHeight * 0.98);
-      case OatStageKey.harvest:
-        return RangeDouble(minHeight * 0.85, maxHeight * 0.96);
-    }
+    final (double startPct, double endPct) = switch (stage) {
+      OatStageKey.germination => (0.00, 0.02),
+      OatStageKey.emergence => (0.02, 0.05),
+      OatStageKey.vegEarly => (0.05, 0.18),
+      OatStageKey.tillering => (0.18, 0.38),
+      OatStageKey.elongation => (0.38, 0.65),
+      OatStageKey.booting => (0.65, 0.82),
+      OatStageKey.heading => (0.82, 0.95),
+      OatStageKey.flowering => (0.95, 1.00),
+      OatStageKey.grainFill => (0.95, 1.00),
+      OatStageKey.physiologicalMaturity => (0.95, 1.00),
+      OatStageKey.harvest => (0.95, 1.00),
+    };
+
+    final pct = startPct + (endPct - startPct) * progress.clamp(0.0, 1.0);
+    return RangeDouble(
+      p.plantHeightM.min * pct,
+      p.plantHeightM.max * pct,
+    );
   }
 
   static String _labelEs(OatStageKey stage) {

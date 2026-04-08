@@ -482,7 +482,12 @@ class EventEngine {
     final pBand = input.bandOf(EventMetricKeys.p);
     final kBand = input.bandOf(EventMetricKeys.k);
 
-    if (nBand != null && nBand.isLowish) {
+    final nIsExcess = input.excessNutrientKeys.contains(EventMetricKeys.n);
+    final pIsExcess = input.excessNutrientKeys.contains(EventMetricKeys.p);
+    final kIsExcess = input.excessNutrientKeys.contains(EventMetricKeys.k);
+
+    // ── Nitrógeno ──
+    if (nBand != null && nBand.isLowish && !nIsExcess) {
       events.add(
         AgronomicEvent(
           type: AgronomicEventType.nitrogenLow,
@@ -507,9 +512,36 @@ class EventEngine {
           },
         ),
       );
+    } else if (nBand != null && nIsExcess) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.nitrogenHigh,
+          severity: nBand.toSeverity(isLow: false),
+          title: 'Nitrógeno en exceso',
+          message: input.n != null
+              ? 'El nitrógeno aparece por encima del rango esperado (${_fmt(input.n)} mg/kg). Conviene reducir aportes nitrogenados.'
+              : 'El nitrógeno aparece por encima del rango esperado.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: EventMetricKeys.n,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isCritical: false,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'npk',
+            'value': input.n,
+            'band': nBand.name,
+            'excess': true,
+          },
+        ),
+      );
     }
 
-    if (pBand != null && pBand.isLowish) {
+    // ── Fósforo ──
+    if (pBand != null && pBand.isLowish && !pIsExcess) {
       events.add(
         AgronomicEvent(
           type: AgronomicEventType.phosphorusLow,
@@ -534,9 +566,36 @@ class EventEngine {
           },
         ),
       );
+    } else if (pBand != null && pIsExcess) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.phosphorusHigh,
+          severity: pBand.toSeverity(isLow: false),
+          title: 'Fósforo en exceso',
+          message: input.p != null
+              ? 'El fósforo aparece por encima del rango esperado (${_fmt(input.p)} mg/kg). Conviene reducir aportes fosfatados.'
+              : 'El fósforo aparece por encima del rango esperado.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: EventMetricKeys.p,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isCritical: false,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'npk',
+            'value': input.p,
+            'band': pBand.name,
+            'excess': true,
+          },
+        ),
+      );
     }
 
-    if (kBand != null && kBand.isLowish) {
+    // ── Potasio ──
+    if (kBand != null && kBand.isLowish && !kIsExcess) {
       events.add(
         AgronomicEvent(
           type: AgronomicEventType.potassiumLow,
@@ -558,6 +617,32 @@ class EventEngine {
             'group': 'npk',
             'value': input.k,
             'band': kBand.name,
+          },
+        ),
+      );
+    } else if (kBand != null && kIsExcess) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.potassiumHigh,
+          severity: kBand.toSeverity(isLow: false),
+          title: 'Potasio en exceso',
+          message: input.k != null
+              ? 'El potasio aparece por encima del rango esperado (${_fmt(input.k)} mg/kg). Conviene reducir aportes potásicos.'
+              : 'El potasio aparece por encima del rango esperado.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: EventMetricKeys.k,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isCritical: false,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'npk',
+            'value': input.k,
+            'band': kBand.name,
+            'excess': true,
           },
         ),
       );
@@ -1107,6 +1192,7 @@ class EventEngineInput {
     this.k,
     this.currentBands = const <String, AgroBand>{},
     this.previousBands = const <String, AgroBand>{},
+    this.excessNutrientKeys = const <String>{},
     this.history = const <EventTelemetryPoint>[],
     this.rules = const EventEngineRules(),
   });
@@ -1152,6 +1238,10 @@ class EventEngineInput {
 
   /// Bandas previas opcionales. Útiles para recovery.
   final Map<String, AgroBand> previousBands;
+
+  /// Nutrientes cuya banda es por exceso (no por déficit).
+  /// Keys: EventMetricKeys.n / .p / .k
+  final Set<String> excessNutrientKeys;
 
   /// Historial ya normalizado.
   final List<EventTelemetryPoint> history;

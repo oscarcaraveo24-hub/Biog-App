@@ -209,15 +209,20 @@ extension NutrientPriorityLabelX on NutrientPriorityLabel {
       case NutrientPriorityLabel.highPriority:
         return AgroBand.low;
       case NutrientPriorityLabel.possibleExcess:
+      case NutrientPriorityLabel.reviewAccumulation:
         return AgroBand.high;
       case NutrientPriorityLabel.reviewManagement:
       case NutrientPriorityLabel.actionRecommended:
-      case NutrientPriorityLabel.reviewAccumulation:
         return AgroBand.critical;
       case NutrientPriorityLabel.unknown:
         return AgroBand.unknown;
     }
   }
+
+  /// True si esta etiqueta es del lado de exceso (no de déficit).
+  bool get isExcessSide =>
+      this == NutrientPriorityLabel.possibleExcess ||
+      this == NutrientPriorityLabel.reviewAccumulation;
 }
 
 enum AgroScoreKind { soilControl, nutrientPriority }

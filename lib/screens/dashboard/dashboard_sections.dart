@@ -420,7 +420,7 @@ class DashboardQuickActionsSection extends StatelessWidget {
               Expanded(
                 child: DashboardQuickActionCard(
                   assetIconPath: 'assets/icons/metrics/ic_plant_growth.png',
-                  title: 'Viaje del\ncultivo',
+                  title: 'Rendimiento\nestimado',
                   assetScale: 4.2,
                   assetWidth: 22,
                   assetHeight: 22,
@@ -431,7 +431,7 @@ class DashboardQuickActionsSection extends StatelessWidget {
               Expanded(
                 child: DashboardQuickActionCard(
                   assetIconPath: 'assets/icons/metrics/ic_smart_time.png',
-                  title: 'Clima\ninteligente',
+                  title: 'Riesgos\ndel cultivo',
                   assetScale: 4.2,
                   assetWidth: 22,
                   assetHeight: 22,

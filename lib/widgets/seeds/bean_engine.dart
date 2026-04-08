@@ -48,26 +48,26 @@ class BeanEngine {
     }
   }
 
-  static RangeDouble _heightPct(BeanStageKey stage) {
+  static (double, double) _heightPctBounds(BeanStageKey stage) {
     switch (stage) {
       case BeanStageKey.germination:
-        return const RangeDouble(0.00, 0.02);
+        return (0.00, 0.02);
       case BeanStageKey.emergence:
-        return const RangeDouble(0.02, 0.06);
+        return (0.02, 0.06);
       case BeanStageKey.vegEarly:
-        return const RangeDouble(0.08, 0.28);
+        return (0.06, 0.28);
       case BeanStageKey.vegAdvanced:
-        return const RangeDouble(0.28, 0.65);
+        return (0.28, 0.65);
       case BeanStageKey.flowering:
-        return const RangeDouble(0.60, 0.80);
+        return (0.65, 0.85);
       case BeanStageKey.podSet:
-        return const RangeDouble(0.75, 0.90);
+        return (0.85, 0.95);
       case BeanStageKey.grainFill:
-        return const RangeDouble(0.85, 1.00);
+        return (0.95, 1.00);
       case BeanStageKey.physiologicalMaturity:
-        return const RangeDouble(0.90, 1.00);
+        return (0.95, 1.00);
       case BeanStageKey.harvest:
-        return const RangeDouble(0.90, 1.00);
+        return (0.95, 1.00);
     }
   }
 
@@ -207,10 +207,11 @@ class BeanEngine {
       1.0,
     );
 
-    final pct = _heightPct(current.key);
+    final (startPct, endPct) = _heightPctBounds(current.key);
+    final pct = startPct + (endPct - startPct) * progress;
     final heightToday = RangeDouble(
-      profile.plantHeightM.min * pct.min,
-      profile.plantHeightM.max * pct.max,
+      profile.plantHeightM.min * pct,
+      profile.plantHeightM.max * pct,
     );
 
     final expectedEnd = profile.endWindowDays.mid;
