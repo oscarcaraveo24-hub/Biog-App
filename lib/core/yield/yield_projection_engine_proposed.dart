@@ -46,6 +46,8 @@ enum YieldFamily {
   cerealGrain,
   cerealForage,
   beanGrain,
+  tomatoFresh,
+  cucumberFresh,
   other,
 }
 
@@ -229,6 +231,10 @@ class YieldProjectionEngine {
             : YieldFamily.cerealGrain;
       case 'bean':
         return YieldFamily.beanGrain;
+      case 'tomato':
+        return YieldFamily.tomatoFresh;
+      case 'cucumber':
+        return YieldFamily.cucumberFresh;
       default:
         return YieldFamily.other;
     }
@@ -283,6 +289,26 @@ class YieldProjectionEngine {
         betaHigh: 1.25,
         managementGamma: 1.30,
         managementFloor: 0.22,
+      ),
+      // Tomate: alta sensibilidad a manejo (agua, poda, Ca), penalización
+      // moderada por densidad desajustada. Techo conservador para TM-GEN.
+      YieldFamily.tomatoFresh => const _YieldFamilyParams(
+        alphaLow: 0.90,
+        betaLow: 1.30,
+        alphaHigh: 0.85,
+        betaHigh: 1.25,
+        managementGamma: 1.45,
+        managementFloor: 0.20,
+      ),
+      // Pepino: más sensible a continuidad de agua, calor, sanidad y corte
+      // progresivo; la densidad fuera de rango castiga rápido la proyección.
+      YieldFamily.cucumberFresh => const _YieldFamilyParams(
+        alphaLow: 0.95,
+        betaLow: 1.35,
+        alphaHigh: 0.82,
+        betaHigh: 1.22,
+        managementGamma: 1.50,
+        managementFloor: 0.20,
       ),
       YieldFamily.other => const _YieldFamilyParams(
         alphaLow: 1.00,

@@ -420,7 +420,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   }
 
   Future<void> _openCropSelector() async {
-    if (_draft.cropCategory != CropCatalog.grainCategoryId) return;
+    if (_draft.cropCategory != CropCatalog.grainCategoryId &&
+        _draft.cropCategory != CropCatalog.vegetableCategoryId) {
+      return;
+    }
 
     final cropOptions = CropCatalog.cropsByCategory(
       _draft.cropCategory ?? CropCatalog.grainCategoryId,
@@ -490,6 +493,16 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                     )
                   : cropId == CropCatalog.beanCropId
                   ? ConfigureSeedWizardAssets.beanIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.tomatoCropId
+                  ? ConfigureSeedWizardAssets.tomatoIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.cucumberCropId
+                  ? ConfigureSeedWizardAssets.cucumberTypedIconForVariety(
                       varietyId: variety.id,
                       label: variety.label,
                     )
@@ -597,6 +610,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return ConfigureSeedWizardAssets.cropOat;
       case CropCatalog.beanCropId:
         return ConfigureSeedWizardAssets.cropBean;
+      case CropCatalog.tomatoCropId:
+        return ConfigureSeedWizardAssets.cropTomato;
+      case CropCatalog.cucumberCropId:
+        return ConfigureSeedWizardAssets.cropCucumber;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }
@@ -614,6 +631,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return ConfigureSeedWizardAssets.cropOat;
       case 'Frijol':
         return ConfigureSeedWizardAssets.cropBean;
+      case 'Tomate':
+        return ConfigureSeedWizardAssets.cropTomato;
+      case 'Pepino':
+        return ConfigureSeedWizardAssets.cropCucumber;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }
@@ -723,8 +744,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               title: 'Hortaliza',
               subtitle: 'Tomate, cebolla, lechuga...',
               selected: category == 'vegetable',
-              enabled: false,
-              onTap: null,
+              enabled: true,
+              onTap: () => _onSelectCategory('vegetable'),
             ),
           ),
           const SizedBox(height: 14),
@@ -793,6 +814,16 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             varietyId: selectedVariety?.id ?? _draft.varietyAlias,
             label: selectedVariety?.label ?? selectedVarietyLabel,
           )
+        : cropId == CropCatalog.tomatoCropId
+        ? ConfigureSeedWizardAssets.tomatoIconForVariety(
+            varietyId: selectedVariety?.id ?? _draft.varietyAlias,
+            label: selectedVariety?.label ?? selectedVarietyLabel,
+          )
+        : cropId == CropCatalog.cucumberCropId
+        ? ConfigureSeedWizardAssets.cucumberTypedIconForVariety(
+            varietyId: selectedVariety?.id ?? _draft.varietyAlias,
+            label: selectedVariety?.label ?? selectedVarietyLabel,
+          )
         : ConfigureSeedWizardAssets.variety;
 
     return CenteredWizardPage(
@@ -848,7 +879,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               title: 'Cultivo',
               value: cropLabel,
               selected: cropId != null,
-              onTap: _draft.cropCategory == CropCatalog.grainCategoryId
+              onTap: (_draft.cropCategory == CropCatalog.grainCategoryId ||
+                      _draft.cropCategory == CropCatalog.vegetableCategoryId)
                   ? _openCropSelector
                   : null,
             ),

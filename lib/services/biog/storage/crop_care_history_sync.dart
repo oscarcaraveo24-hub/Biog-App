@@ -24,16 +24,13 @@ class CropCareHistorySync {
     if (userId == null) return;
 
     try {
-      await _client.from(_table).upsert(
-        <String, dynamic>{
-          'user_id': userId,
-          'device_id': deviceId,
-          'crop_id': cropId,
-          'score': score01.clamp(0.0, 1.0),
-          'recorded_at': _todayIso(),
-        },
-        onConflict: 'user_id,device_id,crop_id,recorded_at',
-      );
+      await _client.from(_table).upsert(<String, dynamic>{
+        'user_id': userId,
+        'device_id': deviceId,
+        'crop_id': cropId,
+        'score': score01.clamp(0.0, 1.0),
+        'recorded_at': _todayIso(),
+      }, onConflict: 'user_id,device_id,crop_id,recorded_at');
     } catch (_) {
       // Best-effort — the app works fine without cloud history.
     }

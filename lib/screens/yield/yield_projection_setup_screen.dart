@@ -273,6 +273,100 @@ class _YieldProjectionSetupScreenState
       case 'oat':
         return YieldReferenceCatalog.byId['oat_generic'];
 
+      case 'tomato':
+        // v1: suelo. Protegido vs campo abierto se discrimina por el perfil
+        // oficial (TM-02 = protegido, TM-04/05 suelen ser protegido, TM-01
+        // campo abierto). TM-GEN usa campo abierto como piso conservador.
+        final profile = ctx.profileId.toLowerCase();
+        final alias = (ctx.varietyAlias ?? '').toLowerCase();
+
+        final isProtected = profile.contains('tm-02') ||
+            profile.contains('tm_02') ||
+            profile == 'tm02' ||
+            profile.contains('protegido') ||
+            alias.contains('protegido') ||
+            alias.contains('invernadero') ||
+            alias.contains('malla') ||
+            profile.contains('tm-04') ||
+            profile.contains('tm_04') ||
+            profile == 'tm04' ||
+            profile.contains('tm-05') ||
+            profile.contains('tm_05') ||
+            profile == 'tm05';
+
+        return isProtected
+            ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
+                YieldReferenceCatalog.genericFresh(ctx.cropId)
+            : YieldReferenceCatalog.genericFresh(ctx.cropId);
+
+      case 'cucumber':
+        final cucumberProfile = ctx.profileId.toLowerCase();
+        final cucumberAlias = (ctx.varietyAlias ?? '').toLowerCase();
+
+        final isGeneric = cucumberProfile.contains('pe-gen') ||
+            cucumberProfile.contains('pe_gen') ||
+            cucumberProfile == 'pegen' ||
+            cucumberAlias.contains('generico') ||
+            cucumberAlias.contains('genérico');
+
+        if (isGeneric) {
+          return YieldReferenceCatalog.byId['cucumber_generic'];
+        }
+
+        final isPickler = cucumberProfile.contains('pe-04') ||
+            cucumberProfile.contains('pe_04') ||
+            cucumberProfile == 'pe04' ||
+            cucumberAlias.contains('pickler') ||
+            cucumberAlias.contains('pickle') ||
+            cucumberAlias.contains('pepinillo') ||
+            cucumberAlias.contains('encurtido');
+        if (isPickler) {
+          return YieldReferenceCatalog.byId['cucumber_pickler'];
+        }
+
+        final cucumberIsProtected = cucumberProfile.contains('pe-02') ||
+            cucumberProfile.contains('pe_02') ||
+            cucumberProfile == 'pe02' ||
+            cucumberProfile.contains('pe-03') ||
+            cucumberProfile.contains('pe_03') ||
+            cucumberProfile == 'pe03' ||
+            cucumberProfile.contains('protegido') ||
+            cucumberAlias.contains('protegido') ||
+            cucumberAlias.contains('invernadero') ||
+            cucumberAlias.contains('malla') ||
+            cucumberAlias.contains('europeo') ||
+            cucumberAlias.contains('ingles') ||
+            cucumberAlias.contains('inglés') ||
+            cucumberAlias.contains('persa') ||
+            cucumberAlias.contains('mini') ||
+            cucumberAlias.contains('beit');
+
+        final isEuropean = cucumberProfile.contains('pe-02') ||
+            cucumberProfile.contains('pe_02') ||
+            cucumberProfile == 'pe02' ||
+            cucumberAlias.contains('europeo') ||
+            cucumberAlias.contains('ingles') ||
+            cucumberAlias.contains('inglés');
+        if (isEuropean) {
+          return YieldReferenceCatalog.byId['cucumber_european_protected'];
+        }
+
+        final isPersian = cucumberProfile.contains('pe-03') ||
+            cucumberProfile.contains('pe_03') ||
+            cucumberProfile == 'pe03' ||
+            cucumberAlias.contains('persa') ||
+            cucumberAlias.contains('mini') ||
+            cucumberAlias.contains('beit');
+        if (isPersian) {
+          return YieldReferenceCatalog.byId['cucumber_persian'];
+        }
+
+        return cucumberIsProtected
+            ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
+                YieldReferenceCatalog.genericFresh(ctx.cropId)
+            : YieldReferenceCatalog.byId['cucumber_slicer_ca'] ??
+                YieldReferenceCatalog.genericFresh(ctx.cropId);
+
       default:
         return null;
     }

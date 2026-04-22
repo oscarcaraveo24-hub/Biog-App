@@ -33,6 +33,13 @@ class DeviceCropContext {
   final String? regionCode;
   final String? cycleLabel;
 
+  /// Modo de establecimiento: siembra_directa | trasplante.
+  ///
+  /// Opcional; relevante para cultivos como tomate donde cambia el anclaje
+  /// temporal del ciclo (el reloj biológico arranca en trasplante, no en
+  /// semilla). Grano tradicional no lo usa.
+  final String? establishmentModeId;
+
   // trazabilidad
   final String catalogVersion;
   final CropConfigSource source;
@@ -61,6 +68,7 @@ class DeviceCropContext {
     this.timezone,
     this.regionCode,
     this.cycleLabel,
+    this.establishmentModeId,
   });
 
   DeviceCropContext copyWith({
@@ -81,6 +89,7 @@ class DeviceCropContext {
     Object? timezone = _sentinel,
     Object? regionCode = _sentinel,
     Object? cycleLabel = _sentinel,
+    Object? establishmentModeId = _sentinel,
     String? catalogVersion,
     CropConfigSource? source,
     DateTime? configuredAt,
@@ -126,6 +135,9 @@ class DeviceCropContext {
       cycleLabel: identical(cycleLabel, _sentinel)
           ? this.cycleLabel
           : cycleLabel as String?,
+      establishmentModeId: identical(establishmentModeId, _sentinel)
+          ? this.establishmentModeId
+          : establishmentModeId as String?,
       catalogVersion: catalogVersion ?? this.catalogVersion,
       source: source ?? this.source,
       configuredAt: configuredAt ?? this.configuredAt,
@@ -152,6 +164,7 @@ class DeviceCropContext {
       'timezone': timezone,
       'regionCode': regionCode,
       'cycleLabel': cycleLabel,
+      'establishmentModeId': establishmentModeId,
       'catalogVersion': catalogVersion,
       'source': source.name,
       'configuredAt': configuredAt.toIso8601String(),
@@ -186,6 +199,7 @@ class DeviceCropContext {
       timezone: json['timezone'] as String?,
       regionCode: json['regionCode'] as String?,
       cycleLabel: json['cycleLabel'] as String?,
+      establishmentModeId: json['establishmentModeId'] as String?,
       catalogVersion: json['catalogVersion'] as String,
       source: CropConfigSource.values.byName(json['source'] as String),
       configuredAt: DateTime.parse(json['configuredAt'] as String),

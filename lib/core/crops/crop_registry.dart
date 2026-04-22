@@ -2,8 +2,10 @@ import 'package:bio_g/core/crops/barley/barley_crop_definition.dart';
 import 'package:bio_g/core/crops/bean/bean_crop_definition.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/crop_types.dart';
+import 'package:bio_g/core/crops/cucumber/cucumber_crop_definition.dart';
 import 'package:bio_g/core/crops/maize/maize_crop_definition.dart';
 import 'package:bio_g/core/crops/oat/oat_crop_definition.dart';
+import 'package:bio_g/core/crops/tomato/tomato_crop_definition.dart';
 import 'package:bio_g/core/crops/wheat/wheat_crop_definition.dart';
 
 class CropRegistry {
@@ -15,6 +17,8 @@ class CropRegistry {
     CropKey.oat: OatCropDefinition(),
     CropKey.barley: BarleyCropDefinition(),
     CropKey.wheat: WheatCropDefinition(),
+    CropKey.tomato: TomatoCropDefinition(),
+    CropKey.cucumber: CucumberCropDefinition(),
   };
 
   static CropDefinition? byKey(CropKey key) => _definitions[key];

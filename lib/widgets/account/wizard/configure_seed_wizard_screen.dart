@@ -298,7 +298,8 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           varietyLabel: _varietyDisplayLabel(),
           cropSelected: _crop != null,
           varietySelected: _varietyId != null,
-          cropEnabled: _category == CropCatalog.grainCategoryId,
+          cropEnabled: _category == CropCatalog.grainCategoryId ||
+              _category == CropCatalog.vegetableCategoryId,
           cropUsesBrands: _cropUsesBrands,
           cropIconPath: _resolvedCropIconPath,
           varietyIconPath: _varietyId != null ? _resolvedCropIconPath : null,
@@ -400,7 +401,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   }
 
   void _onSelectCategory(String value) {
-    if (value != CropCatalog.grainCategoryId) return;
+    if (value != CropCatalog.grainCategoryId &&
+        value != CropCatalog.vegetableCategoryId) {
+      return;
+    }
 
     setState(() {
       _category = value;
@@ -416,7 +420,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   }
 
   Future<void> _openCropSelector() async {
-    if (_category != CropCatalog.grainCategoryId) return;
+    if (_category != CropCatalog.grainCategoryId &&
+        _category != CropCatalog.vegetableCategoryId) {
+      return;
+    }
 
     final cropOptions = CropCatalog.cropsByCategory(
       _category ?? CropCatalog.grainCategoryId,
@@ -508,6 +515,16 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
                     )
                   : cropId == CropCatalog.beanCropId
                   ? ConfigureSeedWizardAssets.beanIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.tomatoCropId
+                  ? ConfigureSeedWizardAssets.tomatoIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.cucumberCropId
+                  ? ConfigureSeedWizardAssets.cucumberTypedIconForVariety(
                       varietyId: variety.id,
                       label: variety.label,
                     )
@@ -803,6 +820,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return ConfigureSeedWizardAssets.cropOat;
       case CropCatalog.beanCropId:
         return ConfigureSeedWizardAssets.cropBean;
+      case CropCatalog.tomatoCropId:
+        return ConfigureSeedWizardAssets.cropTomato;
+      case CropCatalog.cucumberCropId:
+        return ConfigureSeedWizardAssets.cropCucumber;
       default:
         return _genericCropIconPath;
     }
@@ -825,6 +846,18 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         }
         if (cropId == CropCatalog.beanCropId) {
           return ConfigureSeedWizardAssets.beanIconForVariety(
+            varietyId: variety.id,
+            label: variety.label,
+          );
+        }
+        if (cropId == CropCatalog.tomatoCropId) {
+          return ConfigureSeedWizardAssets.tomatoIconForVariety(
+            varietyId: variety.id,
+            label: variety.label,
+          );
+        }
+        if (cropId == CropCatalog.cucumberCropId) {
+          return ConfigureSeedWizardAssets.cucumberTypedIconForVariety(
             varietyId: variety.id,
             label: variety.label,
           );

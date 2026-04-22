@@ -76,8 +76,8 @@ class CategoryPage extends StatelessWidget {
               title: 'Hortaliza',
               subtitle: 'Tomate, cebolla, lechuga...',
               selected: category == 'vegetable',
-              enabled: false,
-              onTap: null,
+              enabled: true,
+              onTap: () => onSelect('vegetable'),
             ),
           ),
           const SizedBox(height: 14),
@@ -213,7 +213,7 @@ class CropVarietyPage extends StatelessWidget {
           StaggerIn(
             delay: 95,
             child: SelectionPill(
-              iconPath: ConfigureSeedWizardAssets.categoryGrain,
+              iconPath: _categoryIconForLabel(categoryLabel),
               title: 'Categoría',
               value: categoryLabel,
               selected: true,
@@ -278,8 +278,28 @@ class CropVarietyPage extends StatelessWidget {
         return ConfigureSeedWizardAssets.cropBean;
       case 'Avena':
         return ConfigureSeedWizardAssets.cropOat;
+      case 'Tomate':
+        return ConfigureSeedWizardAssets.cropTomato;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
+    }
+  }
+
+  static String _categoryIconForLabel(String categoryLabel) {
+    switch (categoryLabel) {
+      case 'Hortaliza':
+      case 'Hortalizas':
+        return ConfigureSeedWizardAssets.categoryVegetable;
+      case 'Árbol':
+      case 'Arbol':
+        return ConfigureSeedWizardAssets.categoryTree;
+      case 'Planta ornamental':
+      case 'Ornamental':
+        return ConfigureSeedWizardAssets.categoryOrnamental;
+      case 'Grano':
+        return ConfigureSeedWizardAssets.categoryGrain;
+      default:
+        return ConfigureSeedWizardAssets.categoryGrain;
     }
   }
 }

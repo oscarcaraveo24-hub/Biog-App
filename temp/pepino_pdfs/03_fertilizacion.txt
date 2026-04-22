@@ -1,0 +1,456 @@
+                                                                                                            BIO-G · Guía técnica de fertilización del pepino
+
+                                         BIO-G
+
+  GUÍA DE FERTILIZACIÓN DEL PEPINO
+
+             Campo abierto e invernadero en suelo · Base técnica para BIO-G v1
+Alcance de esta guía
+
+· Solo cubre dos sistemas: campo abierto e invernadero en suelo.
+· No incluye hidroponía, sustratos inertes ni soluciones recirculantes como sistema principal.
+· Prioriza fuentes universitarias y oficiales; las referencias comerciales o traducidas se usan solo
+
+  como apoyo o verificación secundaria.
+· Está pensada para servir como base técnica confiable de producto y como documento de
+
+  trabajo para BIO-G.
+
+                                                          Versión generada el 19 de abril de 2026
+
+                                                                                     1
+                                                                                                              BIO-G · Guía técnica de fertilización del pepino
+
+1. Metodología y criterio de confiabilidad
+
+Esta guía se construyó a partir de documentos universitarios y oficiales sobre pepino comercial,
+manejo de fertilización, análisis foliar y fertirrigación. Se priorizaron recomendaciones que: (a)
+distinguen claramente entre campo abierto e invernadero; (b) se apoyan en análisis de suelo, agua
+o tejido; y (c) explican relaciones críticas entre N, K, Ca, Mg, S y micronutrientes.
+Se descartó usar una sola "receta universal" para todo pepino. La evidencia converge en que el
+cultivo debe manejarse con una combinación de análisis de suelo, calidad de agua, etapa
+fenológica, sistema de producción y seguimiento foliar. Por eso, esta guía diferencia entre lo que es
+una recomendación fuerte de investigación y lo que se propone aquí como traducción operativa
+para BIO-G.
+
+ Regla de lectura de esta guía
+ · "Recomendación fuerte" = directamente respaldada por fuentes oficiales o universitarias.
+ · "Traducción Bio-G" = síntesis operativa razonable basada en varias fuentes, útil para producto,
+ pero que debe seguir subordinada al laboratorio y al contexto del lote.
+
+Fuentes prioritarias usadas: [S1] Delaware/Mid-Atlantic; [S2] UF/IFAS; [S3] CTAHR Hawaii; [S4] INIFAP; [S5] Alabama
+Extension; [S6] Universidad Jorge Tadeo Lozano; [S7] referencia técnica suplementaria aportada por el usuario.
+
+2. Hallazgos técnicos que sí pueden considerarse firmes
+
+ · El pepino no debe manejarse con fertilización rígida desligada del análisis: P y K dependen con
+    fuerza del nivel del suelo, mientras que N depende además de textura, materia orgánica, riego y
+    duración de cosecha. [S1][S2][S3]
+
+ · La mayor extracción total de nutrientes ocurre hacia fructificación; en una referencia de Hawaii,
+    más del 80% de la remoción total sucede durante la etapa de producción de frutos. [S3]
+
+ · El pepino responde mejor a fuentes nítricas que a esquemas dominados por amonio; el amonio
+    en exceso puede deprimir la absorción de K y agravar desórdenes relacionados con Cl y con
+    calidad de crecimiento. [S3][S7]
+
+ · El cultivo tiene una demanda de K especialmente alta; en manejo intensivo, el K pasa a tener un
+    peso igual o superior al N en la fase productiva, y esto es todavía más evidente en invernadero.
+    [S3][S4][S7]
+
+ · Ca, Mg y S no son accesorios: Ca sostiene calidad y tolerancia a desórdenes, Mg ayuda a clorofila
+    y coloración, y S acompaña el metabolismo proteico. Un exceso de K o NH4 puede inducir
+    problemas de Ca y Mg. [S3][S4][S7]
+
+ · En campo abierto, el muestreo foliar útil suele hacerse alrededor de primera floración; en
+    invernadero, el laboratorio debe especificar claramente cuál hoja se muestrea y con qué
+    protocolo. [S1][S3][S5][S7]
+
+                                                                                        2
+                                                BIO-G · Guía técnica de fertilización del pepino
+
+3. Reglas maestras para fertilizar pepino en BIO-G
+
+ · Separar siempre prioridad fisiológica de meta analítica. La etapa puede decir qué nutriente pesa
+    más, pero no reemplaza el dato real del suelo o del tejido.
+
+ · En campo abierto, la decisión principal es: pH + MO + textura + P del suelo + K del suelo + drenaje
+    + salinidad + historial de lluvias.
+
+ · En invernadero en suelo, además de lo anterior, importan mucho más la calidad del agua, la CE,
+    el pH del bulbo húmedo y la evolución de la relación N/K.
+
+ · No usar N amoniacal alto como base del programa. El pepino tolera mejor un esquema dominado
+    por nitrato, especialmente cuando ya está entrando en floración, cuajado y cosecha.
+
+ · No leer P y K como valores fijos universales. Si el suelo sale alto o muy alto, el programa cambia.
+ · Foliar y fertirriego correctivo sirven para afinar; no deben sustituir el manejo de fondo ni
+
+    compensar un mal riego.
+
+4. Campo abierto: guía de fertilización
+
+4.1. Qué no debe faltar antes de definir la dosis
+
+ · pH del suelo y necesidad de encalado.
+ · Materia orgánica y textura (las recomendaciones de N y K cambian mucho entre suelos finos y
+
+    suelos gruesos).
+ · P disponible y K intercambiable del suelo.
+ · Ca, Mg y CE si el laboratorio lo reporta.
+ · Historial de lluvias y potencial de lixiviación.
+
+4.2. Recomendaciones fuertes basadas en suelo
+
+La recomendación más sólida para campo abierto es manejar P y K por análisis de suelo, y no por
+"receta fija". El esquema Mid-Atlantic 2024/2025 para pepino comercial resume muy bien esta
+lógica: N total de 80­150 lb/A ( 90­168 kg/ha), P2O5 de 150/100/50/0 lb/A ( 168/112/56/0 kg/ha)
+según el nivel de P del suelo, K2O de 200/150/100/0 lb/A ( 224/168/112/0 kg/ha) según el nivel de K
+del suelo, y S de 25­30 lb/A ( 28­34 kg/ha) para la mayoría de los suelos. [S1]
+
+Florida converge con esa lógica: UF/IFAS sostiene 150 lb/A de N ( 168 kg/ha) como objetivo general
+de trabajo y solo suma 120 lb/A de P2O5 y K2O ( 135 kg/ha de cada uno) cuando el suelo está en
+categorías muy bajas según Mehlich-1. [S2]
+
+Componente          Referencia fuerte           Conversión útil      Cómo leerlo en BIO-G
+
+N total estacional  80­150 lb/A [S1] · 150       90­168 kg/ha        Definir banda final
+                    lb/A como objetivo                               con textura, MO,
+                    clásico IFAS [S2]                                duración de cosecha y
+                                                                     riesgo de lixiviación.
+
+P2O5                150 / 100 / 50 / 0 lb/A      168 / 112 / 56 / 0  Nunca fijar una sola
+                    según suelo [S1]; 120       kg/ha                dosis universal de P.
+
+                                             3
+                                                               BIO-G · Guía técnica de fertilización del pepino
+
+Componente            Referencia fuerte            Conversión útil       Cómo leerlo en BIO-G
+
+                      lb/A solo en suelos
+                      muy bajos [S2]
+
+K2O                   200 / 150 / 100 / 0 lb/A      224 / 168 / 112 / 0  K sube de peso
+                      según suelo [S1]; 120        kg/ha                 conforme entra fruto;
+                      lb/A solo en suelos                                no subestimar su
+                      muy bajos [S2]                                     reposición.
+
+Azufre                25­30 lb/A [S1]               28­34 kg/ha          Mantenerlo en el plan,
+                                                                         sobre todo si no hay
+                                                                         sulfatos en otras
+                                                                         fuentes.
+
+Ca y Mg               Definir por análisis y       Sin dosis única       Vigilar cuando hay CE
+                      por antagonismos [S3]        confiable             alta, exceso de K o
+                      [S7]                                               fracción amoniacal
+                                                                         alta.
+
+Tabla 1. Recomendaciones fuertes de referencia para campo abierto. No sustituyen el reporte del laboratorio; lo ordenan.
+
+4.3. Traducción Bio-G para prioridades por etapa en campo abierto
+
+Aquí no conviene amarrar un solo número de ppm universales para todo el pepino. Lo correcto es
+usar metas analíticas separadas del comportamiento fisiológico. La etapa sí debe mover la
+prioridad relativa del nutriente:
+
+Etapa       N         P                            K                Secundarios    Enfoque
+                                                   Medio                           operativo
+Establecimient Medio  Alto                                          Ca/Mg bajos a
+                                                                    medios         Enraizamiento
+o                                                                                  , arranque y
+                                                                                   uniformidad.
+
+Vegetativo  Alto      Medio                        Medio­alto       S y Mg útiles  Construir hoja
+                      Alto                         Alto                            y tallo sin
+Floración   Medio                                                   Ca empieza a   sobrerreaccion
+                                                                    subir          ar con NH4.
+
+                                                                                   Sostener flor,
+                                                                                   cuaje y calidad
+                                                                                   de estructura.
+
+Cuajado     Medio     Medio                        Muy alto         Ca alto, Mg    Evitar aborto,
+                                                                    medio          deformación y
+                                                                                   estrés
+                                                                                   osmótico.
+
+Llenado y   Medio     Bajo­medio Muy alto                           Ca alto, S     Aquí el K y el
+primera                                                             medio          agua estable
+cosecha                                                                            dominan la
+                                                                                   calidad del
+
+                                                4
+                                                BIO-G · Guía técnica de fertilización del pepino
+
+Etapa  N                  P                 K       Secundarios Enfoque
+
+                                                    operativo
+
+                                                    fruto.
+
+Tabla 2. Traducción Bio-G v1 de prioridades por etapa para campo abierto. Esto es una guía de peso fisiológico, no una
+sustitución del análisis.
+
+4.4. Puntos finos que sí cambian decisiones
+
+ · Si el suelo es arenoso, con baja MO o con lluvias frecuentes, N y K deben fraccionarse más.
+ · Si el pH está por arriba del rango de trabajo, P, Fe, Zn y Mn se vuelven menos disponibles; si está
+
+    muy bajo, sube el riesgo de problemas con Mn y otras interacciones.
+ · Si el cultivo empieza a deformar frutos en forma de "botella" o "cuello", K y agua deben revisarse
+
+    al mismo tiempo; no es seguro culpar solo al riego o solo al fertilizante. [S3][S5][S7]
+ · Si hay exceso vegetativo, hojas muy oscuras y entrenudos cortos, revisar exceso de N antes de
+
+    seguir empujando el programa. [S7]
+
+5. Invernadero en suelo: guía de fertilización
+
+En pepino bajo invernadero en suelo, el núcleo del manejo cambia: el riego por goteo y la relación
+N/K a lo largo del ciclo pasan a ser la columna vertebral del programa. Aquí no se trata de "hacer
+hidroponía", sino de usar fertirriego en suelo con análisis de agua, pH, CE y seguimiento del bulbo
+húmedo.
+
+5.1. Hallazgos fuertes para invernadero en suelo
+
+ · INIFAP destaca que la relación N/K evoluciona durante el ciclo: alrededor de 1:0.7 desde
+    trasplante hasta semana 4­5; cerca de 1:1 hasta el inicio del engorde del fruto; y hasta 1:3 en la
+    fase productiva. [S4]
+
+ · El mismo documento subraya que P pesa especialmente en enraizamiento y floración, mientras
+    que Ca sostiene calidad y defensa de la planta, y Fe/Mn influyen en color y vigor. [S4]
+
+ · Los manuales de invernadero y extensión coinciden en que el pepino de ambiente protegido
+    exige una humedad del suelo más estable que en campo y responde con rapidez a desequilibrios
+    de CE, agua y K. [S4][S5][S6]
+
+5.2. Relación N/K recomendada a lo largo del ciclo
+
+Tramo del ciclo           Relación orientativa      Interpretación
+Trasplante a semana 4­5   N:K  1:0.7                Se construye planta y raíz sin
+                                                    empujar K de forma excesiva.
+Semana 5 hasta inicio de  N:K  1:1
+engorde                                             Se equilibra estructura con
+                                                    transición reproductiva.
+
+Engorde y producción      N:K hasta 1:3             K domina la etapa productiva;
+continua                                            Ca debe acompañar para
+                                                    sostener calidad.
+
+                                         5
+                                              BIO-G · Guía técnica de fertilización del pepino
+
+Tabla 3. Relación N/K en pepino protegido según INIFAP. Úsese como guía de fertigación en suelo, no como receta ciega. [S4]
+
+5.3. Referencia de fertirriego por etapa (meq/L) para pepino protegido en
+suelo
+
+INIFAP publica una secuencia muy útil por fenología y quincena. Para BIO-G conviene sintetizarla
+por bloques operativos:
+
+Etapa          N         P2O5        K2O      CaO      MgO
+
+Desarrollo     5.7       0.8         2.1      1.0      0.0
+
+vegetativo
+
+Floración      7.9       1.3         3.9      3.7      1.2
+                         0.7         3.0      3.9      1.3
+Llenado de     6.7
+                         1.1­1.4     3.0­3.5  2.5­3.6  0.5­0.8
+fruto
+
+Cosecha        8.8­11.9
+temprana (4ª­
+6ª quincena)
+
+Cosecha plena 12.5­15.6  0.0­1.4     3.7­4.6  3.7­4.7  0.5­0.9
+(7ª­11ª
+quincena)
+
+Tabla 4. Síntesis por etapa de los requerimientos sugeridos por INIFAP para pepino protegido. Las unidades de la fuente son
+meq/L. [S4]
+
+5.4. Cómo traducirlo operativamente en BIO-G
+
+ · No convertir estos meq/L en una sola dosis fija por hectárea sin pasar antes por caudal, lámina
+    de riego, fuente fertilizante, calidad del agua y análisis del suelo.
+
+ · Sí usarlos para gobernar la curva del programa: K y Ca deben ganar peso con claridad desde
+    floración/cuajado hacia cosecha.
+
+ · Si la CE del bulbo sube y el cultivo empieza a deformar fruto o a perder turgencia en horas
+    críticas, primero revisar agua efectiva, salinidad y balance K/Ca/Mg antes de "subir más N".
+
+ · En invernadero el diagnóstico siempre debe ser de sistema: agua + suelo + tejido + clima + carga
+    de fruto.
+
+6. Análisis foliar y verificación del programa
+
+El análisis foliar no reemplaza al análisis de suelo; lo verifica. También ayuda a separar un
+desorden nutricional de un problema causado por enfermedad, plaga, fitotoxicidad o riego. El
+material técnico suplementario aportado para esta revisión advierte que el diagnóstico visual por sí
+solo puede confundir, y que el análisis foliar sirve para confirmar y corregir. [S7]
+
+Punto clave: las bandas de suficiencia cambian con la hoja muestreada, la etapa y el laboratorio.
+Por eso deben leerse siempre junto con el protocolo de muestreo.
+
+                                  6
+                                    BIO-G · Guía técnica de fertilización del pepino
+
+6.1. Campo abierto: referencia práctica de control en primera floración
+
+Nutriente                Rango de referencia
+N                        3.5­6.0 %
+
+P                        0.3­0.6 %
+
+K                        1.6­3.0 %
+
+Ca                       2.0­4.0 %
+
+Mg                       0.5­0.7 %
+
+S                        0.3­0.8 %
+
+Tabla 5. Valores críticos de tejido para hojas recientemente maduras en primera floración según recomendaciones
+comerciales del Mid-Atlantic. [S1]
+
+6.2. Invernadero: rangos normales de tejido y referencia de solución
+
+Nutriente  Tejido (rango normal)    Referencia de solución /
+                                    apoyo
+N          4.2­5.6 %                150­200 ppm [S5]
+P          0.6­0.9 %
+                                     50 ppm [S5]
+
+K          3.2­4.5 %                300­500 ppm [S5]
+
+Ca         2.2­2.4 %                150­300 ppm [S5]
+
+Mg         0.4­0.7 %                 50 ppm [S5]
+
+S          0.3­0.6 %                50­200 ppm [S5]
+
+Tabla 6. Rango normal de tejido para invernadero (texto técnico suplementario aportado por el usuario) y rangos de solución
+coincidentes reportados por Alabama Extension. [S5][S7]
+
+Notas críticas sobre interpretación foliar
+· Las hojas asperjadas con fungicidas o fertilizantes con Cu, Zn o Mn pueden dar resultados
+engañosos para esos elementos.
+· El Fe foliar no siempre es guía confiable de deficiencia por contaminación superficial,
+inmovilidad y hierro fisiológicamente inactivo.
+· En pepino, el protocolo de muestreo importa mucho: no mezclar tejidos jóvenes, viejos y hojas
+tratadas.
+
+Nota técnica consolidada a partir del material suplementario aportado por el usuario. [S7]
+
+                      7
+                                                                                                              BIO-G · Guía técnica de fertilización del pepino
+
+7. Deficiencias, excesos y antagonismos que sí vale la pena
+vigilar
+
+7.1. Macronutrientes y secundarios más sensibles
+
+Nitrógeno (N): Deficiencia: hojas viejas verde pálido a amarillas, crecimiento débil, frutos pálidos o
+deformes. Exceso: crecimiento blando o demasiado vegetativo, hojas oscuras, menos flores y frutos
+pequeños. [S7]
+Fósforo (P): Deficiencia: raíces débiles, crecimiento atrofiado, hojas pequeñas, oscuras y opacas; su
+mayor papel práctico está en establecimiento y floración. [S4][S7]
+Potasio (K): Deficiencia: clorosis y quemado marginal en hojas viejas, marchitez más fácil, frutos
+deformes o con "cuello". Es el nutriente que más fácilmente se subestima en la fase productiva. [S3]
+[S4][S5][S7]
+Calcio (Ca): Problemas de Ca suelen dispararse por ambiente, salinidad, anoxia, exceso de K o NH4
+y enfermedades de raíz; no siempre por falta absoluta de Ca en el suelo. Síntomas: hojas jóvenes
+deformadas, bordes quemados, aborto floral y punto de crecimiento afectado. [S7]
+Magnesio (Mg): Deficiencia clásica: clorosis intervenal en hojas viejas; se agrava con programas
+altos en K, N amoniacal o Ca. [S3][S7]
+Boro (B): Margen muy estrecho entre deficiencia y toxicidad; deficiencia: hojas nuevas
+deformadas, muerte del punto de crecimiento y aborto de frutos; exceso: necrosis marginal y
+clorosis. [S7]
+
+7.2. Antagonismos que deben quedar explícitos en el producto
+
+ · NH4 alto  puede reducir absorción de K y empeorar el equilibrio catiónico. [S3][S7]
+ · K alto  puede inducir o agravar deficiencia de Mg y dificultar el manejo de Ca. [S7]
+ · pH alto  baja disponibilidad de P, Fe, Zn y Mn; pH muy bajo  sube riesgo de toxicidad por Mn
+
+    y otros desbalances.
+ · CE alta + riego irregular + K/Ca mal balanceados  más deformación de fruto y peor calidad.
+
+8. Recomendaciones directas para implementación en BIO-G
+
+ · Mantener nPriority / pPriority / kPriority como capa fisiológica y UX; no usarlos como meta
+    analítica dura.
+
+ · Crear metas analíticas por sistema y etapa de manera separada: campo abierto por suelo;
+    invernadero en suelo por análisis de suelo + agua + relación N/K y seguimiento foliar.
+
+ · Hacer que P y K cambien según buckets de laboratorio, no según etapa solamente.
+ · En invernadero, modelar explícitamente la evolución N/K y el papel de Ca desde floración en
+
+    adelante.
+ · Añadir una capa de verificación foliar con protocolo claro de muestreo, y avisar cuando
+
+    resultados de Cu/Zn/Mn/Fe pueden estar sesgados por aspersiones o contaminación.
+
+                                                                                        8
+                                                                                                              BIO-G · Guía técnica de fertilización del pepino
+
+ · No forzar una sola receta de ppm universales para todo pepino. El sistema debe explicar la
+    lógica, no esconderla.
+
+ Decisión editorial recomendada para BIO-G
+ Para pepino, el producto queda más sólido si la guía muestra con honestidad tres capas: (1)
+ prioridad por etapa; (2) referencia analítica por sistema; y (3) acción correctiva. Eso evita repetir
+ el error de mezclar índices internos con metas agronómicas reales.
+
+9. Conclusión ejecutiva
+
+Sí se puede cerrar una guía de fertilización de pepino confiable para BIO-G, siempre que se
+respeten cuatro principios: suelo primero, agua siempre, K en serio y Ca/Mg sin descuidar. En
+campo abierto, P y K deben ser dirigidos por laboratorio; en invernadero en suelo, la relación N/K y
+la calidad del fertirriego deben gobernar la curva del programa. El pepino no castiga solo la
+escasez; también castiga el exceso y el desequilibrio.
+La mejor base técnica para el producto es: campo abierto con recomendaciones guiadas por suelo;
+invernadero en suelo con relación N/K escalonada, seguimiento foliar y lectura de CE/pH. Bajo esa
+lógica, esta guía sí puede servir como documento base para construir la capa de fertilización del
+pepino sin meter hidroponía ni complejidades que aún no pertenecen al producto.
+
+Fuentes
+
+ [S1] Mid-Atlantic Commercial Vegetable Production Recommendations 2024/2025 ­ Cucumbers.
+ University of Delaware / Rutgers / Penn State / Virginia Tech / others. Documento técnico para
+ producción comercial.
+
+ [S2] Hochmuth, G. et al. A Summary of N, P, and K Research with Cucumber in Florida. UF/IFAS,
+ Florida.
+
+ [S3] Valenzuela, H. & Kratky, B. Field Cucumber Production Guidelines for Hawaii. CTAHR,
+ University of Hawai`i.
+
+ [S4] Producción de pimiento, chile habanero y pepino en casa malla. INIFAP, México.
+
+ [S5] Greenhouse Cucumber Production. Alabama Cooperative Extension System.
+
+ [S6] Manual de Producción de Pepino Bajo Invernadero. Universidad Jorge Tadeo Lozano,
+ Colombia. Documento aportado para esta revisión.
+
+ [S7] Referencia técnica suplementaria aportada por el usuario, con tablas de análisis foliar y
+ descripción de síntomas/carencias. Se utilizó como apoyo y contraste, no como única fuente
+ principal.
+
+       [S1] URL: https://www.udel.edu/content/dam/udelImages/canr/pdfs/extension/sustainable-agriculture/commericial-
+       veg-recommendations/2024-cucumbers.pdf
+
+                                                                                        9
+                                                                                                       BIO-G · Guía técnica de fertilización del pepino
+[S2] URL: https://ask.ifas.ufl.edu/publication/CV226
+[S3] URL: https://www.ctahr.hawaii.edu/oc/freepubs/pdf/RES-151.pdf
+[S4] URL: https://vun.inifap.gob.mx/VUN_MEDIA/BibliotecaWeb/_media/_publicacionespecial/
+3111_4754_Producci%C3%B3n_de_pimiento_chile_habanero_y_pepino_en_casa_malla.pdf
+[S5] URL: https://www.aces.edu/wp-content/uploads/2022/09/ANR-2926_GreenhouseCucumberProduction_091422L-
+G.pdf
+
+                                                                                10

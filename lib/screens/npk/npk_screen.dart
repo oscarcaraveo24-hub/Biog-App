@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
+import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -18,6 +19,17 @@ enum InsightTone { ok, warn, bad }
 
 class NpkScreen extends StatelessWidget {
   const NpkScreen({super.key});
+
+  AgroMetricKey _metricKeyFor(NpkChannel ch) {
+    switch (ch) {
+      case NpkChannel.n:
+        return AgroMetricKey.n;
+      case NpkChannel.p:
+        return AgroMetricKey.p;
+      case NpkChannel.k:
+        return AgroMetricKey.k;
+    }
+  }
 
   int _roundInt(double v) => v.isNaN ? 0 : v.round();
 
@@ -35,23 +47,10 @@ class NpkScreen extends StatelessWidget {
   }
 
   double _ppmCap(NpkChannel ch, {required String? cropKey}) {
-    final AgroMetricKey metricKey = switch (ch) {
-      NpkChannel.n => AgroMetricKey.n,
-      NpkChannel.p => AgroMetricKey.p,
-      NpkChannel.k => AgroMetricKey.k,
-    };
-
-    return NpkCaps.forCropMetric(cropKey: cropKey, metricKey: metricKey);
-  }
-
-  int _indexToPpm(
-    NpkChannel ch,
-    double index0to100, {
-    required String? cropKey,
-  }) {
-    final cap = _ppmCap(ch, cropKey: cropKey);
-    final v = (index0to100.clamp(0.0, 100.0) / 100.0) * cap;
-    return v.round();
+    return NpkCaps.forCropMetric(
+      cropKey: cropKey,
+      metricKey: _metricKeyFor(ch),
+    );
   }
 
   double _ppmToGauge01(NpkChannel ch, double ppm, {required String? cropKey}) {
@@ -110,27 +109,16 @@ class NpkScreen extends StatelessWidget {
     }
   }
 
-  _NpkBand _bandFromPpmUsingIndexRange({
-    required NpkChannel ch,
+  _NpkBand _bandFromPpmUsingComparableRange({
     required double ppm,
-    required AgroRange indexRange,
-    required String? cropKey,
+    required AgroRange comparableRange,
   }) {
-    final cap = _ppmCap(ch, cropKey: cropKey);
-
-    double t(double idx) => (idx.clamp(0.0, 100.0) / 100.0) * cap;
-
-    final lowMax = t(indexRange.lowMax);
-    final optMin = t(indexRange.optimalMin);
-    final optMax = t(indexRange.optimalMax);
-    final highMin = t(indexRange.highMin);
-
     if (!ppm.isFinite) return _NpkBand.unknown;
 
-    if (ppm < lowMax) return _NpkBand.critical;
-    if (ppm < optMin) return _NpkBand.low;
-    if (ppm <= optMax) return _NpkBand.optimal;
-    if (ppm <= highMin) return _NpkBand.high;
+    if (ppm < comparableRange.lowMax) return _NpkBand.critical;
+    if (ppm < comparableRange.optimalMin) return _NpkBand.low;
+    if (ppm <= comparableRange.optimalMax) return _NpkBand.optimal;
+    if (ppm <= comparableRange.highMin) return _NpkBand.high;
     return _NpkBand.critical;
   }
 
@@ -216,33 +204,29 @@ class NpkScreen extends StatelessWidget {
     final trendPct = _trendPctFromSeries(series);
     final gaugePercent = _ppmToGauge01(channel, level, cropKey: cropKey);
 
-    final rIndex = (!allowStageInterpretation || targets == null)
+    final comparableRange = (!allowStageInterpretation || targets == null)
         ? null
-        : switch (channel) {
-            NpkChannel.n => targets.nIndex,
-            NpkChannel.p => targets.pIndex,
-            NpkChannel.k => targets.kIndex,
-          };
+        : NutrientTargetRangeResolver.comparableRange(
+            nutrient: _metricKeyFor(channel),
+            cropKey: cropKey,
+            targets: targets,
+          );
 
-    final targetMinPpm = (rIndex == null)
-        ? null
-        : _indexToPpm(channel, rIndex.optimalMin, cropKey: cropKey);
+    final targetMinPpm =
+        comparableRange == null ? null : comparableRange.optimalMin.round();
 
-    final targetMaxPpm = (rIndex == null)
-        ? null
-        : _indexToPpm(channel, rIndex.optimalMax, cropKey: cropKey);
+    final targetMaxPpm =
+        comparableRange == null ? null : comparableRange.optimalMax.round();
 
     final capPpm = _ppmCap(channel, cropKey: cropKey).round();
 
     final _NpkBand band = evalMetric != null
         ? _bandFromAgroBand(evalMetric.band)
-        : (rIndex == null)
+        : (comparableRange == null)
         ? _NpkBand.unknown
-        : _bandFromPpmUsingIndexRange(
-            ch: channel,
+        : _bandFromPpmUsingComparableRange(
             ppm: level,
-            indexRange: rIndex,
-            cropKey: cropKey,
+            comparableRange: comparableRange,
           );
 
     final String bandLabel =
@@ -1150,30 +1134,43 @@ class _TargetLinePpm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasTargets = showTargets && minPpm != null && maxPpm != null;
     final text = windowLabel.isEmpty
-        ? ((!showTargets || minPpm == null || maxPpm == null)
-              ? 'Ventana actual: no disponible'
-              : 'Referencia heredada: $minPpm–$maxPpm mg/kg')
-        : 'Ventana actual: $windowLabel';
+        ? (hasTargets
+              ? 'Objetivo etapa: $minPpm–$maxPpm mg/kg'
+              : 'Ventana actual: no disponible')
+        : (hasTargets
+              ? 'Ventana actual: $windowLabel · Objetivo: $minPpm–$maxPpm mg/kg'
+              : 'Ventana actual: $windowLabel');
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.timeline_rounded,
-          size: 16,
-          color: accent.withValues(alpha: 0.70),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 12.0,
-            fontWeight: FontWeight.w900,
-            color: Colors.black.withValues(alpha: 0.55),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(
+              Icons.timeline_rounded,
+              size: 16,
+              color: accent.withValues(alpha: 0.70),
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              softWrap: true,
+              style: TextStyle(
+                fontSize: 12.0,
+                fontWeight: FontWeight.w900,
+                color: Colors.black.withValues(alpha: 0.55),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

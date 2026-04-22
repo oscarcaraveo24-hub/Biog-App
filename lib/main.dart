@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bio_g/bootstrap_gate.dart';
 
+import 'package:bio_g/bootstrap_gate.dart';
 import 'package:bio_g/core/config/supabase_config.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
-import 'package:bio_g/services/biog/fake_biog_repository.dart';
+import 'package:bio_g/services/biog/hybrid_biog_repository.dart';
 import 'package:bio_g/theme/app_theme.dart';
 
 Future<void> main() async {
@@ -19,21 +19,29 @@ Future<void> main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(_kBioGOverlays);
 
-  final repo = FakeBioGRepository();
+  // ---------------------------------------------------------------------------
+  // Runtime wiring — hybrid architecture
+  // ---------------------------------------------------------------------------
+  //
+  // Identity (devices, memberships, active device, crop context,
+  // yield config) now lives in a REAL layer backed by Supabase with an
+  // offline-first local cache.
+  //
+  // The sensor simulator is the ONLY temporary fake component in the
+  // runtime and is scoped to live telemetry / short history / alerts
+  // for whichever devices identity owns. When real hardware arrives,
+  // the simulator is the single replacement point.
+  //
+  // BootstrapGate is responsible for calling `store.bindUser(...)` on
+  // every auth-state change so that device identity and crop context
+  // stay scoped to the authenticated user.
+  final repo = HybridBioGRepository();
   final store = BioGStore(repo);
 
-  // Carga primero el contexto persistido por dispositivo (local → Supabase fallback).
+  // Load local-only state first so the UI has something to render
+  // immediately. Remote hydration happens in `BioGStore.bindUser` once
+  // an authenticated session is available.
   await store.init();
-
-  // Ya con el store hidratado, conectamos el resolver legacy
-  // que sigue usando el repo fake.
-  repo.attachSeedResolver((deviceId) => store.seedInstallForDevice(deviceId));
-
-  // Carga historial persistido (local → Supabase fallback).
-  await repo.loadPersistedHistory();
-
-  // Arrancamos el motor — sync siempre activa.
-  repo.start();
 
   runApp(BioGScope(store: store, child: const BioGApp()));
 }

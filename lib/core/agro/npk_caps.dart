@@ -19,13 +19,47 @@ class NpkCaps {
             return 80.0;
           case 'barley':
             return 100.0;
+          // Tomate demanda alta pero es sensible a exceso vegetativo.
+          // Cap ligeramente más alto para no clasificar como "exceso" una
+          // lectura que en hortaliza sigue siendo operativa.
+          case 'tomato':
+          case 'tomate':
+          case 'jitomate':
+            return 130.0;
+          case 'cucumber':
+          case 'pepino':
+            return 130.0;
           default:
             return 120.0;
         }
       case AgroMetricKey.p:
-        return 80.0;
+        switch (normalizedCropKey) {
+          // Tomate requiere P starter alto en establecimiento (anclaje
+          // de trasplante) y sostenido hasta cuajado.
+          case 'tomato':
+          case 'tomate':
+          case 'jitomate':
+            return 90.0;
+          case 'cucumber':
+          case 'pepino':
+            return 90.0;
+          default:
+            return 80.0;
+        }
       case AgroMetricKey.k:
-        return 140.0;
+        switch (normalizedCropKey) {
+          // Tomate tolera y responde a K muy alto (Brix, firmeza, color).
+          // Lecturas de 200+ mg/kg son productivas, no tóxicas.
+          case 'tomato':
+          case 'tomate':
+          case 'jitomate':
+            return 200.0;
+          case 'cucumber':
+          case 'pepino':
+            return 210.0;
+          default:
+            return 140.0;
+        }
       default:
         return 100.0;
     }

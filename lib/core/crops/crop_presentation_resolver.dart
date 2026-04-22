@@ -2,6 +2,8 @@ import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
+import 'package:bio_g/widgets/seeds/cucumber_profiles.dart';
+import 'package:bio_g/widgets/seeds/tomato_profiles.dart';
 
 class CropPresentationData {
   final bool hasConfiguredCrop;
@@ -49,6 +51,29 @@ class CropPresentationResolver {
   static const String _wheatIconAsset = 'assets/icons/wizard/ic_trigo.png';
   static const String _barleyIconAsset = 'assets/icons/wizard/ic_cebada.png';
   static const String _oatIconAsset = 'assets/icons/wizard/ic_avena.png';
+  static const String _tomatoIconAsset = 'assets/icons/wizard/ic_tomate.png';
+  static const String _cucumberIconAsset =
+      'assets/icons/wizard/ic_cucumber.png';
+  static const String _cucumberSlicerIconAsset =
+      'assets/icons/wizard/ic_cucumber_slicer.png';
+  static const String _cucumberEnglishProtectedIconAsset =
+      'assets/icons/wizard/ic_cucumber_english_protected.png';
+  static const String _cucumberPersianMiniIconAsset =
+      'assets/icons/wizard/ic_cucumber_persian_mini.png';
+  static const String _cucumberCornichonPicklingIconAsset =
+      'assets/icons/wizard/ic_cucumber_cornichon_pickling.png';
+  static const String _tomatoGenericIconAsset =
+      'assets/icons/wizard/ic_tomate_generico.png';
+  static const String _tomatoBolaIconAsset =
+      'assets/icons/wizard/ic_tomate_bola.png';
+  static const String _tomatoCherryIconAsset =
+      'assets/icons/wizard/ic_tomate_cherry.png';
+  static const String _tomatoRacimoIconAsset =
+      'assets/icons/wizard/ic_tomate_racimo.png';
+  static const String _tomatoSaladetteOpenIconAsset =
+      'assets/icons/wizard/ic_tomate_saladette_campo_abierto.png';
+  static const String _tomatoSaladetteProtectedIconAsset =
+      'assets/icons/wizard/ic_tomate_saladette_protegido.png';
 
   static CropPresentationData resolve({
     required DeviceCropContext? cropContext,
@@ -219,9 +244,123 @@ class CropPresentationResolver {
         return _barleyIconAsset;
       case CropCatalog.oatCropId:
         return _oatIconAsset;
+      case CropCatalog.tomatoCropId:
+        return _resolveTomatoIcon(rawVarietyValue);
+      case CropCatalog.cucumberCropId:
+        return _resolveCucumberIcon(rawVarietyValue);
       default:
         return _genericPlantIconAsset;
     }
+  }
+
+  static String _resolveTomatoIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return _tomatoIconAsset;
+
+    final canonical = resolveCanonicalTomatoProfileId(raw);
+    switch (canonical) {
+      case kTm01:
+        return _tomatoSaladetteOpenIconAsset;
+      case kTm02:
+        return _tomatoSaladetteProtectedIconAsset;
+      case kTm03:
+        return _tomatoBolaIconAsset;
+      case kTm04:
+        return _tomatoCherryIconAsset;
+      case kTm05:
+        return _tomatoRacimoIconAsset;
+      case kTmGen:
+        return _tomatoGenericIconAsset;
+    }
+
+    final normalized = raw.toLowerCase();
+    if (normalized.contains('cherry') || normalized.contains('uva')) {
+      return _tomatoCherryIconAsset;
+    }
+    if (normalized.contains('bola') ||
+        normalized.contains('redondo') ||
+        normalized.contains('beef')) {
+      return _tomatoBolaIconAsset;
+    }
+    if (normalized.contains('racimo') ||
+        normalized.contains('tov') ||
+        normalized.contains('truss')) {
+      return _tomatoRacimoIconAsset;
+    }
+    if (normalized.contains('saladette') ||
+        normalized.contains('roma') ||
+        normalized.contains('pera')) {
+      if (normalized.contains('protegido') ||
+          normalized.contains('invernadero') ||
+          normalized.contains('malla')) {
+        return _tomatoSaladetteProtectedIconAsset;
+      }
+      return _tomatoSaladetteOpenIconAsset;
+    }
+    if (normalized.contains('gen')) return _tomatoGenericIconAsset;
+    return _tomatoIconAsset;
+  }
+
+  static String _resolveCucumberIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return _cucumberIconAsset;
+
+    final canonical = resolveCanonicalCucumberProfileId(raw);
+    switch (canonical) {
+      case kPe01:
+        return _cucumberSlicerIconAsset;
+      case kPe02:
+        return _cucumberEnglishProtectedIconAsset;
+      case kPe03:
+        return _cucumberPersianMiniIconAsset;
+      case kPe04:
+        return _cucumberCornichonPicklingIconAsset;
+      case kPeGen:
+        return _cucumberIconAsset;
+    }
+
+    final variety = CropCatalog.varietyByAny(CropCatalog.cucumberCropId, raw);
+    switch (variety?.id) {
+      case 'cucumber_slicer_ca':
+        return _cucumberSlicerIconAsset;
+      case 'cucumber_european_protected':
+        return _cucumberEnglishProtectedIconAsset;
+      case 'cucumber_persian':
+        return _cucumberPersianMiniIconAsset;
+      case 'cucumber_pickler':
+        return _cucumberCornichonPicklingIconAsset;
+      case 'cucumber_generic':
+        return _cucumberIconAsset;
+    }
+
+    final normalized = raw.toLowerCase();
+    if (normalized.contains('pickler') ||
+        normalized.contains('cornichon') ||
+        normalized.contains('cornichÃ³n') ||
+        normalized.contains('encurtido') ||
+        normalized.contains('pepinillo')) {
+      return _cucumberCornichonPicklingIconAsset;
+    }
+    if (normalized.contains('persa') ||
+        normalized.contains('persian') ||
+        normalized.contains('mini') ||
+        normalized.contains('beit')) {
+      return _cucumberPersianMiniIconAsset;
+    }
+    if (normalized.contains('slicer') ||
+        normalized.contains('americano') ||
+        normalized.contains('criollo')) {
+      return _cucumberSlicerIconAsset;
+    }
+    if (normalized.contains('europeo') ||
+        normalized.contains('ingles') ||
+        normalized.contains('inglÃ©s') ||
+        normalized.contains('english') ||
+        normalized.contains('protegido')) {
+      return _cucumberEnglishProtectedIconAsset;
+    }
+    if (normalized.contains('gen')) return _cucumberIconAsset;
+    return _cucumberIconAsset;
   }
 
   static String _resolveMaizeIcon(String? rawVarietyValue) {

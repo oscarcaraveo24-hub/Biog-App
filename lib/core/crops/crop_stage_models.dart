@@ -16,6 +16,15 @@ class CropStageResult {
   /// Es opcional porque no todos los motores legacy lo exponían.
   final double? stageProgressPct;
 
+  /// Estado productivo complementario a la etapa dominante.
+  ///
+  /// Útil para cultivos con traslape (ej. tomate en cosechaProgresiva con
+  /// floración y cuajado simultáneos). Opcional; engines sin solape lo dejan null.
+  final String? productiveState;
+
+  /// Label corto en español del estado productivo, para UI.
+  final String? productiveStateLabelEs;
+
   const CropStageResult({
     required this.stageKey,
     required this.stageLabelEs,
@@ -25,5 +34,7 @@ class CropStageResult {
     this.helperCaption = '',
     this.daySinceSowing,
     this.stageProgressPct,
+    this.productiveState,
+    this.productiveStateLabelEs,
   });
 }

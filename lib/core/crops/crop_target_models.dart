@@ -13,7 +13,12 @@ class StageTargets {
     required this.pIndex,
     required this.kIndex,
 
-    // Nueva semántica NPK:
+    // Targets comparables de suelo (mg/kg / ppm).
+    this.nSoilPpmRange,
+    this.pSoilPpmRange,
+    this.kSoilPpmRange,
+
+    // Nueva semantica NPK:
     this.nPriority,
     this.pPriority,
     this.kPriority,
@@ -29,6 +34,16 @@ class StageTargets {
     this.nConfidence01,
     this.pConfidence01,
     this.kConfidence01,
+
+    // Nutrientes secundarios (aditivos, opcionales).
+    // Usados por cultivos que requieren sensibilidad explicita a Ca, Mg, S
+    // (por ejemplo, hortalizas como tomate). No rompen calculos existentes.
+    this.caPriority,
+    this.mgPriority,
+    this.sPriority,
+    this.caShortGuidanceEs,
+    this.mgShortGuidanceEs,
+    this.sShortGuidanceEs,
   });
 
   final AgroRange moistureRaw;
@@ -38,25 +53,33 @@ class StageTargets {
   final AgroRange resistance;
 
   /// Legacy:
-  /// Estos campos existían como índices interpretativos 0..100 orientados
-  /// a “estado/target” y hoy se mantienen para no romper el proyecto.
+  /// Estos campos existian como indices interpretativos 0..100 orientados
+  /// a "estado/target" y hoy se mantienen para no romper el proyecto.
   ///
   /// Nueva lectura recomendada:
-  /// usarlos temporalmente como proxy de presión / prioridad por etapa,
-  /// NO como “ppm óptimos universales”.
+  /// usarlos temporalmente como proxy de presion / prioridad por etapa,
+  /// NO como "ppm optimos universales".
   final AgroRange nIndex;
   final AgroRange pIndex;
   final AgroRange kIndex;
 
-  /// Nueva semántica:
-  /// presión / prioridad por etapa para cada nutriente (0..1).
+  /// Rangos comparables reales del suelo para N/P/K, en mg/kg (ppm).
   ///
-  /// Si vienen nulos, el engine puede derivarlos desde los índices legacy.
+  /// Cuando existen, el motor debe usar estos targets para comparar lectura
+  /// actual vs suficiencia de la etapa, sin traducir desde caps.
+  final AgroRange? nSoilPpmRange;
+  final AgroRange? pSoilPpmRange;
+  final AgroRange? kSoilPpmRange;
+
+  /// Nueva semantica:
+  /// presion / prioridad por etapa para cada nutriente (0..1).
+  ///
+  /// Si vienen nulos, el engine puede derivarlos desde los indices legacy.
   final double? nPriority;
   final double? pPriority;
   final double? kPriority;
 
-  /// Etiquetas de ventana fisiológica por nutriente.
+  /// Etiquetas de ventana fisiologica por nutriente.
   ///
   /// Ejemplos:
   /// - "Ventana de arranque"
@@ -66,17 +89,17 @@ class StageTargets {
   final String? pWindowLabelEs;
   final String? kWindowLabelEs;
 
-  /// Guía corta visible en cards, resumen o NPK screen.
+  /// Guia corta visible en cards, resumen o NPK screen.
   final String? nShortGuidanceEs;
   final String? pShortGuidanceEs;
   final String? kShortGuidanceEs;
 
-  /// Hint para el planner / lógica posterior de fertilización.
+  /// Hint para el planner / logica posterior de fertilizacion.
   ///
   /// Ejemplos:
-  /// - "Evaluar complemento si no se cubrió base"
-  /// - "Favorecer aplicación de arranque"
-  /// - "Vigilar partición y balance"
+  /// - "Evaluar complemento si no se cubrio base"
+  /// - "Favorecer aplicacion de arranque"
+  /// - "Vigilar particion y balance"
   final String? nPlannerHintEs;
   final String? pPlannerHintEs;
   final String? kPlannerHintEs;
@@ -85,6 +108,16 @@ class StageTargets {
   final double? nConfidence01;
   final double? pConfidence01;
   final double? kConfidence01;
+
+  /// Prioridad/presion por etapa (0..1) para nutrientes secundarios.
+  final double? caPriority;
+  final double? mgPriority;
+  final double? sPriority;
+
+  /// Guia corta opcional para nutrientes secundarios.
+  final String? caShortGuidanceEs;
+  final String? mgShortGuidanceEs;
+  final String? sShortGuidanceEs;
 
   /// Prioridad efectiva de N, con fallback legacy.
   double get resolvedNPriority01 =>
@@ -98,7 +131,7 @@ class StageTargets {
   double get resolvedKPriority01 =>
       _clamp01(kPriority ?? _legacyRangeToPriority(kIndex));
 
-  /// Devuelve la prioridad efectiva para la métrica dada.
+  /// Devuelve la prioridad efectiva para la metrica dada.
   double resolvedPriorityFor(AgroMetricKey key) {
     switch (key) {
       case AgroMetricKey.n:
@@ -126,7 +159,7 @@ class StageTargets {
     }
   }
 
-  /// Devuelve la guía corta si existe.
+  /// Devuelve la guia corta si existe.
   String? shortGuidanceFor(AgroMetricKey key) {
     switch (key) {
       case AgroMetricKey.n:
@@ -168,9 +201,93 @@ class StageTargets {
     }
   }
 
-  /// Helper de migración suave:
-  /// convierte el "centro" del rango legacy a una señal simple 0..1
-  /// de presión/prioridad por etapa.
+  /// Devuelve el rango comparable explicito de suelo (mg/kg) si existe.
+  AgroRange? soilPpmRangeFor(AgroMetricKey key) {
+    switch (key) {
+      case AgroMetricKey.n:
+        return nSoilPpmRange;
+      case AgroMetricKey.p:
+        return pSoilPpmRange;
+      case AgroMetricKey.k:
+        return kSoilPpmRange;
+      default:
+        return null;
+    }
+  }
+
+  StageTargets copyWith({
+    AgroRange? moistureRaw,
+    AgroRange? soilTemp,
+    AgroRange? ph,
+    AgroRange? ec,
+    AgroRange? resistance,
+    AgroRange? nIndex,
+    AgroRange? pIndex,
+    AgroRange? kIndex,
+    AgroRange? nSoilPpmRange,
+    AgroRange? pSoilPpmRange,
+    AgroRange? kSoilPpmRange,
+    double? nPriority,
+    double? pPriority,
+    double? kPriority,
+    String? nWindowLabelEs,
+    String? pWindowLabelEs,
+    String? kWindowLabelEs,
+    String? nShortGuidanceEs,
+    String? pShortGuidanceEs,
+    String? kShortGuidanceEs,
+    String? nPlannerHintEs,
+    String? pPlannerHintEs,
+    String? kPlannerHintEs,
+    double? nConfidence01,
+    double? pConfidence01,
+    double? kConfidence01,
+    double? caPriority,
+    double? mgPriority,
+    double? sPriority,
+    String? caShortGuidanceEs,
+    String? mgShortGuidanceEs,
+    String? sShortGuidanceEs,
+  }) {
+    return StageTargets(
+      moistureRaw: moistureRaw ?? this.moistureRaw,
+      soilTemp: soilTemp ?? this.soilTemp,
+      ph: ph ?? this.ph,
+      ec: ec ?? this.ec,
+      resistance: resistance ?? this.resistance,
+      nIndex: nIndex ?? this.nIndex,
+      pIndex: pIndex ?? this.pIndex,
+      kIndex: kIndex ?? this.kIndex,
+      nSoilPpmRange: nSoilPpmRange ?? this.nSoilPpmRange,
+      pSoilPpmRange: pSoilPpmRange ?? this.pSoilPpmRange,
+      kSoilPpmRange: kSoilPpmRange ?? this.kSoilPpmRange,
+      nPriority: nPriority ?? this.nPriority,
+      pPriority: pPriority ?? this.pPriority,
+      kPriority: kPriority ?? this.kPriority,
+      nWindowLabelEs: nWindowLabelEs ?? this.nWindowLabelEs,
+      pWindowLabelEs: pWindowLabelEs ?? this.pWindowLabelEs,
+      kWindowLabelEs: kWindowLabelEs ?? this.kWindowLabelEs,
+      nShortGuidanceEs: nShortGuidanceEs ?? this.nShortGuidanceEs,
+      pShortGuidanceEs: pShortGuidanceEs ?? this.pShortGuidanceEs,
+      kShortGuidanceEs: kShortGuidanceEs ?? this.kShortGuidanceEs,
+      nPlannerHintEs: nPlannerHintEs ?? this.nPlannerHintEs,
+      pPlannerHintEs: pPlannerHintEs ?? this.pPlannerHintEs,
+      kPlannerHintEs: kPlannerHintEs ?? this.kPlannerHintEs,
+      nConfidence01: nConfidence01 ?? this.nConfidence01,
+      pConfidence01: pConfidence01 ?? this.pConfidence01,
+      kConfidence01: kConfidence01 ?? this.kConfidence01,
+      caPriority: caPriority ?? this.caPriority,
+      mgPriority: mgPriority ?? this.mgPriority,
+      sPriority: sPriority ?? this.sPriority,
+      caShortGuidanceEs: caShortGuidanceEs ?? this.caShortGuidanceEs,
+      mgShortGuidanceEs: mgShortGuidanceEs ?? this.mgShortGuidanceEs,
+      sShortGuidanceEs: sShortGuidanceEs ?? this.sShortGuidanceEs,
+    );
+  }
+
+  /// Helper de migracion suave:
+  /// convierte el "centro" del rango legacy a una senal simple 0..1
+  /// de presion/prioridad por etapa.
   ///
   /// No significa suficiencia del suelo.
   static double _legacyRangeToPriority(AgroRange range) {
@@ -206,14 +323,14 @@ class StageWeights {
 
   /// Peso legacy combinado para NPK.
   ///
-  /// Si [n], [p] y [k] vienen nulos, este valor se reparte automáticamente
+  /// Si [n], [p] y [k] vienen nulos, este valor se reparte automaticamente
   /// entre los tres nutrientes para mantener compatibilidad.
   final double? npk;
 
-  /// Pesos explícitos por nutriente.
+  /// Pesos explicitos por nutriente.
   ///
   /// En el nuevo motor, estos pesan la prioridad/urgencia interpretada,
-  /// no un supuesto “estado óptimo”.
+  /// no un supuesto "estado optimo".
   final double? n;
   final double? p;
   final double? k;

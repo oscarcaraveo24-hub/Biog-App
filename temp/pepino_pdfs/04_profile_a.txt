@@ -1,0 +1,135 @@
+ PERFIL GENÉRICO PEPINO --
+
+PE-GEN (SKIP)
+
+Estado: OBLIGATORIO · CONSERVADOR · UNIVERSAL
+Se usa cuando el usuario:
+
+     no sabe si su pepino es americano, europeo, persa o pepinillo
+     no conoce la variedad
+     no encuentra su semilla en la lista
+     quiere avanzar rápido
+     tiene información incompleta
+
+ IDENTIDAD BASE
+
+     Cultivo: Pepino
+     Tipo: Genérico
+     Variedad: No especificada
+     Perfil Bio-G: PE-GEN -- Intermedio Conservador
+     Especie: Cucumis sativus L.
+     Órgano objetivo: Fruto
+
+ El usuario NO ve que está en SKIP.
+
+ FILOSOFÍA DEL PERFIL
+
+Este perfil NO busca máximo rendimiento ni longitud perfecta.
+Busca:
+
+     estabilidad del cultivo
+     protección del cuajado
+     alertas confiables
+     mínima probabilidad de error
+
+ PE-GEN prioriza floración, amarre y llenado temprano.
+
+ PARÁMETROS AGRONÓMICOS BASE
+
+(promedio real y conservador del pepino más común en México)
+     Uso: Fruto fresco (genérico)
+     Floración: 35 ­ 50 días
+     Inicio de cosecha: 55 ­ 75 días
+     Ciclo: Intermedio
+     Tipo de cosecha: Progresiva
+     Densidad típica: 25 ­ 35 mil plantas/ha
+     Arquitectura asumida: Enredadera (rastrera o tutorada)
+
+ PE-GEN NO asume:
+
+     tipo exacto (americano/europeo/persa/pickle)
+     sistema (campo/protegido)
+     longitud comercial
+     número de cortes
+
+ COMPORTAMIENTO FISIOLÓGICO ASUMIDO
+
+(CONSERVADOR)
+     Sensibilidad al frío: Alta
+     Sensibilidad al calor: Media­Alta
+     Sensibilidad a sequía: Alta
+     Sensibilidad a exceso de agua: Alta
+     Sensibilidad a salinidad: Media­Alta
+
+ Bio-G asume sensibilidad ligeramente alta porque el pepino responde rápido al
+
+estrés.
+
+ VENTANAS CRÍTICAS ACTIVAS (GENÉRICAS)
+
+     Agua:
+          pre-floración  floración  llenado temprano
+
+     Temperatura:
+          floración y cuajado
+
+     Suelo:
+          establecimiento
+          (compactación / anoxia)
+
+ En PE-GEN, floración y cuajado siempre son críticas.
+
+ ALERTAS ACTIVADAS (LENGUAJE HUMANO)
+     "Déficit hídrico en etapa crítica del pepino"
+     "Riesgo de aborto floral por estrés térmico"
+     "Frutos deformes por estrés hídrico o salinidad"
+     "Exceso de humedad: riesgo radicular"
+     "Suelo compactado limita absorción de agua"
+
+ Todas con ponderación intermedia, sin extremos.
+
+ COMPORTAMIENTO DEL SISTEMA (CLAVE)
+
+     PE-GEN migra automáticamente si el usuario después selecciona:
+               Tipo (americano, europeo, persa, pepinillo)
+               Variedad (semilla específica)
+
+Durante la migración:
+     Bio-G NO pierde memoria
+     Bio-G NO reinicia el cultivo
+     Bio-G solo recalcula calendario y ventanas
+
+ PE-GEN es una entrada segura, no un perfil definitivo.
+
+ CUÁNDO USAR PE-GEN
+
+ Usuario nuevo
+ No sabe el tipo de pepino
+ No encuentra su semilla
+ Datos incompletos
+ Quiere avanzar rápido
+ CUÁNDO NO USAR PE-GEN
+
+ Cuando el usuario:
+
+     selecciona un tipo de pepino
+     elige una variedad reconocida
+
+ En ese caso Bio-G activa PE-01 a PE-04, no PE-GEN.
+
+ FRASE DE CIERRE (PRODUCTO)
+
+        El perfil genérico no adivina, acompaña.
+Con PE-GEN:
+
+     el pepino queda cubierto
+     la UX nunca se rompe
+     el sistema es tolerante al error
+     Bio-G se siente humano y confiable
+
+ ESTADO DEL PERFIL
+
+     PE-GEN (SKIP PEPINO): CERRADO
+     Obligatorio en Bio-G
+     Compatible con todos los tipos de pepino
+     Base segura para migración posterior

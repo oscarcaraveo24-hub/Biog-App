@@ -22,6 +22,28 @@ class ConfigureSeedWizardAssets {
   static const String cropBarley = 'assets/icons/wizard/ic_cebada.png';
   static const String cropBean = 'assets/icons/wizard/ic_frijol.png';
   static const String cropOat = 'assets/icons/wizard/ic_avena.png';
+  static const String cropCucumber = 'assets/icons/wizard/ic_cucumber.png';
+  static const String cucumberSlicer =
+      'assets/icons/wizard/ic_cucumber_slicer.png';
+  static const String cucumberEnglishProtected =
+      'assets/icons/wizard/ic_cucumber_english_protected.png';
+  static const String cucumberPersianMini =
+      'assets/icons/wizard/ic_cucumber_persian_mini.png';
+  static const String cucumberCornichonPickling =
+      'assets/icons/wizard/ic_cucumber_cornichon_pickling.png';
+
+  /// Ícono principal del cultivo tomate (listas y encabezados).
+  static const String cropTomato = 'assets/icons/wizard/ic_tomate.png';
+
+  static const String tomatoGeneric =
+      'assets/icons/wizard/ic_tomate_generico.png';
+  static const String tomatoBola = 'assets/icons/wizard/ic_tomate_bola.png';
+  static const String tomatoCherry = 'assets/icons/wizard/ic_tomate_cherry.png';
+  static const String tomatoRacimo = 'assets/icons/wizard/ic_tomate_racimo.png';
+  static const String tomatoSaladetteOpen =
+      'assets/icons/wizard/ic_tomate_saladette_campo_abierto.png';
+  static const String tomatoSaladetteProtected =
+      'assets/icons/wizard/ic_tomate_saladette_protegido.png';
 
   static const String variety = 'assets/icons/wizard/ic_variedad.png';
 
@@ -86,6 +108,138 @@ class ConfigureSeedWizardAssets {
     }
 
     return beanPinto;
+  }
+
+  /// Resuelve el ícono por tipo de tomate. Los IDs canónicos son
+  /// tm_01..tm_05 y tm_gen; también se aceptan alias textuales comunes.
+  static String tomatoIconForVariety({String? varietyId, String? label}) {
+    switch (varietyId) {
+      case 'tm_01':
+        return tomatoSaladetteOpen;
+      case 'tm_02':
+        return tomatoSaladetteProtected;
+      case 'tm_03':
+        return tomatoBola;
+      case 'tm_04':
+        return tomatoCherry;
+      case 'tm_05':
+        return tomatoRacimo;
+      case 'tm_gen':
+        return tomatoGeneric;
+    }
+
+    final normalized = (label ?? '').trim().toLowerCase();
+    if (normalized.isEmpty) return tomatoGeneric;
+
+    if (normalized.contains('cherry') || normalized.contains('uva')) {
+      return tomatoCherry;
+    }
+    if (normalized.contains('bola') ||
+        normalized.contains('redondo') ||
+        normalized.contains('beef')) {
+      return tomatoBola;
+    }
+    if (normalized.contains('racimo') ||
+        normalized.contains('tov') ||
+        normalized.contains('truss')) {
+      return tomatoRacimo;
+    }
+    if (normalized.contains('saladette') ||
+        normalized.contains('roma') ||
+        normalized.contains('pera')) {
+      if (normalized.contains('protegido') ||
+          normalized.contains('invernadero') ||
+          normalized.contains('malla')) {
+        return tomatoSaladetteProtected;
+      }
+      return tomatoSaladetteOpen;
+    }
+    if (normalized.contains('gen')) return tomatoGeneric;
+    return tomatoGeneric;
+  }
+
+  static String cucumberIconForVariety({String? varietyId, String? label}) {
+    final normalizedId = (varietyId ?? '').trim().toLowerCase();
+    if (normalizedId.startsWith('cucumber_') || normalizedId.startsWith('pe')) {
+      return cropCucumber;
+    }
+
+    final normalized = (label ?? '').trim().toLowerCase();
+    if (normalized.contains('pepino') ||
+        normalized.contains('cucumber') ||
+        normalized.contains('slicer') ||
+        normalized.contains('europeo') ||
+        normalized.contains('ingles') ||
+        normalized.contains('inglés') ||
+        normalized.contains('persa') ||
+        normalized.contains('persian') ||
+        normalized.contains('pickler') ||
+        normalized.contains('pepinillo')) {
+      return cropCucumber;
+    }
+
+    return cropCucumber;
+  }
+
+  static String cucumberTypedIconForVariety({String? varietyId, String? label}) {
+    final normalizedId = (varietyId ?? '').trim().toLowerCase();
+
+    switch (normalizedId) {
+      case 'cucumber_slicer_ca':
+      case 'pe_01':
+      case 'pe-01':
+      case 'pe01':
+        return cucumberSlicer;
+      case 'cucumber_european_protected':
+      case 'pe_02':
+      case 'pe-02':
+      case 'pe02':
+        return cucumberEnglishProtected;
+      case 'cucumber_persian':
+      case 'pe_03':
+      case 'pe-03':
+      case 'pe03':
+        return cucumberPersianMini;
+      case 'cucumber_pickler':
+      case 'pe_04':
+      case 'pe-04':
+      case 'pe04':
+        return cucumberCornichonPickling;
+      case 'cucumber_generic':
+      case 'pe_gen':
+      case 'pe-gen':
+      case 'pegen':
+        return cropCucumber;
+    }
+
+    final normalized = (label ?? '').trim().toLowerCase();
+    if (normalized.contains('pickler') ||
+        normalized.contains('cornichon') ||
+        normalized.contains('cornichón') ||
+        normalized.contains('encurtido') ||
+        normalized.contains('pepinillo')) {
+      return cucumberCornichonPickling;
+    }
+    if (normalized.contains('persa') ||
+        normalized.contains('persian') ||
+        normalized.contains('mini') ||
+        normalized.contains('beit')) {
+      return cucumberPersianMini;
+    }
+    if (normalized.contains('slicer') ||
+        normalized.contains('americano') ||
+        normalized.contains('criollo')) {
+      return cucumberSlicer;
+    }
+    if (normalized.contains('europeo') ||
+        normalized.contains('ingles') ||
+        normalized.contains('inglés') ||
+        normalized.contains('english') ||
+        normalized.contains('protegido')) {
+      return cucumberEnglishProtected;
+    }
+
+    return cropCucumber;
   }
 
   static const String stagePlanned =

@@ -7,6 +7,7 @@ import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/agronomic_event.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
 import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart'; // <-- IMPORTANTE: Lo usamos para las dosis en vivo
+import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
@@ -558,16 +559,36 @@ class DashboardScreenPresenter {
     return 'Sigue preparando el suelo para la siembra';
   }
 
-  double _ppmCapFor({required String? cropKey, required AgroMetricKey key}) =>
-      NpkCaps.forCropMetric(cropKey: cropKey, metricKey: key);
-  double _toIndex0to100(
-    double ppm,
-    AgroMetricKey key, {
+  double _scoreNutrientAgainstTarget({
+    required double value,
+    required AgroMetricKey key,
     required String? cropKey,
-  }) => ((ppm / _ppmCapFor(cropKey: cropKey, key: key)) * 100.0).clamp(
-    0.0,
-    100.0,
-  );
+    required StageTargets targets,
+  }) {
+    final AgroRange? comparableRange = NutrientTargetRangeResolver.comparableRange(
+      nutrient: key,
+      cropKey: cropKey,
+      targets: targets,
+    );
+
+    if (comparableRange != null) {
+      return _scoreFromRawRange(value: value, range: comparableRange);
+    }
+
+    final double cap = NpkCaps.forCropMetric(cropKey: cropKey, metricKey: key);
+    final double index0to100 = cap <= 0
+        ? 0.0
+        : ((value / cap) * 100.0).clamp(0.0, 100.0);
+
+    final AgroRange legacyRange = switch (key) {
+      AgroMetricKey.n => targets.nIndex,
+      AgroMetricKey.p => targets.pIndex,
+      AgroMetricKey.k => targets.kIndex,
+      _ => targets.nIndex,
+    };
+
+    return _scoreFromIndexRange(index0to100: index0to100, range: legacyRange);
+  }
 
   String _labelFromRangeTuned({
     required double index0to100,
@@ -708,29 +729,23 @@ class DashboardScreenPresenter {
                       range: targets.resistance,
                     )) /
                 5.0) +
-            ((_scoreFromIndexRange(
-                          index0to100: _toIndex0to100(
-                            t.n.toDouble(),
-                            AgroMetricKey.n,
-                            cropKey: cropKey,
-                          ),
-                          range: targets.nIndex,
+            ((_scoreNutrientAgainstTarget(
+                          value: t.n.toDouble(),
+                          key: AgroMetricKey.n,
+                          cropKey: cropKey,
+                          targets: targets,
                         ) +
-                        _scoreFromIndexRange(
-                          index0to100: _toIndex0to100(
-                            t.p.toDouble(),
-                            AgroMetricKey.p,
-                            cropKey: cropKey,
-                          ),
-                          range: targets.pIndex,
+                        _scoreNutrientAgainstTarget(
+                          value: t.p.toDouble(),
+                          key: AgroMetricKey.p,
+                          cropKey: cropKey,
+                          targets: targets,
                         ) +
-                        _scoreFromIndexRange(
-                          index0to100: _toIndex0to100(
-                            t.k.toDouble(),
-                            AgroMetricKey.k,
-                            cropKey: cropKey,
-                          ),
-                          range: targets.kIndex,
+                        _scoreNutrientAgainstTarget(
+                          value: t.k.toDouble(),
+                          key: AgroMetricKey.k,
+                          cropKey: cropKey,
+                          targets: targets,
                         )) /
                     3.0) /
                 2.0)

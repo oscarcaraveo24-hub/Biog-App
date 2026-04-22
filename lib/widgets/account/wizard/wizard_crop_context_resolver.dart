@@ -3,8 +3,10 @@ import 'package:bio_g/core/crops/maize/maize_catalog.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/widgets/seeds/barley_profiles.dart';
 import 'package:bio_g/widgets/seeds/bean_profiles.dart';
+import 'package:bio_g/widgets/seeds/cucumber_profiles.dart';
 import 'package:bio_g/widgets/seeds/maize_profiles.dart';
 import 'package:bio_g/widgets/seeds/oat_profiles.dart';
+import 'package:bio_g/widgets/seeds/tomato_profiles.dart';
 import 'package:bio_g/widgets/seeds/wheat_profiles.dart';
 
 class WizardCropContextResolver {
@@ -213,6 +215,20 @@ class WizardCropContextResolver {
     if (cropId == CropCatalog.wheatCropId) {
       if (varietyAlias != null && varietyAlias.isNotEmpty) {
         return resolveCanonicalWheatProfileId(varietyAlias);
+      }
+      return null;
+    }
+
+    if (cropId == CropCatalog.tomatoCropId) {
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalTomatoProfileId(varietyAlias);
+      }
+      return null;
+    }
+
+    if (cropId == CropCatalog.cucumberCropId) {
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalCucumberProfileId(varietyAlias);
       }
       return null;
     }

@@ -80,6 +80,8 @@ flutter:
     - assets/seeds/Maize/
     - assets/seeds/barley/
     - assets/seeds/wheat/
+    - assets/seeds/tomato/
+    - assets/seeds/cucumber/
     
   fonts:
     - family: Inter

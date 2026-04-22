@@ -577,6 +577,22 @@ class SeedsScreenLayout {
   static const String oatIconAsset = 'assets/icons/wizard/ic_avena.png';
   static const double oatIconScale = 2.65;
 
+  static const String tomatoIconAsset = 'assets/icons/wizard/ic_tomate.png';
+  static const double tomatoIconScale = 2.55;
+
+  static const String cucumberIconAsset = 'assets/icons/wizard/ic_cucumber.png';
+  static const double cucumberIconScale = 2.55;
+  static const List<String> cucumberHeroFallbackAssets = <String>[
+    'assets/seeds/cucumber/cucumber_stage_flowering.png',
+    'assets/seeds/cucumber/cucumber_stage_vegetative.png',
+    'assets/seeds/cucumber/cucumber_stage_fruit_set.png',
+    'assets/seeds/cucumber/cucumber_stage_fruit_fill.png',
+    'assets/seeds/cucumber/cucumber_stage_progressive_harvest.png',
+    'assets/seeds/cucumber/cucumber_stage_establishment.png',
+    'assets/seeds/cucumber/cucumber_stage_germination.png',
+    'assets/seeds/cucumber/cucumber_stage_senescence.png',
+  ];
+
   static const String bgAsset = 'assets/images/bg_image_seeds.png';
   static const double topBgHeightFactor = 1.0;
   static const double topBgDy = -20;
@@ -728,6 +744,8 @@ class SeedsScreenLogic {
         return 'Cebada';
       case 'oat':
         return 'Avena';
+      case 'cucumber':
+        return 'Pepino';
       case '':
         return 'Cultivo';
       default:
@@ -862,6 +880,10 @@ class SeedsScreenLogic {
           return SeedsScreenLayout.barleyIconAsset;
         case CropCatalog.oatCropId:
           return SeedsScreenLayout.oatIconAsset;
+        case CropCatalog.tomatoCropId:
+          return SeedsScreenLayout.tomatoIconAsset;
+        case CropCatalog.cucumberCropId:
+          return SeedsScreenLayout.cucumberIconAsset;
         default:
           return SeedsScreenLayout.genericPlantIconAsset;
       }
@@ -878,6 +900,10 @@ class SeedsScreenLogic {
         return SeedsScreenLayout.barleyIconAsset;
       case CropCatalog.oatCropId:
         return SeedsScreenLayout.oatIconAsset;
+      case CropCatalog.tomatoCropId:
+        return SeedsScreenLayout.tomatoIconAsset;
+      case CropCatalog.cucumberCropId:
+        return SeedsScreenLayout.cucumberIconAsset;
       default:
         return SeedsScreenLayout.genericPlantIconAsset;
     }
@@ -912,6 +938,16 @@ class SeedsScreenLogic {
       return SeedsScreenLayout.oatIconScale;
     }
 
+    if (asset == SeedsScreenLayout.tomatoIconAsset ||
+        cropId == CropCatalog.tomatoCropId) {
+      return SeedsScreenLayout.tomatoIconScale;
+    }
+
+    if (asset == SeedsScreenLayout.cucumberIconAsset ||
+        cropId == CropCatalog.cucumberCropId) {
+      return SeedsScreenLayout.cucumberIconScale;
+    }
+
     return SeedsScreenLayout.genericPlantIconScale;
   }
 
@@ -930,6 +966,13 @@ class SeedsScreenLogic {
     }
 
     add(primaryAsset);
+
+    if (cropId == CropCatalog.cucumberCropId) {
+      for (final asset in SeedsScreenLayout.cucumberHeroFallbackAssets) {
+        add(asset);
+      }
+    }
+
     if (primaryAsset == null || primaryAsset.trim().isEmpty) {
       return out;
     }

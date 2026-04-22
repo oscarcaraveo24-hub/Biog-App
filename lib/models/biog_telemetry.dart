@@ -28,6 +28,7 @@ class BioGDevice {
     this.deviceModelId,
     this.status = BioGDeviceStatus.active,
     this.createdAt,
+    this.updatedAt,
   });
 
   final String id;
@@ -52,6 +53,11 @@ class BioGDevice {
   final BioGDeviceStatus status;
   final DateTime? createdAt;
 
+  /// Marca de última modificación usada para last-write-wins al
+  /// reconciliar el caché local contra el remoto en Supabase. Cae en
+  /// `createdAt` si el backend no informa `updated_at`.
+  final DateTime? updatedAt;
+
   BioGDevice copyWith({
     String? id,
     String? name,
@@ -61,6 +67,7 @@ class BioGDevice {
     Object? deviceModelId = _bioGDeviceSentinel,
     BioGDeviceStatus? status,
     DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return BioGDevice(
       id: id ?? this.id,
@@ -73,6 +80,7 @@ class BioGDevice {
           : deviceModelId as String?,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

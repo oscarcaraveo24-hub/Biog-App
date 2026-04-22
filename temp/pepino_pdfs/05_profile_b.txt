@@ -1,0 +1,315 @@
+ PERFIL UNIVERSAL BIO-G --
+
+PEPINO
+
+1 Identidad del cultivo -- UNIVERSAL
+
+ ID del cultivo: PE (crop_cucumber)
+ Nombre común: Pepino
+ Nombre científico: Cucumis sativus L.
+ Familia botánica: Cucurbitaceae
+ Tipo de planta: Hortaliza de fruto
+ Metabolismo: C3
+ Ciclo de vida: Anual
+
+  Uso principal: Fruto fresco / proceso (sub-uso, no perfil)
+
+ Órgano objetivo: FRUTO 
+ Variedad / híbrido: Opcional (solo alias  perfil)
+
+ Varía (NO aquí):
+
+tipo de pepino (americano, europeo, pepinillo), longitud del fruto, sistema
+(campo/protegido), arquitectura.
+
+2 Estructura fenológica (ESQUELETO BIO-G) --
+UNIVERSAL
+
+Pepino SÍ usa floración, pero tiene desarrollo y cosecha más rápidos que tomate.
+Etapas Bio-G (humanizadas, compatibles con agronomía real)
+
+    1. Germinación
+
+    2. Emergencia / establecimiento
+
+    3. Desarrollo vegetativo
+
+  4. Floración (ETAPA CRÍTICA)
+
+    5. Amarre / cuajado
+
+    6. Llenado rápido de fruto
+
+    7. Cosecha progresiva
+
+    8. Fin de ciclo / senescencia
+
+ No se modela número de frutos
+ No se fija longitud comercial
+ No se fija número de cortes
+
+3 Tiempo y calendario base -- UNIVERSAL (REGLA
+BIO-G)
+
+ Día 0: siembra / trasplante
+ Tiempo desde siembra: hoy - fecha_siembra
+ Duración total: depende del perfil fenológico, no de la variedad
+ Ajuste por estrés:
+ estrés acumulado mueve calendario
+ estrés NO cambia biología
+
+ Recomendación futura: GDD base ~10 °C
+
+4 Rangos fisiológicos MEDIBLES -- UNIVERSAL
+
+ Temperatura ambiente
+
+ Mínimo funcional: ~14 °C
+ Óptimo general: ~20­30 °C
+ Estrés térmico: >32 °C
+ Crítico en floración: >35 °C  aborto floral / mal cuaje
+ Daño severo: helada (0 °C)
+
+ Pepino es muy sensible al frío y al estrés térmico temprano.
+
+ Humedad del suelo (% Agua Disponible ­ AW)
+
+ Óptimo: 65­100% AW
+ Inicio de estrés: ~50% depleción
+ Crítico: déficit hídrico en floración y llenado
+ Exceso: anoxia radicular (alta susceptibilidad)
+
+ Humedad ambiental
+
+ HR alta:
+  enfermedades foliares
+  transpiración
+ HR baja + calor:
+  cuajado
+ frutos deformes
+
+ En v1: usar como factor de riesgo, no umbral duro.
+
+ pH del suelo
+
+ Rango óptimo: 6.0 ­ 7.2
+
+ Salinidad (ECe)
+
+ Sensibilidad: media­alta
+ Umbral inicial de alerta: ~2.0 dS/m
+ Impacto en:
+ cuajado
+ calidad
+ deformación del fruto
+
+ Compactación del suelo
+ Umbral crítico: ~2 MPa
+ Impacta:
+ desarrollo radicular
+ absorción de agua
+ uniformidad del cultivo
+
+ NPK (nivel relativo por etapa -- NO dosis)
+
+ N: moderado­alto en vegetativo
+ P: importante en establecimiento y floración
+ K: muy importante en llenado rápido del fruto
+
+5 Sensibilidad por etapa -- MATRIZ UNIVERSAL
+
+Germinación / establecimiento
+ Déficit agua: Alta
+ Exceso agua: Alta
+ Frío: Muy alta
+ Compactación: Alta
+
+Desarrollo vegetativo
+ Déficit agua: Media
+ Nutrición (N): Alta
+
+ Floración (ETAPA MÁS CRÍTICA)
+
+ Déficit agua: Muy alta
+ Calor: Muy alta
+ Exceso humedad: Alta
+ Nutrición (P/K): Alta
+
+Amarre / llenado
+ Déficit agua: Muy alta
+ Salinidad: Alta
+ Nutrición (K): Alta
+
+Cosecha
+ Agua: Media
+ Exceso humedad: riesgo sanitario
+
+6 Ventanas fisiológicas activas -- UNIVERSAL
+ Ventana crítica: floración  amarre
+ Ventana de riego: continua (prioridad máxima desde floración)
+ Ventana de nutrición: vegetativo  llenado
+ Ventana de revisión: pre-floración, floración, primeros cortes
+
+7 Estado del cultivo (OUTPUT BIO-G)
+
+ Índice general: 0­100
+ Sub-índices: agua / temperatura / suelo / nutrición
+ Estado: Óptimo / Observación / Alerta
+ Tendencia: Mejorando / Estable / Deteriorando
+
+ Penalización fuerte en floración y llenado.
+
+8 Alertas posibles (lenguaje humano)
+
+  Estrés térmico en floración
+  Riesgo de aborto floral
+  Déficit hídrico en etapa crítica
+  Frutos deformes por estrés hídrico o salinidad
+  Exceso de humedad en suelo
+  Suelo compactado
+
+9 Contexto climático reciente -- UNIVERSAL
+
+ Tendencia térmica
+ Tendencia humedad del suelo
+ Evento extremo (sí/no)
+ Impacto esperado según etapa
+
+ Memoria del cultivo -- UNIVERSAL
+
+Guarda:
+ tipo de estrés
+ severidad
+ duración
+ etapa
+ ajuste de calendario
+ impacto en índice
+
+11 Confiabilidad del dato -- UNIVERSAL
+
+ Fuente: sensor / modelo / estimación
+ Confianza: alta / media / baja
+ Última actualización
+
+12 Metadatos Bio-G -- UNIVERSAL
+
+ Tipo ficha: Bio-G v1
+ Compatible con sensores: sí
+ Campos obligatorios vs opcionales
+ Preparado para expansión (GDD, VPD): sí
+
+ CIERRE BIO-G -- PEPINO
+
+Este perfil define cuándo el pepino está en riesgo,
+no cómo producirlo.
+
+ BIO-G -- PEPINO
+
+PERFILES (TIPOS) + ALIAS POPULARES (MÉXICO)
+
+        Regla Bio-G activa:
+         Tipo = UX  Perfil = reloj biológico  Variedad = alias (confianza)
+         La variedad NO cambia el perfil.
+         Siempre existe "Otra variedad".
+
+ PE-01 -- PEPINO SLICER / AMERICANO (CAMPO
+
+ABIERTO)
+
+Tipo (UX): Pepino americano
+Perfil Bio-G: PE-01 -- Intermedio (slicer americano)
+Uso: fresco (rebanar)
+Floración: 35 ­ 50 días
+Inicio de cosecha: 50 ­ 70 días
+Ciclo: Corto­Intermedio
+Densidad típica: 25 ­ 40 mil plantas/ha
+
+Alias (variedades populares)
+
+     Slice More (Sakata)
+
+     DIOMEDE (Syngenta)
+
+     SV2516CP (Seminis)
+
+     Bristol 85 + SV4212CL 15 (Seminis)
+
+     Poinsett 76 (genérico, muy usado)
+
+     Pepino americano (nombre cultural)
+
+     Otra variedad (slicer americano)
+
+ PE-02 -- PEPINO EUROPEO / INGLÉS (PROTEGIDO)
+
+Tipo (UX): Pepino europeo / inglés
+Perfil Bio-G: PE-02 -- Intermedio (europeo protegido)
+Uso: fresco / exportación
+Floración: 35 ­ 55 días
+Inicio de cosecha: 55 ­ 80 días
+Ciclo: Intermedio (corte continuo)
+Densidad típica: 18 ­ 28 mil plantas/ha
+
+Alias (variedades populares)
+
+     ESBEN (Syngenta)
+
+     CELESTINO (Syngenta)
+
+     Pepino europeo / inglés (nombre cultural)
+
+     Otra variedad (europeo / inglés)
+ PE-03 -- PEPINO PERSA / MINI / BEIT-ALFA
+
+(PROTEGIDO)
+
+Tipo (UX): Pepino persa / mini / libanés
+Perfil Bio-G: PE-03 -- Intermedio (mini protegido)
+Uso: fresco / snack
+Floración: 35 ­ 55 días
+Inicio de cosecha: 55 ­ 85 días
+Ciclo: Intermedio
+Densidad típica: 18 ­ 30 mil plantas/ha
+
+Alias (variedades populares)
+
+     RAYA (Syngenta)
+
+     TITAN (Syngenta)
+
+     SOLTANE (Syngenta)
+
+     PBxxxx (líneas Beit-Alfa comerciales)
+
+     Pepino persa / Beit-Alfa (nombre cultural)
+
+     Otra variedad (persa / Beit-Alfa)
+
+ PE-04 -- PEPINILLO / PICKLE (PROCESO)
+
+Tipo (UX): Pepinillo / pickle
+Perfil Bio-G: PE-04 -- Corto­Intermedio (encurtido)
+Uso: industria / proceso (y fresco corto)
+Floración: 30 ­ 50 días
+Inicio de cosecha: 45 ­ 70 días
+Ciclo: Corto
+Densidad típica: 60 ­ 120 mil plantas/ha
+
+Alias (variedades populares)
+
+     HASHTAG (Syngenta)
+
+     Pepinillo (nombre cultural)
+
+     Otra variedad (pepinillo / pickle)
+ CIERRE BIO-G -- PEPINO
+
+     Estos 4 perfiles cubren 90% del pepino cultivado en México
+          (americano + europeo + persa + pickle).
+
+     Las variedades listadas son las más visibles y usadas en portafolios reales.
+     No se cargan catálogos completos de semillas.
+     Si la semilla no aparece  "Otra variedad" y el sistema funciona igual.
+
+        El agricultor reconoce su pepino.
+         Bio-G gobierna el comportamiento.

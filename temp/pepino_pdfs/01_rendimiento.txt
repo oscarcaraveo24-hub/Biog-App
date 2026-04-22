@@ -1,0 +1,227 @@
+   RENDIMIENTO APROXIMADO DEL PEPINO
+
+                          BIO-G v1 · Campo abierto e invernadero en suelo
+
+                              Documento de referencia para Seeds / Yield Projection
+                                      No incluye hidroponía ni sustratos sin suelo
+
+                                                     Criterio de este documento:
+usar rangos conservadores y útiles para producto, apoyados en ensayos, manuales técnicos y guías de
+
+ extensión; evitar techos de hidroponía o invernadero de ultra alta tecnología que no representan el
+                                                       alcance actual de BIO-G.
+
+1. Alcance y definición
+
+· La unidad base es t/ha de fruto fresco comercializable por ciclo productivo.
+
+· En pepino, el rendimiento depende mucho de la duración del corte, la frecuencia de cosecha, el
+ sistema de conducción, la sanidad y la estabilidad hídrica; por eso aquí se trabaja con rangos y no
+ con un solo número.
+
+· Para BIO-G, el rendimiento aproximado debe leerse como referencia de motor y UX: zona baja =
+ manejo promedio con estrés; zona media = manejo bueno; zona alta = manejo bueno-muy bueno
+ dentro del sistema correcto.
+
+· Estos rangos no sustituyen fichas varietales oficiales ni contratos de industria.
+
+2. Variables que más mueven el rendimiento
+
+Variable               Impacto              Lectura BIO-G
+
+Sistema de producción  Muy alto             Campo abierto y protegido en suelo
+                                            no deben compartir el mismo
+                                            benchmark.
+
+Tipo comercial         Alto                 Americano, europeo, persa/mini y
+                                            pepinillo no tienen el mismo peso
+                                            por fruto ni el mismo patrón de
+                                            cosecha.
+
+Densidad real          Muy alto             Si la población queda fuera del
+                                            rango útil, la proyección debe bajar.
+
+Agua y calor en floración/cuajado Muy alto  El pepino castiga rápido déficit
+                                            hídrico, calor y discontinuidad de
+
+                       BIO-G · Pepino · Rendimiento aproximado · Página 1
+Sanidad foliar y radicular                  Muy alto                     riego.
+Disciplina de cosecha                       Medio-alto
+                                                                         Mildius, oídio, ácaros, trips, virosis y
+                                                                         problemas radiculares mueven
+                                                                         mucho el techo real.
+
+                                                                         En un cultivo progresivo, cosechar
+                                                                         tarde reduce calidad y frena nuevo
+                                                                         llenado.
+
+3. Rendimientos base propuestos para BIO-G
+
+Importante: los siguientes rangos son una síntesis conservadora para el proyecto. Están pensados
+para carga de catálogo, Seeds y proyección aproximada. No están diseñados para copiar techos
+máximos de hidroponía, vidrio holandés o sistemas de alta tecnología fuera del alcance actual.
+
+Perfil           Sistema                    Densidad típica  Rango base  Confianza    Lectura BIO-G
+                                                  (pl/ha)        (t/ha)
+
+PE-GEN           Sin sistema fijo           25,000­35,000    30­70        Modelado    Sólo para avanzar
+(transitorio)                                                            conservador  en UX; debe
+                                                                                      migrar cuando el
+                                                                                      usuario defina
+                                                                                      sistema/tipo.
+
+PE-01 Americano /                           25,000­40,000    25­40       Media        Rango comercial
+                             Campo abierto                                            razonable para
+                                                                                      fresco en manejo
+slicer                                                                                medio-bueno; con
+                                                                                      excelente
+                                                                                      plasticultura
+                                                                                      puede superar
+                                                                                      esto, pero no será
+                                                                                      el default de BIO-
+                                                                                      G.
+
+PE-02 Europeo /  Invernadero en             18,000­28,000    75­100      Media-alta   Alineado a
+inglés           suelo                                                                protegido en suelo
+                                                                                      y a materiales
+                                                                                      largos tipo
+                                                                                      europeo; excluye
+                                                                                      hidroponía y
+                                                                                      techos de alta
+                                                                                      tecnología.
+
+PE-03 Persa / mini Invernadero en           18,000­30,000    40­70       Media        El fruto es más
+                                                                                      ligero y la lectura
+/ Beit-Alpha     suelo                                                                por t/ha suele
+
+                            BIO-G · Pepino · Rendimiento aproximado · Página 2
+PE-04 Pepinillo /  Campo abierto /  60,000­120,000  18­35  Media       quedar por debajo
+pickle             proceso                                             del europeo largo,
+                                                                       aunque con
+                                                                       buena rotación
+                                                                       puede
+                                                                       comportarse muy
+                                                                       bien.
+
+                                                                       La rentabilidad
+                                                                       depende mucho
+                                                                       del esquema de
+                                                                       cosecha y del
+                                                                       estándar de
+                                                                       industria; no
+                                                                       conviene inflarlo
+                                                                       por densidad alta
+                                                                       sin calidad ni
+                                                                       calibre.
+
+4. Interpretación operativa para el motor de rendimiento
+
+· Zona baja: usar cuando el cultivo entra a floración/cuajado con estrés térmico, déficit hídrico,
+  salinidad, sanidad inestable o densidad fuera de rango.
+
+· Zona media: usar cuando el cultivo mantiene continuidad de agua, buena sanidad, cosecha
+  disciplinada y población adecuada.
+
+· Zona alta: reservar para lotes estables, con tutorado/ventilación correctos, nutrición buena y
+  cosecha bien llevada durante el ciclo.
+
+· Para BIO-G, el rendimiento total debe seguir calculándose como: rendimiento por ha × superficie
+  sembrada.
+
+· En cultivos progresivos como pepino, la proyección debe poder convivir con rendimiento
+  acumulado real conforme avanzan los cortes.
+
+                   BIO-G · Pepino · Rendimiento aproximado · Página 3
+5. Propuesta compatible con el catálogo de rendimiento del proyecto
+
+Formato compatible con el ZIP revisado: yieldLowTonPerHa, yieldHighTonPerHa,
+seedsLowPerHa, seedsHighPerHa, confidence, sourceMethod.
+
+id propuesto displayName         yieldLow                       yieldHigh  plantsLow  plantsHigh  confidence
+
+cucumber_field   Pepino campo
+
+_generic         abierto         25                             35         25000      40000       calibrated
+
+                 (genérico)
+
+cucumber_prot    Pepino
+
+ected_soil_gene  protegido en    70                             95         18000      30000       calibrated
+
+ric              suelo
+
+                 (genérico)
+
+cucumber_ame     Pepino
+
+rican_field      americano       25                             40         25000      40000       calibrated
+
+                 campo abierto
+
+cucumber_euro    Pepino europeo
+
+pean_protected   protegido en    75                             100        18000      28000       calibrated
+
+                 suelo
+
+                         Pepino                                 70         18000      30000       calibrated
+cucumber_pers persa/mini
+
+                                                            40
+ ian_protected protegido en
+
+                         suelo
+
+cucumber_pick Pepinillo/pickle   18                             35         60000      120000      modeled
+
+le_field         campo abierto
+
+6. Notas de criterio
+
+· No se recomienda usar como benchmark por defecto los techos de 120­200+ t/ha asociados a
+  sustratos, hidroponía o invernaderos de alta tecnología.
+
+· En pepino, la diferencia entre un lote sano y uno con mildiú / oídio / ácaros / estrés hídrico puede
+  desplazar muy rápido la proyección desde la zona media hacia la baja.
+
+· El pepino europeo largo puede dar más toneladas por fruto y por ciclo que un mini o persa, aun
+  cuando ambos estén bien manejados.
+
+· En pepinillo, la tonelada por hectárea dice menos sobre negocio que en fresco, porque el valor
+  depende mucho de calibre, uniformidad y esquema de corte.
+
+7. Fuentes base consultadas
+
+· Oregon State University. Cucumbers, Slicing (Fresh Market): rendimientos aproximados de slicer a
+  campo y techo con plasticultura.
+                                  BIO-G · Pepino · Rendimiento aproximado · Página 4
+· Oregon State University. Cucumbers, Pickling: rendimientos promedio y buenos rendimientos
+  para pepinillo/pickle.
+
+· Alabama Cooperative Extension System (2022). Greenhouse Cucumber Production: rangos por
+  planta, espaciamiento y manejo de pepino seedless bajo invernadero.
+
+· U.S. International Trade Commission (2021). Cucumbers: Effect of Imports on U.S. Seasonal
+  Markets: rendimientos recientes a campo en el sureste de EE.UU. y comparación con producción
+  protegida de México.
+
+· CTAHR, University of Hawai`i. Field Cucumber Production Guidelines: contexto técnico de manejo
+  y rendimiento de pepino a campo.
+
+· University of Hawai`i at Mnoa (2014). Persian Cucumber (Beit Alpha) Variety Screening:
+  referencia para pepino persa/mini en screenhouse.
+
+· Manual de producción de pepino bajo invernadero, Universidad Jorge Tadeo Lozano: ensayos
+  semicomerciales en protegido y rendimientos por material.
+
+· Manual técnico de pepino / síntesis tipo InfoAgro-CENTA: referencias históricas de rendimiento a
+  campo y protegido.
+
+· Perfiles universales y genéricos de pepino BIO-G suministrados por el proyecto.
+
+Cierre BIO-G: para pepino, el rendimiento aproximado debe anclarse a tipo + sistema + densidad +
+estabilidad del ciclo. El error más común es inflar protegido con techos hidropónicos o subestimar
+campo abierto cuando hay tutorado, riego estable y cosecha disciplinada.
+
+                                  BIO-G · Pepino · Rendimiento aproximado · Página 5

@@ -83,6 +83,13 @@ class _BootstrapGateState extends State<BootstrapGate> {
         if (newUserId != _lastUserId) {
           _lastUserId = newUserId;
           _profileFuture = newSession == null ? null : _repo.getMyProfile();
+
+          // Rebind the BioGStore so identity (devices, active device,
+          // crop context, yield config) is scoped to the current user.
+          // This is the main transition seam: the hybrid repo pulls
+          // real devices from Supabase here, then last-write-wins
+          // merges crop context / yield config.
+          unawaited(_rebindStoreForUser(newUserId));
         }
       });
     });
@@ -92,6 +99,25 @@ class _BootstrapGateState extends State<BootstrapGate> {
   void dispose() {
     _authSub?.cancel();
     super.dispose();
+  }
+
+  /// Rebinds the [BioGStore] to the currently authenticated user id.
+  /// On sign-out this clears user-scoped identity; on sign-in it
+  /// pulls real devices from Supabase and last-write-wins merges
+  /// crop context / yield config.
+  ///
+  /// Best-effort: any failure leaves local state as-is so the UI
+  /// keeps working offline.
+  Future<void> _rebindStoreForUser(String? userId) async {
+    if (!mounted) return;
+    final BioGStore store = BioGScope.of(context);
+
+    if (userId == null || userId.isEmpty) {
+      store.unbindUser();
+      return;
+    }
+
+    await store.bindUser(userId: userId);
   }
 
   Future<void> _handleOnboardingCompleted(OnboardingDraft draft) async {

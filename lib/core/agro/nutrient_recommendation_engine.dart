@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/fertilization_planner.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
+import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 
 class NutrientInterpretationResult {
@@ -71,6 +72,7 @@ class NutrientRecommendationEngine {
 
     final baseStagePressure01 = _resolveStagePressure01(
       nutrient: nutrient,
+      cropKey: cropKey,
       targets: targets,
       weights: weights,
     );
@@ -97,17 +99,15 @@ class NutrientRecommendationEngine {
       targets: targets,
     );
 
-    final range = switch (nutrient) {
-      AgroMetricKey.n => targets?.nIndex,
-      AgroMetricKey.p => targets?.pIndex,
-      AgroMetricKey.k => targets?.kIndex,
-      _ => null,
-    };
+    final comparableRange = NutrientTargetRangeResolver.comparableRange(
+      nutrient: nutrient,
+      cropKey: cropKey,
+      targets: targets,
+    );
 
     final label = _resolveLabel(
       rawPpm: rawPpm,
-      cap: cap,
-      range: range,
+      range: comparableRange,
       stagePressure01: effectiveStagePressure01,
     );
 
@@ -185,25 +185,31 @@ class NutrientRecommendationEngine {
   // =========================================================================
   static double _resolveStagePressure01({
     required AgroMetricKey nutrient,
+    required String? cropKey,
     StageTargets? targets,
     StageWeights? weights,
   }) {
-    final AgroRange? range = switch (nutrient) {
-      AgroMetricKey.n => targets?.nIndex,
-      AgroMetricKey.p => targets?.pIndex,
-      AgroMetricKey.k => targets?.kIndex,
-      _ => null,
-    };
+    final AgroRange? range = NutrientTargetRangeResolver.comparableRange(
+      nutrient: nutrient,
+      cropKey: cropKey,
+      targets: targets,
+    );
 
     final targetPriority01 = (targets?.resolvedPriorityFor(nutrient) ?? 0.50)
         .clamp(0.0, 1.0);
 
-    final double rangeMid01 = range == null
-        ? 0.50
-        : (((range.optimalMin + range.optimalMax) / 2.0) / 100.0).clamp(
-            0.0,
-            1.0,
-          );
+    final double rangeMid01;
+    if (range == null) {
+      rangeMid01 = 0.50;
+    } else {
+      final double cap = NpkCaps.forCropMetric(cropKey: cropKey, metricKey: nutrient);
+      if (cap <= 0) {
+        rangeMid01 = 0.50;
+      } else {
+        rangeMid01 =
+            (((range.optimalMin + range.optimalMax) / 2.0) / cap).clamp(0.0, 1.0);
+      }
+    }
 
     final double weightShare01;
     if (weights == null || weights.nutrientsSum <= 0) {
@@ -275,17 +281,16 @@ class NutrientRecommendationEngine {
   // =========================================================================
   static NutrientPriorityLabel _resolveLabel({
     required double rawPpm,
-    required double cap,
     required AgroRange? range,
     required double stagePressure01,
   }) {
     if (range == null) return NutrientPriorityLabel.unknown;
 
-    final targetMin = (range.optimalMin / 100.0) * cap;
-    final targetMax = (range.optimalMax / 100.0) * cap;
+    final targetMin = range.optimalMin;
+    final targetMax = range.optimalMax;
     final targetMid = (targetMin + targetMax) / 2.0;
-    final highMin = (range.highMin / 100.0) * cap;
-    final lowMax = (range.lowMax / 100.0) * cap;
+    final highMin = range.highMin;
+    final lowMax = range.lowMax;
 
     if (rawPpm >= highMin) return NutrientPriorityLabel.reviewAccumulation;
     if (rawPpm > targetMax) return NutrientPriorityLabel.possibleExcess;
@@ -475,6 +480,15 @@ class NutrientRecommendationEngine {
     }
     if (crop == 'oat' || crop == 'avena') {
       return _oatPracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+        targets,
+      );
+    }
+    if (crop == 'tomato' || crop == 'tomate' || crop == 'jitomate') {
+      return _tomatoPracticalRecommendation(
         nutrient,
         label,
         stage,
@@ -1094,6 +1108,213 @@ class NutrientRecommendationEngine {
     }
   }
 
+  // ── TOMATE ────────────────────────────────────────────────────────────────
+  //
+  // Fisiología de referencia:
+  // - N: demanda moderada-alta, pero el exceso induce follaje y aborta flor.
+  // - P: starter crítico en establecimiento (anclaje post-trasplante).
+  // - K: pico en llenado; cuello real de calidad (Brix, firmeza, color, rajado).
+  // - Balance N:K y disponibilidad estable de Ca (ligada a K) son los drivers
+  //   principales de BER, rajado y calidad postcosecha.
+  static String _tomatoPracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    double? stagePressure01,
+    StageTargets? targets,
+  ) {
+    final isGerm = stage.contains('germin');
+    final isEstablishment = stage.contains('establec');
+    final isVeg = stage.contains('vegetativo') || stage.contains('vegetative');
+    final isFlowering = stage.contains('floracion') || stage.contains('flor');
+    final isFruitSet = stage.contains('cuajado') || stage.contains('fruitset');
+    final isFilling = stage.contains('llenado');
+    final isHarvest = stage.contains('progresiv') || stage.contains('harvest');
+    final isLate = _isLateStage(stage);
+    final isCritical = isFlowering || isFruitSet;
+
+    final profileHint = targets?.plannerHintFor(nutrient);
+    final windowLabel = targets?.windowLabelFor(nutrient);
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isCritical) {
+            return 'Traes nitrógeno de más justo en floración/cuajado. Riesgo alto de que se te caiga la flor, el fruto salga blando y el potasio ya no entre. Corta las aplicaciones de nitrógeno.';
+          }
+          if (isVeg) {
+            return 'La planta está echando pura hoja por exceso de nitrógeno. Si no lo frenas ahora, la floración y el cuajado se van a resentir.';
+          }
+          return 'Pausa el nitrógeno. El tomate ya tiene con qué y seguir metiéndole solo desbalancea la planta.';
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isGerm || isEstablishment) {
+            return 'Arranque correcto. Al tomate le conviene poco nitrógeno al inicio: deja que el fósforo haga el trabajo de que la raíz agarre.';
+          }
+          if (isVeg) {
+            return 'Nitrógeno en su punto para armar follaje sin disparar crecimiento loco.';
+          }
+          if (isCritical || isFilling) {
+            return 'Nitrógeno equilibrado en la ventana crítica. No le cargues más: aquí lo que manda es el calcio y el potasio.';
+          }
+          return 'Nitrógeno estable para esta etapa del tomate.';
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isVeg && (stagePressure01 ?? 0) > 0.5) {
+            return 'El nitrógeno todavía alcanza, pero ya viene la etapa de follaje fuerte. Ten listo el plan para no llegar corto a floración.';
+          }
+          return 'Por ahora el nitrógeno no es la urgencia. Enfócate en fósforo al pegue del trasplante, o en potasio y calcio cuando haya flor y fruto.';
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isVeg) {
+            return 'El nitrógeno va bajando. Revisa el plan antes de entrar a floración con la planta corta.';
+          }
+          if (isCritical) {
+            return 'El nitrógeno está bajando en flor/cuajado. Un apoyo chico sí ayuda, pero NADA de cargas fuertes: un jalón alto aquí te tumba la flor.';
+          }
+          if (isFilling || isHarvest) {
+            return 'El nitrógeno va a la baja; en llenado es lo esperado. Mejor acompaña con potasio fuerte, no persigas el nitrógeno.';
+          }
+          return 'El nitrógeno va bajando. Vigila según la etapa.';
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return 'El nitrógeno está bajo pero el ciclo ya está cerrando. Guarda la lectura para planear el próximo trasplante.';
+          }
+          if (isGerm || isEstablishment) {
+            return 'Acompaña con un poquito de nitrógeno como arranque. En tomate no se empuja: solo se complementa el fósforo inicial con un toque.';
+          }
+          if (isVeg) {
+            return 'Tomate en vegetativo con nitrógeno corto. Apóyalo con calma cuidando el balance con potasio: pasarte hoy se paga en la floración con flor caída.';
+          }
+          if (isCritical) {
+            return 'Falta nitrógeno en flor/cuajado. Aplícalo POCO Y SEGUIDO en el riego (no de un solo golpe): una dosis alta aquí tumba la flor.';
+          }
+          if (isFilling) {
+            return 'Nitrógeno bajo en llenado. Aporte MÍNIMO: aquí el verdadero cuello es el potasio, no el nitrógeno.';
+          }
+          if (isHarvest) {
+            return 'Nitrógeno bajo en cosecha progresiva. Mantén aportes de sostén metidos en cada riego, nada de golpes secos.';
+          }
+          return 'Falta nitrógeno. Corrige con calma: el tomate no responde bien a picos.';
+        }
+        return profileHint ??
+            windowLabel ??
+            'Vigila el nitrógeno con criterio según la etapa del tomate.';
+
+      case AgroMetricKey.p:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return 'Fósforo de sobra. Pausa la aplicación: con exceso la planta batalla para absorber zinc y fierro, y el fruto pierde color.';
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isEstablishment || isGerm) {
+            return 'Buen nivel de fósforo para que la raíz agarre y la planta supere el jalón del trasplante.';
+          }
+          if (isCritical) {
+            return 'Fósforo en rango para sostener la energía de flor y fruto. No hace falta empujar más.';
+          }
+          return 'El fósforo está en nivel suficiente para esta etapa.';
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          return (isEstablishment || isGerm)
+              ? 'El fósforo todavía acompaña el arranque, pero no lo descuides: si se queda corto después del trasplante, la floración se retrasa.'
+              : 'El fósforo no es la prioridad en esta etapa del tomate.';
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isEstablishment) {
+            return 'El fósforo se está quedando corto justo donde más importa: que la raíz agarre después del trasplante. Conviene corregir ya.';
+          }
+          return 'El fósforo va bajando. En tomate el riesgo real de quedarse corto está en el pegue, no al final.';
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return 'Fósforo bajo pero el ciclo cierra. Úsalo para planear el arrancador del próximo cultivo.';
+          }
+          if (isEstablishment || isGerm) {
+            return 'Fósforo bajo después del trasplante: crítico. Aplícalo al pie de la planta como arrancador (fosfato monoamónico o diamónico) para que la raíz agarre.';
+          }
+          if (isVeg) {
+            return 'Fósforo bajo en vegetativo. Corrígelo, pero la respuesta será moderada: la ventana donde el fósforo rinde fuerte ya pasó.';
+          }
+          if (isCritical || isFilling || isHarvest) {
+            return 'Fósforo bajo en etapa reproductiva. Úsalo como corrección de base, no como rescate: la planta responde lento.';
+          }
+          return 'Fósforo bajo. Conviene corregirlo después del trasplante; más tarde rinde menos.';
+        }
+        return profileHint ??
+            windowLabel ??
+            'Revisa el fósforo del tomate, sobre todo después del trasplante.';
+
+      case AgroMetricKey.k:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isFilling || isHarvest) {
+            return 'Potasio muy alto en llenado. Cuida el balance con calcio: demasiado potasio BLOQUEA la entrada de calcio y te saca pudrición en la punta del fruto.';
+          }
+          return 'Potasio alto. Pausa el potasio solo y revisa el balance con calcio y magnesio.';
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isFilling || isHarvest) {
+            return 'Potasio en su punto justo donde más pesa en tomate: firmeza, color, dulzor del fruto y aguante después de cortar. Excelente.';
+          }
+          if (isCritical) {
+            return 'Potasio en rango para flor/cuajado. Mantenlo disponible siempre: si baja aquí te arranca pudrición en la punta del fruto.';
+          }
+          return 'Niveles de potasio estables para esta etapa del tomate.';
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isVeg && (stagePressure01 ?? 0) > 0.5) {
+            return 'El potasio todavía alcanza, pero ya viene flor/cuajado y la demanda se dispara. Prepara reservas.';
+          }
+          return 'El potasio no urge ahora, pero vigílalo: en tomate es el nutriente que más pide acumulado.';
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isCritical) {
+            return 'Potasio bajando en flor/cuajado. Riesgo real de cuajado débil y pudrición en la punta del fruto. Corrige ya manteniendo humedad pareja en el suelo.';
+          }
+          if (isFilling) {
+            return 'Potasio bajando en LLENADO: la peor etapa para que esto pase. Afecta directo calidad, dulzor, firmeza y color.';
+          }
+          if (isHarvest) {
+            return 'Potasio bajando en cosecha progresiva. Sin potasio constante hay rajado y frutos blandos. Corrige sin jalones bruscos.';
+          }
+          return 'El potasio va bajando. Vigila: el tomate es muy demandante de potasio.';
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return 'Potasio bajo pero el ciclo cierra. Anótalo para ajustar la base del próximo trasplante.';
+          }
+          if (isGerm || isEstablishment) {
+            return 'Apoyo moderado de potasio en arranque. La demanda fuerte llega más adelante.';
+          }
+          if (isVeg) {
+            return 'Potasio bajo en vegetativo. Refuerza metiéndolo en el riego para llegar a floración sin cuello.';
+          }
+          if (isCritical) {
+            return 'Potasio BAJO en flor/cuajado. Urge reforzar en el riego para evitar cuajado débil, caída de flor y pudrición en la punta del fruto.';
+          }
+          if (isFilling) {
+            return 'Potasio BAJO en pleno llenado: la ventana más cara de fallar. Aplica potasio soluble metido en el riego (nada de golpes secos) con humedad pareja en el suelo.';
+          }
+          if (isHarvest) {
+            return 'Potasio bajo en cosecha progresiva. Sostén constante en el riego para evitar rajado de fruto y caída de calidad.';
+          }
+          return 'Potasio bajo. Corrígelo metiéndolo poco a poco en el riego: el tomate no aguanta golpes fuertes de sales.';
+        }
+        return profileHint ??
+            windowLabel ??
+            'Vigila el potasio: es el nutriente cuello en tomate.';
+
+      default:
+        return 'Revisa el manejo de nutrientes del tomate.';
+    }
+  }
+
   // ── GENÉRICO ──────────────────────────────────────────────────────────────
   static String _genericPracticalRecommendation(
     AgroMetricKey nutrient,
@@ -1136,17 +1357,14 @@ class NutrientRecommendationEngine {
       return 'Tu sensor lee ${rawPpm.round()} mg/kg. Esto está dentro del rango óptimo que pide la planta hoy. Cuida tu bolsillo y no apliques de más.';
     }
 
-    final range = switch (nutrient) {
-      AgroMetricKey.n => targets?.nIndex,
-      AgroMetricKey.p => targets?.pIndex,
-      AgroMetricKey.k => targets?.kIndex,
-      _ => null,
-    };
+    final range = NutrientTargetRangeResolver.comparableRange(
+      nutrient: nutrient,
+      cropKey: cropKey,
+      targets: targets,
+    );
 
     if (range != null) {
-      final cap = NpkCaps.forCropMetric(cropKey: cropKey, metricKey: nutrient);
-      final targetMidPpm =
-          ((range.optimalMin + range.optimalMax) / 2.0 / 100.0) * cap;
+      final targetMidPpm = (range.optimalMin + range.optimalMax) / 2.0;
       final diff = math.max(0, (targetMidPpm - rawPpm)).round();
 
       if (diff > 0) {
@@ -1316,6 +1534,48 @@ class NutrientRecommendationEngine {
       }
     }
 
+    if (crop == 'tomato' || crop == 'tomate' || crop == 'jitomate') {
+      if (nutrient == AgroMetricKey.n) {
+        if (stage.contains('germin') || stage.contains('establec')) {
+          return 'Arranque moderado';
+        }
+        if (stage.contains('vegetativo')) {
+          return 'Follaje con mesura';
+        }
+        if (stage.contains('floracion') ||
+            stage.contains('flor') ||
+            stage.contains('cuajado')) {
+          return 'Equilibrio para flor y fruto';
+        }
+        if (stage.contains('llenado') || stage.contains('progresiv')) {
+          return 'Nitrógeno a la baja';
+        }
+        if (stage.contains('fincic')) return 'Cierre de ciclo';
+        return 'Demanda de nitrógeno por etapa';
+      }
+      if (nutrient == AgroMetricKey.p) {
+        if (stage.contains('germin') || stage.contains('establec')) {
+          return 'Arranque: raíz que agarre';
+        }
+        if (stage.contains('vegetativo') ||
+            stage.contains('floracion') ||
+            stage.contains('cuajado')) {
+          return 'Fósforo de sostén';
+        }
+        if (stage.contains('fincic')) return 'Cierre de ciclo';
+        return 'Base de fósforo';
+      }
+      if (nutrient == AgroMetricKey.k) {
+        if (stage.contains('floracion') || stage.contains('cuajado')) {
+          return 'Cuajado: evita pudrición de punta';
+        }
+        if (stage.contains('llenado')) return 'Llenado: calidad y dulzor';
+        if (stage.contains('progresiv')) return 'Cosecha: firmeza y anti-rajado';
+        if (stage.contains('fincic')) return 'Cierre de ciclo';
+        return 'Reserva de potasio';
+      }
+    }
+
     return 'Demanda actual';
   }
 
@@ -1370,16 +1630,27 @@ class NutrientRecommendationEngine {
           s.contains('tiller') ||
           s.contains('macoll');
     }
+    if (crop == 'tomato' || crop == 'tomate' || crop == 'jitomate') {
+      // Antes de floración/cuajado la demanda sube fuerte (K, Ca).
+      return s.contains('establec') || s.contains('vegetativo');
+    }
     return false;
   }
 
   static bool _isLateStage(String? stageKey) {
     final s = (stageKey ?? '').toLowerCase();
+    // Tomate indeterminado: cosecha progresiva es activamente productiva,
+    // NO es late (sigue habiendo floración y cuajado en ramas superiores).
+    if (s.contains('progresiv')) return false;
     return s.contains('matur') ||
         s.contains('senesc') ||
         s.contains('harvest') ||
         s.contains('cosech') ||
-        s.contains('late');
+        s.contains('late') ||
+        // Tomate: finCiclo es el cierre real; debe clasificarse como tardía.
+        s.contains('fincic') ||
+        s.contains('fin_cic') ||
+        s.contains('fin cic');
   }
 
   static String _nutrientShortName(AgroMetricKey nutrient) =>

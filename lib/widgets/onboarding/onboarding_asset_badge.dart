@@ -18,6 +18,8 @@ class OnboardingUiAssets {
   static const String beanBlack = 'assets/icons/wizard/ic_frijol_negro.png';
   static const String beanRed = 'assets/icons/wizard/ic_frijol_rojo.png';
   static const String beanWhite = 'assets/icons/wizard/ic_frijol_blanco.png';
+  static const String tomato = 'assets/icons/wizard/ic_tomate.png';
+  static const String cucumber = 'assets/icons/wizard/ic_cucumber.png';
   static const String variety = 'assets/icons/wizard/ic_variedad.png';
   static const String configureCrop =
       'assets/icons/wizard/ic_configurar_cultivo.png';
@@ -72,6 +74,12 @@ class OnboardingUiAssets {
       case 'frijol':
         return bean;
       case 'tomato':
+      case 'tomate':
+      case 'jitomate':
+        return tomato;
+      case 'cucumber':
+      case 'pepino':
+        return cucumber;
       case 'pepper':
       case 'lettuce':
       case 'onion':

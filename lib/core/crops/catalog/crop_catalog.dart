@@ -1,10 +1,13 @@
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/core/crops/barley/barley_catalog.dart';
 import 'package:bio_g/core/crops/bean/bean_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
+import 'package:bio_g/core/crops/cucumber/cucumber_catalog.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
 import 'package:bio_g/core/crops/oat/oat_catalog.dart';
+import 'package:bio_g/core/crops/tomato/tomato_catalog.dart';
 import 'package:bio_g/core/crops/wheat/wheat_catalog.dart';
 import 'package:bio_g/widgets/seeds/barley_profiles.dart';
 import 'package:bio_g/widgets/seeds/bean_profiles.dart';
@@ -15,12 +18,20 @@ class CropCatalog {
   static const String version = 'v1';
 
   static const String grainCategoryId = 'grain';
+  static const String vegetableCategoryId = 'vegetable';
 
   static const String maizeCropId = 'maize';
   static const String wheatCropId = 'wheat';
   static const String barleyCropId = 'barley';
   static const String beanCropId = 'bean';
   static const String oatCropId = 'oat';
+  static const String tomatoCropId = 'tomato';
+  static const String cucumberCropId = 'cucumber';
+
+  static const String tomatoDefaultProfileId = 'tm_gen';
+  static const String tomatoDefaultCalendarId = 'tomato_default';
+  static const String cucumberDefaultProfileId = 'pe_gen';
+  static const String cucumberDefaultCalendarId = 'cucumber_default';
 
   // ── Maize catalog constants ─────────────────────────────────────────────────
   static const String maizeDemoVarietyId = 'dk_2069';
@@ -41,6 +52,12 @@ class CropCatalog {
       id: grainCategoryId,
       label: 'Grano',
       subtitle: 'Cereales y leguminosas de ciclo agrícola',
+      enabled: true,
+    ),
+    CropCategoryEntry(
+      id: vegetableCategoryId,
+      label: 'Hortalizas',
+      subtitle: 'Cultivos hortícolas en suelo (campo abierto y protegido)',
       enabled: true,
     ),
   ];
@@ -221,6 +238,76 @@ class CropCatalog {
           label: 'Riego',
           cropId: beanCropId,
           subtitle: 'Escenario de mayor estabilidad hídrica',
+          enabled: true,
+        ),
+      ],
+    ),
+    CropCatalogEntry(
+      cropId: tomatoCropId,
+      categoryId: vegetableCategoryId,
+      label: 'Tomate',
+      subtitle: 'Hortaliza · campo abierto y protegido en suelo',
+      enabled: true,
+      defaultProfileId: tomatoDefaultProfileId,
+      defaultCalendarId: tomatoDefaultCalendarId,
+      varieties: tomatoVarieties,
+      profiles: tomatoProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: tomatoDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: tomatoCropId,
+          subtitle: 'Ciclo general anclado al trasplante',
+          enabled: true,
+          isDefault: true,
+        ),
+        CropCalendarEntry(
+          id: 'tomato_campo_abierto',
+          label: 'Campo abierto',
+          cropId: tomatoCropId,
+          subtitle: 'Ciclo exterior con mayor sensibilidad ambiental',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'tomato_protegido',
+          label: 'Protegido en suelo',
+          cropId: tomatoCropId,
+          subtitle: 'Invernadero o malla; ciclo productivo extendido',
+          enabled: true,
+        ),
+      ],
+    ),
+    CropCatalogEntry(
+      cropId: cucumberCropId,
+      categoryId: vegetableCategoryId,
+      label: 'Pepino',
+      subtitle: 'Hortaliza · campo abierto y protegido en suelo',
+      enabled: true,
+      defaultProfileId: cucumberDefaultProfileId,
+      defaultCalendarId: cucumberDefaultCalendarId,
+      varieties: cucumberVarieties,
+      profiles: cucumberProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: cucumberDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: cucumberCropId,
+          subtitle: 'Ciclo general anclado a siembra o trasplante',
+          enabled: true,
+          isDefault: true,
+        ),
+        CropCalendarEntry(
+          id: 'cucumber_campo_abierto',
+          label: 'Campo abierto',
+          cropId: cucumberCropId,
+          subtitle: 'Mayor exposición climática y presión de vectores',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'cucumber_protegido',
+          label: 'Protegido en suelo',
+          cropId: cucumberCropId,
+          subtitle: 'Malla o invernadero en suelo; más humedad y continuidad',
           enabled: true,
         ),
       ],
@@ -549,16 +636,13 @@ class CropCatalog {
     final double nDelta = isVegetative ? (isIrrigated ? 4.0 : -4.0) : 0.0;
     final double kDelta = isReproductive ? (isIrrigated ? 3.0 : -3.0) : 0.0;
 
-    return StageTargets(
+    return baseTargets.copyWith(
       moistureRaw: _shiftRange(
         baseTargets.moistureRaw,
         moistureDelta,
         min: 0.0,
         max: 100.0,
       ),
-      soilTemp: baseTargets.soilTemp,
-      ph: baseTargets.ph,
-      ec: baseTargets.ec,
       resistance: _shiftRange(
         baseTargets.resistance,
         resistanceDelta,
@@ -566,9 +650,35 @@ class CropCatalog {
         max: 4.0,
       ),
       nIndex: _shiftRange(baseTargets.nIndex, nDelta, min: 0.0, max: 100.0),
-      pIndex: baseTargets.pIndex,
       kIndex: _shiftRange(baseTargets.kIndex, kDelta, min: 0.0, max: 100.0),
+      nSoilPpmRange: _shiftComparableRange(
+        cropId: cropId,
+        nutrient: AgroMetricKey.n,
+        baseRange: baseTargets.nSoilPpmRange,
+        deltaIndex: nDelta,
+      ),
+      kSoilPpmRange: _shiftComparableRange(
+        cropId: cropId,
+        nutrient: AgroMetricKey.k,
+        baseRange: baseTargets.kSoilPpmRange,
+        deltaIndex: kDelta,
+      ),
     );
+  }
+
+  static AgroRange? _shiftComparableRange({
+    required String cropId,
+    required AgroMetricKey nutrient,
+    required AgroRange? baseRange,
+    required double deltaIndex,
+  }) {
+    if (baseRange == null) return null;
+    if (deltaIndex.abs() < 0.0001) return baseRange;
+
+    final double cap = NpkCaps.forCropMetric(cropKey: cropId, metricKey: nutrient);
+    final double deltaPpm = (deltaIndex / 100.0) * cap;
+
+    return _shiftRange(baseRange, deltaPpm, min: 0.0, max: cap * 1.25);
   }
 
   static bool isGenericAlias(String? raw) {
@@ -584,6 +694,8 @@ class CropCatalog {
         normalized == 'generic_wheat' ||
         normalized == 'generic_barley' ||
         normalized == 'generic_oat' ||
+        normalized == 'generic_tomato' ||
+        normalized == 'generic_cucumber' ||
         normalized.startsWith('generic_');
   }
 
@@ -595,7 +707,9 @@ class CropCatalog {
             normalized == 'fj_gen' ||
             normalized == 'tr_gen' ||
             normalized == 'cb_gen' ||
-            normalized == 'av_gen');
+            normalized == 'av_gen' ||
+            normalized == 'tm_gen' ||
+            normalized == 'pe_gen');
   }
 
   static String? _canonicalCalendarId({
@@ -665,6 +779,8 @@ class CropCatalog {
       'wheat' || 'trigo' => wheatCropId,
       'barley' || 'cebada' => barleyCropId,
       'oat' || 'avena' => oatCropId,
+      'tomato' || 'tomate' || 'jitomate' => tomatoCropId,
+      'cucumber' || 'pepino' => cucumberCropId,
       _ => value,
     };
   }
@@ -685,6 +801,8 @@ class CropCatalog {
       wheatCropId => 'Trigo',
       barleyCropId => 'Cebada',
       oatCropId => 'Avena',
+      tomatoCropId => 'Tomate',
+      cucumberCropId => 'Pepino',
       _ => 'Cultivo',
     };
   }

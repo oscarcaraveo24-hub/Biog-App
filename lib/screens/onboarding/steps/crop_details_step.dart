@@ -233,34 +233,14 @@ class CropDetailsStep extends StatelessWidget {
       ).map(_fromCatalogCrop).toList(growable: false);
     }
 
+    if (category == CropCatalog.vegetableCategoryId) {
+      return CropCatalog.cropsByCategory(
+        CropCatalog.vegetableCategoryId,
+        enabledOnly: false,
+      ).map(_fromCatalogCrop).toList(growable: false);
+    }
+
     switch (category) {
-      case 'vegetable':
-        return const <_DetailOption>[
-          _DetailOption(
-            cropId: 'tomato',
-            title: 'Tomate',
-            subtitle: 'Huerto y siembra intensiva',
-            typeLabel: 'Fruto',
-            assetPath: OnboardingUiAssets.vegetable,
-            varieties: <_VarietyOption>[
-              _VarietyOption(id: 'tomato_cherry', label: 'Cherry'),
-              _VarietyOption(id: 'tomato_saladette', label: 'Saladette'),
-              _VarietyOption(id: 'tomato_generic', label: 'Genérico'),
-            ],
-          ),
-          _DetailOption(
-            cropId: 'lettuce',
-            title: 'Lechuga',
-            subtitle: 'Hoja de ciclo corto',
-            typeLabel: 'Hoja',
-            assetPath: OnboardingUiAssets.vegetable,
-            varieties: <_VarietyOption>[
-              _VarietyOption(id: 'lettuce_romana', label: 'Romana'),
-              _VarietyOption(id: 'lettuce_orejona', label: 'Orejona'),
-              _VarietyOption(id: 'lettuce_generic', label: 'Genérico'),
-            ],
-          ),
-        ];
       case 'tree':
         return const <_DetailOption>[
           _DetailOption(
@@ -341,7 +321,7 @@ class CropDetailsStep extends StatelessWidget {
       cropId: crop.cropId,
       title: crop.label,
       subtitle: crop.subtitle ?? 'Disponible en el catálogo',
-      typeLabel: 'Grano',
+      typeLabel: _typeLabelForCategory(crop.categoryId),
       assetPath: OnboardingUiAssets.assetForCrop(
         crop.cropId,
         category: crop.categoryId,
@@ -355,6 +335,17 @@ class CropDetailsStep extends StatelessWidget {
                     _VarietyOption(id: item.id, label: item.label))
                 .toList(growable: false),
     );
+  }
+
+  static String _typeLabelForCategory(String categoryId) {
+    switch (categoryId) {
+      case CropCatalog.grainCategoryId:
+        return 'Grano';
+      case CropCatalog.vegetableCategoryId:
+        return 'Hortaliza';
+      default:
+        return 'Cultivo';
+    }
   }
 }
 

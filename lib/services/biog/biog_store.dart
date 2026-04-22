@@ -9,7 +9,7 @@ import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/models/yield_projection_config.dart';
 import 'package:bio_g/services/biog/biog_repository.dart';
-import 'package:bio_g/services/biog/fake_biog_repository.dart';
+import 'package:bio_g/services/biog/hybrid_biog_repository.dart';
 import 'package:bio_g/services/biog/storage/crop_context_storage.dart';
 import 'package:bio_g/services/biog/storage/crop_context_supabase_sync.dart';
 import 'package:bio_g/services/biog/storage/shared_prefs_crop_context_storage.dart';
@@ -74,24 +74,42 @@ class BioGStore extends ChangeNotifier {
   final List<StreamSubscription<dynamic>> _subs =
       <StreamSubscription<dynamic>>[];
 
-  Future<void> init() async {
-    Map<String, DeviceCropContext> loaded = await _cropContextStorage.loadAll();
+  /// The user whose local cache slice currently lives in the
+  /// in-memory maps (`_cropByDevice`, `_yieldByDevice`). Null while
+  /// no one is bound yet, and during an explicit guest session.
+  ///
+  /// All storage reads and writes are namespaced with this value so
+  /// signing out of user A and signing in as user B cannot leak A's
+  /// crop context or yield config into B's session.
+  String? _currentUserId;
 
-    // Fallback: if local is empty, try to recover from Supabase.
-    if (loaded.isEmpty) {
-      final remote = await _cropContextSync.downloadAll();
-      if (remote.isNotEmpty) {
-        loaded = remote;
-        for (final context in remote.values) {
-          await _cropContextStorage.save(context);
-        }
-      }
-    }
+  /// Exposed for read-only inspection. Persistent writes must go
+  /// through [bindUser] / [unbindUser] to keep the namespacing
+  /// invariant intact.
+  String? get currentUserId => _currentUserId;
+
+  /// Hydrate the store from local storage only. This runs before
+  /// [bindUser] and exclusively loads the *guest* slot, so the UI has
+  /// something to render immediately on cold start before auth has
+  /// resolved. Once [bindUser] runs with a real userId, the guest
+  /// slice is discarded and replaced with the authenticated user's.
+  Future<void> init() async {
+    await _loadLocalCacheFor(userId: null);
+    _currentUserId = null;
+    notifyListeners();
+  }
+
+  /// Replace the in-memory crop context / yield config maps with
+  /// whatever the per-user local cache holds for [userId]. Used by
+  /// both [init] (guest) and [bindUser] (authenticated).
+  Future<void> _loadLocalCacheFor({required String? userId}) async {
+    final Map<String, DeviceCropContext> localContexts =
+        await _cropContextStorage.loadAll(userId: userId);
 
     _cropByDevice
       ..clear()
       ..addAll(
-        loaded.map(
+        localContexts.map(
           (deviceId, context) => MapEntry<String, DeviceCropContext>(
             deviceId,
             _normalizeContextForStorage(context),
@@ -99,23 +117,13 @@ class BioGStore extends ChangeNotifier {
         ),
       );
 
-    Map<String, YieldProjectionConfig> loadedYield =
-        await _yieldProjectionStorage.loadAll();
-
-    if (loadedYield.isEmpty) {
-      final remoteYield = await _yieldProjectionSync.downloadAll();
-      if (remoteYield.isNotEmpty) {
-        loadedYield = remoteYield;
-        for (final config in remoteYield.values) {
-          await _yieldProjectionStorage.save(config);
-        }
-      }
-    }
+    final Map<String, YieldProjectionConfig> localYields =
+        await _yieldProjectionStorage.loadAll(userId: userId);
 
     _yieldByDevice
       ..clear()
       ..addAll(
-        loadedYield.map(
+        localYields.map(
           (deviceId, config) => MapEntry<String, YieldProjectionConfig>(
             deviceId,
             _normalizeYieldConfigForStorage(config),
@@ -124,16 +132,181 @@ class BioGStore extends ChangeNotifier {
       );
 
     _dropYieldConfigsWithoutCropContext();
+  }
 
-    if (_cropByDevice.isNotEmpty) {
-      unawaited(_cropContextSync.uploadAll(_cropByDevice));
+  /// Hydrate user-scoped real state (devices + identity) and merge
+  /// remote crop contexts / yield configs using last-write-wins by
+  /// `updatedAt`. Call this on login and on every auth change.
+  ///
+  /// Offline-first: if the network call fails, the local state
+  /// remains authoritative and we try again on the next call.
+  ///
+  /// User isolation: before anything else, the in-memory maps are
+  /// replaced with the per-user local cache slice for [userId]. This
+  /// prevents leaking state from a previously-bound user into the
+  /// current session — a particularly nasty bug when the LWW merge
+  /// runs with contaminated `local` and ends up pushing user A's
+  /// crop context up to Supabase under user B's account.
+  ///
+  /// Conflict resolution (explicit):
+  ///   For every deviceId present in both local and remote:
+  ///     - if remote.updatedAt > local.updatedAt → remote wins, the
+  ///       per-user local cache is overwritten.
+  ///     - otherwise → local wins and is pushed back to remote.
+  Future<void> bindUser({required String? userId}) async {
+    // 0) Switch the in-memory slice to the new user BEFORE any merge
+    //    logic runs. Same user = instant re-render from their own
+    //    cache; different user = starts from a clean, isolated slot.
+    _currentUserId = userId;
+    await _loadLocalCacheFor(userId: userId);
+    notifyListeners();
+
+    // 1) Drive identity. The hybrid repo rehydrates its own device
+    //    cache and emits fresh device streams.
+    final repo = _repo;
+    if (repo is HybridBioGRepository) {
+      await repo.bindUser(
+        userId: userId,
+        seedResolver: (deviceId) => seedInstallForDevice(deviceId),
+      );
     }
 
-    if (_yieldByDevice.isNotEmpty) {
-      unawaited(_yieldProjectionSync.uploadAll(_yieldByDevice));
+    // 2) Pull remote crop contexts and merge with local using LWW.
+    //    Note: `_currentUserId` is the authoritative namespace here —
+    //    if auth state flipped while we were awaiting, we abort so
+    //    we don't write user A's merged data into user B's cache.
+    if (userId != null && userId.isNotEmpty) {
+      try {
+        final remoteContexts = await _cropContextSync.downloadAll();
+        if (_currentUserId != userId) return;
+
+        final merged = _mergeCropContextsLWW(
+          local: Map<String, DeviceCropContext>.from(_cropByDevice),
+          remote: remoteContexts,
+        );
+
+        _cropByDevice
+          ..clear()
+          ..addAll(
+            merged.map(
+              (k, v) => MapEntry<String, DeviceCropContext>(
+                k,
+                _normalizeContextForStorage(v),
+              ),
+            ),
+          );
+
+        // Persist the merged winners locally under this user's slot.
+        for (final v in _cropByDevice.values) {
+          unawaited(_cropContextStorage.save(v, userId: userId));
+        }
+
+        // Push anything where local was newer (or missing on remote).
+        for (final entry in _cropByDevice.entries) {
+          final remote = remoteContexts[entry.key];
+          if (remote == null ||
+              entry.value.updatedAt.isAfter(remote.updatedAt)) {
+            unawaited(_cropContextSync.upload(entry.value));
+          }
+        }
+      } catch (_) {
+        // Best-effort; local stays authoritative.
+      }
+
+      try {
+        final remoteYields = await _yieldProjectionSync.downloadAll();
+        if (_currentUserId != userId) return;
+
+        final mergedYields = _mergeYieldConfigsLWW(
+          local: Map<String, YieldProjectionConfig>.from(_yieldByDevice),
+          remote: remoteYields,
+        );
+
+        _yieldByDevice
+          ..clear()
+          ..addAll(
+            mergedYields.map(
+              (k, v) => MapEntry<String, YieldProjectionConfig>(
+                k,
+                _normalizeYieldConfigForStorage(v),
+              ),
+            ),
+          );
+
+        _dropYieldConfigsWithoutCropContext();
+
+        for (final v in _yieldByDevice.values) {
+          unawaited(_yieldProjectionStorage.save(v, userId: userId));
+        }
+
+        for (final entry in _yieldByDevice.entries) {
+          final remote = remoteYields[entry.key];
+          if (remote == null ||
+              entry.value.updatedAt.isAfter(remote.updatedAt)) {
+            unawaited(_yieldProjectionSync.upload(entry.value));
+          }
+        }
+      } catch (_) {
+        // Best-effort; local stays authoritative.
+      }
     }
 
     notifyListeners();
+  }
+
+  /// Drop user-scoped runtime state.
+  ///
+  /// In-memory crop context / yield config maps are cleared so the
+  /// next sign-in (possibly a *different* user) starts from a clean
+  /// slate. The on-disk per-user cache slots are preserved intact,
+  /// so if the same user signs back in their own slice is re-loaded
+  /// instantly via [bindUser] → [_loadLocalCacheFor].
+  void unbindUser() {
+    final repo = _repo;
+    if (repo is HybridBioGRepository) {
+      repo.unbindUser();
+    }
+    _currentUserId = null;
+    _cropByDevice.clear();
+    _yieldByDevice.clear();
+    _alertsStateByDevice.clear();
+    _agroEvalByDevice.clear();
+    _cropCareAvgByDevice.clear();
+    notifyListeners();
+  }
+
+  /// Last-write-wins merge for crop contexts by `updatedAt`.
+  Map<String, DeviceCropContext> _mergeCropContextsLWW({
+    required Map<String, DeviceCropContext> local,
+    required Map<String, DeviceCropContext> remote,
+  }) {
+    final result = <String, DeviceCropContext>{...local};
+    for (final entry in remote.entries) {
+      final existing = result[entry.key];
+      if (existing == null) {
+        result[entry.key] = entry.value;
+      } else if (entry.value.updatedAt.isAfter(existing.updatedAt)) {
+        result[entry.key] = entry.value;
+      }
+    }
+    return result;
+  }
+
+  /// Last-write-wins merge for yield projection configs by `updatedAt`.
+  Map<String, YieldProjectionConfig> _mergeYieldConfigsLWW({
+    required Map<String, YieldProjectionConfig> local,
+    required Map<String, YieldProjectionConfig> remote,
+  }) {
+    final result = <String, YieldProjectionConfig>{...local};
+    for (final entry in remote.entries) {
+      final existing = result[entry.key];
+      if (existing == null) {
+        result[entry.key] = entry.value;
+      } else if (entry.value.updatedAt.isAfter(existing.updatedAt)) {
+        result[entry.key] = entry.value;
+      }
+    }
+    return result;
   }
 
   List<BioGDevice> devices = const <BioGDevice>[];
@@ -214,7 +387,7 @@ class BioGStore extends ChangeNotifier {
     final previous = _cropByDevice[context.deviceId];
     final normalized = _normalizeContextForStorage(context);
     _cropByDevice[normalized.deviceId] = normalized;
-    await _cropContextStorage.save(normalized);
+    await _cropContextStorage.save(normalized, userId: _currentUserId);
     unawaited(_cropContextSync.upload(normalized));
 
     final previousCropId = _normalizeCropKey(previous?.cropId);
@@ -244,7 +417,7 @@ class BioGStore extends ChangeNotifier {
     _alertsStateByDevice.remove(deviceId);
     _agroEvalByDevice.remove(deviceId);
     _cropCareAvgByDevice.remove(deviceId);
-    await _cropContextStorage.delete(deviceId);
+    await _cropContextStorage.delete(deviceId, userId: _currentUserId);
     unawaited(_cropContextSync.delete(deviceId));
     await clearYieldProjectionConfig(deviceId, notify: false);
 
@@ -281,7 +454,7 @@ class BioGStore extends ChangeNotifier {
     }
 
     _yieldByDevice[normalized.deviceId] = normalized;
-    await _yieldProjectionStorage.save(normalized);
+    await _yieldProjectionStorage.save(normalized, userId: _currentUserId);
     unawaited(_yieldProjectionSync.upload(normalized));
     notifyListeners();
   }
@@ -293,7 +466,7 @@ class BioGStore extends ChangeNotifier {
     final removed = _yieldByDevice.remove(deviceId);
     if (removed == null) return;
 
-    await _yieldProjectionStorage.delete(deviceId);
+    await _yieldProjectionStorage.delete(deviceId, userId: _currentUserId);
     unawaited(_yieldProjectionSync.delete(deviceId));
 
     if (notify) {
@@ -430,8 +603,8 @@ class BioGStore extends ChangeNotifier {
       _alertsStateByDevice.remove(id);
       _agroEvalByDevice.remove(id);
       _cropCareAvgByDevice.remove(id);
-      unawaited(_cropContextStorage.delete(id));
-      unawaited(_yieldProjectionStorage.delete(id));
+      unawaited(_cropContextStorage.delete(id, userId: _currentUserId));
+      unawaited(_yieldProjectionStorage.delete(id, userId: _currentUserId));
       unawaited(_cropContextSync.delete(id));
       unawaited(_yieldProjectionSync.delete(id));
     }
@@ -451,7 +624,9 @@ class BioGStore extends ChangeNotifier {
 
     for (final deviceId in orphanIds) {
       _yieldByDevice.remove(deviceId);
-      unawaited(_yieldProjectionStorage.delete(deviceId));
+      unawaited(
+        _yieldProjectionStorage.delete(deviceId, userId: _currentUserId),
+      );
       unawaited(_yieldProjectionSync.delete(deviceId));
     }
   }
@@ -562,13 +737,13 @@ class BioGStore extends ChangeNotifier {
     await _repo.setActiveDevice(id);
   }
 
-  Future<BioGDevice> addDemoDevice({
+  Future<BioGDevice> addDevice({
     String? seedId,
     String? profileId,
     String? locationName,
     String? name,
   }) {
-    return _repo.addFakeDevice(
+    return _repo.addDevice(
       seedId: seedId,
       profileId: profileId,
       locationName: locationName,
@@ -576,14 +751,29 @@ class BioGStore extends ChangeNotifier {
     );
   }
 
+  /// Legacy alias kept so existing callers (e.g. `AddBioGScreen`) do
+  /// not break during the transition. Prefer [addDevice] in new code.
+  Future<BioGDevice> addDemoDevice({
+    String? seedId,
+    String? profileId,
+    String? locationName,
+    String? name,
+  }) =>
+      addDevice(
+        seedId: seedId,
+        profileId: profileId,
+        locationName: locationName,
+        name: name,
+      );
+
   Future<void> removeDevice(String id) async {
     _cropByDevice.remove(id);
     _yieldByDevice.remove(id);
     _alertsStateByDevice.remove(id);
     _agroEvalByDevice.remove(id);
     _cropCareAvgByDevice.remove(id);
-    await _cropContextStorage.delete(id);
-    await _yieldProjectionStorage.delete(id);
+    await _cropContextStorage.delete(id, userId: _currentUserId);
+    await _yieldProjectionStorage.delete(id, userId: _currentUserId);
     unawaited(_cropContextSync.delete(id));
     unawaited(_yieldProjectionSync.delete(id));
 
@@ -775,17 +965,17 @@ class BioGStore extends ChangeNotifier {
 
   void pauseSync() {
     final repo = _repo;
-    if (repo is FakeBioGRepository) repo.pause();
+    if (repo is HybridBioGRepository) repo.pause();
   }
 
   void resumeSync() {
     final repo = _repo;
-    if (repo is FakeBioGRepository) repo.resume();
+    if (repo is HybridBioGRepository) repo.resume();
   }
 
   bool get isSyncPaused {
     final repo = _repo;
-    if (repo is FakeBioGRepository) return repo.isPaused;
+    if (repo is HybridBioGRepository) return repo.isPaused;
     return false;
   }
 

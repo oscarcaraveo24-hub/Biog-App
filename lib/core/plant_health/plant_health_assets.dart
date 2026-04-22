@@ -1,20 +1,10 @@
 import 'package:bio_g/core/plant_health/plant_health_ids.dart';
 
-/// Centralised registry that maps every Plant-Health ID (organ, symptom,
-/// signal, context) to its PNG asset path inside `assets/icons/plant_health/`.
-///
-/// Usage:
-/// ```dart
-/// final String? path = PlantHealthAssets.forOrgan('leaf');
-/// final String? path = PlantHealthAssets.forSymptom('necrotic_foliar_spots');
-/// final String? path = PlantHealthAssets.forSignal('pustules_on_stem');
-/// ```
+/// Centralized registry that maps plant-health IDs to local PNG assets.
 class PlantHealthAssets {
   PlantHealthAssets._();
 
   static const String _base = 'assets/icons/plant_health';
-
-  // ── Organs ──────────────────────────────────────────────────────────────────
 
   static const Map<String, String> _organs = <String, String>{
     PlantHealthIds.organLeaf: '$_base/ph_leaf_normal.png',
@@ -23,13 +13,14 @@ class PlantHealthAssets {
     PlantHealthIds.organEar: '$_base/ph_ear_head_normal.png',
     PlantHealthIds.organSpike: '$_base/ph_ear_head_normal.png',
     PlantHealthIds.organPod: '$_base/ph_pod_normal.png',
+    PlantHealthIds.organFruit: '$_base/ph_pod_normal.png',
+    PlantHealthIds.organFlower: '$_base/ph_pod_normal.png',
+    PlantHealthIds.organRoot: '$_base/ph_whole_plant_normal.png',
+    PlantHealthIds.organCrown: '$_base/ph_stem_normal.png',
     PlantHealthIds.organGrain: '$_base/ph_grain_normal.png',
     PlantHealthIds.organWholePlant: '$_base/ph_whole_plant_normal.png',
-    // cob maps to the same ear/head visual
     'cob': '$_base/ph_cob_normal.png',
   };
-
-  // ── Primary symptoms ───────────────────────────────────────────────────────
 
   static const Map<String, String> _symptoms = <String, String>{
     PlantHealthIds.symptomOrangeReddishPustules:
@@ -57,9 +48,33 @@ class PlantHealthAssets {
     PlantHealthIds.symptomAngularSpots: '$_base/ph_leaf_angular_lesions.png',
     PlantHealthIds.symptomStripedLeaves: '$_base/ph_leaf_streaks_bands.png',
     PlantHealthIds.symptomGrayFoliarScald: '$_base/ph_leaf_scald_blanched.png',
+    PlantHealthIds.symptomPowderyGrowth: '$_base/ph_leaf_spore_dust.png',
+    PlantHealthIds.symptomWiltVascular:
+        '$_base/ph_plant_rapid_defoliation.png',
+    PlantHealthIds.symptomFruitApicalRot: '$_base/ph_pod_canker.png',
+    PlantHealthIds.symptomBacterialSpeckSpot:
+        '$_base/ph_leaf_angular_lesions.png',
+    PlantHealthIds.symptomBronzingStippling:
+        '$_base/ph_leaf_strong_chlorosis.png',
+    PlantHealthIds.symptomRootGalls:
+        '$_base/ph_plant_stunting_reddish.png',
+    PlantHealthIds.symptomSeedlingCollapse:
+        '$_base/ph_plant_rapid_defoliation.png',
+    PlantHealthIds.symptomRootRotWilt:
+        '$_base/ph_plant_rapid_defoliation.png',
+    PlantHealthIds.symptomGrayMoldNecrosis:
+        '$_base/ph_leaf_spore_dust.png',
+    PlantHealthIds.symptomLeafMines:
+        '$_base/ph_leaf_reticulated_lesions.png',
+    PlantHealthIds.symptomFeedingHoles:
+        '$_base/ph_leaf_chewing_larva.png',
+    PlantHealthIds.symptomFlowerAbortion:
+        '$_base/ph_pod_normal.png',
+    PlantHealthIds.symptomFruitDeformation:
+        '$_base/ph_pod_canker.png',
+    PlantHealthIds.symptomColdInjury:
+        '$_base/ph_leaf_scald_blanched.png',
   };
-
-  // ── Secondary signals / refiners ───────────────────────────────────────────
 
   static const Map<String, String> _signals = <String, String>{
     PlantHealthIds.signalPustulesOnStem: '$_base/ph_stem_pustules.png',
@@ -97,27 +112,63 @@ class PlantHealthAssets {
         '$_base/ph_leaf_angular_lesions.png',
     PlantHealthIds.signalPinkSporeMass:
         '$_base/ph_lesion_pink_spore_mass.png',
+    PlantHealthIds.signalWhitePowderGrowth: '$_base/ph_leaf_spore_dust.png',
+    PlantHealthIds.signalGrayFuzzyGrowth: '$_base/ph_leaf_spore_dust.png',
+    PlantHealthIds.signalHaloMargin:
+        '$_base/ph_leaf_water_soaked_margin.png',
+    PlantHealthIds.signalVascularBrowning:
+        '$_base/ph_leaf_stem_dark_streaks.png',
+    PlantHealthIds.signalOneSidedWilt:
+        '$_base/ph_plant_rapid_defoliation.png',
+    PlantHealthIds.signalFruitApicalBlackPatch: '$_base/ph_pod_canker.png',
+    PlantHealthIds.signalThripsPresent: '$_base/ph_insect_vector.png',
+    PlantHealthIds.signalBronzedLeafSurface:
+        '$_base/ph_leaf_strong_chlorosis.png',
+    PlantHealthIds.signalMitesWebbing: '$_base/ph_leaf_spore_dust.png',
+    PlantHealthIds.signalRootGalls:
+        '$_base/ph_plant_stunting_reddish.png',
+    PlantHealthIds.signalStemCanker: '$_base/ph_pod_canker.png',
+    PlantHealthIds.signalUndersideSporulation:
+        '$_base/ph_leaf_dew.png',
+    PlantHealthIds.signalSeedlingNeckCollapse:
+        '$_base/ph_plant_rapid_defoliation.png',
+    PlantHealthIds.signalWaterlogging:
+        '$_base/ph_humid_environment.png',
+    PlantHealthIds.signalRootsDarkRot:
+        '$_base/ph_leaf_stem_dark_streaks.png',
+    PlantHealthIds.signalHeatStress:
+        '$_base/ph_plant_recent_stress.png',
+    PlantHealthIds.signalDryHotWindow:
+        '$_base/ph_plant_recent_stress.png',
+    PlantHealthIds.signalFlowerDrop:
+        '$_base/ph_pod_normal.png',
+    PlantHealthIds.signalFruitHooking:
+        '$_base/ph_pod_canker.png',
+    PlantHealthIds.signalDeformedNoRot:
+        '$_base/ph_pod_canker.png',
+    PlantHealthIds.signalSalinityLoad:
+        '$_base/ph_plant_recent_stress.png',
+    PlantHealthIds.signalLeafMines:
+        '$_base/ph_leaf_reticulated_lesions.png',
+    PlantHealthIds.signalFeedingHoles:
+        '$_base/ph_leaf_chewing_larva.png',
+    PlantHealthIds.signalColdExposure:
+        '$_base/ph_leaf_scald_blanched.png',
+    PlantHealthIds.signalRecentStress:
+        '$_base/ph_plant_recent_stress.png',
   };
-
-  // ── Context toggles ────────────────────────────────────────────────────────
 
   static const String contextHumidity = '$_base/ph_humid_environment.png';
   static const String contextCoolDew = '$_base/ph_leaf_dew.png';
   static const String contextRecentStress = '$_base/ph_plant_recent_stress.png';
   static const String contextVectorPressure = '$_base/ph_insect_vector.png';
 
-  // ── Public API ─────────────────────────────────────────────────────────────
-
-  /// Returns the asset path for an organ ID, or `null` if unmapped.
   static String? forOrgan(String organId) => _organs[organId];
 
-  /// Returns the asset path for a primary-symptom ID, or `null` if unmapped.
   static String? forSymptom(String symptomId) => _symptoms[symptomId];
 
-  /// Returns the asset path for a secondary-signal ID, or `null` if unmapped.
   static String? forSignal(String signalId) => _signals[signalId];
 
-  /// Generic lookup across all categories (organ → symptom → signal).
   static String? forId(String id) =>
       _organs[id] ?? _symptoms[id] ?? _signals[id];
 }

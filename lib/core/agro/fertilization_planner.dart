@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
+import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 
 class NutrientDoseGuide {
@@ -136,6 +137,12 @@ class FertilizationPlanner {
     if (crop == 'oat' || crop == 'avena') {
       return _oatGuide(nutrient, stageKey, deficitPpm, cultivationScaleId);
     }
+    if (crop == 'tomato' || crop == 'tomate' || crop == 'jitomate') {
+      return _tomatoGuide(nutrient, stageKey, deficitPpm, cultivationScaleId);
+    }
+    if (crop == 'cucumber' || crop == 'pepino') {
+      return _cucumberGuide(nutrient, stageKey, deficitPpm, cultivationScaleId);
+    }
 
     return _genericGuide(nutrient, deficitPpm, cultivationScaleId);
   }
@@ -153,17 +160,14 @@ class FertilizationPlanner {
   ) {
     if (targets == null) return null;
 
-    final range = switch (nutrient) {
-      AgroMetricKey.n => targets.nIndex,
-      AgroMetricKey.p => targets.pIndex,
-      AgroMetricKey.k => targets.kIndex,
-      _ => null,
-    };
+    final range = NutrientTargetRangeResolver.comparableRange(
+      nutrient: nutrient,
+      cropKey: cropKey,
+      targets: targets,
+    );
     if (range == null) return null;
 
-    final cap = NpkCaps.forCropMetric(cropKey: cropKey, metricKey: nutrient);
-    final targetMidPpm =
-        ((range.optimalMin + range.optimalMax) / 2.0 / 100.0) * cap;
+    final targetMidPpm = (range.optimalMin + range.optimalMax) / 2.0;
 
     return math.max(0.0, targetMidPpm - rawPpm);
   }
@@ -911,6 +915,387 @@ class FertilizationPlanner {
     }
   }
 
+  // ==========================================
+  // TOMATE
+  // ==========================================
+  // Leyes fertilizante adicionales usadas en tomate:
+  //   MAP  (11-52-0):        P₂O₅ = 0.52
+  //   Nitrato de potasio (13-0-46): K₂O = 0.46
+  //
+  // Racional agronómico:
+  // - N fraccionado en fertirriego (nunca pulsos altos en flor/cuajado).
+  // - P starter post-trasplante; MAP preferido sobre DAP por pH ácido leve.
+  // - K dominante en llenado; preferir nitrato de K en reproductivo
+  //   (aporte sinérgico de N + K, y mejor balance con Ca frente a KCl).
+  static NutrientDoseGuide _tomatoGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    double deficitPpm,
+    String? scale,
+  ) {
+    final stage = (stageKey ?? '').toLowerCase();
+    final isGerm = stage.contains('germin');
+    final isEstablishment = stage.contains('establec');
+    final isVeg = stage.contains('vegetativo');
+    final isFlowering = stage.contains('floracion') || stage.contains('flor');
+    final isFruitSet = stage.contains('cuajado');
+    final isFilling = stage.contains('llenado');
+    final isHarvest = stage.contains('progresiv');
+    final isLate = _isLateStage(stage);
+    final isReproductive = isFlowering || isFruitSet || isFilling || isHarvest;
+    final bridge = _formatSoilBridgeText(deficitPpm);
+
+    if (isLate) {
+      return const NutrientDoseGuide(
+        doseGuideEs:
+            'El ciclo del tomate ya está cerrando. Guarda esta lectura para ajustar el arrancador del próximo trasplante.',
+        fertilizerEquivalentEs:
+            'A estas alturas corregir ya no paga: el valor está en planear mejor el siguiente ciclo.',
+      );
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        final eqUrea = _formatCommercialDoseText(
+          deficitPpm,
+          _leyUrea,
+          'Urea (46-0-0)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Nitrógeno puro',
+          scale,
+        );
+        if (isFlowering || isFruitSet) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Aplica $puroText REPARTIDO en el riego (3 a 4 veces en la semana). Evita dosis altas de un solo golpe: te tumban la flor.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea repartido durante la semana.',
+              bridge,
+            ),
+          );
+        }
+        if (isGerm || isEstablishment) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arranque moderado: aplica $puroText para acompañar el fósforo inicial sin disparar follaje.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea.',
+              bridge,
+            ),
+          );
+        }
+        if (isFilling || isHarvest) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Apoyo MÍNIMO de nitrógeno en llenado/cosecha: $puroText solo si la lectura lo justifica. Aquí lo que manda es el potasio.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea; a estas alturas el nitrógeno rinde poco.',
+              bridge,
+            ),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText repartido en el riego (varias veces, no de un solo jalón). El tomate no aguanta dosis altas de nitrógeno.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqUrea.', bridge),
+        );
+
+      case AgroMetricKey.p:
+        final eqMap = _formatCommercialDoseText(
+          deficitPpm,
+          0.52,
+          'MAP (11-52-0)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Fósforo puro',
+          scale,
+        );
+        if (isEstablishment || isGerm) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arrancador de fósforo después del trasplante: aplica $puroText al pie de la planta (empapado al suelo o directo a la raíz) para que la planta agarre.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqMap (conviene usar fosfato monoamónico en lugar de diamónico porque cuida mejor el pH).',
+              bridge,
+            ),
+          );
+        }
+        if (isReproductive) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Fósforo en flor y fruto: aplica $puroText como corrección de base. La respuesta será moderada.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqMap.',
+              bridge,
+            ),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText como base de fósforo. En tomate la respuesta fuerte del fósforo es al inicio, después del trasplante.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqMap.', bridge),
+        );
+
+      case AgroMetricKey.k:
+        final eqMop = _formatCommercialDoseText(
+          deficitPpm,
+          _leyMop,
+          'KCl / MOP',
+          scale,
+        );
+        final eqKnit = _formatCommercialDoseText(
+          deficitPpm,
+          0.46,
+          'Nitrato de K (13-0-46)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Potasio puro',
+          scale,
+        );
+        if (isFilling || isHarvest) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Etapa de mucho potasio: aplica $puroText metiéndolo POCO A POCO en el riego. Nada de jalones fuertes: detonan el rajado del fruto.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Conviene $eqKnit antes que KCl; si el suelo es salino, usa sulfato de potasio. También equivale a $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        if (isFlowering || isFruitSet) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Potasio en flor/cuajado: aplica $puroText repartido en el riego, manteniendo la humedad del suelo PAREJA, para que el potasio no le compita al calcio y no salga pudrición en la punta del fruto.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqKnit (el nitrato de potasio es lo más recomendado aquí). Alternativa: $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        if (isVeg) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Refuerza reservas de potasio con $puroText antes de que llegue la demanda fuerte de floración.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs: 'Aplica $puroText preparando reservas para la demanda fuerte del llenado.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqMop.', bridge),
+        );
+
+      default:
+        return const NutrientDoseGuide(doseGuideEs: 'Falta nutriente.');
+    }
+  }
+
+  // ==========================================
+  // PEPINO
+  // ==========================================
+  // Racional agronómico base:
+  // - P pesa fuerte al arranque y vuelve a pesar en floración.
+  // - N sube en vegetativo, pero en flor/cuajado se modera para no tirar flor.
+  // - K es el cuello real desde floración, y domina cuajado, llenado y cosecha.
+  // - En cucurbitáceas la estabilidad hídrica importa tanto como la dosis:
+  //   un "jalón" de sales o de seca pega rápido en deformidad y amargor.
+  static NutrientDoseGuide _cucumberGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    double deficitPpm,
+    String? scale,
+  ) {
+    final stage = (stageKey ?? '').toLowerCase();
+    final isGerm = stage.contains('germin');
+    final isEstablishment = stage.contains('establec');
+    final isVeg = stage.contains('vegetativo') || stage.contains('vegetative');
+    final isFlowering = stage.contains('floracion') || stage.contains('flor');
+    final isFruitSet =
+        stage.contains('cuajado') ||
+        stage.contains('fruitset') ||
+        stage.contains('amarre');
+    final isFilling = stage.contains('llenado') || stage.contains('fill');
+    final isHarvest =
+        stage.contains('progresiv') || stage.contains('harvest');
+    final isLate = _isLateStage(stage);
+    final isReproductive =
+        isFlowering || isFruitSet || isFilling || isHarvest;
+    final bridge = _formatSoilBridgeText(deficitPpm);
+
+    if (isLate) {
+      return const NutrientDoseGuide(
+        doseGuideEs:
+            'El ciclo del pepino ya va de salida. Usa esta lectura para corregir la base del siguiente ciclo, no para perseguir una respuesta tardía.',
+        fertilizerEquivalentEs:
+            'En fin de ciclo el valor está más en aprender del suelo que en meter una corrección grande.',
+      );
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        final eqUrea = _formatCommercialDoseText(
+          deficitPpm,
+          _leyUrea,
+          'Urea (46-0-0)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Nitrógeno puro',
+          scale,
+        );
+        if (isFlowering || isFruitSet) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Aplica $puroText FRACCIONADO. En flor y cuajado el pepino no quiere jalones altos de nitrógeno porque se vegeta y aborta flor.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea, mejor repartido en varios riegos o eventos cortos.',
+              bridge,
+            ),
+          );
+        }
+        if (isGerm || isEstablishment) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arranque moderado de nitrógeno: aplica $puroText sin excederte. Aquí primero manda el fósforo y que la raíz agarre.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea.',
+              bridge,
+            ),
+          );
+        }
+        if (isFilling || isHarvest) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Apoyo moderado de nitrógeno: $puroText solo para sostener guía y follaje productivo. En esta ventana manda mucho más el potasio.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea; evita perseguir N como si fuera el cuello principal.',
+              bridge,
+            ),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText con criterio para sostener el vegetativo del pepino sin disparar exceso.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqUrea.', bridge),
+        );
+
+      case AgroMetricKey.p:
+        final eqMap = _formatCommercialDoseText(
+          deficitPpm,
+          0.52,
+          'MAP (11-52-0)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Fósforo puro',
+          scale,
+        );
+        if (isGerm || isEstablishment) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arrancador de fósforo: aplica $puroText cerca de la zona radical para que la plántula agarre y no se quede frenada.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqMap. En pepino el P temprano sí se siente.',
+              bridge,
+            ),
+          );
+        }
+        if (isFlowering) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Fósforo de sostén en floración: aplica $puroText si la lectura está corta. Aquí acompaña energía reproductiva, pero ya no rinde como al arranque.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqMap.',
+              bridge,
+            ),
+          );
+        }
+        if (isReproductive) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Usa $puroText como corrección de base, no como rescate. En pepino el fósforo pesa más al inicio y vuelve a pesar en floración.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqMap.',
+              bridge,
+            ),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText para reforzar el arranque y la base fisiológica del cultivo.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqMap.', bridge),
+        );
+
+      case AgroMetricKey.k:
+        final eqMop = _formatCommercialDoseText(
+          deficitPpm,
+          _leyMop,
+          'KCl / MOP',
+          scale,
+        );
+        final eqKnit = _formatCommercialDoseText(
+          deficitPpm,
+          0.46,
+          'Nitrato de K (13-0-46)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Potasio puro',
+          scale,
+        );
+        if (isFlowering || isFruitSet) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Sube el potasio ya: aplica $puroText repartido en el riego con humedad pareja. En pepino, cuajado flojo y deformidad arrancan cuando K cae aquí.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqKnit; si el suelo viene salino, considera una fuente más amable que KCl. Referencia alternativa: $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        if (isFilling || isHarvest) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Ventana fuerte de potasio: aplica $puroText POCO A POCO en el riego. Nada de cargas bruscas: en pepino disparan amargor, deformidad y estrés osmótico.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Conviene $eqKnit o, si hace falta bajar cloruros, una fuente de sulfato de potasio. También equivale a $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        if (isVeg) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Refuerza reservas de potasio con $puroText antes de entrar a floración y cuajado con el tanque vacío.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText preparando la demanda fuerte de potasio del pepino.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqMop.', bridge),
+        );
+
+      default:
+        return const NutrientDoseGuide(doseGuideEs: 'Falta nutriente.');
+    }
+  }
+
   static NutrientDoseGuide _genericGuide(
     AgroMetricKey nutrient,
     double deficitPpm,
@@ -979,10 +1364,18 @@ class FertilizationPlanner {
       stage.contains('elong') ||
       stage.contains('boot');
 
-  static bool _isLateStage(String stage) =>
-      stage.contains('matur') ||
-      stage.contains('senesc') ||
-      stage.contains('harvest') ||
-      stage.contains('cosech') ||
-      stage.contains('late');
+  static bool _isLateStage(String stage) {
+    // Tomate indeterminado: cosecha progresiva es activamente productiva,
+    // NO es tardía (sigue cuajando fruto en ramas superiores).
+    if (stage.contains('progresiv')) return false;
+    return stage.contains('matur') ||
+        stage.contains('senesc') ||
+        stage.contains('harvest') ||
+        stage.contains('cosech') ||
+        stage.contains('late') ||
+        // Tomate: finCiclo es el cierre real.
+        stage.contains('fincic') ||
+        stage.contains('fin_cic') ||
+        stage.contains('fin cic');
+  }
 }

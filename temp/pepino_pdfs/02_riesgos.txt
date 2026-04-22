@@ -1,0 +1,319 @@
+                                               BIO-G
+
+          Riesgos del cultivo del pepino
+
+               Plagas, enfermedades, desórdenes fisiológicos y factores predisponentes
+Alcance: campo abierto e invernadero en suelo · Base para módulo de Riesgos del Cultivo / Plant
+
+                                                             Health
+
+    Objetivo: consolidar un catálogo confiable de riesgos para pepino, priorizado para Bio-G y alineado a dos
+    sistemas reales del producto: campo abierto e invernadero en suelo.
+    Criterio de confiabilidad: se cruzaron manuales técnicos aportados por el usuario con fuentes universitarias y
+    oficiales de extensión/IPM. Cuando una nomenclatura antigua o una recomendación vieja resultaba dudosa, se
+    privilegió la fuente moderna y específica para cucurbitáceas/pepino.
+    Nota de alcance: este documento no cubre hidroponía ni sustratos. El foco es riesgo agronómico y sanitario, no
+    listado de plaguicidas.
+
+                                                                       Abril 2026
+
+                                                  BIO-G · Riesgos del cultivo del pepino · Abril 2026 · Página 1
+Resumen ejecutivo
+
+En pepino, los riesgos más consistentes y económicamente relevantes se concentran en tres frentes: (1)
+enfermedades favorecidas por humedad alta, mojado foliar y ventilación deficiente; (2) insectos y ácaros
+chupadores que dañan directamente y además transmiten virus; y (3) estrés fisiológico rápido asociado con
+calor, baja humedad relativa, déficit hídrico, anoxia radicular y salinidad. Esta combinación hace que el cultivo
+se descompense rápido si el monitoreo no es oportuno.
+
+Para Bio-G, el núcleo duro del catálogo debería priorizar: mildiu velloso, cenicilla, Botrytis, pudriciones de
+plántula y raíz, Phytophthora/Pythium, Fusarium, bacteriosis foliares tipo angular leaf spot,
+antracnosis/gomosis, complejos virales transmitidos por áfidos o mosca blanca, mosca blanca, áfidos, trips,
+araña roja, minadores y nematodos agalladores. A eso se le deben sumar riesgos abióticos clave: aborto
+floral por calor, deformación o asurado de frutos por baja HR + calor o estrés hídrico, exceso de humedad con
+riesgo radicular, salinidad y daño por frío.
+
+La ventana más sensible sigue siendo prefloración  floración  amarre/cuajado, y luego los primeros
+cortes. Tu perfil universal de pepino ya iba bien orientado: floración y cuajado son críticos, y el
+establecimiento es especialmente vulnerable a compactación, anoxia, frío y problemas radiculares.
+
+Sistema               Riesgos que más pesan                             Notas clave para Bio-G
+
+Campo abierto         Mildiu velloso, bacteriosis foliares,             Priorizar humedad foliar, lluvia/rocío,
+                      antracnosis/gomosis, virus por áfidos/mosca       historial del lote, bordes con maleza,
+                      blanca, minador, nematodos y perforadores         manchas iniciales y deformación de
+                      regionales.                                       fruto.
+
+Invernadero en suelo  Mosca blanca, trips, araña roja, áfidos,          Priorizar ventilación, HR, focos en
+                      Botrytis, cenicilla, pudriciones de cuello/raíz,  puertas/ventilas, envés de hoja,
+                      virus y problemas por HR mal manejada.            trampas amarillas/azules y revisión
+                                                                        frecuente del cuello/raíces.
+
+1. Panorama real del riesgo en pepino
+
+El pepino responde rápido al entorno. Los manuales aportados por el usuario coinciden en que la humedad
+relativa muy alta favorece enfermedades fungosas y que una humedad ambiental baja acelera problemas
+como ácaros y trips; además, el estrés térmico y la sequía alteran cuajado, forma y calidad del fruto. También
+se remarca que el cultivo es muy susceptible a nematodos y hongos de suelo desde antes de sembrar.
+
+· Alta HR / ventilación deficiente: incrementa Botrytis, mildiu velloso, bacteriosis y otros problemas de follaje.
+
+· Baja HR + calor: favorece araña roja, trips y frutos asurados o deformes, especialmente en protegido.
+
+· Exceso de agua, mal drenaje y compactación: disparan anoxia y pudriciones de cuello/raíz.
+
+· Maleza y restos de cultivo: sostienen inóculo, reservorios de plagas y presión viral.
+
+· Monitoreo tardío: en pepino el deterioro visual y productivo se acelera rápido, por lo que la detección
+    temprana vale más que las correcciones tardías.
+
+Apoyo documental usado aquí: perfil universal Bio-G de pepino, pepino.pdf y manuales técnicos aportados por el usuario; ver
+sección final de fuentes.
+
+2. Catálogo maestro propuesto de riesgos bióticos para Bio-G
+
+La función de esta tabla no es reemplazar un manual de fitopatología, sino dejar un catálogo operativo,
+farmer-friendly y suficientemente robusto para el módulo de Riesgos del Cultivo. La priorización combina
+frecuencia, severidad, velocidad de daño, facilidad de monitoreo y relevancia para campo abierto e
+
+                      BIO-G · Riesgos del cultivo del pepino · Abril 2026 · Página 2
+invernadero en suelo.
+
+Riesgo              Dónde pesa     Qué lo favorece              Clave visual                      Etapa         Prioridad
+                    más
+
+Mildiu velloso      Ambos          HR alta, mojado foliar,      Manchas angulares en haz;         Vegetativo    Muy alta
+                                   lluvia/rocío, dosel cerrado  esporulación en envés;            cosecha
+                                                                defoliación rápida
+
+Cenicilla / mildiu  Ambos; más     Ambiente húmedo              Polvo blanquecino; hojas          Floraciónc    Alta
+polvoso             en protegido   alrededor del follaje,       viejas primero                    osecha
+                                   exceso de N, ventilación
+                                   limitada
+
+Botrytis / moho gris Invernadero   Alta HR, mala ventilación, Micelio gris, necrosis en           Floraciónc    Alta
+                                                                                                  osecha
+                                   tejido senescente            flores y tejidos húmedos
+
+Damping-off /       Ambos          Semilleros húmedos,          Colapso de plántulas y            Germinación
+muerte súbita                      drenaje pobre,               cuello ennegrecido                estableci Alta
+                                   sustrato/suelo                                                 miento
+                                   contaminado
+
+Pudrición de cuello y              Encharcamiento, suelos       Marchitez, cuello oscuro,         Establecimie
+raíz (Pythium/Phytop Ambos         pesados, agua                raíz deteriorada                  nto y picos Muy alta
+hthora)                            contaminada                                                    de humedad
+
+Marchiteces         Ambos          Historial del lote, estrés   Amarillamiento/marchitez          Vegetativo
+vasculares                         radicular, temperaturas      progresiva; vasos                 producció Alta
+(Fusarium spp.)                    favorables                   comprometidos                     n
+
+Bacteriosis tipo    Campo          Semilla infectada,           Lesiones acuosas                  Vegetativo
+angular leaf spot   abierto >                                                                     floración
+                    protegido      residuos, salpique, mojado angulares; perforaciones al                       Alta
+
+                                   foliar, N excesivo           secarse
+
+Antracnosis /       Campo          Lluvia, residuos             Lesiones húmedas;                 Vegetativo    Media-alt
+gomosis             abierto        infectados, semilla          cancros y exudados                fructificaci  a
+                                   contaminada, salpique                                          ón
+
+Virus transmitidos  Ambos          Áfidos, maleza hospedera, Mosaico, deformación,                Muy tempra
+por áfidos                                                                                        noproducc Muy alta
+                                   lotes viejos cerca           enanismo, fruto irregular         ión
+
+Riesgo              Dónde pesa     Qué lo favorece              Clave visual                      Etapa         Prioridad
+Mosca blanca y      más
+complejos virales
+asociados           Invernadero y  Ambiente cálido, maleza, Amarillamiento,                       Vegetativo
+Áfidos              zonas cálidas                                                                 cosecha
+                                   lotes continuos,             encrespado, mielecilla,                         Muy alta
+Trips
+                                   malla/ventilación deficiente fumagina
+Araña roja
+                    Ambos          Bordes con maleza,           Colonias en envés/brotes,         Temprano      Alta
+Minadores de hoja                  crecimiento tierno           mielecilla, deformación           producción
+
+                    Invernadero > Baja HR, calor, flores        Plateado/raspado, daño en         Floracióna    Muy alta
+                                                                flor y fruto                      marre
+                    campo          abundantes
+
+                    Invernadero > Baja HR, calor, estrés        Punteado clorótico,               Vegetativo    Muy alta
+
+                    campo          hídrico                      bronceado, telarañas finas cosecha
+
+                    Ambos          Presión externa, maleza,     Galerías serpenteantes y          Vegetativo    Media
+                                   monitoreo débil              punteo de alimentación
+
+                                  BIO-G · Riesgos del cultivo del pepino · Abril 2026 · Página 3
+Riesgo             Dónde pesa      Qué lo favorece               Clave visual                   Etapa              Prioridad
+                   más
+Nematodos                          Historial del lote, rotación  Bajo vigor, marchitez          Desde estab        Muy alta
+agalladores        Ambos           pobre                         irregular, raíces con agallas  lecimiento
+
+Perforadores       Campo           Climas cálidos, presión       Daño en brotes, flores y       Floraciónc Media /
+regionales (ej.    abierto         regional, maleza              fruto perforado
+Diaphania spp.)                    hospedera                                                    osecha             zona
+
+Decisión de diseño: se consolidaron riesgos por complejos funcionales (por ejemplo, virus transmitidos por áfidos) para que el
+catálogo sirva al producto, no sólo al taxón. Cuando Bio-G necesite más granularidad, estos complejos pueden abrirse en
+entradas hijas sin romper la UX.
+
+3. Riesgos abióticos y fisiológicos que deben entrar al motor
+
+En pepino, no todo lo que parece plaga o enfermedad lo es. Por eso el módulo de riesgo debe integrar
+ambiente, agua, salinidad y estado fenológico además de sanidad.
+
+Riesgo             Qué lo dispara            Qué se observa             Momento                 Lectura Bio-G
+                                                                        sensible                recomendada
+
+Aborto floral / mal Temperatura alta, estrés Caída de flores, cuajado   Prefloración Alerta fuerte por calor en
+
+cuaje por calor    térmico sostenido, HR baja errático                  floración               etapa crítica
+
+Frutos deformes /  Baja HR + calor, estrés   Fruto curvo, mal llenado,  Floraciónlle            Cruzar agua + HR +
+asurado            hídrico, salinidad, mala  piel afectada              nado                    temperatura + salinidad
+                   polinización                                         temprano
+
+Exceso de          Riego excesivo, drenaje   Marchitez con suelo        Establecimien           Prioridad alta en
+humedad / anoxia   pobre, compactación       húmedo, cuello             to y tras               suelo/agua
+radicular                                    comprometido               lluvias
+
+Salinidad          EC alta, fertirriego      Menor vigor, deformación, Floraciónco Vincular a deformación y
+                   cargado, mala calidad de
+                   agua                      menor calidad              secha                   rendimiento
+
+Daño por frío      Temperaturas bajas        Cese de crecimiento,       Establecimien           Alerta climática preventiva
+                   prolongadas, trasplantes  caída de flores femeninas  to y temprano
+                   expuestos
+
+Problemas de       Manejo deficiente de      Frutos malformados tipo Floracióna Distinguir protegido
+polinización /     abejas en campo o
+polinización no    entrada de insectos en    maza o simetría deficiente marre                   partenocárpico vs campo
+deseada            partenocárpicos
+
+4. Priorización por sistema de producción
+
+Campo abierto (pepino americano / slicer y pepinillo):
+
+· Muy prioritarios: mildiu velloso, bacteriosis angulares, antracnosis/gomosis, complejos virales, áfidos, mosca
+    blanca en zonas cálidas, nematodos y perforadores regionales.
+
+· Importa mucho la historia del lote, la lluvia o salpique, la maleza hospedera, el drenaje y la cercanía con
+    cucurbitáceas viejas.
+
+· En campo, el riesgo de virus y bacteriosis sube cuando hay lotes viejos cerca, siembras escalonadas y bordes
+    con maleza.
+
+Invernadero en suelo (pepino europeo / inglés, persa / mini):
+
+                   BIO-G · Riesgos del cultivo del pepino · Abril 2026 · Página 4
+· Muy prioritarios: mosca blanca, trips, araña roja, áfidos, Botrytis, cenicilla, pudriciones de cuello o raíz, virus y
+    problemas fisiológicos por manejo de HR.
+
+· Los focos suelen arrancar en puertas, ventilas, cabeceras y puntos calientes o secos; por eso el monitoreo no
+    debe ser sólo al centro del invernadero.
+
+· En materiales partenocárpicos bajo cubierta, la entrada de insectos polinizadores puede causar frutos
+    malformados.
+
+5. Monitoreo y diagnóstico: protocolo mínimo confiable
+
+Si este documento va a alimentar el módulo de Riesgos del Cultivo, el monitoreo debe ser simple pero
+disciplinado. En pepino, llegar tarde cuesta mucho porque el dosel cambia rápido y los daños se disparan en
+pocos días.
+· Frecuencia mínima: 2 veces por semana; en protegido o con presión alta, 3 veces por semana.
+· Revisar siempre el envés de hojas, brotes tiernos, flores, cuello de planta, raíces sospechosas y frutos recién
+
+    cuajados.
+· No revisar sólo plantas bonitas: incluir bordes, esquinas, entradas, ventilas, zonas húmedas y zonas calientes
+
+    o secas.
+· En invernadero usar trampas amarillas y azules para monitorear alados; una referencia útil es al menos 1
+
+    trampa por cada 1,000 ft², colocada sobre el dosel o cerca de accesos y ventilas.
+· Separar diagnóstico en tres preguntas: ¿es biótico, abiótico o nutricional?, ¿está distribuido en focos o
+
+    homogéneo?, ¿apareció primero en hojas viejas, nuevas, cuello o fruto?
+· Confirmar en laboratorio cuando haya mosaicos, amarillamientos atípicos, marchiteces vasculares,
+
+    bacteriosis dudosas o muerte radicular sin causa clara.
+
+El análisis foliar ayuda a confirmar o descartar causas nutricionales, pero no sustituye el diagnóstico fitosanitario y puede tardar;
+por eso, en síntomas mixtos, conviene leer primero patrón de distribución, etapa y condición ambiental.
+
+6. Qué sí debería quedar dado de alta en Bio-G
+
+Si el objetivo es dejar pepino listo como siguiente hortaliza fuerte después de tomate, mi recomendación
+concreta es cerrar estas entradas como catálogo base del motor:
+
+1. Mildiu velloso
+2. Cenicilla / mildiu polvoso
+3. Botrytis / moho gris
+4. Damping-off / muerte súbita
+5. Pudrición de cuello y raíz (Pythium/Phytophthora)
+6. Marchitez fusariana
+7. Bacteriosis angular / angular leaf spot
+8. Antracnosis / gomosis
+9. Virus transmitidos por áfidos
+10. Mosca blanca / virus asociados
+11. Áfidos
+12. Trips
+13. Araña roja
+14. Minadores
+
+                                                     BIO-G · Riesgos del cultivo del pepino · Abril 2026 · Página 5
+15. Nematodos agalladores
+16. Perforadores regionales (condicional por zona)
+17. Aborto floral por calor
+18. Frutos deformes por agua­HR­salinidad
+19. Exceso de humedad / riesgo radicular
+20. Daño por frío
+
+Además, para la UX farmer-friendly, conviene que varias salidas del sistema usen lenguaje humano y no el
+nombre del patógeno como única capa. Ejemplos: riesgo de mildiu por humedad alta, foco de chupadores en
+floración, riesgo radicular por exceso de humedad, fruto deforme por estrés agua­salinidad­ambiente o
+probable complejo viral.
+
+7. Conclusión técnica
+
+Pepino sí merece un módulo de riesgos más completo que el perfil universal base porque la sanidad y el
+ambiente cambian el cultivo muy rápido. La investigación revisada coincide en que las enfermedades de
+humedad, los vectores de virus, los chupadores y los problemas radiculares son el centro del riesgo. En
+protegido, el manejo de HR y ventilación define mucho del problema; en campo abierto, la lluvia, el salpique,
+la maleza y la continuidad de cucurbitáceas elevan la presión. Con esto sí puedes construir un catálogo
+fuerte, útil y escalable para Bio-G sin meter todavía hidroponía ni una sobrecarga innecesaria de complejidad.
+
+Fuentes base y notas de confiabilidad
+
+Fuentes primarias modernas priorizadas para criterios sanitarios e IPM:
+· UC IPM. Agriculture: Pest Management Guidelines for Cucurbits. Enfoque por etapa e IPM año redondo.
+· Mid-Atlantic Commercial Vegetable Production Recommendations (University of Maryland et al.), sección de
+
+    manejo de plagas en invernadero. Útil para trampas adhesivas y monitoreo de plagas aladas.
+· Oklahoma State University. Guide for Identification and Management of Diseases of Cucurbit Vegetable
+
+    Crops. Útil para angular leaf spot, antracnosis y otros foliares o semilla-residuo.
+· University of Alaska Fairbanks Cooperative Extension. Growing cucumbers in greenhouses. Útil para
+
+    priorización de mosca blanca, trips, araña roja, Botrytis y cenicilla en protegido.
+· Purdue, Mississippi State y otras extensiones sobre downy mildew de cucurbitáceas. Útiles para condiciones
+
+    predisponentes y manejo preventivo de humedad o leaf wetness.
+Fuentes de apoyo aportadas por el usuario e integradas al criterio final:
+· s PERFIL UNIVERSAL BIO-G -- PEPINO. Muy útil para alinear etapa crítica, ventanas fisiológicas y tipos UX
+
+    ya definidos por el proyecto.
+· pepino.pdf y 2005,-El cultivo del pepino,-F. Útiles para clima, HR, nematodos, maleza hospedera y lista
+
+    regional de plagas/enfermedades; se tomaron como apoyo contextual y se cruzaron con fuentes más nuevas
+    antes de consolidar el catálogo.
+· Manual de producción de pepino bajo invernadero (Universidad Jorge Tadeo Lozano). Útil para confirmar qué
+    artrópodos y enfermedades son típicos en producción protegida y para reforzar el enfoque de monitoreo en
+    invernadero.
+
+Criterio aplicado: cuando un manual antiguo o una taxonomía vieja mostraba ambigüedad, el texto final privilegió la nomenclatura
+y la epidemiología de las fuentes modernas de extensión/IPM. El objetivo fue construir un documento útil para producto, no un
+compendio histórico de nombres o ingredientes activos.
+
+                                                     BIO-G · Riesgos del cultivo del pepino · Abril 2026 · Página 6

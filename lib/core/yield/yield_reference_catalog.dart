@@ -2015,6 +2015,140 @@ class YieldReferenceCatalog {
       sourceMethod:
           'Calibrado con agendas técnicas INIFAP y estadísticas oficiales de avena forrajera; equivalente desde 100–120 kg/ha',
     ),
+
+    // ── Tomate (hortaliza, fruto fresco) ───────────────────────────────────
+    // v1: sólo suelo (campo abierto + protegido en suelo). No hidroponía.
+    // seedsLow/HighPerHa representan densidad de plantas trasplantadas por
+    // hectárea, no semillas (el ciclo se ancla a trasplante).
+    'tomato_field_generic': const YieldReference(
+      id: 'tomato_field_generic',
+      cropId: 'tomato',
+      useType: 'fresh',
+      displayName: 'Tomate campo abierto (genérico)',
+      yieldLowTonPerHa: 45,
+      yieldHighTonPerHa: 75,
+      seedsLowPerHa: 15000,
+      seedsHighPerHa: 22000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'Modelo conservador tomate saladette/roma en suelo a cielo abierto; densidad y rendimiento típicos en manejo medio.',
+    ),
+    'tomato_protected_generic': const YieldReference(
+      id: 'tomato_protected_generic',
+      cropId: 'tomato',
+      useType: 'fresh',
+      displayName: 'Tomate protegido en suelo (genérico)',
+      yieldLowTonPerHa: 90,
+      yieldHighTonPerHa: 160,
+      seedsLowPerHa: 20000,
+      seedsHighPerHa: 30000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'Modelo conservador tomate bajo malla/invernadero en suelo; excluye hidroponía y sustrato.',
+    ),
+
+    // ── Pepino (hortaliza, fruto fresco / proceso) ───────────────────────
+    // v1: sólo campo abierto e invernadero en suelo. Sin hidroponía.
+    'cucumber_generic': const YieldReference(
+      id: 'cucumber_generic',
+      cropId: 'cucumber',
+      useType: 'fresh',
+      displayName: 'Pepino genérico',
+      yieldLowTonPerHa: 30,
+      yieldHighTonPerHa: 70,
+      seedsLowPerHa: 25000,
+      seedsHighPerHa: 35000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'Transitorio conservador PE-GEN; migrable al definir sistema/tipo.',
+    ),
+    'cucumber_field_generic': const YieldReference(
+      id: 'cucumber_field_generic',
+      cropId: 'cucumber',
+      useType: 'fresh',
+      displayName: 'Pepino campo abierto (genérico)',
+      yieldLowTonPerHa: 25,
+      yieldHighTonPerHa: 35,
+      seedsLowPerHa: 25000,
+      seedsHighPerHa: 40000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'Calibrado desde referencia BIO-G para pepino campo abierto genérico.',
+    ),
+    'cucumber_protected_soil_generic': const YieldReference(
+      id: 'cucumber_protected_soil_generic',
+      cropId: 'cucumber',
+      useType: 'fresh',
+      displayName: 'Pepino protegido en suelo (genérico)',
+      yieldLowTonPerHa: 70,
+      yieldHighTonPerHa: 95,
+      seedsLowPerHa: 18000,
+      seedsHighPerHa: 30000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'Calibrado desde referencia BIO-G para pepino protegido en suelo.',
+    ),
+    'cucumber_slicer_ca': const YieldReference(
+      id: 'cucumber_slicer_ca',
+      cropId: 'cucumber',
+      useType: 'fresh',
+      displayName: 'Pepino americano / slicer campo abierto',
+      yieldLowTonPerHa: 25,
+      yieldHighTonPerHa: 40,
+      seedsLowPerHa: 25000,
+      seedsHighPerHa: 40000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'PE-01 BIO-G; slicer/americano a campo abierto.',
+    ),
+    'cucumber_european_protected': const YieldReference(
+      id: 'cucumber_european_protected',
+      cropId: 'cucumber',
+      useType: 'fresh',
+      displayName: 'Pepino europeo / inglés protegido',
+      yieldLowTonPerHa: 75,
+      yieldHighTonPerHa: 100,
+      seedsLowPerHa: 18000,
+      seedsHighPerHa: 28000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'PE-02 BIO-G; europeo largo protegido en suelo.',
+    ),
+    'cucumber_persian': const YieldReference(
+      id: 'cucumber_persian',
+      cropId: 'cucumber',
+      useType: 'fresh',
+      displayName: 'Pepino persa / mini protegido',
+      yieldLowTonPerHa: 40,
+      yieldHighTonPerHa: 70,
+      seedsLowPerHa: 18000,
+      seedsHighPerHa: 30000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'PE-03 BIO-G; persa/mini protegido en suelo.',
+    ),
+    'cucumber_pickler': const YieldReference(
+      id: 'cucumber_pickler',
+      cropId: 'cucumber',
+      useType: 'process',
+      displayName: 'Pepinillo / pickle campo abierto',
+      yieldLowTonPerHa: 18,
+      yieldHighTonPerHa: 35,
+      seedsLowPerHa: 60000,
+      seedsHighPerHa: 120000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'PE-04 BIO-G; pickler/pickle campo abierto.',
+    ),
   };
 
   /// Mapeo de referencia genérica forrajera por cultivo.
@@ -2033,6 +2167,32 @@ class YieldReferenceCatalog {
     'oat': 'oat_generic',
     'bean': 'bean_generic',
   };
+
+  /// Mapeo de referencia genérica de fruto fresco por cultivo.
+  ///
+  /// Para tomate, la referencia por defecto es campo abierto; la variante
+  /// protegida se resuelve explícitamente con `genericFreshProtected`.
+  static const Map<String, String> _genericFreshIds = {
+    'tomato': 'tomato_field_generic',
+    'cucumber': 'cucumber_field_generic',
+  };
+
+  static const Map<String, String> _genericFreshProtectedIds = {
+    'tomato': 'tomato_protected_generic',
+    'cucumber': 'cucumber_protected_soil_generic',
+  };
+
+  /// Devuelve la referencia genérica de fruto fresco (campo abierto por defecto).
+  static YieldReference? genericFresh(String cropId) {
+    final id = _genericFreshIds[cropId];
+    return id == null ? null : byId[id];
+  }
+
+  /// Devuelve la referencia genérica de fruto fresco en ambiente protegido.
+  static YieldReference? genericFreshProtected(String cropId) {
+    final id = _genericFreshProtectedIds[cropId];
+    return id == null ? null : byId[id];
+  }
 
   /// Devuelve la referencia genérica de forraje para un cropId, o null si
   /// ese cultivo no soporta modo forraje.

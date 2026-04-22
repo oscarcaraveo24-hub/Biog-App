@@ -1,4 +1,5 @@
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/core/crops/barley/barley_catalog.dart';
 import 'package:bio_g/core/crops/bean/bean_catalog.dart';
@@ -549,16 +550,13 @@ class CropCatalog {
     final double nDelta = isVegetative ? (isIrrigated ? 4.0 : -4.0) : 0.0;
     final double kDelta = isReproductive ? (isIrrigated ? 3.0 : -3.0) : 0.0;
 
-    return StageTargets(
+    return baseTargets.copyWith(
       moistureRaw: _shiftRange(
         baseTargets.moistureRaw,
         moistureDelta,
         min: 0.0,
         max: 100.0,
       ),
-      soilTemp: baseTargets.soilTemp,
-      ph: baseTargets.ph,
-      ec: baseTargets.ec,
       resistance: _shiftRange(
         baseTargets.resistance,
         resistanceDelta,
@@ -566,9 +564,35 @@ class CropCatalog {
         max: 4.0,
       ),
       nIndex: _shiftRange(baseTargets.nIndex, nDelta, min: 0.0, max: 100.0),
-      pIndex: baseTargets.pIndex,
       kIndex: _shiftRange(baseTargets.kIndex, kDelta, min: 0.0, max: 100.0),
+      nSoilPpmRange: _shiftComparableRange(
+        cropId: cropId,
+        nutrient: AgroMetricKey.n,
+        baseRange: baseTargets.nSoilPpmRange,
+        deltaIndex: nDelta,
+      ),
+      kSoilPpmRange: _shiftComparableRange(
+        cropId: cropId,
+        nutrient: AgroMetricKey.k,
+        baseRange: baseTargets.kSoilPpmRange,
+        deltaIndex: kDelta,
+      ),
     );
+  }
+
+  static AgroRange? _shiftComparableRange({
+    required String cropId,
+    required AgroMetricKey nutrient,
+    required AgroRange? baseRange,
+    required double deltaIndex,
+  }) {
+    if (baseRange == null) return null;
+    if (deltaIndex.abs() < 0.0001) return baseRange;
+
+    final double cap = NpkCaps.forCropMetric(cropKey: cropId, metricKey: nutrient);
+    final double deltaPpm = (deltaIndex / 100.0) * cap;
+
+    return _shiftRange(baseRange, deltaPpm, min: 0.0, max: cap * 1.25);
   }
 
   static bool isGenericAlias(String? raw) {

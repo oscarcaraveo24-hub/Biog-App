@@ -259,9 +259,16 @@ class CropRuntimeResolver {
     }
 
     final cropEntry = CropCatalog.cropById(cropId);
-    final String cropCategoryId = _normalizeNullable(cropContext.cropCategoryId) ??
-        cropEntry?.categoryId ??
-        CropCatalog.grainCategoryId;
+    // Resolver categoría en orden: explícita del contexto → catálogo del cultivo.
+    // Antes se caía a `grainCategoryId` en silencio, lo que marcaba como grano
+    // cualquier cultivo cuyo catálogo aún no estuviera registrado (ej. tomate
+    // antes de wire-up). Ahora preservamos lo que venga en el contexto si no
+    // hay catálogo disponible, o devolvemos cadena vacía para que capas
+    // superiores decidan (mejor fallar visible que clasificar mal).
+    final String cropCategoryId =
+        _normalizeNullable(cropContext.cropCategoryId) ??
+            cropEntry?.categoryId ??
+            '';
 
     final bool isFallow = cropContext.lifecycleStatus == CropLifecycleStatus.fallow;
     final String? rawVarietyValue =
