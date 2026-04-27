@@ -157,6 +157,12 @@ class CropVarietyPage extends StatelessWidget {
   final VoidCallback onTapVariety;
 
   String get _subtitleText {
+    if (_isChiliCrop) {
+      return 'Selecciona el cultivo y el tipo de chile.';
+    }
+    if (_isEggplantCrop) {
+      return 'Selecciona el cultivo y el tipo de berenjena.';
+    }
     if (cropUsesBrands) {
       return 'Selecciona el cultivo y la semilla.';
     }
@@ -164,10 +170,34 @@ class CropVarietyPage extends StatelessWidget {
   }
 
   String get _varietyPillTitle {
+    if (_isChiliCrop) {
+      return 'Tipo de chile';
+    }
+    if (_isEggplantCrop) {
+      return 'Tipo de berenjena';
+    }
     if (cropUsesBrands) {
       return 'Marca y semilla';
     }
     return 'Variedad';
+  }
+
+  bool get _isChiliCrop => cropLabel.trim().toLowerCase() == 'chile';
+
+  bool get _isEggplantCrop =>
+      cropLabel.trim().toLowerCase() == 'berenjena';
+
+  String get _helperText {
+    if (cropUsesBrands) {
+      return 'Si no conoces tu semilla exacta, podras elegir un perfil generico.';
+    }
+    if (_isChiliCrop) {
+      return 'Si no sabes el tipo de chile, puedes usar No se / Otro chile.';
+    }
+    if (_isEggplantCrop) {
+      return 'Si no sabes el tipo, puedes usar No se / Otra berenjena.';
+    }
+    return 'Usa perfil generico si no sabes la variedad.';
   }
 
   @override
@@ -246,9 +276,7 @@ class CropVarietyPage extends StatelessWidget {
           StaggerIn(
             delay: 255,
             child: Text(
-              cropUsesBrands
-                  ? 'Si no conoces tu semilla exacta, podrás elegir un perfil genérico.'
-                  : 'Usa perfil genérico si no sabes la variedad.',
+              _helperText,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.6,
@@ -280,6 +308,12 @@ class CropVarietyPage extends StatelessWidget {
         return ConfigureSeedWizardAssets.cropOat;
       case 'Tomate':
         return ConfigureSeedWizardAssets.cropTomato;
+      case 'Pepino':
+        return ConfigureSeedWizardAssets.cropCucumber;
+      case 'Chile':
+        return ConfigureSeedWizardAssets.cropChili;
+      case 'Berenjena':
+        return ConfigureSeedWizardAssets.cropEggplant;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }

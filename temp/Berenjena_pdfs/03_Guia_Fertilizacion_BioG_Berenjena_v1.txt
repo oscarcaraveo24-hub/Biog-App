@@ -1,0 +1,439 @@
+GUIA TECNICA DE FERTILIZACION DE BERENJENA
+Fuente PDF: Guia_Fertilizacion_BioG_Berenjena_v1.pdf
+Paginas: 7
+====================================================================================================
+
+
+==================================== PAGINA 1 / 7 ====================================
+
+                                                 BIO-G | GUIA TECNICA
+          GUIA TECNICA DE FERTILIZACION DE BERENJENA
+                                Campo abierto y protegido en suelo - Base tecnica para BIO-G v1
+
+                                Documento de trabajo agronomico - Version generada el 26 de abril de 2026
+
+
+
+
+Decision ejecutiva
+La berenjena debe usar una sola guia base de fertilizacion, con modificadores por perfil y sistema. A diferencia de
+chile, los tipos UX de berenjena (larga, oval/bola, rayada y blanca) NO justifican recetas NPK totalmente separadas
+en v1. Lo que si cambia de forma importante es el sistema de produccion, la duracion de cosecha, el tamano/calidad
+visual del fruto, la presion de salinidad y el riesgo de exceso vegetativo por nitrogeno.
+
+Alcance
+ • Incluye berenjena en campo abierto, acolchado con goteo y casa malla/invernadero en suelo.
+
+ • No cubre hidroponia, sustratos inertes, soluciones recirculantes ni recetas exactas por marca comercial.
+
+ • Trabaja como motor BIO-G: prioridades por etapa + contexto de suelo/agua/tejido + modificadores por perfil.
+
+ • No reemplaza analisis de suelo, agua, tejido ni asesoria local. En BIO-G, la dosis exacta solo debe sugerirse con datos de
+   laboratorio.
+
+Archivos base BIO-G usados
+El perfil universal de berenjena define a Solanum melongena L. como hortaliza de fruto con 8 etapas BIO-G: germinacion,
+emergencia/establecimiento, desarrollo vegetativo, floracion, amarre/cuajado, llenado, cosecha progresiva y senescencia.
+Tambien lista los tipos BE-01 a BE-04 como tipos UX y mantiene variedad/semilla como alias. El perfil BE-GEN/SKIP se usa
+cuando el usuario solo dice “berenjena”, desconoce tipo/variedad o quiere avanzar rapido; no se muestra como incompleto
+y migra sin perder memoria.
+
+
+
+1. Metodologia y criterio de confiabilidad
+La investigacion se reviso con prioridad en extension universitaria y fuentes tecnicas publicas: Rutgers/Mid-Atlantic
+2026/2027, UF/IFAS, University of Guam Cooperative Extension, University of Georgia Extension, literatura sobre salinidad
+y la base BIO-G de perfiles de berenjena. Las fuentes comerciales o foros solo deben considerarse senales de campo, no
+reglas de dosis.
+
+ Tipo de evidencia                                  Uso dentro de BIO-G                                  Confianza
+ Extension universitaria y manuales oficiales       Base principal para N, P, K, pH, tejido, timing      Alta
+                                                    y fertirriego
+ Investigacion academica revisada                   Ajustes finos: respuesta a N/K, salinidad,           Media-alta
+                                                    calidad de fruto, eficiencia de fertilizacion
+ Experiencia de productores/foros                   Validar lenguaje y problemas frecuentes; no          Baja-media
+                                                    definir dosis
+ Perfil BIO-G existente                             Estructura de producto, etapas, IDs, SKIP, UX        Alta para codigo
+                                                    y reglas de migracion
+
+
+
+
+                                    BIO-G - Guia tecnica de fertilizacion de berenjena - v1 | Documento tecnico interno
+
+
+==================================== PAGINA 2 / 7 ====================================
+
+2. Hallazgos tecnicos firmes
+• La berenjena responde a N, P y K, pero el nitrogeno tiene techo. UF/IFAS resume que los rendimientos suelen llegar a
+  meseta cerca de 200 lb/A de N y pueden bajar cuando N supera aproximadamente 250 lb/A en algunos ensayos.
+
+• Rutgers/Mid-Atlantic 2026/2027 recomienda 125-150 lb/A de N total como referencia comercial, con P2O5 y K2O segun
+  analisis de suelo: bajo, medio, alto/optimo o muy alto.
+
+• El mismo manual Mid-Atlantic recomienda tejido foliar en fruto temprano: N 4.2-6.0%, P 0.3-0.7%, K 3.5-5.0%, Ca 0.8-
+  1.5%, Mg 0.25-0.6% y S 0.4-0.6%.
+
+• UF/IFAS indica que las recomendaciones de fertilizacion para eggplant aplican a varios tipos de berenjena; por tanto, en
+  BIO-G los tipos BE-01 a BE-04 deben ajustar sensibilidad, no crear recetas completas por tipo.
+
+• La salinidad merece una alerta mas temprana que la version simple del perfil. Estudios con variedades de berenjena
+  reportan umbrales de rendimiento entre 0.89 y 1.83 dS/m bajo condiciones de salinidad, con diferencias varietales
+  claras.
+
+• El sistema y la duracion de cosecha explican mas que la forma del fruto: campo sin goteo, acolchado con goteo y
+  protegido en suelo deben comportarse diferente en el motor.
+
+
+
+3. Reglas maestras para BIO-G
+Regla                                                                      Decision de producto
+Suelo primero                                                              pH, materia organica, textura, P, K, Ca, Mg, CE, sodio y drenaje definen
+                                                                           la base. No sugerir dosis exacta sin analisis.
+Agua siempre                                                               La fertilizacion no se interpreta sin humedad disponible y drenaje.
+                                                                           Raiz anegada o suelo seco pueden parecer deficiencia.
+N no es “mas fruto”                                                        N sostiene planta y area foliar; exceso puede empujar vigor vegetativo
+                                                                           y no mejorar rendimiento.
+P/K por laboratorio                                                        P y K cambian segun suelo bajo/medio/alto. No aplicar P o K alto por
+                                                                           costumbre.
+K manda en fruto, pero con balance                                         K sostiene llenado y calidad, pero exceso/CE alta puede afectar Mg/Ca y
+                                                                           absorcion de agua.
+Tipos UX con modificadores                                                 Larga, oval, rayada y blanca comparten guia base; ajustan calidad
+                                                                           visual, cosecha, salinidad y vigor.
+Protegido no es hidroponia                                                 Invernadero/casa malla en suelo usa fertirriego frecuente, monitoreo
+                                                                           de CE y tejido; hidroponia queda fuera de v1.
+
+
+
+
+4. Campo abierto: guia de fertilizacion
+4.1 Informacion minima antes de recomendar
+• Sistema: campo abierto sin goteo, campo abierto con goteo, acolchado con goteo, protegido en suelo o desconocido.
+
+• Modo de establecimiento: siembra, trasplante o desconocido.
+
+• pH, materia organica, textura y drenaje.
+
+• P disponible y K intercambiable por laboratorio.
+
+• CE/salinidad, Ca, Mg, sodio y bicarbonatos si existen.
+
+• Duracion esperada de cosecha: corta, normal, prolongada.
+
+• Perfil BIO-G: BE-GEN, BE-01, BE-02, BE-03 o BE-04.
+
+                                BIO-G - Guia tecnica de fertilizacion de berenjena - v1 | Documento tecnico interno
+
+
+==================================== PAGINA 3 / 7 ====================================
+
+4.2 Referencia fuerte por analisis de suelo
+ Componente                               Referencia fuerte                       Conversion util                            Lectura BIO-G
+ N total estacional                       125-150 lb/A como banda comercial       140-168 kg/ha de N                         Base segura para campo. Subir solo
+                                          Mid-Atlantic                                                                       por ciclo largo, suelo
+                                                                                                                             arenoso/leaching, alto rendimiento
+                                                                                                                             y monitoreo.
+ N intensivo / plastico-goteo             UF/IFAS documenta meseta cerca de       224 kg/ha como techo operativo;            No convertir en receta. Usar como
+                                          200 lb/A y riesgo arriba de ~250 lb/A   >280 kg/ha solo muy justificado            techo de alta intensidad, no como
+                                                                                                                             default.
+ P2O5                                     250 / 150 / 100 / 0 lb/A segun suelo    280 / 168 / 112 / 0 kg/ha                  P es clave en
+                                          bajo / medio / alto(opt) / muy alto                                                establecimiento/floracion, pero
+                                                                                                                             depende del suelo. P alto puede
+                                                                                                                             bloquear micronutrientes.
+ K2O                                      250 / 150 / 100 / 0 lb/A segun suelo    280 / 168 / 112 / 0 kg/ha                  K sube en llenado/cosecha. Respetar
+                                          bajo / medio / alto(opt) / muy alto                                                CE y Mg/Ca.
+ Boro                                     1-2 lb/A con fertilizante broadcast     1.1-2.2 kg/ha B                            Micronutriente de margen estrecho;
+                                          cuando aplique                                                                     no sobredosificar.
+ Azufre                                   25-30 lb/A para la mayoria de suelos    28-34 kg/ha S                              Apoya metabolismo de N;
+                                                                                                                             considerar fuentes sulfatadas.
+ Ca/Mg                                    Definir por analisis y balance          Sin dosis universal                        Importante para raiz, tejido,
+                                                                                                                             firmeza y balance con K; no
+                                                                                                                             corregir a ciegas.
+
+
+
+
+4.3 Timing recomendado sin goteo o con manejo simple
+ Momento                           N                               P                                K                               Mensaje BIO-G
+ Antes de trasplante               Parte de la base                Todo o casi todo segun           Parte de la base                Incorporar sin concentrar
+                                                                   analisis                                                         sales cerca de la raiz
+                                                                                                                                    joven.
+ 3-4 semanas despues               Sidedress moderado              Normalmente 0                    Solo si analisis/tejido lo      Acompanar crecimiento
+                                                                                                    justifica                       sin empujar exceso
+                                                                                                                                    vegetativo.
+ 6-8 semanas despues               Sidedress moderado              Normalmente 0                    Segun carga y analisis          Transicion a
+                                                                                                                                    floracion/fruto; vigilar
+                                                                                                                                    agua y salinidad.
+ Cosecha prolongada                Pequenas reposiciones           Evitar rutina sin prueba         K sostenido si hay              Mantener cosecha sin
+                                                                                                    extraccion                      subir N por costumbre.
+
+
+
+
+5. Acolchado con goteo y protegido en suelo
+En goteo/protegido, la logica cambia de “aplicar todo” a “fraccionar y medir”. La recomendacion debe ser mas dependiente
+de CE del bulbo, humedad, vigor, carga de fruto y tejido. En suelo arenoso o con baja CEC, aplicaciones pesadas elevan CE y
+se pierden rapido; en suelo pesado, el riesgo es anoxia y disponibilidad irregular.
+
+ Punto de control                                                                 Regla BIO-G
+ pH antes de acolchar                                                             Ajustar cerca de 6.5 cuando sea posible; no corregir fuerte sin analisis.
+ Base pretrasplante                                                               Aplicar parte de N y K, y P segun analisis, evitando sales concentradas.
+ Fertirriego                                                                      Usar pulsos pequenos y frecuentes; no copiar una dosis de campo
+                                                                                  como si fuera hidroponia.
+ CE del bulbo                                                                     Alerta temprana si sube; en fruto/cuaje la salinidad actua como estres
+                                                                                  hidrico.
+ Nitrato vs amonio                                                                Preferir balance con predominio nitrato en suelos problemáticos;
+                                                                                  exceso de amonio puede agravar salinidad/raiz.
+ Ciclo largo/protegido                                                            Permite reposiciones mas largas, pero siempre condicionadas a tejido,
+                                                                                  vigor y rendimiento esperado.
+
+
+
+
+6. Traduccion BIO-G por etapa - prioridad, no dosis
+ Etapa BIO-G                N                           P                         K                            Ca/Mg/S                   Enfoque operativo
+ Germinacion                Bajo                        Medio                     Bajo                         Bajo                      Humedad estable,
+                                                                                                                                         temperatura y evitar
+                                       BIO-G - Guia tecnica de fertilizacion de berenjena - v1 | Documento tecnico interno
+
+
+==================================== PAGINA 4 / 7 ====================================
+
+                                                                                                                                 sales cerca de raiz
+                                                                                                                                 joven.
+ Emergencia /            Medio                    Alto                       Medio                     Medio                     Raiz y arranque. P
+ establecimiento                                                                                                                 importa si el suelo lo
+                                                                                                                                 permite; no salinizar.
+ Desarrollo vegetativo   Alto controlado          Medio                      Medio-alto                Mg/S medios               Construir canopia y
+                                                                                                                                 sombra para fruto sin
+                                                                                                                                 exceso vegetativo.
+ Floracion               Medio                    Alto                       Alto                      Ca/Mg/B suben             Etapa critica. Agua +
+                                                                                                                                 temperatura estable;
+                                                                                                                                 no subir solo N.
+ Amarre / cuajado        Medio                    Medio                      Alto                      Ca/Mg altos               Evitar aborto, mal
+                                                                                                                                 cuaje y salinidad.
+ Llenado de fruto        Medio                    Bajo-medio                 Muy alto                  Ca/Mg altos               Tamaño, brillo,
+                                                                                                                                 firmeza y calidad. K
+                                                                                                                                 alto pero con CE bajo
+                                                                                                                                 control.
+ Cosecha progresiva      Medio                    Bajo                       Alto                      Mantenimiento             Reposicion por cortes;
+                                                                                                                                 no mantener N alto si
+                                                                                                                                 baja
+                                                                                                                                 vigor/rentabilidad.
+ Fin de ciclo            Bajo                     Bajo                       Bajo-medio                Bajo                      No sobreinvertir;
+                                                                                                                                 registrar cierre y
+                                                                                                                                 decisiones futuras.
+
+
+
+
+7. Modificadores por tipo BIO-G
+Validacion clave: los tipos de berenjena SI cambian algo, pero no tanto como los tipos de chile. En v1, no conviene crear
+recetas separadas BE-01 a BE-04. Conviene crear modificadores de sensibilidad y mensajes.
+
+ Perfil                              Tipo UX                                 Ajuste nutrimental                      Nota BIO-G
+ BE-GEN                              Generico / no se                        Base conservadora, N moderado,          No asume forma, mercado ni
+                                                                             K sube desde floracion-fruto            ciclo largo. Protege floracion y
+                                                                                                                     cuajado.
+ BE-01                               Larga / semilarga morada                Base estandar. K y agua                 Tipo dominante. Evitar baja area
+                                                                             constantes en cosecha progresiva;       foliar que exponga fruto al sol,
+                                                                             N controlado                            pero no empujar follaje excesivo.
+ BE-02                               Oval / bola morada                      Subir vigilancia de K, Ca/Mg y          Mayor riesgo de fruta irregular si
+                                                                             riego uniforme por fruto mas            hay agua/CE inestable. Calidad y
+                                                                             pesado                                  calibre pesan mas.
+ BE-03                               Rayada / listada                        Mayor peso a calidad visual,            Nicho/gourmet/protegido. Daños
+                                                                             salinidad y uniformidad de agua         superficiales bajan mucho el
+                                                                                                                     valor.
+ BE-04                               Blanca                                  Mayor peso a manchas, brillo,           Fruto claro muestra defectos mas
+                                                                             golpes, sunscald y CE                   rapido; mantener canopia y
+                                                                                                                     evitar estres salino/hidrico.
+
+
+
+
+8. Analisis foliar y verificacion
+El analisis foliar no reemplaza el analisis de suelo. Sirve para verificar si el programa esta entrando a planta y evitar
+confundir deficiencia con riego, raiz, salinidad, plaga o clima.
+
+ Nutriente                                        Rango critico / suficiencia en fruto                 Lectura BIO-G
+                                                  temprano
+ N                                                4.2-6.0% en hoja recientemente madura                Bajo: vigor y area foliar insuficientes. Alto:
+                                                                                                       posible exceso vegetativo.
+ P                                                0.3-0.7%                                             Arranque/floracion; exceso puede ser
+                                                                                                       innecesario si suelo esta alto.
+ K                                                3.5-5.0%                                             Clave para llenado, calidad y continuidad de
+                                                                                                       cosecha.
+ Ca                                               0.8-1.5%                                             Leer con raiz, riego y transpiracion; no solo
+                                                                                                       dosis de calcio.
+
+                                  BIO-G - Guia tecnica de fertilizacion de berenjena - v1 | Documento tecnico interno
+
+
+==================================== PAGINA 5 / 7 ====================================
+
+ Mg                                            0.25-0.6%                                            Vigilar cuando K esta alto o pH/CE alteran
+                                                                                                    absorcion.
+ S                                             0.4-0.6%                                             Acompaña metabolismo de N y vigor.
+
+
+
+Protocolo minimo de muestreo
+ • Muestrear hojas recientemente maduras, no hojas viejas mezcladas con brotes tiernos.
+
+ • Registrar etapa, perfil BE-XX, sistema, fecha, riego, CE, pH y aplicaciones recientes.
+
+ • Evitar hojas con foliares recientes o residuos de micronutrientes que contaminen el resultado.
+
+ • Usar tejido como confirmacion; si hay salinidad, anoxia o raiz enferma, el problema puede no ser “falta de fertilizante”.
+
+
+
+9. Deficiencias, excesos y antagonismos
+ Elemento                        Deficiencia tipica                      Exceso / desbalance                    Accion BIO-G
+ N                               Clorosis en hojas viejas, bajo vigor,   Exceso vegetativo, floracion/cuaje     Revisar etapa; en floracion no subir
+                                 poca sombra sobre fruto                 menos eficientes, tejido tierno        N sin mirar cuaje y K/agua.
+ P                               Raiz debil, crecimiento lento,          Innecesario en suelos altos; puede     Usar suelo; no aplicar por
+                                 retraso de floracion                    reducir Zn/Fe/Cu                       costumbre.
+ K                               Bordes quemados, peor llenado,          Salinidad y antagonismo con Mg/Ca      Subir solo si CE y tejido lo permiten.
+                                 menor calidad
+ Ca                              Tejido joven debil, problemas de        No suele ser toxicidad directa;        Revisar raiz, riego, HR y balance.
+                                 firmeza/calidad                         compite con Mg/K
+ Mg                              Clorosis intervenal en hojas viejas     Puede competir si se sobredosifica     Vigilar con K alto y pH fuera de
+                                                                                                                rango.
+ B                               Brotes/floracion anormales si falta     Margen estrecho; toxicidad facil       Microdosis solo con criterio/lab.
+
+
+
+
+10. Salinidad y calidad de fruto
+La version inicial del perfil trataba a la berenjena como sensibilidad media. Para BIO-G conviene elevar la sensibilidad
+operativa a media-alta durante establecimiento, floracion, cuaje y llenado. La razon no es que todas las variedades
+respondan igual, sino que hay diferencias varietales y la salinidad actua como estres hidrico; por eso el motor debe alertar
+antes de que el rendimiento caiga.
+
+ ECe / tendencia                               Lectura BIO-G                                        Accion sugerida
+ <1.5 dS/m                                     Zona generalmente segura para BIO-G v1               Mantener monitoreo y riego uniforme.
+ 1.5-2.0 dS/m                                  Observacion / alerta temprana si sube                Revisar agua, fertirriego, drenaje y
+                                                                                                    frecuencia.
+ >2.0 dS/m                                     Alerta en floracion/cuaje/llenado                    Evitar aumentar K/N sin revisar CE;
+                                                                                                    considerar lavado si aplica localmente.
+ >3.0 dS/m                                     Critico operativo en etapa sensible                  Alto riesgo de caida de cuaje, menor tamano y
+                                                                                                    estres radicular.
+
+
+
+
+11. Calendario operativo sugerido BIO-G
+ Momento                         Que revisar                             Que hacer                              Mensaje humano posible
+ Antes de trasplante             pH, P, K, MO, textura, CE, Ca/Mg        Corregir pH/base; evitar sales cerca   Antes de fertilizar fuerte, conviene
+                                                                         de raiz                                saber que ya tiene tu suelo.
+ Establecimiento                 Humedad, raiz, salinidad                P util si el suelo lo permite; N       La planta esta formando raiz: aqui
+                                                                         moderado                               el exceso tambien puede quemar.
+ Vegetativo                      Vigor, color, entrenudos, N/K           N controlado, Mg/S si hay demanda      Va bien de hoja, pero no conviene
+                                                                                                                empujar puro follaje.
+ Prefloracion                    P/K/Ca, agua, temperatura               Preparar transicion reproductiva       Se acerca floracion: agua y balance
+                                                                                                                pesan mas.
+ Floracion                       Flor, aborto, calor, humedad            Evitar estres; ajustar K/Ca/Mg, no     Etapa critica: cualquier estres
+                                                                         solo N                                 puede tirar flor.
+
+                              BIO-G - Guia tecnica de fertilizacion de berenjena - v1 | Documento tecnico interno
+
+
+==================================== PAGINA 6 / 7 ====================================
+
+Cuajado                           Fruto pequeno, aborto, CE               K controlado, Ca/Mg y agua             Aqui se decide gran parte del
+                                                                          constante                              rendimiento.
+Llenado/cosecha                   Tamano, brillo, firmeza, color,         Reposicion continua y bajar N si       El fruto manda: K, agua y equilibrio
+                                  golpes                                  hay exceso                             sostienen calidad.
+Cierre                            Rentabilidad, vigor, sanidad            Mantener solo si hay cortes            Ya no conviene gastar igual si el
+                                                                          rentables                              ciclo esta cerrando.
+
+
+
+
+12. Recomendaciones directas para implementacion en codigo
+• Crear o extender EggplantFertilizationProfile separado del perfil fenologico. La fenologia dice cuando pesa; fertilizacion
+  dice que recomendar segun suelo/sistema/perfil.
+
+• Asegurar que FertilizationPlanner y NutrientRecommendationEngine reciban profileId, productionSystem y, si existe,
+  soilBucketP / soilBucketK.
+
+• No crear recetas completas separadas para BE-01 a BE-04. Crear modificadores: fruitQualitySensitivity,
+  harvestContinuity, salinitySensitivity, nitrogenVigorRisk, potassiumDemand, calciumMagnesiumImportance.
+
+• Si soilBucketP o soilBucketK son unknown, usar modo conservador: prioridad por etapa + recomendar analisis antes de
+  dosis.
+
+• Para BE-GEN, usar banda moderada y evitar prometer alta intensidad. BE-GEN protege floracion/cuajado y permite
+  migracion.
+
+• Para BE-02, BE-03 y BE-04, subir mensajes de calidad visual, agua estable, CE baja y balance K/Ca/Mg.
+
+• Para protegido en suelo, activar CE del bulbo, fertirriego fraccionado y ventilacion/HR como contexto; no activar modo
+  hidroponia.
+
+• Agregar mensajes farmer-friendly: “K ayuda al fruto, pero tu CE esta subiendo”, “No subas nitrogeno sin revisar
+  floracion”, “El problema puede ser raiz/agua, no falta de fertilizante”.
+
+Campos sugeridos para modelo
+Campo                                          Tipo sugerido                                        Uso
+profileId                                      BE-GEN / BE-01 / BE-02 / BE-03 / BE-04               Resolver modificadores.
+productionSystem                               openField / openFieldDrip / protectedSoil /          Cambiar timing y riesgo de CE.
+                                               unknown
+soilBucketP                                    low / medium / high / veryHigh / unknown             Evitar P universal.
+soilBucketK                                    low / medium / high / veryHigh / unknown             Ajustar K sin subir CE.
+salinityRiskClass                              low / watch / alert / critical                       Conectar CE con cuaje y llenado.
+fruitQualitySensitivity                        normal / high / premium                              BE-02/03/04 suben calidad visual.
+harvestContinuity                              short / normal / extended                            Ajusta reposicion N/K en cosecha.
+
+
+
+
+13. Decisiones finales de producto
+Decision                                                                  Resultado
+¿Cambian mucho los tipos de berenjena?                                    No lo suficiente para recetas NPK separadas. Si para modificadores de
+                                                                          calidad, salinidad, ciclo y sistema.
+¿Que es mas importante?                                                   Sistema, suelo/agua, etapa, duracion de cosecha, CE y tejido.
+¿Que error evitar del chile?                                              No sobrediferenciar por nombre UX. En berenjena, BE-01 a BE-04
+                                                                          deben compartir base y ajustar sensibilidad.
+¿Que debe salir en v1?                                                    Guia base universal + modificadores por perfil + modo conservador si
+                                                                          faltan datos.
+¿Que queda fuera?                                                         Hidroponia, sustrato inerte, receta por marca, dosis exacta sin analisis
+                                                                          y promesas de rendimiento.
+
+
+
+                               BIO-G - Guia tecnica de fertilizacion de berenjena - v1 | Documento tecnico interno
+
+
+==================================== PAGINA 7 / 7 ====================================
+
+14. Fuentes y trazabilidad
+Rutgers NJAES / Mid-Atlantic Commercial Vegetable Production Recommendations 2026/2027 - Eggplant.
+https://njaes.rutgers.edu/pubs/commercial-veg-rec/eggplant.pdf
+
+University of Delaware Cooperative Extension - Mid-Atlantic Commercial Vegetable Production Recommendations 2026/2027.
+https://www.udel.edu/academics/colleges/canr/cooperative-extension/sustainable-production/commercial-crops/vegetable-crops/
+midatlantic-vegetable-recommendations/
+
+UF/IFAS Ask IFAS - Summary of N, P, and K Research with Eggplant in Florida (SL330/CV228). https://ask.ifas.ufl.edu/publication/CV228
+
+UF/IFAS Ask IFAS - Eggplant Production (HS726/CV124). https://ask.ifas.ufl.edu/publication/CV124
+
+UF/IFAS Ask IFAS - Plant Tissue Analysis and Interpretation for Vegetable Crops in Florida (HS964/EP081).
+https://ask.ifas.ufl.edu/publication/EP081
+
+University of Guam Cooperative Extension - Eggplant, Pepper, and Tomato Production Guide for Guam.
+https://www.uog.edu/_resources/files/extension/Eggplant-Pepper-and-Tomato-Production-Guide-on-Guam-2nd-E-Web.pdf
+
+University of Georgia Extension - Home Garden Eggplant. https://fieldreport.caes.uga.edu/publications/C1028/home-garden-eggplant/
+
+Semiz et al. - Modelling Yield Response and Water Use to Salinity and Water Deficit in Eggplant Varieties. Journal of Agricultural Sciences,
+2023. https://dergipark.org.tr/en/download/article-file/2056429
+
+Documentos internos BIO-G: Perfil Universal Bio-G - Berenjena v2 y Perfil Generico BE-GEN/SKIP v2, aportados por el usuario.
+
+
+
+
+                                  BIO-G - Guia tecnica de fertilizacion de berenjena - v1 | Documento tecnico interno

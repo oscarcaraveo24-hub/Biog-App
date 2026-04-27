@@ -1,0 +1,620 @@
+RIESGOS DEL CULTIVO DE BERENJENA - SANIDAD VEGETAL
+Fuente PDF: Riesgos_Cultivo_Sanidad_BioG_Berenjena_v1 (1).pdf
+Paginas: 9
+====================================================================================================
+
+
+==================================== PAGINA 1 / 9 ====================================
+
+BIO-G | Riesgos del cultivo - Berenjena | Sanidad vegetal | v1
+
+
+
+
+                                                                       BIO-G
+           RIESGOS DEL CULTIVO DE BERENJENA
+                    Plagas, enfermedades, desordenes fisiologicos y traduccion a motor Plant Health
+
+
+ Alcance: berenjena en campo abierto, casa malla e invernadero en suelo. No incluye hidroponia ni
+ sustratos inertes como sistema principal.
+
+ Objetivo: consolidar una base confiable para el modulo Riesgos del Cultivo / Sanidad Vegetal de BIO-G v1, compatible
+ con el codigo actual de PlantHealthSyndrome y con los perfiles BE-GEN, BE-01, BE-02, BE-03 y BE-04.
+
+ Criterio editorial: BIO-G orienta, prioriza y pide confirmacion; no receta plaguicidas ni reemplaza diagnostico local.
+ Las fuentes comerciales, foros y experiencias de campo se usan como senales, no como base normativa.
+
+   Documento                               Estado Bio-G
+
+   Perfil Universal Berenjena              Base biologica y fenologica ya definida: 8 etapas, fruto como organo objetivo, floracion/cuajado como ventana
+                                           critica.
+
+   BE-GEN / SKIP                           Entrada conservadora y migrable cuando el usuario no sabe tipo o variedad.
+
+   Fertilizacion                           Debe cruzarse con sanidad: exceso N, CE, riego y desequilibrio K/Ca/Mg pueden parecer enfermedad.
+
+   Rendimiento                             La sanidad afecta continuidad de cortes, calidad visual y descarte comercial; no solo toneladas.
+
+   Este documento                          Define riesgos, sintomas, señales y reglas para el catalogo Plant Health.
+
+
+
+
+Documento tecnico para catalogo Bio-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                Pagina 1
+
+
+==================================== PAGINA 2 / 9 ====================================
+
+BIO-G | Riesgos del cultivo - Berenjena | Sanidad vegetal | v1
+
+
+
+
+ 1. Metodologia y lectura del codigo actual
+ El codigo de BIO-G ya tiene un motor general de sanidad vegetal basado en sindromes. Cada cultivo define una lista
+ de PlantHealthSyndrome con organo, sintoma principal, señales fuertes/debiles, diferenciales probables, acciones
+ base y banderas ambientales. El motor suma puntuacion por coincidencia de etapa, organo, sintoma principal,
+ señales secundarias, ambiente y modificadores por variedad.
+
+ Por eso esta guia no solo lista enfermedades: traduce cada riesgo a entradas que el codigo puede usar sin rediseñar
+ toda la app.
+
+   Componente actual            Como se usa                                        Implicacion para berenjena
+   PlantHealthStageBucket       seedling, vegetativeEarly/Mid/Late,                Agregar _fromEggplant con las 8 etapas Bio-G. Floracion = reproductiveEarly; cuajado
+                                reproductiveEarly/Mid, grainFill, lateSeason       = reproductiveMid; llenado/cosecha = grainFill.
+
+   PlantHealthIds               Organo, sintoma principal y señales                La mayoria de riesgos caben con IDs existentes; conviene agregar pocas señales
+                                reutilizables                                      finas: black_pycnidia, calyx_scarring, bacterial_ooze, shot_holes.
+
+   PlantHealthSyndrome          Unidad principal del catalogo                      Crear eggplant_syndromes.dart con 24-28 entradas priorizadas.
+
+   VarietyModifier              Ajusta score por varietyId                         Usarlo para BE-01/BE-02/BE-03/BE-04 sin crear cultivos separados.
+
+   Environment flags            highHumidity, coolDewyWindow,                      Muy utiles para Phomopsis, Botrytis, Verticillium, vectores, acaros y estres fisiologico.
+                                vectorPressure, recentStress
+
+   PlantHealthRegistry          Elige catalogo por CropCatalog                     Agregar import de eggplant_syndromes.dart y case CropCatalog.eggplantCropId.
+
+
+
+
+ 2. Resumen ejecutivo
+ En berenjena, el riesgo sanitario se concentra en cuatro grupos: (1) suelo/raiz y marchiteces, (2) pudriciones y
+ manchas de fruto, (3) chupadores/vectores y acaros, y (4) desordenes fisiologicos de floracion, agua, salinidad y
+ calidad visual. Por ser Solanaceae se parece a tomate/chile, pero tiene particularidades: es muy sensible a
+ Verticillium, a plagas defoliadoras tempranas como flea beetles, y a daños cosmeticos en fruto oscuro o de nicho.
+
+   Sistema                        Riesgos que mas pesan                                                      Lectura Bio-G
+   Campo abierto                  Flea beetles en trasplante, Phomopsis/Phytophthora por                     Cruzar lluvia, humedad alta, suelos con historial de
+                                  lluvia/salpique, Verticillium, nematodos, gusanos, acaros, golpes de       solanaceas, daño en hojas jovenes, manchas de fruto y
+                                  calor y estres hidrico.                                                    marchitez por parches.
+
+   Protegido en suelo             Mosca blanca, trips, acaro blanco, araña roja, Botrytis/cenicilla,         Priorizar envés de hoja, brotes tiernos, flores,
+                                  salinidad/CE, anoxia por riego, focos en puertas/ventilas.                 HR/ventilacion, CE del bulbo y trampas adhesivas como
+                                                                                                             apoyo.
+
+   Tipos nicho: rayada/blanca     Daño cosmetico, cicatrices por trips/roce, sol, manchas de fruto,          Subir peso de calidad visual; no necesariamente subir
+                                  descarte visual.                                                           severidad agronomica, pero si impacto comercial.
+
+
+
+
+Documento tecnico para catalogo Bio-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                    Pagina 2
+
+
+==================================== PAGINA 3 / 9 ====================================
+
+BIO-G | Riesgos del cultivo - Berenjena | Sanidad vegetal | v1
+
+
+
+
+ 3. Panorama real del riesgo en berenjena
+ ● La berenjena es una hortaliza de fruto con cosecha progresiva; una enfermedad o plaga que reduce area foliar no
+      solo baja vigor, tambien corta continuidad de cortes.
+
+ ● En etapa temprana, flea beetles, damping-off, frio, exceso de humedad y mala raiz pueden definir el
+      establecimiento.
+
+ ● En floracion y cuajado, el sistema debe separar aborto por calor/agua de virosis, trips, acaros o daño nutricional.
+ ● En llenado y cosecha, el foco cambia a fruto comercial: Phomopsis, antracnosis, Pythium fruit rot, Botrytis,
+      cicatrices, sunscald y descarte visual.
+
+ ● La marchitez en berenjena es peligrosa de diagnosticar: puede ser Verticillium, Ralstonia, Phytophthora, Pythium,
+      nematodos, sequia, salinidad o anoxia. El motor debe pedir confirmacion de raiz/cuello/tallo y no sentenciar desde
+      una sola foto.
+
+
+ 4. Catalogo maestro propuesto de riesgos bioticos
+ La tabla prioriza riesgos que si conviene dar de alta en el catalogo v1. No es una lista infinita; son cuadros con valor
+ para decision de campo y compatibles con los IDs actuales del motor.
+
+   Riesgo                         Donde pesa mas               Que lo favorece                       Clave visual                          Etapa                Priorida
+                                                                                                                                                                d
+   Damping-off / muerte de        Semillero, charola,          Sustrato/suelo humedo, frio, mala     Plantula colapsa; cuello              Germinacion-estab    Alta
+   plantula                       trasplante                   aireacion, residuos sin               oscuro/estrechado; raiz pobre         lecimiento
+                                                               descomponer
+
+   Phytophthora blight /          Campo humedo y suelos        Agua acumulada, calor, salpique,      Marchitez rapida; cuello oscuro;      Establecimiento-co   Muy alta
+   pudricion raiz-cuello-fruto    con drenaje pobre            historial de                          fruto acuoso/blando                   secha
+                                                               solanaceas/cucurbitaceas
+
+   Pythium / Rhizoctonia /        Suelos con estres            Exceso humedad, raiz herida,          Parches con vigor bajo; raiz cafe;    Temprano y tras      Alta
+   Fusarium de raiz               radicular                    compactacion                          cuello dañado                         estres
+
+   Verticillium wilt              Lotes con historial; campo   Suelo contaminado, clima              Marchitez/amarilleo unilateral;       Vegetativo-produc    Muy alta
+                                  y protegido en suelo         fresco-moderado, plantas con          vasos cafes; raiz sin pudricion       cion
+                                                               carga                                 externa fuerte
+
+   Marchitez bacteriana /         Regiones                     Alta humedad, drenaje pobre,          Marchitez subita con poca clorosis;   Vegetativo-produc    Alta
+   Ralstonia                      calidas-humedas; suelos      heridas, solanaceas previas           exudado bacteriano en tallo           cion                 regional
+                                  con historial
+
+   Phomopsis blight / fruit rot   Fruto, tallo, hoja; campo    Clima caliente-humedo, salpique,      Lesiones hundidas en fruto con        Llenado-cosecha      Muy alta
+                                  lluvioso                     residuos, malezas solanaceas          puntos negros; cancro en tallo
+
+   Antracnosis de fruto           Fruto en llenado/cosecha     Humedad alta, heridas, fruta          Lesiones hundidas, pudricion y        Llenado-cosecha      Alta
+                                                               madura, residuos                      esporulacion
+
+   Early blight / Alternaria      Hojas y pedicelos; fruta     Humedad, estres, follaje denso,       Manchas foliares necroticas;          Vegetativo-cosech    Media-alta
+                                  ocasional                    acaros                                puede haber caida prematura de        a
+                                                                                                     fruto
+
+   Pythium fruit rot              Fruto bajo o en contacto     Exceso humedad, mal drenaje,          Extremo floral blanquea/tan;          Llenado-cosecha      Media-alta
+                                  con suelo                    fruta tocando suelo                   pudricion acuosa; micelio blanco
+                                                                                                     algodonoso
+
+   Botrytis / moho gris           Protegido, flores viejas,    HR alta, mala ventilacion, tejido     Moho gris en flor, tallo o fruto;     Floracion-cosecha    Alta en
+                                  heridas                      senescente                            necrosis humeda                                            protegido
+
+   Cenicilla / powdery mildew     Protegido y dosel denso      Ventilacion limitada, HR favorable,   Polvillo blanco, amarillamiento y     Vegetativo-cosech    Media-alta
+                                                               estres                                defoliacion                           a
+
+   Southern blight /              Base del tallo en            Suelos calidos y humedos,             Micelio blanco grueso y               Vegetativo-produc    Media-alta
+   Sclerotium                     calor-humedad                residuos, mala rotacion               esclerocios tipo semilla de           cion
+                                                                                                     mostaza
+
+
+
+
+Documento tecnico para catalogo Bio-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                  Pagina 3
+
+
+==================================== PAGINA 4 / 9 ====================================
+
+BIO-G | Riesgos del cultivo - Berenjena | Sanidad vegetal | v1
+
+
+
+
+ 4.1 Plagas, vectores y nematodos
+   Riesgo                        Donde pesa mas               Que lo favorece                     Clave visual                          Etapa                 Priorida
+                                                                                                                                                              d
+   Flea beetles / pulguillas     Primer mes                   Clima calido, bordes, residuos,     Tiros pequeños en hojas; plantulas    Establecimiento-ve    Muy alta
+                                 post-trasplante; campo       llegada rapida al lote              defoliadas; daño rapido               getativo              temprana
+
+   Mosca blanca                  Protegido y zonas calidas    Ciclos continuos, maleza, poca      Adultos/ninfas envés; mielecilla;     Vegetativo-cosech     Alta
+                                                              exclusion, hospederos cercanos      fumagina; fruto sucio                 a
+
+   Trips                         Flor, caliz y fruto oscuro   Calor, baja HR, cultivos vecinos    Plateado/cicatrices en caliz/fruto;   Floracion-cosecha     Alta calidad
+                                                              cebolla/ajo/cereales, flores        vector TSWV
+
+   Araña roja / acaros           Protegido, clima seco,       Baja HR, calor, polvo, uso amplio   Punteado, amarilleo, telaraña,        Vegetativo-cosech     Alta
+   tetraniquidos                 polvo, estrés                de insecticidas                     focos calientes                       a
+
+   Acaro blanco                  Protegido y brotes tiernos   Calor, brotes nuevos, deteccion     Brotes deformes, hojas pequeñas,      Vegetativo-floracio   Alta en
+                                                              tardia; puede moverse con mosca     fruto/calyx deformado                 n                     protegido
+                                                              blanca
+
+   Pulgones                      Brotes, envés, bordes        Crecimiento tierno, maleza, clima   Colonias, mielecilla, deformacion;    Temprano-producc      Media-alta
+                                                              templado                            vector potencial                      ion
+
+   Minador de hoja / Liriomyza   Protegido y presión          Calor moderado, maleza, baja        Galerias serpenteantes; punturas;     Vegetativo-cosech     Media-alta
+                                 externa                      fauna benefica                      defoliacion si severo                 a
+
+   Colorado potato beetle /      Campo, regiones con          Solanaceas cercanas, falta de       Larvas/adultos comen hojas;           Vegetativo-cosech     Condicional
+   escarabajos defoliadores      presencia                    rotacion                            defoliacion fuerte                    a
+
+   Gusanos                       Campo y bordes               Malezas, ventanas calidas, fruta    Mordidas en hoja/flor/fruto;          Floracion-cosecha     Media-alta
+   defoliadores/fruteros                                      expuesta                            excretas; entrada de pudriciones
+
+   Hornworms                     Campo, solanaceas            Hospederos cercanos, monitoreo      Defoliacion grande; larvas verdes     Vegetativo-cosech     Media
+                                                              tardio                              grandes                               a
+
+   Virus por trips / TSWV        Campos con trips;            Trips + maleza hospedera +          Bronceado, manchas/anillos,           Temprano-producc      Alta
+                                 protegido                    trasplantes infectados              deformacion y planta frenada          ion
+
+   Mosaicos /                    Material vegetal,            Higiene deficiente, maleza,         Mosaico, enchinamiento, hojas         Temprano-cosecha      Alta
+   TMV-CMV-Potyvirus             herramientas, vectores       trasplantes contaminados,           filiformes, fruto irregular
+                                                              pulgones
+
+   Nematodos agalladores         Suelos arenosos, ciclos      Meloidogyne, malezas                Parches debiles; marchitez; raices    Desde                 Muy alta si
+                                 repetidos                    hospedantes, temperaturas           con agallas; mala respuesta a         establecimiento       hay
+                                                              calidas                             fertilizacion                                               historial
+
+
+
+
+Documento tecnico para catalogo Bio-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                 Pagina 4
+
+
+==================================== PAGINA 5 / 9 ====================================
+
+BIO-G | Riesgos del cultivo - Berenjena | Sanidad vegetal | v1
+
+
+
+
+ 5. Riesgos abioticos y fisiologicos
+   Riesgo                       Que lo dispara                         Que se observa                      Momento                   Lectura Bio-G recomendada
+                                                                                                           sensible
+   Aborto floral / mal cuaje    Calor, noches calidas/frías, baja      Flor cae, cuaje erratico, pocos     Prefloracion-floracion-   No culpar primero a plaga: cruzar
+                                humedad de suelo, salinidad,           frutos iniciales                    cuaje                     temperatura, agua, EC y vigor.
+                                estres radicular
+
+   Deficit hidrico              Riego irregular, calor, viento, raiz   Hojas caidas, flor/fruto joven      Floracion, cuaje,         Alerta fuerte si coincide con etapa
+                                limitada                               abortado, recuperacion              llenado                   reproductiva.
+                                                                       parcial nocturna
+
+   Exceso de humedad /          Riego excesivo, mal drenaje,           Marchitez con suelo humedo,         Establecimiento y tras    Diferenciar de sequia: suelo humedo + raiz
+   anoxia                       compactacion, lluvia                   raiz oscura, cuello                 lluvias                   pobre = riesgo radicular.
+                                                                       comprometido
+
+   Salinidad / CE alta          Agua salina, fertirriego cargado,      Bajo vigor, fruta chica, peor       Floracion-cosecha         En berenjena conviene alertar temprano por
+                                lavado insuficiente                    cuaje, bordes quemados                                        impacto en rendimiento/calidad.
+
+   Compactacion                 Preparacion deficiente, transito,      Raiz limitada, marchitez            Establecimiento-veget     Cruzar resistencia del suelo + humedad +
+                                suelo pesado                           aunque haya agua, respuesta         ativo                     tendencia de vigor.
+                                                                       baja a fertilizacion
+
+   Golpe de sol / sunscald      Radiacion alta, defoliacion, poda,     Zonas                               Llenado-cosecha           Relacionar con defoliacion por
+                                fruto expuesto                         blanquecinas/quemadas en                                      plaga/enfermedad y calor.
+                                                                       fruto
+
+   Daño cosmetico por           Hojas bajeras rozan fruto, viento,     Cicatrices, plateado, marcas        Llenado-cosecha           Muy importante en larga/rayada/blanca y
+   roce/calyx/scarring          trips, cosecha tardia                  superficiales; descarte visual                                mercado premium.
+
+   Frio / helada                Trasplante temprano, noches frias,     Arranque lento, hojas               Establecimiento-florac    Berenjena es muy sensible a frio; alertar
+                                helada                                 oscuras/necroticas, aborto,         ion                       preventivo.
+                                                                       muerte
+
+   Fitotoxicidad / deriva       Mezcla fuerte, aplicacion con          Patron uniforme/bordes,             Cualquier etapa           Preguntar por aplicacion reciente antes de
+                                calor, herbicida, residuos             quemado o deformacion no                                      diagnosticar enfermedad.
+                                                                       compatible con plaga
+
+
+
+
+ 6. Priorizacion por tipo Bio-G
+   Perfil                             Riesgos que suben de peso                                             Notas para BIO-G
+   BE-GEN - Generico                  Verticillium, Phomopsis, flea beetles, raiz/anoxia, aborto floral,    Perfil conservador: alertar antes que fallar tarde; no asumir forma,
+                                      CE                                                                    color ni sistema.
+
+   BE-01 - Larga / semilarga          Cicatrices por roce/trips, Phomopsis/anthracnosis en fruto,           Tipo dominante: foco en calidad visual y cortes continuos; largo fruto
+   morada                             acaros, continuidad de cosecha                                        expuesto.
+
+   BE-02 - Oval / bola morada         Phomopsis, sunscald, pudriciones de fruto, Verticillium, calidad      Fruto mas voluminoso: daño leve puede bajar mercado; conservar
+                                      visual                                                                area foliar.
+
+   BE-03 - Rayada / listada           Daño cosmetico, trips, flea beetles, Phomopsis/antracnosis,           Nicho/gourmet: subir impacto comercial de cicatrices y manchas
+                                      Botrytis en protegido                                                 aunque severidad agronomica sea media.
+
+   BE-04 - Blanca                     Sunscald, manchas visibles, cicatrices, trips/acaros,                 El color blanco evidencia defectos; usar modificador de calidad
+                                      salinidad/calidad                                                     visual.
+
+
+
+
+Documento tecnico para catalogo Bio-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                        Pagina 5
+
+
+==================================== PAGINA 6 / 9 ====================================
+
+BIO-G | Riesgos del cultivo - Berenjena | Sanidad vegetal | v1
+
+
+
+
+ 7. Monitoreo y diagnostico: protocolo minimo confiable
+ La app debe empujar revision simple pero disciplinada. BIO-G no debe prometer diagnostico definitivo desde una foto
+ o un sensor aislado.
+
+ ● Frecuencia normal: 1 vez por semana. En floracion, cosecha, protegido o clima favorable a enfermedad: 2 veces
+      por semana.
+
+ ● En el primer mes post-trasplante revisar pulguillas/flea beetles cada pocos dias; el daño puede avanzar rapido en
+      plantulas.
+
+ ● Revisar envés de hojas, brotes tiernos, flores, caliz, fruto bajo, cuello de planta, raiz sospechosa, bordes, puertas,
+      ventilas y zonas calientes/humedas.
+
+ ● Para marchitez: sacar planta completa si es posible. Diferenciar raiz podrida, vasos cafes, exudado bacteriano y
+      agallas.
+
+ ● Para Phomopsis/fruit rot: revisar frutos con manchas hundidas y puntos negros; preguntar por lluvia, salpique y
+      residuos.
+
+ ● Para vectores: trampas adhesivas ayudan, pero se confirma en planta; revisar envés y flores.
+ ● Para nematodos: no diagnosticar por clorosis sola; revisar raiz y considerar muestra de suelo/raiz.
+ Preguntas de diagnostico
+   Pregunta                              Indica mas riesgo biotico                                       Indica mas riesgo abiotico/nutricional
+   ¿Focos o uniforme?                    Focos, bordes, ventilas, plantas vecinas, lineas de riego.      Patron uniforme por lote, aplicacion, riego o clima.
+
+   ¿Organo inicial?                      Envés/brote = chupadores; fruto = Phomopsis/antracnosis;        Hoja vieja/nueva por movilidad nutrimental; flor/fruto por
+                                         raiz/cuello = suelo.                                            calor/agua.
+
+   ¿Marchitez con suelo humedo o         Humedo + raiz/cuello dañados: Phytophthora/anoxia/raiz; vasos   Seco + recupera de noche: deficit hidrico; CE alta: estres
+   seco?                                 cafes: Verticillium.                                            osmótico.
+
+   ¿Hay vectores?                        Trips, mosca blanca, pulgones o acaros elevan riesgo de         Sin vectores y ligado a clima/riego: revisar estres primero.
+                                         virus/daño directo.
+
+   ¿Hay aplicacion reciente?             Podria abrir puerta a enfermedad si hubo heridas/estrés.        Patron de quemado o deformacion posterior a mezcla/deriva
+                                                                                                         sugiere fitotoxicidad.
+
+
+
+
+ 8. Reglas para el motor Bio-G
+   Señal Bio-G                           Aumenta riesgo de                     Etapa donde pesa          Salida farmer-friendly
+                                                                               mas
+   Humedad suelo alta + drenaje          Phytophthora, Pythium, anoxia,        Establecimiento-cosecha   Riesgo radicular por exceso de humedad: revise cuello, raiz y
+   pobre + calor                         Southern blight                                                 drenaje.
+
+   HR alta / lluvia / salpique / fruto   Phomopsis, antracnosis, Pythium       Llenado-cosecha           Ambiente favorable a pudriciones de fruto: revise manchas
+   bajo                                  fruit rot, Botrytis                                             hundidas y frutos bajos.
+
+   Floracion + calor + baja humedad      Aborto floral, mal cuaje,             Floracion-cuaje           Etapa critica: calor y agua irregular pueden tirar flor y reducir
+   suelo                                 acaros/trips                                                    cuaje.
+
+   Daño pequeño tipo tiro en             Flea beetles                          Establecimiento           Revise pulguilla en plantulas; puede desfoliar rapido al inicio.
+   plantulas
+
+   Envés con mosca blanca /              Mosca blanca y daño cosmetico         Vegetativo-cosecha        Foco de mosca blanca: revise envés y bordes, y monitoree
+   mielecilla / fumagina                                                                                 avance.
+
+   Bronceado/punteado + telaraña +       Araña roja                            Vegetativo-cosecha        Posible foco de acaros: revise hojas medias y zonas
+   calor seco                                                                                            polvosas/calientes.
+
+   Vasos cafes + marchitez unilateral    Verticillium                          Vegetativo-produccion     Marchitez compatible con problema vascular; confirme corte de
+                                                                                                         tallo y raiz.
+
+   Raices con agallas + parches          Nematodos agalladores                 Desde establecimiento     Posible nematodo: revise raices y considere muestra de
+   debiles                                                                                               suelo/raiz.
+
+   Fruto con cicatrices/plateado         Trips, roce, daño cosmetico           Llenado-cosecha           Daño de calidad visual: revise trips, roce de hojas y manejo de
+                                                                                                         follaje.
+
+
+
+
+Documento tecnico para catalogo Bio-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                  Pagina 6
+
+
+==================================== PAGINA 7 / 9 ====================================
+
+BIO-G | Riesgos del cultivo - Berenjena | Sanidad vegetal | v1
+
+
+
+
+ 9. Que debe quedar dado de alta en codigo
+ Catalogo base recomendado para eggplant_syndromes.dart. Los IDs son sugeridos y siguen el estilo de
+ tomate/chile/pepino.
+
+   #    ID sugerido                            Sindrome / diferencial                 Organo                       Sintoma principal            Flags
+                                               principal
+   1    eggplant_damping_off_01                Damping-off:                           crown/root/whole_pla         seedling_collapse            highHumidity
+                                               Pythium/Rhizoctonia/Fusarium           nt
+
+   2    eggplant_phytophthora_root_crow        Phytophthora capsici -                 root/crown/fruit             root_rot_wilt                highHumidity
+        n_01                                   raiz/cuello/fruto
+
+   3    eggplant_root_rot_complex_01           Pythium/Rhizoctonia/Fusarium raiz      root/crown                   root_rot_wilt                recentStress/highHumidity
+
+   4    eggplant_verticillium_wilt_01          Verticillium dahliae                   stem/root/whole_plan         wilt_vascular                recentStress
+                                                                                      t
+
+   5    eggplant_bacterial_wilt_01             Ralstonia solanacearum                 stem/whole_plant             wilt_vascular                highHumidity
+
+   6    eggplant_phomopsis_fruit_rot_01        Phomopsis vexans                       fruit/stem/leaf              dark_sunken_lesions          highHumidity
+
+   7    eggplant_anthracnose_01                Colletotrichum spp.                    fruit/leaf                   dark_sunken_lesions          highHumidity
+
+   8    eggplant_alternaria_leaf_spot_01       Alternaria / early blight              leaf/fruit                   necrotic_foliar_spots        highHumidity/recentStress
+
+   9    eggplant_pythium_fruit_rot_01          Pythium fruit rot                      fruit                        fruit_apical_rot or          highHumidity
+                                                                                                                   dark_sunken_lesions
+
+   10   eggplant_botrytis_gray_mold_01         Botrytis cinerea                       flower/fruit/stem            gray_mold_necrosis           highHumidity
+
+   11   eggplant_powdery_mildew_01             Cenicilla                              leaf                         powdery_growth               highHumidity
+
+   12   eggplant_southern_blight_01            Sclerotium rolfsii                     crown/stem                   root_rot_wilt                highHumidity
+
+   13   eggplant_flea_beetle_01                Flea beetles / pulguilla               leaf                         feeding_holes                recentStress
+
+   14   eggplant_whitefly_01                   Mosca blanca                           leaf/fruit                   whitefly_presence            vectorPressure
+
+   15   eggplant_thrips_calyx_scarring_01      Trips y cicatriz de caliz/fruto        flower/fruit                 bronzing_stippling           vectorPressure
+
+   16   eggplant_spider_mites_01               Araña roja / acaros tetraniquidos      leaf                         bronzing_stippling           recentStress
+
+   17   eggplant_broad_mite_01                 Acaro blanco                           leaf/flower/fruit            fruit_deformation            recentStress
+
+   18   eggplant_aphids_01                     Pulgones                               leaf/whole_plant             aphid_colonies               vectorPressure
+
+   19   eggplant_leafminer_01                  Minador de hoja                        leaf                         leaf_mines
+
+   20   eggplant_chewing_larvae_01             Gusanos/hornworms/armyworms            leaf/flower/fruit            feeding_holes
+
+   21   eggplant_virus_mosaic_01               TMV/CMV/Potyvirus                      leaf/whole_plant             mosaic_yellowing             vectorPressure
+
+   22   eggplant_tswv_01                       Tomato spotted wilt virus              leaf/fruit/whole_plant       mosaic_yellowing             vectorPressure
+
+   23   eggplant_root_knot_nematode_01         Meloidogyne spp.                       root/whole_plant             root_galls                   recentStress
+
+   24   eggplant_flower_abortion_stress_0      Aborto floral por calor/agua/CE        flower                       flower_abortion              recentStress
+        1
+
+   25   eggplant_salinity_quality_01           Salinidad/CE alta                      whole_plant/fruit            fruit_deformation            recentStress
+
+   26   eggplant_waterlogging_anoxia_01        Exceso humedad/anoxia                  root/whole_plant             root_rot_wilt                highHumidity
+
+   27   eggplant_cold_injury_01                Frio/helada                            whole_plant                  cold_injury                  recentStress
+
+   28   eggplant_sunscald_scarring_01          Golpe de sol/cicatriz/calidad visual   fruit                        fruit_deformation            recentStress
+
+
+
+ 9.1 Nuevas señales opcionales recomendadas
+ El catalogo puede arrancar con IDs existentes, pero para berenjena conviene agregar pocas señales nuevas para
+ mejorar precision sin saturar la UX:
+
+   Nuevo signalId sugerido                  Etiqueta UX                                            Uso
+   signalBlackPycnidia                      Puntos negros dentro de la lesion                      Diferenciar Phomopsis de otras pudriciones de fruto.
+
+   signalCalyxScarring                      Cicatriz plateada en caliz/fruto                       Trips/roce/calidad visual en frutos oscuros, rayados o blancos.
+
+   signalShotHoleFeeding                    Muchos agujeritos tipo tiro                            Flea beetles en plantulas y hojas jovenes.
+
+   signalSlimyBacterialOoze                 Exudado lechoso/baba bacteriana al cortar tallo        Ralstonia/bacterial wilt.
+
+   signalFruitTouchesSoil                   Fruto bajo tocando suelo o acolchado mojado            Pythium fruit rot, Phomopsis y pudriciones por salpique.
+
+   signalWhiteCottonyMycelium               Micelio blanco algodonoso                              Pythium fruit rot o Sclerotium, segun organo.
+
+
+
+
+Documento tecnico para catalogo Bio-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                 Pagina 7
+
+
+==================================== PAGINA 8 / 9 ====================================
+
+BIO-G | Riesgos del cultivo - Berenjena | Sanidad vegetal | v1
+
+
+
+
+ 10. Modificadores por tipo / variedad
+ El motor actual permite VarietyModifier por varietyId. Para berenjena, los tipos no deben crear cultivos separados;
+ deben modificar score de algunos sindromes.
+
+   Grupo                      varietyIds sugeridos          diagnosisIds que suben                      scoreDelt       Razon
+                                                                                                        a
+   BE-01 larga/semilarga      eggplant_long_purple,         phomopsis_vexans,                           +4 a +6         Fruto largo expuesto, cosecha continua y
+                              eggplant_long, be_01          colletotrichum_eggplant,                                    daño cosmetico por roce/trips.
+                                                            thrips_eggplant, eggplant_scarring
+
+   BE-02 oval/bola            eggplant_oval_round, be_02    phomopsis_vexans, eggplant_sunscald,        +3 a +5         Fruto mas voluminoso; calidad visual y area
+                                                            botrytis_eggplant                                           foliar importan mucho.
+
+   BE-03 rayada/listada       eggplant_striped,             thrips_eggplant, eggplant_scarring,         +5 a +7         Mercado nicho: manchas/cicatrices tienen
+                              eggplant_graffiti, be_03      phomopsis_vexans                                            mayor impacto comercial.
+
+   BE-04 blanca               eggplant_white,               eggplant_sunscald, thrips_eggplant,         +5 a +7         El fruto claro hace mas visibles quemaduras
+                              eggplant_white_egg, be_04     eggplant_scarring                                           y cicatrices.
+
+   BE-GEN                     eggplant_generic, be_gen      sin boost fuerte                            0 a +2          Solo conservar perfil preventivo; no
+                                                                                                                        sobrediagnosticar.
+
+
+
+
+ 11. Integracion minima de codigo
+ Cambios minimos esperados al implementar este PDF:
+
+ ● Crear lib/core/plant_health/catalog/eggplant_syndromes.dart con const List<PlantHealthSyndrome>
+      eggplantSyndromes.
+
+ ● Agregar eggplantCropId, defaultProfileId y catalogo de variedades/perfiles en CropCatalog cuando se integre el
+      cultivo.
+
+ ● Actualizar PlantHealthRegistry: import de eggplant_syndromes.dart y case CropCatalog.eggplantCropId.
+ ● Actualizar PlantHealthStageAdapter con _fromEggplant: germinacion/establecimiento -> seedling; vegetativo ->
+      early/mid/late; floracion -> reproductiveEarly; cuajado -> reproductiveMid; llenado/cosecha -> grainFill;
+      senescencia -> lateSeason.
+
+ ● Usar package: imports y no imports relativos.
+ ● No agregar ingredientes activos ni recetas de plaguicidas en UX v1.
+ ● No separar BE-01/BE-04 como cultivos; son perfiles/variedades de crop_eggplant.
+
+ 12. Lenguaje de salida recomendado
+   Situacion                        No decir solo...           Mejor salida BIO-G
+   Marchitez con suelo humedo       Falta agua                 Marchitez con suelo humedo: revise raiz, cuello y drenaje; puede haber anoxia o pudricion radicular.
+
+   Fruto con lesion hundida         Antracnosis                Daño compatible con pudricion de fruto. Revise Phomopsis/antracnosis, humedad reciente y
+                                                               salpique.
+
+   Plantulas con agujeritos         Plaga                      Daño tipo pulguilla en etapa temprana. Revise hojas nuevas y bordes; puede avanzar rapido.
+
+   Flor cayendo                     Falta nutriente            Caida de flor en etapa critica: revise calor, agua, CE y vectores antes de corregir a ciegas.
+
+   Fruto rayado/blanco con          Trips                      Daño de calidad visual. Revise trips, roce de hojas, viento y manejo del dosel.
+   cicatriz
+
+   Mosaico con vectores             Virus                      Sintomas compatibles con virosis; confirme avance, revise vectores y maleza hospedera.
+
+
+
+
+Documento tecnico para catalogo Bio-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                           Pagina 8
+
+
+==================================== PAGINA 9 / 9 ====================================
+
+BIO-G | Riesgos del cultivo - Berenjena | Sanidad vegetal | v1
+
+
+
+
+ 13. Conclusion tecnica
+ Berenjena puede reutilizar gran parte del pensamiento de tomate y chile, pero no debe copiarse igual. La diferencia
+ principal esta en la sensibilidad a Verticillium, la importancia de Phomopsis en fruto, el daño temprano por flea
+ beetles, la presion de acaros/trips en protegido y el peso comercial de cicatrices/manchas en fruta larga, rayada o
+ blanca.
+ La decision para BIO-G v1 es crear un catalogo robusto pero no excesivo: 28 entradas maximas,
+ agrupadas en UX como raiz/suelo, manchas-pudriciones, vectores-acaros, plagas masticadoras y estres
+ fisiologico. El sistema debe hablar en terminos de riesgo y confirmacion, no en recetas cerradas.
+
+
+ 14. Fuentes base y trazabilidad
+ S1. UC IPM. Agriculture: Pest Management Guidelines for Eggplant. Base para plagas, enfermedades, nematodos y manejo integrado. URL:
+ https://ipm.ucanr.edu/agriculture/eggplant/
+
+ S2. UF/IFAS. 2021 Florida Plant Disease Management Guide: Eggplant. Base para Ralstonia, damping-off, early blight, Phomopsis, Phytophthora, Pythium fruit rot,
+ Southern blight y Verticillium. URL: https://ask.ifas.ufl.edu/publication/PG047
+
+ S3. Rutgers/NJAES. Mid-Atlantic Commercial Vegetable Production Recommendations 2026/2027 - Eggplant. Base para variedades, plagas, enfermedades y enfoque
+ comercial. URL: https://njaes.rutgers.edu/pubs/commercial-veg-rec/eggplant.pdf
+
+ S4. Rutgers Plant & Pest Advisory. Phomopsis fruit rot in eggplant. Phomopsis vexans, clima caliente-humedo, pycnidia, rotacion y monitoreo. URL:
+ https://plant-pest-advisory.rutgers.edu/phomopsis-fruit-rot-in-eggplant-2/
+
+ S5. Cornell Long Island Vegetable Health. Verticillium wilt of eggplant. Sintomas unilaterales, tejido vascular cafe y diferencia con pudriciones de raiz. URL:
+ https://blogs.cornell.edu/livegpath/gallery/eggplant/verticilium-wilt-on-eggplant/
+
+ S6. UC IPM. Flea Beetles in Eggplant. Daño temprano, monitoreo del primer mes y manejo. URL: https://ipm.ucanr.edu/agriculture/eggplant/flea-beetle/
+
+ S7. UC IPM. Silverleaf Whitefly in Eggplant. Daño por mielecilla/fumagina y monitoreo de bordes. URL: https://ipm.ucanr.edu/agriculture/eggplant/silverleaf-whitefly/
+
+ S8. UC IPM. Thrips in Eggplant. Daño cosmetico en caliz/fruto y vector TSWV. URL: https://ipm.ucanr.edu/agriculture/eggplant/thrips/
+
+ S9. UC IPM. Webspinning Spider Mites in Eggplant. Daño por punteado, defoliacion, hotspots y monitoreo. URL:
+ https://ipm.ucanr.edu/agriculture/eggplant/webspinning-spider-mites/
+
+ S10. UC IPM. Nematodes in Eggplant. Meloidogyne, agallas, parches, suelos ligeros y muestreo. URL: https://ipm.ucanr.edu/agriculture/eggplant/nematodes/
+
+ S11. FHIA Honduras. Guia Manejo Integrado de Plagas Insectiles de Berenjena. Referencia regional para MIP en berenjena china/protegida, monitoreo, enemigos
+ naturales y plagas clave. URL: https://fhia.org.hn/wp-content/uploads/Guia_Manejo_Integrado_de_Plagas_Insectiles_de_Berenjena.pdf
+
+ S12. Universidad de Sonora. El cultivo de la berenjena bajo cubiertas plasticas. Referencia regional para plagas/enfermedades bajo cubiertas y Costa de Hermosillo.
+ URL: https://dagus.unison.mx/Zamora/4.%20EL%20CULTIVO%20DE%20LA%20BERENJENA%20%28Solanum%20melongena%20L.%29%20BAJO%20CUBIERTAS%20PLAS
+ TICAS.pdf
+
+
+
+
+Documento tecnico para catalogo Bio-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                        Pagina 9

@@ -1,0 +1,8 @@
+BIO-G - BERENJENA - PDFs convertidos a TXT
+Metodo: pdftotext -layout, con separadores visibles por pagina para conservar lectura, tablas y trazabilidad.
+
+- 01_Perfil_Universal_BioG_Berenjena_v2_mejorado.txt: PERFIL UNIVERSAL BIO-G - BERENJENA (7 paginas)
+- 02_Perfil_Generico_BioG_Berenjena_BE_GEN_SKIP_v2_mejorado.txt: PERFIL GENERICO BIO-G - BERENJENA BE-GEN (SKIP) (5 paginas)
+- 03_Guia_Fertilizacion_BioG_Berenjena_v1.txt: GUIA TECNICA DE FERTILIZACION DE BERENJENA (7 paginas)
+- 04_Riesgos_Cultivo_Sanidad_BioG_Berenjena_v1.txt: RIESGOS DEL CULTIVO DE BERENJENA - SANIDAD VEGETAL (9 paginas)
+- 05_Rendimiento_Aproximado_BioG_Berenjena_v1.txt: RENDIMIENTO APROXIMADO DE LA BERENJENA (7 paginas)

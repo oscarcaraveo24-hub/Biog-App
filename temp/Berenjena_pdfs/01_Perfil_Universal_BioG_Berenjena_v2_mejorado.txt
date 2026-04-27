@@ -1,0 +1,600 @@
+PERFIL UNIVERSAL BIO-G - BERENJENA
+Fuente PDF: Perfil_Universal_BioG_Berenjena_v2_mejorado.pdf
+Paginas: 7
+====================================================================================================
+
+
+==================================== PAGINA 1 / 7 ====================================
+
+BIO-G | Documento tecnico interno                                                                                                                Pagina 1
+
+
+
+
+                                                                        BIO-G
+            PERFIL UNIVERSAL BIO-G - BERENJENA
+                                       Version corregida y ampliada para codigo - BIO-G v1
+
+ Estado: Base universal mejorada para integracion progresiva en BIO-G v1. Cultivo: Berenjena - hortaliza de fruto. Regla:
+ cultivo madre -> tipo UX/perfil -> variedad como alias.
+
+
+ 0. Mejoras aplicadas sobre el borrador recibido
+   Area                     Borrador                                     Correccion BIO-G v2
+
+   Dia 0                    Siembra / trasplante sin separar.            Se obliga a guardar establishmentMode: seed, transplant o unknown. El
+                                                                         calendario cambia su confianza segun el modo.
+
+   Salinidad                Alerta cerca de 2.5 dS/m.                    Se baja a alerta temprana 1.5-2.0 dS/m porque estudios de salinidad
+                                                                         muestran reduccion de fruto desde ECe baja; fruto es mas sensible que
+                                                                         vegetativo.
+
+   Humedad suelo            Optimo 60-100% AW.                           Se ajusta a 60-90% AW sin saturacion; >95% con mal drenaje se trata
+                                                                         como riesgo radicular/anoxia.
+
+   Tipos                    Larga, bola, rayada, blanca.                 Se conservan como perfiles UX BE-01 a BE-04; variedades/marcas
+                                                                         quedan como alias, no como motores biologicos.
+
+   Fertilizacion            Solo prioridad NPK basica.                   Se agrega lectura por etapa y advertencia: N alto puede retrasar
+                                                                         floracion; K/Ca/Mg y agua gobiernan calidad de fruto.
+
+   Codigo                   Pocos campos tecnicos.                       Se agregan nombres de modelo, assets, score weights, ventanas y
+                                                                         reglas de no sobre-modelar.
+
+
+
+ 1. Proposito y alcance
+ Este documento define la base biologica y de producto para que BIO-G interprete sensores, etapa, alertas,
+ historial, fertilizacion general, sanidad y rendimiento aproximado de berenjena. No es una receta de produccion
+ ni promete rendimiento. Su funcion es dar un motor estable para una solanacea de fruto con floracion, cuajado,
+ llenado y cosecha progresiva.
+ Decision de arquitectura: Berenjena si puede ser un cultivo madre propio, porque no es un subtipo de
+ chile/tomate. Sus tipos UX - larga, oval/bola, rayada y blanca - viven dentro de crop_eggplant. La variedad o
+ semilla comercial solo actua como alias hacia el perfil seleccionado.
+
+
+ 2. Identidad del cultivo - universal
+   Campo                                       Valor BIO-G
+
+   ID del cultivo                              BE
+
+   Clave tecnica                               crop_eggplant / CropKey.eggplant
+
+   Nombre comun                                Berenjena
+
+   Nombre cientifico                           Solanum melongena L.
+
+   Familia botanica                            Solanaceae
+
+   Tipo de planta                              Hortaliza de fruto; cultivo de estacion calida; normalmente anual en manejo comercial
+
+   Metabolismo                                 C3
+
+   Uso principal                               Fruto fresco para mercado nacional/exportacion/gourmet
+
+   Organo objetivo                             Fruto inmaduro/comercial, cosechado firme y brillante
+
+   Variedad / hibrido                          Opcional; siempre se interpreta como alias hacia un perfil de tipo
+
+
+
+
+No sustituye diagnostico agronomico local, analisis de suelo/agua/tejido ni asesoria tecnica regional.
+
+
+==================================== PAGINA 2 / 7 ====================================
+
+BIO-G | Documento tecnico interno                                                                                                                            Pagina 2
+
+
+
+
+ 3. Lo que SI y NO pertenece al perfil universal
+   SI pertenece al universal                                                    NO pertenece al universal
+
+   Etapas biologicas base: germinacion, establecimiento, vegetativo,            Calibre comercial exacto, precio de mercado, numero de cortes,
+   floracion, cuaje, llenado, cosecha progresiva y senescencia.                 marca de semilla o receta de fertilizante cerrada.
+
+   Rangos medibles: temperatura, humedad de suelo, pH, salinidad,               Dosis por hectarea sin analisis de suelo/agua/tejido ni sistema
+   compactacion, HR como factor de riesgo.                                      productivo.
+
+   Sensibilidad por etapa y ponderacion de Agro Score.                          Diagnostico cerrado de plagas/enfermedades o recomendaciones de
+                                                                                ingrediente activo.
+
+   Reglas de migracion BE-GEN -> tipo especifico sin perder historial.          Duplicar un cultivo por cada forma/color de fruto.
+
+
+
+ 4. Arquitectura BIO-G recomendada para Berenjena
+   Nivel                           Ejemplo                                             Uso
+
+   Cultivo madre                   Berenjena / crop_eggplant                           Define sensores, etapas universales, alertas base, assets de
+                                                                                       etapa y comportamiento general.
+
+   Perfil generico                 BE-GEN                                              Entrada segura cuando el usuario no sabe tipo/variedad o quiere
+                                                                                       avanzar rapido.
+
+   Tipo UX                         Berenjena larga, oval/bola, rayada, blanca          Ajusta calendario, densidad, textos, sensibilidad ligera y copia de
+                                                                                       wizard.
+
+   Alias / variedad                Barcelona, Dark Night, Nápoli, morada larga,        Apunta al perfil del tipo. No modifica por si sola el motor
+                                   Graffiti, White Egg, otra variedad                  biologico.
+
+ Regla UX: Tipo = como lo pide el agricultor; Variedad = nombre de semilla o alias comercial; Perfil BIO-G = reloj
+ biologico oculto.
+
+
+ 5. Estructura fenologica universal
+   #       Etapa BIO-G                      Objetivo biologico                                Lectura del sistema
+
+   1       Germinacion                      Activacion de semilla y emergencia de             Temperatura estable, humedad sin saturacion y baja
+                                            radicula.                                         salinidad.
+
+   2       Emergencia /                     Planta joven, raiz inicial y adaptacion al        Alta sensibilidad a frio, exceso de agua, compactacion y
+           establecimiento                  sitio.                                            trasplante.
+
+   3       Desarrollo vegetativo            Construccion de area foliar, tallo, raiz y        Vigor suficiente sin exceso de N que retrase floracion.
+                                            arquitectura productiva.
+
+   4       Floracion                        Aparicion de flor, viabilidad de polen y          Etapa critica: calor, deficit de agua, frio y baja HR pueden
+                                            retencion floral.                                 provocar aborto.
+
+   5       Amarre / cuajado                 Flor fecundada se transforma en fruto             Agua estable, baja CE y temperatura moderada para
+                                            inicial.                                          evitar aborto o fruto deformado.
+
+   6       Llenado de fruto                 Crecimiento, firmeza, brillo, peso y calidad      K, Ca/Mg, humedad constante y sanidad foliar/fruto
+                                            de fruto.                                         aumentan de peso.
+
+   7       Cosecha progresiva               Cortes sucesivos segun tamaño y mercado.          No fijar numero de cortes; leer continuidad del cultivo e
+                                                                                              historial de calidad.
+
+   8       Fin de ciclo / senescencia       Declive productivo y cierre fisiologico.          Cambiar tono: cierre, sanidad y registro historico; no
+                                                                                              prometer recuperacion.
+
+
+
+ 6. Calendario base y Dia 0
+ El calendario debe almacenar si el usuario registro semilla, trasplante o etapa estimada. En berenjena la misma
+ etapa visual puede aparecer con fechas distintas segun charola, clima y sistema. BIO-G no debe fingir precision
+ cuando faltan datos.
+
+   Campo tecnico                    Valores                            Regla
+
+   establishmentMode                seed / transplant / unknown        Define si el sistema muestra germinacion completa o inicia en
+                                                                       establecimiento/vegetativo.
+
+   plantingDate                     fecha ingresada                    Base del reloj si el usuario conoce fecha.
+
+   estimatedStage                   etapa manual                       Se usa si no hay fecha; la etapa manda sobre el calendario.
+
+
+
+
+No sustituye diagnostico agronomico local, analisis de suelo/agua/tejido ni asesoria tecnica regional.
+
+
+==================================== PAGINA 3 / 7 ====================================
+
+BIO-G | Documento tecnico interno                                                                                                                          Pagina 3
+
+
+
+
+   Campo tecnico                     Valores                          Regla
+
+   stressDelayDays                   0, +1 a +3, +3 a +7, +7 o        El estres acumulado retrasa calendario, pero no cambia biologia.
+                                     mas
+
+   confidence                        alta / media / baja              Depende de fecha, etapa, sensores y perfil seleccionado.
+
+   Perfil                              Floracion aprox.           Inicio cosecha             Ciclo                        Densidad referencia
+
+   BE-GEN - Generico                   45-65 dias desde           70-95 DAT; 90-120 DAS      Intermedio conservador       12k-20k plantas/ha
+                                       trasplante; 60-85 desde
+                                       semilla
+
+   BE-01 - Larga / semilarga           40-60 DAT                  65-90 DAT                  Intermedio                   14k-22k plantas/ha
+   morada
+
+   BE-02 - Oval / bola morada          45-65 DAT                  70-95 DAT                  Intermedio                   12k-20k plantas/ha
+
+   BE-03 - Rayada / listada            45-70 DAT                  75-105 DAT                 Intermedio, nicho            12k-20k plantas/ha
+
+   BE-04 - Blanca                      45-70 DAT                  75-105 DAT                 Intermedio, nicho            12k-20k plantas/ha
+ DAT = dias despues de trasplante. DAS = dias despues de siembra. Si BIO-G solo tiene fecha de semilla, usar DAS; si tiene fecha
+ de instalacion/trasplante, usar DAT.
+
+
+ 7. Rangos fisiologicos medibles - version codificable
+   Variable                    Optimo / normal                    Observacion                  Alerta                       Critico / accion
+
+   Temperatura ambiente        22-30 C general; floracion         <18 C o >32 C                >35 C en                     Helada <=0 C: daño
+                               estable mejor 21-29 C                                           floracion/cuajado            severo; calor sostenido:
+                                                                                                                            aborto floral y bajo cuaje.
+
+   Temperatura                 20-30 C para germinacion/raiz      15-20 C o >30 C              <15 C o >32 C                Frio reduce
+   suelo/sustrato                                                                                                           germinacion/raiz; calor
+                                                                                                                            extrema raiz y trasplante.
+
+   Humedad suelo - AW          60-90% agua disponible, sin        50-60% o fluctuacion         <50% en                      Deficit: aborto/flor y fruto
+                               saturacion                         fuerte                       floracion/cuajado;           chico; exceso: anoxia,
+                                                                                               >95% con mal drenaje         Phytophthora y raiz pobre.
+
+   Humedad ambiental /         50-75% como referencia             <40% con calor; >85%         Baja HR + calor; alta HR     Usar como factor de riesgo
+   HR                          practica                           sostenido                    + follaje cerrado            sanitario/reproductivo, no
+                                                                                                                            umbral unico.
+
+   pH suelo                    6.0-6.8 ideal operativo            5.5-6.0 o 6.8-7.3            <5.5 o >7.3                  Bloqueo nutricional
+                                                                                                                            probable; pedir analisis
+                                                                                                                            antes de corregir fuerte.
+
+   Salinidad ECe               <1.5 dS/m ideal conservador        1.5-2.0 dS/m                 >2.0 dS/m                    >3.0 dS/m: riesgo alto de
+                                                                                                                            menor peso/calidad; fruto
+                                                                                                                            es mas sensible que
+                                                                                                                            vegetativo.
+
+   Compactacion /              <1.5 MPa                           1.5-2.0 MPa                  >2.0 MPa                     Raiz limitada; peor si
+   resistencia                                                                                                              coincide con exceso de
+                                                                                                                            agua o trasplante joven.
+
+   NPK relativo                N medio-alto vegetativo, P         Lectura baja segun etapa     Deficiencia en ventana       No dosificar aqui: mandar a
+                               establecimiento/floracion, K                                    critica                      guia de fertilizacion y
+                               alto llenado                                                                                 laboratorio.
+
+
+
+ 8. Prioridad nutrimental relativa por etapa - NO dosis
+   Etapa                         N               P            K               Ca/Mg/S             Lectura BIO-G
+
+   Germinacion                   Baja            Media        Baja            Baja                Prioridad real: humedad, temperatura y no
+                                                                                                  saturacion.
+
+   Establecimiento               Media           Alta         Media           Media               P y raiz importan; evitar sales cerca de raiz joven.
+
+   Vegetativo                    Media-alta      Media        Media           Media               Construir canopia sin exceso de hoja blanda.
+
+   Floracion                     Media           Alta         Alta            Alta                Etapa critica: no empujar solo N; proteger flor, agua
+                                                                                                  y balance.
+
+   Amarre/cuajado                Media           Media        Alta            Alta                K/Ca/Mg y agua estable reducen aborto y fruta
+                                                                                                  irregular.
+
+   Llenado                       Media           Baja-media   Muy alta        Alta                K domina peso/brillo/firmeza; vigilar CE y agua.
+
+   Cosecha progresiva            Media           Baja-media   Alta            Alta                Reposicion de mantenimiento segun cortes, vigor y
+                                                                                                  calidad.
+
+
+
+No sustituye diagnostico agronomico local, analisis de suelo/agua/tejido ni asesoria tecnica regional.
+
+
+==================================== PAGINA 4 / 7 ====================================
+
+BIO-G | Documento tecnico interno                                                                                                                            Pagina 4
+
+
+
+
+   Etapa                           N             P              K                Ca/Mg/S               Lectura BIO-G
+
+   Senescencia                     Baja          Baja           Baja-media       Baja                  No sobreinvertir si el ciclo ya cerro.
+
+
+
+ 9. Matriz universal de sensibilidad por etapa
+   Etapa                    Deficit agua       Exceso agua          Frio          Calor         Salinidad            Compactacio          Nutricion
+                                                                                                                     n
+
+   Germinacion              Alta               Alta                 Muy alta      Media         Media                Alta                 Baja
+
+   Establecimiento          Alta               Muy alta             Alta          Media         Media                Alta                 Media
+
+   Vegetativo               Media              Alta                 Media         Media         Media                Media                Media-alta N
+
+   Floracion                Muy alta           Alta                 Alta          Muy alta      Alta                 Media                Alta P/K
+
+   Amarre/cuajado           Muy alta           Alta                 Media         Muy alta      Alta                 Media                Alta K/Ca
+
+   Llenado fruto            Alta               Media-alta           Media         Alta          Alta                 Media                Muy alta K
+
+   Cosecha progresiva       Media              Alta sanitaria       Media         Media-alta    Media-alta           Media                Alta
+                                                                                                                                          mantenimiento
+
+   Senescencia              Baja-media         Media                Baja-media    Media         Media                Baja-media           Baja
+
+
+
+ 10. Ponderacion sugerida para Agro Score
+   Etapa                    Agua              Temperatura           Suelo/raiz           Nutricion         Comentario motor
+
+   Germinacion              35%               30%                   25%                  10%               Frio/humedad definen emergencia.
+
+   Establecimiento          30%               25%                   30%                  15%               Raiz joven: exceso agua/compactacion pesan
+                                                                                                           fuerte.
+
+   Vegetativo               25%               20%                   20%                  35%               Vigor explicado por nutricion y raiz activa.
+
+   Floracion                35%               35%                   10%                  20%               Etapa critica: calor + deficit = aborto floral.
+
+   Amarre/cuajado           35%               30%                   15%                  20%               Agua/temperatura explican cuaje; CE empieza
+                                                                                                           a pesar.
+
+   Llenado                  30%               20%                   20%                  30%               K, Ca/Mg, humedad y salinidad definen calidad.
+
+   Cosecha                  25%               15%                   25%                  35%               Mantener vigor/calidad sin sobreestimular hoja.
+
+   Senescencia              20%               15%                   25%                  40%               Lectura historica: cierre y declive.
+
+
+
+ 11. Ventanas fisiologicas activas
+   Ventana                     Activa desde               Activa hasta            Prioridad            Accion sistema
+
+   Riego critico               Prefloracion               Cuaje / primer          Muy alta             Alertar antes de aborto floral o fruto chico.
+                                                          llenado
+
+   Temperatura                 Floracion                  Amarre                  Muy alta             Detectar >32-35 C, noches frias y tendencias de
+   reproductiva                                                                                        calor.
+
+   Nutricion reproductiva      Vegetativo avanzado        Llenado                 Alta                 Subir peso de P/K/Ca/Mg, no convertir en dosis.
+
+   Salinidad                   Establecimiento            Cosecha                 Media-alta           Mayor peso en cuaje/llenado y si ECe sube.
+
+   Sanidad por humedad         Floracion                  Cosecha                 Alta                 Exceso humedad + HR alta = revisar raiz, Botrytis,
+                                                                                                       manchas y pudriciones.
+
+   Cierre de ciclo             Cosecha tardia             Senescencia             Media                Tono de mantener/cerrar, no prometer
+                                                                                                       recuperacion.
+
+
+
+ 12. Alertas universales en lenguaje humano
+   Condicion detectada                           Mensaje sugerido                                                                      Etapas donde
+                                                                                                                                       pesa mas
+
+   Temperatura alta + floracion/cuajado          Hay riesgo de aborto floral en berenjena por calor. Mantenga humedad                  Floracion, amarre
+                                                 estable y revise ventilacion/sombreo si aplica.
+
+   Humedad suelo baja                            La berenjena esta entrando en deficit hidrico. En esta etapa puede bajar el           Floracion, amarre,
+                                                 cuaje y el tamaño del fruto.                                                          llenado
+
+
+
+
+No sustituye diagnostico agronomico local, analisis de suelo/agua/tejido ni asesoria tecnica regional.
+
+
+==================================== PAGINA 5 / 7 ====================================
+
+BIO-G | Documento tecnico interno                                                                                                                        Pagina 5
+
+
+
+
+   Condicion detectada                         Mensaje sugerido                                                                  Etapas donde
+                                                                                                                                 pesa mas
+
+   Humedad excesiva / saturacion               Hay exceso de humedad en raiz. Puede reducir oxigeno y aumentar                   Establecimiento,
+                                               problemas radiculares.                                                            floracion, cosecha
+
+   EC alta o subiendo                          La salinidad puede estar reduciendo peso y calidad del fruto. Revise agua,        Establecimiento,
+                                               drenaje y fertilizacion acumulada.                                                cuaje, llenado
+
+   pH fuera de rango                           El pH puede estar bloqueando nutrientes. Conviene confirmar con analisis          Todas, especialmente
+                                               antes de corregir fuerte.                                                         vegetativo/llenado
+
+   Compactacion alta                           La raiz puede estar limitada. Aunque haya agua, la planta puede no                Establecimiento,
+                                               absorber bien.                                                                    vegetativo, floracion
+
+   N alto con poca flor                        La planta puede estar demasiado vegetativa. Evite empujar solo follaje si         Vegetativo avanzado,
+                                               ya debe florear.                                                                  floracion
+
+
+
+ 13. Estados de salida BIO-G
+   Salida                            Valores                                        Regla para berenjena
+
+   Indice general                    0-100                                          Debe ponderar etapa: el mismo estres pesa mas en
+                                                                                    floracion/cuajado que en cosecha tardia.
+
+   Subindices                        agua / temperatura / suelo / nutricion         Cada subindice conserva lectura independiente para explicar
+                                                                                    recomendacion.
+
+   Estado                            Optimo / Observacion / Alerta / Critico        Critico solo con estres fuerte en ventana sensible o factores
+                                                                                    acumulados.
+
+   Tendencia                         Mejorando / Estable / Deteriorando             Se calcula por historial reciente, no por lectura instantanea.
+
+   Confianza                         Alta / media / baja                            Baja si faltan fecha, etapa, tipo o sensores; alta si hay stage +
+                                                                                    sensores + perfil.
+
+   Memoria                           evento, etapa, severidad, duracion,            Cada evento importante se guarda en History con lenguaje de
+                                     impacto                                        agricultor.
+
+
+
+ 14. Tipos, perfiles y alias - cobertura UX
+   ID                Tipo UX                           Perfil BIO-G                  Uso dominante              Alias representativos
+
+   BE-GEN            No se / Otra berenjena            Intermedio conservador        Fresco generico            berenjena generica, otra variedad,
+                                                                                                                no se el tipo
+
+   BE-01             Berenjena larga / semilarga       Intermedio - larga morada     Fresco dominante           morada larga, larga, semilarga,
+                     morada                                                                                     oriental/china, Barcelona, Dark
+                                                                                                                Night, Orestia, Napoli
+
+   BE-02             Berenjena oval / bola morada      Intermedio - fruto grande     Fresco comercial           bola, oval, americana, morada
+                                                                                                                grande, Night Shadow, Emma F1
+
+   BE-03             Berenjena rayada / listada        Intermedio -                  Fresco                     rayada, listada, graffiti/grafiti,
+                                                       nicho/gourmet                 gourmet/protegido          jaspeada
+
+   BE-04             Berenjena blanca                  Intermedio - nicho            Fresco gourmet             blanca, white egg, blanca F1, otra
+                                                                                                                blanca
+
+ Nota de producto: las marcas/variedades listadas son alias representativos de UX. No deben cambiar por si solas
+ rendimiento, fertilizacion o sanidad sin ficha varietal validada.
+
+
+ 15. Traduccion futura a codigo
+   Componente futuro                                Contenido esperado
+
+   eggplant_models.dart                             EggplantType, EggplantProfile, EggplantStage, EggplantProfileId, EggplantEstablishmentMode.
+
+   eggplant_profiles.dart                           BE-GEN y BE-01 a BE-04 con calendarios, densidades, sensibilidad, aliases y flags de nicho.
+
+   eggplant_engine.dart                             Resolver etapa actual, migracion generico -> tipo, stage copy, hero asset y alertas de stage.
+
+   eggplant_universal_profile.dart                  Rangos medibles, matriz de sensibilidad, pesos de score y textos universales.
+
+   eggplant_agro_score_engine.dart                  Ponderacion por etapa y penalizaciones por agua, temperatura, suelo, salinidad y nutricion.
+
+   eggplant_catalog.dart                            Entradas UX para wizard: Berenjena, tipo, variedad/otra, etapa, fecha.
+
+   plant_health/eggplant_syndromes.dart             Riesgos sanitarios posteriores: plagas, hongos, bacterias, virus, nematodos y factores abioticos.
+
+
+
+
+No sustituye diagnostico agronomico local, analisis de suelo/agua/tejido ni asesoria tecnica regional.
+
+
+==================================== PAGINA 6 / 7 ====================================
+
+BIO-G | Documento tecnico interno                                                                                                                  Pagina 6
+
+
+
+
+ 16. Assets y nombres sugeridos
+   Asset de etapa Seeds                                                   Etapa
+
+   eggplant_stage_germination.png                                         Germinacion
+
+   eggplant_stage_establishment.png                                       Emergencia / establecimiento
+
+   eggplant_stage_vegetative.png                                          Desarrollo vegetativo
+
+   eggplant_stage_flowering.png                                           Floracion
+
+   eggplant_stage_fruit_set.png                                           Amarre / cuajado
+
+   eggplant_stage_fruit_fill.png                                          Llenado de fruto
+
+   eggplant_stage_progressive_harvest.png                                 Cosecha progresiva
+
+   eggplant_stage_senescence.png                                          Fin de ciclo / senescencia
+
+   Icon de wizard                                                     Uso
+
+   ic_eggplant.png                                                    Entrada madre Berenjena
+
+   ic_eggplant_generic.png                                            No se / Otra berenjena
+
+   ic_eggplant_long_purple.png                                        Berenjena larga / semilarga morada
+
+   ic_eggplant_oval_purple.png                                        Berenjena oval / bola morada
+
+   ic_eggplant_striped.png                                            Berenjena rayada / listada
+
+   ic_eggplant_white.png                                              Berenjena blanca
+
+
+
+ 17. Reglas de migracion y seguridad UX
+ - BE-GEN nunca debe mostrarse como perfil incompleto; debe sentirse como configuracion normal.
+ - Si el usuario despues elige tipo especifico, BIO-G migra BE-GEN -> BE-XX sin borrar historial.
+ - La migracion recalcula calendario, ventanas activas, sensibilidad y textos futuros; no reinicia cultivo.
+ - Si el usuario no sabe fecha, se usa etapa manual y baja la confianza del calendario.
+ - Si el usuario sabe tipo pero no variedad, cargar el perfil del tipo con alias Otra variedad.
+ - No crear un perfil biologico nuevo por cada marca comercial salvo ficha validada.
+
+
+ 18. Reglas de no sobre-modelar en v1
+ No modelar color comercial exacto, calibre, precio, numero de cortes, receta de fertilizante, diagnostico cerrado de
+ plaga o rendimiento garantizado dentro del Perfil Universal. Esos temas pertenecen a guias o modulos posteriores.
+
+   Tema                                        Decision v1
+
+   Forma/color de fruto                        Solo ajusta UX y textos; no cambia por si solo el motor.
+
+   Numero de cortes                            No se fija. La cosecha es progresiva y el historial dira continuidad.
+
+   Fertilizacion kg/ha                         Queda para guia de fertilizacion con laboratorio y sistema.
+
+   Plagas/enfermedades                         Quedan para documento de riesgos y modulo de sanidad vegetal.
+
+   Rendimiento                                 Queda para ficha de rendimiento aproximado por sistema y tipo.
+
+
+
+ 19. Resumen ejecutivo para continuar
+   Elemento                           Cierre
+
+   Estructura                         Berenjena queda como cultivo madre propio: crop_eggplant.
+
+   Subtipos                           Larga/semilarga morada, oval/bola morada, rayada/listada, blanca y generico.
+
+   Etapas                             8 etapas BIO-G: germinacion, establecimiento, vegetativo, floracion, cuaje, llenado, cosecha, senescencia.
+
+   Etapa critica                      Floracion -> amarre/cuajado.
+
+   Sensores clave                     Humedad de suelo, temperatura, pH, EC, compactacion/resistencia, HR como factor de riesgo.
+
+
+
+
+No sustituye diagnostico agronomico local, analisis de suelo/agua/tejido ni asesoria tecnica regional.
+
+
+==================================== PAGINA 7 / 7 ====================================
+
+BIO-G | Documento tecnico interno                                                                                                                       Pagina 7
+
+
+
+
+   Elemento                           Cierre
+
+   Siguiente documento                Perfil Generico BE-GEN / SKIP, conservador y migrable.
+
+
+
+ 20. Fuentes y trazabilidad
+   ID        Fuente                                                                 Uso dentro de BIO-G
+
+   S1        UF/IFAS Extension. HS726/CV124, Chapter 8. Eggplant                    Base comercial para produccion de berenjena, plagas/insectos,
+             Production. Actualizado 2025.                                          enfoque de extension y manejo por sistema.
+
+   S2        UF/IFAS Extension. CV228, Summary of N, P, and K Research with         Nutricion N-P-K en sistemas con plastico/goteo; confirma que
+             Eggplant in Florida.                                                   fertilizacion y agua se leen juntas.
+
+   S3        University of Missouri Extension. Eggplant Production.                 pH 6.0-7.0, drenaje, espaciamientos, fertilizacion base y
+                                                                                    sidedress/fertirriego por goteo.
+
+   S4        Utah State University Extension. Tomato, Pepper and Eggplant           Necesidad de analisis de suelo, riesgo de sobrefertilizacion y
+             Soil and Fertility.                                                    tasas orientativas N/P/K para eggplant/pepper.
+
+   S5        SARE / Cornell Nutrient Guidelines. Eggplants.                         pH 6.0-6.4, referencia N-P-K comercial y germinacion en
+                                                                                    ambiente caliente.
+
+   S6        UC IPM. Agriculture: Eggplant Pest Management Guidelines.              Catalogo base de enfermedades, nematodos, desordenes
+                                                                                    abioticos y plagas para modulo de sanidad.
+
+   S7        Rutgers Cooperative Extension. Eggplant IPM Field Guide.               Rotacion, camas elevadas, Phytophthora, monitoreo y decisiones
+                                                                                    pre-siembra para sanidad.
+
+   S8        Unlukara et al. / USDA-ARS PDF. Effects of salinity on eggplant        Ajuste del umbral de alerta de salinidad: fruto sensible cerca de
+             growth and evapotranspiration.                                         ECe 1.5-2.0 dS/m.
+
+   S9        SADER/SIAP, comunicados y estadistica publica de berenjena en          Contexto Mexico: Sinaloa, Nayarit y zonas de exportacion; usado
+             Mexico.                                                                solo para calibrar contexto nacional, no recetas.
+
+ Estado del documento: PERFIL UNIVERSAL BIO-G - BERENJENA v2 mejorado queda listo para revisar fertilizacion, riesgos
+ y rendimiento aproximado antes de codigo.
+
+
+
+
+No sustituye diagnostico agronomico local, analisis de suelo/agua/tejido ni asesoria tecnica regional.

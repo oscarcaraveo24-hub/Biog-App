@@ -226,6 +226,7 @@ class DashboardScreenPresenter {
 
     if (isPlanted && telemetry != null) {
       final scaleId = runtime.cropContext?.cultivationScaleId;
+      final cropContext = runtime.cropContext;
 
       final nInt = NutrientRecommendationEngine.interpret(
         nutrient: AgroMetricKey.n,
@@ -233,6 +234,9 @@ class DashboardScreenPresenter {
         cropKey: runtime.cropKeyName,
         stageKey: stageResult?.stageKey,
         profileId: runtime.profile?.id,
+        varietyId: cropContext?.varietyId,
+        varietyAlias: cropContext?.varietyAlias,
+        calendarId: cropContext?.calendarTypeId,
         targets: targets,
         cultivationScaleId: scaleId,
       );
@@ -242,6 +246,9 @@ class DashboardScreenPresenter {
         cropKey: runtime.cropKeyName,
         stageKey: stageResult?.stageKey,
         profileId: runtime.profile?.id,
+        varietyId: cropContext?.varietyId,
+        varietyAlias: cropContext?.varietyAlias,
+        calendarId: cropContext?.calendarTypeId,
         targets: targets,
         cultivationScaleId: scaleId,
       );
@@ -251,6 +258,9 @@ class DashboardScreenPresenter {
         cropKey: runtime.cropKeyName,
         stageKey: stageResult?.stageKey,
         profileId: runtime.profile?.id,
+        varietyId: cropContext?.varietyId,
+        varietyAlias: cropContext?.varietyAlias,
+        calendarId: cropContext?.calendarTypeId,
         targets: targets,
         cultivationScaleId: scaleId,
       );

@@ -593,6 +593,33 @@ class SeedsScreenLayout {
     'assets/seeds/cucumber/cucumber_stage_senescence.png',
   ];
 
+  static const String chiliIconAsset = 'assets/icons/wizard/ic_chili.png';
+  static const double chiliIconScale = 2.55;
+  static const List<String> chiliHeroFallbackAssets = <String>[
+    'assets/seeds/chili/chili_stage_flowering.png',
+    'assets/seeds/chili/chili_stage_vegetative.png',
+    'assets/seeds/chili/chili_stage_fruit_set.png',
+    'assets/seeds/chili/chili_stage_fruit_fill.png',
+    'assets/seeds/chili/chili_stage_progressive_harvest.png',
+    'assets/seeds/chili/chili_stage_establishment.png',
+    'assets/seeds/chili/chili_stage_germination.png',
+    'assets/seeds/chili/chili_stage_senescence.png',
+  ];
+
+  static const String eggplantIconAsset =
+      'assets/icons/wizard/ic_eggplant.png';
+  static const double eggplantIconScale = 2.55;
+  static const List<String> eggplantHeroFallbackAssets = <String>[
+    'assets/seeds/eggplant/eggplant_stage_flowering.png',
+    'assets/seeds/eggplant/eggplant_stage_vegetative.png',
+    'assets/seeds/eggplant/eggplant_stage_fruit_set.png',
+    'assets/seeds/eggplant/eggplant_stage_fruit_fill.png',
+    'assets/seeds/eggplant/eggplant_stage_progressive_harvest.png',
+    'assets/seeds/eggplant/eggplant_stage_establishment.png',
+    'assets/seeds/eggplant/eggplant_stage_germination.png',
+    'assets/seeds/eggplant/eggplant_stage_senescence.png',
+  ];
+
   static const String bgAsset = 'assets/images/bg_image_seeds.png';
   static const double topBgHeightFactor = 1.0;
   static const double topBgDy = -20;
@@ -746,6 +773,10 @@ class SeedsScreenLogic {
         return 'Avena';
       case 'cucumber':
         return 'Pepino';
+      case 'chili':
+        return 'Chile';
+      case 'eggplant':
+        return 'Berenjena';
       case '':
         return 'Cultivo';
       default:
@@ -884,6 +915,10 @@ class SeedsScreenLogic {
           return SeedsScreenLayout.tomatoIconAsset;
         case CropCatalog.cucumberCropId:
           return SeedsScreenLayout.cucumberIconAsset;
+        case CropCatalog.chiliCropId:
+          return SeedsScreenLayout.chiliIconAsset;
+        case CropCatalog.eggplantCropId:
+          return SeedsScreenLayout.eggplantIconAsset;
         default:
           return SeedsScreenLayout.genericPlantIconAsset;
       }
@@ -904,6 +939,10 @@ class SeedsScreenLogic {
         return SeedsScreenLayout.tomatoIconAsset;
       case CropCatalog.cucumberCropId:
         return SeedsScreenLayout.cucumberIconAsset;
+      case CropCatalog.chiliCropId:
+        return SeedsScreenLayout.chiliIconAsset;
+      case CropCatalog.eggplantCropId:
+        return SeedsScreenLayout.eggplantIconAsset;
       default:
         return SeedsScreenLayout.genericPlantIconAsset;
     }
@@ -948,6 +987,16 @@ class SeedsScreenLogic {
       return SeedsScreenLayout.cucumberIconScale;
     }
 
+    if (asset == SeedsScreenLayout.chiliIconAsset ||
+        cropId == CropCatalog.chiliCropId) {
+      return SeedsScreenLayout.chiliIconScale;
+    }
+
+    if (asset == SeedsScreenLayout.eggplantIconAsset ||
+        cropId == CropCatalog.eggplantCropId) {
+      return SeedsScreenLayout.eggplantIconScale;
+    }
+
     return SeedsScreenLayout.genericPlantIconScale;
   }
 
@@ -969,6 +1018,18 @@ class SeedsScreenLogic {
 
     if (cropId == CropCatalog.cucumberCropId) {
       for (final asset in SeedsScreenLayout.cucumberHeroFallbackAssets) {
+        add(asset);
+      }
+    }
+
+    if (cropId == CropCatalog.chiliCropId) {
+      for (final asset in SeedsScreenLayout.chiliHeroFallbackAssets) {
+        add(asset);
+      }
+    }
+
+    if (cropId == CropCatalog.eggplantCropId) {
+      for (final asset in SeedsScreenLayout.eggplantHeroFallbackAssets) {
         add(asset);
       }
     }

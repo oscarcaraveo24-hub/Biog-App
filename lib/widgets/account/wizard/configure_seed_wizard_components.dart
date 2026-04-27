@@ -23,6 +23,9 @@ class ConfigureSeedWizardAssets {
   static const String cropBean = 'assets/icons/wizard/ic_frijol.png';
   static const String cropOat = 'assets/icons/wizard/ic_avena.png';
   static const String cropCucumber = 'assets/icons/wizard/ic_cucumber.png';
+  static const String cropChili = 'assets/icons/wizard/ic_chili.png';
+  static const String cropEggplant = 'assets/icons/wizard/ic_eggplant.png';
+
   static const String cucumberSlicer =
       'assets/icons/wizard/ic_cucumber_slicer.png';
   static const String cucumberEnglishProtected =
@@ -31,6 +34,38 @@ class ConfigureSeedWizardAssets {
       'assets/icons/wizard/ic_cucumber_persian_mini.png';
   static const String cucumberCornichonPickling =
       'assets/icons/wizard/ic_cucumber_cornichon_pickling.png';
+
+  static const String chiliGeneric = 'assets/icons/wizard/ic_chili_generic.png';
+  static const String chiliJalapeno =
+      'assets/icons/wizard/ic_chili_jalapeno.png';
+  static const String chiliSerrano = 'assets/icons/wizard/ic_chili_serrano.png';
+  static const String chiliPoblanoAncho =
+      'assets/icons/wizard/ic_chili_poblano_ancho.png';
+  static const String chiliChilacaPasilla =
+      'assets/icons/wizard/ic_chili_chilaca_pasilla.png';
+  static const String chiliGuajilloMirasol =
+      'assets/icons/wizard/ic_chili_guajillo_mirasol.png';
+  static const String chiliArbolPuya =
+      'assets/icons/wizard/ic_chili_arbol_puya.png';
+  static const String chiliHabanero =
+      'assets/icons/wizard/ic_chili_habanero.png';
+  static const String chiliBellPepper =
+      'assets/icons/wizard/ic_chili_bell_pepper.png';
+
+  // Berenjena
+  //
+  // El genérico usa el icono madre de berenjena.
+  static const String eggplantGeneric = 'assets/icons/wizard/ic_eggplant.png';
+  static const String eggplantItalianBlack =
+      'assets/icons/wizard/ic_eggplant_italian_black.png';
+  static const String eggplantLongPurple =
+      'assets/icons/wizard/ic_eggplant_long_purple.png';
+  static const String eggplantOvalRound =
+      'assets/icons/wizard/ic_eggplant_oval_round.png';
+  static const String eggplantStriped =
+      'assets/icons/wizard/ic_eggplant_striped.png';
+  static const String eggplantWhite =
+      'assets/icons/wizard/ic_eggplant_white.png';
 
   /// Ícono principal del cultivo tomate (listas y encabezados).
   static const String cropTomato = 'assets/icons/wizard/ic_tomate.png';
@@ -181,7 +216,10 @@ class ConfigureSeedWizardAssets {
     return cropCucumber;
   }
 
-  static String cucumberTypedIconForVariety({String? varietyId, String? label}) {
+  static String cucumberTypedIconForVariety({
+    String? varietyId,
+    String? label,
+  }) {
     final normalizedId = (varietyId ?? '').trim().toLowerCase();
 
     switch (normalizedId) {
@@ -240,6 +278,182 @@ class ConfigureSeedWizardAssets {
     }
 
     return cropCucumber;
+  }
+
+  static String chiliTypedIconForVariety({String? varietyId, String? label}) {
+    final normalizedId = (varietyId ?? '').trim().toLowerCase();
+
+    switch (normalizedId) {
+      case 'chili_jalapeno':
+      case 'ch_01':
+      case 'ch-01':
+      case 'ch01':
+        return chiliJalapeno;
+      case 'chili_serrano':
+      case 'ch_02':
+      case 'ch-02':
+      case 'ch02':
+        return chiliSerrano;
+      case 'chili_poblano_ancho':
+      case 'ch_03':
+      case 'ch-03':
+      case 'ch03':
+        return chiliPoblanoAncho;
+      case 'chili_chilaca_pasilla':
+      case 'ch_04':
+      case 'ch-04':
+      case 'ch04':
+        return chiliChilacaPasilla;
+      case 'chili_guajillo_mirasol':
+      case 'ch_05':
+      case 'ch-05':
+      case 'ch05':
+        return chiliGuajilloMirasol;
+      case 'chili_arbol_puya':
+      case 'ch_06':
+      case 'ch-06':
+      case 'ch06':
+        return chiliArbolPuya;
+      case 'chili_habanero':
+      case 'ch_07':
+      case 'ch-07':
+      case 'ch07':
+        return chiliHabanero;
+      case 'chili_bell_pepper':
+      case 'ch_08':
+      case 'ch-08':
+      case 'ch08':
+        return chiliBellPepper;
+      case 'chili_generic':
+      case 'ch_gen':
+      case 'ch-gen':
+      case 'chgen':
+        return chiliGeneric;
+    }
+
+    final normalized = (label ?? '').trim().toLowerCase();
+    if (normalized.contains('jalapeno') || normalized.contains('chipotle')) {
+      return chiliJalapeno;
+    }
+    if (normalized.contains('serrano')) return chiliSerrano;
+    if (normalized.contains('poblano') ||
+        normalized.contains('ancho') ||
+        normalized.contains('mulato')) {
+      return chiliPoblanoAncho;
+    }
+    if (normalized.contains('chilaca') || normalized.contains('pasilla')) {
+      return chiliChilacaPasilla;
+    }
+    if (normalized.contains('guajillo') || normalized.contains('mirasol')) {
+      return chiliGuajilloMirasol;
+    }
+    if (normalized.contains('arbol') || normalized.contains('puya')) {
+      return chiliArbolPuya;
+    }
+    if (normalized.contains('habanero')) return chiliHabanero;
+    if (normalized.contains('morron') ||
+        normalized.contains('morrón') ||
+        normalized.contains('gordo') ||
+        normalized.contains('pimiento') ||
+        normalized.contains('bell')) {
+      return chiliBellPepper;
+    }
+    if (normalized.contains('gen') || normalized.contains('otro')) {
+      return chiliGeneric;
+    }
+
+    return cropChili;
+  }
+
+  static String eggplantTypedIconForVariety({
+    String? varietyId,
+    String? label,
+  }) {
+    final normalizedId = (varietyId ?? '').trim().toLowerCase();
+
+    switch (normalizedId) {
+      case 'eggplant_long_purple':
+      case 'be_01':
+      case 'be-01':
+      case 'be01':
+        return eggplantLongPurple;
+      case 'eggplant_italian_purple':
+        return eggplantItalianBlack;
+      case 'eggplant_oval_round':
+      case 'be_02':
+      case 'be-02':
+      case 'be02':
+        return eggplantOvalRound;
+      case 'eggplant_striped':
+      case 'be_03':
+      case 'be-03':
+      case 'be03':
+        return eggplantStriped;
+      case 'eggplant_white':
+      case 'be_04':
+      case 'be-04':
+      case 'be04':
+        return eggplantWhite;
+      case 'eggplant_generic':
+      case 'be_gen':
+      case 'be-gen':
+      case 'begen':
+        return eggplantGeneric;
+    }
+
+    final normalized = (label ?? '').trim().toLowerCase();
+
+    if (normalized.contains('italiana') ||
+        normalized.contains('italian') ||
+        normalized.contains('clasica') ||
+        normalized.contains('clásica') ||
+        normalized.contains('black beauty')) {
+      return eggplantItalianBlack;
+    }
+
+    if (normalized.contains('larga') ||
+        normalized.contains('semilarga') ||
+        normalized.contains('morada larga') ||
+        normalized.contains('larga morada') ||
+        normalized.contains('barcelona') ||
+        normalized.contains('dark night') ||
+        normalized.contains('orestia') ||
+        normalized.contains('napoli') ||
+        normalized.contains('nápoli') ||
+        normalized.contains('oriental') ||
+        normalized.contains('china')) {
+      return eggplantLongPurple;
+    }
+
+    if (normalized.contains('oval') ||
+        normalized.contains('bola') ||
+        normalized.contains('americana') ||
+        normalized.contains('morada grande') ||
+        normalized.contains('night shadow') ||
+        normalized.contains('emma')) {
+      return eggplantOvalRound;
+    }
+
+    if (normalized.contains('rayada') ||
+        normalized.contains('listada') ||
+        normalized.contains('jaspeada') ||
+        normalized.contains('graffiti') ||
+        normalized.contains('grafiti')) {
+      return eggplantStriped;
+    }
+
+    if (normalized.contains('blanca') || normalized.contains('white')) {
+      return eggplantWhite;
+    }
+
+    if (normalized.contains('gen') ||
+        normalized.contains('otra') ||
+        normalized.contains('no se') ||
+        normalized.contains('no sé')) {
+      return eggplantGeneric;
+    }
+
+    return cropEggplant;
   }
 
   static const String stagePlanned =

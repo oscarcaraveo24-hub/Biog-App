@@ -473,7 +473,11 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
     final result = await showWizardSelectionSheet<String>(
       context: context,
-      title: 'Selecciona variedad o perfil',
+      title: cropId == CropCatalog.chiliCropId
+          ? 'Selecciona el tipo de chile'
+          : cropId == CropCatalog.eggplantCropId
+          ? 'Selecciona el tipo de berenjena'
+          : 'Selecciona variedad o perfil',
       options: varieties
           .map(
             (variety) => WizardSheetOption<String>(
@@ -483,7 +487,11 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                   variety.subtitle ??
                   (variety.enabled
                       ? (variety.isGeneric
-                            ? 'Recomendado si no sabes la variedad'
+                            ? (cropId == CropCatalog.chiliCropId
+                                  ? 'Recomendado si no sabes el tipo de chile'
+                                  : cropId == CropCatalog.eggplantCropId
+                                  ? 'Recomendado si no sabes el tipo de berenjena'
+                                  : 'Recomendado si no sabes la variedad')
                             : 'Disponible ahora')
                       : 'Próximamente'),
               iconPath: cropId == CropCatalog.maizeCropId
@@ -503,6 +511,16 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                     )
                   : cropId == CropCatalog.cucumberCropId
                   ? ConfigureSeedWizardAssets.cucumberTypedIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.chiliCropId
+                  ? ConfigureSeedWizardAssets.chiliTypedIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.eggplantCropId
+                  ? ConfigureSeedWizardAssets.eggplantTypedIconForVariety(
                       varietyId: variety.id,
                       label: variety.label,
                     )
@@ -614,6 +632,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return ConfigureSeedWizardAssets.cropTomato;
       case CropCatalog.cucumberCropId:
         return ConfigureSeedWizardAssets.cropCucumber;
+      case CropCatalog.chiliCropId:
+        return ConfigureSeedWizardAssets.cropChili;
+      case CropCatalog.eggplantCropId:
+        return ConfigureSeedWizardAssets.cropEggplant;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }
@@ -635,6 +657,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return ConfigureSeedWizardAssets.cropTomato;
       case 'Pepino':
         return ConfigureSeedWizardAssets.cropCucumber;
+      case 'Chile':
+        return ConfigureSeedWizardAssets.cropChili;
+      case 'Berenjena':
+        return ConfigureSeedWizardAssets.cropEggplant;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }
@@ -821,6 +847,16 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           )
         : cropId == CropCatalog.cucumberCropId
         ? ConfigureSeedWizardAssets.cucumberTypedIconForVariety(
+            varietyId: selectedVariety?.id ?? _draft.varietyAlias,
+            label: selectedVariety?.label ?? selectedVarietyLabel,
+          )
+        : cropId == CropCatalog.chiliCropId
+        ? ConfigureSeedWizardAssets.chiliTypedIconForVariety(
+            varietyId: selectedVariety?.id ?? _draft.varietyAlias,
+            label: selectedVariety?.label ?? selectedVarietyLabel,
+          )
+        : cropId == CropCatalog.eggplantCropId
+        ? ConfigureSeedWizardAssets.eggplantTypedIconForVariety(
             varietyId: selectedVariety?.id ?? _draft.varietyAlias,
             label: selectedVariety?.label ?? selectedVarietyLabel,
           )

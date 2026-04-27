@@ -20,6 +20,8 @@ class OnboardingUiAssets {
   static const String beanWhite = 'assets/icons/wizard/ic_frijol_blanco.png';
   static const String tomato = 'assets/icons/wizard/ic_tomate.png';
   static const String cucumber = 'assets/icons/wizard/ic_cucumber.png';
+  static const String chili = 'assets/icons/wizard/ic_chili.png';
+  static const String eggplant = 'assets/icons/wizard/ic_eggplant.png';
   static const String variety = 'assets/icons/wizard/ic_variedad.png';
   static const String configureCrop =
       'assets/icons/wizard/ic_configurar_cultivo.png';
@@ -80,7 +82,15 @@ class OnboardingUiAssets {
       case 'cucumber':
       case 'pepino':
         return cucumber;
+      case 'chili':
+      case 'chile':
       case 'pepper':
+      case 'pimiento':
+        return chili;
+      case 'eggplant':
+      case 'berenjena':
+      case 'aubergine':
+        return eggplant;
       case 'lettuce':
       case 'onion':
       case 'carrot':

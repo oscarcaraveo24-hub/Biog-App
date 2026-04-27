@@ -4,7 +4,9 @@ import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/core/crops/barley/barley_catalog.dart';
 import 'package:bio_g/core/crops/bean/bean_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
+import 'package:bio_g/core/crops/chili/chili_catalog.dart';
 import 'package:bio_g/core/crops/cucumber/cucumber_catalog.dart';
+import 'package:bio_g/core/crops/eggplant/eggplant_catalog.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
 import 'package:bio_g/core/crops/oat/oat_catalog.dart';
 import 'package:bio_g/core/crops/tomato/tomato_catalog.dart';
@@ -27,11 +29,17 @@ class CropCatalog {
   static const String oatCropId = 'oat';
   static const String tomatoCropId = 'tomato';
   static const String cucumberCropId = 'cucumber';
+  static const String chiliCropId = 'chili';
+  static const String eggplantCropId = 'eggplant';
 
   static const String tomatoDefaultProfileId = 'tm_gen';
   static const String tomatoDefaultCalendarId = 'tomato_default';
   static const String cucumberDefaultProfileId = 'pe_gen';
   static const String cucumberDefaultCalendarId = 'cucumber_default';
+  static const String chiliDefaultProfileId = 'ch_gen';
+  static const String chiliDefaultCalendarId = 'chili_default';
+  static const String eggplantDefaultProfileId = 'be_gen';
+  static const String eggplantDefaultCalendarId = 'eggplant_default';
 
   // ── Maize catalog constants ─────────────────────────────────────────────────
   static const String maizeDemoVarietyId = 'dk_2069';
@@ -308,6 +316,76 @@ class CropCatalog {
           label: 'Protegido en suelo',
           cropId: cucumberCropId,
           subtitle: 'Malla o invernadero en suelo; más humedad y continuidad',
+          enabled: true,
+        ),
+      ],
+    ),
+    CropCatalogEntry(
+      cropId: chiliCropId,
+      categoryId: vegetableCategoryId,
+      label: 'Chile',
+      subtitle: 'Hortaliza - campo abierto y protegido en suelo',
+      enabled: true,
+      defaultProfileId: chiliDefaultProfileId,
+      defaultCalendarId: chiliDefaultCalendarId,
+      varieties: chiliVarieties,
+      profiles: chiliProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: chiliDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: chiliCropId,
+          subtitle: 'Ciclo general anclado a siembra o trasplante',
+          enabled: true,
+          isDefault: true,
+        ),
+        CropCalendarEntry(
+          id: 'chili_campo_abierto',
+          label: 'Campo abierto',
+          cropId: chiliCropId,
+          subtitle: 'Mayor exposicion a calor, frio y vectores',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'chili_protegido',
+          label: 'Protegido en suelo',
+          cropId: chiliCropId,
+          subtitle: 'Malla o invernadero en suelo; mas humedad y continuidad',
+          enabled: true,
+        ),
+      ],
+    ),
+    CropCatalogEntry(
+      cropId: eggplantCropId,
+      categoryId: vegetableCategoryId,
+      label: 'Berenjena',
+      subtitle: 'Hortaliza - campo abierto y protegido en suelo',
+      enabled: true,
+      defaultProfileId: eggplantDefaultProfileId,
+      defaultCalendarId: eggplantDefaultCalendarId,
+      varieties: eggplantVarieties,
+      profiles: eggplantProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: eggplantDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: eggplantCropId,
+          subtitle: 'Ciclo general anclado a siembra o trasplante',
+          enabled: true,
+          isDefault: true,
+        ),
+        CropCalendarEntry(
+          id: 'eggplant_campo_abierto',
+          label: 'Campo abierto',
+          cropId: eggplantCropId,
+          subtitle: 'Mayor exposicion a calor, frio y vectores',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'eggplant_protegido',
+          label: 'Protegido en suelo',
+          cropId: eggplantCropId,
+          subtitle: 'Malla o invernadero en suelo; mas humedad y continuidad',
           enabled: true,
         ),
       ],
@@ -696,6 +774,15 @@ class CropCatalog {
         normalized == 'generic_oat' ||
         normalized == 'generic_tomato' ||
         normalized == 'generic_cucumber' ||
+        normalized == 'generic_chili' ||
+        normalized == 'generic_eggplant' ||
+        normalized == 'eggplant_generic' ||
+        normalized == 'be_gen' ||
+        normalized == 'be-gen' ||
+        normalized == 'begen' ||
+        normalized == 'otra berenjena' ||
+        normalized == 'no se' ||
+        normalized == 'no sé' ||
         normalized.startsWith('generic_');
   }
 
@@ -709,7 +796,9 @@ class CropCatalog {
             normalized == 'cb_gen' ||
             normalized == 'av_gen' ||
             normalized == 'tm_gen' ||
-            normalized == 'pe_gen');
+            normalized == 'pe_gen' ||
+            normalized == 'ch_gen' ||
+            normalized == 'be_gen');
   }
 
   static String? _canonicalCalendarId({
@@ -781,6 +870,13 @@ class CropCatalog {
       'oat' || 'avena' => oatCropId,
       'tomato' || 'tomate' || 'jitomate' => tomatoCropId,
       'cucumber' || 'pepino' => cucumberCropId,
+      'chili' ||
+      'chile' ||
+      'chiles' ||
+      'pepper' ||
+      'pimiento' ||
+      'aji' => chiliCropId,
+      'eggplant' || 'berenjena' || 'aubergine' => eggplantCropId,
       _ => value,
     };
   }
@@ -803,6 +899,8 @@ class CropCatalog {
       oatCropId => 'Avena',
       tomatoCropId => 'Tomate',
       cucumberCropId => 'Pepino',
+      chiliCropId => 'Chile',
+      eggplantCropId => 'Berenjena',
       _ => 'Cultivo',
     };
   }

@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/chili_nutrition_modifier.dart';
+import 'package:bio_g/core/agro/eggplant_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/fertilization_planner.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
@@ -52,6 +54,9 @@ class NutrientRecommendationEngine {
     required String? cropKey,
     required String? stageKey,
     String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+    String? calendarId,
     StageTargets? targets,
     StageWeights? weights,
     String? cultivationScaleId,
@@ -86,11 +91,41 @@ class NutrientRecommendationEngine {
 
     final trendModifier01 = _resolveTrendModifier01(trendPct);
 
-    final effectiveStagePressure01 = _combineStagePressure01(
+    final isChiliCrop = _isChiliCrop(cropKey);
+    final chiliModifier = isChiliCrop
+        ? resolveChiliNutritionModifier(
+            profileId: profileId,
+            varietyId: varietyId,
+            alias: varietyAlias,
+            calendarId: calendarId ?? cultivationScaleId,
+          )
+        : null;
+    final isEggplantCrop = _isEggplantCrop(cropKey);
+    final eggplantModifier = isEggplantCrop
+        ? resolveEggplantNutritionModifier(
+            profileId: profileId,
+            varietyId: varietyId,
+            alias: varietyAlias,
+            calendarId: calendarId ?? cultivationScaleId,
+          )
+        : null;
+
+    final combinedStagePressure01 = _combineStagePressure01(
       baseStagePressure01: baseStagePressure01,
       contextModifier01: contextModifier01,
       trendModifier01: trendModifier01,
     );
+    final effectiveStagePressure01 = chiliModifier?.adjustStagePressure(
+          combinedStagePressure01,
+          nutrient: nutrient,
+          stageKey: stageKey,
+        ) ??
+        eggplantModifier?.adjustStagePressure(
+          combinedStagePressure01,
+          nutrient: nutrient,
+          stageKey: stageKey,
+        ) ??
+        combinedStagePressure01;
 
     final demandWindowLabel = _demandWindowLabel(
       nutrient: nutrient,
@@ -125,6 +160,9 @@ class NutrientRecommendationEngine {
       cropKey: cropKey,
       stageKey: stageKey,
       profileId: profileId,
+      varietyId: varietyId,
+      varietyAlias: varietyAlias,
+      calendarId: calendarId,
       targets: targets,
       cultivationScaleId: cultivationScaleId,
     );
@@ -137,6 +175,8 @@ class NutrientRecommendationEngine {
       trendPct: trendPct,
       stagePressure01: effectiveStagePressure01,
       targets: targets,
+      chiliModifier: chiliModifier,
+      eggplantModifier: eggplantModifier,
     );
 
     final practicalRecommendation = _mergePracticalAndDose(
@@ -440,6 +480,8 @@ class NutrientRecommendationEngine {
     double? trendPct,
     double? stagePressure01,
     StageTargets? targets,
+    ChiliNutritionModifier? chiliModifier,
+    EggplantNutritionModifier? eggplantModifier,
   }) {
     final stage = (stageKey ?? '').toLowerCase();
     final crop = (cropKey ?? '').toLowerCase();
@@ -494,6 +536,31 @@ class NutrientRecommendationEngine {
         stage,
         stagePressure01,
         targets,
+      );
+    }
+    if (crop == 'chili' ||
+        crop == 'chile' ||
+        crop == 'pepper' ||
+        crop == 'pimiento') {
+      return _chiliPracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+        targets,
+        chiliModifier,
+      );
+    }
+    if (crop == 'eggplant' ||
+        crop == 'berenjena' ||
+        crop == 'aubergine') {
+      return _eggplantPracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+        targets,
+        eggplantModifier,
       );
     }
 
@@ -1316,6 +1383,492 @@ class NutrientRecommendationEngine {
   }
 
   // ── GENÉRICO ──────────────────────────────────────────────────────────────
+  static String _chiliPracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    double? stagePressure01,
+    StageTargets? targets,
+    ChiliNutritionModifier? modifier,
+  ) {
+    final isGerm = stage.contains('germin');
+    final isEstablishment =
+        stage.contains('establec') || stage.contains('emerg');
+    final isVeg = stage.contains('vegetativo') || stage.contains('vegetative');
+    final isFlowering = stage.contains('floracion') || stage.contains('flor');
+    final isFruitSet =
+        stage.contains('cuajado') ||
+        stage.contains('amarre') ||
+        stage.contains('fruitset');
+    final isFilling = stage.contains('llenado') || stage.contains('fill');
+    final isHarvest = stage.contains('progresiv') || stage.contains('harvest');
+    final isLate = _isLateStage(stage);
+    final isCritical = isFlowering || isFruitSet;
+    final profileHint = targets?.shortGuidanceFor(nutrient);
+    final windowLabel = targets?.windowLabelFor(nutrient);
+    final profileCaution = modifier?.practicalCaution(nutrient, stage);
+    String withModifier(String base) {
+      if (profileCaution == null || profileCaution.trim().isEmpty) {
+        return base;
+      }
+      return '$base ${profileCaution.trim()}';
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isCritical || isFilling || isHarvest) {
+            return withModifier(
+              'Nitrogeno alto en etapa reproductiva. Frena el N: el chile puede tirar flor, cuajar mal o seguirse yendo a follaje.',
+            );
+          }
+          return withModifier(
+            'Nitrogeno alto. Pausa aplicaciones y revisa balance con K y Ca antes de floracion.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isVeg) {
+            return withModifier('N en rango para sostener follaje sin exceso.');
+          }
+          if (isCritical) {
+            return withModifier('N equilibrado para proteger flor y amarre.');
+          }
+          return withModifier('N suficiente para la etapa actual del chile.');
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            'Por ahora el N no es la prioridad; vigila que no baje antes de entrar a floracion.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isVeg) {
+            return withModifier(
+              'N va bajando en vegetativo. Corrige con mesura para no llegar a floracion con exceso.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'N empieza a faltar en flor/amarre. Corrige fraccionado, sin jalones fuertes.',
+            );
+          }
+          return withModifier(
+            'N va bajando. Ajusta sin perseguir follaje de mas.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return withModifier(
+              'N bajo pero el ciclo cierra. Usalo para planear el siguiente cultivo.',
+            );
+          }
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'N bajo en arranque. Corrige moderado, priorizando raiz, P y humedad estable.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'N bajo en flor/amarre. Aplica en eventos cortos; una dosis fuerte puede tumbar flor.',
+            );
+          }
+          return withModifier(
+            'N bajo para esta etapa. Corrige fraccionado y revisa que no haya bloqueo por salinidad o humedad.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Vigila el nitrogeno del chile.',
+        );
+
+      case AgroMetricKey.p:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return withModifier(
+            'Fosforo alto. Pausa P: el exceso puede bloquear micronutrientes y no mejora el cuaje.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'Buen P para pegue y raiz. Esta es la ventana donde mas rinde.',
+            );
+          }
+          return withModifier(
+            'P suficiente para soporte fisiologico de la etapa.',
+          );
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            (isGerm || isEstablishment)
+                ? 'P aun acompana el arranque, pero no lo descuides si el trasplante viene lento.'
+                : 'P no es la prioridad principal en esta etapa del chile.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'P se esta quedando corto justo en pegue y raiz. Conviene corregir temprano.',
+            );
+          }
+          return withModifier(
+            'P va bajando. Corrige como base si la lectura o analisis lo confirma.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return withModifier(
+              'P bajo pero el ciclo cierra. Guarda el dato para el arrancador del siguiente ciclo.',
+            );
+          }
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'P bajo en arranque. Corrige cerca de raiz para evitar retraso de floracion.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'P bajo en ventana reproductiva. Corrige como soporte, pero no esperes una respuesta de rescate rapido.',
+            );
+          }
+          return withModifier(
+            'P bajo. Conviene ajustar la base del cultivo y revisar pH para disponibilidad.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el fosforo del chile.',
+        );
+
+      case AgroMetricKey.k:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isCritical || isFilling || isHarvest) {
+            return withModifier(
+              'K muy alto. Cuida el balance con Ca y Mg: demasiado K puede bajar firmeza y calidad de fruto.',
+            );
+          }
+          return withModifier(
+            'K alto. Pausa potasio solo y revisa sales totales antes de subir mas.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'K en rango en la ventana fuerte: buena base para llenado, color y calidad.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'K en rango para flor y amarre. Mantener humedad pareja es tan importante como la dosis.',
+            );
+          }
+          return withModifier('K estable para la etapa actual del chile.');
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isVeg && (stagePressure01 ?? 0) > 0.5) {
+            return withModifier(
+              'K aun alcanza, pero ya viene floracion y amarre. Prepara reserva.',
+            );
+          }
+          return withModifier(
+            'K no urge ahora, pero vigilalo: desde amarre domina la demanda.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isCritical) {
+            return withModifier(
+              'K bajando en flor/amarre. Riesgo de mal cuaje; corrige con humedad pareja y cuidando Ca.',
+            );
+          }
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'K bajando en llenado/cosecha. Esto pega directo en peso, firmeza y continuidad de cortes.',
+            );
+          }
+          return withModifier(
+            'K va bajando. Refuerza antes de entrar a la ventana reproductiva.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return withModifier(
+              'K bajo pero el ciclo cierra. Anotalo para ajustar la base del siguiente ciclo.',
+            );
+          }
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'K bajo en arranque. Apoya moderado sin subir sales.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'K bajo en flor/amarre. Urge reforzar, pero poco a poco para no meter golpe salino.',
+            );
+          }
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'K bajo en llenado/cosecha: ventana cara de fallar. Refuerza soluble, fraccionado y con humedad estable.',
+            );
+          }
+          return withModifier(
+            'K bajo. Corrige antes de floracion para no entrar a cuajado con el tanque vacio.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Vigila el potasio del chile.',
+        );
+
+      default:
+        return 'Revisa el manejo de nutrientes del chile.';
+    }
+  }
+
+  static String _eggplantPracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    double? stagePressure01,
+    StageTargets? targets,
+    EggplantNutritionModifier? modifier,
+  ) {
+    final isGerm = stage.contains('germin');
+    final isEstablishment =
+        stage.contains('establec') || stage.contains('emerg');
+    final isVeg = stage.contains('vegetativo') || stage.contains('vegetative');
+    final isFlowering = stage.contains('floracion') || stage.contains('flor');
+    final isFruitSet =
+        stage.contains('cuajado') ||
+        stage.contains('amarre') ||
+        stage.contains('fruitset');
+    final isFilling = stage.contains('llenado') || stage.contains('fill');
+    final isHarvest = stage.contains('progresiv') || stage.contains('harvest');
+    final isLate = _isLateStage(stage);
+    final isCritical = isFlowering || isFruitSet;
+    final windowLabel = targets?.windowLabelFor(nutrient);
+    final profileHint = targets?.plannerHintFor(nutrient);
+
+    String withModifier(String base) {
+      final caution = modifier?.practicalCaution(nutrient, stage);
+      if (caution == null || caution.trim().isEmpty) return base;
+      return '$base $caution';
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isCritical || isFilling || isHarvest) {
+            return withModifier(
+              'N alto. En berenjena esto puede vegetarla, tirar flor o bajar calidad; pausa N y revisa CE.',
+            );
+          }
+          return withModifier(
+            'N alto. Pausa nitrogeno y revisa si el vigor ya esta excesivo.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isVeg) {
+            return withModifier(
+              'N en rango para construir hoja activa sin exagerar vigor.',
+            );
+          }
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'N suficiente. En esta ventana ya no conviene perseguir follaje.',
+            );
+          }
+          return withModifier('N estable para la etapa actual de berenjena.');
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isVeg && (stagePressure01 ?? 0) > 0.5) {
+            return withModifier(
+              'N aun alcanza, pero viene floracion. Prepara correccion suave si la tendencia cae.',
+            );
+          }
+          return withModifier(
+            'N no urge ahora; vigila que no caiga antes de floracion.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isCritical) {
+            return withModifier(
+              'N va bajando en flor/cuajado. Corrige solo fraccionado para no vegetarla.',
+            );
+          }
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'N bajando en llenado/cosecha. Apoya moderado si la planta pierde hoja funcional.',
+            );
+          }
+          return withModifier(
+            'N empieza a bajar. Ajusta antes de entrar a la ventana reproductiva.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return withModifier(
+              'N bajo pero el ciclo cierra. Guarda el dato para el siguiente plan.',
+            );
+          }
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'N bajo en arranque. Corrige moderado; no subas sales cerca de raiz joven.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'N bajo en flor/cuajado. Corrige con mucho fraccionamiento y estabilidad de riego.',
+            );
+          }
+          return withModifier(
+            'N bajo. Conviene corregir para sostener hoja activa y entrar fuerte a floracion.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el nitrogeno de la berenjena.',
+        );
+
+      case AgroMetricKey.p:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return withModifier(
+            'P alto. Evita seguir aplicando y revisa pH; mas P no corrige cuaje si el problema es agua, calor o raiz.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isEstablishment) {
+            return withModifier('P en rango para pegue y raiz.');
+          }
+          return withModifier('P estable como soporte de la etapa.');
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            'P no urge, pero confirma disponibilidad si pH esta fuera de rango.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'P se esta quedando corto justo en pegue y raiz. Conviene corregir temprano.',
+            );
+          }
+          return withModifier(
+            'P va bajando. Corrige como base si la lectura o analisis lo confirma.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return withModifier(
+              'P bajo pero el ciclo cierra. Guarda el dato para el arrancador del siguiente ciclo.',
+            );
+          }
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'P bajo en arranque. Corrige cerca de raiz para evitar retraso de floracion.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'P bajo en ventana reproductiva. Corrige como soporte; no lo trates como rescate rapido.',
+            );
+          }
+          return withModifier(
+            'P bajo. Ajusta la base y revisa pH para disponibilidad real.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el fosforo de la berenjena.',
+        );
+
+      case AgroMetricKey.k:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isCritical || isFilling || isHarvest) {
+            return withModifier(
+              'K muy alto. Cuida balance con Ca/Mg y CE: demasiado K puede marcar fruto y bajar firmeza.',
+            );
+          }
+          return withModifier(
+            'K alto. Pausa potasio solo y revisa sales totales antes de subir mas.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'K en rango en la ventana fuerte: buena base para llenado, brillo y firmeza.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'K en rango para flor y amarre. Mantener humedad pareja es tan importante como la dosis.',
+            );
+          }
+          return withModifier('K estable para la etapa actual de berenjena.');
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isVeg && (stagePressure01 ?? 0) > 0.5) {
+            return withModifier(
+              'K aun alcanza, pero ya viene floracion y amarre. Prepara reserva.',
+            );
+          }
+          return withModifier(
+            'K no urge ahora, pero vigilalo: desde amarre domina la demanda.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isCritical) {
+            return withModifier(
+              'K bajando en flor/amarre. Riesgo de mal cuaje; corrige con humedad pareja y cuidando Ca/Mg.',
+            );
+          }
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'K bajando en llenado/cosecha. Esto pega directo en peso, brillo y continuidad de cortes.',
+            );
+          }
+          return withModifier(
+            'K va bajando. Refuerza antes de entrar a la ventana reproductiva.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return withModifier(
+              'K bajo pero el ciclo cierra. Anotalo para ajustar la base del siguiente ciclo.',
+            );
+          }
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'K bajo en arranque. Apoya moderado sin subir sales.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'K bajo en flor/amarre. Urge reforzar, pero poco a poco para no meter golpe salino.',
+            );
+          }
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'K bajo en llenado/cosecha: ventana cara de fallar. Refuerza soluble, fraccionado y con humedad estable.',
+            );
+          }
+          return withModifier(
+            'K bajo. Corrige antes de floracion para no entrar a cuajado con el tanque vacio.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Vigila el potasio de la berenjena.',
+        );
+
+      default:
+        return 'Revisa el manejo de nutrientes de la berenjena.';
+    }
+  }
+
   static String _genericPracticalRecommendation(
     AgroMetricKey nutrient,
     NutrientPriorityLabel label,
@@ -1576,12 +2129,132 @@ class NutrientRecommendationEngine {
       }
     }
 
+    if (crop == 'chili' ||
+        crop == 'chile' ||
+        crop == 'pepper' ||
+        crop == 'pimiento') {
+      if (nutrient == AgroMetricKey.n) {
+        if (stage.contains('germin') ||
+            stage.contains('emerg') ||
+            stage.contains('establec')) {
+          return 'Arranque moderado';
+        }
+        if (stage.contains('vegetativo')) return 'Follaje con mesura';
+        if (stage.contains('flor') ||
+            stage.contains('cuaj') ||
+            stage.contains('amarre')) {
+          return 'Equilibrio para flor y amarre';
+        }
+        if (stage.contains('llen') || stage.contains('progresiv')) {
+          return 'Nitrogeno a la baja';
+        }
+        if (stage.contains('fin') || stage.contains('senesc')) {
+          return 'Cierre de ciclo';
+        }
+        return 'Demanda de N por etapa';
+      }
+      if (nutrient == AgroMetricKey.p) {
+        if (stage.contains('germin') ||
+            stage.contains('emerg') ||
+            stage.contains('establec')) {
+          return 'Raiz y pegue';
+        }
+        if (stage.contains('flor') || stage.contains('cuaj')) {
+          return 'Energia reproductiva';
+        }
+        if (stage.contains('fin') || stage.contains('senesc')) {
+          return 'Cierre de ciclo';
+        }
+        return 'Fosforo de sosten';
+      }
+      if (nutrient == AgroMetricKey.k) {
+        if (stage.contains('flor') ||
+            stage.contains('cuaj') ||
+            stage.contains('amarre')) {
+          return 'Amarre: K y Ca';
+        }
+        if (stage.contains('llen')) return 'Llenado y calidad';
+        if (stage.contains('progresiv')) return 'Cosecha progresiva';
+        if (stage.contains('fin') || stage.contains('senesc')) {
+          return 'Cierre de ciclo';
+        }
+        return 'Reserva de potasio';
+      }
+    }
+
+    if (crop == 'eggplant' ||
+        crop == 'berenjena' ||
+        crop == 'aubergine') {
+      if (nutrient == AgroMetricKey.n) {
+        if (stage.contains('germin') ||
+            stage.contains('emerg') ||
+            stage.contains('establec')) {
+          return 'Arranque moderado';
+        }
+        if (stage.contains('vegetativo')) return 'Follaje con mesura';
+        if (stage.contains('flor') ||
+            stage.contains('cuaj') ||
+            stage.contains('amarre')) {
+          return 'Equilibrio para flor y amarre';
+        }
+        if (stage.contains('llen') || stage.contains('progresiv')) {
+          return 'Nitrogeno a la baja';
+        }
+        if (stage.contains('fin') || stage.contains('senesc')) {
+          return 'Cierre de ciclo';
+        }
+        return 'Demanda de N por etapa';
+      }
+      if (nutrient == AgroMetricKey.p) {
+        if (stage.contains('germin') ||
+            stage.contains('emerg') ||
+            stage.contains('establec')) {
+          return 'Raiz y pegue';
+        }
+        if (stage.contains('flor') || stage.contains('cuaj')) {
+          return 'Energia reproductiva';
+        }
+        if (stage.contains('fin') || stage.contains('senesc')) {
+          return 'Cierre de ciclo';
+        }
+        return 'Fosforo de sosten';
+      }
+      if (nutrient == AgroMetricKey.k) {
+        if (stage.contains('flor') ||
+            stage.contains('cuaj') ||
+            stage.contains('amarre')) {
+          return 'Amarre: K y Ca';
+        }
+        if (stage.contains('llen')) return 'Llenado y calidad';
+        if (stage.contains('progresiv')) return 'Cosecha progresiva';
+        if (stage.contains('fin') || stage.contains('senesc')) {
+          return 'Cierre de ciclo';
+        }
+        return 'Reserva de potasio';
+      }
+    }
+
     return 'Demanda actual';
   }
 
   // =========================================================================
   // HELPERS DE ETAPA
   // =========================================================================
+  static bool _isChiliCrop(String? cropKey) {
+    final crop = (cropKey ?? '').toLowerCase();
+    return crop == 'chili' ||
+        crop == 'chile' ||
+        crop == 'pepper' ||
+        crop == 'pimiento';
+  }
+
+  static bool _isEggplantCrop(String? cropKey) {
+    final crop = (cropKey ?? '').toLowerCase();
+    return crop == 'eggplant' ||
+        crop == 'berenjena' ||
+        crop == 'aubergine';
+  }
+
   static bool _isEarlyStage(String? stage) {
     final s = (stage ?? '').toLowerCase();
     return s.contains('germin') ||
@@ -1633,6 +2306,21 @@ class NutrientRecommendationEngine {
     if (crop == 'tomato' || crop == 'tomate' || crop == 'jitomate') {
       // Antes de floración/cuajado la demanda sube fuerte (K, Ca).
       return s.contains('establec') || s.contains('vegetativo');
+    }
+    if (crop == 'chili' ||
+        crop == 'chile' ||
+        crop == 'pepper' ||
+        crop == 'pimiento') {
+      return s.contains('establec') ||
+          s.contains('emerg') ||
+          s.contains('vegetativo');
+    }
+    if (crop == 'eggplant' ||
+        crop == 'berenjena' ||
+        crop == 'aubergine') {
+      return s.contains('establec') ||
+          s.contains('emerg') ||
+          s.contains('vegetativo');
     }
     return false;
   }

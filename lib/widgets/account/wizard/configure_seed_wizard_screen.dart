@@ -298,7 +298,8 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           varietyLabel: _varietyDisplayLabel(),
           cropSelected: _crop != null,
           varietySelected: _varietyId != null,
-          cropEnabled: _category == CropCatalog.grainCategoryId ||
+          cropEnabled:
+              _category == CropCatalog.grainCategoryId ||
               _category == CropCatalog.vegetableCategoryId,
           cropUsesBrands: _cropUsesBrands,
           cropIconPath: _resolvedCropIconPath,
@@ -495,7 +496,11 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
 
     final result = await showWizardSelectionSheet<String>(
       context: context,
-      title: 'Selecciona la variedad',
+      title: cropId == CropCatalog.chiliCropId
+          ? 'Selecciona el tipo de chile'
+          : cropId == CropCatalog.eggplantCropId
+          ? 'Selecciona el tipo de berenjena'
+          : 'Selecciona la variedad',
       options: varieties
           .map(
             (variety) => WizardSheetOption<String>(
@@ -505,7 +510,11 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
                   variety.subtitle ??
                   (variety.enabled
                       ? (variety.isGeneric
-                            ? 'Recomendado si no sabes la variedad'
+                            ? (cropId == CropCatalog.chiliCropId
+                                  ? 'Recomendado si no sabes el tipo de chile'
+                                  : cropId == CropCatalog.eggplantCropId
+                                  ? 'Recomendado si no sabes el tipo de berenjena'
+                                  : 'Recomendado si no sabes la variedad')
                             : 'Disponible ahora')
                       : 'Próximamente'),
               iconPath: cropId == CropCatalog.maizeCropId
@@ -525,6 +534,16 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
                     )
                   : cropId == CropCatalog.cucumberCropId
                   ? ConfigureSeedWizardAssets.cucumberTypedIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.chiliCropId
+                  ? ConfigureSeedWizardAssets.chiliTypedIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.eggplantCropId
+                  ? ConfigureSeedWizardAssets.eggplantTypedIconForVariety(
                       varietyId: variety.id,
                       label: variety.label,
                     )
@@ -729,7 +748,9 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         normalizedCropId,
         cropContext.profileId,
       );
-      if (CropCatalog.isGenericProfileId(genericProfile?.id ?? cropContext.profileId)) {
+      if (CropCatalog.isGenericProfileId(
+        genericProfile?.id ?? cropContext.profileId,
+      )) {
         return genericVarietyId;
       }
     }
@@ -824,6 +845,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return ConfigureSeedWizardAssets.cropTomato;
       case CropCatalog.cucumberCropId:
         return ConfigureSeedWizardAssets.cropCucumber;
+      case CropCatalog.chiliCropId:
+        return ConfigureSeedWizardAssets.cropChili;
+      case CropCatalog.eggplantCropId:
+        return ConfigureSeedWizardAssets.cropEggplant;
       default:
         return _genericCropIconPath;
     }
@@ -858,6 +883,18 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         }
         if (cropId == CropCatalog.cucumberCropId) {
           return ConfigureSeedWizardAssets.cucumberTypedIconForVariety(
+            varietyId: variety.id,
+            label: variety.label,
+          );
+        }
+        if (cropId == CropCatalog.chiliCropId) {
+          return ConfigureSeedWizardAssets.chiliTypedIconForVariety(
+            varietyId: variety.id,
+            label: variety.label,
+          );
+        }
+        if (cropId == CropCatalog.eggplantCropId) {
+          return ConfigureSeedWizardAssets.eggplantTypedIconForVariety(
             varietyId: variety.id,
             label: variety.label,
           );

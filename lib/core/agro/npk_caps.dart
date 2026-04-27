@@ -29,6 +29,15 @@ class NpkCaps {
           case 'cucumber':
           case 'pepino':
             return 130.0;
+          case 'chili':
+          case 'chile':
+          case 'pepper':
+          case 'pimiento':
+            return 130.0;
+          case 'eggplant':
+          case 'berenjena':
+          case 'aubergine':
+            return 130.0;
           default:
             return 120.0;
         }
@@ -42,6 +51,15 @@ class NpkCaps {
             return 90.0;
           case 'cucumber':
           case 'pepino':
+            return 90.0;
+          case 'chili':
+          case 'chile':
+          case 'pepper':
+          case 'pimiento':
+            return 90.0;
+          case 'eggplant':
+          case 'berenjena':
+          case 'aubergine':
             return 90.0;
           default:
             return 80.0;
@@ -57,6 +75,15 @@ class NpkCaps {
           case 'cucumber':
           case 'pepino':
             return 210.0;
+          case 'chili':
+          case 'chile':
+          case 'pepper':
+          case 'pimiento':
+            return 220.0;
+          case 'eggplant':
+          case 'berenjena':
+          case 'aubergine':
+            return 220.0;
           default:
             return 140.0;
         }

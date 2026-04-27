@@ -216,6 +216,15 @@ class _YieldProjectionSetupScreenState
   }
 
   YieldReference? _resolveYieldReference(DeviceCropContext? ctx) {
+    if (ctx?.cropId == 'chili') {
+      final chiliReference = _resolveChiliYieldReference(ctx!);
+      if (chiliReference != null) return chiliReference;
+    }
+    if (ctx?.cropId == 'eggplant') {
+      final eggplantReference = _resolveEggplantYieldReference(ctx!);
+      if (eggplantReference != null) return eggplantReference;
+    }
+
     final varietyId = ctx?.varietyId?.trim();
     if (varietyId != null && varietyId.isNotEmpty) {
       final direct = YieldReferenceCatalog.byId[varietyId];
@@ -238,6 +247,259 @@ class _YieldProjectionSetupScreenState
       }
     }
     return _genericYieldReferenceForContext(ctx);
+  }
+
+  YieldReference? _resolveChiliYieldReference(DeviceCropContext ctx) {
+    final profile = ctx.profileId.toLowerCase();
+    final alias = (ctx.varietyAlias ?? '').toLowerCase();
+    final variety = (ctx.varietyId ?? '').toLowerCase();
+    final calendar = (ctx.calendarTypeId ?? '').toLowerCase();
+    final scale = (ctx.cultivationScaleId ?? '').toLowerCase();
+    final joined = '$profile $alias $variety $calendar $scale';
+
+    final isGeneric = _containsAny(joined, const [
+      'ch-gen',
+      'ch_gen',
+      'chgen',
+      'chili_generic',
+      'generico',
+      'otro chile',
+      'no se',
+    ]);
+    if (isGeneric) return YieldReferenceCatalog.byId['chili_generic'];
+
+    final isProtected = _containsAny(joined, const [
+      'protegido',
+      'invernadero',
+      'casa malla',
+      'malla',
+      'protected',
+      'chili_protegido',
+    ]);
+    final wantsDry = _containsAny(joined, const [
+      'seco',
+      'dry',
+      'deshidrat',
+      'ancho seco',
+      'mulato seco',
+    ]);
+    final wantsFresh = _containsAny(joined, const [
+      'fresco',
+      'fresh',
+      'verde',
+      'chilaca verde',
+    ]);
+
+    if (_containsAny(joined, const ['ch-01', 'ch_01', 'ch01', 'jalapeno'])) {
+      return YieldReferenceCatalog.byId['chili_jalapeno'];
+    }
+    if (_containsAny(joined, const ['ch-02', 'ch_02', 'ch02', 'serrano'])) {
+      return YieldReferenceCatalog.byId['chili_serrano'];
+    }
+    if (_containsAny(joined, const [
+      'ch-03',
+      'ch_03',
+      'ch03',
+      'poblano',
+      'ancho',
+      'mulato',
+    ])) {
+      final explicitDry = variety == 'chili_ancho_dry' ||
+          wantsDry ||
+          alias.contains('ancho seco') ||
+          alias.contains('mulato seco');
+      return explicitDry
+          ? YieldReferenceCatalog.byId['chili_ancho_dry'] ??
+              YieldReferenceCatalog.byId['chili_poblano_ancho']
+          : YieldReferenceCatalog.byId['chili_poblano_ancho'];
+    }
+    if (_containsAny(joined, const [
+      'ch-04',
+      'ch_04',
+      'ch04',
+      'chilaca',
+      'pasilla',
+    ])) {
+      final explicitFresh = variety == 'chili_chilaca_fresh' ||
+          alias.contains('chilaca verde') ||
+          (alias.contains('chilaca') && wantsFresh && !alias.contains('pasilla'));
+      final explicitDry = variety == 'chili_chilaca_pasilla' ||
+          alias.contains('pasilla') ||
+          wantsDry;
+      if (explicitFresh && !explicitDry) {
+        return YieldReferenceCatalog.byId['chili_chilaca_fresh'] ??
+            YieldReferenceCatalog.byId['chili_chilaca_pasilla'];
+      }
+      return YieldReferenceCatalog.byId['chili_chilaca_pasilla'];
+    }
+    if (_containsAny(joined, const [
+      'ch-05',
+      'ch_05',
+      'ch05',
+      'guajillo',
+      'mirasol',
+    ])) {
+      return YieldReferenceCatalog.byId['chili_guajillo_mirasol'];
+    }
+    if (_containsAny(joined, const [
+      'ch-06',
+      'ch_06',
+      'ch06',
+      'arbol',
+      'puya',
+    ])) {
+      if (variety == 'chili_arbol_fresh' || (wantsFresh && !wantsDry)) {
+        return YieldReferenceCatalog.byId['chili_arbol_fresh'] ??
+            YieldReferenceCatalog.byId['chili_arbol_puya_dry'] ??
+            YieldReferenceCatalog.byId['chili_arbol_puya'];
+      }
+      return YieldReferenceCatalog.byId['chili_arbol_puya_dry'] ??
+          YieldReferenceCatalog.byId['chili_arbol_puya'];
+    }
+    if (_containsAny(joined, const ['ch-07', 'ch_07', 'ch07', 'habanero'])) {
+      return YieldReferenceCatalog.byId['chili_habanero'];
+    }
+    if (_containsAny(joined, const [
+      'ch-08',
+      'ch_08',
+      'ch08',
+      'morron',
+      'pimiento',
+      'chile gordo',
+      'bell',
+    ])) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['chili_bell_pepper_protected'] ??
+              YieldReferenceCatalog.byId['chili_bell_pepper']
+          : YieldReferenceCatalog.byId['chili_bell_pepper'];
+    }
+
+    final direct = YieldReferenceCatalog.byId[variety];
+    if (direct != null) return direct;
+    return isProtected
+        ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
+            YieldReferenceCatalog.genericFresh(ctx.cropId)
+        : YieldReferenceCatalog.genericFresh(ctx.cropId);
+  }
+
+  YieldReference? _resolveEggplantYieldReference(DeviceCropContext ctx) {
+    final profile = ctx.profileId.toLowerCase();
+    final alias = (ctx.varietyAlias ?? '').toLowerCase();
+    final variety = (ctx.varietyId ?? '').toLowerCase();
+    final calendar = (ctx.calendarTypeId ?? '').toLowerCase();
+    final scale = (ctx.cultivationScaleId ?? '').toLowerCase();
+    final joined = '$profile $alias $variety $calendar $scale';
+
+    final isGeneric = _containsAny(joined, const [
+      'be-gen',
+      'be_gen',
+      'begen',
+      'eggplant_generic',
+      'generico',
+      'generica',
+      'otra berenjena',
+      'no se',
+      'no sé',
+    ]);
+    if (isGeneric) return YieldReferenceCatalog.byId['eggplant_generic'];
+
+    final isProtected = _containsAny(joined, const [
+      'protegido',
+      'invernadero',
+      'casa malla',
+      'casa sombra',
+      'malla',
+      'malla sombra',
+      'macro tunel',
+      'macro túnel',
+      'protected',
+      'eggplant_protegido',
+    ]);
+
+    if (_containsAny(joined, const [
+      'be-01',
+      'be_01',
+      'be01',
+      'eggplant_long_purple',
+      'larga',
+      'semilarga',
+      'barcelona',
+      'dark night',
+      'orestia',
+      'napoli',
+    ])) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['eggplant_long_purple_protected'] ??
+              YieldReferenceCatalog.byId['eggplant_long_purple_field']
+          : YieldReferenceCatalog.byId['eggplant_long_purple_field'];
+    }
+    if (_containsAny(joined, const [
+      'be-02',
+      'be_02',
+      'be02',
+      'eggplant_oval_round',
+      'eggplant_italian_purple',
+      'eggplant_italian_black',
+      'oval',
+      'bola',
+      'italiana',
+      'italian',
+      'clasica',
+      'clásica',
+      'morada clasica',
+      'morada clásica',
+      'black beauty',
+      'night shadow',
+      'emma',
+    ])) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['eggplant_oval_round_protected'] ??
+              YieldReferenceCatalog.byId['eggplant_oval_round_field']
+          : YieldReferenceCatalog.byId['eggplant_oval_round_field'];
+    }
+    if (_containsAny(joined, const [
+      'be-03',
+      'be_03',
+      'be03',
+      'eggplant_striped',
+      'rayada',
+      'listada',
+      'graffiti',
+      'grafiti',
+    ])) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['eggplant_striped_protected'] ??
+              YieldReferenceCatalog.byId['eggplant_striped_field']
+          : YieldReferenceCatalog.byId['eggplant_striped_field'];
+    }
+    if (_containsAny(joined, const [
+      'be-04',
+      'be_04',
+      'be04',
+      'eggplant_white',
+      'blanca',
+      'white egg',
+      'white',
+    ])) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['eggplant_white_protected'] ??
+              YieldReferenceCatalog.byId['eggplant_white_field']
+          : YieldReferenceCatalog.byId['eggplant_white_field'];
+    }
+
+    final direct = YieldReferenceCatalog.byId[variety];
+    if (direct != null) return direct;
+    return isProtected
+        ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
+            YieldReferenceCatalog.genericFresh(ctx.cropId)
+        : YieldReferenceCatalog.genericFresh(ctx.cropId);
+  }
+
+  bool _containsAny(String source, List<String> needles) {
+    for (final needle in needles) {
+      if (source.contains(needle)) return true;
+    }
+    return false;
   }
 
   YieldReference? _genericYieldReferenceForContext(DeviceCropContext? ctx) {
@@ -366,6 +628,119 @@ class _YieldProjectionSetupScreenState
                 YieldReferenceCatalog.genericFresh(ctx.cropId)
             : YieldReferenceCatalog.byId['cucumber_slicer_ca'] ??
                 YieldReferenceCatalog.genericFresh(ctx.cropId);
+
+      case 'chili':
+        final chiliProfile = ctx.profileId.toLowerCase();
+        final chiliAlias = (ctx.varietyAlias ?? '').toLowerCase();
+
+        final isGeneric = chiliProfile.contains('ch-gen') ||
+            chiliProfile.contains('ch_gen') ||
+            chiliProfile == 'chgen' ||
+            chiliAlias.contains('generico') ||
+            chiliAlias.contains('otro chile') ||
+            chiliAlias.contains('no se');
+        if (isGeneric) return YieldReferenceCatalog.byId['chili_generic'];
+
+        final isProtected = chiliProfile.contains('protegido') ||
+            chiliAlias.contains('protegido') ||
+            chiliAlias.contains('invernadero') ||
+            chiliAlias.contains('malla') ||
+            chiliAlias.contains('casa malla');
+
+        final wantsDry = chiliAlias.contains('seco') ||
+            chiliAlias.contains('deshidratado');
+
+        if (chiliProfile.contains('ch-01') ||
+            chiliProfile.contains('ch_01') ||
+            chiliProfile == 'ch01' ||
+            chiliAlias.contains('jalapeno') ||
+            chiliAlias.contains('chipotle')) {
+          return YieldReferenceCatalog.byId['chili_jalapeno'];
+        }
+        if (chiliProfile.contains('ch-02') ||
+            chiliProfile.contains('ch_02') ||
+            chiliProfile == 'ch02' ||
+            chiliAlias.contains('serrano')) {
+          return YieldReferenceCatalog.byId['chili_serrano'];
+        }
+        if (chiliProfile.contains('ch-03') ||
+            chiliProfile.contains('ch_03') ||
+            chiliProfile == 'ch03' ||
+            chiliAlias.contains('poblano') ||
+            chiliAlias.contains('ancho') ||
+            chiliAlias.contains('mulato')) {
+          // Destino seco para CH-03 -> ancho/mulato seco.
+          if (wantsDry ||
+              chiliAlias.contains('ancho') ||
+              chiliAlias.contains('mulato')) {
+            return YieldReferenceCatalog.byId['chili_ancho_dry'] ??
+                YieldReferenceCatalog.byId['chili_poblano_ancho'];
+          }
+          return YieldReferenceCatalog.byId['chili_poblano_ancho'];
+        }
+        if (chiliProfile.contains('ch-04') ||
+            chiliProfile.contains('ch_04') ||
+            chiliProfile == 'ch04' ||
+            chiliAlias.contains('chilaca') ||
+            chiliAlias.contains('pasilla')) {
+          // Chilaca verde fresca vs pasilla seco.
+          if (chiliAlias.contains('chilaca') && !wantsDry) {
+            return YieldReferenceCatalog.byId['chili_chilaca_fresh'] ??
+                YieldReferenceCatalog.byId['chili_chilaca_pasilla'];
+          }
+          return YieldReferenceCatalog.byId['chili_chilaca_pasilla'];
+        }
+        if (chiliProfile.contains('ch-05') ||
+            chiliProfile.contains('ch_05') ||
+            chiliProfile == 'ch05' ||
+            chiliAlias.contains('guajillo') ||
+            chiliAlias.contains('mirasol')) {
+          return YieldReferenceCatalog.byId['chili_guajillo_mirasol'];
+        }
+        if (chiliProfile.contains('ch-06') ||
+            chiliProfile.contains('ch_06') ||
+            chiliProfile == 'ch06' ||
+            chiliAlias.contains('arbol') ||
+            chiliAlias.contains('puya')) {
+          final wantsFresh = chiliAlias.contains('fresco') ||
+              chiliAlias.contains('fresh') ||
+              chiliAlias.contains('verde');
+          if (wantsFresh && !wantsDry) {
+            return YieldReferenceCatalog.byId['chili_arbol_fresh'] ??
+                YieldReferenceCatalog.byId['chili_arbol_puya_dry'] ??
+                YieldReferenceCatalog.byId['chili_arbol_puya'];
+          }
+          return YieldReferenceCatalog.byId['chili_arbol_puya_dry'] ??
+              YieldReferenceCatalog.byId['chili_arbol_puya'];
+        }
+        if (chiliProfile.contains('ch-07') ||
+            chiliProfile.contains('ch_07') ||
+            chiliProfile == 'ch07' ||
+            chiliAlias.contains('habanero')) {
+          return YieldReferenceCatalog.byId['chili_habanero'];
+        }
+        if (chiliProfile.contains('ch-08') ||
+            chiliProfile.contains('ch_08') ||
+            chiliProfile == 'ch08' ||
+            chiliAlias.contains('morron') ||
+            chiliAlias.contains('gordo') ||
+            chiliAlias.contains('pimiento') ||
+            chiliAlias.contains('bell')) {
+          if (isProtected) {
+            return YieldReferenceCatalog.byId['chili_bell_pepper_protected'] ??
+                YieldReferenceCatalog.byId['chili_bell_pepper'];
+          }
+          return YieldReferenceCatalog.byId['chili_bell_pepper'];
+        }
+
+        return isProtected
+            ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
+                YieldReferenceCatalog.genericFresh(ctx.cropId)
+            : YieldReferenceCatalog.genericFresh(ctx.cropId);
+
+      case 'eggplant':
+        return _resolveEggplantYieldReference(ctx) ??
+            YieldReferenceCatalog.genericFresh(ctx.cropId);
 
       default:
         return null;
@@ -1311,6 +1686,12 @@ class _YieldProjectionSetupScreenState
         return 'Cebada';
       case 'bean':
         return 'Frijol';
+      case 'tomato':
+        return 'Tomate';
+      case 'cucumber':
+        return 'Pepino';
+      case 'chili':
+        return 'Chile';
       default:
         return _prettyId(cropId) ?? 'Cultivo';
     }

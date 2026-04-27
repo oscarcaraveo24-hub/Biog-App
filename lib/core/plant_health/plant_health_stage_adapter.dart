@@ -27,6 +27,10 @@ class PlantHealthStageAdapter {
         return _fromTomato(stage, daySinceSowing);
       case CropCatalog.cucumberCropId:
         return _fromCucumber(stage, daySinceSowing);
+      case CropCatalog.chiliCropId:
+        return _fromChili(stage, daySinceSowing);
+      case CropCatalog.eggplantCropId:
+        return _fromEggplant(stage, daySinceSowing);
     }
     return null;
   }
@@ -179,6 +183,88 @@ class PlantHealthStageAdapter {
       if (day <= 58) return PlantHealthStageBucket.reproductiveEarly;
       if (day <= 72) return PlantHealthStageBucket.reproductiveMid;
       if (day <= 110) return PlantHealthStageBucket.grainFill;
+    }
+    return PlantHealthStageBucket.lateSeason;
+  }
+
+  static PlantHealthStageBucket _fromChili(String stage, int? day) {
+    if (_matches(stage, const <String>['germin'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['establec', 'emerg', 'transplant'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['vegetativo', 'vegetative'])) {
+      if (day != null) {
+        if (day <= 35) return PlantHealthStageBucket.vegetativeEarly;
+        if (day <= 55) return PlantHealthStageBucket.vegetativeMid;
+      }
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (_matches(stage, const <String>['flor', 'flower'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['cuaj', 'amarre', 'fruitset'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>['llen'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>['cosecha', 'progresiv', 'harvest'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>['fin', 'cierre', 'end', 'senesc'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (day != null) {
+      if (day <= 18) return PlantHealthStageBucket.seedling;
+      if (day <= 35) return PlantHealthStageBucket.vegetativeEarly;
+      if (day <= 55) return PlantHealthStageBucket.vegetativeMid;
+      if (day <= 75) return PlantHealthStageBucket.vegetativeLate;
+      if (day <= 95) return PlantHealthStageBucket.reproductiveEarly;
+      if (day <= 115) return PlantHealthStageBucket.reproductiveMid;
+      if (day <= 160) return PlantHealthStageBucket.grainFill;
+    }
+    return PlantHealthStageBucket.lateSeason;
+  }
+
+  static PlantHealthStageBucket _fromEggplant(String stage, int? day) {
+    if (_matches(stage, const <String>['germin'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['establec', 'emerg', 'transplant'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['vegetativo', 'vegetative'])) {
+      if (day != null) {
+        if (day <= 35) return PlantHealthStageBucket.vegetativeEarly;
+        if (day <= 55) return PlantHealthStageBucket.vegetativeMid;
+      }
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (_matches(stage, const <String>['flor', 'flower'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['cuaj', 'amarre', 'fruitset'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>['llen'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>['cosecha', 'progresiv', 'harvest'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>['fin', 'cierre', 'end', 'senesc'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (day != null) {
+      if (day <= 18) return PlantHealthStageBucket.seedling;
+      if (day <= 35) return PlantHealthStageBucket.vegetativeEarly;
+      if (day <= 55) return PlantHealthStageBucket.vegetativeMid;
+      if (day <= 75) return PlantHealthStageBucket.vegetativeLate;
+      if (day <= 95) return PlantHealthStageBucket.reproductiveEarly;
+      if (day <= 115) return PlantHealthStageBucket.reproductiveMid;
+      if (day <= 160) return PlantHealthStageBucket.grainFill;
     }
     return PlantHealthStageBucket.lateSeason;
   }

@@ -48,6 +48,8 @@ enum YieldFamily {
   beanGrain,
   tomatoFresh,
   cucumberFresh,
+  chiliFruit,
+  eggplantFruit,
   other,
 }
 
@@ -235,6 +237,10 @@ class YieldProjectionEngine {
         return YieldFamily.tomatoFresh;
       case 'cucumber':
         return YieldFamily.cucumberFresh;
+      case 'chili':
+        return YieldFamily.chiliFruit;
+      case 'eggplant':
+        return YieldFamily.eggplantFruit;
       default:
         return YieldFamily.other;
     }
@@ -309,6 +315,25 @@ class YieldProjectionEngine {
         betaHigh: 1.22,
         managementGamma: 1.50,
         managementFloor: 0.20,
+      ),
+      YieldFamily.chiliFruit => const _YieldFamilyParams(
+        alphaLow: 0.95,
+        betaLow: 1.35,
+        alphaHigh: 0.86,
+        betaHigh: 1.25,
+        managementGamma: 1.48,
+        managementFloor: 0.20,
+      ),
+      // Berenjena: PDF Rendimiento v1 sugiere managementGamma 1.35 y
+      // managementFloor 0.24; algo menos punitivo que chile/pepino, pero
+      // sigue siendo sensible a manejo en floracion/cuajado/llenado.
+      YieldFamily.eggplantFruit => const _YieldFamilyParams(
+        alphaLow: 0.92,
+        betaLow: 1.32,
+        alphaHigh: 0.84,
+        betaHigh: 1.22,
+        managementGamma: 1.35,
+        managementFloor: 0.24,
       ),
       YieldFamily.other => const _YieldFamilyParams(
         alphaLow: 1.00,

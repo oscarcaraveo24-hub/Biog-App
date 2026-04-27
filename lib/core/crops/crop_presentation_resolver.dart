@@ -2,7 +2,9 @@ import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
+import 'package:bio_g/widgets/seeds/chili_profiles.dart';
 import 'package:bio_g/widgets/seeds/cucumber_profiles.dart';
+import 'package:bio_g/widgets/seeds/eggplant_profiles.dart';
 import 'package:bio_g/widgets/seeds/tomato_profiles.dart';
 
 class CropPresentationData {
@@ -51,17 +53,8 @@ class CropPresentationResolver {
   static const String _wheatIconAsset = 'assets/icons/wizard/ic_trigo.png';
   static const String _barleyIconAsset = 'assets/icons/wizard/ic_cebada.png';
   static const String _oatIconAsset = 'assets/icons/wizard/ic_avena.png';
+
   static const String _tomatoIconAsset = 'assets/icons/wizard/ic_tomate.png';
-  static const String _cucumberIconAsset =
-      'assets/icons/wizard/ic_cucumber.png';
-  static const String _cucumberSlicerIconAsset =
-      'assets/icons/wizard/ic_cucumber_slicer.png';
-  static const String _cucumberEnglishProtectedIconAsset =
-      'assets/icons/wizard/ic_cucumber_english_protected.png';
-  static const String _cucumberPersianMiniIconAsset =
-      'assets/icons/wizard/ic_cucumber_persian_mini.png';
-  static const String _cucumberCornichonPicklingIconAsset =
-      'assets/icons/wizard/ic_cucumber_cornichon_pickling.png';
   static const String _tomatoGenericIconAsset =
       'assets/icons/wizard/ic_tomate_generico.png';
   static const String _tomatoBolaIconAsset =
@@ -74,6 +67,55 @@ class CropPresentationResolver {
       'assets/icons/wizard/ic_tomate_saladette_campo_abierto.png';
   static const String _tomatoSaladetteProtectedIconAsset =
       'assets/icons/wizard/ic_tomate_saladette_protegido.png';
+
+  static const String _cucumberIconAsset =
+      'assets/icons/wizard/ic_cucumber.png';
+  static const String _cucumberSlicerIconAsset =
+      'assets/icons/wizard/ic_cucumber_slicer.png';
+  static const String _cucumberEnglishProtectedIconAsset =
+      'assets/icons/wizard/ic_cucumber_english_protected.png';
+  static const String _cucumberPersianMiniIconAsset =
+      'assets/icons/wizard/ic_cucumber_persian_mini.png';
+  static const String _cucumberCornichonPicklingIconAsset =
+      'assets/icons/wizard/ic_cucumber_cornichon_pickling.png';
+
+  static const String _chiliIconAsset = 'assets/icons/wizard/ic_chili.png';
+  static const String _chiliGenericIconAsset =
+      'assets/icons/wizard/ic_chili_generic.png';
+  static const String _chiliJalapenoIconAsset =
+      'assets/icons/wizard/ic_chili_jalapeno.png';
+  static const String _chiliSerranoIconAsset =
+      'assets/icons/wizard/ic_chili_serrano.png';
+  static const String _chiliPoblanoAnchoIconAsset =
+      'assets/icons/wizard/ic_chili_poblano_ancho.png';
+  static const String _chiliChilacaPasillaIconAsset =
+      'assets/icons/wizard/ic_chili_chilaca_pasilla.png';
+  static const String _chiliGuajilloMirasolIconAsset =
+      'assets/icons/wizard/ic_chili_guajillo_mirasol.png';
+  static const String _chiliArbolPuyaIconAsset =
+      'assets/icons/wizard/ic_chili_arbol_puya.png';
+  static const String _chiliHabaneroIconAsset =
+      'assets/icons/wizard/ic_chili_habanero.png';
+  static const String _chiliBellPepperIconAsset =
+      'assets/icons/wizard/ic_chili_bell_pepper.png';
+
+  static const String _eggplantIconAsset =
+      'assets/icons/wizard/ic_eggplant.png';
+
+  // Generic uses the mother-crop eggplant icon.
+  static const String _eggplantGenericIconAsset =
+      'assets/icons/wizard/ic_eggplant.png';
+
+  static const String _eggplantItalianBlackIconAsset =
+      'assets/icons/wizard/ic_eggplant_italian_black.png';
+  static const String _eggplantLongPurpleIconAsset =
+      'assets/icons/wizard/ic_eggplant_long_purple.png';
+  static const String _eggplantOvalRoundIconAsset =
+      'assets/icons/wizard/ic_eggplant_oval_round.png';
+  static const String _eggplantStripedIconAsset =
+      'assets/icons/wizard/ic_eggplant_striped.png';
+  static const String _eggplantWhiteIconAsset =
+      'assets/icons/wizard/ic_eggplant_white.png';
 
   static CropPresentationData resolve({
     required DeviceCropContext? cropContext,
@@ -248,6 +290,10 @@ class CropPresentationResolver {
         return _resolveTomatoIcon(rawVarietyValue);
       case CropCatalog.cucumberCropId:
         return _resolveCucumberIcon(rawVarietyValue);
+      case CropCatalog.chiliCropId:
+        return _resolveChiliIcon(rawVarietyValue);
+      case CropCatalog.eggplantCropId:
+        return _resolveEggplantIcon(rawVarietyValue);
       default:
         return _genericPlantIconAsset;
     }
@@ -361,6 +407,173 @@ class CropPresentationResolver {
     }
     if (normalized.contains('gen')) return _cucumberIconAsset;
     return _cucumberIconAsset;
+  }
+
+  static String _resolveChiliIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return _chiliIconAsset;
+
+    final canonical = resolveCanonicalChiliProfileId(raw);
+    switch (canonical) {
+      case kCh01:
+        return _chiliJalapenoIconAsset;
+      case kCh02:
+        return _chiliSerranoIconAsset;
+      case kCh03:
+        return _chiliPoblanoAnchoIconAsset;
+      case kCh04:
+        return _chiliChilacaPasillaIconAsset;
+      case kCh05:
+        return _chiliGuajilloMirasolIconAsset;
+      case kCh06:
+        return _chiliArbolPuyaIconAsset;
+      case kCh07:
+        return _chiliHabaneroIconAsset;
+      case kCh08:
+        return _chiliBellPepperIconAsset;
+      case kChGen:
+        return _chiliGenericIconAsset;
+    }
+
+    final variety = CropCatalog.varietyByAny(CropCatalog.chiliCropId, raw);
+    switch (variety?.id) {
+      case 'chili_jalapeno':
+        return _chiliJalapenoIconAsset;
+      case 'chili_serrano':
+        return _chiliSerranoIconAsset;
+      case 'chili_poblano_ancho':
+        return _chiliPoblanoAnchoIconAsset;
+      case 'chili_chilaca_pasilla':
+        return _chiliChilacaPasillaIconAsset;
+      case 'chili_guajillo_mirasol':
+        return _chiliGuajilloMirasolIconAsset;
+      case 'chili_arbol_puya':
+        return _chiliArbolPuyaIconAsset;
+      case 'chili_habanero':
+        return _chiliHabaneroIconAsset;
+      case 'chili_bell_pepper':
+        return _chiliBellPepperIconAsset;
+      case 'chili_generic':
+        return _chiliGenericIconAsset;
+    }
+
+    final normalized = raw.toLowerCase();
+    if (normalized.contains('jalapeno') || normalized.contains('chipotle')) {
+      return _chiliJalapenoIconAsset;
+    }
+    if (normalized.contains('serrano')) return _chiliSerranoIconAsset;
+    if (normalized.contains('poblano') ||
+        normalized.contains('ancho') ||
+        normalized.contains('mulato')) {
+      return _chiliPoblanoAnchoIconAsset;
+    }
+    if (normalized.contains('chilaca') || normalized.contains('pasilla')) {
+      return _chiliChilacaPasillaIconAsset;
+    }
+    if (normalized.contains('guajillo') || normalized.contains('mirasol')) {
+      return _chiliGuajilloMirasolIconAsset;
+    }
+    if (normalized.contains('arbol') || normalized.contains('puya')) {
+      return _chiliArbolPuyaIconAsset;
+    }
+    if (normalized.contains('habanero')) return _chiliHabaneroIconAsset;
+    if (normalized.contains('morron') ||
+        normalized.contains('gordo') ||
+        normalized.contains('pimiento') ||
+        normalized.contains('bell')) {
+      return _chiliBellPepperIconAsset;
+    }
+    if (normalized.contains('gen') || normalized.contains('otro')) {
+      return _chiliGenericIconAsset;
+    }
+    return _chiliIconAsset;
+  }
+
+  static String _resolveEggplantIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return _eggplantIconAsset;
+
+    final variety = CropCatalog.varietyByAny(CropCatalog.eggplantCropId, raw);
+    switch (variety?.id) {
+      case 'eggplant_long_purple':
+        return _eggplantLongPurpleIconAsset;
+      case 'eggplant_italian_purple':
+        return _eggplantItalianBlackIconAsset;
+      case 'eggplant_oval_round':
+        return _eggplantOvalRoundIconAsset;
+      case 'eggplant_striped':
+        return _eggplantStripedIconAsset;
+      case 'eggplant_white':
+        return _eggplantWhiteIconAsset;
+      case 'eggplant_generic':
+        return _eggplantGenericIconAsset;
+    }
+
+    final normalized = raw.toLowerCase();
+
+    if (normalized.contains('italiana') ||
+        normalized.contains('italian') ||
+        normalized.contains('clasica') ||
+        normalized.contains('clásica') ||
+        normalized.contains('black beauty')) {
+      return _eggplantItalianBlackIconAsset;
+    }
+
+    final canonical = resolveCanonicalEggplantProfileId(raw);
+    switch (canonical) {
+      case kBe01:
+        return _eggplantLongPurpleIconAsset;
+      case kBe02:
+        return _eggplantOvalRoundIconAsset;
+      case kBe03:
+        return _eggplantStripedIconAsset;
+      case kBe04:
+        return _eggplantWhiteIconAsset;
+      case kBeGen:
+        return _eggplantGenericIconAsset;
+    }
+
+    if (normalized.contains('larga') ||
+        normalized.contains('semilarga') ||
+        normalized.contains('barcelona') ||
+        normalized.contains('dark night') ||
+        normalized.contains('orestia') ||
+        normalized.contains('napoli') ||
+        normalized.contains('nápoli') ||
+        normalized.contains('oriental') ||
+        normalized.contains('china')) {
+      return _eggplantLongPurpleIconAsset;
+    }
+
+    if (normalized.contains('oval') ||
+        normalized.contains('bola') ||
+        normalized.contains('americana') ||
+        normalized.contains('morada grande') ||
+        normalized.contains('night shadow') ||
+        normalized.contains('emma')) {
+      return _eggplantOvalRoundIconAsset;
+    }
+
+    if (normalized.contains('rayada') ||
+        normalized.contains('listada') ||
+        normalized.contains('jaspeada') ||
+        normalized.contains('graffiti') ||
+        normalized.contains('grafiti')) {
+      return _eggplantStripedIconAsset;
+    }
+
+    if (normalized.contains('blanca') || normalized.contains('white')) {
+      return _eggplantWhiteIconAsset;
+    }
+
+    if (normalized.contains('gen') ||
+        normalized.contains('otra') ||
+        normalized.contains('no se') ||
+        normalized.contains('no sé')) {
+      return _eggplantGenericIconAsset;
+    }
+
+    return _eggplantIconAsset;
   }
 
   static String _resolveMaizeIcon(String? rawVarietyValue) {

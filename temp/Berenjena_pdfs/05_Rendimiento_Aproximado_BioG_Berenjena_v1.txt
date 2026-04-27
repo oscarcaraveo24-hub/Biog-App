@@ -1,0 +1,436 @@
+RENDIMIENTO APROXIMADO DE LA BERENJENA
+Fuente PDF: Rendimiento_Aproximado_BioG_Berenjena_v1.pdf
+Paginas: 7
+====================================================================================================
+
+
+==================================== PAGINA 1 / 7 ====================================
+
+BIO-G | Rendimiento aproximado | Berenjena v1
+
+
+
+
+ BIO-G
+
+
+ Rendimiento aproximado de la berenjena
+ Base técnica para calculadora de rendimiento - campo abierto, malla/invernadero en suelo - BIO-G v1
+
+
+
+
+ Objetivo
+ Definir rangos prudentes de rendimiento por hectárea y densidad de plantas para que BIO-G pueda estimar
+ producción aproximada de berenjena a partir de superficie sembrada, población establecida y condición/cuidado
+ del cultivo.
+
+
+ Alcance
+ Esta guía cubre BE-GEN, BE-01 berenjena larga/semilarga morada, BE-02 oval/bola morada, BE-03 rayada/listada
+ y BE-04 blanca. El enfoque es fruto fresco comercial. No se modela todavía hidroponía ni recetas de rendimiento
+ garantizado.
+
+
+ Decisión de producto
+ Berenjena queda como cultivo madre crop_eggplant. Los tipos UX no son cultivos separados; son perfiles internos. La
+ variedad o semilla funciona como alias de confianza, no como motor biológico por sí sola.
+
+
+ Fuentes fuertes usadas
+ Se priorizaron universidades/extensión y fuentes oficiales: UF/IFAS, University of Missouri Extension, Oregon
+ State University, UC ANR/UC Davis, SADER/SIAP México, artículos universitarios en invernadero y referencias
+ latinoamericanas/varietales. Las fuentes comerciales se usaron solo como contraste.
+
+
+
+
+Documento técnico interno. Rangos operativos, no promesa de producción ni sustituto de historial local.            Página 1
+
+
+==================================== PAGINA 2 / 7 ====================================
+
+BIO-G | Rendimiento aproximado | Berenjena v1
+
+
+
+
+ 1. Cómo debe calcular rendimiento BIO-G
+ El cálculo no debe usar un solo promedio nacional. La berenjena cambia por sistema, duración de cosecha,
+ población, manejo de cortes, temperatura, sanidad, agua y mercado. Para v1, el motor debe resolver una
+ referencia base por perfil/sistema y después aplicar factor de población y factor de manejo/cuidado.
+
+           Entrada                                                                Uso en el motor
+
+  Área sembrada                      Convertir a hectáreas. Si el usuario captura m², dividir entre 10,000.
+
+  Semillas o plantas                 En hortalizas trasplantadas leer como plantas establecidas o población final, no como semilla bruta en
+                                     charola.
+
+  Rango base t/ha                    Sale de YieldReference según BE-GEN/BE-01/BE-02/BE-03/BE-04 y sistema.
+
+  Rango de densidad                  seedsLowPerHa / seedsHighPerHa deben representar plantas/ha normales. Penalizar poblaciones muy
+                                     bajas o demasiado altas.
+
+  Crop Care / Agro Score             Ajusta potencial por agua, temperatura, suelo/raíz, nutrición y sanidad. En floración/cuajado pesa más.
+
+
+
+ Fórmula conceptual para producto
+            rendimiento proyectado = rendimiento base del perfil x factor de población x factor de manejo.
+            Producción total = rendimiento proyectado x hectáreas.
+
+ Principio de seguridad
+ BIO-G debe estimar, no prometer. La salida debe sonar como rango probable bajo condiciones comparables, y
+ bajar confianza cuando falten sistema, población, etapa, historial o calidad de manejo.
+
+
+ 2. Evidencia usada para calibrar rangos
+ Los rangos finales de BIO-G no copian una sola fuente. Se cruzan referencias de campo abierto, producción
+ comercial intensiva y estudios protegidos para evitar tanto subestimar como inflar rendimientos.
+
+              Fuente                                       Dato útil                                Conversión / lectura BIO-G
+
+  University of Missouri Extension      500-700 bushels/acre, 33 lb/bushel.               18.5-25.9 t/ha. Base de campo abierto
+                                                                                          conservadora-media.
+
+  Oregon State University               Promedio 190 cwt/acre; buen rendimiento 250       21.3-28.0 t/ha. Confirma rango de campo abierto
+                                        cwt/acre.                                         medio.
+
+  UC ANR / UC Davis American            2,450 cajas/acre de 20 lb promedio.               ≈54.9 t/ha. Referencia de producción comercial
+  eggplant                                                                                intensiva con cosecha continua.
+
+  SADER/SIAP México 2023                91,057 t en 1,710 ha.                             ≈53.2 t/ha. Orden de magnitud nacional exportador,
+                                                                                          no necesariamente todo campo abierto.
+
+  Costa Rica, estudio universitario     0.65 y 1.30 plantas/m²; 4.01-6.42 kg/m² total y   40.1-64.2 t/ha total; 33.0-52.5 t/ha comercial. Útil para
+  en invernadero                        3.30-5.25 kg/m² comercial.                        protegido, con advertencia por sustrato.
+
+  Universidad de Sonora /               Potencial medio bajo invernadero 60-80 t/ha;      Usar 55-85 t/ha para protegido suelo intensivo; no usar
+  cubiertas plásticas                   reportes experimentales mucho mayores.            techos extremos como promesa v1.
+
+  Agrosavia C015                        Variedad alargada con 31.43 t/ha/ciclo.           Calibra BE-01 largo en un rango de campo
+                                                                                          abierto/intermedio de 25-45 t/ha.
+
+
+
+
+Documento técnico interno. Rangos operativos, no promesa de producción ni sustituto de historial local.                                               Página 2
+
+
+==================================== PAGINA 3 / 7 ====================================
+
+BIO-G | Rendimiento aproximado | Berenjena v1
+
+
+
+
+ 3. Conversiones rápidas para validar toneladas por hectárea
+                Referencia                                           Cálculo                                  Resultado
+
+  Missouri 500 bu/ac                         500 x 33 lb/ac x 1.12085 / 1000                   18.5 t/ha
+
+  Missouri 700 bu/ac                         700 x 33 lb/ac x 1.12085 / 1000                   25.9 t/ha
+
+  OSU 190 cwt/ac                             190 x 100 lb/ac x 1.12085 / 1000                  21.3 t/ha
+
+  OSU 250 cwt/ac                             250 x 100 lb/ac x 1.12085 / 1000                  28.0 t/ha
+
+  UC ANR 2450 boxes/ac                       2450 x 20 lb/ac x 1.12085 / 1000                  54.9 t/ha
+
+  México 2023                                91,057 t / 1,710 ha                               53.2 t/ha
+
+  Costa Rica invernadero                     4.01-6.42 kg/m² x 10                              40.1-64.2 t/ha total
+
+
+
+ Lectura para BIO-G
+ Campo abierto común puede quedar en 18-35 t/ha cuando el manejo es normal. Producción comercial intensiva o
+ protegida puede entrar en 45-85 t/ha. Techo experimental o invernadero de alta tecnología puede superar eso, pero no
+ debe usarse en v1 si no hay modo protegido avanzado y datos de sistema.
+
+
+ 4. Tabla maestra recomendada para BIO-G
+ Los rangos son para fruto fresco comercial cosechado. La confianza 'calibrated' indica que hay varias fuentes
+ que soportan el orden de magnitud; 'modeled' indica ajuste por analogía, mercado o nicho donde la evidencia
+ por subtipo es limitada.
+
+      ID sugerido                   Perfil            Sistema            t/ha   plantas/ha     conf.             Lectura Bio-G
+
+  eggplant_generic         BE-GEN                  desconocido         18-32    12k-20k      modeled       Skip conservador: no asume
+                                                                                                           forma, color ni protegido.
+
+  eggplant_field_generic   Berenjena genérica      campo abierto       20-36    12k-22k      calibrate     Base de campo si no hay tipo
+                           campo                                                             d             específico.
+
+  eggplant_protected_soi   Berenjena genérica      malla/invernader    40-65    8k-18k       modeled       Solo si alias/sistema indica
+  l_generic                protegida               o suelo                                                 protegido; no hidroponía.
+
+  eggplant_long_purple_f   BE-01 larga/semilarga   campo abierto       25-45    12k-24k      calibrate     Tipo dominante; buen
+  ield                     morada                                                            d             rendimiento con cortes
+                                                                                                           continuos.
+
+  eggplant_long_purple_    BE-01 larga/semilarga   protegido suelo     55-85    8k-18k       modeled       Usar con malla/invernadero
+  protected                morada                                                                          en suelo y manejo intensivo.
+
+  eggplant_oval_round_fi   BE-02 oval/bola         campo abierto       22-42    12k-22k      modeled       Fruto más pesado; ajustar
+  eld                      morada                                                                          por calidad y rechazo.
+
+  eggplant_oval_round_p    BE-02 oval/bola         protegido suelo     45-75    8k-16k       modeled       Potencial alto, pero calidad
+  rotected                 morada                                                                          visual manda.
+
+  eggplant_striped_field   BE-03 rayada/listada    campo abierto       16-32    10k-18k      modeled       Nicho gourmet; más rechazo
+                                                                                                           por estética/mercado.
+
+  eggplant_striped_prote   BE-03 rayada/listada    protegido suelo     30-55    7k-14k       modeled       Recomendable si el mercado
+  cted                                                                                                     paga calidad; no inflar techo.
+
+  eggplant_white_field     BE-04 blanca            campo abierto       14-30    10k-18k      modeled       Nicho pequeño; conservar
+                                                                                                           estimación prudente.
+
+  eggplant_white_protect   BE-04 blanca            protegido suelo     25-50    7k-14k       modeled       Más sensible a defectos
+  ed                                                                                                       visibles; usar calidad como
+                                                                                                           limitante.
+
+
+
+
+Documento técnico interno. Rangos operativos, no promesa de producción ni sustituto de historial local.                                     Página 3
+
+
+==================================== PAGINA 4 / 7 ====================================
+
+BIO-G | Rendimiento aproximado | Berenjena v1
+
+
+
+
+ 5. Reglas de resolución por perfil / tipo UX
+        Perfil / condición               YieldReference recomendado                                     Regla de producto
+
+  BE-GEN / No sé / Otra berenjena        eggplant_generic                          No asumir protegido ni nicho; estimar prudente y permitir
+                                                                                   migración posterior.
+
+  BE-01 larga/semilarga morada           eggplant_long_purple_field                Si alias contiene protegido, malla, invernadero o casa malla: usar
+                                                                                   protected.
+
+  BE-02 oval / bola morada               eggplant_oval_round_field                 No separar como cultivo; es perfil interno. Proteger calidad de
+                                                                                   fruto.
+
+  BE-03 rayada/listada/Graffiti          eggplant_striped_field                    Si mercado gourmet/protegido explícito, usar protected; si no,
+                                                                                   mantener conservador.
+
+  BE-04 blanca / White Egg               eggplant_white_field                      Perfil nicho: no inflar producción; aumentar peso de
+                                                                                   calidad/rechazo si hay estrés.
+
+  Sistema protegido explícito            *_protected                               Palabras clave: protegido, invernadero, casa malla, malla
+                                                                                   sombra, high tunnel, macro túnel.
+
+  Sistema desconocido                    *_field o generic                         Usar campo abierto conservador aunque el promedio nacional
+                                                                                   mexicano sea alto.
+
+
+
+ Punto crítico
+ En berenjena, el subtipo cambia menos el rendimiento biológico que el sistema, el número de cortes, la sanidad y el
+ mercado. BE-03 y BE-04 se diferencian más por rechazo/calidad que por demanda fisiológica completamente distinta.
+
+
+ 6. Notas por tipo para rendimiento
+             Tipo                                  Qué cambia                                        Cómo afecta rendimiento
+
+  BE-GEN                          No se sabe forma/color/sistema.                      Debe ser conservador y migrable; no usa referencia
+                                                                                       protegida aunque el potencial exista.
+
+  BE-01 larga/semilarga           Tipo dominante y más cercano al mercado              Puede usar techo de campo 45 t/ha y protegido 85 t/ha si el
+  morada                          comercial estándar.                                  manejo lo soporta.
+
+  BE-02 oval/bola morada          Fruto más grande/pesado, cortes pueden variar        Rango similar a BE-01 pero con más penalización si hay
+                                  según calibre.                                       deformidad o sobre-madurez.
+
+  BE-03 rayada/listada            Nicho orgánico/gourmet/protegido; apariencia         Usar rango menor por rechazo estético y mercado limitado;
+                                  importa más.                                         protected mejora uniformidad.
+
+  BE-04 blanca                    Nicho pequeño; defectos visibles se notan más.       Rango prudente; calidad y manejo poscosecha limitan el
+                                                                                       valor útil.
+
+
+
+
+ 7. Densidad, población y manejo
+ UF/IFAS lista una población de 9,680 plantas/acre para eggplant, que equivale a unas 23,900 plantas/ha. En
+ otros sistemas comerciales, UC ANR reporta alrededor de 2,000 plantas/acre en Coachella, equivalente a unas
+ 4,940 plantas/ha, con plantas muy productivas y cosecha prolongada. Por eso BIO-G no debe forzar una
+ densidad única: debe aceptar rangos amplios y penalizar de forma suave según sistema.
+
+               Sistema                          Rango operativo                                          Lectura Bio-G
+                                                  plantas/ha
+
+  Campo abierto intensivo                 12k-24k                            Compatible con camas, goteo y cosecha progresiva; mejor
+                                                                             rango para BE-01/BE-02.
+
+  Campo abierto amplio / baja             5k-12k                             Puede producir bien por planta, pero la app debe penalizar
+  densidad                                                                   potencial por hectárea si la población es baja.
+
+  Protegido suelo                         7k-18k                             Depende de tutorado, poda, ciclo y ventilación; no usar techo
+                                                                             alto sin sistema protegido explícito.
+
+  Genérico / usuario no sabe              12k-20k                            Rango seguro para no sobreestimar.
+
+
+
+
+Documento técnico interno. Rangos operativos, no promesa de producción ni sustituto de historial local.                                                 Página 4
+
+
+==================================== PAGINA 5 / 7 ====================================
+
+BIO-G | Rendimiento aproximado | Berenjena v1
+
+
+
+
+ 8. Recomendación directa para código
+ Crear o reutilizar una familia de rendimiento para hortaliza de fruto fresca. Si ya existe tomato/cucumberFresh,
+ berenjena puede tener su propia familia por sensibilidad de cosecha progresiva y floración, pero no necesita
+ familia seca.
+
+ • Agregar YieldFamily.eggplantFresh o mapear eggplant a fruitVegetableFresh si la arquitectura ya lo permite.
+
+ • Parámetros sugeridos: managementGamma 1.35, managementFloor 0.24. En protected puede subir gamma a
+ 1.45 si hay muchos datos de manejo.
+
+ • Agregar referencias eggplant_* de la tabla maestra al YieldReferenceCatalog.
+
+ • En _familyFor(reference): si cropId == eggplant devolver eggplantFresh.
+
+ • En YieldProjectionSetupScreen: resolver por profileId BE-GEN/BE-01/BE-02/BE-03/BE-04 y detectar protected
+ por alias/sistema.
+
+ • Mantener seedsLowPerHa/seedsHighPerHa como plantas establecidas, igual que chile y tomate.
+
+ • Si usuario captura semillas reales de charola, advertir que la estimación mejora con plantas logradas/población
+ final.
+
+ Resolver sugerido
+                       Condición                                                       Referencia
+
+  BE-GEN o generic                                     eggplant_generic
+
+  BE-01 larga/semilarga morada                         eggplant_long_purple_field o protected
+
+  BE-02 oval/bola morada                               eggplant_oval_round_field o protected
+
+  BE-03 rayada/listada/graffiti                        eggplant_striped_field o protected
+
+  BE-04 blanca/white                                   eggplant_white_field o protected
+
+  profileId desconocido pero crop == eggplant          eggplant_field_generic
+
+
+
+
+Documento técnico interno. Rangos operativos, no promesa de producción ni sustituto de historial local.      Página 5
+
+
+==================================== PAGINA 6 / 7 ====================================
+
+BIO-G | Rendimiento aproximado | Berenjena v1
+
+
+
+
+ 9. Notas agronómicas importantes
+ • La cosecha progresiva cambia el total: si no se cosecha con regularidad, baja la formación de flores y el
+ rendimiento final.
+
+ • La berenjena se cosecha inmadura-comercial. Fruto sobre-maduro puede seguir pesando, pero pierde calidad;
+ BIO-G debe estimar fruto comercial, no biomasa total.
+
+ • Calor, déficit hídrico, salinidad y problemas de polinización/amarre reducen rendimiento aunque la población
+ sea correcta.
+
+ • BE-03 rayada y BE-04 blanca requieren más peso de calidad/rechazo: el rendimiento físico puede existir, pero
+ no todo será comercial.
+
+ • El promedio nacional mexicano puede ser alto por producción exportadora intensiva; no debe aplicarse a
+ usuario genérico sin saber sistema.
+
+ • No mezclar en v1 con hidroponía/sustrato avanzado. Si aparece ese sistema, responder como modo no
+ cubierto o pedir modo futuro especializado.
+
+
+ 10. Mensajes Bio-G sugeridos para UX
+              Situación                                                      Mensaje farmer-friendly
+
+  Población baja                          La población por hectárea está por debajo del rango esperado. La planta puede producir bien,
+                                          pero el potencial por hectárea baja.
+
+  Población alta                          La densidad parece alta para berenjena. Vigile ventilación, humedad, enfermedades y tamaño
+                                          de fruto.
+
+  BE-GEN                                  Usaremos una estimación conservadora porque todavía no sabemos el tipo o sistema. Puedes
+                                          afinarla después sin perder historial.
+
+  Protegido explícito                     El sistema protegido puede subir el potencial, pero solo si hay riego, ventilación, nutrición y
+                                          sanidad estables.
+
+  Rayada/blanca                           Este tipo depende mucho de calidad visual. El rendimiento comercial puede bajar si hay
+                                          manchas, deformidad o estrés.
+
+
+
+
+ 11. Fuentes y trazabilidad
+ Las fuentes siguientes fueron usadas para construir rangos operativos. Cuando una fuente reporta rendimientos
+ experimentales extremos, BIO-G los usa como techo técnico, no como promesa de producto.
+
+   Clave                                     Fuente                                                              Uso
+
+  S1       UF/IFAS. HS726/CV124 Chapter 8. Eggplant Production.                         Población, madurez desde semilla/trasplante, manejo
+           https://ask.ifas.ufl.edu/publication/CV124                                   comercial.
+
+  S2       University of Missouri Extension. Eggplant Production G6369.                 Rendimiento 500-700 bushels/acre y efecto de
+           https://extension.missouri.edu/publications/g6369                            cosecha regular.
+
+  S3       Oregon State University. Eggplant.                                           Promedio 190 cwt/acre y buen rendimiento 250
+           https://horticulture.oregonstate.edu/oregon-vegetables/eggplant-0            cwt/acre.
+
+  S4       UC ANR / UC Davis. American Eggplant.                                        Rendimiento 2,450 cajas de 20 lb/acre y caja
+           https://ucanr.edu/program/uc-anr-small-farms-network/american-eggplant       comercial.
+
+  S5       SADER/SIAP México 2024. Destaca México como tercer exportador de             Producción 2023 y orden de magnitud nacional.
+           berenjena.
+
+  S6       Arguedas-García y Monge-Pérez, 2017. Efecto de densidad de siembra en        Densidad 0.65-1.30 plantas/m² y rendimiento por
+           invernadero, Costa Rica. DOI 10.18845/tm.v30i4.3412                          área.
+
+  S7       Universidad de Sonora. Cultivo de berenjena bajo cubiertas plásticas.        Potencial protegido 60-80 t/ha y techo experimental
+                                                                                        alto.
+
+  S8       Agrosavia. Variedad de berenjena C015.                                       Calibración de variedad alargada: 31.43 t/ha/ciclo.
+
+  S9       BIO-G. Perfil Universal y Perfil BE-GEN enviados por usuario.                Estructura BE-01 a BE-04, regla de SKIP y arquitectura
+                                                                                        de perfiles.
+
+
+
+Documento técnico interno. Rangos operativos, no promesa de producción ni sustituto de historial local.                                          Página 6
+
+
+==================================== PAGINA 7 / 7 ====================================
+
+BIO-G | Rendimiento aproximado | Berenjena v1
+
+
+
+
+ 12. Cierre de producto
+ La calculadora de rendimiento de berenjena queda lista para v1 si se integra con referencias por tipo y sistema, pero sin
+ sobrediferenciar por color/forma más allá de calidad y mercado. La prioridad para código es resolver
+ BE-GEN/BE-01/BE-02/BE-03/BE-04, detectar protegido y mantener población como plantas establecidas.
+
+
+
+
+Documento técnico interno. Rangos operativos, no promesa de producción ni sustituto de historial local.              Página 7

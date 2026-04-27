@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/chili_nutrition_modifier.dart';
+import 'package:bio_g/core/agro/eggplant_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
@@ -80,6 +82,9 @@ class FertilizationPlanner {
     required String? cropKey,
     required String? stageKey,
     String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+    String? calendarId,
     StageTargets? targets,
     String? cultivationScaleId,
   }) {
@@ -93,6 +98,37 @@ class FertilizationPlanner {
 
     if (label == NutrientPriorityLabel.possibleExcess ||
         label == NutrientPriorityLabel.reviewAccumulation) {
+      if (crop == 'chili' ||
+          crop == 'chile' ||
+          crop == 'pepper' ||
+          crop == 'pimiento') {
+        final modifier = resolveChiliNutritionModifier(
+          profileId: profileId,
+          varietyId: varietyId,
+          alias: varietyAlias,
+          calendarId: calendarId ?? cultivationScaleId,
+        );
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Nivel alto detectado. Pausa este nutriente en chile para evitar bloqueo, salinidad o desbalance en flor/fruto.',
+          fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
+        );
+      }
+      if (crop == 'eggplant' ||
+          crop == 'berenjena' ||
+          crop == 'aubergine') {
+        final modifier = resolveEggplantNutritionModifier(
+          profileId: profileId,
+          varietyId: varietyId,
+          alias: varietyAlias,
+          calendarId: calendarId ?? cultivationScaleId,
+        );
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Nivel alto detectado. Pausa este nutriente en berenjena para evitar salinidad, bloqueo o fruto marcado.',
+          fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
+        );
+      }
       if ((crop == 'barley' || crop == 'cebada') &&
           nutrient == AgroMetricKey.n &&
           _isBarleyMalt(profileId)) {
@@ -142,6 +178,35 @@ class FertilizationPlanner {
     }
     if (crop == 'cucumber' || crop == 'pepino') {
       return _cucumberGuide(nutrient, stageKey, deficitPpm, cultivationScaleId);
+    }
+    if (crop == 'chili' ||
+        crop == 'chile' ||
+        crop == 'pepper' ||
+        crop == 'pimiento') {
+      return _chiliGuide(
+        nutrient,
+        stageKey,
+        deficitPpm,
+        cultivationScaleId,
+        profileId: profileId,
+        varietyId: varietyId,
+        varietyAlias: varietyAlias,
+        calendarId: calendarId,
+      );
+    }
+    if (crop == 'eggplant' ||
+        crop == 'berenjena' ||
+        crop == 'aubergine') {
+      return _eggplantGuide(
+        nutrient,
+        stageKey,
+        deficitPpm,
+        cultivationScaleId,
+        profileId: profileId,
+        varietyId: varietyId,
+        varietyAlias: varietyAlias,
+        calendarId: calendarId,
+      );
     }
 
     return _genericGuide(nutrient, deficitPpm, cultivationScaleId);
@@ -1288,6 +1353,405 @@ class FertilizationPlanner {
         return NutrientDoseGuide(
           doseGuideEs:
               'Aplica $puroText preparando la demanda fuerte de potasio del pepino.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqMop.', bridge),
+        );
+
+      default:
+        return const NutrientDoseGuide(doseGuideEs: 'Falta nutriente.');
+    }
+  }
+
+  // ==========================================
+  // CHILE
+  // ==========================================
+  // Racional BIO-G:
+  // - CH-GEN usa un plan conservador y migrable.
+  // - N sube en vegetativo, pero floracion/cuajado no toleran jalones altos.
+  // - P pesa en raiz, establecimiento y soporte de floracion.
+  // - K y Ca dominan desde amarre, llenado y cosecha progresiva.
+  static NutrientDoseGuide _chiliGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    double deficitPpm,
+    String? scale, {
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+    String? calendarId,
+  }) {
+    final stage = (stageKey ?? '').toLowerCase();
+    final modifier = resolveChiliNutritionModifier(
+      profileId: profileId,
+      varietyId: varietyId,
+      alias: varietyAlias,
+      calendarId: calendarId ?? scale,
+    );
+    final isGerm = stage.contains('germin');
+    final isEstablishment =
+        stage.contains('establec') || stage.contains('emerg');
+    final isVeg = stage.contains('vegetativo') || stage.contains('vegetative');
+    final isFlowering = stage.contains('floracion') || stage.contains('flor');
+    final isFruitSet =
+        stage.contains('cuajado') ||
+        stage.contains('amarre') ||
+        stage.contains('fruitset');
+    final isFilling = stage.contains('llenado') || stage.contains('fill');
+    final isHarvest = stage.contains('progresiv') || stage.contains('harvest');
+    final isLate = _isLateStage(stage);
+    final isReproductive =
+        isFlowering || isFruitSet || isFilling || isHarvest;
+    final bridge = _joinExtra(
+      _formatSoilBridgeText(deficitPpm),
+      modifier.guideCaution(nutrient, stageKey),
+    );
+
+    if (isLate) {
+      return NutrientDoseGuide(
+        doseGuideEs:
+            'El ciclo del chile ya esta cerrando. Guarda esta lectura para ajustar el plan del siguiente ciclo.',
+        fertilizerEquivalentEs: _joinExtra(
+          'En senescencia conviene aprender del suelo, no forzar una correccion tardia.',
+          modifier.guideCaution(nutrient, stageKey),
+        ),
+      );
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        final eqUrea = _formatCommercialDoseText(
+          deficitPpm,
+          _leyUrea,
+          'Urea (46-0-0)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Nitrogeno puro',
+          scale,
+        );
+        if (isFlowering || isFruitSet) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Aplica $puroText FRACCIONADO. En floracion y amarre, el chile no debe recibir jalones altos de N porque tira flor y cuaja mal.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea, repartido en varios riegos o eventos cortos.',
+              bridge,
+            ),
+          );
+        }
+        if (isFilling || isHarvest) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Apoyo moderado de N: $puroText solo si la lectura lo justifica. En llenado y cosecha manda mucho mas el potasio.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea; evita perseguir follaje cuando el fruto ya esta demandando K y Ca.',
+              bridge,
+            ),
+          );
+        }
+        if (isGerm || isEstablishment) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arranque moderado de N: aplica $puroText sin excederte; primero importan raiz, P y humedad estable.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqUrea.', bridge),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText con criterio para sostener vegetativo sin llegar a floracion con exceso de follaje.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqUrea.', bridge),
+        );
+
+      case AgroMetricKey.p:
+        final eqMap = _formatCommercialDoseText(
+          deficitPpm,
+          0.52,
+          'MAP (11-52-0)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Fosforo puro',
+          scale,
+        );
+        if (isGerm || isEstablishment) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arrancador de fosforo: aplica $puroText cerca de la zona radical para que la planta agarre y no retrase floracion.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqMap. En chile el P temprano si se siente.',
+              bridge,
+            ),
+          );
+        }
+        if (isFlowering) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Fosforo de sosten en floracion: aplica $puroText si la lectura esta corta, como soporte de energia reproductiva.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqMap.', bridge),
+          );
+        }
+        if (isReproductive) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Usa $puroText como correccion de base, no como rescate. La respuesta del P baja despues del establecimiento.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqMap.', bridge),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText para reforzar raiz y base fisiologica antes de la ventana reproductiva.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqMap.', bridge),
+        );
+
+      case AgroMetricKey.k:
+        final eqMop = _formatCommercialDoseText(
+          deficitPpm,
+          _leyMop,
+          'KCl / MOP',
+          scale,
+        );
+        final eqKnit = _formatCommercialDoseText(
+          deficitPpm,
+          0.46,
+          'Nitrato de K (13-0-46)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Potasio puro',
+          scale,
+        );
+        if (isFlowering || isFruitSet) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Sube K con cuidado: aplica $puroText repartido en el riego y con humedad pareja. En chile, flor y amarre son la ventana cara de fallar.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqKnit; si el suelo viene salino, considera una fuente mas amable que KCl. Referencia alternativa: $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        if (isFilling || isHarvest) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Ventana fuerte de K: aplica $puroText poco a poco en el riego. Tambien vigila Ca para firmeza y calidad de fruto.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Conviene $eqKnit o sulfato de potasio si hace falta bajar cloruros. Tambien equivale a $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        if (isVeg) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Refuerza reservas de potasio con $puroText antes de floracion y cuajado.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqMop.', bridge),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText preparando la demanda fuerte de potasio del chile.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqMop.', bridge),
+        );
+
+      default:
+        return const NutrientDoseGuide(doseGuideEs: 'Falta nutriente.');
+    }
+  }
+
+  // ==========================================
+  // BERENJENA
+  // ==========================================
+  // Racional BIO-G:
+  // - BE-GEN usa plan conservador y migrable.
+  // - P pesa en establecimiento/raiz y vuelve como soporte de floracion.
+  // - N sube en vegetativo, pero debe moderarse desde floracion.
+  // - K domina cuajado, llenado y cosecha; Ca/Mg y agua pareja sostienen
+  //   firmeza y calidad visual.
+  static NutrientDoseGuide _eggplantGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    double deficitPpm,
+    String? scale, {
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+    String? calendarId,
+  }) {
+    final stage = (stageKey ?? '').toLowerCase();
+    final modifier = resolveEggplantNutritionModifier(
+      profileId: profileId,
+      varietyId: varietyId,
+      alias: varietyAlias,
+      calendarId: calendarId ?? scale,
+    );
+    final isGerm = stage.contains('germin');
+    final isEstablishment =
+        stage.contains('establec') || stage.contains('emerg');
+    final isVeg = stage.contains('vegetativo') || stage.contains('vegetative');
+    final isFlowering = stage.contains('floracion') || stage.contains('flor');
+    final isFruitSet =
+        stage.contains('cuajado') ||
+        stage.contains('amarre') ||
+        stage.contains('fruitset');
+    final isFilling = stage.contains('llenado') || stage.contains('fill');
+    final isHarvest = stage.contains('progresiv') || stage.contains('harvest');
+    final isLate = _isLateStage(stage);
+    final isReproductive =
+        isFlowering || isFruitSet || isFilling || isHarvest;
+    final bridge = _joinExtra(
+      _formatSoilBridgeText(deficitPpm),
+      modifier.guideCaution(nutrient, stageKey),
+    );
+
+    if (isLate) {
+      return NutrientDoseGuide(
+        doseGuideEs:
+            'El ciclo de berenjena ya esta cerrando. Guarda esta lectura para ajustar la base del siguiente ciclo.',
+        fertilizerEquivalentEs: _joinExtra(
+          'En senescencia conviene aprender del suelo, no forzar una correccion tardia.',
+          modifier.guideCaution(nutrient, stageKey),
+        ),
+      );
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        final eqUrea = _formatCommercialDoseText(
+          deficitPpm,
+          _leyUrea,
+          'Urea (46-0-0)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Nitrogeno puro',
+          scale,
+        );
+        if (isFlowering || isFruitSet) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Aplica $puroText FRACCIONADO. En floracion y cuajado, la berenjena necesita equilibrio: mucho N vegeta la planta y baja el amarre.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea, repartido en varios riegos o eventos cortos.',
+              bridge,
+            ),
+          );
+        }
+        if (isFilling || isHarvest) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Apoyo moderado de N: $puroText solo si la lectura lo justifica. En llenado y cosecha mandan mas K, Ca/Mg y humedad estable.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea; evita perseguir follaje cuando el fruto ya exige calidad.',
+              bridge,
+            ),
+          );
+        }
+        if (isGerm || isEstablishment) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arranque moderado de N: aplica $puroText sin excederte; primero importan raiz, P, baja salinidad y pegue.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqUrea.', bridge),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText para sostener vegetativo, cuidando no llegar a floracion con exceso de follaje.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqUrea.', bridge),
+        );
+
+      case AgroMetricKey.p:
+        final eqMap = _formatCommercialDoseText(
+          deficitPpm,
+          0.52,
+          'MAP (11-52-0)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Fosforo puro',
+          scale,
+        );
+        if (isGerm || isEstablishment) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arrancador de fosforo: aplica $puroText cerca de la zona radical para que el trasplante agarre y no retrase floracion.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqMap. En berenjena el P temprano si se siente.',
+              bridge,
+            ),
+          );
+        }
+        if (isFlowering) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Fosforo de sosten en floracion: aplica $puroText si la lectura esta corta, como soporte de energia reproductiva.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqMap.', bridge),
+          );
+        }
+        if (isReproductive) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Usa $puroText como correccion de base, no como rescate. La respuesta del P baja despues del establecimiento.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqMap.', bridge),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText para reforzar raiz y base fisiologica antes de floracion.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqMap.', bridge),
+        );
+
+      case AgroMetricKey.k:
+        final eqMop = _formatCommercialDoseText(
+          deficitPpm,
+          _leyMop,
+          'KCl / MOP',
+          scale,
+        );
+        final eqKnit = _formatCommercialDoseText(
+          deficitPpm,
+          0.46,
+          'Nitrato de K (13-0-46)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Potasio puro',
+          scale,
+        );
+        if (isFlowering || isFruitSet) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Sube K con cuidado: aplica $puroText repartido en el riego y con humedad pareja. En berenjena, flor y amarre fallan rapido con deficit hidrico o CE alta.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqKnit; si el suelo viene salino, considera una fuente mas amable que KCl. Referencia alternativa: $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        if (isFilling || isHarvest) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Ventana fuerte de K: aplica $puroText poco a poco en el riego. Vigila Ca/Mg para firmeza, brillo y vida de anaquel.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Conviene $eqKnit o sulfato de potasio si hace falta bajar cloruros. Tambien equivale a $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        if (isVeg) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Refuerza reservas de potasio con $puroText antes de floracion y cuajado.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqMop.', bridge),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText preparando la demanda fuerte de potasio de la berenjena.',
           fertilizerEquivalentEs: _joinExtra('Equivale a $eqMop.', bridge),
         );
 
