@@ -3,7 +3,9 @@ import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/chili_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/eggplant_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/fertilization_planner.dart';
+import 'package:bio_g/core/agro/lettuce_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
+import 'package:bio_g/core/agro/squash_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 
@@ -109,6 +111,24 @@ class NutrientRecommendationEngine {
             calendarId: calendarId ?? cultivationScaleId,
           )
         : null;
+    final isSquashCrop = _isSquashCrop(cropKey);
+    final squashModifier = isSquashCrop
+        ? resolveSquashNutritionModifier(
+            profileId: profileId,
+            varietyId: varietyId,
+            alias: varietyAlias,
+            calendarId: calendarId ?? cultivationScaleId,
+          )
+        : null;
+    final isLettuceCrop = _isLettuceCrop(cropKey);
+    final lettuceModifier = isLettuceCrop
+        ? resolveLettuceNutritionModifier(
+            profileId: profileId,
+            varietyId: varietyId,
+            alias: varietyAlias,
+            calendarId: calendarId ?? cultivationScaleId,
+          )
+        : null;
 
     final combinedStagePressure01 = _combineStagePressure01(
       baseStagePressure01: baseStagePressure01,
@@ -121,6 +141,16 @@ class NutrientRecommendationEngine {
           stageKey: stageKey,
         ) ??
         eggplantModifier?.adjustStagePressure(
+          combinedStagePressure01,
+          nutrient: nutrient,
+          stageKey: stageKey,
+        ) ??
+        squashModifier?.adjustStagePressure(
+          combinedStagePressure01,
+          nutrient: nutrient,
+          stageKey: stageKey,
+        ) ??
+        lettuceModifier?.adjustStagePressure(
           combinedStagePressure01,
           nutrient: nutrient,
           stageKey: stageKey,
@@ -177,6 +207,8 @@ class NutrientRecommendationEngine {
       targets: targets,
       chiliModifier: chiliModifier,
       eggplantModifier: eggplantModifier,
+      squashModifier: squashModifier,
+      lettuceModifier: lettuceModifier,
     );
 
     final practicalRecommendation = _mergePracticalAndDose(
@@ -430,6 +462,14 @@ class NutrientRecommendationEngine {
         label == NutrientPriorityLabel.possibleExcess ||
         label == NutrientPriorityLabel.reviewAccumulation;
 
+    if (_isLettuceCrop(cropKey)) {
+      return _lettuceShortRecommendation(
+        nutrientName: nutrientName,
+        label: label,
+        isExcess: isExcess,
+      );
+    }
+
     if (isExcess) {
       if (nutrient == AgroMetricKey.n) {
         return 'Frena el nitrógeno. Hay reserva de sobra.';
@@ -469,6 +509,29 @@ class NutrientRecommendationEngine {
     return 'Faltan datos para evaluar $nutrientName.';
   }
 
+  static String _lettuceShortRecommendation({
+    required String nutrientName,
+    required NutrientPriorityLabel label,
+    required bool isExcess,
+  }) {
+    if (isExcess) {
+      return 'Pausa $nutrientName y revisa balance en lechuga.';
+    }
+    if (label == NutrientPriorityLabel.noPriority ||
+        label == NutrientPriorityLabel.lowPriority) {
+      return '$nutrientName en zona manejable para lechuga.';
+    }
+    if (label == NutrientPriorityLabel.mediumPriority) {
+      return '$nutrientName va bajando; vigila calidad de hoja.';
+    }
+    if (label == NutrientPriorityLabel.highPriority ||
+        label == NutrientPriorityLabel.actionRecommended ||
+        label == NutrientPriorityLabel.reviewManagement) {
+      return 'Revisa $nutrientName antes de ajustar manejo.';
+    }
+    return 'Faltan datos para evaluar $nutrientName en lechuga.';
+  }
+
   // =========================================================================
   // RECOMENDACIÓN PRÁCTICA
   // =========================================================================
@@ -482,9 +545,21 @@ class NutrientRecommendationEngine {
     StageTargets? targets,
     ChiliNutritionModifier? chiliModifier,
     EggplantNutritionModifier? eggplantModifier,
+    SquashNutritionModifier? squashModifier,
+    LettuceNutritionModifier? lettuceModifier,
   }) {
     final stage = (stageKey ?? '').toLowerCase();
     final crop = (cropKey ?? '').toLowerCase();
+
+    // Guardia para hortalizas de fruto SIN recomendación dedicada (pepino
+    // hoy, frutales/ornamentales mañana) en fin de ciclo: evita que el
+    // dispatch caiga al genérico "conviene corregir". Las hortalizas con
+    // función propia (tomate/chile/berenjena/calabaza) hacen su propio
+    // early-return de fin de ciclo más abajo y pueden añadir caution
+    // de perfil (p.ej. "Calabacita en cierre").
+    if (_isHortalizaFrutoSinHandler(crop) && _isLateStage(stage)) {
+      return _hortalizaLateCycleMessage(nutrient: nutrient, label: label);
+    }
 
     if (crop == 'maize' || crop == 'maiz' || crop == 'corn') {
       return _maizePracticalRecommendation(
@@ -561,6 +636,30 @@ class NutrientRecommendationEngine {
         stagePressure01,
         targets,
         eggplantModifier,
+      );
+    }
+    if (crop == 'squash' ||
+        crop == 'calabaza' ||
+        crop == 'pumpkin' ||
+        crop == 'zucchini' ||
+        crop == 'calabacita') {
+      return _squashPracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+        targets,
+        squashModifier,
+      );
+    }
+    if (crop == 'lettuce' || crop == 'lechuga' || crop == 'crop_lettuce') {
+      return _lettucePracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+        targets,
+        lettuceModifier,
       );
     }
 
@@ -1200,6 +1299,12 @@ class NutrientRecommendationEngine {
     final isLate = _isLateStage(stage);
     final isCritical = isFlowering || isFruitSet;
 
+    // Guard de fin de ciclo / senescencia: prioritario sobre cualquier
+    // mensaje productivo. Cosecha progresiva NO entra aquí (no es late).
+    if (isLate) {
+      return _hortalizaLateCycleMessage(nutrient: nutrient, label: label);
+    }
+
     final profileHint = targets?.plannerHintFor(nutrient);
     final windowLabel = targets?.windowLabelFor(nutrient);
 
@@ -1404,6 +1509,13 @@ class NutrientRecommendationEngine {
     final isHarvest = stage.contains('progresiv') || stage.contains('harvest');
     final isLate = _isLateStage(stage);
     final isCritical = isFlowering || isFruitSet;
+
+    // Guard de fin de ciclo / senescencia: corta antes de mensajes productivos
+    // y no anexa el caution del perfil para no confundir con cortes continuos.
+    if (isLate) {
+      return _hortalizaLateCycleMessage(nutrient: nutrient, label: label);
+    }
+
     final profileHint = targets?.shortGuidanceFor(nutrient);
     final windowLabel = targets?.windowLabelFor(nutrient);
     final profileCaution = modifier?.practicalCaution(nutrient, stage);
@@ -1646,6 +1758,11 @@ class NutrientRecommendationEngine {
     final isHarvest = stage.contains('progresiv') || stage.contains('harvest');
     final isLate = _isLateStage(stage);
     final isCritical = isFlowering || isFruitSet;
+
+    if (isLate) {
+      return _hortalizaLateCycleMessage(nutrient: nutrient, label: label);
+    }
+
     final windowLabel = targets?.windowLabelFor(nutrient);
     final profileHint = targets?.plannerHintFor(nutrient);
 
@@ -1869,6 +1986,444 @@ class NutrientRecommendationEngine {
     }
   }
 
+  static String _squashPracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    double? stagePressure01,
+    StageTargets? targets,
+    SquashNutritionModifier? modifier,
+  ) {
+    final isGerm = stage.contains('germin');
+    final isEstablishment =
+        stage.contains('establec') || stage.contains('emerg');
+    final isVeg = stage.contains('vegetativo') || stage.contains('vegetative');
+    final isFlowering = stage.contains('floracion') || stage.contains('flor');
+    final isFruitSet = stage.contains('cuajado') ||
+        stage.contains('amarre') ||
+        stage.contains('fruitset') ||
+        stage.contains('poliniz');
+    final isFilling = stage.contains('llenado') || stage.contains('fill');
+    final isHarvest = stage.contains('progresiv') || stage.contains('harvest');
+    final isLate = _isLateStage(stage);
+    final isCritical = isFlowering || isFruitSet;
+    final isProduction = isCritical || isFilling || isHarvest;
+
+    // Guard de fin de ciclo / senescencia. En calabaza se anexa la frase del
+    // perfil (p.ej. "Calabacita en cierre: ...") porque el perfil sí tiene
+    // un mensaje específico de cierre por tipo (CA-01..CA-07, CA-GEN).
+    if (isLate) {
+      final base = _hortalizaLateCycleMessage(nutrient: nutrient, label: label);
+      final caution = modifier?.practicalCaution(nutrient, stage);
+      if (caution == null || caution.trim().isEmpty) return base;
+      return '$base ${caution.trim()}';
+    }
+
+    final windowLabel = targets?.windowLabelFor(nutrient);
+    final profileHint = targets?.plannerHintFor(nutrient);
+
+    String withModifier(String base) {
+      final caution = modifier?.practicalCaution(nutrient, stage);
+      if (caution == null || caution.trim().isEmpty) return base;
+      return '$base $caution';
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isProduction) {
+            return withModifier(
+              'N alto. En calabaza puede empujar guia y hoja cuando flor, amarre o pepita necesitan equilibrio; pausa N y revisa CE.',
+            );
+          }
+          return withModifier(
+            'N alto. Pausa nitrogeno y confirma si el vigor ya esta excesivo.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'N suficiente. En esta ventana no conviene perseguir follaje; cuida K, agua y sanidad foliar.',
+            );
+          }
+          return withModifier('N estable para la etapa actual de calabaza.');
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isVeg && (stagePressure01 ?? 0) > 0.5) {
+            return withModifier(
+              'N aun alcanza, pero viene floracion. Prepara correccion suave si la tendencia cae.',
+            );
+          }
+          return withModifier(
+            'N no urge ahora; vigila que no llegue alto a floracion.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isCritical) {
+            return withModifier(
+              'N va bajando en flor/cuajado. Corrige solo fraccionado para no perder equilibrio de flor y amarre.',
+            );
+          }
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'N bajando en llenado/cosecha. Apoya moderado solo si la planta pierde hoja funcional.',
+            );
+          }
+          return withModifier(
+            'N empieza a bajar. Ajusta antes de que floracion y cuajado suban la demanda.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return withModifier(
+              'N bajo pero el ciclo cierra. Guarda el dato para la base del siguiente ciclo.',
+            );
+          }
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'N bajo en arranque. Corrige moderado; raiz joven y salinidad importan mas que empujar guia.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'N bajo en flor/cuajado. Corrige con fraccionamiento y riego estable, sin disparar follaje.',
+            );
+          }
+          return withModifier(
+            'N bajo. Conviene corregir para sostener hoja activa sin llegar pasado a floracion.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el nitrogeno de la calabaza.',
+        );
+
+      case AgroMetricKey.p:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return withModifier(
+            'P alto. Evita seguir aplicando; mas P no corrige polinizacion, agua o raiz limitada.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isEstablishment) {
+            return withModifier('P en rango para pegue, raiz y arranque.');
+          }
+          return withModifier('P estable como soporte de la etapa.');
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            'P no urge, pero confirma disponibilidad si pH esta fuera de rango.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'P se esta quedando corto justo en raiz. Conviene corregir temprano.',
+            );
+          }
+          return withModifier(
+            'P va bajando. Corrige como base si la lectura lo confirma; no es rescate tardio.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return withModifier(
+              'P bajo pero el ciclo cierra. Usalo para ajustar el arrancador del siguiente ciclo.',
+            );
+          }
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'P bajo en arranque. Corrige cerca de raiz para evitar retraso de floracion.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'P bajo en ventana reproductiva. Corrige como soporte de energia, sin esperar efecto inmediato en cuaje.',
+            );
+          }
+          return withModifier(
+            'P bajo. Ajusta la base y revisa pH para disponibilidad real.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el fosforo de la calabaza.',
+        );
+
+      case AgroMetricKey.k:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isProduction) {
+            return withModifier(
+              'K muy alto. Pausa potasio y revisa CE; exceso de sales tambien tumba flor, amarre y calidad.',
+            );
+          }
+          return withModifier(
+            'K alto. Pausa potasio solo y revisa sales totales antes de subir mas.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isCritical) {
+            return withModifier(
+              'K en rango para flor y amarre. Mantener humedad pareja y polinizacion activa es igual de importante.',
+            );
+          }
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'K en rango en la ventana fuerte: buena base para llenado, firmeza o pepita.',
+            );
+          }
+          return withModifier('K estable para la etapa actual de calabaza.');
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isVeg && (stagePressure01 ?? 0) > 0.5) {
+            return withModifier(
+              'K aun alcanza, pero ya viene floracion y amarre. Prepara reserva.',
+            );
+          }
+          return withModifier(
+            'K no urge ahora, pero vigilalo: desde cuajado domina la demanda.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isCritical) {
+            return withModifier(
+              'K bajando en flor/amarre. Riesgo de mal cuaje; corrige con humedad pareja y buena polinizacion.',
+            );
+          }
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'K bajando en llenado/cosecha. Esto pega directo en peso, firmeza y pepita.',
+            );
+          }
+          return withModifier(
+            'K va bajando. Refuerza antes de entrar a cuajado y llenado.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended) {
+          if (isLate) {
+            return withModifier(
+              'K bajo pero el ciclo cierra. Anotalo para ajustar la base del siguiente ciclo.',
+            );
+          }
+          if (isGerm || isEstablishment) {
+            return withModifier(
+              'K bajo en arranque. Apoya moderado sin subir sales.',
+            );
+          }
+          if (isCritical) {
+            return withModifier(
+              'K bajo en flor/cuajado. Urge reforzar fraccionado y cuidar agua para no perder amarre.',
+            );
+          }
+          if (isFilling || isHarvest) {
+            return withModifier(
+              'K bajo en llenado/cosecha: ventana cara de fallar. Refuerza fraccionado y con humedad estable.',
+            );
+          }
+          return withModifier(
+            'K bajo. Corrige antes de floracion para no entrar a cuajado con reserva corta.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Vigila el potasio de la calabaza.',
+        );
+
+      default:
+        return 'Revisa el manejo de nutrientes de la calabaza.';
+    }
+  }
+
+  // ── LECHUGA ───────────────────────────────────────────────────────────────
+  // Hortaliza de hoja: la fertilizacion favorece hoja firme, turgente y
+  // sana, no solo crecimiento rapido. Reglas conservadoras: N a la baja
+  // cerca de cosecha, K de apoyo a turgencia en cabeza/cosecha, P clave en
+  // establecimiento. Sin dosis cerradas.
+  static String _lettucePracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    double? stagePressure01,
+    StageTargets? targets,
+    LettuceNutritionModifier? modifier,
+  ) {
+    final isGerm = stage.contains('germin');
+    final isEstablishment =
+        stage.contains('establec') || stage.contains('emerg');
+    final isVeg = stage.contains('vegetativo') || stage.contains('vegetative');
+    final isHead = stage.contains('cabeza') || stage.contains('formacion');
+    final isHarvest = stage.contains('cosecha') || stage.contains('ventana');
+    // `sobremadurez` no lo detecta _isLateStage; se cubre explicitamente.
+    final isLate = stage.contains('sobremadur') || _isLateStage(stage);
+    final isQualityWindow = isHead || isHarvest;
+
+    // Guard de cierre de ciclo: prioritario sobre cualquier mensaje
+    // productivo; se anexa la frase de cierre del perfil.
+    if (isLate) {
+      final base = _hortalizaLateCycleMessage(nutrient: nutrient, label: label);
+      final caution = modifier?.practicalCaution(nutrient, stage);
+      if (caution == null || caution.trim().isEmpty) return base;
+      return '$base ${caution.trim()}';
+    }
+
+    final windowLabel = targets?.windowLabelFor(nutrient);
+    final profileHint = targets?.plannerHintFor(nutrient);
+
+    String withModifier(String base) {
+      final caution = modifier?.practicalCaution(nutrient, stage);
+      if (caution == null || caution.trim().isEmpty) return base;
+      return '$base $caution';
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isQualityWindow) {
+            return withModifier(
+              'N alto cerca de cabeza o cosecha. En lechuga ablanda la hoja y sube tip burn y Botrytis; pausa N y revisa CE.',
+            );
+          }
+          return withModifier(
+            'N alto. Pausa nitrogeno y confirma si el follaje ya viene blando.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority) {
+          if (isHarvest) {
+            return withModifier(
+              'N suficiente. Cerca de corte no conviene empujar crecimiento tierno; prioriza turgencia y sanidad.',
+            );
+          }
+          return withModifier('N estable para la etapa actual de la lechuga.');
+        }
+        if (label == NutrientPriorityLabel.lowPriority) {
+          if (isVeg && (stagePressure01 ?? 0) > 0.5) {
+            return withModifier(
+              'N aun alcanza, pero la expansion foliar pide mas demanda. Prepara revision suave si la tendencia cae.',
+            );
+          }
+          return withModifier(
+            'N no urge ahora; vigila que no llegue alto a cabeza ni a cosecha.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isHarvest) {
+            return withModifier(
+              'N va bajando cerca de cosecha. No empujes: prioriza calidad, turgencia y corte oportuno.',
+            );
+          }
+          if (isVeg) {
+            return withModifier(
+              'N empieza a bajar en plena expansion foliar. Valora ajuste moderado para no frenar la hoja.',
+            );
+          }
+          return withModifier(
+            'N empieza a bajar. Revisa antes de que se note en el tamano de hoja.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement) {
+          if (isGerm) {
+            return withModifier(
+              'N bajo en germinacion. No empujar N: la semilla usa reservas y las sales bajas mandan.',
+            );
+          }
+          if (isEstablishment) {
+            return withModifier(
+              'N bajo en establecimiento. Revisa con cautela; raiz superficial y P pesan mas que empujar hoja.',
+            );
+          }
+          if (isHarvest) {
+            return withModifier(
+              'N bajo cerca de cosecha. Valida solo si la hoja pierde vigor; BIO-G no recomienda N fuerte tardio.',
+            );
+          }
+          if (isVeg) {
+            return withModifier(
+              'N bajo en expansion foliar. Conviene revisar manejo para sostener el crecimiento de hoja.',
+            );
+          }
+          return withModifier(
+            'N bajo. Conviene revisar balance sin excederse para no ablandar la hoja.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el nitrogeno de la lechuga.',
+        );
+
+      case AgroMetricKey.p:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return withModifier(
+            'P alto. Evita seguir aplicando; el exceso de P puede antagonizar Zn y Fe.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            'P suficiente. En lechuga el P pesa sobre todo en el establecimiento de la raiz.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement ||
+            label == NutrientPriorityLabel.mediumPriority) {
+          if (isEstablishment || isGerm) {
+            return withModifier(
+              'P bajo en el arranque. Es la ventana clave: el P apoya la raiz superficial joven.',
+            );
+          }
+          return withModifier(
+            'P bajo. Revisa una correccion moderada con criterio tecnico; su mayor retorno estuvo en el establecimiento.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el fosforo de la lechuga.',
+        );
+
+      case AgroMetricKey.k:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return withModifier(
+            'K alto. Pausa potasio; el exceso puede antagonizar Ca y Mg.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            'K suficiente para sostener turgencia y calidad de hoja.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement ||
+            label == NutrientPriorityLabel.mediumPriority) {
+          if (isQualityWindow) {
+            return withModifier(
+              'K bajo en cabeza o cosecha. Revisa balance junto con humedad pareja: el K sostiene turgencia, firmeza y calidad.',
+            );
+          }
+          return withModifier(
+            'K bajo. Valora apoyo moderado para preparar la turgencia de cara a la cabeza.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el potasio de la lechuga.',
+        );
+
+      case AgroMetricKey.soilMoisture:
+      case AgroMetricKey.soilTemp:
+      case AgroMetricKey.ph:
+      case AgroMetricKey.ec:
+      case AgroMetricKey.resistance:
+        return withModifier('Revisa el manejo de nutrientes de la lechuga.');
+    }
+  }
+
   static String _genericPracticalRecommendation(
     AgroMetricKey nutrient,
     NutrientPriorityLabel label,
@@ -1900,6 +2455,17 @@ class NutrientRecommendationEngine {
   }) {
     final nutrientName = _nutrientLongName(nutrient);
 
+    if (_isLettuceCrop(cropKey)) {
+      return _lettuceJustification(
+        nutrientName: nutrientName,
+        rawPpm: rawPpm,
+        targets: targets,
+        cropKey: cropKey,
+        nutrient: nutrient,
+        label: label,
+      );
+    }
+
     if (label == NutrientPriorityLabel.possibleExcess ||
         label == NutrientPriorityLabel.reviewAccumulation) {
       return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName. Tienes niveles súper altos. Meterle más fertilizante ahorita puede ser tóxico o bloquear otros nutrientes en la tierra.';
@@ -1926,6 +2492,40 @@ class NutrientRecommendationEngine {
     }
 
     return 'La planta va a requerir más $nutrientName pronto según su etapa de desarrollo.';
+  }
+
+  static String _lettuceJustification({
+    required String nutrientName,
+    required double rawPpm,
+    required StageTargets? targets,
+    required String? cropKey,
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+  }) {
+    if (label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation) {
+      return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName en lechuga. La lectura se toma como riesgo de desequilibrio: puede subir salinidad, ablandar hoja o bloquear balance. Pausa ese nutriente y confirma con CE, pH, agua e historial.';
+    }
+
+    if (label == NutrientPriorityLabel.noPriority ||
+        label == NutrientPriorityLabel.lowPriority) {
+      return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName. Para lechuga está en zona manejable; mantén monitoreo y evita empujar crecimiento por rutina.';
+    }
+
+    final range = NutrientTargetRangeResolver.comparableRange(
+      nutrient: nutrient,
+      cropKey: cropKey,
+      targets: targets,
+    );
+    if (range != null) {
+      final targetMidPpm = (range.optimalMin + range.optimalMax) / 2.0;
+      final diff = math.max(0, (targetMidPpm - rawPpm)).round();
+      if (diff > 0) {
+        return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName y queda corto contra la referencia de la etapa. En lechuga BIO-G usa esa diferencia ($diff puntos) como señal de revisión de manejo, no como receta de dosis.';
+      }
+    }
+
+    return 'La lechuga puede necesitar más $nutrientName según etapa y calidad observada. Confirma en campo antes de ajustar el plan.';
   }
 
   // =========================================================================
@@ -2234,6 +2834,60 @@ class NutrientRecommendationEngine {
       }
     }
 
+    if (crop == 'squash' ||
+        crop == 'calabaza' ||
+        crop == 'pumpkin' ||
+        crop == 'zucchini' ||
+        crop == 'calabacita') {
+      if (nutrient == AgroMetricKey.n) {
+        if (stage.contains('germin') ||
+            stage.contains('emerg') ||
+            stage.contains('establec')) {
+          return 'Arranque moderado';
+        }
+        if (stage.contains('vegetativo')) return 'Guia y hoja con mesura';
+        if (stage.contains('flor') ||
+            stage.contains('cuaj') ||
+            stage.contains('amarre')) {
+          return 'Equilibrio para flor y amarre';
+        }
+        if (stage.contains('llen') || stage.contains('progresiv')) {
+          return 'Nitrogeno a la baja';
+        }
+        if (stage.contains('fin') || stage.contains('senesc')) {
+          return 'Cierre de ciclo';
+        }
+        return 'Demanda de N por etapa';
+      }
+      if (nutrient == AgroMetricKey.p) {
+        if (stage.contains('germin') ||
+            stage.contains('emerg') ||
+            stage.contains('establec')) {
+          return 'Raiz y pegue';
+        }
+        if (stage.contains('flor') || stage.contains('cuaj')) {
+          return 'Energia reproductiva';
+        }
+        if (stage.contains('fin') || stage.contains('senesc')) {
+          return 'Cierre de ciclo';
+        }
+        return 'Fosforo de sosten';
+      }
+      if (nutrient == AgroMetricKey.k) {
+        if (stage.contains('flor') ||
+            stage.contains('cuaj') ||
+            stage.contains('amarre')) {
+          return 'Flor, amarre y K';
+        }
+        if (stage.contains('llen')) return 'Llenado de fruto o pepita';
+        if (stage.contains('progresiv')) return 'Cosecha y calidad';
+        if (stage.contains('fin') || stage.contains('senesc')) {
+          return 'Cierre de ciclo';
+        }
+        return 'Reserva de potasio';
+      }
+    }
+
     return 'Demanda actual';
   }
 
@@ -2253,6 +2907,27 @@ class NutrientRecommendationEngine {
     return crop == 'eggplant' ||
         crop == 'berenjena' ||
         crop == 'aubergine';
+  }
+
+  static bool _isSquashCrop(String? cropKey) {
+    final crop = (cropKey ?? '').toLowerCase();
+    return crop == 'squash' ||
+        crop == 'calabaza' ||
+        crop == 'pumpkin' ||
+        crop == 'zucchini' ||
+        crop == 'calabacita';
+  }
+
+  static bool _isLettuceCrop(String? cropKey) {
+    final crop = (cropKey ?? '').toLowerCase();
+    return crop == 'lettuce' || crop == 'lechuga' || crop == 'crop_lettuce';
+  }
+
+  // Hortalizas de fruto SIN recomendación dedicada (cae al genérico).
+  // Tomate, chile, berenjena y calabaza tienen su propio handler con
+  // early-return de fin de ciclo y caution por perfil; no se incluyen aquí.
+  static bool _isHortalizaFrutoSinHandler(String crop) {
+    return crop == 'cucumber' || crop == 'pepino';
   }
 
   static bool _isEarlyStage(String? stage) {
@@ -2322,23 +2997,68 @@ class NutrientRecommendationEngine {
           s.contains('emerg') ||
           s.contains('vegetativo');
     }
+    if (crop == 'squash' ||
+        crop == 'calabaza' ||
+        crop == 'pumpkin' ||
+        crop == 'zucchini' ||
+        crop == 'calabacita') {
+      return s.contains('establec') ||
+          s.contains('emerg') ||
+          s.contains('vegetativo');
+    }
     return false;
   }
 
   static bool _isLateStage(String? stageKey) {
     final s = (stageKey ?? '').toLowerCase();
-    // Tomate indeterminado: cosecha progresiva es activamente productiva,
-    // NO es late (sigue habiendo floración y cuajado en ramas superiores).
+    // Hortalizas indeterminadas: cosecha progresiva es activamente productiva,
+    // NO es late (sigue habiendo floración y cuajado en ramas/guías nuevas).
     if (s.contains('progresiv')) return false;
     return s.contains('matur') ||
         s.contains('senesc') ||
+        s.contains('senescence') ||
         s.contains('harvest') ||
         s.contains('cosech') ||
         s.contains('late') ||
-        // Tomate: finCiclo es el cierre real; debe clasificarse como tardía.
+        s.contains('lateseason') ||
+        s.contains('cierre') ||
+        s.contains('cerrando') ||
+        // finCiclo / fin_ciclo / fin ciclo en cualquier variante.
         s.contains('fincic') ||
         s.contains('fin_cic') ||
-        s.contains('fin cic');
+        s.contains('fin cic') ||
+        s.contains('fin ciclo') ||
+        s.contains('fin_ciclo');
+  }
+
+  // Mensaje compartido de cierre de ciclo para hortalizas de fruto.
+  // No empuja N/P/K hacia floración/cuajado/llenado; pide guardar la lectura
+  // para ajustar la base del siguiente ciclo.
+  static String _hortalizaLateCycleMessage({
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+  }) {
+    final isExcess = label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation;
+
+    if (isExcess) {
+      return 'Hay acumulación al cierre del ciclo. No apliques más por ahora; '
+          'registra el dato para evitar sales o desbalance en el siguiente ciclo.';
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        return 'N bajo, pero el ciclo ya está cerrando. No conviene empujar follaje; '
+            'guarda esta lectura para ajustar la base del siguiente ciclo.';
+      case AgroMetricKey.p:
+        return 'P bajo en cierre de ciclo. Úsalo como aprendizaje para el arrancador '
+            'o base del próximo ciclo.';
+      case AgroMetricKey.k:
+        return 'K bajo, pero el ciclo ya está cerrando. No refuerces pensando en '
+            'cuajado o llenado; guarda esta lectura para ajustar el siguiente ciclo.';
+      default:
+        return 'Lectura de cierre de ciclo: guárdala para ajustar la base del siguiente ciclo.';
+    }
   }
 
   static String _nutrientShortName(AgroMetricKey nutrient) =>

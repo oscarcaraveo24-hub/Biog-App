@@ -31,9 +31,14 @@ class TelemetryLocalStorage {
     try {
       final decoded = jsonDecode(raw) as List<dynamic>;
 
-      final list = decoded
-          .map((e) => BioGTelemetry.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final list = <BioGTelemetry>[];
+      for (final row in decoded) {
+        if (row is! Map) continue;
+        final telemetry = BioGTelemetry.tryFromJson(
+          Map<String, dynamic>.from(row),
+        );
+        if (telemetry != null) list.add(telemetry);
+      }
 
       list.sort((a, b) => a.timestamp.compareTo(b.timestamp));
       return list;

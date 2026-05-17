@@ -44,6 +44,7 @@ class PlantHealthIds {
   static const String symptomGrayMoldNecrosis = 'gray_mold_necrosis';
   static const String symptomLeafMines = 'leaf_mines';
   static const String symptomFeedingHoles = 'feeding_holes';
+  static const String symptomBoltingStem = 'bolting_stem';
   static const String symptomFlowerAbortion = 'flower_abortion';
   static const String symptomFruitDeformation = 'fruit_deformation';
   static const String symptomColdInjury = 'cold_injury';
@@ -147,6 +148,7 @@ class PlantHealthIds {
     symptomGrayMoldNecrosis: 'Necrosis humeda con moho gris',
     symptomLeafMines: 'Galerias o minas dentro de la hoja',
     symptomFeedingHoles: 'Perforaciones o dano de mordida',
+    symptomBoltingStem: 'Tallo central alargado / espigado',
     symptomFlowerAbortion: 'Caida de flor o mal cuaje',
     symptomFruitDeformation: 'Fruto deforme o mal llenado',
     symptomColdInjury: 'Dano por frio o arranque frenado',

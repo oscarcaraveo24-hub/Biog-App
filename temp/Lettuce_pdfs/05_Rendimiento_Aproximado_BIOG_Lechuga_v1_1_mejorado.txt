@@ -1,0 +1,122 @@
+BIO-G
+RENDIMIENTO APROXIMADO / CALIDAD COMERCIAL - LECHUGA
+Version revisada v1.1 | crop_lettuce
+
+0. PRINCIPIO CENTRAL
+En lechuga, rendimiento no significa solo kg/ha. El valor comercial depende de peso fresco, turgencia, color, forma, compactacion o roseta, limpieza, sanidad, sabor, ausencia de tip burn, ausencia de bolting y ventana de cosecha. BIO-G debe estimar calidad/cosecha, no prometer produccion exacta.
+
+1. QUE ESTABA BIEN EN EL ORIGINAL
+El documento original acerto al decir que BIO-G no debe mostrar kilos esperados como numero absoluto y debe mostrar madurez, calidad estimada, ventana de cosecha y alertas de oportunidad. Esa regla se mantiene.
+
+2. RENDIMIENTO ORIENTATIVO POR PERFIL
+Estos rangos son orientativos y sirven para contexto tecnico. No deben mostrarse como garantia.
+
+Perfil | Peso/planta orientativo | Rendimiento orientativo | Notas
+- LE-01 Romana/cos: 300-800 g | 20-50 t/ha | Depende de densidad, variedad, clima y mercado.
+- LE-02 Mini romana/corazones: 150-400 g | 15-40 t/ha | Mas plantas por area, menor peso por planta.
+- LE-03 Iceberg/bola: 400-1,200 g | 25-60 t/ha | Mayor peso, ciclo mas largo, sensible a calor/bolting.
+- LE-04 Mantequilla/butterhead: 200-500 g | 15-35 t/ha | Premium por textura; muy sensible a manejo de agua y sanidad.
+- LE-05 Hoja suelta/orejona: 80-300 g por planta | 10-30 t/ha | Puede ser 1 corte o multiples cortes.
+- LE-05 Baby leaf: 1-3 kg/m2 por corte/ciclo segun sistema | variable | Densidad alta; requiere harvestMode.
+- LE-GEN: 150-600 g | 15-45 t/ha | Conservador, sin asumir tipo.
+
+3. INDICADORES QUE SI DEBE MOSTRAR BIO-G
+- avanceEtapa: porcentaje hacia ventana de cosecha
+- ventanaCosecha: rango de dias, no fecha unica
+- calidadEstimada: excelente / buena / reducida / en riesgo
+- riesgoBolting: bajo / medio / alto / critico
+- turgenciaRiesgo: bajo / medio / alto
+- sanidadRiesgo: bajo / medio / alto
+- cosechaAccion: esperar / revisar campo / cosechar pronto / cosechar inmediato / ventana pasada
+
+4. FACTORES DE IMPACTO
+Factor | Direccion | Impacto
+- Deficit hidrico E3-E4: baja peso y turgencia | alto
+- Calor >28 C E4-E5: adelanta ventana, aumenta bolting/amargor | muy alto
+- >30 C sostenido: riesgo critico de bolting | muy alto
+- ECe >1.3: reduce potencial progresivamente | medio-alto
+- ECe >2.0: perdida probable de rendimiento/calidad | alto
+- Saturacion/anoxia: raiz limitada, pudriciones | alto
+- HR alta + poca ventilacion: mildiu/Botrytis/tip burn | alto
+- Exceso de N tarde: hoja blanda, tip burn/sanidad | medio-alto
+- Deficiencia de N en E3: menor biomasa | medio
+- Densidad incorrecta: cabezas chicas o mala ventilacion | alto
+- Cosecha tardia: sobre-madurez, amargor, bolting | alto
+
+5. ESTRES ACUMULADO Y PENALIZACIONES ORIENTATIVAS
+Las penalizaciones son internas y deben calibrarse con datos reales.
+
+Evento | Penalizacion sugerida al indice de calidad
+- deficit hidrico leve <24 h fuera de E4/E5: -2 a -5
+- deficit hidrico >3 dias en E3/E4: -10 a -25
+- calor >28 C por 2-3 dias en E4/E5: -10 a -20
+- calor >30 C sostenido + E4/E5: -25 a -50 y activar bolting
+- ECe 1.3-2.0 sostenida: -5 a -15
+- ECe >2.0 sostenida: -15 a -35
+- HR alta + mojado foliar + E4/E5: -10 a -30 por sanidad
+- tip burn reportado: -15 a -40 segun severidad
+- bolting confirmado: calidad comercial en riesgo critico o cierre anticipado
+
+6. MODELO DE VENTANA DE COSECHA
+Entradas:
+- profileId
+- plantedDate
+- dayZeroType
+- etapa actual
+- acumulado de estres
+- temperatura reciente
+- humedad suelo reciente
+- reporte visual
+
+Salida:
+- daysToHarvestMin
+- daysToHarvestMax
+- harvestStatus
+- qualityIndex
+- actionMessage
+
+Reglas:
+- Si ciclo normal sin estres: usar ventana base del perfil.
+- Si calor en E4/E5: adelantar ventana y pedir revision de campo.
+- Si bolting inminente: cambiar a "cosechar pronto".
+- Si bolting confirmado: "cosecha inmediata si todavia es comercial" o "calidad comprometida".
+- Si E6: no prometer recuperacion; orientar a cosecha/cierre.
+
+7. CRITERIOS VISUALES DE COSECHA
+- Romana/cos: cogollo formado, tamaño comercial, nervadura firme, hojas turgentes.
+- Mini romana/corazon: corazon compacto, color uniforme, sin apertura ni tallo alargado.
+- Iceberg/bola: cabeza firme, compacta, bien formada; para transporte dejar hojas externas protectoras.
+- Mantequilla: cabeza suave pero formada, hojas tiernas, sin tip burn interno.
+- Hoja suelta: tamaño de hoja comercial, turgencia, color, sin amargor ni tallo floral.
+- Baby leaf: hoja joven del tamaño objetivo, sin amarillamiento ni daño estetico.
+
+8. MENSAJES PARA APP
+Situacion | Mensaje
+- Normal: "Tu lechuga avanza bien. La ventana de cosecha se estima en X-Y dias."
+- Pre-cosecha: "Estas cerca de la ventana comercial. Revisa firmeza, turgencia y hojas internas."
+- Cosecha optima: "Tu lechuga parece estar en ventana de cosecha. Es buen momento para revisar y cortar."
+- Calor acumulado: "El calor puede adelantar la cosecha y aumentar riesgo de espigado. Revisa campo."
+- Deficit hidrico resuelto: "Hubo estres de agua; revisa turgencia y calidad al cosechar."
+- Tip burn: "Hay riesgo de quemado de puntas. Revisa hojas internas antes de decidir corte."
+- Bolting inminente: "Riesgo alto de espigado. Si el tallo central se alarga, cosecha hoy."
+- Ventana pasada: "La lechuga puede haber pasado su punto. La calidad podria disminuir rapido."
+
+9. NO HACER
+- No mostrar kg exactos como promesa.
+- No usar rangos de rendimiento como garantia.
+- No decir que BIO-G "asegura" cosecha.
+- No decir que bolting se corrige despues de iniciar.
+- No comparar rendimiento de baby leaf con iceberg sin normalizar por densidad/cortes.
+
+FUENTES AGRONOMICAS CONSULTADAS PARA ESTA REVISION
+- Texas A&M AgriLife Extension. Lettuce - Commercial and Specialty Crop Guides. https://aggie-horticulture.tamu.edu/vegetable/wp-content/uploads/sites/10/2011/10/lettuce.pdf
+- UC Agriculture and Natural Resources / Cooperative Extension Monterey County. Management of Salinity for Lettuce Production. https://ucanr.edu/?legacy-file=171001.pdf&legacy-file-path=sites/uccemontereycounty/files/
+- Perennia / AgraPoint. Vegetable Production Guide - Lettuce. https://www.perennia.ca/wp-content/uploads/2018/06/lettuce-production-guide.pdf
+- UF/IFAS Extension. Fertilizer Management for Vegetable Production in Florida. https://ask.ifas.ufl.edu/publication/CV296
+- University of Arizona / Western IPM Center. Crop Profile for Lettuce in Arizona. https://ipmdata.ipmcenters.org/documents/cropprofiles/AZlettuce.pdf
+- UC ANR Stanislaus Sprout. What is Lettuce, You Ask? https://ucanr.edu/blog/stanislaus-sprout/article/what-lettuce-you-ask
+- INIFAP. Agenda Tecnica Agricola de Baja California 2017. https://vun.inifap.gob.mx/VUN_MEDIA/BibliotecaWeb/_media/_agendas/4120_4817_Agenda_T%C3%A9cnica_Baja_California_2017.pdf
+- Terra Latinoamericana, 2025. Rendimiento de Lechuga bajo diferentes laminas de riego y dosis de nitrogeno en el Valle Imperial, California. https://www.scielo.org.mx/pdf/tl/v43/2395-8030-tl-43-e2056.pdf
+
+NOTA SOBRE FOROS / PRACTICA DE PRODUCTORES
+Se reviso la logica practica que suelen repetir productores y tecnicos: calor + falta de agua = bolting/amargor; exceso de humedad = pudriciones; crecimiento demasiado rapido + mala ventilacion = tip burn. No se usaron foros como fuente normativa de umbrales. Los umbrales finales se apoyan en extension universitaria, guias tecnicas y literatura tecnica.

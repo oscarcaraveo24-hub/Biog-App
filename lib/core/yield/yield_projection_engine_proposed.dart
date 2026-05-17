@@ -50,6 +50,9 @@ enum YieldFamily {
   cucumberFresh,
   chiliFruit,
   eggplantFruit,
+  squashFruit,
+  squashSeed,
+  lettuceLeaf,
   other,
 }
 
@@ -241,6 +244,12 @@ class YieldProjectionEngine {
         return YieldFamily.chiliFruit;
       case 'eggplant':
         return YieldFamily.eggplantFruit;
+      case 'squash':
+        return reference.useType == 'seed'
+            ? YieldFamily.squashSeed
+            : YieldFamily.squashFruit;
+      case 'lettuce':
+        return YieldFamily.lettuceLeaf;
       default:
         return YieldFamily.other;
     }
@@ -334,6 +343,36 @@ class YieldProjectionEngine {
         betaHigh: 1.22,
         managementGamma: 1.35,
         managementFloor: 0.24,
+      ),
+      YieldFamily.squashFruit => const _YieldFamilyParams(
+        alphaLow: 0.90,
+        betaLow: 1.30,
+        alphaHigh: 0.82,
+        betaHigh: 1.22,
+        managementGamma: 1.42,
+        managementFloor: 0.22,
+      ),
+      // Calabaza CA-07 / pipián / pepita:
+      // menos punitivo que fruto fresco porque el destino es semilla seca
+      // y el rango ya carga mayor incertidumbre agronómica.
+      YieldFamily.squashSeed => const _YieldFamilyParams(
+        alphaLow: 0.80,
+        betaLow: 1.25,
+        alphaHigh: 0.78,
+        betaHigh: 1.18,
+        managementGamma: 1.30,
+        managementFloor: 0.24,
+      ),
+      // Lechuga: hortaliza de hoja de ciclo corto. Muy sensible a manejo
+      // (agua, calor, espigado) y a densidad fuera de rango; el techo se
+      // mantiene conservador porque el valor real es calidad y ventana.
+      YieldFamily.lettuceLeaf => const _YieldFamilyParams(
+        alphaLow: 0.92,
+        betaLow: 1.30,
+        alphaHigh: 0.84,
+        betaHigh: 1.22,
+        managementGamma: 1.45,
+        managementFloor: 0.22,
       ),
       YieldFamily.other => const _YieldFamilyParams(
         alphaLow: 1.00,

@@ -1,0 +1,138 @@
+BIO-G
+GUIA DE FERTILIZACION BIO-G - LECHUGA
+Version revisada v1.1 | Enfoque NPK conservador | crop_lettuce
+
+0. PRINCIPIO CENTRAL
+Lechuga es un cultivo de ciclo corto, raiz superficial y hoja de consumo fresco. La fertilizacion debe favorecer hoja firme, turgente y sana, no solo crecimiento rapido. En BIO-G v1, NPK funciona como lectura de riesgo y desequilibrio, no como receta de dosis.
+
+Regla v1:
+La app no debe decir "aplica X kg/ha" al agricultor. Debe decir que revise, ajuste con analisis de suelo/agua y consulte tecnico. Las dosis de literatura quedan como referencia interna para calibracion, no como recomendacion directa.
+
+1. LO QUE HAY QUE CORREGIR DEL ORIGINAL
+- El documento original estaba bien, pero tenia un error menor: "sobreferrtilizacion" debe ser "sobrefertilizacion".
+- La frase "nunca aplicar N en E5" es correcta como regla conservadora de app, pero agronomicamente debe entenderse como: BIO-G no debe recomendar aplicaciones fuertes/tardias de N cerca de cosecha salvo criterio tecnico local.
+- Faltaba incluir inocuidad: lechuga se consume cruda, por lo que fertilizantes organicos, estiercoles, agua y cosecha deben manejarse con mas cuidado que en granos.
+
+2. LOGICA AGRONOMICA NPK
+N - Nitrogeno
+- Mayor demanda durante expansion foliar.
+- Deficiencia: hoja pequena, verde palido, crecimiento lento, amarillamiento en hojas viejas.
+- Exceso: hoja grande pero blanda, mayor susceptibilidad a Botrytis/mildiu, tip burn por crecimiento rapido, vida de anaquel menor, posible acumulacion de nitratos.
+
+P - Fosforo
+- Mas importante en establecimiento y raiz.
+- Deficiencia: raiz debil, crecimiento lento, tonos morados/rojizos bajo frio o baja disponibilidad.
+- Exceso: menos comun; puede antagonizar Zn/Fe bajo ciertas condiciones.
+
+K - Potasio
+- Relacionado con turgencia, regulacion hidrica, firmeza y tolerancia a estres.
+- Deficiencia: bordes amarillos/necroticos, perdida de turgencia, hoja flacida.
+- Exceso: puede antagonizar Ca/Mg; en v1 solo nota de diagnostico.
+
+3. DEMANDA RELATIVA POR ETAPA
+Etapa | N | P | K | Recomendacion BIO-G
+- E1 Germinacion: muy bajo | bajo-medio | bajo | Evitar salinidad; no empujar fertilizacion.
+- E2 Establecimiento: bajo-medio | alto | bajo-medio | P/raiz primero; N suave.
+- E3 Desarrollo vegetativo: alto | medio | medio-alto | Etapa de mayor demanda; vigilar agua y pH.
+- E4 Cabeza/madurez: medio | bajo-medio | alto | Reducir impulso de N; sostener K/calidad.
+- E5 Cosecha: bajo | bajo | medio | No recomendar N fuerte; priorizar calidad, turgencia y sanidad.
+- E6 Sobre-madurez: bajo | bajo | bajo | No corregir con fertilizacion; revisar cosecha/cierre.
+
+4. INTERPRETACION BIO-G V1
+BIO-G v1 infiere riesgo nutricional con:
+- etapa actual
+- fecha de ultima fertilizacion reportada
+- tipo de fertilizante reportado, si el usuario lo sabe
+- sintomas visuales
+- pH
+- ECe/salinidad
+- compactacion
+- exceso o deficit de agua
+- temperatura y HR
+- historial de estres
+
+Mensajes se disparan si:
+- usuario reporta sintomas compatibles con deficiencia/exceso
+- pH sale de rango y puede bloquear nutrientes
+- ECe >1.3 dS/m como observacion o >2.0 como alerta
+- compactacion >=2 MPa limita absorcion
+- hay saturacion/anoxia
+- E3 sin nutricion reportada y crecimiento lento
+- E4/E5 con N tardio reportado + HR alta o hoja blanda
+
+5. TABLA REFERENCIAL TECNICA - NO MOSTRAR COMO DOSIS APP
+Esta tabla es para que el equipo BIO-G calibre motores y entienda magnitudes. No debe convertirse en recomendacion automatica.
+
+Referencia tecnica | Rango/nota | Uso en BIO-G
+- UF/IFAS mineral soils: target pH general 6.0-6.5; lechuga crisphead/romaine con recomendacion N alrededor de 200 lb/A y leaf lettuce alrededor de 150 lb/A segun tabla regional. | Solo referencia regional.
+- Perennia/AgraPoint: 110 kg/ha de N actual, 50% preplant y resto 2-4 semanas despues; exceso de N puede causar crecimiento rapido y tip burn. | Apoya logica de dividir y evitar exceso.
+- Terra Latinoamericana 2025: en el Valle Imperial, dosis menor de N y menor lamina de riego no redujeron estadisticamente rendimiento en ese ensayo. | Apoya el enfoque conservador: no sobrefertilizar por defecto.
+
+Regla para app:
+Si no hay analisis de suelo, BIO-G debe recomendar revision y dosis minima/de mantenimiento con tecnico, nunca dosis maxima de literatura.
+
+6. pH, SALINIDAD Y ABSORCION
+pH:
+- Objetivo operativo mineral: 6.0-6.8
+- Observacion: 5.8-6.0 o 6.8-7.2
+- Alerta: <5.8 o >7.5
+- Riesgo: pH alto puede bloquear P y micronutrientes; pH bajo puede danar raiz y disponibilidad.
+
+Salinidad:
+- Optimo: ECe <1.3 dS/m
+- Observacion: 1.3-2.0
+- Alerta: >2.0
+- Critico: >3.0
+- Si ECe esta alta, no resolver agregando fertilizante. Primero revisar agua, sales y manejo de lavado/drenaje.
+
+Compactacion:
+- Si resistencia >=2 MPa, la raiz superficial de lechuga absorbe peor agua y nutrientes. La correccion real suele ser pre-siembra, no durante el ciclo.
+
+7. INOCUIDAD Y FERTILIZANTES ORGANICOS
+La lechuga se consume cruda. Por eso BIO-G debe incluir una advertencia de seguridad cuando el usuario reporte estiercol, composta inmadura, agua dudosa o fertilizacion organica cerca de cosecha.
+
+Reglas conservadoras:
+- No recomendar estiercol fresco en lechuga.
+- Usar composta estabilizada y manejo local seguro.
+- Evitar aplicaciones organicas no tratadas cerca de cosecha.
+- Si el usuario menciona estiercol fresco o agua contaminada: mostrar alerta de inocuidad, no solo agronomica.
+
+Mensaje app:
+"Como la lechuga se consume fresca, evita usar estiercol fresco o agua de mala calidad cerca de cosecha. Consulta normas locales de inocuidad."
+
+8. SINTOMAS Y MENSAJES
+Situacion | Mensaje BIO-G
+- Deficit probable de N en E3: "Tu lechuga podria tener poco nitrogeno disponible. Revisa color, crecimiento y analisis antes de fertilizar."
+- Exceso probable de N en E4/E5: "Mucho nitrogeno cerca de cosecha puede ablandar la hoja y favorecer enfermedades. Evita empujar crecimiento tarde."
+- Deficit probable de K: "Bordes amarillos o quemados pueden relacionarse con potasio, sales o falta de agua. Revisa fertilizacion y salinidad."
+- pH fuera de rango: "El pH puede bloquear nutrientes. Corregir suelo/agua puede ser mas importante que agregar fertilizante."
+- Salinidad alta: "La salinidad puede impedir absorcion aunque haya nutrientes. Revisa calidad de agua y manejo de sales."
+- Tip burn: "Las puntas internas marrones suelen relacionarse con calcio, crecimiento rapido y baja transpiracion. Mejora ventilacion y estabilidad de riego."
+
+9. Ca, Mg, S Y MICROELEMENTOS - FUTURO
+- Ca: clave para tip burn. En v1 se maneja como diagnostico visual y riesgo por HR/ventilacion/crecimiento rapido, no como sensor activo.
+- Mg: clorofila; deficiencia puede verse como amarillamiento intervenal en hojas viejas.
+- S: proteinas; deficiencia rara, amarillamiento en hojas jovenes.
+- Fe/Mn/B/Zn: relevantes en pH extremos o suelos arenosos.
+
+10. REGLAS DE ORO
+- No prometer dosis.
+- No resolver todo agregando N.
+- No recomendar N fuerte cerca de cosecha.
+- Si hay sales, primero sales.
+- Si hay pH fuera de rango, primero pH.
+- Si hay saturacion o compactacion, la absorcion estara limitada.
+- Si hay sospecha de inocuidad, priorizar seguridad alimentaria.
+
+FUENTES AGRONOMICAS CONSULTADAS PARA ESTA REVISION
+- Texas A&M AgriLife Extension. Lettuce - Commercial and Specialty Crop Guides. https://aggie-horticulture.tamu.edu/vegetable/wp-content/uploads/sites/10/2011/10/lettuce.pdf
+- UC Agriculture and Natural Resources / Cooperative Extension Monterey County. Management of Salinity for Lettuce Production. https://ucanr.edu/?legacy-file=171001.pdf&legacy-file-path=sites/uccemontereycounty/files/
+- Perennia / AgraPoint. Vegetable Production Guide - Lettuce. https://www.perennia.ca/wp-content/uploads/2018/06/lettuce-production-guide.pdf
+- UF/IFAS Extension. Fertilizer Management for Vegetable Production in Florida. https://ask.ifas.ufl.edu/publication/CV296
+- University of Arizona / Western IPM Center. Crop Profile for Lettuce in Arizona. https://ipmdata.ipmcenters.org/documents/cropprofiles/AZlettuce.pdf
+- UC ANR Stanislaus Sprout. What is Lettuce, You Ask? https://ucanr.edu/blog/stanislaus-sprout/article/what-lettuce-you-ask
+- INIFAP. Agenda Tecnica Agricola de Baja California 2017. https://vun.inifap.gob.mx/VUN_MEDIA/BibliotecaWeb/_media/_agendas/4120_4817_Agenda_T%C3%A9cnica_Baja_California_2017.pdf
+- Terra Latinoamericana, 2025. Rendimiento de Lechuga bajo diferentes laminas de riego y dosis de nitrogeno en el Valle Imperial, California. https://www.scielo.org.mx/pdf/tl/v43/2395-8030-tl-43-e2056.pdf
+
+NOTA SOBRE FOROS / PRACTICA DE PRODUCTORES
+Se reviso la logica practica que suelen repetir productores y tecnicos: calor + falta de agua = bolting/amargor; exceso de humedad = pudriciones; crecimiento demasiado rapido + mala ventilacion = tip burn. No se usaron foros como fuente normativa de umbrales. Los umbrales finales se apoyan en extension universitaria, guias tecnicas y literatura tecnica.

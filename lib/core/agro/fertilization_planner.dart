@@ -2,7 +2,9 @@ import 'dart:math' as math;
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/chili_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/eggplant_nutrition_modifier.dart';
+import 'package:bio_g/core/agro/lettuce_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
+import 'package:bio_g/core/agro/squash_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 
@@ -129,6 +131,32 @@ class FertilizationPlanner {
           fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
         );
       }
+      if (crop == 'squash' || crop == 'calabaza' || crop == 'pumpkin') {
+        final modifier = resolveSquashNutritionModifier(
+          profileId: profileId,
+          varietyId: varietyId,
+          alias: varietyAlias,
+          calendarId: calendarId ?? cultivationScaleId,
+        );
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Nivel alto detectado. Pausa este nutriente en calabaza para evitar salinidad, bloqueo o fruto marcado.',
+          fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
+        );
+      }
+      if (crop == 'lettuce' || crop == 'lechuga' || crop == 'crop_lettuce') {
+        final modifier = resolveLettuceNutritionModifier(
+          profileId: profileId,
+          varietyId: varietyId,
+          alias: varietyAlias,
+          calendarId: calendarId ?? cultivationScaleId,
+        );
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Nivel alto detectado. Pausa este nutriente en lechuga: el exceso puede bloquear absorcion, subir salinidad o ablandar la hoja. Revisa CE y manejo antes de agregar mas.',
+          fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
+        );
+      }
       if ((crop == 'barley' || crop == 'cebada') &&
           nutrient == AgroMetricKey.n &&
           _isBarleyMalt(profileId)) {
@@ -201,6 +229,29 @@ class FertilizationPlanner {
         nutrient,
         stageKey,
         deficitPpm,
+        cultivationScaleId,
+        profileId: profileId,
+        varietyId: varietyId,
+        varietyAlias: varietyAlias,
+        calendarId: calendarId,
+      );
+    }
+    if (crop == 'squash' || crop == 'calabaza' || crop == 'pumpkin') {
+      return _squashGuide(
+        nutrient,
+        stageKey,
+        deficitPpm,
+        cultivationScaleId,
+        profileId: profileId,
+        varietyId: varietyId,
+        varietyAlias: varietyAlias,
+        calendarId: calendarId,
+      );
+    }
+    if (crop == 'lettuce' || crop == 'lechuga' || crop == 'crop_lettuce') {
+      return _lettuceGuide(
+        nutrient,
+        stageKey,
         cultivationScaleId,
         profileId: profileId,
         varietyId: varietyId,
@@ -1758,6 +1809,295 @@ class FertilizationPlanner {
       default:
         return const NutrientDoseGuide(doseGuideEs: 'Falta nutriente.');
     }
+  }
+
+  // ==========================================
+  // CALABAZA
+  // ==========================================
+  // Racional BIO-G v1 (Guia Tecnica de Fertilizacion v2):
+  // - CA-GEN: plan conservador y migrable; si faltan datos, pedir
+  //   analisis antes de subir dosis exacta.
+  // - P pesa en establecimiento/raiz; rara vez es rescate tarde.
+  // - N moderado en vegetativo; bajar en floracion para no perder
+  //   relacion macho/hembra ni cuajado.
+  // - K manda desde cuajado, llenado y cosecha; en CA-07/pipian, la
+  //   demanda de K sostiene peso de semilla; Mg/S quedan como contexto.
+  // - Calabaza tropical (UPR) acepta pH 5.5+; rangos generales
+  //   6.0-7.2.
+  static NutrientDoseGuide _squashGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    double deficitPpm,
+    String? scale, {
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+    String? calendarId,
+  }) {
+    final stage = (stageKey ?? '').toLowerCase();
+    final modifier = resolveSquashNutritionModifier(
+      profileId: profileId,
+      varietyId: varietyId,
+      alias: varietyAlias,
+      calendarId: calendarId ?? scale,
+    );
+    final isGerm = stage.contains('germin');
+    final isEstablishment =
+        stage.contains('establec') || stage.contains('emerg');
+    final isVeg = stage.contains('vegetativo') || stage.contains('vegetative');
+    final isFlowering = stage.contains('floracion') || stage.contains('flor');
+    final isFruitSet = stage.contains('cuajado') ||
+        stage.contains('amarre') ||
+        stage.contains('fruitset') ||
+        stage.contains('poliniz');
+    final isFilling = stage.contains('llenado') || stage.contains('fill');
+    final isHarvest = stage.contains('progresiv') || stage.contains('harvest');
+    final isLate = _isLateStage(stage);
+    final isReproductive =
+        isFlowering || isFruitSet || isFilling || isHarvest;
+    final isSeedFocused = modifier.isSeedFocused;
+    final isMature = modifier.isMatureFruit;
+
+    final bridge = _joinExtra(
+      _formatSoilBridgeText(deficitPpm),
+      modifier.guideCaution(nutrient, stageKey),
+    );
+
+    if (isLate) {
+      return NutrientDoseGuide(
+        doseGuideEs:
+            'El ciclo de calabaza ya esta cerrando. Guarda esta lectura para ajustar la base del siguiente ciclo.',
+        fertilizerEquivalentEs: _joinExtra(
+          'En senescencia, conviene aprender del suelo, no forzar correccion tardia.',
+          modifier.guideCaution(nutrient, stageKey),
+        ),
+      );
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        final eqUrea = _formatCommercialDoseText(
+          deficitPpm,
+          _leyUrea,
+          'Urea (46-0-0)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Nitrogeno puro',
+          scale,
+        );
+        if (isFlowering || isFruitSet) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Aplica $puroText FRACCIONADO. En floracion y cuajado, la calabaza necesita equilibrio: mucho N puede tirar flor o fallar el amarre.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea, repartido en varios riegos cortos.',
+              bridge,
+            ),
+          );
+        }
+        if (isFilling || isHarvest) {
+          if (isMature) {
+            return NutrientDoseGuide(
+              doseGuideEs:
+                  'En fruto maduro conviene bajar N para no retrasar madurez ni endurecimiento de cascara. Si la planta lo necesita, $puroText fraccionado y suave.',
+              fertilizerEquivalentEs:
+                  _joinExtra('Equivale a $eqUrea.', bridge),
+            );
+          }
+          if (isSeedFocused) {
+            return NutrientDoseGuide(
+              doseGuideEs:
+                  'CA-07 pipian: N alto al final castiga peso de semilla. Si la lectura lo justifica, $puroText muy moderado.',
+              fertilizerEquivalentEs:
+                  _joinExtra('Equivale a $eqUrea.', bridge),
+            );
+          }
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Apoyo moderado de N: $puroText solo si la lectura lo justifica. En llenado y cosecha mandan mas K, agua estable y sanidad foliar.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqUrea; evita perseguir follaje cuando el fruto ya exige calidad.',
+              bridge,
+            ),
+          );
+        }
+        if (isGerm || isEstablishment) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arranque moderado de N: aplica $puroText sin excederte. Primero importan suelo calido, raiz, P y baja salinidad.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqUrea.', bridge),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText para sostener vegetativo, sin llegar a floracion con exceso de follaje.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqUrea.', bridge),
+        );
+
+      case AgroMetricKey.p:
+        final eqMap = _formatCommercialDoseText(
+          deficitPpm,
+          0.52,
+          'MAP (11-52-0)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Fosforo puro',
+          scale,
+        );
+        if (isGerm || isEstablishment) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Arrancador de fosforo: aplica $puroText cerca de la zona radical para que la plantula agarre y no retrase floracion.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqMap. En calabaza el P temprano si se siente.',
+              bridge,
+            ),
+          );
+        }
+        if (isFlowering) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Fosforo de sosten en floracion: aplica $puroText si la lectura esta corta, como soporte de energia reproductiva.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqMap.', bridge),
+          );
+        }
+        if (isReproductive) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Usa $puroText como correccion de base, no como rescate. La respuesta del P baja despues del establecimiento.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqMap.', bridge),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText para reforzar raiz y base fisiologica antes de floracion.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqMap.', bridge),
+        );
+
+      case AgroMetricKey.k:
+        final eqMop = _formatCommercialDoseText(
+          deficitPpm,
+          _leyMop,
+          'KCl / MOP',
+          scale,
+        );
+        final eqKnit = _formatCommercialDoseText(
+          deficitPpm,
+          0.46,
+          'Nitrato de K (13-0-46)',
+          scale,
+        );
+        final puroText = _formatPureDoseText(
+          deficitPpm,
+          'Potasio puro',
+          scale,
+        );
+        if (isFlowering || isFruitSet) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Sube K con cuidado: aplica $puroText repartido en el riego y con humedad pareja. En calabaza, flor y amarre fallan rapido con deficit hidrico, calor o baja polinizacion.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a $eqKnit; si el suelo viene salino, considera una fuente mas amable que KCl. Referencia alternativa: $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        if (isFilling || isHarvest) {
+          if (isSeedFocused) {
+            return NutrientDoseGuide(
+              doseGuideEs:
+                  'CA-07 pipian: K manda llenado de semilla. Aplica $puroText fraccionado y vigila agua estable; Mg/S quedan como contexto de balance.',
+              fertilizerEquivalentEs: _joinExtra(
+                'Conviene $eqKnit o sulfato de potasio si hace falta bajar cloruros. Tambien equivale a $eqMop.',
+                bridge,
+              ),
+            );
+          }
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Ventana fuerte de K: aplica $puroText poco a poco en el riego. Vigila balance con Ca/Mg y CE para firmeza, color y vida de almacen.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Conviene $eqKnit o sulfato de potasio si hay sales. Tambien equivale a $eqMop.',
+              bridge,
+            ),
+          );
+        }
+        if (isVeg) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'Refuerza reservas de potasio con $puroText antes de floracion y cuajado.',
+            fertilizerEquivalentEs: _joinExtra('Equivale a $eqMop.', bridge),
+          );
+        }
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Aplica $puroText preparando la demanda fuerte de potasio de la calabaza.',
+          fertilizerEquivalentEs: _joinExtra('Equivale a $eqMop.', bridge),
+        );
+
+      default:
+        return const NutrientDoseGuide(doseGuideEs: 'Falta nutriente.');
+    }
+  }
+
+  // ==========================================
+  // GUÍA LECHUGA — sin dosis cerradas (NPK v1 conservador)
+  // ==========================================
+  /// A diferencia de los cultivos de fruto y grano, BIO-G v1 NO entrega
+  /// dosis en kg/ha para lechuga. El documento de Fertilización v1.1
+  /// indica que la app debe recomendar revisión, análisis de suelo/agua
+  /// y manejo de mantenimiento con técnico: la lectura es señal de riesgo
+  /// y desequilibrio, no una receta cerrada.
+  static NutrientDoseGuide _lettuceGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    String? scale, {
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+    String? calendarId,
+  }) {
+    final stage = (stageKey ?? '').toLowerCase();
+    final modifier = resolveLettuceNutritionModifier(
+      profileId: profileId,
+      varietyId: varietyId,
+      alias: varietyAlias,
+      calendarId: calendarId ?? scale,
+    );
+    final isHarvest = stage.contains('cosecha') || stage.contains('ventana');
+    final isEstablishment = stage.contains('establec') ||
+        stage.contains('emerg') ||
+        stage.contains('germin');
+
+    String base;
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        base = isHarvest
+            ? 'La lectura de nitrogeno viene baja, pero estas cerca de cosecha. BIO-G no recomienda N fuerte tardio en lechuga: prioriza calidad, turgencia y corte oportuno, y valida con tecnico si la hoja pierde vigor.'
+            : 'La lectura de nitrogeno viene corta para la etapa. En lechuga BIO-G no fija dosis cerradas: revisa color y crecimiento, apoyate en analisis de suelo y valora mantenimiento fraccionado con tu tecnico. Evita el exceso que ablanda la hoja.';
+        break;
+      case AgroMetricKey.p:
+        base = isEstablishment
+            ? 'La lectura de fosforo viene corta justo en el arranque, la ventana clave para la raiz superficial. BIO-G no fija dosis: revisa P de base o starter segun analisis de suelo y criterio tecnico.'
+            : 'La lectura de fosforo viene corta. En lechuga el P rinde mas colocado en el establecimiento; revisa pH y analisis de suelo antes de ajustar, sin dosis ciega.';
+        break;
+      case AgroMetricKey.k:
+        base =
+            'La lectura de potasio viene corta. El K sostiene turgencia y calidad de hoja; revisa con analisis de suelo y mantenimiento prudente, cuidando no subir la salinidad.';
+        break;
+      default:
+        base =
+            'Revisa la nutricion de la lechuga con apoyo de analisis de suelo y criterio tecnico local.';
+    }
+
+    return NutrientDoseGuide(
+      doseGuideEs: base,
+      fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
+    );
   }
 
   static NutrientDoseGuide _genericGuide(

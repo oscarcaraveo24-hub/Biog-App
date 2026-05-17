@@ -1,0 +1,443 @@
+RENDIMIENTO APROXIMADO DE LA CALABAZA v1
+Fuente PDF: BIO-G_Rendimiento_Aproximado_Calabaza_v1.pdf
+Conversión a texto: pdftotext -layout UTF-8, con separadores de pagina.
+
+--- PAGINA 1 ---
+
+BIO-G
+                  RENDIMIENTO APROXIMADO DE LA
+                            CALABAZA
+  Base técnica para calculadora de rendimiento - Calabacita, calabaza madura, butternut, chilacayote
+               y pipián - Campo abierto, protegido en suelo y destino semilla - BIO-G v1
+
+
+ Documento técnico interno. Rangos operativos, no promesa de producción ni sustituto de historial local, análisis
+ técnico ni asesoría agronómica de zona.
+ Decisión de producto. Calabaza queda como cultivo madre crop_squash / CropKey.squash. Los tipos CA-GEN a
+ CA-07 no son cultivos separados; son perfiles internos. La variedad o semilla funciona como alias de confianza, no
+ como motor biológico por sí sola.
+ Nota BIO-G v1. La estimación de rendimiento se apoya en área, población final, perfil, sistema y Crop Care / Agro
+ Score. La fertilización activa de v1 sigue enfocada en NPK; Ca/Mg/S se dejan como contexto agronómico o versión
+ futura.
+
+
+
+ Fuentes fuertes usadas
+ Se priorizaron universidades, extensión, fuentes oficiales y artículos técnicos: Michigan State University, Oklahoma
+ State University, University of Georgia, University of Puerto Rico Mayagüez, INIFAP/Revista Internacional de
+ Contaminación Ambiental, Revista Fitotecnia Mexicana, Revista Mexicana de Ciencias Agrícolas, SIAP/SADER y
+ ensayos de butternut de Connecticut Agricultural Experiment Station. Foros y blogs de productores se usaron solo
+ como señal de variabilidad, nunca para fijar dosis o rendimiento base.
+
+
+
+
+BIO-G | Rendimiento aproximado | Calabaza v1                                                                    Página 1
+
+
+--- PAGINA 2 ---
+
+1. Cómo debe calcular rendimiento BIO-G
+ El cálculo no debe usar un solo promedio nacional. En calabaza cambia el órgano comercial: calabacita tierna, fruto
+ maduro, fruto para almacenamiento, fruto criollo de milpa, chilacayote o semilla seca de pipián/chihua. Para v1, el
+ motor debe resolver una referencia base por perfil/sistema/destino y después aplicar población y manejo.
+
+  Entrada                             Uso en el motor
+
+  Área sembrada                       Convertir a hectáreas. Si el usuario captura m2, dividir entre 10,000.
+
+  Semillas o plantas                  En calabaza se debe interpretar como plantas establecidas o población final, no semilla bruta. En
+                                      siembra directa puede haber fallas de emergencia.
+
+  Perfil CA-XX                        Define si el rendimiento es fruto tierno, fruto maduro o semilla seca. CA-07 no debe mezclarse con t/ha
+                                      de fruto fresco si el destino es pepita.
+
+  Rango base t/ha                     Sale de YieldReference: yieldLowTonPerHa y yieldHighTonPerHa. Para semilla seca se expresa en t/ha de
+                                      semilla seca comercial.
+
+  Densidad plants/ha                  seedsLowPerHa / seedsHighPerHa deben representar plantas/ha normales. Penalizar suavemente
+                                      poblaciones muy bajas o demasiado altas.
+
+  Crop Care / Agro Score              Ajusta potencial por agua, temperatura, suelo/raíz, nutrición NPK y sanidad. En floración/cuajado pesa
+                                      más.
+
+ Fórmula conceptual: rendimiento proyectado = rendimiento base del perfil x factor de población x factor de
+ manejo. Producción total = rendimiento proyectado x hectáreas.
+ Principio de seguridad: BIO-G estima, no promete. Debe bajar la confianza cuando falten sistema, población, etapa,
+ historial, destino comercial o calidad de manejo.
+
+
+ 2. Evidencia usada para calibrar rangos
+ Los rangos finales no copian una sola fuente. Se cruzan rendimientos promedio, buenos rendimientos, ensayos
+ intensivos y referencias por tipo para evitar dos errores: subestimar calabacita tecnificada y sobreestimar calabaza
+ criolla o semilla seca.
+
+  Fuente                            Dato útil                                           Conversión / lectura BIO-G
+  SIAP 2023 vía reporte académico   29.6 mil ha y 547 mil t de calabacita.              ~18.5 t/ha. Orden de magnitud nacional para calabacita fresca; útil
+                                                                                        para piso de campo.
+
+  INIFAP/RICA calabacita            31.3 t/ha en 2012 y 28.1 t/ha en 2013;              Calibra calabacita de campo bien manejada cerca de 25-35 t/ha.
+                                    tratamientos biológicos similares a mineral.
+
+  Oklahoma State Extension          Summer squash: buen rendimiento 8 ton/ac;           8 ton/ac = 17.9 t/ha. 12 ton/ac = 26.9 t/ha. 15-20 ton/ac =
+                                    winter squash/pumpkin 12 ton/ac o más; pumpkin      33.6-44.8 t/ha.
+                                    15-20 ton/ac posible.
+
+  Michigan State Extension          Halloween pumpkins y squashes grandes: 7 ton/ac     15.7, 33.6 y 44.8 t/ha; base para CA-04/CA-05 con prudencia.
+                                    promedio, 15 bueno, 20 excelente.
+
+  University of Puerto Rico         Soler hasta 300 quintales/cuerda; Taína Dorada      ~34.6 y ~28.8 t/ha. Muy útil para calabaza tropical / madura tipo
+                                    hasta 250 quintales/cuerda.                         moschata.
+
+  Connecticut Agricultural          Butternut trials: promedios por sitio/año muy       Usar como techo técnico para CA-05, no como promesa v1.
+  Experiment Station                altos, top cultivars >30 ton/ac.
+
+  Chihua / pipiana México           Rendimientos tradicionales 0.36-0.6 t/ha semilla;   Separar CA-07 como semilla seca. No comparar con t/ha de fruto
+                                    accesiones destacadas 0.94-1.19 t/ha semilla.       fresco.
+
+
+
+
+ 3. Conversiones rápidas para validar toneladas por hectárea
+  Referencia                                  Cálculo                                                               Resultado
+
+  Oklahoma summer squash                      8 ton/ac x 2.2417                                                     17.9 t/ha
+
+  Oklahoma winter squash/pumpkin              12 ton/ac x 2.2417                                                    26.9 t/ha
+
+  Oklahoma pumpkin posible                    15-20 ton/ac x 2.2417                                                 33.6-44.8 t/ha
+
+  MSU average/good/excellent                  7 / 15 / 20 ton/ac x 2.2417                                           15.7 / 33.6 / 44.8 t/ha
+
+  UPR Taína Dorada                            250 quintales/cuerda, 100 lb/quintal, cuerda ~0.393 ha                ~28.8 t/ha
+
+  UPR Soler                                   300 quintales/cuerda, 100 lb/quintal, cuerda ~0.393 ha                ~34.6 t/ha
+
+  México calabacita 2023                      547,000 t / 29,600 ha                                                 ~18.5 t/ha
+
+
+
+BIO-G | Rendimiento aproximado | Calabaza v1                                                                                                                  Página 2
+
+
+--- PAGINA 3 ---
+
+Referencia                            Cálculo                              Resultado
+
+  Chihua tradicional                    0.4-0.6 t/ha semilla seca            No convertir a fruto fresco
+
+ Lectura para BIO-G. Calabacita comercial de campo puede quedar normalmente en 18-40 t/ha; producción
+ intensiva/protegida puede superar 45 t/ha, pero solo con sistema explícito. Calabaza madura tipo
+ Castilla/moschata/butternut debe quedar más cerca de 18-45 t/ha en v1. Semilla de pipián/chihua trabaja en otro
+ orden: 0.4-1.2 t/ha de semilla seca.
+
+
+
+
+BIO-G | Rendimiento aproximado | Calabaza v1                                                                Página 3
+
+
+--- PAGINA 4 ---
+
+4. Tabla maestra recomendada para BIO-G
+ Los rangos son para producto comercial cosechado. En fruta se expresan como t/ha de fruto fresco o maduro; en
+ pepita se expresan como t/ha de semilla seca comercial. La confianza "calibrated" indica soporte de varias fuentes
+ o tipo común; "modeled" indica ajuste prudente por analogía, mercado o evidencia limitada por subtipo.
+
+  ID sugerido              Perfil                   Producto / sistema         t/ha      plantas   conf.        Lectura BIO-G
+                                                                                         /ha
+  squash_generic           CA-GEN                   fruto genérico / sistema   15-28     8k-18k    modeled      Skip conservador; no asume calabacita,
+                                                    desconocido                                                 fruto maduro ni pepita.
+
+  squash_field_generic     Calabaza campo           fruto fresco/maduro        18-32     10k-20k   calibrated   Base de campo si no hay tipo específico;
+                           abierto genérica         genérico                                                    evita techo protegido.
+
+  squash_protected_soil_   Calabaza protegida       fruto fresco/protegido     35-60     12k-25k   modeled      Solo si alias/sistema dice protegido,
+  generic                  en suelo                 suelo                                                       malla, túnel o invernadero en suelo.
+
+  squash_zucchini_field    CA-01 calabacita         fruto tierno campo         20-40     12k-25k   calibrated   Tipo dominante de corte continuo; base
+                           italiana / zucchini                                                                  fuerte para calabacita.
+
+  squash_zucchini_protec   CA-01 zucchini           fruto tierno protegido     45-75     15k-30k   modeled      Potencial alto por cortes continuos; no
+  ted                      protegido                suelo                                                       hidroponía.
+
+  squash_criolla_field     CA-02 criolla / huicha   fruto tierno campo/milpa   10-25     5k-15k    modeled      Más variable; temporal/milpa no debe
+                           / milpa                                                                              recibir techo de zucchini tecnificado.
+
+  squash_round_field       CA-03 calabacita de      fruto tierno campo         18-36     12k-25k   modeled      Mismo destino que zucchini; ajustar por
+                           bola                                                                                 mercado y calibre.
+
+  squash_castilla_mature   CA-04 Castilla /         fruto maduro campo         18-35     4k-10k    calibrated   Fruto grande/maduro; usar si destino es
+                           pumpkin mexicano                                                                     dulce, altar o almacenamiento.
+
+  squash_butternut_field   CA-05 butternut /        fruto maduro campo         20-45     4k-10k    calibrated   Mayor techo con cultivares modernos;
+                           buchona                                                                              mantener prudente en v1.
+
+  squash_butternut_inten   CA-05 butternut          fruto maduro intensivo     35-65     5k-12k    modeled      Usar solo con manejo intensivo explícito;
+  sive                     intensiva/protegida                                                                  no usar para usuario genérico.
+                           suelo
+
+  squash_chilacayote_ma    CA-06 chilacayote        fruto maduro/dulce         8-25      1k-4k     modeled      Muy largo y vigoroso; evidencia
+  ture                                                                                                          comercial limitada; confianza
+                                                                                                                baja-media.
+
+  squash_pipian_seed_dr    CA-07 pipián / chihua    semilla seca               0.4-1.2   3k-8k     calibrated   Destino semilla. No mezclar con
+  y                        / pepita                                                                             toneladas de fruto fresco.
+
+  squash_pipian_fruit_ma   CA-07 pipián fruta       fruto maduro secundario    12-30     3k-8k     modeled      Solo si el usuario declara destino fruto;
+  ture                                                                                                          por defecto CA-07 debe ser semilla.
+
+
+
+
+BIO-G | Rendimiento aproximado | Calabaza v1                                                                                                                Página 4
+
+
+--- PAGINA 5 ---
+
+5. Reglas de resolución por perfil / tipo UX
+  Perfil / condición                           YieldReference recomendado                    Regla de producto
+  CA-GEN / No sé / Otra calabaza               squash_generic                                Entrada segura y migrable. No usar protegido ni pepita si el usuario
+                                                                                             no lo dijo.
+
+  Calabaza genérica con sistema campo          squash_field_generic                          Si el usuario solo dice campo abierto, usar referencia genérica de
+                                                                                             campo.
+
+  Sistema protegido explícito                  squash_protected_soil_generic o *_protected   Palabras clave: protegido, invernadero, casa malla, malla sombra,
+                                                                                             túnel, high tunnel, macro túnel.
+
+  CA-01 italiana / zucchini                    squash_zucchini_field                         Si alias contiene protegido, usar squash_zucchini_protected.
+
+  CA-02 criolla / huicha / milpa               squash_criolla_field                          Si alias contiene milpa, temporal, criolla o huicha, usar rango más
+                                                                                             prudente.
+
+  CA-03 bola / redonda                         squash_round_field                            Fruto tierno; no separar como cultivo. Si protegido explícito, puede
+                                                                                             usar generic protected hasta tener referencia propia.
+
+  CA-04 Castilla / pumpkin / dulce / altar     squash_castilla_mature                        Fruto maduro; ciclo largo y baja densidad. No usar rango de
+                                                                                             calabacita tierna.
+
+  CA-05 butternut / buchona /                  squash_butternut_field                        Si manejo intensivo/protegido explícito, usar
+  mantequilla                                                                                squash_butternut_intensive.
+
+  CA-06 chilacayote                            squash_chilacayote_mature                     Muy largo. Penalizar si población o sistema no están claros.
+
+  CA-07 pipián / pepita / chihua               squash_pipian_seed_dry                        Por defecto semilla seca. Si el usuario dice fruto, usar
+                                                                                             squash_pipian_fruit_mature.
+
+ Punto crítico. Calabaza tiene dos confusiones peligrosas para una calculadora: (1) calabacita tierna vs fruto
+ maduro, y (2) fruto vs semilla. Si BIO-G mezcla esos destinos, puede sobreestimar o subestimar brutalmente.
+
+
+ 6. Notas por tipo para rendimiento
+  Tipo                           Qué cambia                                    Cómo afecta rendimiento
+  CA-GEN                         No se sabe si será tierno, maduro o pepita.   Debe ser conservador y migrable; no usa techo protegido ni semilla seca sin
+                                                                               confirmación.
+
+  CA-01 Zucchini                 Corte temprano y continuo.                    Rinde por número de cortes; si no se cosecha frecuente, baja la producción útil.
+
+  CA-02 Criolla/milpa            Más rastrera, variable y común en sistemas    Puede tener buen vigor, pero menor control de densidad, agua y sanidad; rango
+                                 tradicionales.                                prudente.
+
+  CA-03 Bola/redonda             Corte tierno como calabacita, pero            Similar a zucchini; penalizar calidad si hay deformidad o sobremadurez.
+                                 mercado/calibre distinto.
+
+  CA-04 Castilla                 Fruto grande maduro, menor densidad, ciclo    Toneladas por hectárea dependen de tamaño y número de frutos; la sanidad foliar
+                                 largo.                                        y lluvia cerca de cosecha pesan.
+
+  CA-05 Butternut                Fruto maduro de mayor uniformidad y           Puede tener alto techo con cultivares modernos, pero v1 debe usar rango realista
+                                 mercado específico.                           de campo.
+
+  CA-06 Chilacayote              Guías muy vigorosas y ciclo muy largo.        Evidencia menos estandarizada; usar modeled y confianza baja-media.
+
+  CA-07 Pipián/pepita            El órgano comercial principal puede ser       Usar t/ha de semilla seca; no compararlo con t/ha de fruto.
+                                 semilla seca.
+
+
+
+
+ 7. Densidad, población y manejo
+ La densidad de calabaza cambia muchísimo por arquitectura. En zucchini arbustivo hay poblaciones altas; en
+ Castilla, butternut, chilacayote o pipián hay guías largas y menor población. Por eso BIO-G no debe forzar una
+ densidad única: debe aceptar rangos amplios y penalizar de forma suave según sistema.
+
+  Sistema / perfil                             Rango operativo                   Lectura BIO-G
+                                               plantas/ha
+  Calabacita zucchini / bola campo             12k-25k                           Compatible con porte arbustivo/semiarbustivo y cosecha progresiva.
+
+  Calabacita protegida en suelo                15k-30k                           Solo si hay manejo protegido, riego, ventilación y sanidad.
+
+  Criolla / milpa / guía corta                 5k-15k                            Mayor espaciamiento; no penalizar como si fuera zucchini.
+
+  Castilla / butternut / fruto maduro          4k-10k                            Guías rastreras; densidad baja puede ser normal si el fruto es grande.
+
+  Chilacayote                                  1k-4k                             Planta muy vigorosa y larga; baja densidad es esperada.
+
+  Pipián / chihua semilla                      3k-8k                             Perfil de semilla y guía rastrera; densidades más altas son manejo
+                                                                                 especializado.
+
+  Genérico / usuario no sabe                   8k-18k                            Rango seguro para no sobreestimar ni castigar demasiado.
+
+
+
+BIO-G | Rendimiento aproximado | Calabaza v1                                                                                                                        Página 5
+
+
+--- PAGINA 6 ---
+
+8. Recomendación directa para código
+ La app ya soporta tomate, pepino, chile y berenjena como hortalizas de fruto. Para calabaza conviene agregar una
+ familia propia porque el cultivo puede resolver fruto tierno, fruto maduro y semilla seca dentro del mismo
+ crop_squash.
+ • Agregar YieldFamily.squashFruit y YieldFamily.squashSeed. squashFruit puede comportarse parecido a
+ cucumberFresh, pero un poco menos punitivo para poblaciones bajas en guías largas. squashSeed debe parecerse
+ más a chiliDry/seed con menor techo y más incertidumbre.
+ • En _familyFor(reference): si cropId == squash y useType == seed, devolver squashSeed; en cualquier otro caso
+ devolver squashFruit.
+ • Parámetros sugeridos squashFruit: alphaLow 0.90, betaLow 1.30, alphaHigh 0.82, betaHigh 1.22,
+ managementGamma 1.42, managementFloor 0.22.
+ • Parámetros sugeridos squashSeed: alphaLow 0.80, betaLow 1.25, alphaHigh 0.78, betaHigh 1.18,
+ managementGamma 1.30, managementFloor 0.24.
+ • Agregar squash a _genericFreshIds con squash_field_generic y a _genericFreshProtectedIds con
+ squash_protected_soil_generic.
+ • En YieldProjectionSetupScreen, crear case squash dentro de _genericYieldReferenceForContext con resolución por
+ profileId CA-GEN/CA-01..CA-07 y varietyAlias.
+ • Mantener seedsLowPerHa/seedsHighPerHa como plantas establecidas, no semilla bruta sembrada.
+ • Si el usuario captura semillas reales, mostrar advertencia: "la estimación mejora si usas plantas logradas o
+ población final".
+
+
+ 9. Resolver sugerido para YieldProjectionSetupScreen
+  Condición                                                      YieldReference recomendado
+  CA-GEN / generic / no sé                                       squash_generic
+
+  crop == squash sin profileId, campo                            squash_field_generic
+
+  profileId CA-01 o alias zucchini / italiana / calabacín        squash_zucchini_field o squash_zucchini_protected
+
+  profileId CA-02 o alias criolla / huicha / milpa               squash_criolla_field
+
+  profileId CA-03 o alias bola / redonda / round zucchini        squash_round_field
+
+  profileId CA-04 o alias castilla / pumpkin / dulce / altar     squash_castilla_mature
+
+  profileId CA-05 o alias butternut / buchona / mantequilla      squash_butternut_field o squash_butternut_intensive
+
+  profileId CA-06 o alias chilacayote / chilacayota / alcayota   squash_chilacayote_mature
+
+  profileId CA-07 o alias pipián / pipiana / pepita / chihua     squash_pipian_seed_dry por defecto
+
+  CA-07 + alias fruto / verdura / cosecha fruto                  squash_pipian_fruit_mature
+
+
+
+
+BIO-G | Rendimiento aproximado | Calabaza v1                                                                           Página 6
+
+
+--- PAGINA 7 ---
+
+10. Notas agronómicas importantes
+ • Rendimiento fresco no es lo mismo que rendimiento maduro ni rendimiento de semilla. CA-07 debe trabajar como
+ semilla seca salvo que el usuario diga lo contrario.
+ • La cosecha progresiva cambia el total. En calabacita, cortar tarde reduce calidad y puede frenar continuidad de
+ producción.
+ • El promedio nacional de calabacita es útil para piso de campo, pero no representa el techo de sistemas intensivos
+ ni protegidos.
+ • Los ensayos de butternut y zucchini pueden mostrar rendimientos muy altos; BIO-G debe usarlos como techo
+ técnico, no como default.
+ • Castilla, butternut y chilacayote dependen más de tamaño de fruto, número de frutos, sanidad foliar y clima al
+ final del ciclo.
+ • En milpa o temporal, la app debe reducir confianza porque el cultivo puede estar asociado con maíz/frijol y tener
+ menor densidad útil por hectárea.
+ • Protegido no significa hidroponía. Los rangos de esta guía son para suelo bajo malla/invernadero o manejo
+ protegido simple.
+
+
+ 11. Mensajes Bio-G sugeridos para UX
+  Situación                              Mensaje farmer-friendly
+  CA-GEN                                 Usaremos una estimación conservadora porque todavía no sabemos si será calabacita, calabaza madura o pepita.
+                                         Puedes afinarla después sin perder historial.
+
+  Población baja                         La población por hectárea está por debajo del rango esperado para este tipo. Puede producir bien por planta, pero
+                                         baja el potencial por hectárea.
+
+  Población alta                         La densidad parece alta para este tipo de calabaza. Vigile ventilación, humedad, enfermedades y tamaño de fruto.
+
+  Zucchini / corte tierno                El rendimiento depende mucho de cortes frecuentes. Si se deja madurar el fruto, cambia la calidad y baja la
+                                         continuidad.
+
+  Castilla / fruto maduro                Este perfil produce menos plantas por hectárea, pero frutos más pesados. La estimación depende mucho del tamaño
+                                         final y la sanidad foliar.
+
+  Butternut intensiva                    El potencial puede subir con manejo intensivo, pero solo si riego, sanidad y nutrición están estables.
+
+  Chilacayote                            Este tipo tiene ciclo muy largo y mucha guía. La estimación es más incierta que en calabacita comercial.
+
+  Pipián / pepita                        Aquí la referencia principal es semilla seca, no toneladas de fruto fresco. Si buscas fruto, cambia el destino en el perfil.
+
+
+
+
+ 12. Fuentes y trazabilidad
+ Las fuentes siguientes fueron usadas para construir rangos operativos. Cuando una fuente reporta rendimientos
+ experimentales extremos, BIO-G los usa como techo técnico, no como promesa de producto.
+
+  Clave      Fuente                                                                     Uso
+  S1         BIO-G Perfil Universal Calabaza v2, aportado por Caraveo.                  Estructura CA-GEN a CA-07, densidades y perfiles UX.
+
+  S2         BIO-G Rendimiento aproximado Berenjena v1, aportado por Caraveo.           Molde de producto: área + población + Crop Care + YieldReference.
+
+  S3         BIO-G Rendimiento aproximado Chile v1, aportado por Caraveo.               Molde para resolver perfiles y destinos distintos dentro de un cultivo
+                                                                                        madre.
+
+  S4         Michigan State University Extension. Pumpkins, Squash, Gourds -            Rangos average/good/excellent para pumpkins y squashes grandes.
+             Commercial Vegetable Recommendations.
+
+  S5         Oklahoma State University Extension. Squash and Pumpkin Production         Good yield de summer squash y rangos de winter squash/pumpkin.
+             HLA-6026.
+
+  S6         University of Georgia Extension. Commercial Squash Production.             Densidad/espaciamiento para bush y vining; días a cosecha.
+
+  S7         University of Puerto Rico Mayagüez. Guía para la producción comercial      Rendimiento de Soler y Taína Dorada; calabaza tropical C. moschata.
+             de calabaza tropical.
+
+  S8         Díaz Franco et al. 2016. Crecimiento, nutrición y rendimiento de           Rendimiento de calabacita en México y validación de campo 28-31 t/ha.
+             calabacita.
+
+  S9         Sedano-Castro et al. 2011. Rendimiento y calidad de frutos de              Contexto de rendimiento nacional y techo experimental de calabacita.
+             calabacita con altas dosis de N y K.
+
+
+
+
+BIO-G | Rendimiento aproximado | Calabaza v1                                                                                                                            Página 7
+
+
+--- PAGINA 8 ---
+
+Clave    Fuente                                                                     Uso
+  S10      Connecticut Agricultural Experiment Station. Butternut Squash Trials       Techos técnicos de butternut; no usar como default genérico.
+           2017-2019.
+
+  S11      Ireta-Paredes et al. 2018. Red de valor calabaza chihua en Campeche.       Rendimientos tradicionales de semilla de chihua 0.4-0.6 t/ha.
+
+  S12      Serna et al. 2004. Rendimiento de calabaza pipiana en respuesta a          Rendimiento regional de semilla y efecto de densidad.
+           poda y densidad.
+
+  S13      Rojas-Martínez et al. 2025. Correlación de caracteres de planta, fruto y   Accesiones con fruto 31.8-46.6 t/ha y semilla 0.94-1.19 t/ha.
+           semilla de accesiones de calabaza.
+
+
+
+
+ 13. Cierre de producto
+ La calculadora de rendimiento de calabaza queda lista para v1 si se integra con referencias por perfil, sistema y
+ destino comercial. La prioridad para código es resolver CA-GEN/CA-01..CA-07, separar fruto de semilla y mantener
+ población como plantas establecidas. No conviene prometer rendimientos de cultivo protegido o ensayos intensivos
+ al usuario genérico.
+
+
+
+
+BIO-G | Rendimiento aproximado | Calabaza v1                                                                                                          Página 8

@@ -95,6 +95,8 @@ class AlertsEngine {
       );
     }
 
+    final isLettuce = _isLettuceCrop(crop);
+
     if (key == 'stage.fallback') {
       return _AlertTemplate(
         type: BioGAlertType.stageEvent,
@@ -120,6 +122,17 @@ class AlertsEngine {
 
     // ── Humedad ──
     if (key == 'soilMoisture.critical') {
+      if (isLettuce) {
+        return _AlertTemplate(
+          type: BioGAlertType.lowSoilMoisture,
+          severity: BioGAlertSeverity.critical,
+          title: 'Déficit hídrico crítico en lechuga',
+          body:
+              'La humedad disponible está muy baja para lechuga en $stage. '
+              'La hoja pierde turgencia rápido y sube el riesgo de amargor '
+              'o espigado; revisa riego hoy y evita oscilaciones fuertes.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.lowSoilMoisture,
         severity: BioGAlertSeverity.critical,
@@ -131,6 +144,17 @@ class AlertsEngine {
       );
     }
     if (key == 'soilMoisture.low') {
+      if (isLettuce) {
+        return _AlertTemplate(
+          type: BioGAlertType.lowSoilMoisture,
+          severity: BioGAlertSeverity.warning,
+          title: 'Humedad baja en lechuga',
+          body:
+              'La humedad está por debajo de lo conveniente para lechuga en '
+              '$stage. Mantener agua estable ayuda a sostener turgencia, '
+              'calidad de hoja y ventana comercial.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.lowSoilMoisture,
         severity: BioGAlertSeverity.warning,
@@ -142,6 +166,17 @@ class AlertsEngine {
       );
     }
     if (key == 'soilMoisture.high') {
+      if (isLettuce) {
+        return _AlertTemplate(
+          type: BioGAlertType.highSoilMoisture,
+          severity: BioGAlertSeverity.warning,
+          title: 'Saturación en zona de raíz',
+          body:
+              'La humedad está por arriba del rango para lechuga. Suspende '
+              'riegos largos, revisa drenaje y vigila anoxia, chupadera o '
+              'pudrición basal.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.highSoilMoisture,
         severity: BioGAlertSeverity.warning,
@@ -188,6 +223,17 @@ class AlertsEngine {
 
     // ── EC ──
     if (key == 'ec.critical') {
+      if (isLettuce) {
+        return _AlertTemplate(
+          type: BioGAlertType.ecOutOfRange,
+          severity: BioGAlertSeverity.warning,
+          title: 'Salinidad crítica para lechuga',
+          body:
+              'La CE está en zona de riesgo para lechuga en $stage. La '
+              'salinidad reduce turgencia y calidad; confirma lectura, '
+              'revisa agua de riego, drenaje y acumulación antes de corregir.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.ecOutOfRange,
         severity: BioGAlertSeverity.warning,
@@ -207,6 +253,16 @@ class AlertsEngine {
       );
     }
     if (key == 'ec.high') {
+      if (isLettuce) {
+        return _AlertTemplate(
+          type: BioGAlertType.ecOutOfRange,
+          severity: BioGAlertSeverity.info,
+          title: 'Salinidad en observación',
+          body:
+              'La CE empieza a ser alta para lechuga. Vigila turgencia, '
+              'bordes secos y uniformidad, sobre todo si se acerca la cosecha.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.ecOutOfRange,
         severity: BioGAlertSeverity.info,
@@ -217,6 +273,23 @@ class AlertsEngine {
 
     // ── Temperatura de suelo ──
     if (key == 'soilTemp.critical') {
+      if (isLettuce) {
+        final germination = stage.toLowerCase().contains('germin');
+        return _AlertTemplate(
+          type: BioGAlertType.tempExtreme,
+          severity: BioGAlertSeverity.warning,
+          title: germination
+              ? 'Riesgo de termoinhibición'
+              : 'Temperatura de suelo crítica',
+          body: germination
+              ? 'El suelo está demasiado caliente para germinar lechuga. '
+                    'Arriba de 26-28 °C puede frenarse la emergencia; revisa '
+                    'fecha, sombra, humedad y hora de siembra.'
+              : 'La temperatura del suelo está fuera del rango seguro para '
+                    'lechuga en $stage. La raíz superficial puede estresarse y '
+                    'perder capacidad de absorción.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.tempExtreme,
         severity: BioGAlertSeverity.warning,
@@ -238,6 +311,23 @@ class AlertsEngine {
       );
     }
     if (key == 'soilTemp.high') {
+      if (isLettuce) {
+        final germination = stage.toLowerCase().contains('germin');
+        return _AlertTemplate(
+          type: BioGAlertType.tempExtreme,
+          severity: BioGAlertSeverity.info,
+          title: germination
+              ? 'Suelo caliente para germinación'
+              : 'Suelo caliente para lechuga',
+          body: germination
+              ? 'La temperatura del suelo se acerca a zona de termoinhibición '
+                    'en lechuga. Mantén humedad uniforme y evita sembrar en '
+                    'las horas más calientes.'
+              : 'La temperatura del suelo es alta para lechuga. Vigila '
+                    'turgencia y raíz; sombreo ligero, cobertura o riego bien '
+                    'programado pueden reducir el estrés.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.tempExtreme,
         severity: BioGAlertSeverity.info,
@@ -250,6 +340,17 @@ class AlertsEngine {
 
     // ── Resistencia / compactación ──
     if (key == 'resistance.critical') {
+      if (isLettuce) {
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Compactación en cama de lechuga',
+          body:
+              'La resistencia del suelo es alta para una raíz superficial. '
+              'Revisa costra, drenaje e infiltración; evita labores agresivas '
+              'si el cultivo ya está establecido.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.stageEvent,
         severity: BioGAlertSeverity.warning,
@@ -274,6 +375,17 @@ class AlertsEngine {
 
     // ── Temperatura ambiental ──
     if (key == 'airTemp.frost') {
+      if (isLettuce) {
+        return _AlertTemplate(
+          type: BioGAlertType.airTempExtreme,
+          severity: BioGAlertSeverity.critical,
+          title: 'Riesgo de helada en lechuga',
+          body:
+              'La temperatura ambiental está cerca o bajo 0 °C. En lechuga '
+              'puede quemar hoja y perder calidad comercial; evalúa cobertura '
+              'o protección anti-helada según el lote.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.airTempExtreme,
         severity: BioGAlertSeverity.critical,
@@ -295,6 +407,17 @@ class AlertsEngine {
       );
     }
     if (key == 'airTemp.heat') {
+      if (isLettuce) {
+        return _AlertTemplate(
+          type: BioGAlertType.airTempExtreme,
+          severity: BioGAlertSeverity.warning,
+          title: 'Calor alto para lechuga',
+          body:
+              'La temperatura está por arriba del rango fresco de lechuga en '
+              '$stage. Vigila turgencia, amargor y tallo central; estabiliza '
+              'riego, sombra o ventilación.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.airTempExtreme,
         severity: BioGAlertSeverity.warning,
@@ -306,6 +429,17 @@ class AlertsEngine {
       );
     }
     if (key == 'airTemp.extreme_heat') {
+      if (isLettuce) {
+        return _AlertTemplate(
+          type: BioGAlertType.airTempExtreme,
+          severity: BioGAlertSeverity.critical,
+          title: 'Calor crítico para lechuga',
+          body:
+              'La temperatura supera el límite seguro para lechuga. En '
+              '$stage puede acelerar espigado, amargor y pérdida rápida de '
+              'calidad; revisa cosecha temprana si ya está comercial.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.airTempExtreme,
         severity: BioGAlertSeverity.critical,
@@ -319,6 +453,17 @@ class AlertsEngine {
 
     // ── Humedad relativa ──
     if (key == 'airHumidity.high') {
+      if (isLettuce) {
+        return _AlertTemplate(
+          type: BioGAlertType.highHumidity,
+          severity: BioGAlertSeverity.warning,
+          title: 'HR alta en lechuga',
+          body:
+              'La humedad relativa alta favorece mildiu velloso, Botrytis y '
+              'tip burn en lechuga. Revisa ventilación, mojado foliar y hojas '
+              'internas antes de que avance el foco.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.highHumidity,
         severity: BioGAlertSeverity.warning,
@@ -330,6 +475,17 @@ class AlertsEngine {
       );
     }
     if (key == 'airHumidity.critical') {
+      if (isLettuce) {
+        return _AlertTemplate(
+          type: BioGAlertType.highHumidity,
+          severity: BioGAlertSeverity.critical,
+          title: 'HR muy alta en lechuga',
+          body:
+              'La HR está en zona crítica para lechuga. Hay riesgo alto de '
+              'mildiu velloso, moho gris, pudriciones y pérdida de calidad; '
+              'prioriza ventilación, drenaje y revisión de focos.',
+        );
+      }
       return _AlertTemplate(
         type: BioGAlertType.highHumidity,
         severity: BioGAlertSeverity.critical,
@@ -337,6 +493,76 @@ class AlertsEngine {
         body:
             'La HR supera 90%. Condiciones ideales para patógenos en '
             '$crop. Riesgo alto de enfermedades foliares y de espiga.',
+      );
+    }
+
+    // ── Lechuga: espigado / bolting (evento de falla) y ventana de
+    // cosecha. Lenguaje de hortaliza de hoja: calidad y oportunidad. ──
+    if (key == 'lettuce.bolting_critical') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.critical,
+        title: 'Riesgo crítico de espigado',
+        body:
+            'El calor y el estrés acumulado están empujando la lechuga '
+            'hacia el espigado en $stage. Si el tallo central ya se '
+            'alarga, cosecha cuanto antes: el amargor y la pérdida de '
+            'calidad avanzan rápido.',
+      );
+    }
+    if (key == 'lettuce.bolting_warning') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Riesgo de espigado',
+        body:
+            'El calor y el estrés pueden adelantar el espigado de la '
+            'lechuga en $stage. Revisa si el tallo central empieza a '
+            'alargarse y estabiliza el riego, la sombra o la ventilación.',
+      );
+    }
+    if (key == 'lettuce.harvest_urgent') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Conviene cosechar pronto',
+        body:
+            'La lechuga está en ventana de cosecha y el calor o el '
+            'estrés pueden acortarla. Revisa el campo y corta en cuanto '
+            'la firmeza, el color y la turgencia sean buenos.',
+      );
+    }
+    if (key == 'lettuce.harvest_window') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.info,
+        title: 'Lechuga en ventana de cosecha',
+        body:
+            'Tu lechuga parece estar en su punto comercial. Es buen '
+            'momento para revisar firmeza, color y turgencia, y cortar '
+            'en la ventana óptima.',
+      );
+    }
+    if (key == 'lettuce.harvest_review') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.info,
+        title: 'Revisa el campo: cosecha cercana',
+        body:
+            'La lechuga se acerca a su ventana comercial. Revisa el '
+            'campo en los próximos días para no pasarte del punto '
+            'óptimo de cosecha.',
+      );
+    }
+    if (key == 'lettuce.harvest_past') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Ventana de cosecha pasada',
+        body:
+            'La lechuga puede haber pasado su punto óptimo. La calidad '
+            'baja rápido en sobre-madurez: revisa cosecha o cierre del '
+            'ciclo cuanto antes.',
       );
     }
 
@@ -368,7 +594,19 @@ class AlertsEngine {
         cropLc.contains('maiz') ||
         cropLc.contains('corn') ||
         cropLc.contains('maize');
+    final isLettuce = _isLettuceCrop(crop);
     final stageLc = stage.toLowerCase();
+
+    if (isLettuce) {
+      return _lettuceNutrientPriorityAlert(
+        nutrientCode: nutrientCode,
+        stateCode: stateCode,
+        nutrientName: nutrientName,
+        shortName: shortName,
+        crop: crop,
+        stage: stage,
+      );
+    }
 
     final nutrientWhy = _nutrientWhy(
       nutrientCode: nutrientCode,
@@ -445,6 +683,108 @@ class AlertsEngine {
           title: 'Evento nutricional',
           body: 'Se detectó un evento nutricional en $crop para $stage.',
         );
+    }
+  }
+
+  static _AlertTemplate _lettuceNutrientPriorityAlert({
+    required String nutrientCode,
+    required String stateCode,
+    required String nutrientName,
+    required String shortName,
+    required String crop,
+    required String stage,
+  }) {
+    final role = _lettuceNutrientRole(nutrientCode, stage);
+
+    switch (stateCode) {
+      case 'action':
+      case 'high_priority':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Revisa $shortName en lechuga',
+          body:
+              'La lectura sugiere posible déficit de $shortName en $crop '
+              'durante $stage. $role BIO-G v1 lo maneja como riesgo de '
+              'desequilibrio: confirma historial, humedad, pH y CE antes de '
+              'ajustar el manejo.',
+        );
+      case 'review':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Revisión de $nutrientName',
+          body:
+              'Algo no cuadra con $shortName en $crop durante $stage. $role '
+              'Revisa qué se aplicó, cuándo y cómo viene el agua antes de '
+              'agregar más.',
+        );
+      case 'medium_priority':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: '$shortName en observación',
+          body:
+              'El $shortName empieza a alejarse del rango esperado para '
+              'lechuga en $stage. $role Vigila la tendencia y confirma en '
+              'campo antes de cambiar el plan.',
+        );
+      case 'possible_excess':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Posible exceso de $shortName',
+          body:
+              'El $shortName aparece por encima de lo conveniente para '
+              'lechuga. $role Pausa aportes de ese nutriente y revisa el '
+              'balance con agua, pH y CE.',
+        );
+      case 'review_accumulation':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: 'Acumulación de $shortName',
+          body:
+              'BIO-G detecta acumulación de $shortName en lechuga. $role Usa '
+              'la lectura para ajustar manejo y evitar empujar tejido blando '
+              'cerca de cosecha.',
+        );
+      default:
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: 'Evento nutricional en lechuga',
+          body:
+              'Se detectó un evento NPK en lechuga para $stage. BIO-G lo '
+              'interpreta como señal de balance, no como receta de dosis.',
+        );
+    }
+  }
+
+  static String _lettuceNutrientRole(String nutrientCode, String stage) {
+    final stageLc = stage.toLowerCase();
+    final nearHarvest = stageLc.contains('cabeza') ||
+        stageLc.contains('compact') ||
+        stageLc.contains('cosecha') ||
+        stageLc.contains('madur') ||
+        stageLc.contains('senesc');
+
+    switch (nutrientCode) {
+      case 'n':
+        if (nearHarvest) {
+          return 'En lechuga, el N tardío puede ablandar hoja, favorecer '
+              'Botrytis y acortar vida de anaquel.';
+        }
+        return 'El N sostiene expansión foliar, pero los pulsos fuertes '
+            'pueden producir tejido blando y más presión sanitaria.';
+      case 'p':
+        return 'El P pesa sobre todo en establecimiento por raíz, energía y '
+            'uniformidad; tarde conviene usar la lectura para planear.';
+      case 'k':
+        return 'El K ayuda a sostener turgencia, calidad de hoja y respuesta '
+            'al estrés hídrico.';
+      default:
+        return 'En lechuga la nutrición se interpreta por balance y etapa.';
     }
   }
 
@@ -596,6 +936,13 @@ class AlertsEngine {
       default:
         return 'Este nutriente merece seguimiento según etapa y contexto del lote.';
     }
+  }
+
+  static bool _isLettuceCrop(String crop) {
+    final value = crop.toLowerCase();
+    return value.contains('lechuga') ||
+        value.contains('lettuce') ||
+        value.contains('crop_lettuce');
   }
 }
 

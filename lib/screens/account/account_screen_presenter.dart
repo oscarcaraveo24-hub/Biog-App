@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
@@ -5,6 +6,7 @@ import 'package:bio_g/core/crops/crop_presentation_resolver.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
+import 'package:bio_g/screens/account/biog_hardware_health.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 
 // Re-export para que account_screen.dart no necesite import adicional.
@@ -28,6 +30,9 @@ class AccountDeviceCardUiModel {
 
 class AccountScreenPresenter {
   static const Color kBrandMid = Color(0xFF3FAF6E);
+  static const bool kBioGAccountPreviewDebugLogs = true;
+
+  final Set<String> _loggedPreviewStates = <String>{};
 
   DeviceCropContext? cropContextForDevice(BioGStore store, String deviceId) {
     return store.cropContextForDevice(deviceId);
@@ -40,31 +45,53 @@ class AccountScreenPresenter {
     required bool isActive,
     required int index,
   }) {
-    final metrics = simulatedMetricsForDevice(
-      device,
-      index,
+    return deviceCardUiModelFromTelemetry(
+      device: device,
+      cropContext: cropContext,
+      seed: seed,
       isActive: isActive,
+      telemetry: null,
+    );
+  }
+
+  /// Real-data variant of [deviceCardUiModel].
+  ///
+  /// When [telemetry] is provided we drive the trailing chip and icon
+  /// tint from the actual battery / signal / recency. When it is null
+  /// after the telemetry source has refreshed, signal degrades to
+  /// "Sin señal" instead of inventing numbers.
+  AccountDeviceCardUiModel deviceCardUiModelFromTelemetry({
+    required BioGDevice device,
+    required DeviceCropContext? cropContext,
+    required SeedInstall? seed,
+    required bool isActive,
+    required BioGTelemetry? telemetry,
+    DateTime? now,
+  }) {
+    final BioGHardwareHealth health = BioGHardwareHealth.fromTelemetry(
+      telemetry,
+      now: now,
     );
 
-    final int battery = (metrics['batteryPct'] ?? 92) as int;
-    final String signal = (metrics['signalLabel'] ?? 'Buena').toString();
-    final String sensors = (metrics['sensorsLabel'] ?? 'OK').toString();
-    final String system = (metrics['systemLabel'] ?? 'Estable').toString();
+    final String trailingText;
+    final Color trailingColor;
 
-    final health = healthFromMetrics(
-      batteryPct: battery,
-      signalLabel: signal,
-      sensorsLabel: sensors,
-      systemLabel: system,
+    if (!health.hasReading || !health.hasSignalData) {
+      trailingText = 'Sin señal';
+      trailingColor = BioGHealthColors.gray;
+    } else {
+      trailingText = health.signalSubtitle;
+      trailingColor = BioGHealthColors.forSignal(health.signalLevel);
+    }
+
+    _logPreview(
+      'device_id=${device.id} active=$isActive '
+      'battery_pct=${health.batteryPct} signal_rssi=${health.signalRssi} '
+      'signal=$trailingText sensors_detected=${health.hasSensorData} '
+      'system_ok=${health.systemOk} timestamp=${health.lastSeen?.toIso8601String()}',
+      onceKey:
+          '${device.id}|${health.lastSeen?.toIso8601String()}|${health.signalRssi}|${health.systemOk}',
     );
-
-    final trailingText = isActive
-        ? 'Activo'
-        : (health == 'bad')
-        ? 'Crítico'
-        : (health == 'warn')
-        ? 'Atención'
-        : '';
 
     return AccountDeviceCardUiModel(
       title: device.name,
@@ -74,11 +101,11 @@ class AccountScreenPresenter {
         isActive: isActive,
       ),
       trailingText: trailingText,
-      trailingColor: isActive ? kBrandMid : leafTintFromHealth(health),
-      deviceIconTint: deviceIconTint(
+      trailingColor: trailingColor,
+      deviceIconTint: deviceIconTintFromHealth(
         cropContext: cropContext,
         seed: seed,
-        health: health,
+        status: health.status,
       ),
     );
   }
@@ -88,32 +115,10 @@ class AccountScreenPresenter {
     int index, {
     required bool isActive,
   }) {
-    final metrics = simulatedMetricsForDevice(
-      device,
-      index,
-      isActive: isActive,
-    );
-
-    final int battery = (metrics['batteryPct'] ?? 92) as int;
-    final String signal = (metrics['signalLabel'] ?? 'Buena').toString();
-    final String sensors = (metrics['sensorsLabel'] ?? 'OK').toString();
-    final String system = (metrics['systemLabel'] ?? 'Estable').toString();
-
-    final String health = healthFromMetrics(
-      batteryPct: battery,
-      signalLabel: signal,
-      sensorsLabel: sensors,
-      systemLabel: system,
-    );
-
     return <String, dynamic>{
       'id': device.id,
+      'telemetryDeviceId': device.telemetryDeviceId,
       'name': device.name,
-      'health': health,
-      'batteryPct': battery,
-      'signalLabel': signal,
-      'sensorsLabel': sensors,
-      'systemLabel': system,
       'source': 'repo',
       'locationName': device.locationName,
       'isActive': isActive,
@@ -370,6 +375,17 @@ class AccountScreenPresenter {
     return leafTintFromHealth(health);
   }
 
+  Color deviceIconTintFromHealth({
+    required DeviceCropContext? cropContext,
+    required SeedInstall? seed,
+    required BioGHardwareStatus status,
+  }) {
+    if (!hasConfiguredCrop(cropContext: cropContext, seed: seed)) {
+      return Colors.black38;
+    }
+    return BioGHealthColors.forStatus(status);
+  }
+
   int stableHash(String value) {
     int h = 0;
     for (int i = 0; i < value.length; i++) {
@@ -414,5 +430,12 @@ class AccountScreenPresenter {
 
     // Fallback legacy: seed status.
     return seed?.status == SowingStatus.skip;
+  }
+
+  void _logPreview(String message, {required String onceKey}) {
+    if (!_loggedPreviewStates.add(onceKey)) return;
+    if (!kDebugMode) return;
+    if (!kBioGAccountPreviewDebugLogs) return;
+    debugPrint('[BioG/AccountPreview] $message');
   }
 }

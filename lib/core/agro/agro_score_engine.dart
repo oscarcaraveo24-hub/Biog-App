@@ -218,7 +218,6 @@ class AgroScoreEngine {
     );
   }
 
-
   static double _nutrientSeverityScore(AgroMetricEval metric) {
     final label = metric.priorityLabel;
     if (label == null) return 0.0;
@@ -230,9 +229,7 @@ class AgroScoreEngine {
   static double _nutrientHealthScore(AgroMetricEval metric) {
     final label = metric.priorityLabel;
     if (label == null) return metric.score01.clamp(0.0, 1.0);
-    return label.healthScore01(
-      stagePressure01: metric.stagePressure01 ?? 0.0,
-    );
+    return label.healthScore01(stagePressure01: metric.stagePressure01 ?? 0.0);
   }
 
   static double _nutrientPenaltyFactor(NutrientPriorityLabel? label) {

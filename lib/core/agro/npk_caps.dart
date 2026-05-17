@@ -38,6 +38,21 @@ class NpkCaps {
           case 'berenjena':
           case 'aubergine':
             return 130.0;
+          // Calabaza: PDF Guia v1 sugiere 84-112 kg/ha N base para
+          // calabacita y 56-112 kg/ha para fruto maduro. El cap operativo
+          // (lectura de mg/kg que NO se considera "exceso") queda
+          // moderado a 120 mg/kg para no clasificar lecturas funcionales
+          // como exceso. CA-07/pipian comparte cap.
+          case 'squash':
+          case 'calabaza':
+          case 'pumpkin':
+            return 120.0;
+          // Lechuga: hortaliza de hoja de ciclo corto y raiz superficial.
+          // Demanda foliar moderada; cap operativo de 110 mg/kg evita
+          // clasificar como exceso una lectura funcional de N en E3.
+          case 'lettuce':
+          case 'lechuga':
+            return 110.0;
           default:
             return 120.0;
         }
@@ -61,6 +76,14 @@ class NpkCaps {
           case 'berenjena':
           case 'aubergine':
             return 90.0;
+          case 'squash':
+          case 'calabaza':
+          case 'pumpkin':
+            return 90.0;
+          // Lechuga: P pesa en establecimiento (raiz superficial joven).
+          case 'lettuce':
+          case 'lechuga':
+            return 85.0;
           default:
             return 80.0;
         }
@@ -84,6 +107,18 @@ class NpkCaps {
           case 'berenjena':
           case 'aubergine':
             return 220.0;
+          // Calabaza demanda K alto desde cuajado hasta llenado/cosecha;
+          // 220 mg/kg como cap operativo evita clasificar como exceso una
+          // lectura productiva. Pipian/pepita comparte cap.
+          case 'squash':
+          case 'calabaza':
+          case 'pumpkin':
+            return 220.0;
+          // Lechuga: K apoya turgencia y calidad de cabeza/hoja; cap
+          // operativo de 180 mg/kg cubre la demanda sin marcar exceso.
+          case 'lettuce':
+          case 'lechuga':
+            return 180.0;
           default:
             return 140.0;
         }

@@ -2523,6 +2523,311 @@ class YieldReferenceCatalog {
       sourceMethod:
           'BE-04 BIO-G protegido en suelo; calidad visual como limitante principal.',
     ),
+
+    // Calabaza / squash (hortaliza, fruto fresco/maduro y semilla seca)
+    // v1: suelo en campo abierto o protegido. Densidad = plantas
+    // establecidas/ha, no semilla bruta. CA-07 se resuelve por defecto como
+    // semilla seca / pepita y no se mezcla con t/ha de fruto fresco.
+    'squash_generic': const YieldReference(
+      id: 'squash_generic',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'Calabaza generica (CA-GEN)',
+      yieldLowTonPerHa: 15,
+      yieldHighTonPerHa: 28,
+      seedsLowPerHa: 8000,
+      seedsHighPerHa: 18000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'Modelo conservador CA-GEN BIO-G; no asume calabacita, fruto maduro ni pepita hasta que el usuario define tipo.',
+    ),
+    'squash_field_generic': const YieldReference(
+      id: 'squash_field_generic',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'Calabaza campo abierto (generica)',
+      yieldLowTonPerHa: 18,
+      yieldHighTonPerHa: 32,
+      seedsLowPerHa: 10000,
+      seedsHighPerHa: 20000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'Referencia BIO-G para calabaza de campo abierto cuando no hay tipo especifico.',
+    ),
+    'squash_protected_soil_generic': const YieldReference(
+      id: 'squash_protected_soil_generic',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'Calabaza protegida en suelo (generica)',
+      yieldLowTonPerHa: 35,
+      yieldHighTonPerHa: 60,
+      seedsLowPerHa: 12000,
+      seedsHighPerHa: 25000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'Modelo para malla/invernadero en suelo; excluye hidroponia y sustratos inertes.',
+    ),
+    'squash_zucchini_field': const YieldReference(
+      id: 'squash_zucchini_field',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'CA-01 calabacita italiana / zucchini campo',
+      yieldLowTonPerHa: 20,
+      yieldHighTonPerHa: 40,
+      seedsLowPerHa: 12000,
+      seedsHighPerHa: 25000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'CA-01 BIO-G; fruto tierno de corte continuo en campo abierto.',
+    ),
+    'squash_zucchini_protected': const YieldReference(
+      id: 'squash_zucchini_protected',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'CA-01 zucchini protegido en suelo',
+      yieldLowTonPerHa: 45,
+      yieldHighTonPerHa: 75,
+      seedsLowPerHa: 15000,
+      seedsHighPerHa: 30000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'CA-01 BIO-G protegido en suelo; potencial alto por cortes continuos, sin hidroponia.',
+    ),
+    'squash_criolla_field': const YieldReference(
+      id: 'squash_criolla_field',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'CA-02 criolla / huicha / milpa',
+      yieldLowTonPerHa: 10,
+      yieldHighTonPerHa: 25,
+      seedsLowPerHa: 5000,
+      seedsHighPerHa: 15000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'CA-02 BIO-G; sistema mixto, milpa o temporal con alta variabilidad.',
+    ),
+    'squash_round_field': const YieldReference(
+      id: 'squash_round_field',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'CA-03 calabacita bola / redonda',
+      yieldLowTonPerHa: 18,
+      yieldHighTonPerHa: 36,
+      seedsLowPerHa: 12000,
+      seedsHighPerHa: 25000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'CA-03 BIO-G; fruto tierno redondo, similar a zucchini con ajuste por calibre y forma.',
+    ),
+    'squash_castilla_mature': const YieldReference(
+      id: 'squash_castilla_mature',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'CA-04 Calabaza de Castilla / fruto maduro',
+      yieldLowTonPerHa: 18,
+      yieldHighTonPerHa: 35,
+      seedsLowPerHa: 4000,
+      seedsHighPerHa: 10000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'CA-04 BIO-G; fruto grande maduro, menor densidad y ciclo largo.',
+    ),
+    'squash_butternut_field': const YieldReference(
+      id: 'squash_butternut_field',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'CA-05 butternut / buchona campo',
+      yieldLowTonPerHa: 20,
+      yieldHighTonPerHa: 45,
+      seedsLowPerHa: 4000,
+      seedsHighPerHa: 10000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'CA-05 BIO-G; fruto maduro uniforme con mejor techo en cultivares modernos.',
+    ),
+    'squash_butternut_intensive': const YieldReference(
+      id: 'squash_butternut_intensive',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'CA-05 butternut intensivo en suelo',
+      yieldLowTonPerHa: 35,
+      yieldHighTonPerHa: 65,
+      seedsLowPerHa: 5000,
+      seedsHighPerHa: 12000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'CA-05 BIO-G intensivo/protegido en suelo; usar solo con manejo explicito.',
+    ),
+    'squash_chilacayote_mature': const YieldReference(
+      id: 'squash_chilacayote_mature',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'CA-06 chilacayote fruto maduro',
+      yieldLowTonPerHa: 8,
+      yieldHighTonPerHa: 25,
+      seedsLowPerHa: 1000,
+      seedsHighPerHa: 4000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'CA-06 BIO-G; guia vigorosa, ciclo muy largo y evidencia menos estandarizada.',
+    ),
+    'squash_pipian_seed_dry': const YieldReference(
+      id: 'squash_pipian_seed_dry',
+      cropId: 'squash',
+      useType: 'seed',
+      displayName: 'CA-07 pipian / pepita seca',
+      yieldLowTonPerHa: 0.4,
+      yieldHighTonPerHa: 1.2,
+      seedsLowPerHa: 3000,
+      seedsHighPerHa: 8000,
+      isFreshMatter: false,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'CA-07 BIO-G; destino semilla seca / pepita. No comparar con toneladas de fruto fresco.',
+    ),
+    'squash_pipian_fruit_mature': const YieldReference(
+      id: 'squash_pipian_fruit_mature',
+      cropId: 'squash',
+      useType: 'fresh',
+      displayName: 'CA-07 pipian fruto maduro secundario',
+      yieldLowTonPerHa: 12,
+      yieldHighTonPerHa: 30,
+      seedsLowPerHa: 3000,
+      seedsHighPerHa: 8000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'CA-07 BIO-G cuando el usuario declara destino fruto; por defecto CA-07 usa pepita seca.',
+    ),
+
+    // Lechuga / lettuce (hortaliza de hoja, peso fresco comercial).
+    // BIO-G v1: suelo en campo abierto o protegido; sin hidroponia.
+    // Densidad = plantas establecidas/ha. Los rangos son orientativos y
+    // NO deben mostrarse como garantia: la lechuga prioriza calidad y
+    // ventana comercial sobre kg exactos.
+    'lettuce_generic': const YieldReference(
+      id: 'lettuce_generic',
+      cropId: 'lettuce',
+      useType: 'fresh',
+      displayName: 'Lechuga generica (LE-GEN)',
+      yieldLowTonPerHa: 15,
+      yieldHighTonPerHa: 45,
+      seedsLowPerHa: 70000,
+      seedsHighPerHa: 120000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'Modelo conservador LE-GEN BIO-G; no asume tipo comercial hasta que el usuario lo define.',
+    ),
+    'lettuce_field_generic': const YieldReference(
+      id: 'lettuce_field_generic',
+      cropId: 'lettuce',
+      useType: 'fresh',
+      displayName: 'Lechuga campo abierto (generica)',
+      yieldLowTonPerHa: 16,
+      yieldHighTonPerHa: 42,
+      seedsLowPerHa: 70000,
+      seedsHighPerHa: 115000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'Referencia BIO-G para lechuga de campo abierto cuando no hay tipo especifico.',
+    ),
+    'lettuce_protected_soil_generic': const YieldReference(
+      id: 'lettuce_protected_soil_generic',
+      cropId: 'lettuce',
+      useType: 'fresh',
+      displayName: 'Lechuga protegida en suelo (generica)',
+      yieldLowTonPerHa: 30,
+      yieldHighTonPerHa: 65,
+      seedsLowPerHa: 80000,
+      seedsHighPerHa: 140000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'Modelo para malla/invernadero en suelo; excluye hidroponia y sustratos inertes.',
+    ),
+    'lettuce_romaine_field': const YieldReference(
+      id: 'lettuce_romaine_field',
+      cropId: 'lettuce',
+      useType: 'fresh',
+      displayName: 'LE-01 lechuga romana / cos',
+      yieldLowTonPerHa: 20,
+      yieldHighTonPerHa: 50,
+      seedsLowPerHa: 60000,
+      seedsHighPerHa: 95000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'LE-01 BIO-G; cabeza alargada de 1 corte. Depende de densidad, variedad, clima y mercado.',
+    ),
+    'lettuce_mini_romaine_field': const YieldReference(
+      id: 'lettuce_mini_romaine_field',
+      cropId: 'lettuce',
+      useType: 'fresh',
+      displayName: 'LE-02 mini romana / corazones',
+      yieldLowTonPerHa: 15,
+      yieldHighTonPerHa: 40,
+      seedsLowPerHa: 90000,
+      seedsHighPerHa: 140000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'LE-02 BIO-G; mas plantas por area y menor peso por planta.',
+    ),
+    'lettuce_iceberg_field': const YieldReference(
+      id: 'lettuce_iceberg_field',
+      cropId: 'lettuce',
+      useType: 'fresh',
+      displayName: 'LE-03 lechuga bola / iceberg',
+      yieldLowTonPerHa: 25,
+      yieldHighTonPerHa: 60,
+      seedsLowPerHa: 50000,
+      seedsHighPerHa: 80000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.calibrated,
+      sourceMethod:
+          'LE-03 BIO-G; cabeza compacta de mayor peso, ciclo mas largo y sensible a calor/bolting.',
+    ),
+    'lettuce_butterhead_field': const YieldReference(
+      id: 'lettuce_butterhead_field',
+      cropId: 'lettuce',
+      useType: 'fresh',
+      displayName: 'LE-04 lechuga mantequilla / butterhead',
+      yieldLowTonPerHa: 15,
+      yieldHighTonPerHa: 35,
+      seedsLowPerHa: 60000,
+      seedsHighPerHa: 95000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'LE-04 BIO-G; premium por textura, muy sensible a manejo de agua y sanidad.',
+    ),
+    'lettuce_looseleaf_field': const YieldReference(
+      id: 'lettuce_looseleaf_field',
+      cropId: 'lettuce',
+      useType: 'fresh',
+      displayName: 'LE-05 lechuga hoja suelta / baby leaf',
+      yieldLowTonPerHa: 10,
+      yieldHighTonPerHa: 30,
+      seedsLowPerHa: 120000,
+      seedsHighPerHa: 320000,
+      isFreshMatter: true,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod:
+          'LE-05 BIO-G; roseta abierta de 1 corte o multicorte; densidad alta segun sistema.',
+    ),
   };
 
   /// Mapeo de referencia genérica forrajera por cultivo.
@@ -2551,6 +2856,8 @@ class YieldReferenceCatalog {
     'cucumber': 'cucumber_field_generic',
     'chili': 'chili_field_generic',
     'eggplant': 'eggplant_field_generic',
+    'squash': 'squash_field_generic',
+    'lettuce': 'lettuce_field_generic',
   };
 
   static const Map<String, String> _genericFreshProtectedIds = {
@@ -2558,6 +2865,8 @@ class YieldReferenceCatalog {
     'cucumber': 'cucumber_protected_soil_generic',
     'chili': 'chili_protected_soil_generic',
     'eggplant': 'eggplant_protected_soil_generic',
+    'squash': 'squash_protected_soil_generic',
+    'lettuce': 'lettuce_protected_soil_generic',
   };
 
   /// Devuelve la referencia genérica de fruto fresco (campo abierto por defecto).

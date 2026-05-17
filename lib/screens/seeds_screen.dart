@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/crop_cycle_display_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -101,7 +102,9 @@ class _SeedsScreenState extends State<SeedsScreen>
     final today = DateTime.now();
 
     // Preload the historical crop-care average if not cached yet.
-    if (activeDevice != null && cropContext != null && store.cropCareAverage == null) {
+    if (activeDevice != null &&
+        cropContext != null &&
+        store.cropCareAverage == null) {
       store.loadCropCareAverage(activeDevice.id, cropContext.cropId);
     }
 
@@ -160,6 +163,7 @@ class _SeedsScreenState extends State<SeedsScreen>
 
     final String topCardTitle = SeedsScreenLogic.topCardTitle(
       runtime: runtime,
+      cropId: resolvedCropId,
       cropDisplayName: cropDisplayName,
       varietyAlias: resolvedVarietyAlias,
       isGenericSelection: isGenericProfile,
@@ -202,6 +206,7 @@ class _SeedsScreenState extends State<SeedsScreen>
     late final String dayPrefix;
     late final int dayValue;
     late final String daySuffix;
+    late final String harvestLabel;
     late final String harvestText;
     late final String windowText;
     late final int estHeightCm;
@@ -236,7 +241,15 @@ class _SeedsScreenState extends State<SeedsScreen>
       dayPrefix = 'Día:';
       dayValue = daySinceSowing;
       daySuffix = 'desde siembra';
-      harvestText = '${stageResult.expectedDaysToEnd} días';
+      final maizeCycleLine = resolveCycleDisplayLine(
+        cropId: resolvedCropId,
+        profileId: runtime.effectiveProfileId,
+        stageKey: stageResult.stageKey,
+        stageLabel: stageResult.stageLabelEs,
+        expectedDaysToEnd: stageResult.expectedDaysToEnd,
+      );
+      harvestLabel = maizeCycleLine.label;
+      harvestText = maizeCycleLine.value;
       windowText = SeedsScreenLogic.windowsText(windowsNow);
       estHeightCm = est.heightCm;
       growthCmPerWeek = est.growthCmPerWeek;
@@ -256,9 +269,15 @@ class _SeedsScreenState extends State<SeedsScreen>
       daySuffix = resolvedSowingDate == null
           ? 'seguimiento fenológico pendiente'
           : 'desde siembra';
-      harvestText = runtime.stageResult != null
-          ? '${runtime.stageResult!.expectedDaysToEnd} días'
-          : 'Pendiente';
+      final cycleLine = resolveCycleDisplayLine(
+        cropId: resolvedCropId,
+        profileId: runtime.effectiveProfileId,
+        stageKey: runtime.stageResult?.stageKey,
+        stageLabel: runtime.stageResult?.stageLabelEs ?? runtime.stageLabel,
+        expectedDaysToEnd: runtime.stageResult?.expectedDaysToEnd,
+      );
+      harvestLabel = cycleLine.label;
+      harvestText = cycleLine.value;
 
       final windowsNow =
           runtime.stageResult?.windowsNow.whereType<SeedWindowKey>().toList(
@@ -287,6 +306,7 @@ class _SeedsScreenState extends State<SeedsScreen>
       dayPrefix = daysUntil == 0 ? 'Hoy:' : 'Faltan:';
       dayValue = daysUntil;
       daySuffix = daysUntil == 0 ? 'siembra sugerida' : 'días para siembra';
+      harvestLabel = 'Estimado a cosecha:';
       harvestText = 'Pendiente';
       windowText = 'Preparación / Validación';
       estHeightCm = 0;
@@ -299,6 +319,7 @@ class _SeedsScreenState extends State<SeedsScreen>
       dayPrefix = 'Estado:';
       dayValue = 0;
       daySuffix = 'sin siembra activa';
+      harvestLabel = 'Seguimiento:';
       harvestText = '—';
       windowText = 'Monitoreo general';
       estHeightCm = 0;
@@ -311,6 +332,7 @@ class _SeedsScreenState extends State<SeedsScreen>
       dayPrefix = 'Estado:';
       dayValue = 0;
       daySuffix = 'configuración pendiente';
+      harvestLabel = 'Seguimiento:';
       harvestText = '—';
       windowText = 'Monitoreo general';
       estHeightCm = 0;
@@ -523,6 +545,7 @@ class _SeedsScreenState extends State<SeedsScreen>
                         dayPrefix: dayPrefix,
                         dayValue: dayValue,
                         daySuffix: daySuffix,
+                        harvestLabel: harvestLabel,
                         harvestText: harvestText,
                         windowText: windowText,
                         progress: hasCropCareScore ? (cropScore! / 100.0) : 0.0,
@@ -606,9 +629,21 @@ class SeedsScreenLayout {
     'assets/seeds/chili/chili_stage_senescence.png',
   ];
 
-  static const String eggplantIconAsset =
-      'assets/icons/wizard/ic_eggplant.png';
+  static const String eggplantIconAsset = 'assets/icons/wizard/ic_eggplant.png';
   static const double eggplantIconScale = 2.55;
+  static const String squashIconAsset =
+      'assets/icons/wizard/ic_squash_generic.png';
+  static const double squashIconScale = 2.55;
+  static const List<String> squashHeroFallbackAssets = <String>[
+    'assets/seeds/Squash/squash_stage_flowering.png',
+    'assets/seeds/Squash/squash_stage_vegetative.png',
+    'assets/seeds/Squash/squash_stage_fruit_set.png',
+    'assets/seeds/Squash/squash_stage_fruit_fill.png',
+    'assets/seeds/Squash/squash_stage_progressive_harvest.png',
+    'assets/seeds/Squash/squash_stage_establishment.png',
+    'assets/seeds/Squash/squash_stage_germination.png',
+    'assets/seeds/Squash/squash_stage_senescence.png',
+  ];
   static const List<String> eggplantHeroFallbackAssets = <String>[
     'assets/seeds/eggplant/eggplant_stage_flowering.png',
     'assets/seeds/eggplant/eggplant_stage_vegetative.png',
@@ -618,6 +653,17 @@ class SeedsScreenLayout {
     'assets/seeds/eggplant/eggplant_stage_establishment.png',
     'assets/seeds/eggplant/eggplant_stage_germination.png',
     'assets/seeds/eggplant/eggplant_stage_senescence.png',
+  ];
+  static const String lettuceIconAsset =
+      'assets/icons/wizard/ic_lettuce_generic.png';
+  static const double lettuceIconScale = 2.55;
+  static const List<String> lettuceHeroFallbackAssets = <String>[
+    'assets/seeds/lettuce/lettuce_stage_vegetative.png',
+    'assets/seeds/lettuce/lettuce_stage_head_formation.png',
+    'assets/seeds/lettuce/lettuce_stage_harvest_window.png',
+    'assets/seeds/lettuce/lettuce_stage_establishment.png',
+    'assets/seeds/lettuce/lettuce_stage_germination.png',
+    'assets/seeds/lettuce/lettuce_stage_senescence.png',
   ];
 
   static const String bgAsset = 'assets/images/bg_image_seeds.png';
@@ -777,6 +823,10 @@ class SeedsScreenLogic {
         return 'Chile';
       case 'eggplant':
         return 'Berenjena';
+      case 'squash':
+        return 'Calabaza';
+      case 'lettuce':
+        return 'Lechuga';
       case '':
         return 'Cultivo';
       default:
@@ -859,6 +909,7 @@ class SeedsScreenLogic {
 
   static String topCardTitle({
     required CropRuntimeSnapshot runtime,
+    required String cropId,
     required String cropDisplayName,
     required String varietyAlias,
     required bool isGenericSelection,
@@ -873,6 +924,12 @@ class SeedsScreenLogic {
     }
 
     if (isGenericSelection) {
+      if (cropId == CropCatalog.squashCropId) {
+        return '$cropDisplayName - Calabaza generica';
+      }
+      if (cropId == CropCatalog.lettuceCropId) {
+        return '$cropDisplayName - Lechuga generica';
+      }
       return '$cropDisplayName – Perfil genérico';
     }
 
@@ -919,6 +976,10 @@ class SeedsScreenLogic {
           return SeedsScreenLayout.chiliIconAsset;
         case CropCatalog.eggplantCropId:
           return SeedsScreenLayout.eggplantIconAsset;
+        case CropCatalog.squashCropId:
+          return SeedsScreenLayout.squashIconAsset;
+        case CropCatalog.lettuceCropId:
+          return SeedsScreenLayout.lettuceIconAsset;
         default:
           return SeedsScreenLayout.genericPlantIconAsset;
       }
@@ -943,6 +1004,10 @@ class SeedsScreenLogic {
         return SeedsScreenLayout.chiliIconAsset;
       case CropCatalog.eggplantCropId:
         return SeedsScreenLayout.eggplantIconAsset;
+      case CropCatalog.squashCropId:
+        return SeedsScreenLayout.squashIconAsset;
+      case CropCatalog.lettuceCropId:
+        return SeedsScreenLayout.lettuceIconAsset;
       default:
         return SeedsScreenLayout.genericPlantIconAsset;
     }
@@ -997,6 +1062,16 @@ class SeedsScreenLogic {
       return SeedsScreenLayout.eggplantIconScale;
     }
 
+    if (asset == SeedsScreenLayout.squashIconAsset ||
+        cropId == CropCatalog.squashCropId) {
+      return SeedsScreenLayout.squashIconScale;
+    }
+
+    if (asset == SeedsScreenLayout.lettuceIconAsset ||
+        cropId == CropCatalog.lettuceCropId) {
+      return SeedsScreenLayout.lettuceIconScale;
+    }
+
     return SeedsScreenLayout.genericPlantIconScale;
   }
 
@@ -1030,6 +1105,21 @@ class SeedsScreenLogic {
 
     if (cropId == CropCatalog.eggplantCropId) {
       for (final asset in SeedsScreenLayout.eggplantHeroFallbackAssets) {
+        add(asset);
+      }
+    }
+
+    if (cropId == CropCatalog.squashCropId) {
+      for (final asset in SeedsScreenLayout.squashHeroFallbackAssets) {
+        add(asset);
+      }
+      for (final asset in SeedsScreenLayout.cucumberHeroFallbackAssets) {
+        add(asset);
+      }
+    }
+
+    if (cropId == CropCatalog.lettuceCropId) {
+      for (final asset in SeedsScreenLayout.lettuceHeroFallbackAssets) {
         add(asset);
       }
     }
@@ -1645,6 +1735,7 @@ class _CareCardInner extends StatelessWidget {
   final int dayValue;
   final String daySuffix;
 
+  final String harvestLabel;
   final String harvestText;
   final String windowText;
   final double progress;
@@ -1679,6 +1770,7 @@ class _CareCardInner extends StatelessWidget {
     required this.dayPrefix,
     required this.dayValue,
     required this.daySuffix,
+    required this.harvestLabel,
     required this.harvestText,
     required this.windowText,
     required this.progress,
@@ -1810,7 +1902,7 @@ class _CareCardInner extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               _LineRow(
-                label: 'Estimado a cosecha:',
+                label: harvestLabel,
                 value: harvestText,
                 labelSize: lineLabelSize,
                 valueSize: lineValueSize,

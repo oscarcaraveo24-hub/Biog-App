@@ -25,6 +25,35 @@ class ConfigureSeedWizardAssets {
   static const String cropCucumber = 'assets/icons/wizard/ic_cucumber.png';
   static const String cropChili = 'assets/icons/wizard/ic_chili.png';
   static const String cropEggplant = 'assets/icons/wizard/ic_eggplant.png';
+  static const String cropSquash = 'assets/icons/wizard/ic_squash_generic.png';
+  static const String squashItalianZucchini =
+      'assets/icons/wizard/ic_squash_italian_zucchini.png';
+  static const String squashCriollaHuicha =
+      'assets/icons/wizard/ic_squash_criolla_huicha.png';
+  static const String squashRoundBola =
+      'assets/icons/wizard/ic_squash_round_bola.png';
+  static const String squashCastilla =
+      'assets/icons/wizard/ic_squash_castilla.png';
+  static const String squashButternutBuchona =
+      'assets/icons/wizard/ic_squash_butternut_buchona.png';
+  static const String squashChilacayote =
+      'assets/icons/wizard/ic_squash_chilacayote.png';
+  static const String squashPipianPepita =
+      'assets/icons/wizard/ic_squash_pipian_pepita.png';
+
+  // Lechuga (cultivo madre crop_lettuce). El genérico usa el ícono madre.
+  static const String cropLettuce =
+      'assets/icons/wizard/ic_lettuce_generic.png';
+  static const String lettuceRomaine =
+      'assets/icons/wizard/ic_lettuce_romaine.png';
+  static const String lettuceMiniRomaine =
+      'assets/icons/wizard/ic_lettuce_mini_romaine.png';
+  static const String lettuceIceberg =
+      'assets/icons/wizard/ic_lettuce_iceberg.png';
+  static const String lettuceButterhead =
+      'assets/icons/wizard/ic_lettuce_butterhead.png';
+  static const String lettuceLooseLeaf =
+      'assets/icons/wizard/ic_lettuce_loose_leaf.png';
 
   static const String cucumberSlicer =
       'assets/icons/wizard/ic_cucumber_slicer.png';
@@ -454,6 +483,117 @@ class ConfigureSeedWizardAssets {
     }
 
     return cropEggplant;
+  }
+
+  static String squashTypedIconForVariety({
+    String? varietyId,
+    String? label,
+  }) {
+    final raw = '${varietyId ?? ''} ${label ?? ''}'.toLowerCase();
+    if (raw.contains('ca-01') ||
+        raw.contains('ca01') ||
+        raw.contains('ca_01') ||
+        raw.contains('zucchini') ||
+        raw.contains('italiana')) {
+      return squashItalianZucchini;
+    }
+    if (raw.contains('ca-02') ||
+        raw.contains('ca02') ||
+        raw.contains('ca_02') ||
+        raw.contains('criolla') ||
+        raw.contains('huicha') ||
+        raw.contains('milpa')) {
+      return squashCriollaHuicha;
+    }
+    if (raw.contains('ca-03') ||
+        raw.contains('ca03') ||
+        raw.contains('ca_03') ||
+        raw.contains('bola') ||
+        raw.contains('redonda') ||
+        raw.contains('round')) {
+      return squashRoundBola;
+    }
+    if (raw.contains('ca-04') ||
+        raw.contains('ca04') ||
+        raw.contains('ca_04') ||
+        raw.contains('castilla') ||
+        raw.contains('pumpkin')) {
+      return squashCastilla;
+    }
+    if (raw.contains('ca-05') ||
+        raw.contains('ca05') ||
+        raw.contains('ca_05') ||
+        raw.contains('butternut') ||
+        raw.contains('buchona') ||
+        raw.contains('mantequilla')) {
+      return squashButternutBuchona;
+    }
+    if (raw.contains('ca-06') ||
+        raw.contains('ca06') ||
+        raw.contains('ca_06') ||
+        raw.contains('chilacayote') ||
+        raw.contains('chilacayota')) {
+      return squashChilacayote;
+    }
+    if (raw.contains('ca-07') ||
+        raw.contains('ca07') ||
+        raw.contains('ca_07') ||
+        raw.contains('pipian') ||
+        raw.contains('pipián') ||
+        raw.contains('pepita')) {
+      return squashPipianPepita;
+    }
+    return cropSquash;
+  }
+
+  static String lettuceTypedIconForVariety({
+    String? varietyId,
+    String? label,
+  }) {
+    final raw = '${varietyId ?? ''} ${label ?? ''}'.toLowerCase();
+    if (raw.contains('le-01') ||
+        raw.contains('le01') ||
+        raw.contains('le_01') ||
+        raw.contains('romaine') ||
+        raw.contains('romana') ||
+        raw.contains('cos')) {
+      return lettuceRomaine;
+    }
+    if (raw.contains('le-02') ||
+        raw.contains('le02') ||
+        raw.contains('le_02') ||
+        raw.contains('mini') ||
+        raw.contains('corazon') ||
+        raw.contains('gem')) {
+      return lettuceMiniRomaine;
+    }
+    if (raw.contains('le-03') ||
+        raw.contains('le03') ||
+        raw.contains('le_03') ||
+        raw.contains('iceberg') ||
+        raw.contains('bola') ||
+        raw.contains('crisphead')) {
+      return lettuceIceberg;
+    }
+    if (raw.contains('le-04') ||
+        raw.contains('le04') ||
+        raw.contains('le_04') ||
+        raw.contains('butterhead') ||
+        raw.contains('mantequilla') ||
+        raw.contains('bibb') ||
+        raw.contains('boston')) {
+      return lettuceButterhead;
+    }
+    if (raw.contains('le-05') ||
+        raw.contains('le05') ||
+        raw.contains('le_05') ||
+        raw.contains('hoja suelta') ||
+        raw.contains('looseleaf') ||
+        raw.contains('orejona') ||
+        raw.contains('baby')) {
+      return lettuceLooseLeaf;
+    }
+    return cropLettuce;
   }
 
   static const String stagePlanned =

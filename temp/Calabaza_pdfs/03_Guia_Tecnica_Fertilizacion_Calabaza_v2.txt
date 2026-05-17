@@ -1,0 +1,555 @@
+GUIA TECNICA DE FERTILIZACION DE CALABAZA v2
+Fuente PDF: BIO-G_Guia_Fertilizacion_Calabaza_v2.pdf
+Conversión a texto: pdftotext -layout UTF-8, con separadores de pagina.
+
+--- PAGINA 1 ---
+
+BIO-G
+           GUIA TECNICA DE FERTILIZACION DE CALABAZA
+                         Campo abierto, acolchado con goteo y protegido en suelo - Base tecnica para BIO-G v1
+
+         Version v2 fortalecida con fuentes universitarias, PDFs aportados por el usuario y criterios de implementacion
+
+
+ Decision ejecutiva. Calabaza debe usar una sola guia base de fertilizacion con modificadores por perfil, destino de cosecha y sistema.
+ No conviene crear recetas totalmente separadas por cada nombre cultural. Lo que si cambia fuerte es: fruto tierno de corte continuo
+ vs fruto maduro/cascara dura vs semilla/pepita; campo abierto simple vs acolchado con goteo/protegido en suelo; y si el usuario
+ tiene o no analisis de suelo, agua o tejido.
+
+ Regla de seguridad agronomica: BIO-G puede orientar dosis de N, P2O5 y K2O por bandas y contexto, pero la dosis exacta debe
+ condicionarse a analisis de suelo/agua/tejido, textura, materia organica, historial de lluvias, CE y sistema de riego. Si faltan datos, se
+ activa modo conservador.
+
+
+ Alcance
+ • Incluye calabacita/zucchini, calabacita criolla, bola/redonda, calabaza de Castilla, butternut/buchona, chilacayote y pipian/pepita
+ como perfiles dentro de crop_squash.
+ • Cubre campo abierto, acolchado con goteo y protegido en suelo. No cubre hidroponia, sustratos inertes, soluciones
+ recirculantes ni recetas por marca comercial.
+ • Trabaja como motor BIO-G: prioridades por etapa + lectura de suelo/agua/tejido + modificadores por perfil y sistema.
+ • Incorpora como soporte los tres PDFs nuevos: guia comercial Fagro de calabacita, articulo INIFAP sobre fertilizacion
+ biologica/mineral en calabacita, y guia UPR de calabaza tropical.
+
+
+ Archivos base BIO-G y compatibilidad con codigo
+ El Perfil Universal Calabaza define a Cucurbita spp. como hortaliza de fruto con etapas BIO-G: germinacion,
+ emergencia/establecimiento, desarrollo vegetativo, floracion, cuajado/polinizacion, desarrollo de fruto/llenado, cosecha y
+ senescencia. El perfil CA-GEN/SKIP se usa cuando el usuario solo dice "calabaza" o no identifica tipo/variedad; puede migrar
+ despues sin perder memoria.
+ En codigo, esta guia debe alimentar FertilizationPlanner, NutrientRecommendationEngine, NpkCaps y, de preferencia, un
+ squash_nutrition_modifier.dart. La fenologia decide cuándo pesa cada nutriente; la guia de fertilizacion decide cuánto y bajo qué
+ condiciones se recomienda.
+
+
+ 1. Metodologia y criterio de confiabilidad
+  Tipo de evidencia                  Uso dentro de BIO-G                                                                     Confianza
+
+  Extension universitaria y          Base principal para N, P2O5, K2O, pH, timing, analisis foliar, fertirriego y            Alta
+  manuales oficiales                 polinizacion.
+
+  Investigacion academica            Ajustes finos: eficiencia de N, gallinaza, micorriza, rendimiento, nutricion foliar y   Media-alta
+  revisada                           salinidad.
+
+  Guias comerciales de producto      Validar secuencia practica por etapa, uso de Ca/B/K, compatibilidades y lenguaje        Media para timing; baja
+                                     de campo. No definir dosis base.                                                        para dosis universal
+
+  Foros/experiencia de               Solo lenguaje humano, problemas frecuentes y sintomas reportados. Nunca                 Baja-media
+  productores                        receta de dosis.
+
+
+
+ 2. Lo nuevo que aportan los PDFs del usuario
+
+
+
+BIO-G - Guia tecnica de fertilizacion de calabaza v2 | Documento tecnico interno                                                                       Pagina 1
+
+
+--- PAGINA 2 ---
+
+Documento                    Dato util                                                        Como entra a BIO-G
+
+  CALABACITA-GUIA /            Guia comercial por etapas: preparacion de suelo, plantula,       No se copian marcas ni dosis como verdad
+  Fagro                        siembra/trasplante, desarrollo vegetativo, floracion y           universal. Se usa para robustecer timing,
+                               engorde de frutos. Refuerza NPK por riego, Ca/B en floracion,    mensajes de fertirriego, etapa de Ca/B y K, y
+                               K en engorde, y compatibilidades como no mezclar ciertos         alertas de compatibilidad.
+                               productos con calcio.
+
+  Calabazita.pdf /             Compara fertilizacion mineral 120-90-00, gallinaza 3 t/ha,       Permite crear capa de enmiendas
+  INIFAP-RICA                  HMA y combinacion. En campo, gallinaza, HMA y mineral            organicas/biofertilidad: gallinaza y micorriza
+                               tuvieron rendimientos estadisticamente semejantes; el            pueden ser apoyo real, pero deben leerse con
+                               mineral subio altura, pero no rendimiento de forma clara.        analisis, CE y mineralizacion.
+
+  guia-calabaza 3 / UPR        Calabaza tropical: suelo profundo, buen drenaje, pH no           Aporta escenario tropical/fruto maduro. Refuerza
+                               menor a 5.5; analisis de suelo antes de fertilizar; si no hay    pH, drenaje, uso de cal, analisis de suelo, riesgo
+                               prueba, 100 lb N/cuerda y, si P<20 ppm y K<120 ppm, 100 lb       por lluvia y proteccion de abejas en floracion.
+                               P2O5 y 80 lb K2O/cuerda.
+
+
+
+ 3. Hallazgos tecnicos firmes
+ • P y K deben decidirse por analisis de suelo, no por receta fija. Mid-Atlantic, Minnesota y UPR coinciden en que la prueba de suelo
+ gobierna el programa. [S1][S2][S5][S6]
+ • Summer squash/calabacita corta: referencia fuerte Mid-Atlantic de 75-100 lb/A de N total, con P2O5 y K2O segun
+ bajo/medio/alto/muy alto. [S1]
+ • Pumpkin/winter squash/fruto maduro: referencia fuerte Mid-Atlantic de 50-100 lb/A de N total, con P2O5 y K2O por categoria de
+ suelo. [S2]
+ • UF/IFAS mantiene 150 lb/A de N como referencia de squash en Florida y 120 lb/A de P2O5/K2O solo cuando P o K son muy bajos;
+ usarlo como techo operativo intensivo, no como default universal. [S3]
+ • Oklahoma Extension recomienda no sobreaplicar N porque niveles altos pueden causar crecimiento excesivo, retrasar floracion
+ y reducir cuajado; sugiere N pre-siembra y dos topdress de 40 lb/A en manejo simple. [S4]
+ • UPR refuerza que en calabaza tropical debe haber suelo profundo, drenado y pH >=5.5; si no hay analisis, usa 100 lb N/cuerda
+ como referencia regional y P/K solo si los niveles son bajos. [S5]
+ • INIFAP/RICA muestra que gallinaza 3 t/ha y HMA pueden competir con fertilizacion mineral en rendimiento de calabacita, pero
+ tambien advierte que los abonos organicos deben medirse por salinidad y posible acumulacion de metales. [U2]
+ • La floracion no depende solo de nutrimentos: sin polinizacion efectiva no hay fruto. En calabaza, flores femeninas no polinizadas
+ en la mañana abortan, asi que el motor debe cruzar fertilizacion con clima, plaguicidas y abejas. [S5]
+
+
+ 4. Bandas base de N, P2O5 y K2O para BIO-G
+ Las bandas siguientes son referencias de trabajo para el motor. No son receta final. El orden correcto es: perfil + sistema + etapa
+ + analisis de suelo + agua/CE + historial + tejido.
+  Escenario BIO-G         N total estacional             P2O5 segun suelo              K2O segun suelo               Lectura BIO-G
+
+  CA-01/CA-03             75-100 lb/A (84-112 kg/ha)     150/100/50/0 lb/A segun P     200/150/100/0 lb/A segun K    Ciclo corto con cortes
+  calabacita de corte     como base Mid-Atlantic.        bajo/medio/alto/muy alto =    bajo/medio/alto/muy alto =    frecuentes: K y agua
+  tierno                  UF/IFAS puede llegar a 150     168/112/56/0 kg/ha.           224/168/112/0 kg/ha.          mandan desde floracion; N
+                          lb/A (168 kg/ha) en                                                                        moderado para no perder
+                          intensivo.                                                                                 continuidad.
+
+  CA-04/CA-05 fruto       50-100 lb/A (56-112 kg/ha)     Mismo esquema por suelo:      Mismo esquema por suelo:      N temprano, K fuerte en
+  maduro                  como base; subir solo por      168/112/56/0 kg/ha.           224/168/112/0 kg/ha.          llenado. Bajar N tarde para
+                          suelo ligero, alto                                                                         no retrasar
+                          rendimiento o ciclo                                                                        maduracion/cascara.
+                          extendido.
+
+  CA-02 criolla/milpa     Base conservadora 60-100       Por laboratorio. En           Por laboratorio. K sube si    No sobrefertilizar por baja
+                          lb/A (67-112 kg/ha),           milpa/suelos con historia     hay alta carga de fruto.      densidad o manejo
+                          ajustada por densidad,         organica, evitar P por                                      tradicional. Priorizar suelo,
+                          materia organica y lluvia.     costumbre.                                                  humedad y MO.
+
+  CA-06 chilacayote       No usar receta corta.          Por laboratorio.              Por laboratorio, con alto     Ciclo largo/vigoroso:
+                          70-120 lb/A (78-134 kg/ha)                                   peso en llenado.              reposicion suave y
+                          fraccionado si ciclo muy                                                                   extendida; evitar CE
+                          largo y hay respuesta.                                                                     acumulada.
+
+  CA-07 pipian/pepita     70-110 lb/A (78-123 kg/ha),    Por laboratorio.              K alto desde cuajado a        Objetivo semilla: K/Mg/S y
+                          con N temprano y medio;                                      llenado de semilla.           agua estable pesan mas que
+                          evitar N alto al final.                                                                    seguir creciendo guia.
+
+
+
+
+BIO-G - Guia tecnica de fertilizacion de calabaza v2 | Documento tecnico interno                                                                     Pagina 2
+
+
+--- PAGINA 3 ---
+
+Escenario BIO-G          N total estacional               P2O5 segun suelo                 K2O segun suelo             Lectura BIO-G
+
+  UPR calabaza             100 lb/cuerda aprox. 115         Solo si P<20 ppm: 100            Solo si K<120 ppm: 80       Referencia regional tropical.
+  tropical sin analisis    kg/ha N.                         lb/cuerda aprox. 115 kg/ha       lb/cuerda aprox. 92 kg/ha   No usar como default
+                                                            P2O5.                            K2O.                        nacional si existe analisis.
+
+
+ Conversiones y reglas de lectura
+ • 1 lb/A = 1.12085 kg/ha. 100 lb/cuerda de Puerto Rico equivale aproximadamente a 115 kg/ha porque una cuerda equivale a
+ ~0.393 ha.
+ • Cuando el suelo sale muy alto en P o K, BIO-G debe sugerir 0 kg/ha de ese nutriente salvo que exista recomendacion local de
+ reposicion o dato de tejido/deficiencia.
+ • Cuando hay lluvia fuerte, suelo arenoso o cosecha prolongada, puede justificarse N adicional o reposiciones de K, pero siempre
+ con lectura de CE y humedad.
+
+
+ 5. Campo abierto: programa operativo
+ 5.1 Informacion minima antes de recomendar dosis
+ • Perfil: CA-GEN, CA-01 a CA-07.
+ • Destino: fruto tierno, fruto maduro, semilla/pepita o desconocido.
+ • Sistema: campo abierto sin goteo, campo abierto con goteo, acolchado con goteo, protegido en suelo o desconocido.
+ • Modo de establecimiento: siembra directa, trasplante o desconocido.
+ • pH, materia organica, textura, drenaje, P disponible, K intercambiable, CE/salinidad, Ca, Mg, sodio y bicarbonatos si existen.
+
+ 5.2 Timing recomendado sin goteo o con manejo simple
+  Momento                      N                              P                          K                          Mensaje BIO-G
+
+  Pre-siembra / cama           25-50% de la banda total.      Todo o casi todo segun     Todo o parte               Antes de fertilizar fuerte, conviene
+                               Si hay                         suelo.                     importante segun           saber que ya tiene tu suelo. Evita
+                               gallinaza/composta,                                       suelo.                     sales cerca de la semilla.
+                               restar credito disponible.
+
+  Emergencia a 3 semanas       N moderado si vigor bajo       Normalmente no             Solo si suelo muy ligero   La planta esta formando raiz y
+                               o suelo pobre.                 repetir.                   o K bajo.                  guia; exceso tambien puede
+                                                                                                                    quemar o retrasar equilibrio.
+
+  Vinas corren /               Sidedress/fertirriego          Normalmente 0.             Comenzar a elevar          Se acerca floracion: balance y
+  prefloracion                 moderado. Mid-Atlantic                                    prioridad.                 agua pesan mas que puro N.
+                               sugiere 50 lb/A en
+                               summer squash; winter
+                               squash 25-50 lb/A.
+
+  Floracion                    Mantener, no empujar.          Importante si el suelo     Alto.                      Etapa critica: la flor puede estar
+                                                              lo permite.                                           bien nutrida, pero si falla
+                                                                                                                    agua/calor/abejas, falla el
+                                                                                                                    cuajado.
+
+  Cuajado / primer fruto       Medio.                         Baja respuesta             Alto-muy alto,             Aqui se decide forma, amarre y
+                                                              correctiva.                fraccionado.               continuidad. Revisa CE antes de
+                                                                                                                    subir K.
+
+  Cosecha progresiva           Pequenas reposiciones si       Evitar rutina sin          Reposicion sostenida.      K sostiene cortes; N alto puede
+  tierno                       hay cortes rentables.          prueba.                                               dar guia y no fruto.
+
+  Llenado/madurez fruto        Bajar N.                       Normalmente 0.             K sostenido.               El fruto manda: peso, cascara,
+  grande                                                                                                            materia seca y almacenamiento.
+
+
+
+ 6. Acolchado con goteo y protegido en suelo
+ En goteo/protegido, la logica cambia de aplicar todo a fraccionar y medir. La guia Fagro es util como senal de campo porque
+ estructura aplicaciones por etapa y refuerza que NPK va por riego, Ca/B en floracion y K en engorde; aun asi, sus marcas/dosis no
+ deben convertirse en regla universal.
+  Punto de control                      Regla BIO-G
+
+  pH antes de acolchar                  Ajustar hacia 6.0-6.5 si el suelo y recomendacion local lo permiten. UPR acepta no menor a 5.5 en calabaza
+                                        tropical; Oregon/Minnesota favorecen 6.0-7.5/6.0-6.5.
+
+
+
+
+BIO-G - Guia tecnica de fertilizacion de calabaza v2 | Documento tecnico interno                                                                           Pagina 3
+
+
+--- PAGINA 4 ---
+
+Punto de control                     Regla BIO-G
+
+  Base pre-siembra                     P y K segun laboratorio; solo parte de N para no concentrar sales. Mid-Atlantic recomienda P/K y 25-50%
+                                       de N antes de plantar en la mayoria de hortalizas.
+
+  Fertirriego                          Pulsos pequenos y frecuentes. Oklahoma destaca que fertirriego reduce riesgo de sobreaplicar N y
+                                       perdidas por lixiviacion.
+
+  CE del bulbo                         Alerta si sube. En flor/cuaje/llenado, CE alta se comporta como sequia fisiologica aunque haya agua.
+
+  Fuente de K                          KCl/MOP puede ser economico, pero en CE alta evaluar sulfato o nitrato de potasio. No subir K sin mirar
+                                       Mg/Ca.
+
+  Calcio y boro                        Suben en floracion/cuaje; utiles para flor/tejido/calidad, pero B tiene margen estrecho. No mezclar
+                                       productos incompatibles con calcio.
+
+  Protegido en suelo                   No activar hidroponia. Usar suelo + agua + CE + humedad + tejido + carga de fruto.
+
+
+
+ 7. Prioridad nutricional por etapa BIO-G
+  Etapa                 N                P                  K                   Ca/Mg/S/B            Accion BIO-G
+
+  Germinacion           Bajo             Medio              Bajo                Bajo                 Humedad estable, temperatura y cero sales
+                                                                                                     cerca de semilla. No forzar fertilizante.
+
+  Establecimiento       Medio            Alto               Medio               Medio                P temprano si el suelo lo permite; raiz y
+                                                                                                     arranque. Evitar anoxia/compactacion.
+
+  Vegetativo            Alto             Medio              Medio-alto          Mg/S medios          Construir guia, hoja y cobertura; evitar
+                        controlado                                                                   entrar a floracion con exceso de N.
+
+  Floracion             Medio            Alto               Alto                Ca/B/Mg suben        Cruzar nutricion con polinizadores. No
+                                                                                                     asperjar toxicos para abejas en la mañana.
+
+  Cuajado/polinizaci    Medio            Medio              Alto-muy alto       Ca/Mg altos          Evitar aborto, fruto mal formado y estres
+  on                                                                                                 osmotico. K ayuda, CE manda.
+
+  Llenado fruto         Medio en         Bajo-medio         Muy alto            Ca/Mg/S altos        Tierno: continuidad. Maduro: peso, materia
+                        tierno;                                                                      seca, cascara. Pipian: semilla.
+                        medio-bajo en
+                        maduro
+
+  Cosecha               Medio            Bajo               Alto                Mantenimiento        Reposicion por cortes; no mantener N si
+  progresiva                                                                                         baja rentabilidad o sube CE.
+
+  Fin de ciclo          Bajo             Bajo               Bajo-medio          Bajo                 Cerrar, registrar y aprender. No
+                                                                                                     sobreinvertir.
+
+
+
+ 8. Modificadores por perfil BIO-G
+  Perfil          Tipo UX                    Ajuste nutrimental                                          Nota BIO-G
+
+  CA-GEN          Generico                   N moderado, P temprano, K sube desde floracion. No          Protege floracion/cuajado y permite
+                                             asume fruto tierno ni maduro.                               migracion.
+
+  CA-01           Italiana/zucchini          75-100 lb/A N base; K constante desde floracion; N en       Mayor parecido operativo con pepino
+                                             reposiciones pequenas.                                      por cortes continuos.
+
+  CA-02           Criolla/milpa              Base conservadora, densidad menor, valorar MO y suelo       No sobrefertilizar sistemas
+                                             antes de subir dosis.                                       tradicionales.
+
+  CA-03           Bola/redonda               K, agua y Ca/Mg mas vigilados por forma/calibre.            Fruto redondo delata desbalance.
+
+  CA-04           Castilla                   50-100 lb/A N; K alto en llenado; bajar N tarde.            Evitar retraso de madurez/cascara.
+
+  CA-05           Butternut/buchona          K + Mg/Ca para firmeza y almacenamiento; N controlado       Calidad postcosecha pesa fuerte.
+                                             despues de cuaje.
+
+  CA-06           Chilacayote                Reposicion extendida y suave; vigilar CE acumulada.         No usar curva corta de calabacita.
+
+  CA-07           Pipian/pepita              K/Mg/S y agua estable en llenado de semilla; N suficiente   Objetivo semilla, no solo pulpa.
+                                             pero no alto tarde.
+
+
+
+ 9. Enmiendas organicas, gallinaza y micorriza
+ La capa nueva mas importante que aporto el PDF de INIFAP/RICA es que BIO-G no debe tratar gallinaza y micorriza como folklore.
+ En el estudio de calabacita, gallinaza, HMA y fertilizacion mineral tuvieron desempenos de rendimiento comparables. Pero eso no
+ significa "aplica cualquier gallinaza": significa que BIO-G debe pedir analisis del material y leer salinidad, mineralizacion y dosis
+
+
+
+BIO-G - Guia tecnica de fertilizacion de calabaza v2 | Documento tecnico interno                                                                  Pagina 4
+
+
+--- PAGINA 5 ---
+
+real.
+  Insumo/practica               Dato base                                       Decision BIO-G
+
+  Gallinaza procesada           INIFAP uso 3 t/ha en campo; reporto aporte      Contabilizar como credito nutrimental si hay analisis. No asumir
+                                total aproximado de 119 kg/ha N, 56 kg/ha P     que todo el N esta disponible de inmediato. Vigilar CE, sales y
+                                y 80 kg/ha K.                                   acumulacion.
+
+  HMA / micorriza               INIFAP uso R. intraradices; hubo colonizacion   No sustituir fertilizante automaticamente. Marcar como soporte
+  arbuscular                    y rendimiento comparable a mineral.             de raiz/absorcion, especialmente establecimiento y estres.
+
+  Gallinaza + HMA               En invernadero destaco altura y biomasa         Usar como estrategia de salud de suelo; no prometer aumento.
+                                foliar, pero en campo no siempre supero al
+                                mineral.
+
+  Composta/abonos               Minnesota y UPR recomiendan analizarlos;        Crear campo optional organicAmendmentAnalysis. Si falta, no
+  organicos                     pueden reducir necesidad de fertilizante        calcular dosis exacta.
+                                adicional.
+
+ Alerta BIO-G: los organicos pueden mejorar fertilidad y liberar nutrientes gradualmente, pero uso continuo o sin analisis puede
+ elevar salinidad o aportar contaminantes. Antes de descontar N/P/K mineral, pedir analisis del material o usar solo ajuste
+ conservador.
+
+
+ 10. Analisis foliar y verificacion
+ El analisis foliar verifica el programa; no reemplaza el suelo. Tambien evita confundir deficiencia con riego, raiz, salinidad, plaga,
+ enfermedad o clima.
+  Nutriente     Summer squash - fruto       Pumpkin - 5             INIFAP/RICA observaciones          Lectura BIO-G
+                temprano                    semanas
+
+  N             3.0-5.0%                    3.0-6.0%                SPAD 34.9-36.8 en campo;           Bajo: vigor/hoja insuficiente. Alto: posible
+                                                                    mineral y biologicos similares.    exceso vegetativo.
+
+  P             0.3-0.5%                    0.3-0.5%                P foliar aprox. 0.51-0.61 en       Clave temprano/floracion; no perseguir P
+                                                                    tratamientos.                      si suelo alto.
+
+  K             2.0-3.0%                    2.3-4.0%                No reportado en tabla foliar del   Clave para cuajado/llenado, leer con CE,
+                                                                    estudio 2013.                      agua y Mg/Ca.
+
+  Ca            1.0-2.0%                    0.9-1.5%                Ca aprox. 0.86-1.09 en             Leer con raiz, riego y transpiracion. No
+                                                                    tratamientos.                      solo dosis.
+
+  Mg            0.3-0.5%                    0.35-0.6%               Mg aprox. 0.79-0.84 en             Vigilar con K alto o pH/CE alterados.
+                                                                    tratamientos.
+
+  B             20-40 ppm aprox. en         Variable por            No reportado.                      Margen estrecho. Aplicar solo con
+                muchas guias horticolas     laboratorio                                                criterio/lab.
+
+
+ Protocolo minimo de muestreo
+ • Muestrear hojas recientemente maduras. No mezclar hojas viejas, brotes tiernos, hojas enfermas ni hojas con residuos foliares
+ recientes.
+ • Registrar etapa, perfil CA-XX, sistema, fecha, riego, CE, pH, aplicaciones recientes, clima y carga de fruto.
+ • Si hay salinidad, anoxia o raiz enferma, el resultado bajo puede reflejar absorcion bloqueada, no falta de fertilizante.
+
+
+ 11. Polinizacion, fertilizacion y aplicaciones foliares
+ En calabaza, la nutricion no puede aislarse de la polinizacion. UPR destaca que las flores femeninas no polinizadas durante la
+ manana abortan, y Mid-Atlantic recomienda proteger polinizadores evitando insecticidas sobre flores o malezas en flor.
+  Situacion                             Riesgo                                       Mensaje/accion BIO-G
+
+  Floracion con calor o baja            Mala polinizacion aunque NPK este bien.      Tu planta puede estar nutrida, pero si no hay polinizacion
+  actividad de abejas                                                                efectiva, el fruto no amarra. Revisa abejas, hora de
+                                                                                     aplicacion y clima.
+
+  Foliar con Ca/B/K en floracion        Puede apoyar tejido/flor, pero no            Aplicar solo si es compatible y sin afectar abejas. Evitar
+                                        reemplaza riego ni polinizadores.            mezclas incompatibles con calcio.
+
+  Aplicacion de plaguicidas en          Muerte/repelencia de abejas y aborto de      Programar tarde, sin viento y respetando etiqueta/toxicidad.
+  floracion                             flor femenina.
+
+  Alta HR/lluvia en floracion           Baja actividad de polinizadores +            Cruzar fertilizacion con clima. No subir N por reflejo; revisar
+                                        enfermedad + lavado/lixiviacion.             agua, CE, sanidad y abejas.
+
+
+
+
+BIO-G - Guia tecnica de fertilizacion de calabaza v2 | Documento tecnico interno                                                                       Pagina 5
+
+
+--- PAGINA 6 ---
+
+12. Salinidad, pH, riego y calidad de fruto
+  Parametro                 Zona segura/objetivo                         Alerta BIO-G                         Accion
+
+  pH                        6.0-7.5 ideal general; UPR: no menor a       <5.5 o >7.8 segun suelo/cultivo.     Encala si pH bajo con tiempo; si pH alto,
+                            5.5 en tropical; Minnesota favorece                                               revisar P, Fe, Zn, Mn.
+                            6.0-6.5.
+
+  CE/Salinidad              Baja y estable, especialmente flor/cuaje.    CE subiendo en                       No subir K/N sin revisar sales y drenaje.
+                                                                         cuajado/llenado.                     La salinidad simula sequia fisiologica.
+
+  Humedad suelo             Mantener estable; Oregon sugiere >60%        Deficit en flor/cuaje o anoxia en    Riego antes de fertilizar fuerte. Usar
+                            de capacidad de retencion para winter        suelo pesado.                        tensiometro/sensor si existe.
+                            squash/pumpkin.
+
+  Goteo + plastico          Reduce evaporacion, lixiviacion y            CE acumulada bajo acolchado o        Pulsos cortos, revisar bulbo y no aplicar
+                            pudricion; mejora manejo de fertirriego.     bulbo seco.                          fertilizante sin agua suficiente.
+
+
+
+ 13. Deficiencias, excesos y antagonismos
+  Elemento       Deficiencia probable                   Exceso/desbalance                       Accion BIO-G
+
+  N              Hojas viejas palidas, guia debil,      Exceso vegetativo, retraso de           Revisar etapa. En floracion no subir N sin mirar
+                 baja cobertura, baja continuidad.      floracion/cuaje, tejido tierno, mas     agua, K, CE y abejas.
+                                                        CE.
+
+  P              Raiz debil, crecimiento lento,         Innecesario en suelos altos; puede      Usar suelo. Mayor peso en establecimiento y
+                 floracion retrasada.                   bloquear micronutrientes.               prefloracion.
+
+  K              Bordes quemados, peor llenado,         CE alta y antagonismo con Mg/Ca.        Subir solo si CE y tejido lo permiten; fraccionar en
+                 fruto deformado, menor                                                         goteo.
+                 continuidad.
+
+  Ca             Tejido joven debil, peor               Competencia con Mg/K si se              Revisar raiz, humedad, HR y transpiracion.
+                 firmeza/calidad.                       desbalancea.
+
+  Mg             Clorosis intervenal en hojas viejas,   Desbalance catiónico.                   Vigilar Mg cuando sube K o pH/CE estan fuera.
+                 frecuente con K alto.
+
+  B              Flor/cuaje anormal, brotes             Toxicidad facil; margen estrecho.       Microdosis solo con analisis/criterio local.
+                 deformes.
+
+
+
+ 14. Reglas de implementacion en codigo
+  Modulo                               Decision concreta
+
+  FertilizationPlanner                 Agregar rama cropKey.squash. Separar modo CA-GEN, fruto tierno, fruto maduro y semilla. Si
+                                       soilBucketP/K unknown, usar prioridad por etapa + recomendar analisis antes de dosis exacta.
+
+  NutrientRecommendationEngin          No usar nPriority/pPriority/kPriority como dosis. Usarlos como razonamiento UX y cruzar con soilBucket,
+  e                                    CE, humedad, sistema y perfil.
+
+  NpkCaps                              Crear caps por perfil/sistema: summer squash 84-112 kg/ha N base; winter/pumpkin 56-112 kg/ha;
+                                       intensivo hasta 168 kg/ha solo justificado. P/K por buckets.
+
+  squash_nutrition_modifier.dart       Campos sugeridos: targetUse, harvestContinuity, fruitMaturityGoal, nitrogenVigorRisk, potassiumDemand,
+                                       salinitySensitivity, pollinationSensitivity, organicAmendmentCredit.
+
+  Mensajes farmer-friendly             Ejemplos: "No subas nitrogeno si la planta ya trae mucha guia"; "K ayuda al fruto, pero tu CE esta
+                                       subiendo"; "Puede ser polinizacion, no falta de fertilizante".
+
+
+ Buckets sugeridos para P y K
+  Bucket                    P2O5 recomendado                  K2O recomendado                   Comportamiento
+
+  low                       168 kg/ha aprox.                  224 kg/ha aprox.                  Alta probabilidad de respuesta.
+
+  medium                    112 kg/ha aprox.                  168 kg/ha aprox.                  Probabilidad media/moderada; ajustar por
+                                                                                                rendimiento esperado.
+
+  high/optimum              56 kg/ha aprox.                   112 kg/ha aprox.                  Respuesta baja; aplicar solo soporte/reposicion.
+
+  veryHigh                  0 kg/ha, salvo reposicion local   0 kg/ha, salvo reposicion local   Evitar gasto y riesgo ambiental/salino.
+
+  unknown                   No dar dosis exacta               No dar dosis exacta               Usar prioridad por etapa y pedir analisis.
+
+
+
+ 15. Calendario operativo sugerido BIO-G
+
+BIO-G - Guia tecnica de fertilizacion de calabaza v2 | Documento tecnico interno                                                                          Pagina 6
+
+
+--- PAGINA 7 ---
+
+Momento                    Que revisar                                Que hacer                              Mensaje humano posible
+
+  Antes de siembra           pH, MO, textura, P, K, CE, Ca/Mg,          Corregir base; descontar credito       Antes de fertilizar fuerte, conviene
+                             historial organico.                        organico solo si hay analisis.         saber que ya tiene tu suelo.
+
+  Establecimiento            Humedad, raiz, CE, emergencia              P util si suelo lo permite; N          La planta esta formando raiz: el
+                             uniforme.                                  moderado.                              exceso tambien puede quemar.
+
+  Vegetativo                 Vigor, color, guia, malezas, N/K.          N controlado, Mg/S si hace falta.      Va creciendo guia, pero no conviene
+                                                                                                               empujar puro follaje.
+
+  Prefloracion               P/K/Ca, agua, temperatura, abejas          Preparar transicion reproductiva.      Se acerca floracion: agua, balance y
+                             presentes.                                                                        polinizacion pesan mas.
+
+  Floracion                  Flor femenina/masculina, calor, HR,        Evitar estres y proteger abejas;       Etapa critica: si falla polinizacion,
+                             plaguicidas.                               ajustar K/Ca/B si se justifica.        aunque fertilices, no amarra.
+
+  Cuajado                    Fruto pequeño, aborto, deformidad,         K controlado, Ca/Mg y agua             Aqui se decide gran parte del
+                             CE.                                        constante.                             rendimiento.
+
+  Llenado/cosecha            Tamaño, firmeza, color, cortes, peso,      Reposicion por cortes o llenado;       El fruto manda: K, agua y equilibrio
+                             calidad.                                   bajar N tarde en fruto maduro.         sostienen calidad.
+
+  Cierre                     Rentabilidad, vigor, sanidad, historial.   No sobreinvertir; registrar            Ya no conviene gastar igual si el ciclo
+                                                                        aprendizaje.                           esta cerrando.
+
+
+
+ 16. Decisiones finales de producto
+  Decision                                  Resultado
+
+  ¿La guia de calabaza debe ser una         Si. Una base + modificadores por perfil, destino y sistema.
+  sola?
+
+  ¿CA-GEN puede sugerir dosis?              Solo bandas conservadoras y condicionadas. Si faltan datos, pedir analisis.
+
+  ¿Que diferencia a BIO-G?                  No solo dice "echa fertilizante". Cruza etapa, perfil, suelo, CE, agua, polinizacion, organicos y
+                                            rendimiento esperado.
+
+  ¿Se pueden usar gallinaza/micorriza?      Si como capa de biofertilidad y credito nutrimental, pero no como sustitucion automatica sin analisis.
+
+  ¿Que queda fuera v1?                      Hidroponia, sustrato inerte, receta por marca, dosis exacta sin laboratorio y promesas de
+                                            rendimiento.
+
+
+
+
+BIO-G - Guia tecnica de fertilizacion de calabaza v2 | Documento tecnico interno                                                                         Pagina 7
+
+
+--- PAGINA 8 ---
+
+17. Fuentes y trazabilidad
+ [S1] Rutgers / Mid-Atlantic Commercial Vegetable Production Recommendations 2026/2027 - Summer Squash.
+ https://njaes.rutgers.edu/pubs/commercial-veg-rec/summer-squash.pdf
+ [S2] Rutgers / Mid-Atlantic Commercial Vegetable Production Recommendations 2026/2027 - Pumpkins and Winter Squash.
+ https://njaes.rutgers.edu/pubs/commercial-veg-rec/pumpkins-winter-squash.pdf
+ [S3] UF/IFAS Ask IFAS - A Summary of N, P, and K Research with Squash in Florida (SL343/CV227). https://ask.ifas.ufl.edu/publication/CV227
+ [S4] Oklahoma State University Extension - Squash and Pumpkin Production. https://extension.okstate.edu/fact-sheets/squash-and-pumpkin-production
+ [S5] University of Puerto Rico Extension - Guia para la Produccion Comercial de la Calabaza Tropical.
+ https://www.uprm.edu/sea/wp-content/uploads/sites/351/2025/03/guia-calabaza.pdf
+ [S6] University of Minnesota Extension - Growing pumpkins and winter squash in home gardens. https://extension.umn.edu/vegetables/pumpkins-and-winter-squash
+ [S7] UF/IFAS Ask IFAS - Plant Tissue Analysis and Interpretation for Vegetable Crops in Florida. https://ask.ifas.ufl.edu/publication/EP081
+ [S8] Oregon State University - Squash, Pumpkin and Winter. https://horticulture.oregonstate.edu/oregon-vegetables/squash-pumpkin-and-winter
+ [U1] PDF aportado por usuario: CALABACITA-GUIA.pdf, guia comercial Fagro de calabacita. Se uso como apoyo de timing, compatibilidad y secuencia por etapa, no
+ como base universal de dosis.
+ [U2] PDF aportado por usuario: Calabazita.pdf. Diaz Franco et al. 2016. Crecimiento, nutricion y rendimiento de calabacita con fertilizacion biologica y mineral. Rev. Int.
+ Contam. Ambie. 32(4):445-453.
+ [U3] PDF aportado por usuario: guia-calabaza 3.pdf. Guia para la Produccion Comercial de la Calabaza Tropical, UPR Extension.
+ [BIO-G] Documentos internos aportados por el usuario: Perfil Universal BIO-G - Calabaza v2; Perfil Generico Calabaza CA-GEN/SKIP v2; Guia de Fertilizacion Pepino v1;
+ Guia de Fertilizacion Berenjena v1.
+
+
+
+
+BIO-G - Guia tecnica de fertilizacion de calabaza v2 | Documento tecnico interno                                                                                      Pagina 8

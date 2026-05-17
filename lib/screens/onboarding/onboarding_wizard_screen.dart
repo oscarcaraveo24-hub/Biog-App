@@ -477,6 +477,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           ? 'Selecciona el tipo de chile'
           : cropId == CropCatalog.eggplantCropId
           ? 'Selecciona el tipo de berenjena'
+          : cropId == CropCatalog.squashCropId
+          ? 'Selecciona el tipo de calabaza'
+          : cropId == CropCatalog.lettuceCropId
+          ? 'Selecciona el tipo de lechuga'
           : 'Selecciona variedad o perfil',
       options: varieties
           .map(
@@ -491,6 +495,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                                   ? 'Recomendado si no sabes el tipo de chile'
                                   : cropId == CropCatalog.eggplantCropId
                                   ? 'Recomendado si no sabes el tipo de berenjena'
+                                  : cropId == CropCatalog.squashCropId
+                                  ? 'Recomendado si no sabes el tipo de calabaza'
+                                  : cropId == CropCatalog.lettuceCropId
+                                  ? 'Recomendado si no sabes el tipo de lechuga'
                                   : 'Recomendado si no sabes la variedad')
                             : 'Disponible ahora')
                       : 'Próximamente'),
@@ -521,6 +529,16 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                     )
                   : cropId == CropCatalog.eggplantCropId
                   ? ConfigureSeedWizardAssets.eggplantTypedIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.squashCropId
+                  ? ConfigureSeedWizardAssets.squashTypedIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.lettuceCropId
+                  ? ConfigureSeedWizardAssets.lettuceTypedIconForVariety(
                       varietyId: variety.id,
                       label: variety.label,
                     )
@@ -636,6 +654,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return ConfigureSeedWizardAssets.cropChili;
       case CropCatalog.eggplantCropId:
         return ConfigureSeedWizardAssets.cropEggplant;
+      case CropCatalog.squashCropId:
+        return ConfigureSeedWizardAssets.cropSquash;
+      case CropCatalog.lettuceCropId:
+        return ConfigureSeedWizardAssets.cropLettuce;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }
@@ -661,6 +683,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return ConfigureSeedWizardAssets.cropChili;
       case 'Berenjena':
         return ConfigureSeedWizardAssets.cropEggplant;
+      case 'Calabaza':
+        return ConfigureSeedWizardAssets.cropSquash;
+      case 'Lechuga':
+        return ConfigureSeedWizardAssets.cropLettuce;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }
@@ -857,6 +883,16 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           )
         : cropId == CropCatalog.eggplantCropId
         ? ConfigureSeedWizardAssets.eggplantTypedIconForVariety(
+            varietyId: selectedVariety?.id ?? _draft.varietyAlias,
+            label: selectedVariety?.label ?? selectedVarietyLabel,
+          )
+        : cropId == CropCatalog.squashCropId
+        ? ConfigureSeedWizardAssets.squashTypedIconForVariety(
+            varietyId: selectedVariety?.id ?? _draft.varietyAlias,
+            label: selectedVariety?.label ?? selectedVarietyLabel,
+          )
+        : cropId == CropCatalog.lettuceCropId
+        ? ConfigureSeedWizardAssets.lettuceTypedIconForVariety(
             varietyId: selectedVariety?.id ?? _draft.varietyAlias,
             label: selectedVariety?.label ?? selectedVarietyLabel,
           )

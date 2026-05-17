@@ -31,8 +31,54 @@ class PlantHealthStageAdapter {
         return _fromChili(stage, daySinceSowing);
       case CropCatalog.eggplantCropId:
         return _fromEggplant(stage, daySinceSowing);
+      case CropCatalog.squashCropId:
+        return _fromSquash(stage, daySinceSowing);
+      case CropCatalog.lettuceCropId:
+        return _fromLettuce(stage, daySinceSowing);
     }
     return null;
+  }
+
+  /// Lechuga: hortaliza de hoja con 6 etapas BIO-G. El bucket
+  /// reproductiveEarly representa la formación de cabeza (E4) y
+  /// reproductiveMid/grainFill la ventana de cosecha (E5).
+  static PlantHealthStageBucket _fromLettuce(String stage, int? day) {
+    if (_matches(stage, const <String>['germin'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['establec', 'emerg', 'transplant'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['cabeza', 'formacion', 'head'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>[
+      'sobremadur',
+      'senesc',
+      'cierre',
+      'end',
+    ])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (_matches(stage, const <String>['cosecha', 'ventana', 'harvest'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>['vegetativo', 'vegetative'])) {
+      if (day != null) {
+        if (day <= 18) return PlantHealthStageBucket.vegetativeEarly;
+        if (day <= 32) return PlantHealthStageBucket.vegetativeMid;
+      }
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (day != null) {
+      if (day <= 7) return PlantHealthStageBucket.seedling;
+      if (day <= 21) return PlantHealthStageBucket.vegetativeEarly;
+      if (day <= 38) return PlantHealthStageBucket.vegetativeMid;
+      if (day <= 50) return PlantHealthStageBucket.vegetativeLate;
+      if (day <= 64) return PlantHealthStageBucket.reproductiveEarly;
+      if (day <= 85) return PlantHealthStageBucket.reproductiveMid;
+    }
+    return PlantHealthStageBucket.lateSeason;
   }
 
   static PlantHealthStageBucket _fromMaize(String stage, int? day) {
@@ -302,6 +348,47 @@ class PlantHealthStageAdapter {
       if (day <= 75) return PlantHealthStageBucket.reproductiveEarly;
       if (day <= 95) return PlantHealthStageBucket.reproductiveMid;
       if (day <= 145) return PlantHealthStageBucket.grainFill;
+    }
+    return PlantHealthStageBucket.lateSeason;
+  }
+
+  static PlantHealthStageBucket _fromSquash(String stage, int? day) {
+    if (_matches(stage, const <String>['germin'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['establec', 'emerg', 'transplant'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['vegetativo', 'vegetative'])) {
+      if (day != null) {
+        if (day <= 28) return PlantHealthStageBucket.vegetativeEarly;
+        if (day <= 45) return PlantHealthStageBucket.vegetativeMid;
+      }
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (_matches(stage, const <String>['flor', 'flower'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['cuaj', 'amarre', 'fruitset'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>['llen'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>['cosecha', 'progresiv', 'harvest'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>['fin', 'cierre', 'end', 'senesc'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (day != null) {
+      if (day <= 10) return PlantHealthStageBucket.seedling;
+      if (day <= 28) return PlantHealthStageBucket.vegetativeEarly;
+      if (day <= 45) return PlantHealthStageBucket.vegetativeMid;
+      if (day <= 65) return PlantHealthStageBucket.vegetativeLate;
+      if (day <= 90) return PlantHealthStageBucket.reproductiveEarly;
+      if (day <= 120) return PlantHealthStageBucket.reproductiveMid;
+      if (day <= 180) return PlantHealthStageBucket.grainFill;
     }
     return PlantHealthStageBucket.lateSeason;
   }

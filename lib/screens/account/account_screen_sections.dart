@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/screens/account/account_screen_presenter.dart';
 import 'package:bio_g/widgets/shared/bio_g_button.dart';
 
@@ -296,16 +297,10 @@ class AccountMyBioGCardSection extends StatelessWidget {
               ),
             ] else ...<Widget>[
               for (int i = 0; i < items.length; i++) ...<Widget>[
-                _DeviceRow(
+                _LiveDeviceRow(
                   deviceIconAsset: deviceIconAsset,
-                  deviceIconTint: items[i].uiModel.deviceIconTint,
-                  title: items[i].uiModel.title,
-                  subtitle: items[i].uiModel.subtitle,
-                  trailingText: items[i].uiModel.trailingText,
-                  trailingColor: items[i].uiModel.trailingColor,
                   errorIconAsset: errorIconAsset,
-                  errorMainScale: 2.2,
-                  onTap: items[i].onTap,
+                  item: items[i],
                 ),
                 if (i != items.length - 1) const _DividerLine(),
               ],
@@ -445,7 +440,22 @@ class AccountMyBioGItem {
   final AccountDeviceCardUiModel uiModel;
   final VoidCallback onTap;
 
-  const AccountMyBioGItem({required this.uiModel, required this.onTap});
+  /// Per-device live telemetry. When provided, the row recomputes its
+  /// uiModel on every tick using [liveUiModelBuilder] so battery / signal
+  /// state stays in sync with real Supabase data.
+  final Stream<BioGTelemetry?>? liveTelemetryStream;
+
+  /// Builds the latest uiModel from a real telemetry reading. Required
+  /// when [liveTelemetryStream] is provided.
+  final AccountDeviceCardUiModel Function(BioGTelemetry? live)?
+  liveUiModelBuilder;
+
+  const AccountMyBioGItem({
+    required this.uiModel,
+    required this.onTap,
+    this.liveTelemetryStream,
+    this.liveUiModelBuilder,
+  });
 }
 
 class _GlowBlob extends StatelessWidget {
@@ -819,6 +829,71 @@ class _NavRowState extends State<_NavRow> {
   }
 }
 
+class _LiveDeviceRow extends StatelessWidget {
+  final String deviceIconAsset;
+  final String errorIconAsset;
+  final AccountMyBioGItem item;
+
+  const _LiveDeviceRow({
+    required this.deviceIconAsset,
+    required this.errorIconAsset,
+    required this.item,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final stream = item.liveTelemetryStream;
+    final builder = item.liveUiModelBuilder;
+
+    if (stream == null || builder == null) {
+      return _DeviceRow(
+        deviceIconAsset: deviceIconAsset,
+        deviceIconTint: item.uiModel.deviceIconTint,
+        title: item.uiModel.title,
+        subtitle: item.uiModel.subtitle,
+        trailingText: item.uiModel.trailingText,
+        trailingColor: item.uiModel.trailingColor,
+        errorIconAsset: errorIconAsset,
+        onTap: item.onTap,
+      );
+    }
+
+    return StreamBuilder<BioGTelemetry?>(
+      stream: stream,
+      builder: (context, snapshot) {
+        final bool waiting =
+            snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData;
+        final BioGTelemetry? telemetry = snapshot.data;
+        final AccountDeviceCardUiModel ui = waiting
+            ? _loadingUiModel(item.uiModel)
+            : (telemetry == null ? item.uiModel : builder(telemetry));
+
+        return _DeviceRow(
+          deviceIconAsset: deviceIconAsset,
+          deviceIconTint: ui.deviceIconTint,
+          title: ui.title,
+          subtitle: ui.subtitle,
+          trailingText: ui.trailingText,
+          trailingColor: ui.trailingColor,
+          errorIconAsset: errorIconAsset,
+          onTap: item.onTap,
+        );
+      },
+    );
+  }
+
+  AccountDeviceCardUiModel _loadingUiModel(AccountDeviceCardUiModel base) {
+    return AccountDeviceCardUiModel(
+      title: base.title,
+      subtitle: base.subtitle,
+      trailingText: base.trailingText.isEmpty ? '' : '...',
+      trailingColor: Colors.black38,
+      deviceIconTint: base.deviceIconTint,
+    );
+  }
+}
+
 class _DeviceRow extends StatefulWidget {
   final String deviceIconAsset;
   final Color deviceIconTint;
@@ -827,7 +902,6 @@ class _DeviceRow extends StatefulWidget {
   final String trailingText;
   final Color trailingColor;
   final String? errorIconAsset;
-  final double errorMainScale;
   final VoidCallback onTap;
 
   const _DeviceRow({
@@ -839,7 +913,6 @@ class _DeviceRow extends StatefulWidget {
     required this.trailingColor,
     required this.onTap,
     this.errorIconAsset,
-    this.errorMainScale = 2.2,
   });
 
   @override
@@ -890,14 +963,21 @@ class _DeviceRowState extends State<_DeviceRow> {
                     _AssetIcon(
                       assetPath: widget.errorIconAsset!,
                       size: 34,
-                      scale: widget.errorMainScale,
+                      scale: 2.2,
                     )
                   else
-                    _TintedAssetIcon(
-                      assetPath: widget.deviceIconAsset,
-                      tint: widget.deviceIconTint,
-                      size: 34,
-                      scale: 0.7,
+                    TweenAnimationBuilder<Color?>(
+                      tween: ColorTween(end: widget.deviceIconTint),
+                      duration: const Duration(milliseconds: 360),
+                      curve: Curves.easeOut,
+                      builder: (context, color, _) {
+                        return _TintedAssetIcon(
+                          assetPath: widget.deviceIconAsset,
+                          tint: color ?? widget.deviceIconTint,
+                          size: 34,
+                          scale: 0.7,
+                        );
+                      },
                     ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -925,12 +1005,31 @@ class _DeviceRowState extends State<_DeviceRow> {
                     ),
                   ),
                   if (widget.trailingText.isNotEmpty)
-                    Text(
-                      widget.trailingText,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        color: widget.trailingColor,
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 260),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        );
+                      },
+                      child: TweenAnimationBuilder<Color?>(
+                        key: ValueKey<String>(widget.trailingText),
+                        tween: ColorTween(end: widget.trailingColor),
+                        duration: const Duration(milliseconds: 360),
+                        curve: Curves.easeOut,
+                        builder: (context, color, _) {
+                          return Text(
+                            widget.trailingText,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              color: color ?? widget.trailingColor,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   const SizedBox(width: 6),

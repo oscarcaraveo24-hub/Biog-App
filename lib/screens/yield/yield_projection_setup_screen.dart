@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/yield_projection_config.dart';
 import 'package:bio_g/core/yield/yield_projection_engine_proposed.dart';
@@ -120,6 +121,13 @@ class _YieldProjectionSetupScreenState
 
   BioGStore _readStore() => BioGScope.of(context);
 
+  bool get _populationInputMeansEstablishedPlants {
+    final cropId = CropCatalog.canonicalCropKey(
+      _readStore().activeCropContext?.cropId,
+    );
+    return cropId == CropCatalog.squashCropId;
+  }
+
   double _getActualHealthScore(BioGStore store) {
     const double fallbackScore = 0.68;
     try {
@@ -216,13 +224,22 @@ class _YieldProjectionSetupScreenState
   }
 
   YieldReference? _resolveYieldReference(DeviceCropContext? ctx) {
-    if (ctx?.cropId == 'chili') {
+    final cropId = CropCatalog.canonicalCropKey(ctx?.cropId);
+    if (cropId == 'chili') {
       final chiliReference = _resolveChiliYieldReference(ctx!);
       if (chiliReference != null) return chiliReference;
     }
-    if (ctx?.cropId == 'eggplant') {
+    if (cropId == 'eggplant') {
       final eggplantReference = _resolveEggplantYieldReference(ctx!);
       if (eggplantReference != null) return eggplantReference;
+    }
+    if (cropId == CropCatalog.squashCropId) {
+      final squashReference = _resolveSquashYieldReference(ctx!);
+      if (squashReference != null) return squashReference;
+    }
+    if (cropId == CropCatalog.lettuceCropId) {
+      final lettuceReference = _resolveLettuceYieldReference(ctx!);
+      if (lettuceReference != null) return lettuceReference;
     }
 
     final varietyId = ctx?.varietyId?.trim();
@@ -485,6 +502,276 @@ class _YieldProjectionSetupScreenState
           ? YieldReferenceCatalog.byId['eggplant_white_protected'] ??
               YieldReferenceCatalog.byId['eggplant_white_field']
           : YieldReferenceCatalog.byId['eggplant_white_field'];
+    }
+
+    final direct = YieldReferenceCatalog.byId[variety];
+    if (direct != null) return direct;
+    return isProtected
+        ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
+            YieldReferenceCatalog.genericFresh(ctx.cropId)
+        : YieldReferenceCatalog.genericFresh(ctx.cropId);
+  }
+
+  YieldReference? _resolveSquashYieldReference(DeviceCropContext ctx) {
+    final profile = ctx.profileId.toLowerCase();
+    final alias = (ctx.varietyAlias ?? '').toLowerCase();
+    final variety = (ctx.varietyId ?? '').toLowerCase();
+    final calendar = (ctx.calendarTypeId ?? '').toLowerCase();
+    final scale = (ctx.cultivationScaleId ?? '').toLowerCase();
+    final joined = '$profile $alias $variety $calendar $scale';
+
+    final isProtected = _containsAny(joined, const [
+      'protegido',
+      'invernadero',
+      'casa malla',
+      'casa sombra',
+      'malla',
+      'malla sombra',
+      'macro tunel',
+      'protected',
+      'squash_protegido',
+    ]);
+
+    final wantsFruit = _containsAny(joined, const [
+      'fruto',
+      'fruta',
+      'verdura',
+      'fresco',
+      'fresh',
+      'cosecha fruto',
+    ]);
+    final wantsSeed = _containsAny(joined, const [
+      'semilla',
+      'pepita',
+      'seed',
+      'seco',
+      'dry',
+      'pipian',
+      'pipiana',
+      'chihua',
+    ]);
+
+    final isGeneric = _containsAny(joined, const [
+      'ca-gen',
+      'ca_gen',
+      'cagen',
+      'squash_generic',
+      'generico',
+      'generica',
+      'otra calabaza',
+      'no se',
+    ]);
+    if (isGeneric) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['squash_protected_soil_generic'] ??
+              YieldReferenceCatalog.byId['squash_generic']
+          : YieldReferenceCatalog.byId['squash_generic'];
+    }
+
+    if (_containsAny(joined, const [
+      'ca-01',
+      'ca_01',
+      'ca01',
+      'squash_zucchini',
+      'zucchini',
+      'calabacita italiana',
+      'italiana',
+      'calabacin',
+    ])) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['squash_zucchini_protected'] ??
+              YieldReferenceCatalog.byId['squash_zucchini_field']
+          : YieldReferenceCatalog.byId['squash_zucchini_field'];
+    }
+
+    if (_containsAny(joined, const [
+      'ca-02',
+      'ca_02',
+      'ca02',
+      'squash_criolla',
+      'criolla',
+      'huicha',
+      'milpa',
+      'temporal',
+    ])) {
+      return YieldReferenceCatalog.byId['squash_criolla_field'];
+    }
+
+    if (_containsAny(joined, const [
+      'ca-03',
+      'ca_03',
+      'ca03',
+      'squash_round',
+      'bola',
+      'redonda',
+      'round zucchini',
+    ])) {
+      return YieldReferenceCatalog.byId['squash_round_field'];
+    }
+
+    if (_containsAny(joined, const [
+      'ca-04',
+      'ca_04',
+      'ca04',
+      'squash_castilla',
+      'castilla',
+      'pumpkin',
+      'dulce',
+      'altar',
+    ])) {
+      return YieldReferenceCatalog.byId['squash_castilla_mature'];
+    }
+
+    if (_containsAny(joined, const [
+      'ca-05',
+      'ca_05',
+      'ca05',
+      'squash_butternut',
+      'butternut',
+      'buchona',
+      'mantequilla',
+      'cacahuate',
+    ])) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['squash_butternut_intensive'] ??
+              YieldReferenceCatalog.byId['squash_butternut_field']
+          : YieldReferenceCatalog.byId['squash_butternut_field'];
+    }
+
+    if (_containsAny(joined, const [
+      'ca-06',
+      'ca_06',
+      'ca06',
+      'squash_chilacayote',
+      'chilacayote',
+      'chilacayota',
+      'alcayota',
+    ])) {
+      return YieldReferenceCatalog.byId['squash_chilacayote_mature'];
+    }
+
+    if (_containsAny(joined, const [
+      'ca-07',
+      'ca_07',
+      'ca07',
+      'squash_pipian',
+      'pipian',
+      'pipiana',
+      'pepita',
+      'chihua',
+    ])) {
+      if (wantsFruit && !wantsSeed) {
+        return YieldReferenceCatalog.byId['squash_pipian_fruit_mature'] ??
+            YieldReferenceCatalog.byId['squash_pipian_seed_dry'];
+      }
+      return YieldReferenceCatalog.byId['squash_pipian_seed_dry'];
+    }
+
+    final direct = YieldReferenceCatalog.byId[variety];
+    if (direct != null) return direct;
+    return isProtected
+        ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
+            YieldReferenceCatalog.genericFresh(ctx.cropId)
+        : YieldReferenceCatalog.genericFresh(ctx.cropId);
+  }
+
+  YieldReference? _resolveLettuceYieldReference(DeviceCropContext ctx) {
+    final profile = ctx.profileId.toLowerCase();
+    final alias = (ctx.varietyAlias ?? '').toLowerCase();
+    final variety = (ctx.varietyId ?? '').toLowerCase();
+    final calendar = (ctx.calendarTypeId ?? '').toLowerCase();
+    final scale = (ctx.cultivationScaleId ?? '').toLowerCase();
+    final joined = '$profile $alias $variety $calendar $scale';
+
+    final isProtected = _containsAny(joined, const [
+      'protegido',
+      'invernadero',
+      'casa malla',
+      'casa sombra',
+      'malla',
+      'malla sombra',
+      'macro tunel',
+      'protected',
+      'lettuce_protegido',
+    ]);
+
+    final isGeneric = _containsAny(joined, const [
+      'le-gen',
+      'le_gen',
+      'legen',
+      'lettuce_generic',
+      'generico',
+      'generica',
+      'otra lechuga',
+      'no se',
+      'no sé',
+    ]);
+    if (isGeneric) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['lettuce_protected_soil_generic'] ??
+              YieldReferenceCatalog.byId['lettuce_generic']
+          : YieldReferenceCatalog.byId['lettuce_generic'];
+    }
+
+    if (_containsAny(joined, const [
+      'le-01',
+      'le_01',
+      'le01',
+      'lettuce_romaine',
+      'romana',
+      'romaine',
+      'cos',
+    ])) {
+      return YieldReferenceCatalog.byId['lettuce_romaine_field'];
+    }
+    if (_containsAny(joined, const [
+      'le-02',
+      'le_02',
+      'le02',
+      'lettuce_mini_romaine',
+      'mini romana',
+      'corazon',
+      'little gem',
+      'gem',
+    ])) {
+      return YieldReferenceCatalog.byId['lettuce_mini_romaine_field'];
+    }
+    if (_containsAny(joined, const [
+      'le-03',
+      'le_03',
+      'le03',
+      'lettuce_iceberg',
+      'iceberg',
+      'bola',
+      'crisphead',
+    ])) {
+      return YieldReferenceCatalog.byId['lettuce_iceberg_field'];
+    }
+    if (_containsAny(joined, const [
+      'le-04',
+      'le_04',
+      'le04',
+      'lettuce_butterhead',
+      'butterhead',
+      'mantequilla',
+      'bibb',
+      'boston',
+    ])) {
+      return YieldReferenceCatalog.byId['lettuce_butterhead_field'];
+    }
+    if (_containsAny(joined, const [
+      'le-05',
+      'le_05',
+      'le05',
+      'lettuce_looseleaf',
+      'hoja suelta',
+      'orejona',
+      'looseleaf',
+      'baby leaf',
+      'green leaf',
+      'red leaf',
+    ])) {
+      return YieldReferenceCatalog.byId['lettuce_looseleaf_field'];
     }
 
     final direct = YieldReferenceCatalog.byId[variety];
@@ -1549,6 +1836,16 @@ class _YieldProjectionSetupScreenState
   }
 
   String _populationCardTitle(YieldAreaUnit unit) {
+    if (_populationInputMeansEstablishedPlants) {
+      switch (unit) {
+        case YieldAreaUnit.hectare:
+          return 'Plantas establecidas por hectarea';
+        case YieldAreaUnit.squareMeter:
+          return 'Plantas establecidas por m2';
+        case YieldAreaUnit.pot:
+          return 'Plantas establecidas';
+      }
+    }
     switch (unit) {
       case YieldAreaUnit.hectare:
         return 'Semillas sembradas por hectárea';
@@ -1563,6 +1860,16 @@ class _YieldProjectionSetupScreenState
     required double populationInput,
     required YieldAreaUnit areaUnit,
   }) {
+    if (_populationInputMeansEstablishedPlants) {
+      switch (areaUnit) {
+        case YieldAreaUnit.hectare:
+          return '${formatNumber(populationInput)} plantas/ha';
+        case YieldAreaUnit.squareMeter:
+          return '${formatNumber(populationInput, maxDecimals: 2)} plantas/m2';
+        case YieldAreaUnit.pot:
+          return '${formatNumber(populationInput)} plantas en total';
+      }
+    }
     switch (areaUnit) {
       case YieldAreaUnit.hectare:
         return '${formatNumber(populationInput)} semillas/ha';
@@ -1579,6 +1886,27 @@ class _YieldProjectionSetupScreenState
     required double? estimatedSeedsPerHa,
     required double? estimatedTotalSeeds,
   }) {
+    if (_populationInputMeansEstablishedPlants) {
+      if (populationInput == null) {
+        return _areaUnit == YieldAreaUnit.pot
+            ? 'Captura plantas establecidas totales.'
+            : 'Captura densidad de plantas establecidas; BIO-G no usa semilla bruta en calabaza.';
+      }
+      switch (_areaUnit) {
+        case YieldAreaUnit.hectare:
+          if (areaValue == null || estimatedTotalSeeds == null) {
+            return 'BIO-G multiplicara esta densidad por tu superficie total.';
+          }
+          return 'Aprox. ${formatNumber(estimatedTotalSeeds)} plantas en ${formatNumber(areaValue)} ha';
+        case YieldAreaUnit.squareMeter:
+          if (estimatedSeedsPerHa == null || estimatedTotalSeeds == null) {
+            return 'BIO-G convertira esta densidad a plantas por hectarea.';
+          }
+          return 'Aprox. ${formatNumber(estimatedTotalSeeds)} plantas totales - ${formatNumber(estimatedSeedsPerHa)} plantas/ha';
+        case YieldAreaUnit.pot:
+          return 'Modo maceta: captura simple sin proyeccion agronomica por hectarea.';
+      }
+    }
     if (populationInput == null) {
       return _areaUnit == YieldAreaUnit.pot
           ? 'Captura el total sembrado en tus macetas.'
@@ -1602,6 +1930,16 @@ class _YieldProjectionSetupScreenState
   }
 
   String _populationEditorTitle(YieldAreaUnit unit) {
+    if (_populationInputMeansEstablishedPlants) {
+      switch (unit) {
+        case YieldAreaUnit.hectare:
+          return 'Editar plantas por hectarea';
+        case YieldAreaUnit.squareMeter:
+          return 'Editar plantas por m2';
+        case YieldAreaUnit.pot:
+          return 'Editar plantas establecidas';
+      }
+    }
     switch (unit) {
       case YieldAreaUnit.hectare:
         return 'Editar semillas por hectárea';
@@ -1613,6 +1951,16 @@ class _YieldProjectionSetupScreenState
   }
 
   String _populationEditorHelper(YieldAreaUnit unit) {
+    if (_populationInputMeansEstablishedPlants) {
+      switch (unit) {
+        case YieldAreaUnit.hectare:
+          return 'Captura cuantas plantas establecidas tienes por hectarea. Para calabaza BIO-G usa poblacion real de plantas, no semilla bruta.';
+        case YieldAreaUnit.squareMeter:
+          return 'Captura cuantas plantas establecidas tienes por metro cuadrado. BIO-G lo convertira a plantas por hectarea.';
+        case YieldAreaUnit.pot:
+          return 'En maceta captura plantas establecidas totales; la proyeccion por hectarea no se aplica en esta escala.';
+      }
+    }
     switch (unit) {
       case YieldAreaUnit.hectare:
         return 'Captura cuántas semillas sembraste por cada hectárea. BIO-G multiplicará esa densidad por la superficie total del lote.';
@@ -1624,6 +1972,16 @@ class _YieldProjectionSetupScreenState
   }
 
   String _populationEditorLabel(YieldAreaUnit unit) {
+    if (_populationInputMeansEstablishedPlants) {
+      switch (unit) {
+        case YieldAreaUnit.hectare:
+          return 'Plantas por hectarea';
+        case YieldAreaUnit.squareMeter:
+          return 'Plantas por m2';
+        case YieldAreaUnit.pot:
+          return 'Total de plantas';
+      }
+    }
     switch (unit) {
       case YieldAreaUnit.hectare:
         return 'Semillas por hectárea';
@@ -1661,6 +2019,12 @@ class _YieldProjectionSetupScreenState
 
   String _varietyTitle(DeviceCropContext? cropContext) {
     if (cropContext == null) return 'Sin semilla configurada';
+    final cropId = CropCatalog.canonicalCropKey(cropContext.cropId);
+    if (cropId == CropCatalog.squashCropId &&
+        (CropCatalog.isGenericAlias(cropContext.varietyAlias) ||
+            CropCatalog.isGenericProfileId(cropContext.profileId))) {
+      return 'Calabaza generica';
+    }
     return cropContext.varietyAlias ?? _prettyCropName(cropContext.cropId);
   }
 
@@ -1692,6 +2056,8 @@ class _YieldProjectionSetupScreenState
         return 'Pepino';
       case 'chili':
         return 'Chile';
+      case 'squash':
+        return 'Calabaza';
       default:
         return _prettyId(cropId) ?? 'Cultivo';
     }
@@ -1760,6 +2126,9 @@ class _YieldProjectionSetupScreenState
     }
     if (reference == null) {
       return null;
+    }
+    if (reference.useType == 'seed') {
+      return 'CA-07 se proyecta como semilla seca / pepita. No compares este rango con toneladas de fruto fresco.';
     }
     if (reference.useType != 'forage') {
       return null;

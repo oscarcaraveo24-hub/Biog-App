@@ -1,0 +1,201 @@
+BIO-G
+PERFIL UNIVERSAL BIO-G - LECHUGA
+Version revisada: v1.1 tecnica para implementacion
+ID cultivo: LE | cropId: crop_lettuce | Nombre cientifico: Lactuca sativa L.
+
+0. RESUMEN DE REVISION
+Este documento sustituye al perfil universal original como version depurada para codigo. Mantiene la idea central: lechuga es una hortaliza de hoja/cabeza, de ciclo corto, alta sensibilidad a calor, agua, salinidad y sanidad, y no debe modelarse como cultivo de fruto. Se refuerza la separacion entre fisiologia, UX y perfiles por tipo.
+
+1. IDENTIDAD UNIVERSAL DEL CULTIVO
+Campo: valor
+- cropKey sugerido: CropKey.lettuce
+- cropId: crop_lettuce
+- ID BIO-G: LE
+- Nombre comun: Lechuga
+- Nombre cientifico: Lactuca sativa L.
+- Familia botanica: Asteraceae
+- Tipo BIO-G: Hortaliza de hoja
+- Metabolismo: C3
+- Ciclo de vida: anual, ciclo corto
+- Uso principal: consumo fresco
+- Organos de cosecha: hoja, roseta, cogollo o cabeza segun perfil
+- Floracion productiva: no aplica en v1
+- Espigado/bolting: evento de falla fisiologica
+- Hidroponia/sustrato inerte: fuera de alcance BIO-G v1; solo nota futura
+
+Regla de arquitectura:
+Lechuga es un cultivo madre. No crear crop_romaine, crop_iceberg, crop_butterhead ni crop_baby_leaf como cultivos separados. Esos son perfiles/UX dentro de crop_lettuce. Las variedades/hibridos son alias dentro de un perfil.
+
+2. TIPOS COMERCIALES QUE SI MODIFICAN PERFIL
+profileId | Nombre UX | Arquitectura | Cosecha | Ciclo orientativo
+- LE-01 | Lechuga romana / cos | cabeza alargada, nervadura marcada | 1 corte | 55-80 dias
+- LE-02 | Mini romana / corazones / Little Gem | cabeza compacta chica | 1 corte | 45-70 dias
+- LE-03 | Iceberg / bola / crisphead | cabeza redonda compacta | 1 corte | 60-90 dias
+- LE-04 | Mantequilla / butterhead / Bibb / Boston | cabeza suave, hojas tiernas | 1 corte | 45-75 dias
+- LE-05 | Hoja suelta / orejona / baby leaf | roseta abierta, no cabecea | 1 corte o multiples cortes | 30-60 dias
+- LE-GEN | Lechuga generica / no se todavia | no asume arquitectura | 1 corte conservador | 45-80 dias
+
+Nota UX:
+La app debe mostrar nombres entendibles. El codigo puede usar profileId y aliases, pero el agricultor no debe ver terminos como SKIP, failure event o stage not applicable.
+
+3. FENOLOGIA UNIVERSAL BIO-G
+La lechuga no sigue el mismo arco de tomate/chile/calabaza. No tiene floracion productiva, amarre ni llenado de fruto. Forzar esas etapas causaria alertas falsas.
+
+E1. Germinacion
+- Dias orientativos: 0-7
+- Proceso: imbibicion, activacion de semilla, elongacion de radicula.
+- Criticidad: alta.
+- Riesgos: termoinhibicion, exceso de sales, sustrato/suelo saturado, damping-off temprano.
+
+E2. Emergencia / establecimiento
+- Dias orientativos: 7-21
+- Proceso: cotiledones, primeras hojas verdaderas, raiz inicial.
+- Criticidad: alta.
+- Riesgos: falta de agua, exceso de agua, compactacion, damping-off, salinidad.
+
+E3. Desarrollo vegetativo / expansion foliar
+- Dias orientativos: 20-45
+- Proceso: crecimiento de roseta, expansion de hojas, acumulacion de biomasa fresca.
+- Criticidad: alta.
+- Riesgos: deficit hidrico, nitrogeno insuficiente o excesivo, calor, salinidad, trips, pulgones, mildiu.
+
+E4. Compactacion / formacion de cabeza / madurez comercial temprana
+- Dias orientativos: 35-65, segun perfil.
+- Aplicacion: aplica fuerte para LE-01, LE-02, LE-03 y LE-04. En LE-05 no se usa como cabeza; se interpreta como "madurez comercial de roseta/hoja".
+- Criticidad: muy alta.
+- Riesgos: bolting, tip burn, Botrytis, Sclerotinia, exceso de N, humedad alta, calor.
+
+E5. Ventana de cosecha
+- Dias orientativos: 45-90, segun perfil.
+- Proceso: punto maximo de calidad: turgencia, color, firmeza, uniformidad y bajo amargor.
+- Criticidad: muy alta.
+- Riesgos: sobre-madurez, espigado, amargor, perdida de turgencia, pudriciones, deterioro poscosecha.
+
+E6. Sobre-madurez / senescencia / perdida de calidad
+- Inicio orientativo: despues de ventana optima del perfil.
+- Proceso: amarillamiento, apertura, hoja dura, sabor mas intenso, perdida de valor comercial.
+- Criticidad: alta, pero el dano ya esta ocurriendo.
+
+E7. Espigado / bolting
+- Tipo: evento de riesgo, no etapa productiva.
+- Proceso: elongacion del tallo floral; la planta cambia de prioridad de hoja a reproduccion.
+- Resultado comercial: en fresco, generalmente reduce o destruye el valor comercial por amargor, perdida de forma y textura.
+- Disparadores: calor sostenido, dias largos/fotoperiodo, edad fisiologica avanzada, deficit hidrico, estres acumulado.
+
+Compatibilidad con motor de 8 etapas:
+Si el motor BIO-G obliga a usar 8 slots, usar stageApplicability:
+- flowering: notApplicable
+- fruitSet: notApplicable
+- fruitFill: notApplicable
+- harvest: mappedTo E5
+- senescence: mappedTo E6
+- bolting: riskEvent, no productiveStage
+
+4. DIA 0 Y CALENDARIO BASE
+Campo clave: dayZeroType
+- directSeeded: Dia 0 = fecha de siembra directa.
+- transplanted: Dia 0 = fecha de trasplante al campo, pero debe guardarse transplantAgeDays o seedlingStage si el usuario lo conoce.
+
+Regla BIO-G:
+El estres acumulado mueve la ventana estimada de cosecha, pero no cambia la biologia de la planta. Si el cultivo entra ya como trasplante con 2-4 hojas verdaderas, no debe tratarse como germinacion desde cero.
+
+5. RANGOS FISIOLOGICOS MEDIBLES - UNIVERSAL
+Variable | Optimo operativo | Observacion | Alerta | Critico | Notas
+- Temperatura ambiente: 15-25 C | 25-28 C | >28 C sostenidos | >30 C varios dias | En tipos que cabecean, >26-27 C ya puede deteriorar cabeza en zonas calientes.
+- Temperatura de germinacion/suelo: 15-22 C | 22-26 C | >26 C | >28 C | Riesgo de germinacion irregular o termoinhibicion.
+- Humedad de suelo (% agua disponible): 60-95 | 50-60 o 95-100 | <50 o saturacion prolongada | anoxia | Lechuga tiene raiz superficial; necesita humedad estable sin encharcar.
+- pH suelo mineral: 6.0-6.8 | 5.8-6.0 / 6.8-7.2 | <5.8 / >7.5 | extremo local | En suelos organicos/turba puede trabajarse menor, pero no activar esto en v1 general.
+- Salinidad ECe: <1.3 dS/m | 1.3-2.0 | >2.0 | >3.0 | Cultivo sensible; 1.3 ya puede marcar perdida potencial.
+- Compactacion/resistencia: <2.0 MPa | 1.5-2.0 | >=2.0 | >3.0 | Impacta mas E1-E3.
+- HR ambiental: 60-80% | 80-85% | >85% sostenida | >90% + mojado foliar | Riesgo de mildiu, Botrytis, tip burn.
+- Viento/desecacion: bajo-moderado | moderado | alto + calor | marchitez rapida | V1 puede manejarlo por API clima futura.
+
+6. NPK - DEMANDA RELATIVA POR ETAPA
+La logica activa v1 no debe prometer medicion directa de NPK si el hardware no lo mide. En v1 NPK es inferido por etapa, reporte de usuario, sintomas y condiciones de suelo.
+
+Etapa | N | P | K | Logica
+- E1 Germinacion: muy bajo | bajo-medio | bajo | Evitar sales; la semilla usa reservas.
+- E2 Establecimiento: bajo-medio | alto | bajo-medio | P apoya raiz; N suave.
+- E3 Desarrollo: alto | medio | medio-alto | Mayor demanda foliar.
+- E4 Cabeza/madurez: medio | bajo-medio | alto | K apoya turgencia/calidad; evitar N excesivo.
+- E5 Cosecha: bajo | bajo | medio | No empujar crecimiento tierno cerca de corte.
+
+Ca, Mg, S y micronutrientes:
+Son agronomicamente importantes, especialmente Ca para tip burn, pero quedan como diagnostico visual/futuro en BIO-G v1. No meterlos a recomendacion activa v1.
+
+7. MATRIZ DE SENSIBILIDAD UNIVERSAL
+Variable de estres | E1 | E2 | E3 | E4 | E5 | E6 | E7 bolting
+- Deficit hidrico: alta | alta | media-alta | muy alta | alta | media | desencadenante
+- Exceso humedad/anoxia: alta | alta | media | alta | alta | alta | agravante
+- Calor >28 C: alta | alta | alta | muy alta | muy alta | media | desencadenante
+- Salinidad ECe >1.3: media | media | media-alta | alta | alta | media | agravante
+- Compactacion >=2 MPa: alta | alta | media | baja-media | baja | baja | indirecto
+- Desequilibrio NPK: baja | media | alta | alta | media | baja | agravante
+- HR >85%: baja | media | media | alta | alta | alta | agravante sanitario
+- Baja ventilacion: baja | media | media | alta | alta | alta | tip burn/Botrytis
+
+8. VENTANAS FISIOLOGICAS ACTIVAS
+- Ventana de raiz: E1-E2. Prioridad a establecimiento sano, humedad estable, baja salinidad.
+- Ventana de expansion: E3. Prioridad a agua, N balanceado, K, baja compactacion.
+- Ventana de calidad: E4-E5. Prioridad maxima. Temperatura, agua, HR, tip burn, sanidad y cosecha oportuna.
+- Ventana de cosecha: E5. Notificar 3-7 dias antes; no dar fecha unica.
+- Ventana de bolting: E4-E5 + calor/estres. Si se confirma elongacion del tallo, recomendar cosecha inmediata.
+
+9. OUTPUT BIO-G
+- indiceGeneral: 0-100
+- subindices: agua, temperatura, suelo, nutricion, sanidad
+- estado: optimo / observacion / alerta
+- tendencia: mejorando / estable / deteriorando
+- cosecha: aunNo / cercana / enVentana / urgente / pasada
+- riesgoBolting: bajo / medio / alto / critico
+- calidadEstimada: excelente / buena / reducida / enRiesgo
+
+Ponderacion:
+E4 y E5 pesan mas que E1-E3 porque ahi se decide valor comercial. E7 es evento critico y puede sobreescribir el dashboard.
+
+10. MEMORIA DEL CULTIVO
+Guardar por evento:
+- eventId
+- cropId/profileId
+- deviceId
+- tipo_estres: calor, deficit, anoxia, salinidad, compactacion, nutricion, sanidad, bolting
+- severidad: leve, moderado, severo, critico
+- duracionHoras/duracionDias
+- etapa_impactada
+- confianzaDato: sensor, modelo, usuario, estimado
+- impactoIndice
+- ajusteCalendarioDias
+- mensajeAgricultor
+- actionTaken opcional
+- resolvedAt opcional
+
+Regla:
+La memoria no se pierde al migrar de LE-GEN a LE-01/LE-02/LE-03/LE-04/LE-05.
+
+11. ALERTAS UNIVERSALES - LENGUAJE HUMANO
+- Calor preventivo: "Tu lechuga esta entrando en una zona de calor. Mantén humedad estable y revisa sombra o ventilacion si aplica."
+- Riesgo de espigado: "El calor y el estres acumulado pueden adelantar el espigado. Revisa si el tallo central empieza a alargarse."
+- Deficit hidrico: "La humedad bajo. En lechuga esto afecta turgencia, sabor y cosecha. Riega antes de que el estres avance."
+- Exceso de humedad: "Hay demasiada humedad. Revisa drenaje y evita mantener el cuello de la planta saturado."
+- Salinidad: "La salinidad esta alta para lechuga. Puede frenar crecimiento aunque haya fertilizante disponible."
+- pH: "El pH puede estar limitando la absorcion de nutrientes. Corrige suelo/agua antes de fertilizar mas."
+- HR alta: "La humedad ambiental favorece mildiu, Botrytis y tip burn. Revisa hojas internas y ventilacion."
+
+12. METADATOS
+- version: BIO-G crop_lettuce v1.1 revisado
+- compatibleSensors: temperatura ambiente, temperatura suelo, humedad suelo, pH, EC/ECe estimada, compactacion, HR/API clima
+- future: GDD, VPD, bolting model, computer vision, SPAD/NDVI, hidroponia separada
+- no active v1: receta de pesticidas, dosis exactas de fertilizante, calcio activo, hidroponia completa
+
+FUENTES AGRONOMICAS CONSULTADAS PARA ESTA REVISION
+- Texas A&M AgriLife Extension. Lettuce - Commercial and Specialty Crop Guides. https://aggie-horticulture.tamu.edu/vegetable/wp-content/uploads/sites/10/2011/10/lettuce.pdf
+- UC Agriculture and Natural Resources / Cooperative Extension Monterey County. Management of Salinity for Lettuce Production. https://ucanr.edu/?legacy-file=171001.pdf&legacy-file-path=sites/uccemontereycounty/files/
+- Perennia / AgraPoint. Vegetable Production Guide - Lettuce. https://www.perennia.ca/wp-content/uploads/2018/06/lettuce-production-guide.pdf
+- UF/IFAS Extension. Fertilizer Management for Vegetable Production in Florida. https://ask.ifas.ufl.edu/publication/CV296
+- University of Arizona / Western IPM Center. Crop Profile for Lettuce in Arizona. https://ipmdata.ipmcenters.org/documents/cropprofiles/AZlettuce.pdf
+- UC ANR Stanislaus Sprout. What is Lettuce, You Ask? https://ucanr.edu/blog/stanislaus-sprout/article/what-lettuce-you-ask
+- INIFAP. Agenda Tecnica Agricola de Baja California 2017. https://vun.inifap.gob.mx/VUN_MEDIA/BibliotecaWeb/_media/_agendas/4120_4817_Agenda_T%C3%A9cnica_Baja_California_2017.pdf
+- Terra Latinoamericana, 2025. Rendimiento de Lechuga bajo diferentes laminas de riego y dosis de nitrogeno en el Valle Imperial, California. https://www.scielo.org.mx/pdf/tl/v43/2395-8030-tl-43-e2056.pdf
+
+NOTA SOBRE FOROS / PRACTICA DE PRODUCTORES
+Se reviso la logica practica que suelen repetir productores y tecnicos: calor + falta de agua = bolting/amargor; exceso de humedad = pudriciones; crecimiento demasiado rapido + mala ventilacion = tip burn. No se usaron foros como fuente normativa de umbrales. Los umbrales finales se apoyan en extension universitaria, guias tecnicas y literatura tecnica.

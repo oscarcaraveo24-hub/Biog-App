@@ -118,7 +118,7 @@ class HybridBioGRepository implements BioGRepository {
 
       await _identity.setActiveDeviceId(userId: userId, deviceId: active.id);
 
-      unawaited(_telemetrySource.refresh(active.id));
+      _refreshTelemetryForDevice(active);
     } else {
       _activeDevice = null;
       _activeDeviceCtrl.add(null);
@@ -164,7 +164,7 @@ class HybridBioGRepository implements BioGRepository {
       if (match.isNotEmpty) {
         _activeDevice = match.first;
         _activeDeviceCtrl.add(_activeDevice);
-        unawaited(_telemetrySource.refresh(_activeDevice!.id));
+        _refreshTelemetryForDevice(_activeDevice!);
         return;
       }
     }
@@ -175,8 +175,17 @@ class HybridBioGRepository implements BioGRepository {
 
     final active = _activeDevice;
     if (active != null) {
-      unawaited(_telemetrySource.refresh(active.id));
+      _refreshTelemetryForDevice(active);
     }
+  }
+
+  void _refreshTelemetryForDevice(
+    BioGDevice device, {
+    Duration window = const Duration(days: 7),
+  }) {
+    final telemetryDeviceId = device.telemetryDeviceId;
+    if (telemetryDeviceId == null || telemetryDeviceId.isEmpty) return;
+    unawaited(_telemetrySource.refresh(telemetryDeviceId, window: window));
   }
 
   Stream<BioGDevice?> _activeDeviceSelections() async* {
@@ -213,9 +222,15 @@ class HybridBioGRepository implements BioGRepository {
         continue;
       }
 
-      unawaited(_telemetrySource.refresh(active.id));
+      final telemetryDeviceId = active.telemetryDeviceId;
+      if (telemetryDeviceId == null || telemetryDeviceId.isEmpty) {
+        yield null;
+        continue;
+      }
 
-      await for (final t in _telemetrySource.watchLive(active.id)) {
+      unawaited(_telemetrySource.refresh(telemetryDeviceId));
+
+      await for (final t in _telemetrySource.watchLive(telemetryDeviceId)) {
         yield t;
 
         // Break out if active device changes again.
@@ -234,10 +249,16 @@ class HybridBioGRepository implements BioGRepository {
         continue;
       }
 
-      unawaited(_telemetrySource.refresh(active.id, window: window));
+      final telemetryDeviceId = active.telemetryDeviceId;
+      if (telemetryDeviceId == null || telemetryDeviceId.isEmpty) {
+        yield const <BioGTelemetry>[];
+        continue;
+      }
+
+      unawaited(_telemetrySource.refresh(telemetryDeviceId, window: window));
 
       await for (final list in _telemetrySource.watchHistory(
-        active.id,
+        telemetryDeviceId,
         window: window,
       )) {
         yield list;
@@ -284,7 +305,7 @@ class HybridBioGRepository implements BioGRepository {
       deviceId: deviceId,
     );
 
-    unawaited(_telemetrySource.refresh(deviceId));
+    _refreshTelemetryForDevice(_activeDevice!);
   }
 
   @override
@@ -351,7 +372,7 @@ class HybridBioGRepository implements BioGRepository {
         deviceId: _activeDevice!.id,
       );
 
-      unawaited(_telemetrySource.refresh(_activeDevice!.id));
+      _refreshTelemetryForDevice(_activeDevice!);
     }
   }
 

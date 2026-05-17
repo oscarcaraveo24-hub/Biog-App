@@ -82,8 +82,10 @@ flutter:
     - assets/seeds/wheat/
     - assets/seeds/tomato/
     - assets/seeds/cucumber/
+    - assets/seeds/Squash/
     - assets/seeds/chili/
     - assets/seeds/eggplant/
+    - assets/seeds/lettuce/
     
   fonts:
     - family: Inter

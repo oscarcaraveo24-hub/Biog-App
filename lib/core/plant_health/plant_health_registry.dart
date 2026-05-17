@@ -5,7 +5,9 @@ import 'package:bio_g/core/plant_health/catalog/chili_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/maize_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/cucumber_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/eggplant_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/lettuce_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/oat_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/squash_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/tomato_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/wheat_syndromes.dart';
 import 'package:bio_g/core/plant_health/plant_health_models.dart';
@@ -33,6 +35,10 @@ class PlantHealthRegistry {
         return chiliSyndromes;
       case CropCatalog.eggplantCropId:
         return eggplantSyndromes;
+      case CropCatalog.squashCropId:
+        return squashSyndromes;
+      case CropCatalog.lettuceCropId:
+        return lettuceSyndromes;
       default:
         return const <PlantHealthSyndrome>[];
     }

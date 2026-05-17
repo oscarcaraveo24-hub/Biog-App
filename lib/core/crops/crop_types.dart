@@ -10,5 +10,7 @@ enum CropKey {
   cucumber,
   chili,
   eggplant,
+  squash,
+  lettuce,
   generic,
 }

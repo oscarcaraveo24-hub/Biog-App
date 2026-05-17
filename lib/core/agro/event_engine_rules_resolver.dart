@@ -10,6 +10,32 @@ class EventEngineRulesResolver {
     final crop = (cropId ?? '').trim().toLowerCase();
     final stage = (stageKey ?? '').trim().toLowerCase();
 
+    if (crop == 'lettuce' || crop == 'crop_lettuce') {
+      final qualityStage = _containsAny(stage, const <String>[
+        'formacioncabeza',
+        'formacion_cabeza',
+        'head',
+        'cabeza',
+        'compact',
+        'ventanacosecha',
+        'ventana_cosecha',
+        'harvest',
+        'cosecha',
+        'sobremadurez',
+        'madur',
+      ]);
+
+      return EventEngineRules(
+        frostThresholdC: 0.0,
+        highAirTempThresholdC: qualityStage ? 27.0 : 28.0,
+        criticalAirTempThresholdC: qualityStage ? 30.0 : 31.0,
+        lowAirHumidityThresholdPct: 35.0,
+        highAirHumidityThresholdPct: 85.0,
+        goodStructureMaxResistance: 2.0,
+        moistureStableTolerance: 5.0,
+      );
+    }
+
     if (crop == 'maize') {
       if (_containsAny(stage, const <String>['tass', 'flower'])) {
         return const EventEngineRules(

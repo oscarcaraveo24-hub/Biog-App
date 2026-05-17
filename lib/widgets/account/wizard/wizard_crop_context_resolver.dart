@@ -6,8 +6,10 @@ import 'package:bio_g/widgets/seeds/bean_profiles.dart';
 import 'package:bio_g/widgets/seeds/chili_profiles.dart';
 import 'package:bio_g/widgets/seeds/cucumber_profiles.dart';
 import 'package:bio_g/widgets/seeds/eggplant_profiles.dart';
+import 'package:bio_g/widgets/seeds/lettuce_profiles.dart';
 import 'package:bio_g/widgets/seeds/maize_profiles.dart';
 import 'package:bio_g/widgets/seeds/oat_profiles.dart';
+import 'package:bio_g/widgets/seeds/squash_profiles.dart';
 import 'package:bio_g/widgets/seeds/tomato_profiles.dart';
 import 'package:bio_g/widgets/seeds/wheat_profiles.dart';
 
@@ -245,6 +247,20 @@ class WizardCropContextResolver {
     if (cropId == CropCatalog.eggplantCropId) {
       if (varietyAlias != null && varietyAlias.isNotEmpty) {
         return resolveCanonicalEggplantProfileId(varietyAlias);
+      }
+      return null;
+    }
+
+    if (cropId == CropCatalog.squashCropId) {
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalSquashProfileId(varietyAlias);
+      }
+      return null;
+    }
+
+    if (cropId == CropCatalog.lettuceCropId) {
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalLettuceProfileId(varietyAlias);
       }
       return null;
     }

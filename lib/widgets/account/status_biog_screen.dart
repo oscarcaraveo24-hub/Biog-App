@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/models/biog_telemetry.dart';
+import 'package:bio_g/screens/account/biog_hardware_health.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 
 class StatusBioGScreen extends StatefulWidget {
@@ -15,8 +18,6 @@ class StatusBioGScreen extends StatefulWidget {
 
 class _StatusBioGScreenState extends State<StatusBioGScreen> {
   static const Color kBrandTop = Color(0xFF40BB5F);
-  static const Color kBrandMid = Color(0xFF3FAF6E);
-  static const Color kBrandBase = Color.fromARGB(137, 43, 126, 101);
 
   static const String kHeroPng = 'assets/images/biog_image.png';
 
@@ -35,16 +36,53 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
   bool _isShowing = false;
   bool _loadingShowingState = true;
 
+  Stream<BioGTelemetry?>? _telemetryStream;
+  BioGTelemetry? _latestTelemetry;
+  bool _firstSnapshotReceived = false;
+  Timer? _ticker;
+
   Map<String, dynamic> get device => widget.device;
+  String get _deviceId => (device['id'] ?? '').toString().trim();
+  String get _telemetryDeviceId {
+    final telemetryId = (device['telemetryDeviceId'] ?? '').toString().trim();
+    if (telemetryId.isNotEmpty) return telemetryId;
+    return _deviceId;
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _refreshShowingState();
+    _ensureTelemetrySubscription();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Re-evaluate connection age once a minute so "Última lectura
+    // hace X min" stays in sync without needing a new reading.
+    _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (!mounted) return;
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  void _ensureTelemetrySubscription() {
+    if (_telemetryStream != null) return;
+    if (_telemetryDeviceId.isEmpty) return;
+
+    final store = BioGScope.of(context);
+    _telemetryStream = store.watchTelemetryForDevice(_telemetryDeviceId);
   }
 
   void _refreshShowingState() {
-    final id = (device['id'] ?? '').toString().trim();
+    final id = _deviceId;
     final store = BioGScope.of(context);
     final activeId = store.activeDevice?.id ?? '';
 
@@ -62,7 +100,7 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
   }
 
   Future<void> _setAsShowing() async {
-    final id = (device['id'] ?? '').toString().trim();
+    final id = _deviceId;
     if (id.isEmpty) return;
 
     final store = BioGScope.of(context);
@@ -87,7 +125,7 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
   }
 
   Future<void> _deleteThisBioG() async {
-    final id = (device['id'] ?? '').toString().trim();
+    final id = _deviceId;
     final name = (device['name'] ?? 'Bio-G').toString();
 
     final ok = await showDialog<bool>(
@@ -132,22 +170,6 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
   Widget build(BuildContext context) {
     final name = (device['name'] ?? 'Bio-G').toString();
 
-    final batteryRaw = device['batteryPct'];
-    final int battery = (batteryRaw is int)
-        ? batteryRaw
-        : int.tryParse(batteryRaw?.toString() ?? '') ?? 92;
-
-    final signalLabel = (device['signalLabel'] ?? 'Buena').toString();
-    final sensorsLabel = (device['sensorsLabel'] ?? 'OK').toString();
-    final systemLabel = (device['systemLabel'] ?? 'Estable').toString();
-
-    final batteryState = battery >= 70
-        ? 'Óptima'
-        : (battery >= 35 ? 'Media' : 'Baja');
-    final batteryTint = battery >= 70
-        ? kBrandMid
-        : (battery >= 35 ? const Color(0xFFB58B2B) : const Color(0xFFB2554E));
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
@@ -155,152 +177,856 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
           const _SoftBackground(),
           SafeArea(
             bottom: false,
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _TopBar(
-                    titleLeft: 'Mis Bio-G',
-                    titleBold: name,
-                    isShowing: _isShowing,
-                    loading: _loadingShowingState,
-                    onBack: () => Navigator.pop(context, false),
-                  ),
-                  const SizedBox(height: 14),
-                  _GlassCard(
-                    radius: 22,
-                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          height: kHeroHeight,
-                          width: double.infinity,
-                          child: Center(
-                            child: Transform.scale(
-                              scale: kHeroScale,
-                              child: Image.asset(kHeroPng, fit: BoxFit.contain),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Estado del hardware',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF0E1A16),
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Resumen rápido del estado actual del dispositivo.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black.withValues(alpha:0.55),
-                            height: 1.25,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+            child: StreamBuilder<BioGTelemetry?>(
+              stream: _telemetryStream,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  _latestTelemetry = snapshot.data;
+                  _firstSnapshotReceived = true;
+                } else if (snapshot.connectionState != ConnectionState.waiting) {
+                  _firstSnapshotReceived = true;
+                }
+
+                final BioGTelemetry? telemetry =
+                    _latestTelemetry ?? snapshot.data;
+                final BioGHardwareHealth health =
+                    BioGHardwareHealth.fromTelemetry(telemetry);
+                final bool isLoading =
+                    !_firstSnapshotReceived && telemetry == null;
+
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _TopBar(
+                        titleLeft: 'Mis Bio-G',
+                        titleBold: name,
+                        isShowing: _isShowing,
+                        loading: _loadingShowingState,
+                        onBack: () => Navigator.pop(context, false),
+                      ),
+                      const SizedBox(height: 14),
+                      _GlassCard(
+                        radius: 22,
+                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _ChipPill(
-                              label: 'Batería $battery%',
-                              tint: batteryTint,
+                            SizedBox(
+                              height: kHeroHeight,
+                              width: double.infinity,
+                              child: Center(
+                                child: Transform.scale(
+                                  scale: kHeroScale,
+                                  child: Image.asset(
+                                    kHeroPng,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
                             ),
-                            _ChipPill(
-                              label: 'Señal $signalLabel',
-                              tint: kBrandMid,
+                            const SizedBox(height: 10),
+                            const Text(
+                              'Estado del hardware',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF0E1A16),
+                                letterSpacing: -0.2,
+                              ),
                             ),
-                            _ChipPill(
-                              label: 'Sensores $sensorsLabel',
-                              tint: kBrandMid,
+                            const SizedBox(height: 6),
+                            _HardwareSummaryLine(
+                              health: health,
+                              isLoading: isLoading,
                             ),
-                            _ChipPill(
-                              label: 'Sistema $systemLabel',
-                              tint: kBrandMid,
-                            ),
+                            const SizedBox(height: 10),
+                            _ChipsRow(health: health, isLoading: isLoading),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _GlassCard(
-                    radius: 22,
-                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                    child: _DisplaySelectorCard(
-                      isShowing: _isShowing,
-                      loading: _loadingShowingState,
-                      onUseThis: _setAsShowing,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _GlassCard(
-                    radius: 22,
-                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
-                    child: Column(
-                      children: [
-                        _StatusRowAssetPlain(
-                          asset: kIcBattery,
-                          iconScale: kIconScale,
-                          iconSize: kIconSize,
-                          iconBox: kIconBox,
-                          leftText: 'Batería: $battery%',
-                          rightText: batteryState,
-                          rightTint: batteryTint,
+                      ),
+                      const SizedBox(height: 14),
+                      _GlassCard(
+                        radius: 22,
+                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                        child: _DisplaySelectorCard(
+                          isShowing: _isShowing,
+                          loading: _loadingShowingState,
+                          onUseThis: _setAsShowing,
                         ),
-                        const _DividerLine(),
-                        _StatusRowAssetPlain(
-                          asset: kIcSignal,
-                          iconScale: kIconScale,
-                          iconSize: kIconSize,
-                          iconBox: kIconBox,
-                          leftText: 'Señal: $signalLabel',
-                          rightText: signalLabel,
-                          rightTint: kBrandMid,
+                      ),
+                      const SizedBox(height: 14),
+                      _GlassCard(
+                        radius: 22,
+                        padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+                        child: _StatusRowsList(
+                          health: health,
+                          isLoading: isLoading,
                         ),
-                        const _DividerLine(),
-                        _StatusRowAssetPlain(
-                          asset: kIcSensors,
-                          iconScale: kIconScale,
-                          iconSize: kIconSize,
-                          iconBox: kIconBox,
-                          leftText: 'Sensores: $sensorsLabel',
-                          rightText: sensorsLabel,
-                          rightTint: kBrandMid,
-                        ),
-                        const _DividerLine(),
-                        _StatusRowAssetPlain(
-                          asset: kIcSystem,
-                          iconScale: kIconScale,
-                          iconSize: kIconSize,
-                          iconBox: kIconBox,
-                          leftText: 'Sistema: $systemLabel',
-                          rightText: systemLabel,
-                          rightTint: kBrandMid,
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 24),
+                      _DangerButton(
+                        label: 'Eliminar Bio-G',
+                        onTap: _deleteThisBioG,
+                      ),
+                      SizedBox(
+                        height: 24 + MediaQuery.of(context).padding.bottom,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                  _DangerButton(
-                    label: 'Eliminar Bio-G',
-                    onTap: _deleteThisBioG,
-                  ),
-                  SizedBox(height: 24 + MediaQuery.of(context).padding.bottom),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _HardwareSummaryLine extends StatelessWidget {
+  final BioGHardwareHealth health;
+  final bool isLoading;
+
+  const _HardwareSummaryLine({required this.health, required this.isLoading});
+
+  @override
+  Widget build(BuildContext context) {
+    final String text = isLoading
+        ? 'Sincronizando datos del dispositivo…'
+        : '${health.summaryText} · ${health.connectionText}';
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 280),
+      switchInCurve: Curves.easeOut,
+      child: Text(
+        text,
+        key: ValueKey<String>(text),
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: Colors.black.withValues(alpha: 0.55),
+          height: 1.25,
+        ),
+      ),
+    );
+  }
+}
+
+class _ChipsRow extends StatelessWidget {
+  final BioGHardwareHealth health;
+  final bool isLoading;
+
+  const _ChipsRow({required this.health, required this.isLoading});
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: const <Widget>[
+          _SkeletonChip(width: 96),
+          _SkeletonChip(width: 86),
+          _SkeletonChip(width: 92),
+          _SkeletonChip(width: 96),
+        ],
+      );
+    }
+
+    final String batteryLabel = health.hasReading && health.batteryPct != null
+        ? 'Batería ${health.batteryPct!.round()}%'
+        : 'Batería —';
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _AnimatedChipPill(
+          label: batteryLabel,
+          tint: BioGHealthColors.forBattery(health.batteryLevel),
+        ),
+        _AnimatedChipPill(
+          label: 'Señal ${health.signalSubtitle}',
+          tint: BioGHealthColors.forSignal(health.signalLevel),
+        ),
+        _AnimatedChipPill(
+          label: 'Sensores ${_sensorsLabel(health)}',
+          tint: _sensorsTint(health),
+        ),
+        _AnimatedChipPill(
+          label: 'Sistema ${_systemLabel(health)}',
+          tint: BioGHealthColors.forStatus(health.status),
+        ),
+      ],
+    );
+  }
+
+  String _sensorsLabel(BioGHardwareHealth health) {
+    if (!health.hasReading) return 'Sin datos';
+    if (health.hasSensorData) return 'OK';
+    if (health.hasBatteryData || health.hasSignalData) return 'Telemetría';
+    return 'Sin datos';
+  }
+
+  Color _sensorsTint(BioGHardwareHealth health) {
+    if (!health.hasReading) return BioGHealthColors.gray;
+    if (health.hasSensorData) return BioGHealthColors.brandMid;
+    if (health.hasBatteryData || health.hasSignalData) {
+      return BioGHealthColors.amber;
+    }
+    return BioGHealthColors.gray;
+  }
+
+  String _systemLabel(BioGHardwareHealth health) {
+    if (!health.hasReading) return 'Sin datos';
+    if (!health.hasRecentReading) return 'Sin datos recientes';
+    if (health.systemOk) return 'OK';
+    if (!health.hasBatteryData ||
+        !health.hasSignalData ||
+        !health.hasSensorData) {
+      return 'Datos parciales';
+    }
+    switch (health.status) {
+      case BioGHardwareStatus.stable:
+        return 'Estable';
+      case BioGHardwareStatus.warning:
+        return 'Atención';
+      case BioGHardwareStatus.critical:
+        return 'Crítico';
+      case BioGHardwareStatus.offline:
+        return 'Sin datos';
+      case BioGHardwareStatus.unknown:
+        return 'Sin datos';
+    }
+  }
+}
+
+class _StatusRowsList extends StatelessWidget {
+  final BioGHardwareHealth health;
+  final bool isLoading;
+
+  const _StatusRowsList({required this.health, required this.isLoading});
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return Column(
+        children: const <Widget>[
+          _SkeletonRow(),
+          _DividerLine(),
+          _SkeletonRow(),
+          _DividerLine(),
+          _SkeletonRow(),
+          _DividerLine(),
+          _SkeletonRow(),
+          _DividerLine(),
+          _SkeletonRow(),
+        ],
+      );
+    }
+
+    final int? battery = health.batteryPct?.round();
+    final Color batteryTint = BioGHealthColors.forBattery(health.batteryLevel);
+
+    final String signalRight = health.hasReading && health.signalRssi != null
+        ? '${health.signalSubtitle} · ${health.signalRssi} dBm'
+        : health.signalSubtitle;
+    final Color signalTint = BioGHealthColors.forSignal(health.signalLevel);
+
+    final String sensorsLabel = _sensorsLabel(health);
+    final Color sensorsTint = _sensorsTint(health);
+
+    final String systemLabel = _systemLabel(health);
+    final Color systemTint = BioGHealthColors.forStatus(health.status);
+    final Color connectionTint = _connectionTint(health);
+
+    return Column(
+      children: [
+        _BatteryStatusRow(
+          asset: _StatusBioGScreenState.kIcBattery,
+          batteryPct: battery,
+          subtitle: health.batterySubtitle,
+          tint: batteryTint,
+          hasReading: health.hasReading,
+        ),
+        const _DividerLine(),
+        _SignalStatusRow(
+          asset: _StatusBioGScreenState.kIcSignal,
+          rightText: signalRight,
+          subtitle: health.signalSubtitle,
+          tint: signalTint,
+          hasReading: health.hasReading,
+        ),
+        const _DividerLine(),
+        _StatusRowAssetPlain(
+          asset: _StatusBioGScreenState.kIcSystem,
+          iconScale: _StatusBioGScreenState.kIconScale,
+          iconSize: _StatusBioGScreenState.kIconSize,
+          iconBox: _StatusBioGScreenState.kIconBox,
+          leftText: 'Última lectura',
+          rightText: health.connectionText,
+          rightTint: connectionTint,
+        ),
+        const _DividerLine(),
+        _StatusRowAssetPlain(
+          asset: _StatusBioGScreenState.kIcSensors,
+          iconScale: _StatusBioGScreenState.kIconScale,
+          iconSize: _StatusBioGScreenState.kIconSize,
+          iconBox: _StatusBioGScreenState.kIconBox,
+          leftText: 'Sensores',
+          rightText: sensorsLabel,
+          rightTint: sensorsTint,
+        ),
+        const _DividerLine(),
+        _StatusRowAssetPlain(
+          asset: _StatusBioGScreenState.kIcSystem,
+          iconScale: _StatusBioGScreenState.kIconScale,
+          iconSize: _StatusBioGScreenState.kIconSize,
+          iconBox: _StatusBioGScreenState.kIconBox,
+          leftText: 'Sistema',
+          rightText: systemLabel,
+          rightTint: systemTint,
+        ),
+      ],
+    );
+  }
+
+  String _sensorsLabel(BioGHardwareHealth health) {
+    if (!health.hasReading) return 'Sin datos';
+    if (health.hasSensorData) return 'OK';
+    if (health.hasBatteryData || health.hasSignalData) return 'Telemetría';
+    return 'Sin datos';
+  }
+
+  Color _sensorsTint(BioGHardwareHealth health) {
+    if (!health.hasReading) return BioGHealthColors.gray;
+    if (health.hasSensorData) return BioGHealthColors.brandMid;
+    if (health.hasBatteryData || health.hasSignalData) {
+      return BioGHealthColors.amber;
+    }
+    return BioGHealthColors.gray;
+  }
+
+  String _systemLabel(BioGHardwareHealth health) {
+    if (!health.hasReading) return 'Sin datos';
+    if (!health.hasRecentReading) return 'Sin datos recientes';
+    if (health.systemOk) return 'OK';
+    if (!health.hasBatteryData ||
+        !health.hasSignalData ||
+        !health.hasSensorData) {
+      return 'Datos parciales';
+    }
+    switch (health.status) {
+      case BioGHardwareStatus.stable:
+        return 'Estable';
+      case BioGHardwareStatus.warning:
+        return 'Atención';
+      case BioGHardwareStatus.critical:
+        return 'Crítico';
+      case BioGHardwareStatus.offline:
+        return 'Sin datos';
+      case BioGHardwareStatus.unknown:
+        return 'Sin datos';
+    }
+  }
+
+  Color _connectionTint(BioGHardwareHealth health) {
+    switch (health.connectionState) {
+      case BioGConnectionState.active:
+        return BioGHealthColors.brandMid;
+      case BioGConnectionState.recent:
+        return BioGHealthColors.amber;
+      case BioGConnectionState.stale:
+      case BioGConnectionState.unknown:
+        return BioGHealthColors.gray;
+    }
+  }
+}
+
+class _BatteryStatusRow extends StatelessWidget {
+  final String asset;
+  final int? batteryPct;
+  final String subtitle;
+  final Color tint;
+  final bool hasReading;
+
+  const _BatteryStatusRow({
+    required this.asset,
+    required this.batteryPct,
+    required this.subtitle,
+    required this.tint,
+    required this.hasReading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final double targetValue = (batteryPct ?? 0).clamp(0, 100).toDouble();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          SizedBox(
+            width: _StatusBioGScreenState.kIconBox,
+            height: _StatusBioGScreenState.kIconBox,
+            child: Center(
+              child: Transform.scale(
+                scale: _StatusBioGScreenState.kIconScale,
+                child: Image.asset(
+                  asset,
+                  width: _StatusBioGScreenState.kIconSize,
+                  height: _StatusBioGScreenState.kIconSize,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Batería',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0E1A16),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (hasReading && batteryPct != null)
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0, end: targetValue),
+                        duration: const Duration(milliseconds: 720),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, _) {
+                          return TweenAnimationBuilder<Color?>(
+                            tween: ColorTween(end: tint),
+                            duration: const Duration(milliseconds: 360),
+                            curve: Curves.easeOut,
+                            builder: (context, color, _) {
+                              return Text(
+                                '${value.round()}%',
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: color ?? tint,
+                                  fontFeatures: const <FontFeature>[
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                _BatteryBar(
+                  targetFraction: targetValue / 100.0,
+                  tint: tint,
+                  hasReading: hasReading,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          TweenAnimationBuilder<Color?>(
+            tween: ColorTween(end: tint),
+            duration: const Duration(milliseconds: 360),
+            curve: Curves.easeOut,
+            builder: (context, color, _) {
+              return Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: color ?? tint,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatteryBar extends StatelessWidget {
+  final double targetFraction;
+  final Color tint;
+  final bool hasReading;
+
+  const _BatteryBar({
+    required this.targetFraction,
+    required this.tint,
+    required this.hasReading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        height: 8,
+        color: Colors.black.withValues(alpha: 0.06),
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: hasReading ? targetFraction : 0),
+          duration: const Duration(milliseconds: 760),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, _) {
+            return Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: value.clamp(0.0, 1.0),
+                child: TweenAnimationBuilder<Color?>(
+                  tween: ColorTween(end: tint),
+                  duration: const Duration(milliseconds: 360),
+                  curve: Curves.easeOut,
+                  builder: (context, color, _) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            (color ?? tint).withValues(alpha: 0.85),
+                            (color ?? tint),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SignalStatusRow extends StatelessWidget {
+  final String asset;
+  final String rightText;
+  final String subtitle;
+  final Color tint;
+  final bool hasReading;
+
+  const _SignalStatusRow({
+    required this.asset,
+    required this.rightText,
+    required this.subtitle,
+    required this.tint,
+    required this.hasReading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          SizedBox(
+            width: _StatusBioGScreenState.kIconBox,
+            height: _StatusBioGScreenState.kIconBox,
+            child: Center(
+              child: Transform.scale(
+                scale: _StatusBioGScreenState.kIconScale,
+                child: Image.asset(
+                  asset,
+                  width: _StatusBioGScreenState.kIconSize,
+                  height: _StatusBioGScreenState.kIconSize,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Row(
+              children: [
+                const Text(
+                  'Señal',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0E1A16),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _SignalBars(tint: tint, hasReading: hasReading),
+              ],
+            ),
+          ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            child: TweenAnimationBuilder<Color?>(
+              key: ValueKey<String>(rightText),
+              tween: ColorTween(end: tint),
+              duration: const Duration(milliseconds: 360),
+              curve: Curves.easeOut,
+              builder: (context, color, _) {
+                return Text(
+                  rightText,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: color ?? tint,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tiny RSSI-bar visualization that animates when the tint or
+/// underlying level changes. No wifi icon — just a fluid set of
+/// vertical bars to keep it discreet.
+class _SignalBars extends StatefulWidget {
+  final Color tint;
+  final bool hasReading;
+
+  const _SignalBars({required this.tint, required this.hasReading});
+
+  @override
+  State<_SignalBars> createState() => _SignalBarsState();
+}
+
+class _SignalBarsState extends State<_SignalBars>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    if (widget.hasReading) {
+      _ctrl.forward(from: 0);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _SignalBars oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.hasReading != widget.hasReading ||
+        oldWidget.tint != widget.tint) {
+      _ctrl.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List<Widget>.generate(4, (i) {
+            final double progress = ((_ctrl.value * 4) - i).clamp(0.0, 1.0);
+            final double height = 6 + (i * 2.5);
+            final double opacity = widget.hasReading ? progress : 0.18;
+            return Padding(
+              padding: const EdgeInsets.only(right: 3),
+              child: TweenAnimationBuilder<Color?>(
+                tween: ColorTween(end: widget.tint),
+                duration: const Duration(milliseconds: 360),
+                curve: Curves.easeOut,
+                builder: (context, color, _) {
+                  return Container(
+                    width: 4,
+                    height: height,
+                    decoration: BoxDecoration(
+                      color: (color ?? widget.tint).withValues(alpha: opacity),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  );
+                },
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+}
+
+class _AnimatedChipPill extends StatelessWidget {
+  final String label;
+  final Color tint;
+
+  const _AnimatedChipPill({required this.label, required this.tint});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 280),
+      switchInCurve: Curves.easeOut,
+      transitionBuilder: (child, anim) =>
+          FadeTransition(opacity: anim, child: child),
+      child: TweenAnimationBuilder<Color?>(
+        key: ValueKey<String>(label),
+        tween: ColorTween(end: tint),
+        duration: const Duration(milliseconds: 360),
+        curve: Curves.easeOut,
+        builder: (context, color, _) {
+          final Color resolved = color ?? tint;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: resolved.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: resolved.withValues(alpha: 0.95),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SkeletonChip extends StatefulWidget {
+  final double width;
+  const _SkeletonChip({required this.width});
+
+  @override
+  State<_SkeletonChip> createState() => _SkeletonChipState();
+}
+
+class _SkeletonChipState extends State<_SkeletonChip>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, _) {
+        final double t = 0.06 + (_ctrl.value * 0.10);
+        return Container(
+          width: widget.width,
+          height: 28,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: t),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SkeletonRow extends StatefulWidget {
+  const _SkeletonRow();
+
+  @override
+  State<_SkeletonRow> createState() => _SkeletonRowState();
+}
+
+class _SkeletonRowState extends State<_SkeletonRow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, _) {
+        final double t = 0.06 + (_ctrl.value * 0.08);
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: t),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: t),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 70,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: t),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -333,7 +1059,7 @@ class _TopBar extends StatelessWidget {
             child: Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 18,
-              color: Colors.black.withValues(alpha:0.55),
+              color: Colors.black.withValues(alpha: 0.55),
             ),
           ),
         ),
@@ -353,7 +1079,7 @@ class _TopBar extends StatelessWidget {
                       text: '$titleLeft · ',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: Colors.black.withValues(alpha:0.55),
+                        color: Colors.black.withValues(alpha: 0.55),
                       ),
                     ),
                     TextSpan(
@@ -397,7 +1123,7 @@ class _TopStatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: border.withValues(alpha:0.9)),
+        border: Border.all(color: border.withValues(alpha: 0.9)),
       ),
       child: Text(
         label,
@@ -486,7 +1212,7 @@ class _DisplaySelectorCard extends StatelessWidget {
           style: TextStyle(
             fontSize: 13.2,
             height: 1.34,
-            color: Colors.black.withValues(alpha:0.55),
+            color: Colors.black.withValues(alpha: 0.55),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -551,12 +1277,12 @@ class _PrimaryShowButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3FAF6E).withValues(alpha:0.18),
+            color: const Color(0xFF3FAF6E).withValues(alpha: 0.18),
             blurRadius: 22,
             offset: const Offset(0, 12),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 18,
             offset: const Offset(0, 12),
           ),
@@ -577,12 +1303,12 @@ class _PrimaryShowButton extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    const Color(0xFF40BB5F).withValues(alpha:0.92),
-                    const Color(0xFF2F9E62).withValues(alpha:0.82),
+                    _StatusBioGScreenState.kBrandTop.withValues(alpha: 0.92),
+                    const Color(0xFF2F9E62).withValues(alpha: 0.82),
                   ],
                 ),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha:0.24),
+                  color: Colors.white.withValues(alpha: 0.24),
                   width: 1,
                 ),
               ),
@@ -612,33 +1338,6 @@ class _PrimaryShowButton extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ChipPill extends StatelessWidget {
-  final String label;
-  final Color tint;
-
-  const _ChipPill({required this.label, required this.tint});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: tint.withValues(alpha:0.10),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.black.withValues(alpha:0.06)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w900,
-          color: tint.withValues(alpha:0.95),
         ),
       ),
     );
@@ -696,12 +1395,23 @@ class _StatusRowAssetPlain extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            rightText,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              color: rightTint,
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            child: TweenAnimationBuilder<Color?>(
+              key: ValueKey<String>(rightText),
+              tween: ColorTween(end: rightTint),
+              duration: const Duration(milliseconds: 360),
+              curve: Curves.easeOut,
+              builder: (context, color, _) {
+                return Text(
+                  rightText,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: color ?? rightTint,
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -718,7 +1428,7 @@ class _DividerLine extends StatelessWidget {
     return Container(
       height: 1,
       width: double.infinity,
-      color: Colors.black.withValues(alpha:0.06),
+      color: Colors.black.withValues(alpha: 0.06),
     );
   }
 }
@@ -741,7 +1451,7 @@ class _GlassCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.14),
+            color: Colors.black.withValues(alpha: 0.14),
             blurRadius: 30,
             offset: const Offset(0, 18),
             spreadRadius: 0,
@@ -754,10 +1464,10 @@ class _GlassCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha:0.62),
+              color: Colors.white.withValues(alpha: 0.62),
               borderRadius: BorderRadius.circular(radius),
               border: Border.all(
-                color: Colors.white.withValues(alpha:0.55),
+                color: Colors.white.withValues(alpha: 0.55),
                 width: 1,
               ),
             ),
@@ -823,7 +1533,7 @@ class _GlowBlob extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: _brandMid.withValues(alpha:opacity),
+          color: _brandMid.withValues(alpha: opacity),
         ),
       ),
     );
@@ -846,12 +1556,12 @@ class _DangerButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: _red.withValues(alpha:0.14),
+            color: _red.withValues(alpha: 0.14),
             blurRadius: 26,
             offset: const Offset(0, 14),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.10),
+            color: Colors.black.withValues(alpha: 0.10),
             blurRadius: 26,
             offset: const Offset(0, 16),
           ),
@@ -871,10 +1581,13 @@ class _DangerButton extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [_red.withValues(alpha:0.73), _deep.withValues(alpha:0.58)],
+                  colors: [
+                    _red.withValues(alpha: 0.73),
+                    _deep.withValues(alpha: 0.58),
+                  ],
                 ),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha:0.22),
+                  color: Colors.white.withValues(alpha: 0.22),
                   width: 1,
                 ),
               ),

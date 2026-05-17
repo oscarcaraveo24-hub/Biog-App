@@ -1,0 +1,575 @@
+PERFIL UNIVERSAL BIO-G - CALABAZA v2
+Fuente PDF: BIO-G_Perfil_Universal_Calabaza_v2.pdf
+Conversión a texto: pdftotext -layout UTF-8, con separadores de pagina.
+
+--- PAGINA 1 ---
+
+BIO-G
+                                                  Perfil técnico de cultivo
+
+
+
+
+             PERFIL UNIVERSAL BIO-G - CALABAZA
+                                 Cultivo madre: CA / crop_squash / Cucurbita spp.
+
+
+
+                                                VERSION V2 - INVESTIGADA Y
+                                                    LISTA PARA CODIGO
+
+
+
+
+         Parte de la base enviada por Caraveo y la corrige como perfil madre: calabaza no es una sola especie ni
+         un solo destino comercial; en BIO-G debe funcionar como cultivo de fruto con variantes de calabacita
+         tierna, calabaza madura, pipiana/pepita y chilacayote.
+
+
+
+ Uso interno recomendado: base agronómica para código, perfiles fenológicos, alertas, NPK relativo, wizard de cultivo y lógica de
+ migración. No sustituye una recomendación agronómica local ni una receta de fertilización por análisis de suelo.
+
+
+
+
+BIO-G | Calabaza                                                                                                       Pagina 1 de 9
+
+
+--- PAGINA 2 ---
+
+1. Identidad universal del cultivo
+ La entrada Calabaza debe tratarse como un cultivo madre de la familia Cucurbitaceae. En México el término
+ cubre calabacitas tiernas, calabazas maduras, pipianas, chilacayotes y tipos regionales. Por eso el código no debe
+ crear cultivos separados para cada nombre cultural; debe usar un solo CropKey.squash y resolver los tipos como
+ perfiles/alias.
+
+  Campo                                    Valor BIO-G recomendado
+
+  ID corto                                 CA
+
+  Clave interna                            crop_squash / CropKey.squash
+
+  Nombre UX                                Calabaza
+
+  Nombre científico                        Cucurbita spp.
+
+  Especies cubiertas                       C. pepo, C. maxima, C. moschata, C. argyrosperma y C. ficifolia cuando el tipo UX lo requiera.
+                                           [S1]
+
+  Familia botánica                         Cucurbitaceae
+
+  Tipo agronómico                          Hortaliza de fruto; planta anual, C3, de estación cálida.
+
+  Órgano objetivo                          Fruto. En pipián/pipiana también se considera semilla/pepita como destino secundario.
+
+  Arquitectura                             Arbustiva, semiarbustiva, rastrera o trepadora según perfil; no se decide desde el universal.
+
+  Variedad/híbrido                         Opcional; se usa como alias hacia perfil fenológico, no como cultivo nuevo.
+
+          Regla de producto: El usuario puede decir "calabaza", "calabacita", "zucchini", "Castilla", "pipián" o
+          "chilacayote". BIO-G debe mantener una sola familia de cultivo y cambiar únicamente el perfil
+          fenológico/UX.
+
+
+
+ 2. Alcance y exclusiones del perfil
+ Este perfil define rangos medibles y ventanas de riesgo. No intenta producir la calabaza por el agricultor.
+ Tampoco reemplaza análisis de suelo, recomendación local de fertilización ni diagnóstico fitosanitario
+ profesional.
+
+  Incluye                                                                 No incluye
+
+  Etapas Bio-G, ventanas críticas, rangos de sensor, sensibilidad         Dosis exacta de fertilizante, receta química, número de frutos
+  por etapa, NPK relativo, alertas, memoria y migración.                  por planta, tamaño comercial exacto, estimación cerrada de
+                                                                          rendimiento, manejo hidroponico o sustratos inertes.
+
+  Perfiles UX por tipo cultural: calabacita, criolla, bola, Castilla,     Separar cada variedad comercial como cultivo nuevo o usar
+  butternut/buchona, chilacayote, pipián.                                 marcas de semilla como perfiles biológicos.
+
+
+
+ 3. Esqueleto fenológico universal
+ Calabaza usa floración y cuajado, pero con una diferencia clave frente a otros frutos: la planta produce flores
+ masculinas y femeninas separadas en la misma planta, y el cuajado depende de polinizadores. Esto debe afectar
+ alertas de calor, humedad, lluvia y actividad de insectos polinizadores. [S1][S2][S3]
+
+
+
+
+BIO-G | Calabaza                                                                                                                            Pagina 2 de 9
+
+
+--- PAGINA 3 ---
+
+Etapa Bio-G                    Día                 Qué debe interpretar BIO-G                                         Imagen/asset esperado
+                                 orientativo
+
+  1. Germinación                 0-7/10              Semilla absorbe agua y emite radícula. Riesgo alto por frío,       Semilla de calabaza real,
+                                                     costra, salinidad y exceso de agua. La semilla requiere suelo      ovalada/plana, radícula
+                                                     cálido; usar mínimo funcional cercano a 15-16 C. [S6]              blanca apenas emergiendo.
+                                                                                                                        Sin hojas.
+
+  2. Emergencia /                5-18                Cotiledones y primeras hojas verdaderas. Priorizar                 Plántula joven con
+  establecimiento                                    humedad estable, temperatura de suelo,                             cotiledones grandes, raíz
+                                                     resistencia/compactación y anoxia.                                 visible, sin fruto.
+
+  3. Desarrollo vegetativo       15-40/55            Expansión foliar y guías. N y agua sostienen biomasa. Si hay       Planta joven con hojas
+                                                     exceso de N o sombra puede retrasar cuajado.                       grandes lobuladas, guía o
+                                                                                                                        porte semiarbustivo según
+                                                                                                                        perfil.
+
+  4. Floración                   30-70               Aparecen flores masculinas primero y luego femeninas.              Flores amarillas grandes,
+                                                     Ventana crítica: calor, sequía, lluvia/HR alta y baja actividad    algunas masculinas y una
+                                                     de abejas reducen cuajado. [S2][S3]                                femenina con ovario
+                                                                                                                        pequeño.
+
+  5. Cuajado / polinización      35-80               El ovario crece solo si hubo polinización suficiente.              Flor + fruto recién cuajado,
+                                                     Penalización fuerte por estrés hídrico, calor, lluvia, mala        pequeño y firme.
+                                                     sanidad foliar y exceso de N. [S8][S10]
+
+  6. Desarrollo de fruto         45-130              Acumulación de peso, forma y calidad. Aumenta demanda              Fruto en crecimiento; para
+                                                     de K, agua constante y sanidad foliar. Riesgo de pudriciones       CA-GEN no asumir forma
+                                                     si hay humedad persistente.                                        exacta.
+
+  7. Cosecha                     45-65 tierna /      Calabacita se cosecha joven y repetida; winter squash se           Planta productiva con frutos
+                                 80-130 madura       cosecha madura con cáscara endurecida. [S7]                        comerciales.
+
+  8. Fin de ciclo /              90-160+ /           Declive foliar, menor crecimiento, más presión de                  Hojas amarillas/cafés, guía
+  senescencia                    180-210             oídio/mildiu y fin de producción. No debe confundirse con          envejecida, fruto remanente.
+                                 chilacayote         estrés temprano.
+
+ Los días son rangos de calendario, no fecha rígida. En v2 se recomienda dejar preparado GDD base 10 C como expansión futura, pero en v1
+ basta con calendario + estrés acumulado.
+
+
+ 4. Perfiles UX derivados del cultivo madre
+ La variedad comercial se guarda como alias. El perfil Bio-G debe representar la biología y el calendario, no la
+ marca de semilla.
+
+  Perfil         Nombre UX                       Uso principal       Floració       Inicio            Ciclo            Densidad         Arquitectur
+                                                                     n              cosecha                            típica/ha        a
+
+  CA-GEN         Calabaza genérica               Fruto genérico      40-60 d        60-95 d           Intermedio       10-20 mil        Semi-rastrera
+                                                                                    flexible          conservador                       / intermedia
+
+  CA-01          Calabacita italiana /           Fruto tierno        30-45 d        45-65 d           Corto-inter      12-25 mil        Arbustiva /
+                 zucchini                                                                             medio                             semiarbustiva
+
+  CA-02          Calabacita criolla / huicha /   Fruto tierno        35-55 d        55-80 d           Intermedio       8-18 mil         Guía /
+                 milpa                                                                                                                  rastrera
+
+  CA-03          Calabacita de bola /            Fruto tierno        30-45 d        45-65 d           Corto            12-25 mil        Arbustiva /
+                 redonda                                                                                                                semiarbustiva
+
+  CA-04          Calabaza de Castilla            Fruto maduro        45-70 d        90-120 d          Largo            4-10 mil         Guía rastrera
+                                                                                                                                        vigorosa
+
+  CA-05          Butternut / Buchona /           Fruto maduro        45-70 d        90-130 d          Largo            4-10 mil         Guía rastrera
+                 Mantequilla
+
+  CA-06          Chilacayote                     Fruto maduro /      ~70-90 d       180-210 d         Muy largo        1-4 mil          Rastrera/trep
+                                                 dulce                                                                                  adora
+                                                                                                                                        vigorosa
+
+  CA-07          Pipián / pipiana / pepita       Semilla + fruto     45-70 d        110-160 d         Intermedio-l     3-8 mil          Guía rastrera
+                                                                                                      argo                              vigorosa
+
+
+
+
+BIO-G | Calabaza                                                                                                                                       Pagina 3 de 9
+
+
+--- PAGINA 4 ---
+
+Mejora sobre la base: CA-GEN no debe cerrarse solo a "calabacita intermedia". Debe iniciar como
+          intermedio conservador, pero con horizonte flexible: si el usuario no confirma corte tierno y el cultivo
+          sigue en desarrollo de fruto, el sistema puede extender a ruta de fruto maduro sin reiniciar.
+
+
+
+ 5. Rangos fisiológicos medibles - base BIO-G
+ Los rangos están expresados como objetivos de interpretación para sensores. Se deben calibrar localmente, pero
+ son seguros para alertas v1 porque privilegian estabilidad sobre precisión extrema.
+
+  Variable              Óptimo                Observación             Alerta                  Lectura BIO-G
+                        operativo
+
+  Temperatura aire      20-30 C               15-20 C o 30-32 C       <12 C o >32 C           La planta es de estación cálida y sensible a helada.
+                                                                                              El cuajado cae con calor fuerte y noches calientes.
+                                                                                              [S3][S5][S6]
+
+  Temperatura suelo     18-30 C               15-18 C o >32 C         <15 C en                Semilla y raíz requieren suelo cálido; bajo 15-16 C
+                                                                      germinación / >35       germina lento o irregular. [S6]
+                                                                      C
+
+  Agua disponible       60-90%                50-60% o 90-95%         <50% en                 Déficit en floración/cuajado penaliza fuerte;
+  suelo (AW)                                                          flor/cuajado o          exceso persistente causa anoxia y raíz débil.
+                                                                      saturación >95%
+                                                                      persistente
+
+  Humedad ambiental     Moderada y            HR alta persistente     HR alta + hoja          No usar como umbral duro en v1; usar para riesgo
+  / lluvia              ventilada             o lluvia durante        mojada + baja           de polinización y enfermedades. [S3][S8]
+                                              floración               ventilación
+
+  pH suelo              6.0-7.2               5.8-6.0 o 7.2-7.6       <5.8 o >7.6             OSU prefiere 6.0-6.8; Wisconsin reporta rango
+                                                                                              amplio 5.5-7.5; NMSU marca 6.5-7.5 para máxima
+                                                                                              producción en pumpkin. [S4][S5][S9]
+
+  Salinidad ECe         <1.8 dS/m             1.8-2.5 dS/m            >2.5 dS/m; crítico      Calabaza se trata como sensibilidad media: no
+                                                                      >3.5-4.0                matar el score de golpe, pero alertar por riesgo en
+                                                                                              establecimiento y cuajado.
+
+  Resistencia/compact   <1.5 MPa              1.5-2.0 MPa             >2.0 MPa                La raíz de cucurbitácea explora lateralmente;
+  ación                                                                                       compactación + humedad alta reduce oxígeno y
+                                                                                              absorción.
+
+  N relativo            Medio-alto en         Bajo en vegetativo      Exceso N + poco K       N impulsa hojas, pero exceso puede
+                        vegetativo            o muy alto en           en cuajado              retrasar/frustrar fruto. [S7][S8]
+                                              floración
+
+  P relativo            Medio en              Bajo en                 Bajo persistente        Importante para raíz, floración y energía; no
+                        establecimiento y     arranque/floración                              sobredimensionar en v1 sin análisis de suelo.
+                        floración
+
+  K relativo            Alto en               Medio-bajo en           Bajo en desarrollo      K sostiene llenado, calidad y transporte de agua;
+                        cuajado/fruto         llenado                 de fruto                subir peso de K desde cuajado.
+
+
+
+ 6. Matriz de sensibilidad por etapa
+ Escala de ponderación: 0 = no aplica, 1 = baja, 2 = media, 3 = alta, 4 = muy alta, 5 = crítica. Esta matriz es útil para
+ el agro score y para decidir qué alerta aparece primero.
+
+  Etapa                 Déficit      Exceso     Frío          Calor       Compa          Salinid    N           K            Poliniz     Sanida
+                        agua         agua                                 ctación        ad                                  ación       d foliar
+
+  Germinación           4            4          4             2           3              3          1           1            0           1
+
+  Establecimiento       4            4          3             2           4              3          2           1            0           2
+
+  Vegetativo            3            3          2             3           3              2          4           2            0           3
+
+  Floración             5            3          2             5           2              3          3           3            5           4
+
+
+
+
+BIO-G | Calabaza                                                                                                                                  Pagina 4 de 9
+
+
+--- PAGINA 5 ---
+
+Etapa                     Déficit     Exceso         Frío             Calor          Compa         Salinid     N            K           Poliniz       Sanida
+                            agua        agua                                           ctación       ad                                   ación         d foliar
+
+  Cuajado                   5           3              2                5              2             4           3            4           5             4
+
+  Desarrollo fruto          4           3              1                4              2             3           3            5           2             4
+
+  Cosecha                   3           4              1                3              1             2           2            4           1             5
+
+  Senescencia               2           3              1                2              1             2           1            2           0             4
+
+
+
+ 7. Lógica NPK relativa por etapa
+
+  Etapa                    N           P              K                     Micronotas útiles                   Interpretación
+
+  Germinación              Bajo        Medio          Bajo                  Evitar salinidad alta.              No empujar fertilización; sensor debe cuidar
+                                                                                                                agua/temperatura/salinidad.
+
+  Establecimiento          Medio       Medio-al       Medio                 Ca/Mg ayudan estructura             Raíz y primera hoja; P bajo penaliza arranque.
+                                       to                                   inicial.
+
+  Vegetativo               Alto        Medio          Medio                 Mg para fotosíntesis.               N sube peso en score; exceso solo alerta si
+                                                                                                                retrasa floración.
+
+  Prefloración             Medio       Medio-al       Medio-alto            B/Mg si se usa modelo futuro.       Transición: bajar exceso N y preparar
+                                       to                                                                       flor/cuajado.
+
+  Floración                Medio       Alto           Alto                  B/Ca/Mg como contexto, no           El sistema debe proteger energía y
+                                                                            dosis.                              polinización.
+
+  Cuajado                  Medio       Medio-al       Alto                  Ca para calidad y estrés.           K y agua pesan más que crecimiento foliar.
+                                       to
+
+  Desarrollo fruto         Medio       Medio          Muy alto              Ca/Mg; evitar salinidad.            K bajo en esta etapa debe generar
+                                                                                                                recomendación clara.
+
+  Cosecha                  Medio-b     Medio          Alto                  Sanidad foliar y continuidad.       Mantener producción sin empujar exceso
+                           ajo                                                                                  vegetativo.
+
+
+            Regla práctica: en calabaza la transición de N hacia K es más importante que el valor aislado. Si el
+            cultivo está en cuajado/desarrollo de fruto y K está bajo mientras N está alto, BIO-G debe explicar: "la
+            planta tiene hoja, pero le falta fuerza para sostener fruto".
+
+
+
+ 8. Ventanas fisiológicas activas
+
+  Ventana                          Rango                         Prioridad                 Qué vigilar
+
+  Arranque seguro                  Siembra-emergencia            Alta                      Suelo cálido, humedad uniforme, sin encharcar, baja salinidad,
+                                                                                           baja compactación.
+
+  Construcción de planta           Vegetativo                    Media-alta                N suficiente, humedad estable, follaje sano, evitar guías débiles.
+
+  Prefloración                     7-14 días antes de            Alta                      No llegar seco ni con N excesivo; revisar temperatura y tendencia
+                                   floración                                               de humedad.
+
+  Floración                        Floración                     Crítica                   Calor, sequía, lluvia, HR alta, baja actividad de abejas, mala
+                                   masculina/femenina                                      ventilación.
+
+  Cuajado                          Primeros frutos               Crítica                   Agua, K, salinidad, estrés térmico, abortos, frutos deformes.
+
+  Llenado de fruto                 Fruto en crecimiento          Alta                      K, agua constante, sanidad foliar, pudriciones y golpes de calor.
+
+  Cosecha progresiva               Cortes repetidos              Media-alta                No dejar frutos sobremaduros en calabacita; mantener vigor y
+                                                                                           sanidad. [S7]
+
+
+
+ 9. Alertas humanas recomendadas
+
+
+BIO-G | Calabaza                                                                                                                                                Pagina 5 de 9
+
+
+--- PAGINA 6 ---
+
+Código sugerido                  Disparo lógico                                      Mensaje humano
+
+     squash_cold_start                Etapa 1-2 + suelo <15 C o aire frío persistente     El suelo está frío para calabaza. La germinación puede
+                                                                                          salir lenta o dispareja.
+
+     squash_water_deficit_flower      Flor/cuajado + AW <55% o tendencia                  La calabaza está entrando a una etapa donde no
+                                      descendente                                         conviene que falte agua; puede tirar flor o cuajar menos.
+
+     squash_heat_pollination          Flor/cuajado + >32 C, crítico >35 C o noche         Hay calor fuerte durante floración. Puede haber muchas
+                                      caliente                                            flores, pero menos fruto si baja la polinización.
+
+     squash_pollination_risk          Floración + lluvia/HR alta/frío/nublado             El clima puede estar frenando a los polinizadores. Revisa
+                                                                                          si las flores femeninas sí están amarrando.
+
+     squash_excess_water_root         AW >95% persistente o lluvia + suelo pesado         Hay demasiada humedad en el suelo. La raíz de calabaza
+                                                                                          puede perder oxígeno y debilitarse.
+
+     squash_compaction                Resistencia >2.0 MPa en                             El suelo está duro para la raíz. La planta puede crecer,
+                                      establecimiento/vegetativo                          pero con menos capacidad para tomar agua y
+                                                                                          nutrientes.
+
+     squash_salinity_set              ECe >2.5 dS/m en establecimiento/cuajado            La salinidad está subiendo en una etapa sensible; puede
+                                                                                          costar más sostener flor y fruto.
+
+     squash_low_k_fruit               Cuajado/fruto + K bajo relativo                     El fruto ya pide más potasio. Si sigue bajo, puede bajar
+                                                                                          tamaño, llenado o continuidad de cosecha.
+
+     squash_foliar_disease_conte      HR/lluvia + follaje denso + etapa 4-8               El ambiente favorece enfermedades foliares en
+     xt                                                                                   cucurbitáceas. Conviene revisar hojas antes de que
+                                                                                          avance.
+
+
+
+ 10. Agro score: ponderación recomendada
+ El score debe cambiar según etapa. En calabaza, floración y cuajado no son una etapa estética; son el cuello de
+ botella. Un estrés moderado ahí vale más que el mismo estrés en vegetativo.
+
+     Etapa                      Agua          Temp.       Suelo               Nutrición   Sanidad/co       Notas
+                                                          físico                          ntexto
+
+     Germinación                35%           25%         25%                 10%         5%               Cuidar suelo frío, salinidad y exceso de
+                                                                                                           agua.
+
+     Establecimiento            30%           20%         30%                 15%         5%               Compactación/anoxia pesan fuerte.
+
+     Vegetativo                 25%           20%         20%                 25%         10%              N y vigor foliar pesan, pero sin ocultar
+                                                                                                           estrés hídrico.
+
+     Floración                  30%           30%         10%                 15%         15%              Polinización y calor suben peso.
+
+     Cuajado                    35%           25%         10%                 20%         10%              Agua + K + temperatura definen
+                                                                                                           amarre.
+
+     Desarrollo fruto           30%           20%         10%                 30%         10%              K y agua sostienen llenado.
+
+     Cosecha                    25%           15%         10%                 25%         25%              Sanidad foliar y continuidad de corte.
+
+     Senescencia                20%           15%         10%                 15%         40%              No castigar senescencia natural como
+                                                                                                           falla temprana.
+
+
+
+ 11. Reglas de calendario y estrés acumulado
+ 1       Día 0: fecha de siembra o trasplante. Si el usuario no sabe, usar estimación con confianza baja.
+ 2       El estrés no cambia la biología: solo mueve la probabilidad de etapa. Una planta estresada no "salta"
+         floración; se retrasa, aborta o reduce cuajado.
+ 3       Retraso sugerido: estrés leve 0-1 día; moderado persistente 1-3 días; severo 3-7 días. No acumular sin límite.
+ 4       Confirmación de cosecha: si el usuario marca cortes de fruto tierno, mantener ruta CA-01/02/03 o CA-GEN
+         tierna. Si no hay corte y el fruto continúa, permitir ruta de fruto maduro.
+
+
+BIO-G | Calabaza                                                                                                                                      Pagina 6 de 9
+
+
+--- PAGINA 7 ---
+
+5       Confianza: perfil conocido + fecha exacta + sensores vivos = alta; CA-GEN + fecha estimada = media/baja.
+
+
+ 12. Memoria del cultivo
+
+     Dato a guardar                                           Por qué importa
+
+     cropKey, profileId, alias mostrado                       Permite migrar sin perder contexto.
+
+     fecha de siembra/trasplante y confianza                  Base del calendario.
+
+     eventos de estrés: tipo, severidad, duración,            Ajusta etapa, score e historial.
+     etapa
+
+     historial de                                             Alimenta tendencias y alertas no repetitivas.
+     humedad/temperatura/pH/EC/resistencia/NPK
+
+     primer floración detectada/confirmada                    Ancla ventana crítica real.
+
+     primer cuajado detectado/confirmado                      Activa peso alto de K y agua.
+
+     primer corte o intención de fruto maduro                 Define si el perfil debe comportarse como calabacita o calabaza madura.
+
+
+
+ 13. Alias de catálogo recomendados
+
+     Perfil              Alias UX / búsqueda
+
+     CA-GEN              calabaza, calabacita, zapallo, ayote, auyama, squash, pumpkin, otra calabaza, no sé cuál
+
+     CA-01               calabacita italiana, zucchini, zuccini, calabacín, italiana larga, grey zucchini, squash italiano
+
+     CA-02               calabacita criolla, calabaza criolla, huicha, güicha, milpa, calabaza de temporal
+
+     CA-03               calabacita de bola, calabacita redonda, round zucchini, eight ball
+
+     CA-04               calabaza de Castilla, calabaza para dulce, calabaza de altar, calabaza madura, pumpkin mexicano
+
+     CA-05               butternut, buchona, mantequilla, cacahuate, violín, squash mantequilla
+
+     CA-06               chilacayote, chilacayota, alcayota
+
+     CA-07               pipián, pipiana, pepita, calabaza para semilla, cushaw, chihua, arota
+
+
+
+ 14. Checklist para implementación en código
+
+     Archivo / módulo                                    Acción
+
+     crop_types.dart                                     Agregar CropKey.squash y evitar CropKey.pumpkin como cultivo separado.
+
+     crop_catalog.dart                                   Registrar cultivo madre CA, perfiles CA-GEN a CA-07, aliases y calendarios.
+
+     crop_registry.dart                                  Registrar SquashCropDefinition y adapter.
+
+     crop_presentation_resolver.dart                     Icono/asset de calabaza y variantes para wizard.
+
+     widgets/seeds/squash_models.dart                    Definir enum/ids de perfiles, etapas, intención de cosecha y arquitectura.
+
+     widgets/seeds/squash_profiles.dart                  Ventanas por perfil: corto, intermedio, largo, muy largo.
+
+     widgets/seeds/squash_engine.dart                    Resolver etapa por días + estrés + confirmaciones de flor/cuajado/cosecha.
+
+     crops/squash/squash_universal_profile.dart          Rangos fisiológicos, sensibilidad y NPK relativo.
+
+     core/agro/squash_agro_score_engine.dart             Ponderación por etapa; flor/cuajado con penalización fuerte.
+
+     fertilization_planner.dart                          Guía de fertilización relativa por etapa, no dosis cerrada.
+
+     nutrient_recommendation_engine.dart                 Rama práctica para N/K/P en calabaza.
+
+
+
+
+BIO-G | Calabaza                                                                                                                        Pagina 7 de 9
+
+
+--- PAGINA 8 ---
+
+Archivo / módulo                             Acción
+
+  plant_health/catalog/squash_syndromes.dart   Oídio, mildiu, virus, damping-off, pudriciones, mosca blanca/áfidos, chicharrita,
+                                               barrenador/squash bug según región.
+
+  yield_reference_catalog.dart                 Rendimientos por tipo: calabacita, fruto maduro, pipián/chilacayote como rangos amplios.
+
+
+
+ 15. Cierre técnico
+
+          Perfil Universal Calabaza v2: cerrado como base de cultivo madre. La lógica principal es: una sola
+          familia de cultivo, múltiples perfiles UX, floración/cuajado como ventana crítica, agua + temperatura +
+          polinización como núcleo de riesgo, y K como nutriente dominante desde cuajado hasta desarrollo de
+          fruto.
+
+
+
+
+BIO-G | Calabaza                                                                                                                      Pagina 8 de 9
+
+
+--- PAGINA 9 ---
+
+Fuentes base revisadas
+ Estas fuentes se usaron para corregir y ampliar el perfil, pero la lógica final está adaptada a BIO-G: sensores,
+ etapa fenológica, alertas humanas y migración de perfiles.
+
+  ID     Fuente                      Uso en el perfil                                                  URL
+
+  S1     Biodiversidad Mexicana /    Calabazas, tamalayotas, pipianas, chilacayotes: especies          https://www.biodiversidad.gob.mx/dive
+         CONABIO                     domesticadas de Cucurbita en México; flores                       rsidad/alimentos/calabazas
+                                     masculinas/femeninas y polinización por insectos.
+
+  S2     University of Minnesota     Growing summer squash and zucchini: flores masculinas y           https://extension.umn.edu/vegetables/
+         Extension                   femeninas; polinización por abejas.                               growing-summer-squash-and-zucchini
+
+  S3     University of Minnesota     How excessive heat affects the vegetable garden: calor            https://extension.umn.edu/planting-an
+         Extension                   altera relación flores macho/hembra y reduce actividad de         d-growing-guides/how-excessive-heat-a
+                                     abejas.                                                           ffects-vegetable-garden
+
+  S4     Oklahoma State University   Squash and Pumpkin Production HLA-6026: pH preferido              https://extension.okstate.edu/fact-sheet
+         Extension                   6.0-6.8, fertilización por análisis de suelo, riego y rotación.   s/print-publications/hla/squash-and-pu
+                                                                                                       mpkin-production-hla-6026.pdf
+
+  S5     New Mexico State            Commercial Pumpkin Production for New Mexico: mejor               https://pubs.nmsu.edu/_h/H231.pdf
+         University                  crecimiento con 60-80 F; suelos bien drenados; no tolera
+                                     suelos mal aireados; pH 6.5-7.5 para máxima producción.
+
+  S6     LSU AgCenter                Squash and Pumpkins: cultivos de estación cálida, muy             https://www.lsuagcenter.com/~/media/
+                                     sensibles a helada; semilla requiere suelo mínimo 60 F para       system/4/4/f/5/44f5081425183c1dd8fc9
+                                     germinar; calabaza de verano 45-50 días a cosecha.                c6a70be9cb6/2054squashandpumpkins
+                                                                                                       inthehomegarden%20rev%200417pdf.p
+                                                                                                       df
+
+  S7     Michigan State University   Commercial vegetable recommendations: cosecha de                  https://www.canr.msu.edu/resources/p
+         Extension                   summer squash 50-60 días; winter squash 90-120 días; corte        umpkins_squash_gourds_commercial_v
+                                     cada 2-3 días en calabacita.                                      egetable_recommendations_e1953
+
+  S8     UC Statewide IPM            Squash: polinización por insectos/abejas; principales             https://ipm.ucanr.edu/home-and-landsc
+         Program                     insectos, enfermedades y desórdenes fisiológicos de               ape/squash/
+                                     cucurbitáceas.
+
+  S9     University of Wisconsin     Growing Pumpkins and Other Vine Crops in Wisconsin: pH            https://barron.extension.wisc.edu/files/
+         Extension                   6.0-6.8 para máximo cuajado en cucurbitáceas y                    2023/02/Growing-Pumpkins-and-other-
+                                     calabazas/squash/gourds toleran 5.5-7.5.                          Vine-Crops-in-Wisconsin.pdf
+
+  S10    University of Georgia       Commercial pumpkins and gourds: densidades por tipo de            https://fieldreport.caes.uga.edu/wp-con
+         Extension                   guía, flores monoicas, polinización y visitas de abejas;          tent/uploads/2025/08/B-1180_5.pdf
+                                     enfermedades importantes.
+
+
+
+
+BIO-G | Calabaza                                                                                                                              Pagina 9 de 9

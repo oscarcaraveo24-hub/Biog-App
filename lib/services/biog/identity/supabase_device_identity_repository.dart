@@ -344,6 +344,14 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
         locationName: (row['location_name'] as String?) ?? 'Parcela',
         seedId: (row['seed_id'] as String?) ?? 'UNCONFIGURED',
         profileId: (row['profile_id'] as String?) ?? 'unconfigured',
+        telemetryDeviceIdOverride: _validTelemetryDeviceIdFrom(<dynamic>[
+          row['telemetry_device_id'],
+          row['telemetryDeviceId'],
+          row['hardware_device_id'],
+          row['hardwareDeviceId'],
+          row['device_uuid'],
+          row['deviceUuid'],
+        ]),
         status: _statusFromDb(row['status'] as String?),
         createdAt: _parseDate(row['created_at']),
         updatedAt: _parseDate(row['updated_at']),
@@ -359,6 +367,7 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
         'location_name': d.locationName,
         'seed_id': d.seedId,
         'profile_id': d.profileId,
+        'telemetry_device_id': d.telemetryDeviceIdOverride,
         'status': _statusToDb(d.status),
         'created_at': d.createdAt?.toIso8601String(),
         'updated_at': d.updatedAt?.toIso8601String(),
@@ -375,6 +384,14 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
         locationName: (json['location_name'] as String?) ?? 'Parcela',
         seedId: (json['seed_id'] as String?) ?? 'UNCONFIGURED',
         profileId: (json['profile_id'] as String?) ?? 'unconfigured',
+        telemetryDeviceIdOverride: _validTelemetryDeviceIdFrom(<dynamic>[
+          json['telemetry_device_id'],
+          json['telemetryDeviceId'],
+          json['hardware_device_id'],
+          json['hardwareDeviceId'],
+          json['device_uuid'],
+          json['deviceUuid'],
+        ]),
         status: _statusFromDb(json['status'] as String?),
         createdAt: _parseDate(json['created_at']),
         updatedAt: _parseDate(json['updated_at']),
@@ -382,6 +399,17 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
     } catch (_) {
       return null;
     }
+  }
+
+  String? _validTelemetryDeviceIdFrom(Iterable<dynamic> values) {
+    for (final value in values) {
+      final text = value?.toString().trim();
+      if (text == null || text.isEmpty || text.toLowerCase() == 'null') {
+        continue;
+      }
+      if (BioGDevice.isTelemetryDeviceId(text)) return text;
+    }
+    return null;
   }
 
   BioGDeviceStatus _statusFromDb(String? raw) {

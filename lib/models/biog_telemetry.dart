@@ -17,6 +17,10 @@ enum BioGAlertType {
   highHumidity,
 }
 
+final RegExp _bioGTelemetryDeviceIdPattern = RegExp(
+  r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+);
+
 @immutable
 class BioGDevice {
   const BioGDevice({
@@ -26,6 +30,7 @@ class BioGDevice {
     required this.seedId,
     required this.profileId,
     this.deviceModelId,
+    this.telemetryDeviceIdOverride,
     this.status = BioGDeviceStatus.active,
     this.createdAt,
     this.updatedAt,
@@ -50,6 +55,13 @@ class BioGDevice {
   /// Modelo comercial del dispositivo (`campo`, `huerto`, `maceta`).
   final String? deviceModelId;
 
+  /// Real UUID used by `telemetry.device_id` when the UI/local device id
+  /// does not match the telemetry key.
+  ///
+  /// Legacy UI ids such as `biog-...` can still exist in Cuenta, but they
+  /// must never be used to query the `telemetry` table.
+  final String? telemetryDeviceIdOverride;
+
   final BioGDeviceStatus status;
   final DateTime? createdAt;
 
@@ -58,6 +70,22 @@ class BioGDevice {
   /// `createdAt` si el backend no informa `updated_at`.
   final DateTime? updatedAt;
 
+  /// Device id accepted by the Supabase `telemetry.device_id` UUID column.
+  /// Legacy local ids such as `biog-...` are valid UI identities, but they
+  /// must not be used for telemetry queries.
+  String? get telemetryDeviceId {
+    final override = telemetryDeviceIdOverride?.trim();
+    if (override != null && isTelemetryDeviceId(override)) return override;
+
+    final normalized = id.trim();
+    if (isTelemetryDeviceId(normalized)) return normalized;
+    return null;
+  }
+
+  static bool isTelemetryDeviceId(String value) {
+    return _bioGTelemetryDeviceIdPattern.hasMatch(value.trim());
+  }
+
   BioGDevice copyWith({
     String? id,
     String? name,
@@ -65,6 +93,7 @@ class BioGDevice {
     String? seedId,
     String? profileId,
     Object? deviceModelId = _bioGDeviceSentinel,
+    Object? telemetryDeviceIdOverride = _bioGDeviceSentinel,
     BioGDeviceStatus? status,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -78,6 +107,10 @@ class BioGDevice {
       deviceModelId: identical(deviceModelId, _bioGDeviceSentinel)
           ? this.deviceModelId
           : deviceModelId as String?,
+      telemetryDeviceIdOverride:
+          identical(telemetryDeviceIdOverride, _bioGDeviceSentinel)
+          ? this.telemetryDeviceIdOverride
+          : telemetryDeviceIdOverride as String?,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -104,6 +137,7 @@ class BioGTelemetry {
     required this.k,
     required this.batteryPct,
     required this.signalRssi,
+    this.hasSensorData = true,
   });
 
   final String deviceId;
@@ -126,8 +160,14 @@ class BioGTelemetry {
   final double k; // ppm
 
   // Estado dispositivo
-  final double batteryPct; // %
-  final int signalRssi; // dBm (ejemplo -40 bueno, -90 malo)
+  final double? batteryPct; // %
+  final int? signalRssi; // dBm (ejemplo -40 bueno, -90 malo)
+
+  /// True when at least one real sensor field was present in the source
+  /// payload. This lets account hardware status distinguish "battery/RSSI
+  /// only" rows from actual telemetry rows without changing the numeric
+  /// fields used elsewhere in the app.
+  final bool hasSensorData;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'device_id': deviceId,
@@ -144,24 +184,152 @@ class BioGTelemetry {
     'k': k,
     'battery_pct': batteryPct,
     'signal_rssi': signalRssi,
+    'has_sensor_data': hasSensorData,
   };
 
   factory BioGTelemetry.fromJson(Map<String, dynamic> json) {
+    final parsed = BioGTelemetry.tryFromJson(json);
+    if (parsed == null) {
+      throw const FormatException('Invalid BioGTelemetry payload');
+    }
+    return parsed;
+  }
+
+  static BioGTelemetry? tryFromJson(Map<String, dynamic> json) {
+    final String? deviceId = _firstString(<dynamic>[
+      json['device_id'],
+      json['deviceId'],
+    ]);
+    final DateTime? timestamp = _firstDateTime(<dynamic>[
+      json['timestamp'],
+      json['created_at'],
+      json['createdAt'],
+      json['recorded_at'],
+    ]);
+
+    if (deviceId == null || deviceId.isEmpty || timestamp == null) {
+      return null;
+    }
+
+    final double? airTempC = _firstNullableDouble(<dynamic>[
+      json['air_temp_c'],
+      json['airTempC'],
+      json['temperature'],
+      json['temperature_c'],
+      json['air_temperature'],
+      json['ambient_temperature'],
+      json['temp_c'],
+      json['temp'],
+    ]);
+    final double? airHumidityPct = _firstNullableDouble(<dynamic>[
+      json['air_humidity_pct'],
+      json['airHumidityPct'],
+      json['air_humidity'],
+      json['humidity_pct'],
+      json['humidity'],
+      json['hum'],
+    ]);
+    final double? soilMoisturePct = _firstNullableDouble(<dynamic>[
+      json['soil_moisture_pct'],
+      json['soilMoisturePct'],
+      json['soil_moisture'],
+      json['soil_humidity'],
+      json['soilHumidity'],
+      json['moisture'],
+      json['humidity_soil'],
+      json['humedad_suelo'],
+    ]);
+    final double? soilTempC = _firstNullableDouble(<dynamic>[
+      json['soil_temp_c'],
+      json['soilTempC'],
+      json['soil_temp'],
+      json['soil_temperature'],
+      json['soilTemperature'],
+      json['soil_temperature_c'],
+      json['ground_temperature'],
+    ]);
+    final double? ph = _firstNullableDouble(<dynamic>[
+      json['ph'],
+      json['pH'],
+      json['PH'],
+      json['pg'],
+      json['PG'],
+    ]);
+    final double? ec = _firstNullableDouble(<dynamic>[
+      json['ec'],
+      json['Ec'],
+      json['EC'],
+      json['conductivity'],
+      json['electrical_conductivity'],
+    ]);
+    final double? resistance = _firstNullableDouble(<dynamic>[
+      json['resistance'],
+      json['rt'],
+      json['RT'],
+      json['soil_resistance'],
+      json['resistance_mpa'],
+    ]);
+    final double? n = _firstNullableDouble(<dynamic>[
+      json['n'],
+      json['N'],
+      json['nitrogen'],
+      json['nitrogen_ppm'],
+    ]);
+    final double? p = _firstNullableDouble(<dynamic>[
+      json['p'],
+      json['P'],
+      json['phosphorus'],
+      json['phosphorus_ppm'],
+    ]);
+    final double? k = _firstNullableDouble(<dynamic>[
+      json['k'],
+      json['K'],
+      json['potassium'],
+      json['potassium_ppm'],
+    ]);
+
+    final bool? explicitHasSensorData = _asBool(
+      json['has_sensor_data'] ?? json['hasSensorData'],
+    );
+    final bool detectedSensorData =
+        _hasAnySensorValue(<double?>[
+          airTempC,
+          airHumidityPct,
+          soilMoisturePct,
+          soilTempC,
+          ph,
+          ec,
+          resistance,
+          n,
+          p,
+          k,
+        ]) ||
+        _hasAnyRawSensorField(json);
+
     return BioGTelemetry(
-      deviceId: json['device_id'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      airTempC: (json['air_temp_c'] as num).toDouble(),
-      airHumidityPct: (json['air_humidity_pct'] as num).toDouble(),
-      soilMoisturePct: (json['soil_moisture_pct'] as num).toDouble(),
-      soilTempC: (json['soil_temp_c'] as num).toDouble(),
-      ph: (json['ph'] as num).toDouble(),
-      ec: (json['ec'] as num).toDouble(),
-      resistance: (json['resistance'] as num).toDouble(),
-      n: (json['n'] as num).toDouble(),
-      p: (json['p'] as num).toDouble(),
-      k: (json['k'] as num).toDouble(),
-      batteryPct: (json['battery_pct'] as num).toDouble(),
-      signalRssi: (json['signal_rssi'] as num).toInt(),
+      deviceId: deviceId,
+      timestamp: timestamp,
+      airTempC: airTempC ?? 0.0,
+      airHumidityPct: airHumidityPct ?? 0.0,
+      soilMoisturePct: soilMoisturePct ?? 0.0,
+      soilTempC: soilTempC ?? 0.0,
+      ph: ph ?? 0.0,
+      ec: ec ?? 0.0,
+      resistance: resistance ?? 0.0,
+      n: n ?? 0.0,
+      p: p ?? 0.0,
+      k: k ?? 0.0,
+      batteryPct: _firstNullableDouble(<dynamic>[
+        json['battery_pct'],
+        json['batteryPct'],
+        json['battery_percent'],
+      ]),
+      signalRssi: _firstNullableInt(<dynamic>[
+        json['signal_rssi'],
+        json['signalRssi'],
+        json['rssi'],
+      ]),
+      hasSensorData: explicitHasSensorData ?? detectedSensorData,
     );
   }
 
@@ -180,6 +348,7 @@ class BioGTelemetry {
     double? k,
     double? batteryPct,
     int? signalRssi,
+    bool? hasSensorData,
   }) {
     return BioGTelemetry(
       deviceId: deviceId ?? this.deviceId,
@@ -196,7 +365,166 @@ class BioGTelemetry {
       k: k ?? this.k,
       batteryPct: batteryPct ?? this.batteryPct,
       signalRssi: signalRssi ?? this.signalRssi,
+      hasSensorData: hasSensorData ?? this.hasSensorData,
     );
+  }
+
+  static String? _asString(dynamic value) {
+    final text = value?.toString().trim();
+    if (text == null || text.isEmpty || text.toLowerCase() == 'null') {
+      return null;
+    }
+    return text;
+  }
+
+  static String? _firstString(Iterable<dynamic> values) {
+    for (final value in values) {
+      final parsed = _asString(value);
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
+  static DateTime? _asDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+
+    final text = value.toString().trim();
+    if (text.isEmpty || text.toLowerCase() == 'null') return null;
+
+    return DateTime.tryParse(text);
+  }
+
+  static DateTime? _firstDateTime(Iterable<dynamic> values) {
+    for (final value in values) {
+      final parsed = _asDateTime(value);
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
+  static double _asDouble(dynamic value) => _asNullableDouble(value) ?? 0.0;
+
+  static double? _asNullableDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is num) return value.toDouble();
+
+    final text = value.toString().trim();
+    if (text.isEmpty || text.toLowerCase() == 'null') return null;
+    return double.tryParse(text);
+  }
+
+  static double? _firstNullableDouble(Iterable<dynamic> values) {
+    for (final value in values) {
+      final parsed = _asNullableDouble(value);
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
+  static int? _asNullableInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is num) return value.round();
+
+    final text = value.toString().trim();
+    if (text.isEmpty || text.toLowerCase() == 'null') return null;
+    return int.tryParse(text) ?? double.tryParse(text)?.round();
+  }
+
+  static int? _firstNullableInt(Iterable<dynamic> values) {
+    for (final value in values) {
+      final parsed = _asNullableInt(value);
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
+  static bool? _asBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    final text = value.toString().trim().toLowerCase();
+    if (text.isEmpty || text == 'null') return null;
+    if (text == 'true' || text == '1' || text == 'yes') return true;
+    if (text == 'false' || text == '0' || text == 'no') return false;
+    return null;
+  }
+
+  static bool _hasAnySensorValue(Iterable<double?> values) {
+    for (final value in values) {
+      if (value != null && value.isFinite) return true;
+    }
+    return false;
+  }
+
+  static bool _hasAnyRawSensorField(Map<String, dynamic> json) {
+    const keys = <String>[
+      'npk',
+      'NPK',
+      'n',
+      'N',
+      'p',
+      'P',
+      'k',
+      'K',
+      'nitrogen',
+      'nitrogen_ppm',
+      'phosphorus',
+      'phosphorus_ppm',
+      'potassium',
+      'potassium_ppm',
+      'air_temp_c',
+      'airTempC',
+      'temperature_c',
+      'air_temperature',
+      'ambient_temperature',
+      'temp_c',
+      'temp',
+      'air_humidity_pct',
+      'airHumidityPct',
+      'air_humidity',
+      'humidity_pct',
+      'hum',
+      'soil_moisture_pct',
+      'soilMoisturePct',
+      'soil_moisture',
+      'soil_humidity',
+      'soilHumidity',
+      'moisture',
+      'humidity_soil',
+      'humedad_suelo',
+      'soil_temp_c',
+      'soilTempC',
+      'soil_temperature',
+      'soilTemperature',
+      'soil_temperature_c',
+      'soil_temp',
+      'ground_temperature',
+      'temperature',
+      'humidity',
+      'ph',
+      'pH',
+      'PH',
+      'pg',
+      'PG',
+      'ec',
+      'Ec',
+      'EC',
+      'rt',
+      'RT',
+      'resistance',
+    ];
+
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty && text.toLowerCase() != 'null') return true;
+    }
+    return false;
   }
 }
 

@@ -7,13 +7,17 @@ import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/chili/chili_catalog.dart';
 import 'package:bio_g/core/crops/cucumber/cucumber_catalog.dart';
 import 'package:bio_g/core/crops/eggplant/eggplant_catalog.dart';
+import 'package:bio_g/core/crops/lettuce/lettuce_catalog.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
 import 'package:bio_g/core/crops/oat/oat_catalog.dart';
+import 'package:bio_g/core/crops/squash/squash_catalog.dart';
 import 'package:bio_g/core/crops/tomato/tomato_catalog.dart';
 import 'package:bio_g/core/crops/wheat/wheat_catalog.dart';
 import 'package:bio_g/widgets/seeds/barley_profiles.dart';
 import 'package:bio_g/widgets/seeds/bean_profiles.dart';
+import 'package:bio_g/widgets/seeds/lettuce_profiles.dart';
 import 'package:bio_g/widgets/seeds/oat_profiles.dart';
+import 'package:bio_g/widgets/seeds/squash_profiles.dart';
 import 'package:bio_g/widgets/seeds/wheat_profiles.dart';
 
 class CropCatalog {
@@ -31,6 +35,8 @@ class CropCatalog {
   static const String cucumberCropId = 'cucumber';
   static const String chiliCropId = 'chili';
   static const String eggplantCropId = 'eggplant';
+  static const String squashCropId = kCropSquash;
+  static const String lettuceCropId = kCropLettuce;
 
   static const String tomatoDefaultProfileId = 'tm_gen';
   static const String tomatoDefaultCalendarId = 'tomato_default';
@@ -40,6 +46,10 @@ class CropCatalog {
   static const String chiliDefaultCalendarId = 'chili_default';
   static const String eggplantDefaultProfileId = 'be_gen';
   static const String eggplantDefaultCalendarId = 'eggplant_default';
+  static const String squashDefaultProfileId = kCaGen;
+  static const String squashDefaultCalendarId = kSquashDefaultCalendarId;
+  static const String lettuceDefaultProfileId = kLeGen;
+  static const String lettuceDefaultCalendarId = kLettuceDefaultCalendarId;
 
   // ── Maize catalog constants ─────────────────────────────────────────────────
   static const String maizeDemoVarietyId = 'dk_2069';
@@ -386,6 +396,97 @@ class CropCatalog {
           label: 'Protegido en suelo',
           cropId: eggplantCropId,
           subtitle: 'Malla o invernadero en suelo; mas humedad y continuidad',
+          enabled: true,
+        ),
+      ],
+    ),
+    CropCatalogEntry(
+      cropId: squashCropId,
+      categoryId: vegetableCategoryId,
+      label: 'Calabaza',
+      subtitle: 'Hortaliza - campo abierto y protegido en suelo',
+      enabled: true,
+      defaultProfileId: squashDefaultProfileId,
+      defaultCalendarId: squashDefaultCalendarId,
+      varieties: squashVarieties,
+      profiles: squashProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: squashDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: squashCropId,
+          subtitle: 'Ciclo general anclado a siembra o trasplante',
+          enabled: true,
+          isDefault: true,
+        ),
+        CropCalendarEntry(
+          id: 'squash_campo_abierto',
+          label: 'Campo abierto',
+          cropId: squashCropId,
+          subtitle: 'Mayor exposicion a calor, lluvia y vectores',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'squash_protegido',
+          label: 'Protegido en suelo',
+          cropId: squashCropId,
+          subtitle: 'Malla o invernadero en suelo; sin hidroponia v1',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'squash_temporal',
+          label: 'Temporal / milpa',
+          cropId: squashCropId,
+          subtitle: 'Ajusta humedad y ritmo para lluvia o sistema mixto',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'squash_riego',
+          label: 'Riego',
+          cropId: squashCropId,
+          subtitle: 'Mayor estabilidad hidrica en suelo',
+          enabled: true,
+        ),
+      ],
+    ),
+    CropCatalogEntry(
+      cropId: lettuceCropId,
+      categoryId: vegetableCategoryId,
+      label: 'Lechuga',
+      subtitle: 'Hortaliza de hoja - campo abierto y protegido en suelo',
+      enabled: true,
+      defaultProfileId: lettuceDefaultProfileId,
+      defaultCalendarId: lettuceDefaultCalendarId,
+      varieties: lettuceVarieties,
+      profiles: lettuceProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: lettuceDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: lettuceCropId,
+          subtitle: 'Ciclo general anclado a siembra o trasplante',
+          enabled: true,
+          isDefault: true,
+        ),
+        CropCalendarEntry(
+          id: 'lettuce_campo_abierto',
+          label: 'Campo abierto',
+          cropId: lettuceCropId,
+          subtitle: 'Mayor exposicion a calor, viento y vectores',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'lettuce_protegido',
+          label: 'Protegido en suelo',
+          cropId: lettuceCropId,
+          subtitle: 'Malla o invernadero en suelo; sin hidroponia v1',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'lettuce_riego',
+          label: 'Riego',
+          cropId: lettuceCropId,
+          subtitle: 'Mayor estabilidad hidrica en suelo',
           enabled: true,
         ),
       ],
@@ -776,11 +877,25 @@ class CropCatalog {
         normalized == 'generic_cucumber' ||
         normalized == 'generic_chili' ||
         normalized == 'generic_eggplant' ||
+        normalized == 'generic_squash' ||
+        normalized == 'generic_lettuce' ||
         normalized == 'eggplant_generic' ||
+        normalized == 'squash_generic' ||
+        normalized == 'lettuce_generic' ||
         normalized == 'be_gen' ||
         normalized == 'be-gen' ||
         normalized == 'begen' ||
+        normalized == 'ca_gen' ||
+        normalized == 'ca-gen' ||
+        normalized == 'cagen' ||
+        normalized == 'le_gen' ||
+        normalized == 'le-gen' ||
+        normalized == 'legen' ||
         normalized == 'otra berenjena' ||
+        normalized == 'otra calabaza' ||
+        normalized == 'otra lechuga' ||
+        normalized == 'calabaza generica' ||
+        normalized == 'lechuga generica' ||
         normalized == 'no se' ||
         normalized == 'no sé' ||
         normalized.startsWith('generic_');
@@ -798,7 +913,9 @@ class CropCatalog {
             normalized == 'tm_gen' ||
             normalized == 'pe_gen' ||
             normalized == 'ch_gen' ||
-            normalized == 'be_gen');
+            normalized == 'ca_gen' ||
+            normalized == 'be_gen' ||
+            normalized == 'le_gen');
   }
 
   static String? _canonicalCalendarId({
@@ -877,6 +994,62 @@ class CropCatalog {
       'pimiento' ||
       'aji' => chiliCropId,
       'eggplant' || 'berenjena' || 'aubergine' => eggplantCropId,
+      'squash' ||
+      'calabaza' ||
+      'calabazas' ||
+      'calabacita' ||
+      'calabacitas' ||
+      'zucchini' ||
+      'zuccini' ||
+      'calabacin' ||
+      'calabacín' ||
+      'pumpkin' ||
+      'zapallo' ||
+      'ayote' ||
+      'auyama' ||
+      'castilla' ||
+      'pipian' ||
+      'pipián' ||
+      'pipiana' ||
+      'pepita' ||
+      'chilacayote' ||
+      'chilacayota' ||
+      'butternut' ||
+      'buchona' ||
+      'mantequilla' ||
+      'bola' ||
+      'redonda' ||
+      'criolla' ||
+      'huicha' ||
+      'güicha' ||
+      'milpa' => squashCropId,
+      'lettuce' ||
+      'crop_lettuce' ||
+      'lechuga' ||
+      'lechugas' ||
+      'lechuga romana' ||
+      'romana' ||
+      'cos' ||
+      'romaine' ||
+      'mini romana' ||
+      'corazones' ||
+      'little gem' ||
+      'lechuga orejona' ||
+      'orejona' ||
+      'lechuga iceberg' ||
+      'lechuga bola' ||
+      'iceberg' ||
+      'crisphead' ||
+      'lechuga mantequilla' ||
+      'lechuga butterhead' ||
+      'butterhead' ||
+      'bibb' ||
+      'boston' ||
+      'hoja suelta' ||
+      'lechuga hoja suelta' ||
+      'baby leaf' ||
+      'lechuga baby leaf' ||
+      'looseleaf' => lettuceCropId,
       _ => value,
     };
   }
@@ -901,6 +1074,8 @@ class CropCatalog {
       cucumberCropId => 'Pepino',
       chiliCropId => 'Chile',
       eggplantCropId => 'Berenjena',
+      squashCropId => 'Calabaza',
+      lettuceCropId => 'Lechuga',
       _ => 'Cultivo',
     };
   }

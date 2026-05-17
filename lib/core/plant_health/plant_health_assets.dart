@@ -68,6 +68,8 @@ class PlantHealthAssets {
         '$_base/ph_leaf_reticulated_lesions.png',
     PlantHealthIds.symptomFeedingHoles:
         '$_base/ph_leaf_chewing_larva.png',
+    PlantHealthIds.symptomBoltingStem:
+        '$_base/ph_stem_normal.png',
     PlantHealthIds.symptomFlowerAbortion:
         '$_base/ph_pod_normal.png',
     PlantHealthIds.symptomFruitDeformation:

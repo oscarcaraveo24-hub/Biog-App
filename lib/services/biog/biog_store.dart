@@ -18,6 +18,8 @@ import 'package:bio_g/services/biog/storage/crop_care_history_sync.dart';
 import 'package:bio_g/services/biog/storage/yield_projection_storage.dart';
 import 'package:bio_g/services/biog/storage/yield_projection_supabase_sync.dart';
 
+const bool kBioGMisBioGStoreDebugLogs = true;
+
 class BioGStore extends ChangeNotifier {
   BioGStore(
     this._repo, {
@@ -272,6 +274,8 @@ class BioGStore extends ChangeNotifier {
     _alertsStateByDevice.clear();
     _agroEvalByDevice.clear();
     _cropCareAvgByDevice.clear();
+    _telemetryStreamsByDevice.clear();
+    _loggedTelemetryIds.clear();
     notifyListeners();
   }
 
@@ -322,6 +326,9 @@ class BioGStore extends ChangeNotifier {
   final Map<String, AgroEvalResult> _agroEvalByDevice =
       <String, AgroEvalResult>{};
   final Map<String, double> _cropCareAvgByDevice = <String, double>{};
+  final Map<String, Stream<BioGTelemetry?>> _telemetryStreamsByDevice =
+      <String, Stream<BioGTelemetry?>>{};
+  final Set<String> _loggedTelemetryIds = <String>{};
 
   DeviceCropContext? get activeCropContext {
     final device = activeDevice;
@@ -723,6 +730,56 @@ class BioGStore extends ChangeNotifier {
 
   Stream<BioGTelemetry?> watchLive() => _repo.watchLiveTelemetry();
 
+  /// Per-device live telemetry stream.
+  ///
+  /// Unlike [watchLive], this is NOT scoped to the active device. Each
+  /// device ID gets its own offline-first stream backed by the local
+  /// telemetry cache and refreshed from Supabase. Used by Cuenta > Mis
+  /// Bio-G so every device row reflects its own real battery / signal,
+  /// even when it is not the active one.
+  Stream<BioGTelemetry?> watchTelemetryForDevice(String deviceId) {
+    final repo = _repo;
+    if (repo is HybridBioGRepository) {
+      final telemetryDeviceId = telemetryDeviceIdForDeviceId(deviceId);
+      if (telemetryDeviceId == null) {
+        _logTelemetry(
+          'invalid telemetry id skipped ui_id=${deviceId.trim()} '
+          'reason=not_uuid',
+          onceKey: 'invalid:${deviceId.trim()}',
+        );
+        return _telemetryStreamsByDevice.putIfAbsent(
+          'invalid:${deviceId.trim()}',
+          () => Stream<BioGTelemetry?>.value(null).asBroadcastStream(),
+        );
+      }
+
+      _logTelemetry(
+        'using telemetry id ui_id=${deviceId.trim()} '
+        'telemetry_device_id=$telemetryDeviceId',
+        onceKey: 'using:$telemetryDeviceId',
+      );
+
+      return _telemetryStreamsByDevice.putIfAbsent(
+        telemetryDeviceId,
+        () => repo.telemetrySource.watchLive(telemetryDeviceId),
+      );
+    }
+    return Stream<BioGTelemetry?>.value(null);
+  }
+
+  String? telemetryDeviceIdForDeviceId(String deviceId) {
+    final normalized = deviceId.trim();
+    if (BioGDevice.isTelemetryDeviceId(normalized)) return normalized;
+
+    for (final device in devices) {
+      if (device.id == normalized) {
+        return device.telemetryDeviceId;
+      }
+    }
+
+    return null;
+  }
+
   Stream<List<BioGTelemetry>> watchHistory(Duration window) =>
       _repo.watchHistory(window: window);
 
@@ -984,8 +1041,19 @@ class BioGStore extends ChangeNotifier {
     for (final s in _subs) {
       s.cancel();
     }
+    _telemetryStreamsByDevice.clear();
+    _loggedTelemetryIds.clear();
     _repo.dispose();
     super.dispose();
+  }
+
+  void _logTelemetry(String message, {required String onceKey}) {
+    if (!_loggedTelemetryIds.add(onceKey)) return;
+    if (!kBioGMisBioGStoreDebugLogs) return;
+    assert(() {
+      debugPrint('[BioG/MisBioG] $message');
+      return true;
+    }());
   }
 }
 

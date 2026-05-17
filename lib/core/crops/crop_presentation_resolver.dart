@@ -5,6 +5,8 @@ import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/widgets/seeds/chili_profiles.dart';
 import 'package:bio_g/widgets/seeds/cucumber_profiles.dart';
 import 'package:bio_g/widgets/seeds/eggplant_profiles.dart';
+import 'package:bio_g/widgets/seeds/lettuce_profiles.dart';
+import 'package:bio_g/widgets/seeds/squash_profiles.dart';
 import 'package:bio_g/widgets/seeds/tomato_profiles.dart';
 
 class CropPresentationData {
@@ -117,6 +119,36 @@ class CropPresentationResolver {
   static const String _eggplantWhiteIconAsset =
       'assets/icons/wizard/ic_eggplant_white.png';
 
+  static const String _squashIconAsset =
+      'assets/icons/wizard/ic_squash_generic.png';
+  static const String _squashZucchiniIconAsset =
+      'assets/icons/wizard/ic_squash_italian_zucchini.png';
+  static const String _squashCriollaIconAsset =
+      'assets/icons/wizard/ic_squash_criolla_huicha.png';
+  static const String _squashRoundIconAsset =
+      'assets/icons/wizard/ic_squash_round_bola.png';
+  static const String _squashCastillaIconAsset =
+      'assets/icons/wizard/ic_squash_castilla.png';
+  static const String _squashButternutIconAsset =
+      'assets/icons/wizard/ic_squash_butternut_buchona.png';
+  static const String _squashChilacayoteIconAsset =
+      'assets/icons/wizard/ic_squash_chilacayote.png';
+  static const String _squashPipianIconAsset =
+      'assets/icons/wizard/ic_squash_pipian_pepita.png';
+
+  static const String _lettuceIconAsset =
+      'assets/icons/wizard/ic_lettuce_generic.png';
+  static const String _lettuceRomaineIconAsset =
+      'assets/icons/wizard/ic_lettuce_romaine.png';
+  static const String _lettuceMiniRomaineIconAsset =
+      'assets/icons/wizard/ic_lettuce_mini_romaine.png';
+  static const String _lettuceIcebergIconAsset =
+      'assets/icons/wizard/ic_lettuce_iceberg.png';
+  static const String _lettuceButterheadIconAsset =
+      'assets/icons/wizard/ic_lettuce_butterhead.png';
+  static const String _lettuceLooseLeafIconAsset =
+      'assets/icons/wizard/ic_lettuce_loose_leaf.png';
+
   static CropPresentationData resolve({
     required DeviceCropContext? cropContext,
     required SeedInstall? seed,
@@ -189,13 +221,28 @@ class CropPresentationResolver {
         ? 'Perfil genérico'
         : (varietyLabel ?? aliasFallback);
 
-    final headlineLabel = detailLabel == null || detailLabel.isEmpty
-        ? cropDisplayName
-        : '$cropDisplayName · $detailLabel';
+    final visibleDetailLabel = _genericDetailLabel(
+      cropId: cropId,
+      isGenericSelection: isGenericSelection,
+      fallback: detailLabel,
+    );
 
-    final runtimeLabel = detailLabel == null || detailLabel.isEmpty
+    final headlineLabel =
+        visibleDetailLabel == null || visibleDetailLabel.isEmpty
         ? cropDisplayName
-        : '$cropDisplayName ($detailLabel)';
+        : '$cropDisplayName · $visibleDetailLabel';
+
+    final runtimeLabel =
+        visibleDetailLabel == null || visibleDetailLabel.isEmpty
+        ? cropDisplayName
+        : '$cropDisplayName ($visibleDetailLabel)';
+
+    final displayHeadlineLabel = _genericHeadlineLabel(
+      cropId: cropId,
+      cropDisplayName: cropDisplayName,
+      isGenericSelection: isGenericSelection,
+      fallback: headlineLabel,
+    );
 
     return CropPresentationData(
       hasConfiguredCrop: true,
@@ -204,7 +251,7 @@ class CropPresentationResolver {
       cropId: cropId,
       cropDisplayName: cropDisplayName,
       varietyLabel: varietyLabel,
-      headlineLabel: headlineLabel,
+      headlineLabel: displayHeadlineLabel,
       runtimeLabel: runtimeLabel,
       iconAsset: _resolveIconAsset(
         cropId: cropId,
@@ -227,6 +274,33 @@ class CropPresentationResolver {
     }
 
     return seed?.status ?? SowingStatus.skip;
+  }
+
+  static String? _genericDetailLabel({
+    required String cropId,
+    required bool isGenericSelection,
+    required String? fallback,
+  }) {
+    if (!isGenericSelection) return fallback;
+    if (cropId == CropCatalog.squashCropId) return 'Calabaza genérica';
+    if (cropId == CropCatalog.lettuceCropId) return 'Lechuga genérica';
+    return fallback;
+  }
+
+  static String _genericHeadlineLabel({
+    required String cropId,
+    required String cropDisplayName,
+    required bool isGenericSelection,
+    required String fallback,
+  }) {
+    if (!isGenericSelection) return fallback;
+    if (cropId == CropCatalog.squashCropId) {
+      return '$cropDisplayName - Calabaza genérica';
+    }
+    if (cropId == CropCatalog.lettuceCropId) {
+      return '$cropDisplayName - Lechuga genérica';
+    }
+    return fallback;
   }
 
   static bool _isGenericSelection({
@@ -273,7 +347,9 @@ class CropPresentationResolver {
     final rawVarietyValue =
         cropContext?.varietyId ??
         cropContext?.varietyAlias ??
-        seed?.varietyAlias;
+        cropContext?.profileId ??
+        seed?.varietyAlias ??
+        seed?.profileId;
 
     switch (cropId) {
       case CropCatalog.maizeCropId:
@@ -294,9 +370,52 @@ class CropPresentationResolver {
         return _resolveChiliIcon(rawVarietyValue);
       case CropCatalog.eggplantCropId:
         return _resolveEggplantIcon(rawVarietyValue);
+      case CropCatalog.squashCropId:
+        return _resolveSquashIcon(rawVarietyValue);
+      case CropCatalog.lettuceCropId:
+        return _resolveLettuceIcon(rawVarietyValue);
       default:
         return _genericPlantIconAsset;
     }
+  }
+
+  static String _resolveLettuceIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return _lettuceIconAsset;
+
+    final canonical = resolveCanonicalLettuceProfileId(raw);
+    switch (canonical) {
+      case kLeGen:
+        return _lettuceIconAsset;
+      case kLe01:
+        return _lettuceRomaineIconAsset;
+      case kLe02:
+        return _lettuceMiniRomaineIconAsset;
+      case kLe03:
+        return _lettuceIcebergIconAsset;
+      case kLe04:
+        return _lettuceButterheadIconAsset;
+      case kLe05:
+        return _lettuceLooseLeafIconAsset;
+    }
+
+    final variety = CropCatalog.varietyByAny(CropCatalog.lettuceCropId, raw);
+    switch (variety?.id) {
+      case 'lettuce_romaine':
+        return _lettuceRomaineIconAsset;
+      case 'lettuce_mini_romaine':
+        return _lettuceMiniRomaineIconAsset;
+      case 'lettuce_iceberg':
+        return _lettuceIcebergIconAsset;
+      case 'lettuce_butterhead':
+        return _lettuceButterheadIconAsset;
+      case 'lettuce_looseleaf':
+        return _lettuceLooseLeafIconAsset;
+      case 'lettuce_generic':
+        return _lettuceIconAsset;
+    }
+
+    return _lettuceIconAsset;
   }
 
   static String _resolveTomatoIcon(String? rawVarietyValue) {
@@ -574,6 +693,55 @@ class CropPresentationResolver {
     }
 
     return _eggplantIconAsset;
+  }
+
+  static String _resolveSquashIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return _squashIconAsset;
+
+    final canonical = resolveCanonicalSquashProfileId(raw);
+    switch (canonical) {
+      case kCaGen:
+        return _squashIconAsset;
+      case kCa01:
+        return _squashZucchiniIconAsset;
+      case kCa02:
+        return _squashCriollaIconAsset;
+      case kCa03:
+        return _squashRoundIconAsset;
+      case kCa04:
+        return _squashCastillaIconAsset;
+      case kCa05:
+        return _squashButternutIconAsset;
+      case kCa06:
+        return _squashChilacayoteIconAsset;
+      case kCa07:
+        return _squashPipianIconAsset;
+    }
+
+    final variety = CropCatalog.varietyByAny(CropCatalog.squashCropId, raw);
+    switch (variety?.id) {
+      case 'squash_zucchini':
+        return _squashZucchiniIconAsset;
+      case 'squash_criolla':
+        return _squashCriollaIconAsset;
+      case 'squash_round':
+        return _squashRoundIconAsset;
+      case 'squash_castilla':
+        return _squashCastillaIconAsset;
+      case 'squash_butternut':
+        return _squashButternutIconAsset;
+      case 'squash_chilacayote':
+        return _squashChilacayoteIconAsset;
+      case 'squash_pipian':
+        return _squashPipianIconAsset;
+      case null:
+        break;
+      default:
+        return _squashIconAsset;
+    }
+
+    return _squashIconAsset;
   }
 
   static String _resolveMaizeIcon(String? rawVarietyValue) {

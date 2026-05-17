@@ -1,0 +1,482 @@
+RIESGOS DEL CULTIVO DE LA CALABAZA - SANIDAD v1
+Fuente PDF: BIO-G_Riesgos_Cultivo_Calabaza_Sanidad_v1.pdf
+Conversión a texto: pdftotext -layout UTF-8, con separadores de pagina.
+
+--- PAGINA 1 ---
+
+BIO-G
+
+
+RIESGOS DEL CULTIVO DE LA CALABAZA
+Plagas, enfermedades, desordenes fisiologicos y factores predisponentes
+Alcance: calabacita de corte tierno, calabaza madura, calabaza tropical, pipian/pepita, campo abierto y
+protegido en suelo. Base tecnica para modulo Riesgos del Cultivo / Plant Health de BIO-G v1.
+
+     Documento tecnico interno. No sustituye diagnostico de campo, laboratorio ni asesoria local. BIO-G v1 no debe
+     convertirse en recetario de plaguicidas: alerta, orienta revision, prioriza riesgo y recomienda confirmar.
+
+
+Version: Mayo 2026 | Cultivo: CA / crop_squash | Enfoque de producto: alertas farmer-friendly, agrupadas por familia de riesgo, sin dosis ni
+ingredientes activos.
+
+
+
+
+Decision ejecutiva
+Calabaza debe compartir una base de sanidad con cucurbitaceas, pero no puede copiarse tal cual de pepino. En calabaza pesan
+mas la polinizacion por insectos, la duracion del ciclo, el contacto del fruto con el suelo, el riesgo de Phytophthora en
+fruto/corona, la defoliacion por cenicilla/mildiu y la presion de mosca blanca/virus en zonas calidas. En calabacita de corte tierno
+pesa mas la continuidad de cosecha, la deformacion del fruto joven, la mosca blanca/silverleaf, trips y la velocidad de deterioro.
+
+Regla v1: BIO-G no recomienda ingredientes activos ni diagnosticos definitivos. La app debe decir: "esto lo favorece", "esto se
+parece a", "revise aqui" y "confirme si avanza".
+
+
+
+
+BIO-G - Riesgos del cultivo de calabaza - Sanidad vegetal v1                                                                          Pagina 1 de 9
+
+
+--- PAGINA 2 ---
+
+1. Metodologia y criterio de confiabilidad
+Se uso el molde editorial de los documentos Bio-G de chile y pepino: separar riesgo biotico de abiotico, priorizar por sistema,
+cruzar etapa fenologica y traducir a reglas de motor. La guia de chile establece que BIO-G no debe saturar al usuario con
+taxonomia, sino construir un catalogo operativo que ayude a detectar temprano y pedir confirmacion cuando el patron se
+pueda confundir con nutricion, riego o ambiente. La guia de pepino refuerza que el modulo debe leer humedad, ventilacion,
+vectores, raiz y estres fisiologico al mismo tiempo.
+
+Fuentes universitarias y oficiales tuvieron prioridad. Foros y comentarios de productores se trataron solo como senales de
+campo: sirven para validar que problemas como cenicilla, squash bugs, mala polinizacion y vine borer son quejas frecuentes,
+pero no definen umbrales ni recomendaciones.
+
+            Tipo de evidencia                                                           Uso dentro de BIO-G                                                                  Confianza
+
+ Extension universitaria / IPM         Base principal para catalogo, sintomas, condiciones predisponentes, monitoreo y priorizacion.                               Alta
+
+ Documentos BIO-G aportados            Molde de producto, tono, estructura, reglas de UX, separacion entre alerta y diagnostico.                                   Alta para codigo
+
+ Guias regionales en espanol           Ajuste de campo para calabaza tropical, abejas, humedad, fruto maduro, plagas tropicales.                                   Media-alta
+
+ Foros / experiencia de productores    Validar lenguaje y problemas que el agricultor menciona; no definir reglas tecnicas.                                        Baja-media
+
+
+
+2. Resumen ejecutivo
+En calabaza el riesgo real se concentra en cinco frentes: (1) raiz/suelo y exceso de humedad; (2) enfermedades foliares por
+humedad o dosel cerrado; (3) vectores y virus; (4) plagas directas de guia, flor y fruto; y (5) fallas fisiologicas de polinizacion,
+calor, agua, salinidad y fruto en contacto con suelo. La etapa mas delicada para rendimiento es floracion - cuajado, pero para
+calidad y cosecha de fruto maduro el periodo critico se extiende hasta llenado, maduracion y postcosecha.
+
+            Sistema / contexto                                     Riesgos que mas pesan                                                          Lectura Bio-G recomendada
+
+ Campo abierto - calabacita de corte    Cenicilla, mildiu velloso, virosis por pulgones/mosca blanca, trips, araña roja, Priorizar monitoreo de envés, flores, fruto pequeño, bordes con maleza,
+ tierno                                 mosca blanca, cucumber beetles, squash bug, Diaphania spp. y mala                lluvia/rocío, calor + baja humedad y continuidad de cosecha.
+                                        polinizacion.
+
+ Campo abierto - fruto maduro / guia    Phytophthora de corona/fruto, pudriciones de fruto por contacto con suelo           Cruzar humedad de suelo, drenaje, densidad de canopia, fruto sobre
+ larga                                  húmedo, cenicilla, virus, squash bug, vine borer, cucumber beetles, sunscald        suelo, lluvias cerca de madurez, polinizadores y defoliacion.
+                                        y mala polinizacion.
+
+ Protegido en suelo / casa malla        Mosca blanca, trips, araña roja, cenicilla, Botrytis, pudriciones de cuello/raiz,   Priorizar puertas, ventilas, focos secos/calientes, trampas adhesivas,
+                                        virosis, HR/ventilacion y CE.                                                       envés de hoja, cuello, raiz y humedad/CE del bulbo.
+
+ Milpa / criolla / sistema mixto        Maleza hospedera, virus por vectores, plagas migrantes, competencia por             No asumir monocultivo limpio; preguntar por cultivo asociado, maleza,
+                                        agua, daño de fruto y poca uniformidad de cosecha.                                  lotes vecinos, rotacion e historial.
+
+
+
+
+BIO-G - Riesgos del cultivo de calabaza - Sanidad vegetal v1                                                                                                                             Pagina 2 de 9
+
+
+--- PAGINA 3 ---
+
+3. Panorama real del riesgo en calabaza
+• Calabaza no es un solo cultivo operacional: puede ser calabacita de corte tierno, criolla/milpa, bola, Castilla, butternut,
+chilacayote o pipian. La especie y el destino cambian el peso de los riesgos.
+
+• El fruto depende de polinizacion por insectos. Si falla la visita de abejas en la mañana, puede fallar el cuajado aunque NPK, pH
+y humedad esten aceptables.
+
+• Las enfermedades foliares no solo bajan fotosintesis: al defoliar, exponen fruto a golpe de sol y reducen llenado, calidad y vida
+de almacenamiento.
+
+• Phytophthora y otros complejos de raiz/fruto son mas peligrosos cuando hay agua acumulada. En calabaza madura, el fruto
+sobre suelo humedo vuelve critica la lectura de drenaje y humedad.
+
+• Mosca blanca, pulgones y trips no son solo plaga directa. Pueden mover virus o inducir desordenes como silverleaf en
+calabacita/squash.
+
+• En BIO-G v1, Ca/Mg/S no deben activar recetas. Riesgos como blossom-end rot se leen como agua + CE + raiz + etapa, no como
+"aplica calcio".
+
+
+4. Catalogo maestro de riesgos bioticos
+La tabla prioriza frecuencia, severidad, velocidad de dano, facilidad de monitoreo y relevancia para Mexico, campo abierto y
+protegido en suelo. Algunos riesgos son complejos funcionales para UX; internamente pueden abrirse en entradas hijas.
+
+               Riesgo                      Donde pesa mas                       Que lo favorece                                  Clave visual                              Etapa             Prioridad
+
+ Damping-off / muerte de              Semillero, germinacion,      Sustrato o suelo humedo, frio, drenaje        Semilla no emerge, plantula colapsa, cuello      Germinacion -             Alta
+ plantula                             trasplante                   pobre, compactacion, semilla/charola          estrechado u oscuro                              establecimiento
+                                                                   contaminada
+
+ Pudricion de raiz y cuello (Pythiu   Suelos pesados, charolas,    Exceso de humedad, raiz herida, mala          Marchitez por parches, raiz cafe, cuello         Establecimiento -         Alta
+ m/Rhizoctonia/Fusarium)              campo temprano               aireacion, estres por riego                   lesionado, bajo vigor                            vegetativo
+
+ Phytophthora corona/raiz/fruto       Calabaza madura, campo       Encharcamiento prolongado, drenaje            Marchitez rapida, corona acuosa/cafe, fruto      Establecimiento -         Muy alta
+                                      con agua acumulada,          pobre, riegos largos, lluvia, historial del   con pudricion acuosa y moho en humedad           cosecha
+                                      suelos pesados               lote
+
+ Nematodos agalladores                Suelos arenosos o lotes      Rotacion pobre, calor, maleza hospedera, Parches debiles, marchitez irregular, raices          Desde establecimiento     Alta si hay
+                                      con historial                raiz estresada                           con agallas                                                                     historial
+
+ Cenicilla / powdery mildew           Ambos; muy comun en          Dosel cerrado, hojas viejas, humedad          Polvo blanco en hojas; amarillamiento,           Vegetativo - cosecha      Muy alta
+                                      calabaza y zucchini          alrededor del follaje, estres y ciclos        defoliacion y fruto expuesto a sol
+                                                                   tardios
+
+ Mildiu velloso / downy mildew        Campo abierto y protegido    Rocio, lluvia, humedad alta, hojas            Manchas cloroticas angulares arriba;             Vegetativo - cosecha      Alta /
+                                      con mojado foliar            mojadas, viento/inoculo regional              esporulacion oscura en enves; defoliacion                                  regional
+                                                                                                                 rapida
+
+ Mancha angular bacteriana            Campo abierto, salpique,     Mojado foliar, lluvia, aspersion, residuos,   Lesiones angulares acuosas; tejido se seca y     Vegetativo - fruto        Alta
+                                      semilla contaminada          manejo en humedo                              puede romperse
+
+ Bacterial wilt / marchitez           Zonas con cucumber           Alimentacion de escarabajos del pepino,       Marchitez repentina de hojas/guia; planta no     Establecimiento -         Media-alta
+ bacteriana                           beetles                      malezas, plantas infectadas                   recupera; vectores presentes                     produccion                por zona
+
+ Antracnosis                          Campo abierto y lluvia       Mojado foliar, salpique, residuos             Manchas hundidas en fruto/hoja, pudricion y      Llenado - cosecha         Media-alta
+                                                                   infectados, fruto lesionado                   perdida comercial
+
+ Gomosis / gummy stem blight -        Calabaza madura, fruto       Residuos, semilla infectada, humedad          Cancros en tallos, exudado gomoso, manchas Vegetativo -                    Media-alta
+ black rot                            almacenado o lluvia          alta, heridas                                 en fruto y pudricion negra                 postcosecha
+
+ Alternaria / tizones foliares        Hojas viejas, dosel denso,   Humedad, senescencia, deficiencias o          Manchas necroticas con anillos; defoliacion si   Vegetativo - cosecha      Media
+                                      estres                       estres previo                                 avanza
+
+ Botrytis / moho gris                 Protegido, flores viejas,    Mala ventilacion, tejido senescente,          Moho gris en flores, peciolos, tallos o heridas; Floracion - cosecha       Alta en
+                                      alta HR                      heridas, condensacion                         pudricion blanda                                                           protegido
+
+ Complejo viral por afidos            Campo, bordes, milpa,        Afidos alados, maleza hospedera, lotes        Mosaico, hojas deformadas, entrenudos            Temprano - cosecha        Muy alta
+ (ZYMV/WMV/PRSV-W/CMV)                siembras escalonadas         viejos, plantulas infectadas                  cortos, fruto manchado/deforme
+
+ Virus por mosca blanca /             Zonas calidas, protegido,    Bemisia tabaci, maleza hospedera, malla       Hojas amarillas, crumpling/enrollamiento,        Vegetativo - cosecha      Muy alta por
+ amarillamientos                      ciclos continuos             deficiente, alta presion regional             venas gruesas, bajo vigor, fruto de menor                                  zona
+                                                                                                                 calidad
+
+ Silverleaf disorder por mosca        Zucchini, calabacita y       Ninfas de mosca blanca, poblaciones           Hojas blanquecinas/plateadas; planta menos       Vegetativo - cosecha      Alta por zona
+ blanca                               calabazas sensibles          altas, calor y ciclos continuos               productiva
+
+ Cucumber beetles                     Plantulas, flores y fruto    Bordes, rastrojos, maleza, falta de           Mordidas en cotiledones/hojas/flores/fruto;      Germinacion - floracion   Alta
+                                                                   proteccion temprana                           vector de bacterial wilt
+
+ Squash bug                           Calabaza, pumpkin, frutos    Residuos de cucurbitaceas, huevos en          Huevos bronceados, ninfas grises, hojas          Vegetativo - cosecha      Alta
+                                      maduros y ciclos largos      hojas, canopia densa                          marchitas/necrosadas, fruto debilitado
+
+
+
+
+BIO-G - Riesgos del cultivo de calabaza - Sanidad vegetal v1                                                                                                                                Pagina 3 de 9
+
+
+--- PAGINA 4 ---
+
+Riesgo                 Donde pesa mas                        Que lo favorece                                Clave visual                               Etapa            Prioridad
+
+ Squash vine borer               Zucchini, pumpkin, winter    Polillas, tallos tiernos, historial local   Marchitez repentina; aserrin/frass en base de     Vegetativo - floracion   Alta regional
+                                 squash; menos en algunos                                                 tallo; guia hueca o blanda
+                                 C. moschata
+
+ Diaphania spp. / pickleworm -   Zonas calidas y siembras     Calor, humedad, ciclos continuos,           Larvas en flores, brotes o fruto; perforaciones   Floracion - cosecha      Alta regional
+ melonworm                       tardias                      flores/fruto tierno                         y pudricion secundaria
+
+ Afidos                          Brotes tiernos, bordes y     Crecimiento tierno, exceso vegetativo,      Colonias en enves/brotes, mielecilla,             Temprano - cosecha       Alta
+                                 maleza                       maleza hospedera                            deformacion; vector viral
+
+ Mosca blanca                    Protegido, zonas calidas y   Calor, maleza, ciclos continuos, mala       Adultos/ninfas en enves, mielecilla/fumagina, Vegetativo - cosecha         Muy alta
+                                 secas                        exclusion, trasplantes infestados           amarillamiento; virus y silverleaf
+
+ Trips                           Flores y protegido           Baja HR, calor, maleza, flores abundantes Plateado/raspado, daño en flor, cicatriz en         Floracion - cuajado      Alta
+                                                                                                        fruto; puede mover virus
+
+ Araña roja                      Protegido y sequia           Baja HR, calor, polvo, estres hidrico       Punteado clorotico, bronceado, telaraña fina,     Vegetativo - cosecha     Alta
+                                                                                                          defoliacion
+
+ Minador de hoja                 Protegido y presion          Maleza, perdida de enemigos naturales,      Galerias serpenteantes, punturas, defoliacion     Vegetativo - cosecha     Media
+                                 externa                      calor moderado                              si severo
+
+
+
+
+BIO-G - Riesgos del cultivo de calabaza - Sanidad vegetal v1                                                                                                                         Pagina 4 de 9
+
+
+--- PAGINA 5 ---
+
+5. Riesgos abioticos y fisiologicos que deben entrar al motor
+En calabaza muchos problemas parecen plaga o deficiencia, pero nacen de polinizacion, agua, calor, salinidad, drenaje o
+defoliacion. BIO-G debe cruzar sensores antes de sugerir un riesgo sanitario.
+
+               Riesgo                               Que lo dispara                             Que se observa                  Momento sensible                       Lectura Bio-G v1
+
+ Mala polinizacion / aborto de         Pocas abejas, lluvia o frio en la mañana,    Flores femeninas abortan, frutos        Floracion - cuajado         Alerta si etapa critica + calor/lluvia matinal +
+ fruto                                 calor extremo, pesticidas en flor, flores    pequeños amarillean y caen, frutos                                  baja actividad de polinizadores. No confundir
+                                       cerradas antes de visita                     malformados                                                         con falta de fertilizante.
+
+ Aborto floral por calor               Dias muy calidos, noches calientes, baja     Caida de flores, pocas hembras          Prefloracion - floracion    Cruzar temperatura + humedad suelo +
+                                       HR, sequia o CE alta                         funcionales, cuajado erratico                                       tendencia de estres.
+
+ Deficit hidrico                       Riego irregular, suelo ligero,               Marchitez, flor/fruto abortado, fruto   Floracion - llenado         Alerta fuerte si humedad baja coincide con
+                                       viento/calor, raiz limitada                  chico o deforme                                                     floracion/cuajado.
+
+ Exceso de humedad / anoxia            Riego excesivo, suelo pesado,                Marchitez con suelo humedo, raiz        Establecimiento y tras      No decir falta agua; revisar drenaje, corona y
+                                       compactacion, lluvia, drenaje pobre          oscura, cuello comprometido             lluvias                     raiz.
+
+ Salinidad / CE alta                   Agua salina, fertirriego cargado,            Bajo vigor, bordes quemados, peor       Establecimiento - cosecha   En v1 usar EC + humedad para riesgo
+                                       evaporacion alta, lavado insuficiente        cuajado, fruto chico                                                osmotico; no convertir en receta de
+                                                                                                                                                        fertilizante.
+
+ Sunscald / golpe de sol en fruto      Defoliacion por cenicilla, mildiu, virus o   Manchas claras, hundidas o quemadas Llenado - cosecha               Activar si defoliacion + radiacion/calor + fruto
+                                       plaga; radiacion alta y calor                en fruto expuesto                                                   expuesto.
+
+ Pudriciones por contacto con          Frutos maduros sobre suelo mojado,           Pudricion blanda, manchas hundidas,     Llenado -                   Mayor peso en CA-04/05/06/07; cruzar
+ suelo humedo                          lluvias cerca de cosecha, heridas            perdida de almacenamiento               cosecha/postcosecha         lluvia/humedad de suelo + etapa de madurez.
+
+ Blossom-end rot / calcio funcional Riego irregular, salinidad, raiz limitada,      Lesion seca/hundida en extremo floral   Llenado temprano            En BIO-G v1 tratar como riesgo agua-CE-raiz;
+                                    exceso vegetativo; no necesariamente            del fruto                                                           no generar dosis de Ca. Ca/Mg queda para
+                                    falta de Ca en suelo                                                                                                Bio-G v2/Pro.
+
+ Daño por frio / helada                Temperaturas bajas, siembra temprana,        Crecimiento lento, hojas dañadas,       Germinacion - floracion     Alerta climatica preventiva; calabaza es
+                                       noches frias                                 aborto, muerte por helada                                           sensible al frio.
+
+ Fitotoxicidad / herbicida             Deriva, mezcla fuerte, aplicacion con        Quemado uniforme, deformacion           Cualquier etapa             Preguntar por aplicacion reciente antes de
+                                       calor, residuos en suelo                     nueva, patron por linea o borde                                     asumir enfermedad.
+
+ Exceso vegetativo por N               N alto, agua alta, baja luz, cosecha         Mucha hoja, poca flor/fruto, dosel      Vegetativo - floracion      Vincular a guia NPK: bajar impulso de N si hay
+                                       retrasada                                    cerrado, mayor humedad interna                                      exceso vegetativo.
+
+
+  Nota de producto: para esta version, la recomendacion nutrimental activa se mantiene en NPK. Ca/Mg/S pueden
+  aparecer como contexto de riesgo fisiologico, pero no deben generar dosis ni alertas principales sin sensor
+  avanzado o analisis confiable.
+
+
+
+
+BIO-G - Riesgos del cultivo de calabaza - Sanidad vegetal v1                                                                                                                             Pagina 5 de 9
+
+
+--- PAGINA 6 ---
+
+6. Priorizacion por perfil Bio-G
+El cultivo madre es Calabaza, pero los perfiles CA-GEN a CA-07 deben modificar sensibilidad sin crear catalogos completamente
+separados. La regla es: mismo catalogo base, pesos distintos por tipo UX, sistema y destino del fruto.
+
+      Perfil                    Tipo UX                                            Riesgos que suben de peso                                                            Nota Bio-G
+
+ CA-GEN           Calabaza generica / no sabe tipo    Cenicilla, mildiu, virus por vectores, riesgo radicular, mala polinizacion y salinidad.    Perfil conservador. No asume fruto tierno o maduro;
+                                                                                                                                                 alerta sin sobrediagnosticar.
+
+ CA-01            Calabacita italiana / zucchini      Mosca blanca/silverleaf, virus, trips, araña roja, cenicilla, mala polinizacion y frutos   Ciclo corto y cosecha continua; monitoreo frecuente de
+                                                      deformes.                                                                                  flores y fruto joven.
+
+ CA-02            Criolla / milpa / huicha            Virus por vectores, maleza hospedera, Diaphania spp., competencia por agua,                Sistema mixto: considerar maleza, cultivos vecinos y
+                                                      polinizacion irregular.                                                                    variabilidad de densidad.
+
+ CA-03            Bola / redonda tierna               Mala polinizacion, deformacion, cenicilla, virus, mosca blanca y daño visual de fruto. Fruto visible y de corte tierno; calidad de forma pesa
+                                                                                                                                             mas.
+
+ CA-04            Castilla / pumpkin / fruto maduro   Phytophthora fruto/corona, pudriciones por suelo humedo, cenicilla, squash bug,            Ciclo largo y fruto en suelo: lluvia, drenaje, defoliacion y
+                                                      vine borer, sunscald.                                                                      postcosecha pesan fuerte.
+
+ CA-05            Butternut / buchona                 Pudriciones de fruto, Phytophthora, cenicilla, virus, sunscald y fallas de madurez         Fruto maduro con valor de almacenamiento; evitar
+                                                      uniforme.                                                                                  humedad al final.
+
+ CA-06            Chilacayote                         Cenicilla, mildiu, plagas de guia, virus, maleza, pudricion de fruto y riesgos de ciclo    Muy largo/vigoroso; la presion acumulada del lote
+                                                      largo.                                                                                     importa mas.
+
+ CA-07            Pipian / pepita                     Virus, maleza, Diaphania spp., cenicilla, madurez de semilla, pudriciones y lluvia al      Destino semilla: proteger sanidad y madurez de fruto,
+                                                      final.                                                                                     no solo corte tierno.
+
+
+
+7. Monitoreo y diagnostico: protocolo minimo confiable
+• Frecuencia minima: 1-2 veces por semana en presion normal; 2-3 veces por semana en floracion, protegido, clima humedo,
+calor-sequia o historial de vectores.
+
+• Revisar envés de hojas, brotes tiernos, hojas viejas, flores, frutos recien cuajados, base de guia, cuello, raices sospechosas y
+frutos en contacto con suelo.
+
+• No revisar solo plantas bonitas: incluir orillas, entradas, ventilas, zonas bajas/humedas, puntos secos/calientes y lotes vecinos
+con cucurbitaceas viejas.
+
+• Para polinizacion: revisar actividad de abejas temprano en la mañana. No evaluar al mediodia cuando las flores pueden haber
+cerrado.
+
+• Para mosca blanca, trips y afidos: usar trampas como apoyo, pero confirmar en planta. El riesgo viral no siempre sigue una
+relacion simple con conteos.
+
+• Para Phytophthora y pudriciones: revisar drenaje, patron por parches, corona, raiz y fruta sobre suelo. Marchitez con suelo
+humedo no es falta de agua.
+
+• Para virus: observar si inicia en bordes/focos y si hay vectores. Confirmar laboratorio cuando mosaico, enchinamiento,
+amarillamiento o fruta deforme avance.
+
+• Para nematodos: no diagnosticar solo por bajo vigor. Si hay parches debiles, revisar raices y enviar muestra cuando sea
+posible.
+
+
+
+
+BIO-G - Riesgos del cultivo de calabaza - Sanidad vegetal v1                                                                                                                                 Pagina 6 de 9
+
+
+--- PAGINA 7 ---
+
+8. Reglas para el motor Bio-G
+Estas reglas traducen el documento a logica de producto. No son diagnostico definitivo; son disparadores de riesgo y mensajes
+de revision.
+
+                    Senal Bio-G                             Aumenta riesgo de                   Etapa donde pesa mas                             Salida farmer-friendly sugerida
+
+ Humedad suelo alta + drenaje pobre +            Phytophthora, anoxia, pudricion             Establecimiento - cosecha       Riesgo radicular por exceso de humedad: revise cuello, raiz y drenaje
+ temperatura calida                              raiz/cuello/fruto                                                           antes de regar mas.
+
+ HR alta / lluvia / rocio / mojado foliar        Mildiu velloso, bacteriosis, antracnosis,   Vegetativo - cosecha            Ambiente favorable a manchas y pudriciones: revise envés, hojas bajas y
+                                                 gomosis, Botrytis                                                           fruto.
+
+ Dosel cerrado + hojas viejas + etapa            Cenicilla y defoliacion                     Floracion - cosecha             Revise hojas viejas: la cenicilla puede bajar calidad por defoliacion y
+ productiva                                                                                                                  golpe de sol.
+
+ Calor + baja HR + baja humedad de suelo         Trips, araña roja, aborto floral, fruto     Floracion - llenado             Estres de calor y agua en etapa critica: riesgo de mala floracion y fruto
+                                                 deforme, sunscald                                                           irregular.
+
+ Floracion + lluvia/frio/manana nublada +        Mala polinizacion / aborto de fruto         Floracion - cuajado             Posible falla de polinizacion: revise abejas en la mañana y frutos recien
+ poca abeja                                                                                                                  cuajados.
+
+ Mosca blanca en envés +                         Virus por mosca blanca / silverleaf         Vegetativo - cosecha            Foco de mosca blanca con riesgo viral o plateado: revise envés, maleza y
+ amarillamiento/crumpling/silverleaf             disorder                                                                    focos de entrada.
+
+ Mosaico/deformacion + pulgones o bordes         Complejo viral por afidos                   Temprano - cosecha              Sintomas compatibles con virosis: controle vectores/maleza y confirme si
+ con maleza                                                                                                                  el foco avanza.
+
+ Marchitez repentina + frass/aserrin en          Squash vine borer                           Vegetativo - floracion          Revise base de guia: puede haber barrenador en tallo, no solo falta de
+ base de tallo                                                                                                               agua.
+
+ Huevos/ninfas en hojas +                        Squash bug                                  Vegetativo - cosecha            Foco de chinche de calabaza: revise huevos, ninfas y hojas debilitadas.
+ marchitez/necrosis
+
+ CE alta + humedad irregular + fruto con         BER / estres salino / agua-raiz             Llenado temprano                Daño de calidad ligado a agua/CE/raiz; en v1 no se recomienda calcio a
+ lesion apical                                                                                                               ciegas.
+
+
+
+9. Que si deberia quedar dado de alta en Bio-G
+                Grupo UX                                                                      Entradas recomendadas para catalogo Bio-G
+
+ Raiz / suelo                         damping_off, root_crown_rot_complex, phytophthora_crown_fruit_rot, root_knot_nematodes, anoxia_excess_moisture
+
+ Manchas / pudriciones                powdery_mildew, downy_mildew, angular_leaf_spot, anthracnose, gummy_stem_blight_black_rot, alternaria_leaf_blight, botrytis_gray_mold,
+                                      fruit_soil_contact_rot
+
+ Vectores / virus                     aphid_virus_complex, whitefly_virus_complex, silverleaf_whitefly_disorder, cucumber_beetle_bacterial_wilt_risk
+
+ Plagas directas                      cucumber_beetles, squash_bug, squash_vine_borer, pickleworm_melonworm, aphids, whiteflies, thrips, spider_mites, leafminers, cutworms_armyworms
+
+ Estres fisiologico                   poor_pollination, heat_flower_abortion, drought_stress, salinity_ec_high, sunscald, blossom_end_rot_functional, cold_frost_damage, phytotoxicity,
+                                      nitrogen_excess_vigor
+
+
+
+
+BIO-G - Riesgos del cultivo de calabaza - Sanidad vegetal v1                                                                                                                              Pagina 7 de 9
+
+
+--- PAGINA 8 ---
+
+10. Lenguaje de salida recomendado para UX
+BIO-G debe evitar salidas absolutas. El lenguaje mas seguro para v1 es: riesgo, condicion que lo favorece, que revisar y cuando
+confirmar.
+
+                Situacion                        No decir solo...                                                       Mejor salida Bio-G
+
+ Floracion + fruto pequeño cayendo       Falta fertilizante         El cuajado puede estar fallando por polinizacion, calor o agua. Revise abejas en la mañana y humedad del suelo.
+
+ Marchitez con suelo humedo              Falta agua                 Marchitez con suelo humedo: revise anoxia, Phytophthora, cuello y drenaje.
+
+ Hojas blancas/polvo                     Hongo                      Ambiente favorable a cenicilla. Revise hojas viejas y cierre de dosel; proteja el area foliar para evitar golpe de sol.
+
+ Hojas amarillas/deformes + mosca        Virus                      Sintomas compatibles con virosis o daño por mosca blanca. Revise envés, focos de entrada y maleza hospedera.
+ blanca
+
+ Fruto con pudricion despues de lluvia   Pudricion                  Riesgo de pudricion por humedad y contacto con suelo. Revise drenaje, fruto lesionado y residuos.
+
+
+
+11. Decision editorial para producto
+Para calabaza, el catalogo base puede ser mas amplio que el de pepino porque integra fruto tierno, fruto maduro, guia larga y
+almacenamiento. Pero la UX debe agruparlo en cinco familias: raiz/suelo, manchas/pudriciones, vectores/virus, plagas de
+flor-guia-fruto y estres fisiologico. Asi se conserva potencia tecnica sin saturar al agricultor.
+
+En la implementacion, cada entrada debe guardar: cropKey=squash, riskId, riskFamily, preferredStages,
+productionSystemWeight, profileModifiers, sensorTriggers, visualClues, farmerMessage, confirmationPrompt y
+sourceConfidence. Las alertas deben bajar de prioridad si no hay etapa compatible o si el patron es uniforme y sugiere
+fitotoxicidad/nutricion.
+
+
+
+
+BIO-G - Riesgos del cultivo de calabaza - Sanidad vegetal v1                                                                                                                       Pagina 8 de 9
+
+
+--- PAGINA 9 ---
+
+12. Fuentes base y trazabilidad
+Fuentes usadas para construir y validar el catalogo. Las fuentes comerciales o foros no se usaron para definir reglas de
+producto.
+
+       ID                                          Fuente                                                                                       URL / nota
+
+ S1         UC IPM - Agriculture: Pest Management Guidelines for Cucurbits                         https://ipm.ucanr.edu/agriculture/cucurbits/
+
+ S2         UC IPM - Phytophthora Fruit and Crown Rot in Cucurbits                                 https://ipm.ucanr.edu/agriculture/cucurbits/phytophthora-fruit-and-crown-rot/
+
+ S3         Oklahoma State University Extension - Squash and Pumpkin Production                    https://extension.okstate.edu/fact-sheets/squash-and-pumpkin-production
+
+ S4         Oklahoma State University Extension - Pumpkin and Squash Diseases                      https://extension.okstate.edu/fact-sheets/pumpkin-and-squash-diseases
+
+ S5         UF/IFAS - Management of Cucurbit Downy Mildew in Florida                               https://ask.ifas.ufl.edu/publication/PP325
+
+ S6         Cornell Vegetables - Cucurbits disease factsheets                                      https://www.vegetables.cornell.edu/crops/cucurbits/
+
+ S7         University of Minnesota Extension - Limited fruit set and fruit abortion in winter     https://blog-fruit-vegetable-ipm.extension.umn.edu/2019/08/limited-fruit-set-and-fruit-abortion-in.
+            squash and pumpkins                                                                    html
+
+ S8         Penn State Extension - Pumpkin Pollinators                                             https://extension.psu.edu/pumpkin-pollinators/
+
+ S9         University of Puerto Rico Extension - Guia para la Produccion Comercial de la          Documento aportado por el usuario
+            Calabaza Tropical
+
+ S10        WVU Extension - Cucumber Beetles                                                       https://extension.wvu.edu/lawn-gardening-pests/pests/cucumber-beetle
+
+ S11        UC IPM - Whiteflies in Cucurbits                                                       https://ipm.ucanr.edu/agriculture/cucurbits/whiteflies/
+
+ S12        University of Georgia CAES - Whitefly-transmitted viruses and silverleaf disorder in   https://fieldreport.caes.uga.edu/publications/C1350/selecting-fall-season-cucurbit-crops-for-whitefl
+            cucurbits                                                                              y-transmitted-disease-tolerance/
+
+ S13        UGA Extension - Vegetable Pest Management Handbook / cucurbit insects                  https://site.extension.uga.edu/colquittag/files/2024/02/2024_SEVEG_final_web.pdf
+
+ S14        Purdue Extension - Vegetable Diseases / Bacterial Wilt notes in Cucurbits              https://www.extension.purdue.edu/extmedia/bp/bp-17/bp-17.pdf
+
+ S15        BIO-G - Riesgos de pepino y chile aportados por el usuario                             Usados como molde editorial y de producto
+
+
+  Cierre tecnico: Calabaza debe salir con un modulo robusto porque el cultivo mezcla biologia reproductiva, sanidad
+  de cucurbitaceas y riesgos de fruto en suelo. La app no debe prometer diagnostico exacto; debe alertar temprano,
+  orientar revision y guardar historial para mejorar decisiones en el siguiente ciclo.
+
+
+
+
+BIO-G - Riesgos del cultivo de calabaza - Sanidad vegetal v1                                                                                                                             Pagina 9 de 9

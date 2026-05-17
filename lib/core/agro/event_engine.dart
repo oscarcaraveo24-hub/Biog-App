@@ -784,15 +784,16 @@ class EventEngine {
       );
     } else if (input.airTemp != null &&
         input.airTemp! >= input.rules.highAirTempThresholdC) {
+      final isCriticalAirTemp =
+          input.airTemp! >= input.rules.criticalAirTempThresholdC;
       events.add(
         AgronomicEvent(
           type: AgronomicEventType.highAirTemp,
-          severity: input.airTemp! >= 42
+          severity: isCriticalAirTemp
               ? AgronomicEventSeverity.critical
               : AgronomicEventSeverity.warning,
           title: 'Temperatura ambiente alta',
-          message: 'La temperatura ambiente es de ${_fmt(input.airTemp)}°C. '
-              'El calor extremo puede provocar estrés hídrico y reducir la fotosíntesis.',
+          message: _highAirTempMessage(input, isCriticalAirTemp),
           timestamp: now,
           deviceId: input.deviceId,
           metricKey: 'airTemp',
@@ -800,7 +801,7 @@ class EventEngine {
           seedAlias: input.seedAlias,
           stageKey: input.stageKey,
           stageLabel: input.stageLabel,
-          isCritical: input.airTemp! >= 42,
+          isCritical: isCriticalAirTemp,
           metadata: {
             'source': 'event_engine',
             'group': 'environment',
@@ -840,8 +841,7 @@ class EventEngine {
           type: AgronomicEventType.highAirHumidity,
           severity: AgronomicEventSeverity.caution,
           title: 'Humedad ambiente alta',
-          message: 'La humedad relativa del aire es de ${_fmt(input.airHumidity)}%. '
-              'Niveles altos favorecen enfermedades fúngicas y dificultan la transpiración.',
+          message: _highAirHumidityMessage(input),
           timestamp: now,
           deviceId: input.deviceId,
           metricKey: 'airHumidity',
@@ -894,7 +894,9 @@ class EventEngine {
           severity: [nBand, pBand, kBand].contains(AgroBand.critical)
               ? AgronomicEventSeverity.warning
               : AgronomicEventSeverity.caution,
-          title: 'Fertilización recomendada',
+          title: _isLettuce(input)
+              ? 'Revisión nutricional'
+              : 'Fertilización recomendada',
           message: _fertilizationRecommendationMessage(input, nBand, pBand, kBand),
           timestamp: now,
           deviceId: input.deviceId,
@@ -1033,6 +1035,39 @@ class EventEngine {
     return badCount >= 1;
   }
 
+  static String _highAirTempMessage(
+    EventEngineInput input,
+    bool isCriticalAirTemp,
+  ) {
+    final value = _fmt(input.airTemp);
+    if (_isLettuce(input)) {
+      final stage = input.stageLabel?.trim();
+      final stageText = stage != null && stage.isNotEmpty ? ' en $stage' : '';
+      if (isCriticalAirTemp) {
+        return 'La temperatura ambiente es de ${value}°C. Para lechuga$stageText '
+            'esto puede acelerar espigado, amargor y pérdida de calidad; revisa '
+            'sombra, ventilación, riego y oportunidad de cosecha.';
+      }
+      return 'La temperatura ambiente es de ${value}°C. La lechuga$stageText '
+          'empieza a salir de su rango fresco; vigila turgencia y tallo central.';
+    }
+
+    return 'La temperatura ambiente es de ${value}°C. '
+        'El calor extremo puede provocar estrés hídrico y reducir la fotosíntesis.';
+  }
+
+  static String _highAirHumidityMessage(EventEngineInput input) {
+    final value = _fmt(input.airHumidity);
+    if (_isLettuce(input)) {
+      return 'La humedad relativa del aire es de $value%. En lechuga, la HR alta '
+          'favorece mildiu velloso, Botrytis, tip burn y pudriciones si hay '
+          'mojado foliar o poca ventilación.';
+    }
+
+    return 'La humedad relativa del aire es de $value%. '
+        'Niveles altos favorecen enfermedades fúngicas y dificultan la transpiración.';
+  }
+
   static String _irrigationRecommendationMessage(
     EventEngineInput input,
     AgroBand? moistureBand,
@@ -1041,6 +1076,20 @@ class EventEngine {
     final value = input.soilMoisture != null
         ? ' (${_fmt(input.soilMoisture)}%)'
         : '';
+
+    if (_isLettuce(input)) {
+      final stageText = stage != null && stage.isNotEmpty
+          ? ' en $stage'
+          : '';
+      if (moistureBand == AgroBand.critical) {
+        return 'La humedad$value está en déficit crítico para lechuga$stageText. '
+            'Conviene revisar riego hoy: la pérdida de turgencia puede traer '
+            'amargor, estrés y espigado.';
+      }
+      return 'La humedad$value sugiere ajustar riego para mantener estable la '
+          'lechuga$stageText. Evita secados fuertes y encharcamientos: ambos '
+          'pegan directo en calidad de hoja.';
+    }
 
     if (stage != null && stage.isNotEmpty) {
       if (_containsAny(stage.toLowerCase(), const <String>['flor', 'cuaj', 'vaina', 'espig', 'antes', 'llenado'])) {
@@ -1080,6 +1129,19 @@ class EventEngine {
       if (excesses.isNotEmpty) 'altos en ${excesses.join('/')}',
     ].join(' y ');
 
+    if (_isLettuce(input)) {
+      final stageText = stage != null && stage.isNotEmpty
+          ? ' en $stage'
+          : '';
+      final issue = issueText.isEmpty
+          ? 'un desbalance posible de NPK'
+          : 'niveles $issueText';
+      return 'Las lecturas muestran $issue$stageText. En lechuga BIO-G v1 '
+          'lo interpreta como riesgo de desequilibrio, no como receta de '
+          'dosis: revisa historial, humedad, pH, CE y calidad de hoja antes '
+          'de ajustar el manejo.';
+    }
+
     if (stage != null && stage.isNotEmpty) {
       if (_containsAny(stage.toLowerCase(), const <String>['germin', 'emerg', 'tempr', 'macoll', 'veg'])) {
         return issueText.isEmpty
@@ -1106,6 +1168,14 @@ class EventEngine {
       if (value.contains(pattern)) return true;
     }
     return false;
+  }
+
+  static bool _isLettuce(EventEngineInput input) {
+    final cropId = input.cropId?.trim().toLowerCase();
+    if (cropId == 'lettuce' || cropId == 'crop_lettuce') return true;
+
+    final seedAlias = input.seedAlias?.trim().toLowerCase() ?? '';
+    return seedAlias.contains('lechuga') || seedAlias.contains('lettuce');
   }
 
   static List<AgronomicEvent> _dedupeAndSort(List<AgronomicEvent> events) {
@@ -1297,6 +1367,7 @@ class EventEngineRules {
     this.goodStructureMaxResistance = 35.0,
     this.frostThresholdC = 4.0,
     this.highAirTempThresholdC = 38.0,
+    this.criticalAirTempThresholdC = 42.0,
     this.lowAirHumidityThresholdPct = 20.0,
     this.highAirHumidityThresholdPct = 90.0,
   });
@@ -1327,6 +1398,7 @@ class EventEngineRules {
   /// Umbrales de ambiente.
   final double frostThresholdC;
   final double highAirTempThresholdC;
+  final double criticalAirTempThresholdC;
   final double lowAirHumidityThresholdPct;
   final double highAirHumidityThresholdPct;
 }

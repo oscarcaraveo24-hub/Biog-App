@@ -174,17 +174,21 @@ class _AccountScreenState extends State<AccountScreen>
       final cropContext = _presenter.cropContextForDevice(store, device.id);
       final seed = store.seedForDevice(device.id);
 
-      final uiModel = _presenter.deviceCardUiModel(
-        device: device,
-        cropContext: cropContext,
-        seed: seed,
-        isActive: isActive,
-        index: index,
-      );
+      AccountDeviceCardUiModel buildUiModel(BioGTelemetry? telemetry) {
+        return _presenter.deviceCardUiModelFromTelemetry(
+          device: device,
+          cropContext: cropContext,
+          seed: seed,
+          isActive: isActive,
+          telemetry: telemetry,
+        );
+      }
 
       return AccountMyBioGItem(
-        uiModel: uiModel,
+        uiModel: buildUiModel(null),
         onTap: () => _openBioGStatus(device, index),
+        liveTelemetryStream: store.watchTelemetryForDevice(device.id),
+        liveUiModelBuilder: buildUiModel,
       );
     });
   }

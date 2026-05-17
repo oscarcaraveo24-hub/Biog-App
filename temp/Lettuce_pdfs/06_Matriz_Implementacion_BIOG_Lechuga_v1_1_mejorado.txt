@@ -1,0 +1,207 @@
+BIO-G
+MATRIZ DE IMPLEMENTACION - LECHUGA
+Version revisada v1.1 | Lista para Flutter/Dart previa validacion de enums reales
+
+0. OBJETIVO
+Convertir el paquete tecnico de lechuga en estructura implementable sin romper la arquitectura BIO-G. Esta matriz debe usarse como fuente para Claude/Codex, pero antes de crear archivos hay que revisar rutas/enums reales del proyecto.
+
+1. IDENTIDAD EN CODIGO
+- cropKey: CropKey.lettuce
+- cropId: crop_lettuce
+- displayName: Lechuga
+- scientificName: Lactuca sativa L.
+- family: Asteraceae
+- plantType: PlantType.leafVegetable
+- harvestOrgan: HarvestOrgan.leaf
+- supportsHeadFormation: true por perfil, false para LE-05
+- version: bio_g_crop_lettuce_v1_1
+
+2. ARCHIVOS SUGERIDOS
+- lib/crops/lettuce/crop_lettuce.dart
+- lib/crops/lettuce/lettuce_profiles.dart
+- lib/crops/lettuce/lettuce_stages.dart
+- lib/crops/lettuce/lettuce_thresholds.dart
+- lib/crops/lettuce/lettuce_alerts.dart
+- lib/crops/lettuce/lettuce_npk.dart
+- lib/crops/lettuce/lettuce_risks.dart
+- lib/crops/lettuce/lettuce_harvest.dart
+
+Si el proyecto ya usa otra estructura para maiz/avena/trigo/calabaza, adaptar a esa estructura. No duplicar engine si ya existe engine generico.
+
+3. PERFILES
+profileId | uxName | systemType | harvestMode | cycleDays | headFormation
+- LE-01 | Lechuga romana | field | singleCut | 55-80 | true
+- LE-02 | Lechuga romana mini / corazones | fieldOrProtected | singleCut | 45-70 | true
+- LE-03 | Lechuga bola / iceberg | field | singleCut | 60-90 | true
+- LE-04 | Lechuga mantequilla | protectedOrField | singleCut | 45-75 | trueSoft
+- LE-05 | Lechuga hoja suelta / orejona / baby leaf | fieldOrProtected | singleCutOrMultiCut | 30-60 | false
+- LE-GEN | Lechuga generica / no se todavia | unknown | singleCutAssumed | 45-80 | unknown
+
+4. ALIASES UX
+LE-01 Romana/cos:
+- romana, cos, oreja larga, Valmaine, Parris Island, Little Caesar, Otra variedad romana
+
+LE-02 Mini romana/corazones:
+- corazones, mini romana, Little Gem, gem, mini cos, Otra variedad mini romana
+
+LE-03 Iceberg/bola/crisphead:
+- bola, iceberg, crisphead, Great Lakes, Salinas, Sure Shot, Otra variedad iceberg
+
+LE-04 Mantequilla/butterhead:
+- mantequilla, butterhead, Bibb, Boston, Fairly, Cuervo, Otra variedad mantequilla
+
+LE-05 Hoja suelta/baby leaf:
+- hoja suelta, orejona, looseleaf, leaf lettuce, baby leaf, green leaf, red leaf, lolla, oak leaf, Otra variedad hoja suelta
+
+Regla:
+No amarrar variedades comerciales cerradas como verdad universal si el mercado local cambia. Mantener "Otra variedad" siempre.
+
+5. ETAPAS POR PERFIL
+stageId | stageName | LE-01 | LE-02 | LE-03 | LE-04 | LE-05 | LE-GEN
+- E1 | Germinacion | 0-7 | 0-7 | 0-7 | 0-7 | 0-7 | 0-7
+- E2 | Emergencia/establecimiento | 7-21 | 7-18 | 7-21 | 7-18 | 7-18 | 7-21
+- E3 | Desarrollo vegetativo | 20-45 | 18-40 | 20-50 | 18-40 | 15-35 | 20-45
+- E4 | Cabeza/compactacion/madurez | 35-55 | 30-45 | 40-65 | 30-50 | notApplicableAsHead, useCommercialLeafMaturity | 45-70
+- E5 | Ventana de cosecha | 55-80 | 45-70 | 60-90 | 45-75 | 30-60 | 45-80
+- E6 | Sobre-madurez | >80 | >70 | >90 | >75 | >60 | >80
+- E7 | Bolting risk event | variable | variable | variable | variable | variable | variable
+
+6. THRESHOLDS UNIVERSALES
+thresholds:
+- airTemp.optimal: 15-25
+- airTemp.observe: 25-28
+- airTemp.alert: >28 sustained
+- airTemp.critical: >30 sustained
+- germinationSoilTemp.optimal: 15-22
+- germinationSoilTemp.alert: >26
+- soilMoistureAW.optimal: 60-95
+- soilMoistureAW.lowAlert: <50
+- soilMoistureAW.saturationAlert: prolonged saturation
+- pH.optimalMineral: 6.0-6.8
+- pH.observe: 5.8-6.0 or 6.8-7.2
+- pH.alert: <5.8 or >7.5
+- ECe.optimal: <1.3
+- ECe.observe: 1.3-2.0
+- ECe.alert: >2.0
+- ECe.critical: >3.0
+- compaction.alert: >=2.0 MPa
+- relativeHumidity.risk: >85 sustained
+
+7. PESOS DE INDICE POR ETAPA
+- E1: high
+- E2: high
+- E3: high
+- E4: veryHigh
+- E5: veryHigh
+- E6: mediumUrgent
+- E7: criticalOverride
+
+8. SUBINDICES
+- waterIndex: humedad suelo, saturacion, riego estable
+- temperatureIndex: temperatura ambiente/suelo, calor acumulado
+- soilIndex: pH, ECe, compactacion
+- nutritionIndex: inferido por etapa + sintomas + reportes
+- healthIndex: condiciones de riesgo + reportes visuales
+
+9. REGLAS DE ALERTA
+- if stage in E4/E5 and airTemp >28 sustained -> heatStressAlert
+- if stage in E4/E5 and airTemp >30 + waterStress -> boltingCriticalAlert
+- if soilMoistureAW <50 and stage in E3/E5 -> waterDeficitAlert
+- if soilSaturation prolonged -> anoxiaRootAlert
+- if ECe >2.0 -> salinityAlert
+- if compaction >=2.0 -> compactionAlert
+- if RH >85 sustained and stage in E3/E5 -> fungalRiskAlert
+- if userReport.tipBurn -> tipBurnDiagnostic
+- if userReport.centralStemElongating -> boltingConfirmedOverride
+
+10. HISTORY / MEMORIA
+Guardar eventos con:
+- deviceId
+- cropId
+- profileId
+- plantedDate
+- stageId
+- eventType
+- severity
+- confidence
+- startedAt
+- resolvedAt
+- duration
+- indexImpact
+- calendarShiftDays
+- farmerMessage
+
+Al migrar LE-GEN -> LE-0X:
+- conservar history
+- conservar stressMemory
+- recalcular stage
+- recalcular harvestWindow
+- no reiniciar dashboard
+
+11. HARVEST ENGINE
+Output:
+- harvestStatus: notYet | approaching | inWindow | urgent | pastWindow | failedByBolting
+- daysRange: min/max
+- qualityIndex: 0-100
+- qualityLabel: excelente | buena | reducida | enRiesgo
+- recommendedAction: esperar | revisarCampo | cosecharPronto | cosecharHoy | cerrarCiclo
+
+No output:
+- kg exactos
+- fecha unica exacta sin rango
+- promesas de rendimiento
+
+12. UX RECOMMENDATIONS
+Dashboard:
+- etapa actual
+- dias en etapa
+- ventana de cosecha con rango
+- banner si calor/bolting
+- indice de calidad
+
+Crop Care:
+- riego: humedad estable
+- nutricion: etapa NPK relativa
+- sanidad: riesgos activos por etapa
+- suelo: pH/ECe/compactacion si disponibles
+
+Notifications:
+- calor E4/E5
+- humedad baja E3/E5
+- salinidad >2.0
+- revisar campo 3-7 dias antes de cosecha
+- cosecha en ventana optima
+- bolting confirmado/inminente
+
+13. REGLAS DE ORO PARA CODEX/CLAUDE
+- No crear cultivo separado por tipo.
+- No crear etapa de floracion productiva.
+- No meter hidroponia en v1.
+- No prometer dosis de fertilizante ni pesticida.
+- No perder memoria al migrar LE-GEN.
+- No mostrar la palabra SKIP al usuario.
+- No usar kg/ha como salida principal.
+- No tratar LE-05 como cabeza.
+- No usar Ca/Mg/S como logica activa v1.
+- Si hay discrepancia con enums reales, adaptar a los enums existentes.
+
+14. NOTAS PARA PROMPT DE IMPLEMENTACION
+Antes de escribir codigo, pedir al agente:
+- buscar patrones existentes en crops/seeds/engines
+- copiar estilo de cultivos ya integrados
+- no inventar enums nuevos si ya existen
+- correr analisis estatico solo si el entorno lo permite
+- no tocar Supabase/auth/dashboard fuera del scope de crop_lettuce
+
+FUENTES AGRONOMICAS CONSULTADAS PARA ESTA REVISION
+- Texas A&M AgriLife Extension. Lettuce - Commercial and Specialty Crop Guides. https://aggie-horticulture.tamu.edu/vegetable/wp-content/uploads/sites/10/2011/10/lettuce.pdf
+- UC Agriculture and Natural Resources / Cooperative Extension Monterey County. Management of Salinity for Lettuce Production. https://ucanr.edu/?legacy-file=171001.pdf&legacy-file-path=sites/uccemontereycounty/files/
+- Perennia / AgraPoint. Vegetable Production Guide - Lettuce. https://www.perennia.ca/wp-content/uploads/2018/06/lettuce-production-guide.pdf
+- UF/IFAS Extension. Fertilizer Management for Vegetable Production in Florida. https://ask.ifas.ufl.edu/publication/CV296
+- University of Arizona / Western IPM Center. Crop Profile for Lettuce in Arizona. https://ipmdata.ipmcenters.org/documents/cropprofiles/AZlettuce.pdf
+- UC ANR Stanislaus Sprout. What is Lettuce, You Ask? https://ucanr.edu/blog/stanislaus-sprout/article/what-lettuce-you-ask
+- INIFAP. Agenda Tecnica Agricola de Baja California 2017. https://vun.inifap.gob.mx/VUN_MEDIA/BibliotecaWeb/_media/_agendas/4120_4817_Agenda_T%C3%A9cnica_Baja_California_2017.pdf
+- Terra Latinoamericana, 2025. Rendimiento de Lechuga bajo diferentes laminas de riego y dosis de nitrogeno en el Valle Imperial, California. https://www.scielo.org.mx/pdf/tl/v43/2395-8030-tl-43-e2056.pdf
+
+NOTA SOBRE FOROS / PRACTICA DE PRODUCTORES
+Se reviso la logica practica que suelen repetir productores y tecnicos: calor + falta de agua = bolting/amargor; exceso de humedad = pudriciones; crecimiento demasiado rapido + mala ventilacion = tip burn. No se usaron foros como fuente normativa de umbrales. Los umbrales finales se apoyan en extension universitaria, guias tecnicas y literatura tecnica.

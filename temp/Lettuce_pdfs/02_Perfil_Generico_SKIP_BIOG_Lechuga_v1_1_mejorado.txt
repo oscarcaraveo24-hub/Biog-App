@@ -1,0 +1,138 @@
+BIO-G
+PERFIL GENERICO BIO-G - LECHUGA
+LE-GEN | crop_lettuce | Version revisada v1.1
+Perfil conservador, seguro y migrable
+
+0. OBJETIVO DEL PERFIL
+LE-GEN se usa cuando el agricultor no sabe si su lechuga es romana, bola, mantequilla, hoja suelta, baby leaf o mini romana. No debe sentirse como perfil incompleto. Debe funcionar desde el dia 1 con alertas confiables y lenguaje seguro.
+
+Regla UX:
+En la app no mostrar "SKIP" como palabra principal. Mostrar:
+"Lechuga generica / no se todavia"
+Subtexto: "Puedes cambiar el tipo despues sin perder historial."
+
+1. IDENTIDAD
+- profileId: LE-GEN
+- cropId: crop_lettuce
+- Nombre UX: Lechuga generica / no se todavia
+- Tipo: generico conservador
+- Objetivo: seguridad biologica, no maximo rendimiento
+- Migrable a: LE-01, LE-02, LE-03, LE-04, LE-05
+- Memoria: no se pierde al migrar
+
+2. SUPUESTOS CONSERVADORES
+- Organo objetivo: hoja
+- Cosecha asumida: 1 corte de planta completa
+- Arquitectura: no asume cabeza compacta
+- Sistema: campo/protegido variable
+- Hidroponia: fuera de alcance v1
+- Ciclo base: intermedio
+- Calidad prioritaria: turgencia, color, sanidad, baja amargura, cosecha oportuna
+
+3. FENOLOGIA GENERICA
+E1 Germinacion
+- Dias: 0-7
+- Alerta principal: temperatura alta en germinacion, exceso de sal, exceso de agua.
+
+E2 Emergencia / establecimiento
+- Dias: 7-21
+- Alerta principal: damping-off, deficit/exceso de humedad, compactacion.
+
+E3 Desarrollo vegetativo
+- Dias: 20-45
+- Alerta principal: agua estable, nutricion suficiente, salinidad, plagas tempranas.
+
+E4 Madurez comercial generica
+- Dias: 45-70
+- No asume cabeza. Interpreta que la planta entra a punto comercial aproximado.
+- Alerta principal: calor, tip burn, sanidad, exceso de N, humedad alta.
+
+E5 Ventana de cosecha
+- Dias: 45-80
+- Ventana corta. La app debe pedir revision visual.
+
+E6 Sobre-madurez / perdida de calidad
+- Dias: >75-80
+- Mensaje: revisar cosecha urgente si aun no se corto.
+
+E7 Espigado / bolting
+- Evento de riesgo. No es etapa productiva.
+
+4. RANGOS OPERATIVOS LE-GEN
+Usar umbrales conservadores, no agresivos.
+
+Variable | Optimo LE-GEN | Observacion | Alerta | Critico
+- Temp. ambiente: 15-24 C | 24-28 | >28 sostenidos | >30 varios dias
+- Temp. germinacion/suelo: 15-22 C | 22-26 | >26 | >28
+- Humedad suelo AW: 60-95% | 50-60 / 95-100 | <50 / saturacion | anoxia
+- pH: 6.0-6.8 | 5.8-7.2 | <5.8 / >7.5 | extremo local
+- ECe: <1.3 dS/m | 1.3-2.0 | >2.0 | >3.0
+- Compactacion: <2 MPa | 1.5-2.0 | >=2.0 | >3.0
+- HR ambiental: 60-80% | 80-85% | >85% sostenida | >90% + mojado foliar
+
+5. SENSIBILIDAD GENERICA
+Etapa | Deficit agua | Calor | Salinidad | Compactacion | HR alta
+- E1-E2: alta | alta | media | alta | baja-media
+- E3: media-alta | alta | media-alta | media | media
+- E4-E5: alta | muy alta | alta | baja-media | alta
+- E6: media | media | media | baja | alta
+- E7 bolting: desencadenante | desencadenante | agravante | indirecto | agravante
+
+6. ALERTAS GENERICAS
+- Temperatura >28 C sostenida: "Tu lechuga esta bajo estres por calor. Revisa riego, sombra o ventilacion."
+- Temperatura >30 C + E4/E5: "Riesgo alto de espigado. Si el tallo central se alarga, cosecha cuanto antes."
+- Humedad suelo <50% AW: "La humedad bajo. La lechuga pierde calidad rapido cuando le falta agua."
+- Saturacion prolongada: "El suelo esta demasiado humedo. Puede haber pudricion de raiz/cuello."
+- ECe >2.0: "La salinidad es alta para lechuga. Revisa agua de riego y fertilizacion."
+- pH fuera de rango: "El pH puede bloquear nutrientes. Corrige antes de aplicar mas fertilizante."
+- HR >85% sostenida: "Condiciones favorables para hongos. Revisa hojas internas y base."
+- Cosecha cercana: "Tu lechuga se acerca a la ventana comercial. Revisa firmeza, color y turgencia."
+
+7. MIGRACION
+Cuando el usuario elija un tipo:
+- Romana/cos -> LE-01
+- Mini romana / corazones / Little Gem -> LE-02
+- Bola / iceberg / crisphead -> LE-03
+- Mantequilla / butterhead / Bibb / Boston -> LE-04
+- Hoja suelta / orejona / baby leaf -> LE-05
+
+Reglas de migracion:
+- conservar historyEvents
+- conservar stressMemory
+- conservar seedInstall/plantedDate
+- recalcular etapa con el nuevo perfil
+- no reiniciar indice
+- recalcular ventana de cosecha con estres acumulado
+
+8. CAMPOS MINIMOS EN CODIGO
+- cropId: crop_lettuce
+- profileId: LE-GEN
+- plantedDate
+- dayZeroType: directSeeded | transplanted | unknown
+- systemType: field | protected | unknown
+- harvestMode: singleCutAssumed
+- confidence: medium/low cuando falten datos
+
+9. REGLA DE MENSAJE AL AGRICULTOR
+LE-GEN nunca debe decir "perfil incompleto". Debe decir:
+"Estoy usando una configuracion segura para lechuga. Cuando sepas el tipo exacto, puedes cambiarlo y conservaremos tu historial."
+
+10. DIFERENCIAS VS PERFIL ORIGINAL
+- Se ajusto pH a objetivo 6.0-6.8 y rango tolerado con observacion.
+- Se agrego dayZeroType para siembra directa o trasplante.
+- Se agrego HR ambiental como factor fuerte de sanidad.
+- Se aclaro que LE-GEN no asume cabeza.
+- Se reforzo que el perfil no maximiza rendimiento.
+
+FUENTES AGRONOMICAS CONSULTADAS PARA ESTA REVISION
+- Texas A&M AgriLife Extension. Lettuce - Commercial and Specialty Crop Guides. https://aggie-horticulture.tamu.edu/vegetable/wp-content/uploads/sites/10/2011/10/lettuce.pdf
+- UC Agriculture and Natural Resources / Cooperative Extension Monterey County. Management of Salinity for Lettuce Production. https://ucanr.edu/?legacy-file=171001.pdf&legacy-file-path=sites/uccemontereycounty/files/
+- Perennia / AgraPoint. Vegetable Production Guide - Lettuce. https://www.perennia.ca/wp-content/uploads/2018/06/lettuce-production-guide.pdf
+- UF/IFAS Extension. Fertilizer Management for Vegetable Production in Florida. https://ask.ifas.ufl.edu/publication/CV296
+- University of Arizona / Western IPM Center. Crop Profile for Lettuce in Arizona. https://ipmdata.ipmcenters.org/documents/cropprofiles/AZlettuce.pdf
+- UC ANR Stanislaus Sprout. What is Lettuce, You Ask? https://ucanr.edu/blog/stanislaus-sprout/article/what-lettuce-you-ask
+- INIFAP. Agenda Tecnica Agricola de Baja California 2017. https://vun.inifap.gob.mx/VUN_MEDIA/BibliotecaWeb/_media/_agendas/4120_4817_Agenda_T%C3%A9cnica_Baja_California_2017.pdf
+- Terra Latinoamericana, 2025. Rendimiento de Lechuga bajo diferentes laminas de riego y dosis de nitrogeno en el Valle Imperial, California. https://www.scielo.org.mx/pdf/tl/v43/2395-8030-tl-43-e2056.pdf
+
+NOTA SOBRE FOROS / PRACTICA DE PRODUCTORES
+Se reviso la logica practica que suelen repetir productores y tecnicos: calor + falta de agua = bolting/amargor; exceso de humedad = pudriciones; crecimiento demasiado rapido + mala ventilacion = tip burn. No se usaron foros como fuente normativa de umbrales. Los umbrales finales se apoyan en extension universitaria, guias tecnicas y literatura tecnica.

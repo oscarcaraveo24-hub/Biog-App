@@ -1,0 +1,418 @@
+PERFIL GENERICO CALABAZA - CA-GEN (SKIP) v2
+Fuente PDF: BIO-G_Perfil_Generico_Calabaza_CA-GEN_v2.pdf
+Conversión a texto: pdftotext -layout UTF-8, con separadores de pagina.
+
+--- PAGINA 1 ---
+
+BIO-G
+                                                  Perfil técnico de cultivo
+
+
+
+
+   PERFIL GENERICO CALABAZA - CA-GEN (SKIP)
+           Entrada conservadora, migrable y universal para usuario que solo dice "calabaza"
+
+
+
+                                               VERSION V2 - CONSERVADORA Y
+                                                    LISTA PARA CODIGO
+
+
+
+
+         El perfil genérico no debe adivinar el destino comercial. Debe proteger al usuario, activar alertas
+         confiables y permitir migración posterior a calabacita tierna, calabaza madura, pipián o chilacayote sin
+         reiniciar el cultivo.
+
+
+
+ Uso interno recomendado: base agronómica para código, perfiles fenológicos, alertas, NPK relativo, wizard de cultivo y lógica de
+ migración. No sustituye una recomendación agronómica local ni una receta de fertilización por análisis de suelo.
+
+
+
+
+BIO-G | Calabaza                                                                                                       Pagina 1 de 7
+
+
+--- PAGINA 2 ---
+
+1. Cuándo se usa CA-GEN
+ CA-GEN es obligatorio para que la UX nunca se rompa. Se activa cuando el usuario solo dice "calabaza", no sabe si
+ es calabacita o fruto maduro, no encuentra su variedad, no reconoce el tipo cultural, o quiere avanzar rápido con
+ datos incompletos.
+
+     Campo                                  Valor CA-GEN v2
+
+     Cultivo                                Calabaza
+
+     Clave interna                          CropKey.squash
+
+     ID perfil                              CA-GEN
+
+     Nombre mostrado                        Calabaza
+
+     Nombre interno                         Calabaza genérica / SKIP
+
+     Usuario ve SKIP                        No. Nunca mostrar "SKIP" ni "datos incompletos" como falla.
+
+     Especie base                           Cucurbita spp.
+
+     Órgano objetivo                        Fruto genérico; no decide tierno/maduro al inicio.
+
+     Arquitectura asumida                   Semiarbustiva a semi-rastrera; cobertura media.
+
+     Confianza inicial                      Media si hay fecha de siembra; baja si no hay fecha ni tipo.
+
+               Principio: CA-GEN no busca rendimiento máximo ni calendario exacto. Busca no dejar al agricultor sin
+               protección mientras BIO-G obtiene más contexto.
+
+
+
+ 2. Filosofía del perfil genérico
+ 1       No adivina: si el usuario no sabe el tipo, el sistema no inventa variedad ni destino.
+ 2       Protege: prioriza agua, temperatura, suelo y polinización en ventanas críticas.
+ 3       No exagera: las alertas tienen ponderación intermedia-alta, no extrema, salvo floración/cuajado con estrés
+         claro.
+ 4       Migra: si después el usuario elige italiana, criolla, Castilla, pipián, etc., se recalcula sin perder historial.
+ 5       Es flexible: puede comportarse como calabacita si hay corte temprano o como calabaza madura si el fruto
+         sigue desarrollándose.
+
+
+ 3. Supuesto agronómico conservador
+ La mejora principal frente a la base es que CA-GEN ya no se amarra únicamente a una calabacita intermedia. En
+ México, "calabaza" puede significar fruto tierno o fruto maduro. Por eso CA-GEN usa una ruta central con
+ cosecha flexible.
+
+     Parámetro                               Valor conservador
+
+     Uso                                     Fruto genérico. No decide tierno/maduro.
+
+     Floración probable                      40-60 días desde siembra.
+
+     Cuajado probable                        45-75 días.
+
+     Primera cosecha probable                60-95 días si se comporta como calabacita/criolla intermedia.
+
+     Extensión posible                       90-130 días si el sistema detecta/usuario busca fruto maduro.
+
+
+
+
+BIO-G | Calabaza                                                                                                      Pagina 2 de 7
+
+
+--- PAGINA 3 ---
+
+Parámetro                                  Valor conservador
+
+  Ciclo operativo                            Intermedio conservador; migrable a corto, largo o muy largo.
+
+  Cosecha                                    Progresiva si hay cortes; única/por lotes si madura.
+
+  Densidad asumida                           10-20 mil plantas/ha como media segura; no usar para dosificación exacta.
+
+  Arquitectura                               Semi-rastrera; no asume guía extrema ni porte compacto.
+
+
+
+ 4. Calendario CA-GEN
+
+  Etapa Bio-G                   Rango CA-GEN      Confianza            Regla de salida
+
+  Germinación                   0-8/10 d          Media                Si hay emergencia confirmada, pasar a establecimiento aunque el día
+                                                                       sea temprano.
+
+  Emergencia /                  5-18 d            Media                Primeras hojas verdaderas y tendencia estable de humedad.
+  establecimiento
+
+  Vegetativo                    15-40 d           Media                Follaje y guía antes de flores.
+
+  Prefloración                  28-45 d           Media-baja           Si aparecen flores masculinas, preparar alerta de polinización.
+
+  Floración                     35-65 d           Media                Flores masculinas/femeninas; activar riesgo por calor/lluvia/abejas.
+                                                                       [S2][S3]
+
+  Cuajado                       40-80 d           Media                Fruto pequeño creciendo después de flor femenina.
+
+  Desarrollo de fruto           50-110 d          Media-baja           K y agua pesan más.
+
+  Cosecha flexible              60-130 d          Baja hasta           Si hay corte tierno, ruta corta. Si no, permitir fruto maduro.
+                                                  confirmación
+
+  Senescencia                   90-160+ d         Baja                 Si es chilacayote/pipián, migrar; no forzar fin de ciclo temprano.
+
+
+
+ 5. Rangos de sensor para CA-GEN
+
+  Variable                  Objetivo                      Observación                        Alerta CA-GEN
+
+  Temperatura aire          20-30 C                       15-20 C / 30-32 C                  <12 C o >32 C; crítico >35 C en flor/cuajado.
+
+  Temperatura suelo         18-30 C                       15-18 C                            <15 C en germinación/establecimiento.
+
+  Humedad suelo AW          60-90%                        50-60% / 90-95%                    <50-55% en flor/cuajado o >95% persistente.
+
+  pH                        6.0-7.2                       5.8-6.0 / 7.2-7.6                  <5.8 o >7.6.
+
+  ECe                       <1.8 dS/m                     1.8-2.5                            >2.5; crítico >3.5-4.0.
+
+  Resistencia suelo         <1.5 MPa                      1.5-2.0 MPa                        >2.0 MPa, especialmente etapas 1-3.
+
+  N relativo                Medio-alto en vegetativo      Bajo en vegetativo                 Muy alto en floración con poco cuajado.
+
+  P relativo                Medio                         Bajo en                            Bajo persistente con planta lenta.
+                                                          establecimiento/prefloración
+
+  K relativo                Alto desde cuajado            Medio-bajo en fruto                Bajo en desarrollo de fruto.
+
+
+
+ 6. Ventanas críticas activas
+
+  Ventana                            Siempre activa en              Por qué
+                                     CA-GEN
+
+  Germinación-establecimiento        Sí                             Sin tipo conocido, el error de arranque es costoso: frío, salinidad,
+                                                                    compactación o exceso de agua pueden dejar mala población.
+
+
+
+
+BIO-G | Calabaza                                                                                                                              Pagina 3 de 7
+
+
+--- PAGINA 4 ---
+
+Ventana                            Siempre activa en                   Por qué
+                                     CA-GEN
+
+  Prefloración-floración             Sí, prioridad alta                  La planta puede tener muchas flores, pero sin polinización suficiente
+                                                                         no hay fruto. [S2][S3][S10]
+
+  Cuajado                            Sí, prioridad crítica               Déficit de agua, calor y salinidad castigan rápido el amarre.
+
+  Desarrollo de fruto                Sí                                  Si no se sabe destino, K + agua + sanidad sostienen tanto fruto
+                                                                         tierno como maduro.
+
+  Cosecha                            Flexible                            No asumir corte tierno si el usuario no lo confirma.
+
+
+
+ 7. Ponderación conservadora de alertas
+
+  Alerta                                  Peso CA-GEN                 Cuándo subir peso
+
+  Déficit hídrico                         Medio-alto                  Subir a crítico en floración/cuajado o si la tendencia cae varios días.
+
+  Exceso de humedad / anoxia              Medio-alto                  Subir si suelo pesado, resistencia alta o HR/lluvia persistente.
+
+  Estrés térmico                          Medio                       Subir a alto en floración/cuajado con >32 C o noches cálidas.
+
+  Riesgo de polinización                  Medio-alto                  Subir con lluvia, nublado/frío, calor fuerte o baja actividad de abejas.
+
+  Compactación                            Medio                       Subir en establecimiento y vegetativo temprano.
+
+  Salinidad                               Media                       Subir si coincide con déficit hídrico o cuajado.
+
+  K bajo en fruto                         Medio                       Subir desde cuajado/desarrollo de fruto.
+
+  N excesivo en floración                 Media                       Subir si hay mucho follaje y poco cuajado.
+
+  Riesgo sanitario foliar                 Medio                       Subir con HR alta, follaje denso, lluvia y etapa 4-8. [S8]
+
+
+
+ 8. Mensajes humanos CA-GEN
+
+  Situación                                   Mensaje BIO-G recomendado
+
+  Calor en floración                          La calabaza está en una etapa delicada. Con este calor puede haber flor, pero menos fruto
+                                              si baja la polinización.
+
+  Suelo seco en cuajado                       Ahorita no conviene que le falte agua. La planta puede tirar flor o no sostener los frutos
+                                              pequeños.
+
+  Suelo saturado                              Hay demasiada humedad. La raíz de calabaza necesita oxígeno; si se mantiene así, puede
+                                              debilitarse.
+
+  K bajo en fruto                             El fruto ya está pidiendo más potasio. No es solo crecer hoja, es sostener llenado.
+
+  N alto y poco cuajado                       La planta puede estar yéndose mucho a hoja. Conviene revisar si sí está amarrando fruto.
+
+  No sabe tipo                                Seguimos con una lectura segura de calabaza. Después puedes elegir el tipo sin perder
+                                              historial.
+
+
+
+ 9. Migración desde CA-GEN
+ La migración es la razón principal de CA-GEN. No debe sentirse como corregir un error del usuario. Debe sentirse
+ como afinar el cultivo.
+
+  Si el usuario selecciona       Migrar a         Qué se conserva                                      Qué se recalcula
+  después...
+
+  Italiana/zucchini/calabacita   CA-01            deviceId, cropInstallId, fecha, historial, estrés,   Duración de ciclo, cosecha temprana,
+  larga                                           notas, lecturas                                      arquitectura, densidad, NPK por etapa
+
+
+
+
+BIO-G | Calabaza                                                                                                                                 Pagina 4 de 7
+
+
+--- PAGINA 5 ---
+
+Si el usuario selecciona   Migrar a   Qué se conserva                                Qué se recalcula
+      después...
+
+      Criolla/huicha/milpa       CA-02      Todo                                           Mayor rango de calendario, guía rastrera,
+                                                                                           variabilidad de temporal
+
+      Bola/redonda               CA-03      Todo                                           Ciclo corto y forma de fruto no afecta
+                                                                                           sensores
+
+      Castilla/madura/dulce      CA-04      Todo                                           Extender cosecha a 90-120 días y
+                                                                                           endurecimiento de fruto
+
+      Butternut/buchona/manteq   CA-05      Todo                                           Ciclo largo y K alto en llenado
+      uilla
+
+      Chilacayote                CA-06      Todo                                           Ciclo muy largo; no forzar senescencia
+                                                                                           temprana
+
+      Pipián/pipiana/pepita      CA-07      Todo                                           Destino semilla/fruto maduro y calendario
+                                                                                           intermedio-largo
+
+
+              Regla técnica: nunca reiniciar el cultivo al migrar. Mantener el historial y recalcular la etapa actual con
+              el nuevo perfil. En historial se puede registrar: "Se afinó el tipo de calabaza; BIO-G conservó la memoria
+              del cultivo".
+
+
+
+     10. No usar CA-GEN cuando...
+•
+     El usuario eligió claramente calabacita italiana/zucchini, criolla, bola, Castilla, butternut, chilacayote o pipián.
+•
+     La variedad comercial ya está mapeada a un perfil Bio-G específico.
+•
+     El cultivo tiene intención explícita de semilla/pepita: usar CA-07.
+•
+     El usuario está en hidroponía/sustrato inerte: no cubrir en v1 salvo modo futuro separado.
+•
+     El usuario necesita dosis exacta de fertilización: Bio-G debe pedir análisis de suelo o usar guía local, no CA-GEN
+     como receta.
+
+
+     11. Checklist de código para CA-GEN
+
+      Campo/código                                 Valor recomendado
+
+      profileId                                    CA-GEN
+
+      displayName                                  Calabaza
+
+      internalName                                 Calabaza genérica / SKIP
+
+      hiddenFromUser                               true para el término SKIP; false para mostrar Calabaza.
+
+      harvestIntent                                unknown / flexible
+
+      cycleClass                                   intermediate_conservative
+
+      harvestMode                                  progressive_or_mature_unknown
+
+      architecture                                 semi_vining
+
+      usesPollination                              true
+
+      usesFlowering                                true
+
+      usesFruitSet                                 true
+
+      criticalStages                               flowering, fruit_set
+
+      canMigrateTo                                 CA-01...CA-07
+
+
+
+
+    BIO-G | Calabaza                                                                                                                   Pagina 5 de 7
+
+
+--- PAGINA 6 ---
+
+Campo/código                             Valor recomendado
+
+  confidenceDefault                        medium_low unless type + date are known
+
+
+
+ 12. Cierre de producto
+
+         CA-GEN v2 cerrado: el perfil genérico no adivina; protege. Permite que el usuario avance sin saber el
+         tipo exacto de calabaza, mantiene alertas útiles en floración/cuajado, evita sobrealertar por destino
+         comercial desconocido y deja lista la migración hacia perfiles específicos sin perder memoria.
+
+
+
+
+BIO-G | Calabaza                                                                                                 Pagina 6 de 7
+
+
+--- PAGINA 7 ---
+
+Fuentes base revisadas
+ Estas fuentes se usaron para corregir y ampliar el perfil, pero la lógica final está adaptada a BIO-G: sensores,
+ etapa fenológica, alertas humanas y migración de perfiles.
+
+  ID     Fuente                      Uso en el perfil                                                  URL
+
+  S1     Biodiversidad Mexicana /    Calabazas, tamalayotas, pipianas, chilacayotes: especies          https://www.biodiversidad.gob.mx/dive
+         CONABIO                     domesticadas de Cucurbita en México; flores                       rsidad/alimentos/calabazas
+                                     masculinas/femeninas y polinización por insectos.
+
+  S2     University of Minnesota     Growing summer squash and zucchini: flores masculinas y           https://extension.umn.edu/vegetables/
+         Extension                   femeninas; polinización por abejas.                               growing-summer-squash-and-zucchini
+
+  S3     University of Minnesota     How excessive heat affects the vegetable garden: calor            https://extension.umn.edu/planting-an
+         Extension                   altera relación flores macho/hembra y reduce actividad de         d-growing-guides/how-excessive-heat-a
+                                     abejas.                                                           ffects-vegetable-garden
+
+  S4     Oklahoma State University   Squash and Pumpkin Production HLA-6026: pH preferido              https://extension.okstate.edu/fact-sheet
+         Extension                   6.0-6.8, fertilización por análisis de suelo, riego y rotación.   s/print-publications/hla/squash-and-pu
+                                                                                                       mpkin-production-hla-6026.pdf
+
+  S5     New Mexico State            Commercial Pumpkin Production for New Mexico: mejor               https://pubs.nmsu.edu/_h/H231.pdf
+         University                  crecimiento con 60-80 F; suelos bien drenados; no tolera
+                                     suelos mal aireados; pH 6.5-7.5 para máxima producción.
+
+  S6     LSU AgCenter                Squash and Pumpkins: cultivos de estación cálida, muy             https://www.lsuagcenter.com/~/media/
+                                     sensibles a helada; semilla requiere suelo mínimo 60 F para       system/4/4/f/5/44f5081425183c1dd8fc9
+                                     germinar; calabaza de verano 45-50 días a cosecha.                c6a70be9cb6/2054squashandpumpkins
+                                                                                                       inthehomegarden%20rev%200417pdf.p
+                                                                                                       df
+
+  S7     Michigan State University   Commercial vegetable recommendations: cosecha de                  https://www.canr.msu.edu/resources/p
+         Extension                   summer squash 50-60 días; winter squash 90-120 días; corte        umpkins_squash_gourds_commercial_v
+                                     cada 2-3 días en calabacita.                                      egetable_recommendations_e1953
+
+  S8     UC Statewide IPM            Squash: polinización por insectos/abejas; principales             https://ipm.ucanr.edu/home-and-landsc
+         Program                     insectos, enfermedades y desórdenes fisiológicos de               ape/squash/
+                                     cucurbitáceas.
+
+  S9     University of Wisconsin     Growing Pumpkins and Other Vine Crops in Wisconsin: pH            https://barron.extension.wisc.edu/files/
+         Extension                   6.0-6.8 para máximo cuajado en cucurbitáceas y                    2023/02/Growing-Pumpkins-and-other-
+                                     calabazas/squash/gourds toleran 5.5-7.5.                          Vine-Crops-in-Wisconsin.pdf
+
+  S10    University of Georgia       Commercial pumpkins and gourds: densidades por tipo de            https://fieldreport.caes.uga.edu/wp-con
+         Extension                   guía, flores monoicas, polinización y visitas de abejas;          tent/uploads/2025/08/B-1180_5.pdf
+                                     enfermedades importantes.
+
+
+
+
+BIO-G | Calabaza                                                                                                                              Pagina 7 de 7
