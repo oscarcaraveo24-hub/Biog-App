@@ -27,9 +27,9 @@ class QuickReportData {
   final List<String> historyLabels;
 
   /// Series históricas de 7 días para NPK.
-  final List<double> historyN;
-  final List<double> historyP;
-  final List<double> historyK;
+  final List<double?> historyN;
+  final List<double?> historyP;
+  final List<double?> historyK;
 
   final String recommendationTitle;
   final String recommendationBody;
@@ -97,9 +97,9 @@ class QuickReportData {
     String? pStatus,
     String? kStatus,
     List<String>? historyLabels,
-    List<double>? historyN,
-    List<double>? historyP,
-    List<double>? historyK,
+    List<double?>? historyN,
+    List<double?>? historyP,
+    List<double?>? historyK,
     String? recommendationTitle,
     String? recommendationBody,
     String? climateBannerTitle,

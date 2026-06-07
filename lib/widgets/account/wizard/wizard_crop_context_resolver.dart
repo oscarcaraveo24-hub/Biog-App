@@ -6,9 +6,12 @@ import 'package:bio_g/widgets/seeds/bean_profiles.dart';
 import 'package:bio_g/widgets/seeds/chili_profiles.dart';
 import 'package:bio_g/widgets/seeds/cucumber_profiles.dart';
 import 'package:bio_g/widgets/seeds/eggplant_profiles.dart';
+import 'package:bio_g/widgets/seeds/garlic_profiles.dart';
 import 'package:bio_g/widgets/seeds/lettuce_profiles.dart';
 import 'package:bio_g/widgets/seeds/maize_profiles.dart';
 import 'package:bio_g/widgets/seeds/oat_profiles.dart';
+import 'package:bio_g/widgets/seeds/onion_profiles.dart';
+import 'package:bio_g/widgets/seeds/spinach_profiles.dart';
 import 'package:bio_g/widgets/seeds/squash_profiles.dart';
 import 'package:bio_g/widgets/seeds/tomato_profiles.dart';
 import 'package:bio_g/widgets/seeds/wheat_profiles.dart';
@@ -261,6 +264,27 @@ class WizardCropContextResolver {
     if (cropId == CropCatalog.lettuceCropId) {
       if (varietyAlias != null && varietyAlias.isNotEmpty) {
         return resolveCanonicalLettuceProfileId(varietyAlias);
+      }
+      return null;
+    }
+
+    if (cropId == CropCatalog.spinachCropId) {
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalSpinachProfileId(varietyAlias);
+      }
+      return null;
+    }
+
+    if (cropId == CropCatalog.onionCropId) {
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalOnionProfileId(varietyAlias);
+      }
+      return null;
+    }
+
+    if (cropId == CropCatalog.garlicCropId) {
+      if (varietyAlias != null && varietyAlias.isNotEmpty) {
+        return resolveCanonicalGarlicProfileId(varietyAlias);
       }
       return null;
     }

@@ -7,16 +7,22 @@ import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/chili/chili_catalog.dart';
 import 'package:bio_g/core/crops/cucumber/cucumber_catalog.dart';
 import 'package:bio_g/core/crops/eggplant/eggplant_catalog.dart';
+import 'package:bio_g/core/crops/garlic/garlic_catalog.dart';
 import 'package:bio_g/core/crops/lettuce/lettuce_catalog.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
 import 'package:bio_g/core/crops/oat/oat_catalog.dart';
+import 'package:bio_g/core/crops/onion/onion_catalog.dart';
+import 'package:bio_g/core/crops/spinach/spinach_catalog.dart';
 import 'package:bio_g/core/crops/squash/squash_catalog.dart';
 import 'package:bio_g/core/crops/tomato/tomato_catalog.dart';
 import 'package:bio_g/core/crops/wheat/wheat_catalog.dart';
 import 'package:bio_g/widgets/seeds/barley_profiles.dart';
 import 'package:bio_g/widgets/seeds/bean_profiles.dart';
+import 'package:bio_g/widgets/seeds/garlic_profiles.dart';
 import 'package:bio_g/widgets/seeds/lettuce_profiles.dart';
 import 'package:bio_g/widgets/seeds/oat_profiles.dart';
+import 'package:bio_g/widgets/seeds/onion_profiles.dart';
+import 'package:bio_g/widgets/seeds/spinach_profiles.dart';
 import 'package:bio_g/widgets/seeds/squash_profiles.dart';
 import 'package:bio_g/widgets/seeds/wheat_profiles.dart';
 
@@ -37,6 +43,9 @@ class CropCatalog {
   static const String eggplantCropId = 'eggplant';
   static const String squashCropId = kCropSquash;
   static const String lettuceCropId = kCropLettuce;
+  static const String spinachCropId = kCropSpinach;
+  static const String onionCropId = kCropOnion;
+  static const String garlicCropId = kCropGarlic;
 
   static const String tomatoDefaultProfileId = 'tm_gen';
   static const String tomatoDefaultCalendarId = 'tomato_default';
@@ -50,6 +59,12 @@ class CropCatalog {
   static const String squashDefaultCalendarId = kSquashDefaultCalendarId;
   static const String lettuceDefaultProfileId = kLeGen;
   static const String lettuceDefaultCalendarId = kLettuceDefaultCalendarId;
+  static const String spinachDefaultProfileId = kSpGen;
+  static const String spinachDefaultCalendarId = kSpinachDefaultCalendarId;
+  static const String onionDefaultProfileId = kOnGen;
+  static const String onionDefaultCalendarId = kOnionDefaultCalendarId;
+  static const String garlicDefaultProfileId = kAgGen;
+  static const String garlicDefaultCalendarId = kGarlicDefaultCalendarId;
 
   // ── Maize catalog constants ─────────────────────────────────────────────────
   static const String maizeDemoVarietyId = 'dk_2069';
@@ -491,6 +506,139 @@ class CropCatalog {
         ),
       ],
     ),
+    CropCatalogEntry(
+      cropId: spinachCropId,
+      categoryId: vegetableCategoryId,
+      label: 'Espinaca',
+      subtitle: 'Hortaliza de hoja - campo abierto y protegido en suelo',
+      enabled: true,
+      defaultProfileId: spinachDefaultProfileId,
+      defaultCalendarId: spinachDefaultCalendarId,
+      varieties: spinachVarieties,
+      profiles: spinachProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: spinachDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: spinachCropId,
+          subtitle: 'Ciclo general anclado a siembra o trasplante',
+          enabled: true,
+          isDefault: true,
+        ),
+        CropCalendarEntry(
+          id: 'spinach_campo_abierto',
+          label: 'Campo abierto',
+          cropId: spinachCropId,
+          subtitle: 'Mayor exposicion a calor, viento y vectores',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'spinach_protegido',
+          label: 'Protegido en suelo',
+          cropId: spinachCropId,
+          subtitle: 'Malla o invernadero en suelo; sin hidroponia v1',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'spinach_riego',
+          label: 'Riego',
+          cropId: spinachCropId,
+          subtitle: 'Mayor estabilidad hidrica en suelo',
+          enabled: true,
+        ),
+      ],
+    ),
+    CropCatalogEntry(
+      cropId: onionCropId,
+      categoryId: vegetableCategoryId,
+      label: 'Cebolla',
+      subtitle: 'Hortaliza de bulbo - campo abierto y protegido en suelo',
+      enabled: true,
+      defaultProfileId: onionDefaultProfileId,
+      defaultCalendarId: onionDefaultCalendarId,
+      varieties: onionVarieties,
+      profiles: onionProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: onionDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: onionCropId,
+          subtitle: 'Ciclo general anclado a siembra, trasplante o set',
+          enabled: true,
+          isDefault: true,
+        ),
+        CropCalendarEntry(
+          id: 'onion_campo_abierto',
+          label: 'Campo abierto',
+          cropId: onionCropId,
+          subtitle: 'Mayor exposicion a calor, frio, fotoperiodo y vectores',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'onion_protegido',
+          label: 'Protegido en suelo',
+          cropId: onionCropId,
+          subtitle: 'Malla o invernadero en suelo; sin hidroponia v1',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'onion_riego',
+          label: 'Riego',
+          cropId: onionCropId,
+          subtitle: 'Goteo o gravedad; mayor estabilidad hidrica en suelo',
+          enabled: true,
+        ),
+      ],
+    ),
+    CropCatalogEntry(
+      cropId: garlicCropId,
+      categoryId: vegetableCategoryId,
+      label: 'Ajo',
+      subtitle: 'Hortaliza de bulbo - campo abierto en suelo',
+      enabled: true,
+      defaultProfileId: garlicDefaultProfileId,
+      defaultCalendarId: garlicDefaultCalendarId,
+      varieties: garlicVarieties,
+      profiles: garlicProfileEntries,
+      calendars: <CropCalendarEntry>[
+        CropCalendarEntry(
+          id: garlicDefaultCalendarId,
+          label: 'Calendario base',
+          cropId: garlicCropId,
+          subtitle: 'Ciclo general anclado a plantacion del diente',
+          enabled: true,
+          isDefault: true,
+        ),
+        CropCalendarEntry(
+          id: 'garlic_campo_abierto',
+          label: 'Campo abierto',
+          cropId: garlicCropId,
+          subtitle: 'Mayor exposicion a frio, calor, salinidad y sanidad',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'garlic_riego',
+          label: 'Riego',
+          cropId: garlicCropId,
+          subtitle: 'Goteo o gravedad; mayor estabilidad hidrica en suelo',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'garlic_bajo_insumo',
+          label: 'Bajo insumo',
+          cropId: garlicCropId,
+          subtitle: 'Referencia conservadora por semilla, agua o manejo limitado',
+          enabled: true,
+        ),
+        CropCalendarEntry(
+          id: 'garlic_temporal',
+          label: 'Temporal / secano',
+          cropId: garlicCropId,
+          subtitle: 'Mayor riesgo por frio, humedad, calibre y sanidad',
+          enabled: true,
+        ),
+      ],
+    ),
   ];
 
   static CropCategoryEntry? categoryById(String? categoryId) {
@@ -879,9 +1027,15 @@ class CropCatalog {
         normalized == 'generic_eggplant' ||
         normalized == 'generic_squash' ||
         normalized == 'generic_lettuce' ||
+        normalized == 'generic_spinach' ||
+        normalized == 'generic_onion' ||
+        normalized == 'generic_garlic' ||
         normalized == 'eggplant_generic' ||
         normalized == 'squash_generic' ||
         normalized == 'lettuce_generic' ||
+        normalized == 'spinach_generic' ||
+        normalized == 'onion_generic' ||
+        normalized == 'garlic_generic' ||
         normalized == 'be_gen' ||
         normalized == 'be-gen' ||
         normalized == 'begen' ||
@@ -891,11 +1045,27 @@ class CropCatalog {
         normalized == 'le_gen' ||
         normalized == 'le-gen' ||
         normalized == 'legen' ||
+        normalized == 'sp_gen' ||
+        normalized == 'sp-gen' ||
+        normalized == 'spgen' ||
+        normalized == 'on_gen' ||
+        normalized == 'on-gen' ||
+        normalized == 'ongen' ||
+        normalized == 'ag_gen' ||
+        normalized == 'ag-gen' ||
+        normalized == 'aggen' ||
         normalized == 'otra berenjena' ||
         normalized == 'otra calabaza' ||
         normalized == 'otra lechuga' ||
+        normalized == 'otra espinaca' ||
+        normalized == 'otra cebolla' ||
+        normalized == 'otro ajo' ||
+        normalized == 'otra ajo' ||
         normalized == 'calabaza generica' ||
         normalized == 'lechuga generica' ||
+        normalized == 'espinaca generica' ||
+        normalized == 'cebolla generica' ||
+        normalized == 'ajo generico' ||
         normalized == 'no se' ||
         normalized == 'no sé' ||
         normalized.startsWith('generic_');
@@ -915,7 +1085,10 @@ class CropCatalog {
             normalized == 'ch_gen' ||
             normalized == 'ca_gen' ||
             normalized == 'be_gen' ||
-            normalized == 'le_gen');
+            normalized == 'le_gen' ||
+            normalized == 'sp_gen' ||
+            normalized == 'on_gen' ||
+            normalized == 'ag_gen');
   }
 
   static String? _canonicalCalendarId({
@@ -1050,6 +1223,159 @@ class CropCatalog {
       'baby leaf' ||
       'lechuga baby leaf' ||
       'looseleaf' => lettuceCropId,
+      'spinach' ||
+      'crop_spinach' ||
+      'spinach_generic' ||
+      'spinach_savoy_summer' ||
+      'spinach_savoy_winter' ||
+      'spinach_smooth_baby' ||
+      'spinach_oriental_bunching' ||
+      'spinach_processing' ||
+      'sp_gen' ||
+      'sp-gen' ||
+      'sp01' ||
+      'sp-01' ||
+      'sp_01' ||
+      'sp02' ||
+      'sp-02' ||
+      'sp_02' ||
+      'sp03' ||
+      'sp-03' ||
+      'sp_03' ||
+      'sp04' ||
+      'sp-04' ||
+      'sp_04' ||
+      'sp05' ||
+      'sp-05' ||
+      'sp_05' ||
+      'espinaca' ||
+      'espinacas' ||
+      'espinaca generica' ||
+      'espinaca saboya' ||
+      'saboya verano' ||
+      'semi-saboya verano' ||
+      'savoy summer' ||
+      'saboya invierno' ||
+      'semi-saboya invierno' ||
+      'savoy winter' ||
+      'dias cortos' ||
+      'espinaca lisa' ||
+      'baby spinach' ||
+      'smooth baby' ||
+      'espinaca baby leaf' ||
+      'espinaca oriental' ||
+      'oriental bunch' ||
+      'manojo' ||
+      'espinaca proceso' ||
+      'espinaca industria' ||
+      'processing spinach' => spinachCropId,
+      'onion' ||
+      'crop_onion' ||
+      'onion_generic' ||
+      'onion_white' ||
+      'onion_yellow' ||
+      'onion_purple' ||
+      'onion_red' ||
+      'onion_transition' ||
+      'onion_intermediate' ||
+      'onion_cambray' ||
+      'on_gen' ||
+      'on-gen' ||
+      'on01' ||
+      'on-01' ||
+      'on_01' ||
+      'on02' ||
+      'on-02' ||
+      'on_02' ||
+      'on03' ||
+      'on-03' ||
+      'on_03' ||
+      'on04' ||
+      'on-04' ||
+      'on_04' ||
+      'on05' ||
+      'on-05' ||
+      'on_05' ||
+      'cebolla' ||
+      'cebollas' ||
+      'cebolla generica' ||
+      'cebolla blanca' ||
+      'cebolla amarilla' ||
+      'cebolla dorada' ||
+      'cebolla morada' ||
+      'cebolla roja' ||
+      'cebolla cambray' ||
+      'cebolla de rama' ||
+      'cebollin' ||
+      'cebollín' ||
+      'cambray' ||
+      'white onion' ||
+      'yellow onion' ||
+      'red onion' ||
+      'purple onion' ||
+      'green onion' ||
+      'bunching onion' ||
+      'scallion' => onionCropId,
+      'garlic' ||
+      'crop_garlic' ||
+      'garlic_generic' ||
+      'garlic_white_pearl' ||
+      'garlic_orion' ||
+      'garlic_san_marqueno' ||
+      'garlic_jaspeado_calera' ||
+      'garlic_cezac_06' ||
+      'garlic_barretero' ||
+      'garlic_purple' ||
+      'garlic_criollo_regional' ||
+      'garlic_chinese_korean' ||
+      'ag_gen' ||
+      'ag-gen' ||
+      'aggen' ||
+      'ag01' ||
+      'ag-01' ||
+      'ag_01' ||
+      'ag02' ||
+      'ag-02' ||
+      'ag_02' ||
+      'ag03' ||
+      'ag-03' ||
+      'ag_03' ||
+      'ag04' ||
+      'ag-04' ||
+      'ag_04' ||
+      'ag05' ||
+      'ag-05' ||
+      'ag_05' ||
+      'ajo' ||
+      'ajos' ||
+      'ajo generico' ||
+      'ajo blanco' ||
+      'ajo perla' ||
+      'ajo jaspeado' ||
+      'ajo calera' ||
+      'ajo rayado' ||
+      'ajo morado' ||
+      'ajo criollo' ||
+      'ajo regional' ||
+      'ajo chino' ||
+      'ajo coreano' ||
+      'perla' ||
+      'orion' ||
+      'san marqueno' ||
+      'diamante' ||
+      'blanco de egipto' ||
+      'cezac 06' ||
+      'cezac06' ||
+      'jaspeado calera' ||
+      'barretero' ||
+      'inifap 94' ||
+      'inifap94' ||
+      'tacatzcuaro' ||
+      'tinguindin' ||
+      'criollo regional' ||
+      'chino calera' ||
+      'chino cedel' ||
+      'coreano' => garlicCropId,
       _ => value,
     };
   }
@@ -1076,6 +1402,9 @@ class CropCatalog {
       eggplantCropId => 'Berenjena',
       squashCropId => 'Calabaza',
       lettuceCropId => 'Lechuga',
+      spinachCropId => 'Espinaca',
+      onionCropId => 'Cebolla',
+      garlicCropId => 'Ajo',
       _ => 'Cultivo',
     };
   }

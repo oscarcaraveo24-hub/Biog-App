@@ -1,0 +1,615 @@
+BIO-G / AJO - TEXTO EXTRAIDO Y MEJORADO PARA CODIGO
+Archivo TXT: 01_Perfil_Universal_BioG_Ajo_v2_mejorado.txt
+Archivo fuente base: PERFIL UNIVERSAL BIO-G — AJO.pdf
+Estado: Version v2 corregida, ampliada e investigada para BIO-G v1
+Cultivo madre: crop_garlic / CropKey.garlic
+Perfiles BIO-G vinculados: AG-GEN, AG-01, AG-02, AG-03, AG-04, AG-05
+Nota: documento tecnico interno. No sustituye analisis local, laboratorio de suelo/agua/tejido, validacion varietal regional, extension agricola ni asesoria agronomica.
+
+====================================================================
+PERFIL UNIVERSAL BIO-G - AJO
+Version v2 mejorada para codigo - BIO-G v1
+====================================================================
+
+Estado: Base universal mejorada para integracion progresiva en BIO-G v1.
+Cultivo: Ajo - hortaliza de bulbo propagada por diente.
+Regla: cultivo madre -> perfil generico/tipo UX -> variedad o ecotipo como alias.
+El sistema debe proteger establecimiento del diente, raiz funcional, acumulacion de frio fisiologico, diferenciacion de dientes, llenado de bulbo, maduracion, cosecha, curado y vida de anaquel. La floracion/escapo/espigado no se modela como etapa productiva de bulbo; se modela como evento fisiologico, comercial o de cierre.
+
+--------------------------------------------------------------------
+0. Mejoras aplicadas sobre el borrador recibido
+--------------------------------------------------------------------
+
+Area                         Borrador base                         Correccion BIO-G v2
+
+Identidad                    Correcta: Allium sativum, bulbo.      Se conserva y se vuelve codificable: crop_garlic / CropKey.garlic, organo objetivo bulb_cloves, propagacion vegetativa por diente.
+
+Etapas                       8 etapas + espigado.                  Se formalizan 8 estados operativos BIO-G y un evento especial. La vernalizacion queda como ventana fisiologica dominante, no como simple dia calendario.
+
+Vernalizacion                Reconocida como critica.              Se matiza: no basta "frio"; el bulbo depende de diente sano + raiz + frio suficiente + crecimiento vegetativo + dias alargandose + temperatura posterior adecuada.
+
+Calendario                   Dia 0 plantacion del diente.          Se obliga a guardar establishmentMode: clovePlanting, sproutedClove, seedGarlicUnknown, unknown. El modo cambia el reloj y la confianza.
+
+Rangos medibles              Temperatura, AW, pH, CE, suelo.       Se amplian con zonas optimo/observacion/alerta/critico; salinidad se corrige con umbral tecnico fuerte y umbral BIO-G conservador por etapa.
+
+Nutricion                    N vegetativo, P raiz, K bulbo.        Se agrega regla de seguridad: N tarde retrasa maduracion, puede elevar cuello/hoja y empeorar curado; K/agua pesan en calibre y firmeza; P se decide por suelo.
+
+Sanidad                      Alertas generales.                    Se deja puente para Riesgos: pudricion blanca, Fusarium basal, Botrytis/neck rot, roya, mildiu, nematodo del tallo y bulbo, acaros, trips, Penicillium/blue mold y black mold.
+
+Tipos UX                     AG-01 a AG-05.                        Se conservan, pero se separa fisiologia real de lenguaje comercial. "Chino/Coreano" queda como nombre de mercado, no categoria botanica universal.
+
+Codigo                       Base conceptual.                      Se agregan modelos sugeridos, stage map, score weights, assets, migracion, confianza y reglas de no sobre-modelar.
+
+--------------------------------------------------------------------
+1. Proposito y alcance
+--------------------------------------------------------------------
+
+Este documento define la base biologica y de producto para que BIO-G interprete sensores, etapa, alertas, historial, fertilizacion general futura, sanidad futura y rendimiento aproximado futuro de ajo.
+
+El ajo es una hortaliza de bulbo, pero a diferencia de cebolla no se inicia desde semilla comercial en v1: normalmente se establece con dientes vegetativos. Cada diente plantado debe formar una planta y, si el frio fisiologico y el manejo acompañan, un bulbo compuesto por dientes diferenciados. Por eso BIO-G debe proteger tres momentos que no se pueden simplificar:
+
+1. Establecimiento del diente y raiz.
+2. Acumulacion de frio fisiologico/vernalizacion suficiente.
+3. Diferenciacion y llenado del bulbo bajo temperatura, agua, sanidad y nutricion adecuadas.
+
+Decision de arquitectura:
+- Ajo queda como cultivo madre propio: crop_garlic.
+- Los tipos UX viven dentro del cultivo madre: AG-GEN, AG-01, AG-02, AG-03, AG-04, AG-05.
+- La variedad, ecotipo o nombre comercial solo actua como alias hacia un perfil, salvo que exista ficha varietal validada.
+- La vernalizacion y la temperatura posterior son variables biologicas dominantes. BIO-G no debe fingir que fertilizar o regar mejor corrige por completo un material mal adaptado al frio/fecha/zona.
+
+No es:
+- Una receta de produccion.
+- Una guia cerrada de dosis por hectarea.
+- Un modulo de agroquimicos.
+- Una promesa de rendimiento, calibre o numero de dientes.
+- Un sustituto de analisis de suelo, agua, tejido, historial local o asesoria tecnica.
+- Un modelo hidroponico/sustrato inerte en v1.
+- Una clasificacion botanica exhaustiva de todos los grupos mundiales de ajo.
+
+--------------------------------------------------------------------
+2. Identidad del cultivo - universal
+--------------------------------------------------------------------
+
+Campo                                Valor BIO-G
+
+ID del cultivo                       AG
+
+Clave tecnica                        crop_garlic / CropKey.garlic
+
+Nombre comun                         Ajo
+
+Nombre cientifico                    Allium sativum L.
+
+Familia botanica                     Amaryllidaceae
+
+Tipo de planta                       Hortaliza de bulbo; perenne botanica propagada vegetativamente, cultivada normalmente como anual para bulbo
+
+Metabolismo                          C3
+
+Propagacion base v1                  Diente de ajo / semilla vegetativa. Bulbillos aereos pueden quedar como modo futuro.
+
+Organo objetivo principal             Bulbo comercial compuesto por dientes: calibre, firmeza, tunicas, sanidad, curado, vida de anaquel y uniformidad
+
+Organo objetivo secundario            Hoja/escapo solo si se decide uso culinario secundario o evento de manejo; no objetivo central de v1
+
+Floracion / escapo / espigado        No productivo para bulbo comercial en BIO-G v1. Se interpreta como scape/bolting/evento fisiologico o de manejo, no como floracion deseada.
+
+Uso principal                        Bulbo fresco, seco, semilla vegetativa propia, proceso, mercado regional/exportacion segun perfil y sistema
+
+Variedad / ecotipo                   Opcional; se interpreta como alias hacia perfil/tipo
+
+Sistema base v1                      Campo abierto en suelo. Protegido en suelo puede existir como modificador futuro. Hidroponia/sustrato fuera de v1.
+
+--------------------------------------------------------------------
+3. Lo que SI y NO pertenece al perfil universal
+--------------------------------------------------------------------
+
+SI pertenece al universal:
+- Etapas biologicas base: plantacion del diente, emergencia, establecimiento, desarrollo foliar, vernalizacion, diferenciacion, llenado, maduracion, cosecha y curado.
+- Vernalizacion/frio fisiologico como variable de primer orden.
+- Temperatura y fotoperiodo/dias alargandose como disparadores de bulbificacion despues del frio.
+- Rangos medibles: temperatura, humedad de suelo, pH, salinidad, compactacion/resistencia, HR como riesgo sanitario/curado.
+- Sensibilidad por etapa y ponderacion de Agro Score.
+- Reglas para interpretar riego, N, K, raiz, suelo, cuello, tunicas y bulbo.
+- Reglas de migracion AG-GEN -> AG-01..AG-05 sin borrar historial.
+- Lenguaje farmer-friendly para alertas y observaciones.
+
+NO pertenece al universal:
+- Dosis cerradas de N, P, K, S, Ca o micros sin laboratorio.
+- Recomendacion de ingredientes activos o plaguicidas.
+- Precio de mercado, contrato, empaque, calibre exacto por comprador.
+- Duplicar cultivo por cada variedad comercial.
+- Prometer rendimiento.
+- Manejo hidroponico, NFT, sustratos o soluciones recirculantes.
+- Asumir que color de tunica equivale a fisiologia completa.
+- Asumir que "chino", "coreano" o "criollo" son motores biologicos universales sin ficha local.
+- Forzar numero de dientes por bulbo como constante del cultivo.
+
+--------------------------------------------------------------------
+4. Arquitectura BIO-G recomendada para Ajo
+--------------------------------------------------------------------
+
+Nivel                       Ejemplo                                  Uso
+
+Cultivo madre               Ajo / crop_garlic                        Define sensores, etapas universales, alertas base, assets y comportamiento general.
+
+Perfil generico             AG-GEN                                   Entrada segura cuando el usuario no sabe tipo, variedad, requerimiento de frio o destino.
+
+Tipo UX / perfil            AG-01 a AG-05                            Ajusta calendario, requerimiento de frio, ciclo, destino, sensibilidad y textos.
+
+Alias / variedad            Orion, San Marqueño, CEZAC 06, etc.      Apunta al perfil. No modifica por si sola el motor biologico sin ficha validada.
+
+Sistema                     Campo abierto, riego, temporal limitado  Modifica calendario, riego, sanidad, confianza, rendimiento y riesgo de curado.
+
+Destino                     Bulbo fresco/seco, semilla, proceso      Modifica cosecha, curado, calidad y rendimiento futuro.
+
+Regla UX:
+Tipo = como lo entiende el agricultor.
+Variedad/ecotipo = nombre de semilla vegetativa, clon o alias comercial.
+Perfil BIO-G = reloj biologico oculto.
+Sistema = modifica confianza, no crea cultivo separado.
+
+--------------------------------------------------------------------
+5. Estructura fenologica universal
+--------------------------------------------------------------------
+
+Ajo no usa floracion como objetivo productivo de bulbo. En materiales de cuello duro puede aparecer escapo; en BIO-G v1 eso se maneja como evento de manejo o riesgo/ajuste de calibre, no como fase reproductiva principal.
+
+#   Estado BIO-G                         Objetivo biologico                         Lectura del sistema
+
+1   Plantacion del diente / activacion    Diente sano, orientado, con reserva,        Temperatura de suelo, humedad inicial, sanidad del diente, profundidad, salinidad y compactacion mandan.
+                                         inicio de raiz y brote subterraeo.
+
+2   Emergencia / establecimiento          Brote visible, raiz funcional, stand        Alta sensibilidad a diente enfermo, pudricion, costra, deficit, saturacion, maleza y salinidad.
+                                         uniforme y plantas firmes.
+
+3   Desarrollo vegetativo foliar          Construir hojas y raiz suficiente           La hoja y raiz son la fabrica del bulbo. N temprano, agua, P, suelo suelto y sanidad foliar pesan.
+                                         antes de la diferenciacion.
+
+4   Ventana de frio fisiologico /          Acumular frio suficiente para activar       Etapa fisiologica critica: no siempre visible. Frio insuficiente deja bulbos chicos, mal divididos o con pocos dientes.
+    vernalizacion                         diferenciacion futura de dientes.
+
+5   Diferenciacion de dientes /            Inicio de division interna y formacion      La edad sola no garantiza bulbo. Se requiere frio acumulado + planta con tamaño suficiente + dias alargandose + temperatura adecuada.
+    inicio de bulbificacion               de bulbo compuesto.
+
+6   Llenado y expansion del bulbo          Aumentar calibre, peso, firmeza, tunicas    Agua estable, K, raiz, CE, compactacion y sanidad definen calibre y calidad. Exceso de N tarde retrasa cierre.
+                                         y calidad comercial.
+
+7   Maduracion del bulbo                   Secado progresivo de hojas, cierre de       Bajar crecimiento vegetativo; evitar N/humedad tardia; preparar cosecha antes de bulbo sobremaduro.
+                                         cuello, definicion de tunicas.
+
+8   Cosecha / curado / reposo              Extraccion, secado de cuello/tunicas,       No es crecimiento. Es proteccion de calidad: sombra, ventilacion, HR, temperatura, heridas y sanidad.
+                                         almacenamiento o semilla.
+
+Evento especial:
+E   Escapo / espigado / floracion          Tallo floral o escapo en materiales         Evento fisiologico. Puede requerir retiro de escapo si el objetivo es bulbo; no tratar como floracion productiva.
+                                         de cuello duro o bajo estimulos.
+
+Notas:
+- No fijar numero universal de dientes. Depende de ecotipo, tamaño de diente semilla, frio, densidad, agua, sanidad y cosecha.
+- No fijar tamaño universal de bulbo. Depende de material, poblacion, fecha, clima, agua, nutricion, suelo, sanidad y destino.
+- El diente semilla grande y sano suele dar mejor potencial, pero BIO-G no debe prometerlo sin stand y manejo real.
+- La vernalizacion no se mide directamente por NPK; debe interpretarse por fecha, temperatura, etapa, perfil y zona.
+
+--------------------------------------------------------------------
+6. Calendario base y Dia 0
+--------------------------------------------------------------------
+
+El Dia 0 debe ser la plantacion del diente o la fecha estimada de establecimiento. En ajo, la edad por si sola NO garantiza bulbificacion; el frio fisiologico y la respuesta posterior a dias alargandose/temperatura son decisivos.
+
+Campo tecnico                  Valores                                      Regla BIO-G
+
+establishmentMode              clovePlanting / sproutedClove /              Define si el reloj usa plantacion de diente, diente brotado, material semilla desconocido o etapa manual.
+                               seedGarlicUnknown / unknown
+
+plantingDate                   fecha ingresada                               Base del reloj si el usuario conoce fecha.
+
+estimatedStage                 etapa manual                                  Se usa si no hay fecha; la etapa manda sobre calendario.
+
+coldRequirementClass           low / medium / mediumHigh / high / unknown    Si se conoce por perfil/alias, domina riesgo de diferenciacion.
+
+hardneckSoftneckClass          softneck / hardneck / semiHardneck / unknown  Ajusta escapo, frio, almacenamiento y sensibilidad.
+
+regionColdWindow               sufficient / watch / insufficient / unknown   Futuro: ayuda a validar frio de temporada contra perfil.
+
+stressDelayDays                0, +1 a +3, +3 a +7, +7 o mas                 Estres acumulado mueve calendario, pero no cambia biologia.
+
+confidence                     alta / media / baja                           Depende de fecha, etapa, sensores, modo establecimiento, perfil y frio.
+
+Calendario orientativo por perfil (no fechas rigidas):
+
+Perfil      Tipo UX dominante                         Diferenciacion/bulbo       Cosecha orientativa        Lectura BIO-G
+
+AG-GEN      Generico / no se                          95-130 dias                205-235 dias               Conservador; no asume blanco, morado, cuello duro/blando ni tamaño premium.
+
+AG-01       Blanco / Perla                             90-120 dias                200-230 dias               Intermedio; referencia fuerte para centro-norte si hay frio y riego suficientes.
+
+AG-02       Jaspeado / Calera / Rayado                 100-130 dias               210-240 dias               Intermedio-largo; subir sensibilidad a frio, compactacion y deficit en llenado.
+
+AG-03       Morado                                     105-140 dias               210-250 dias               Mas exigente a frio; calidad visual y curado pesan fuerte.
+
+AG-04       Criollo / regional                         95-130 dias                200-235 dias               Variable; usar conservador y dejar que datos reales ajusten.
+
+AG-05       Chino / Coreano comercial                  100-135 dias               205-240 dias               Nombre comercial variable; confianza media si no hay ficha.
+
+Ajuste por establecimiento:
+- clovePlanting: modo base; etapa inicial depende de temperatura, humedad y sanidad del diente.
+- sproutedClove: puede adelantar emergencia, pero no sustituye frio ni mejora por si solo diferenciacion.
+- seedGarlicUnknown: bajar confianza por riesgo de mezcla, daño, enfermedad, tamaño irregular y frio desconocido.
+- unknown: usar etapa manual y pedir refinamiento sin bloquear UX.
+
+--------------------------------------------------------------------
+7. Vernalizacion, fotoperiodo y bulbificacion
+--------------------------------------------------------------------
+
+La vernalizacion en ajo no debe tratarse como detalle de calendario. Es una ancla biologica: sin frio fisiologico suficiente, la planta puede crecer hoja pero diferenciar mal los dientes o formar bulbos chicos.
+
+Reglas BIO-G:
+- El frio fisiologico debe ocurrir temprano, con planta en establecimiento/desarrollo vegetativo, segun perfil y fecha.
+- El diente requiere humedad adecuada y raiz funcional para aprovechar la ventana fria; diente seco, podrido o con raiz limitada reduce respuesta.
+- La bulbificacion posterior requiere crecimiento vegetativo suficiente, dias alargandose y temperatura adecuada. El frio solo no garantiza calibre.
+- Exceso de calor temprano puede acortar ciclo, bajar calibre o provocar madurez antes de completar llenado.
+- Exceso de N tarde puede mantener hoja activa, retrasar cierre y afectar curado.
+- Si el frio fue insuficiente, no recomendar NPK para "hacer dientes"; alertar como riesgo fisiologico y pedir validar perfil/fecha/zona.
+
+Clase BIO-G de frio              Lectura operacional                              Riesgo si falla
+
+low                              Materiales mas adaptados a inviernos suaves       Menor riesgo de no diferenciar, pero aun requieren manejo y fecha correcta.
+
+medium                           Requerimiento intermedio                          Usar para AG-GEN y AG-01/AG-04 si no hay ficha local.
+
+mediumHigh                       Requiere ventana fria mas consistente             Usar para AG-02/AG-05 si el origen comercial no esta validado.
+
+high                             Requiere frio mas fuerte y estable                Usar para AG-03/morados exigentes o hardneck confirmados.
+
+unknown                          Desconocido                                       Baja confianza; alertar si fecha/zona no sostienen frio.
+
+Mensaje tecnico:
+En ajo, la edad no garantiza bulbo. BIO-G debe leer frio acumulado, etapa, fecha y material antes de concluir que un cultivo "ya deberia" formar dientes.
+
+--------------------------------------------------------------------
+8. Rangos fisiologicos medibles - version codificable
+--------------------------------------------------------------------
+
+Variable                      Optimo / normal                           Observacion                         Alerta                                  Critico / accion
+
+Temperatura ambiente          Emergencia y arranque: 10-20 C;           22-28 C sostenidos en vegetativo.    >30 C en diferenciacion/llenado.        Calor fuerte acorta ciclo, reduce calibre y puede afectar diferenciacion.
+                              crecimiento vegetativo: 12-22 C;
+                              bulbificacion: 18-25 C aprox.
+
+Temperatura de suelo          Arranque favorable 10-20/22 C;            <8-10 C ralentiza emergencia;        Suelo frio + saturacion o suelo         Frio extremo prolongado con diente debil puede causar pudricion o stand irregular.
+                              rango operativo amplio segun zona.        >25-28 C acelera y estresa.          caliente + sales.
+
+Frio fisiologico              Ventana de frio moderado segun perfil.    Frio parcial o irregular.            Frio insuficiente antes de              Falla de diferenciacion; no corregir con fertilizante tardio.
+                                                                                                             diferenciacion.
+
+Humedad suelo - AW            60-85% agua disponible sin saturacion.    50-60% o fluctuacion fuerte.        <50% en diferenciacion/llenado;         Deficit reduce calibre; exceso produce anoxia, Fusarium/Botrytis y pudriciones.
+                                                                                                             >90-95% con mal drenaje.
+
+Raiz efectiva                 Raiz relativamente superficial; vigilar    Lectura profunda puede no            Sensor en zona raiz principal           Si hay agua lejos de raiz o capa compactada, la planta no absorbe bien.
+                              zona de 10-30 cm segun sistema.           representar absorcion.               debe pesar mas.
+
+Humedad ambiental / HR        HR moderada con ventilacion y follaje      HR alta nocturna, rocio, lluvia.     Alta HR + hoja mojada + dosel denso.    Sube roya, mildiu, Botrytis, neck rot y problemas de curado.
+                              seco.
+
+pH suelo                      Operativo 6.0-7.5; preferible 6.0-7.0     5.7-6.0 o 7.5-7.8.                  <5.7 o >7.8.                            Bloqueo nutrimental probable; pedir analisis antes de correccion fuerte.
+                              / 6.2-7.0.
+
+Salinidad ECe                 Optimo conservador <2.0 dS/m.             2.0-3.0 vigilar, especialmente       >3.0 dS/m en establecimiento o          Referencia tecnica: alrededor de 3.9 dS/m empieza umbral fuerte; 7.4 dS/m puede reducir 50% rendimiento.
+                                                                        con calor o diente joven.            llenado.
+
+Compactacion / resistencia    <1.5 MPa.                                 1.5-2.0 MPa.                        >2.0 MPa.                               Raiz limitada, bulbos pequeños/deformes, drenaje pobre.
+
+NPK relativo                  N temprano-moderado en vegetativo;        Lectura baja segun etapa.           Exceso N en diferenciacion/             No dosificar aqui: mandar a guia de fertilizacion y laboratorio.
+                              P en arranque/raiz; K en llenado.                                             maduracion; K bajo en llenado.
+
+Azufre relativo               Importante para Allium, sabor/aroma       Desbalance puede afectar vigor       Falta probable en suelos ligeros        En v1 observacion; no corregir a ciegas sin analisis.
+                              y metabolismo.                            o calidad.                           o lavados.
+
+--------------------------------------------------------------------
+9. Prioridad nutrimental relativa por etapa - NO dosis
+--------------------------------------------------------------------
+
+Etapa                         N                     P                 K                     Ca/Mg/S                 Lectura BIO-G
+
+Plantacion del diente          Baja                  Media             Baja                  Baja                    Prioridad: diente sano, humedad, temperatura, cama de siembra y baja salinidad.
+
+Emergencia / establecimiento    Media-baja            Alta              Media                 Media                   Raiz y stand; P ayuda si suelo bajo/frio; evitar sales cerca del diente.
+
+Desarrollo vegetativo          Media-alta controlada Media             Media                 Media                   Construir hojas y raiz; N ayuda temprano, pero no debe prolongarse tarde.
+
+Vernalizacion / pre-induccion  Media                 Media-baja        Media                 Media                   Frio manda; nutricion acompaña, no reemplaza frio.
+
+Diferenciacion de dientes      Media, bajando        Media-baja        Media-alta            Media                   No empujar hoja a ciegas; frio + dias + agua + equilibrio mandan.
+
+Llenado de bulbo               Media-baja            Baja-media        Alta                  Media-alta              K/agua/suelo sostienen calibre, tunicas y firmeza; exceso N retrasa maduracion.
+
+Maduracion                     Baja                  Baja              Media                 Media                   Evitar N tardio y humedad excesiva; cerrar cuello y preparar cosecha.
+
+Cosecha / curado               No aplica             No aplica         No aplica             No aplica               Es manejo de secado, ventilacion y sanidad, no nutricion activa.
+
+Escapo / espigado              Baja                  Baja              Baja                  Baja                    Registrar evento; no tratar como etapa productiva de bulbo.
+
+--------------------------------------------------------------------
+10. Matriz universal de sensibilidad por etapa
+--------------------------------------------------------------------
+
+Etapa                         Deficit agua       Exceso agua       Frio insuf.  Frio extremo Calor       Salinidad     Compactacion   Nutricion
+
+Plantacion del diente          Alta               Alta              Media       Media        Media       Alta          Alta           Baja
+Emergencia / establecimiento    Alta               Alta              Media       Media        Media       Alta          Alta           Media
+Desarrollo vegetativo          Media-alta         Media             Alta        Media        Media       Media         Media          Alta N/P
+Vernalizacion / pre-induccion  Alta               Media             Muy alta    Media        Alta        Media         Media          Media
+Diferenciacion de dientes      Muy alta           Media-alta        Muy alta    Baja-media   Alta        Media-alta    Media          Alta balance
+Llenado de bulbo               Muy alta           Alta              Media       Baja         Alta        Alta          Alta           Alta K/N balance
+Maduracion                     Media              Muy alta          Baja        Baja         Media       Media         Media          Alta por exceso N
+Cosecha / curado               Baja-media         Muy alta HR       Baja        Baja         Alta sol    Baja          Baja           No aplica
+Escapo / espigado              Media              Media             Alta        Media        Media       Media         Baja           Media
+
+--------------------------------------------------------------------
+11. Ponderacion sugerida para Agro Score
+--------------------------------------------------------------------
+
+Etapa                         Agua     Temperatura   Suelo/raiz   Nutricion   Frio/Vernalizacion   Sanidad/curado   Comentario motor
+
+Plantacion del diente          30%      20%           30%          10%         10%                  0%               Diente sano, humedad, suelo suelto y salinidad definen stand.
+
+Emergencia / establecimiento    30%      20%           30%          15%         5%                   0%               Raiz joven: anoxia, costra, compactacion y diente enfermo pesan fuerte.
+
+Desarrollo vegetativo          25%      20%           20%          25%         10%                  0%               Construir fabrica foliar sin exceso de N.
+
+Vernalizacion / pre-induccion  20%      20%           15%          10%         35%                  0%               Frio fisiologico domina. No interpretar solo edad.
+
+Diferenciacion de dientes      25%      20%           15%          15%         25%                  0%               Frio + temperatura + agua definen si el bulbo se divide bien.
+
+Llenado de bulbo               35%      20%           20%          20%         5%                   0%               Agua, raiz, salinidad y K determinan calibre.
+
+Maduracion                     20%      15%           15%          20%         5%                   25%              Exceso N/humedad y sanidad pesan mas que crecimiento.
+
+Cosecha / curado               5%       20%           0%           0%          0%                   75%              HR, ventilacion, temperatura, heridas y sanidad del cuello mandan.
+
+Escapo / espigado              15%      20%           10%          15%         25%                  15%              Evento especial; puede afectar calibre y destino.
+
+--------------------------------------------------------------------
+12. Ventanas fisiologicas activas
+--------------------------------------------------------------------
+
+Ventana                         Activa desde               Activa hasta                Prioridad     Accion sistema
+
+Establecimiento seguro           Plantacion del diente       3-5 hojas funcionales       Muy alta      Revisar humedad, temperatura, diente sano, pudricion, sales, maleza, profundidad y stand.
+
+Construccion foliar              Emergencia                  Pre-diferenciacion          Alta          Hoja y raiz sanas; N temprano controlado; no confundir vigor con bulbo garantizado.
+
+Frio fisiologico                 Establecimiento             Inicio de diferenciacion     Critica       Validar perfil contra fecha/zona; alertar si frio insuficiente.
+
+Diferenciacion de dientes         Post-vernalizacion          Inicio de llenado            Critica       Proteger agua, temperatura, salinidad, equilibrio N/K y vigor foliar.
+
+Riego de bulbo                   Diferenciacion              Llenado de bulbo            Critica       Mantener humedad estable; deficit baja calibre y dientes.
+
+Salinidad / CE                   Plantacion                  Llenado                     Alta          Subir severidad si coincide con diente joven, calor o CE creciente.
+
+Calidad de cuello/tunicas        Llenado                     Maduracion                  Alta          Evitar N tardio, humedad excesiva y crecimiento prolongado.
+
+Sanidad foliar                   Vegetativo                  Maduracion                  Alta          Roya, mildiu, Botrytis y trips reducen fabrica foliar y calibre.
+
+Maduracion / secado              Hojas amarillas             Curado                      Muy alta      Suspender crecimiento, evitar lluvias/humedad y proteger curado.
+
+Cierre de ciclo                  Cosecha                     Curado/reposo               Media         Registrar calidad, causa de descarte y preparar seleccion de semilla.
+
+--------------------------------------------------------------------
+13. Alertas universales en lenguaje humano
+--------------------------------------------------------------------
+
+Condicion detectada                   Mensaje sugerido                                                                 Etapas donde pesa mas
+
+Frio insuficiente o dudoso             El ajo necesita una ventana fria para diferenciar bien los dientes. Si esa ventana falla, mas fertilizante no corrige del todo el bulbo.    Vernalizacion / diferenciacion
+
+Edad adecuada pero bulbo pobre         La edad sola no asegura bulbo. Revise frio acumulado, tamaño de planta, temperatura, fecha y exceso de nitrogeno.                         Diferenciacion / llenado
+
+Deficit hidrico en bulbo               El cultivo esta en una ventana sensible. La falta de agua puede reducir calibre y numero de dientes aunque la planta siga verde.             Diferenciacion / llenado
+
+Exceso de humedad                      Hay demasiada humedad en zona de raiz o cuello. Puede favorecer pudricion basal, Botrytis y mala conservacion.                              Establecimiento / maduracion / curado
+
+Exceso de N tardio                     El nitrogeno tarde puede mantener demasiada hoja, retrasar madurez y complicar el curado del bulbo.                                           Diferenciacion / maduracion
+
+Calor sostenido                        El calor puede acelerar maduracion y dejar bulbos mas chicos. Mantenga humedad estable y vigile avance de hojas.                            Llenado / maduracion
+
+Salinidad elevada                      La salinidad puede limitar absorcion de agua y reducir calibre. No suba fertilizante sin revisar CE, agua y drenaje.                          Establecimiento / llenado
+
+Suelo compactado                       Aunque haya agua, la raiz puede no explorar bien. La compactacion limita calibre y puede deformar bulbos.                                    Establecimiento / llenado
+
+HR alta + hoja mojada                  Ambiente favorable a enfermedades foliares. Revise roya, manchas, moho, puntas y ventilacion del follaje.                                  Vegetativo / llenado
+
+Hojas amarillando antes de tiempo      El cultivo puede estar madurando o perdiendo area foliar por estres/sanidad. Revise etapa real antes de fertilizar.                         Llenado / maduracion
+
+Escapo visible                         El ajo muestra escapo o tallo floral. Segun el tipo, puede convenir registrar evento y evaluar manejo para proteger calibre.                  Vegetativo avanzado / diferenciacion
+
+Curado con humedad alta                El curado esta en riesgo. La humedad alta o mala ventilacion pueden abrir puerta a mohos, pudriciones y mala vida de anaquel.                 Curado
+
+--------------------------------------------------------------------
+14. Estados de salida BIO-G
+--------------------------------------------------------------------
+
+Salida                        Valores                                      Regla para ajo
+
+Indice general                0-100                                        Debe ponderar etapa. El mismo deficit pesa mas en diferenciacion/llenado que en vegetativo temprano.
+
+Subindices                    agua / temperatura / suelo / nutricion /     Frio/vernalizacion debe existir como subindice o factor de confianza, no mezclarse solo con clima.
+                              frio / sanidad-curado
+
+Estado                        Optimo / Observacion / Alerta / Critico      Critico si se combinan frio insuficiente + inicio de diferenciacion, o humedad/CE severa en llenado.
+
+Tendencia                     Mejorando / Estable / Deteriorando           Se calcula por historial reciente, no por lectura instantanea.
+
+Confianza                     Alta / media / baja                          Baja si faltan perfil, fecha, etapa, origen del diente o ventana de frio.
+
+Memoria                       evento, etapa, severidad, duracion, impacto  Todo evento importante se guarda en History con lenguaje agricultor.
+
+--------------------------------------------------------------------
+15. Tipos, perfiles y alias - cobertura UX Mexico
+--------------------------------------------------------------------
+
+ID        Tipo UX visible                         Perfil BIO-G                         Uso dominante                         Alias representativos / notas
+
+AG-GEN    No se / Otro ajo                        Intermedio conservador                Bulbo fresco/seco generico            Entrada segura; no asume color, cuello duro/blando, frio exacto ni destino.
+
+AG-01     Ajo blanco / Perla                      Blanco tipo Perla, intermedio         Fresco, seco, mercado nacional        Orion, San Marqueño, Diamante, Blanco de Egipto, otra variedad blanco/perla.
+
+AG-02     Ajo jaspeado / Calera / Rayado          Jaspeado, intermedio-largo            Fresco, seco, calidad comercial       CEZAC 06, Jaspeado Calera, Barretero, INIFAP 94, Tacatzcuaro/Tinguindin, otra variedad jaspeada.
+
+AG-03     Ajo morado                              Morado, intermedio-largo              Fresco premium/mercado regional       Ajo morado regional, otra variedad morada. Alias especifico solo con ficha local.
+
+AG-04     Ajo criollo / regional                  Criollo local, intermedio variable    Mercado local, semilla propia         Criollo regional, otra variedad criolla/regional.
+
+AG-05     Ajo chino / coreano comercial           Importado/seleccion, intermedio-largo Comercial segun disponibilidad        Chino Calera, Chino CEDEL, Coreano, otra variedad chino/coreano. Confianza media si no hay ficha.
+
+Notas:
+- Color ayuda a UX, pero no reemplaza requerimiento de frio, sanidad del diente ni ciclo.
+- Cuello duro/blando puede ajustar escapo y almacenamiento, pero no debe duplicar cultivo.
+- Variedades comerciales pueden cambiar por region y disponibilidad; no hacer motor biologico por marca sin ficha validada.
+- "Elephant garlic" no debe entrar como ajo en v1: botanicamente se acerca mas a Allium ampeloprasum/leek. Si aparece, marcar fuera de alcance o modo futuro.
+
+--------------------------------------------------------------------
+16. Traduccion futura a codigo
+--------------------------------------------------------------------
+
+Componente futuro                         Contenido esperado
+
+garlic_models.dart                        GarlicType, GarlicProfile, GarlicStage, GarlicProfileId, GarlicEstablishmentMode, GarlicColdRequirementClass, GarlicNeckClass.
+
+garlic_profiles.dart                      AG-GEN y AG-01 a AG-05 con calendarios, coldRequirementClass, sensibilidad, aliases, destino y flags de cosecha/curado.
+
+garlic_engine.dart                        Resolver etapa actual, migracion AG-GEN -> tipo, stage copy, hero asset, alertas de etapa, vernalization risk, scape/bolting risk.
+
+garlic_universal_profile.dart             Rangos medibles, matriz de sensibilidad, pesos de score y textos universales.
+
+garlic_agro_score_engine.dart             Ponderacion por etapa y penalizaciones por agua, temperatura, suelo, salinidad, nutricion, frio y curado.
+
+garlic_catalog.dart                       Entradas UX para wizard: Ajo, tipo, variedad/otra, etapa, fecha, modo establecimiento.
+
+plant_health/garlic_syndromes.dart        Riesgos sanitarios posteriores: white rot, Fusarium basal rot, Botrytis/neck rot, rust, downy mildew, nematodes, bulb mites, Penicillium/blue mold, black mold, thrips.
+
+yield/garlic_yield_references.dart        Rendimiento por ajo blanco/perla, jaspeado, morado, criollo, chino/coreano y generico.
+
+fertilization/garlic_fertilization.dart   Guia futura: N temprano, P raiz, K llenado, S calidad, CE, suspender N tarde, riego y curado.
+
+--------------------------------------------------------------------
+17. Assets y nombres sugeridos
+--------------------------------------------------------------------
+
+Asset de etapa Seeds                                  Etapa / uso
+
+garlic_stage_clove_planting.png                       Plantacion del diente / activacion
+garlic_stage_emergence_establishment.png              Emergencia / establecimiento
+garlic_stage_vegetative_leaf_growth.png               Desarrollo vegetativo foliar
+garlic_stage_vernalization_window.png                  Ventana de frio fisiologico / vernalizacion
+garlic_stage_clove_differentiation.png                 Diferenciacion de dientes / inicio de bulbo
+garlic_stage_bulb_filling.png                          Llenado y expansion de bulbo
+garlic_stage_maturation_drydown.png                    Maduracion del bulbo / secado de hojas
+garlic_stage_harvest_curing.png                        Cosecha / curado / reposo
+garlic_stage_scape_bolting.png                         Evento: escapo / espigado, si se decide asset separado
+
+Icon de wizard                                        Uso
+
+ic_garlic.png                                         Entrada madre Ajo
+ic_garlic_generic.png                                 No se / Otro ajo
+ic_garlic_white.png                                   Ajo blanco / Perla
+ic_garlic_jaspeado.png                                Ajo jaspeado / Calera / Rayado
+ic_garlic_purple.png                                  Ajo morado
+ic_garlic_criollo.png                                 Ajo criollo / regional
+ic_garlic_chinese_korean.png                          Ajo chino / coreano comercial
+
+Regla visual:
+- Morfologia real de Allium sativum: hojas planas/lineares, pseudotallo, bulbo compuesto por dientes, tunicas secas, raices fasciculadas.
+- No usar cabeza de ajo generica tipo icono plano para assets fenologicos.
+- En plantacion: diente visible + raiz inicial/brote minimo, no planta desarrollada.
+- En emergencia: brote joven y raiz visible.
+- En vegetativo: hojas lineares sin bulbo exagerado.
+- En vernalizacion: no representar hielo narrativo; representar planta joven en etapa fria con sutileza si se requiere.
+- En diferenciacion: base empieza a formar cabeza y dientes internos sugeridos.
+- En llenado: cabeza/bulbo visible y progresivo.
+- En maduracion: hojas amarillan/secan, cuello pierde vigor.
+- En curado: bulbo con tunicas secas, cuello seco, sin escena narrativa.
+
+--------------------------------------------------------------------
+18. Reglas de migracion y seguridad UX
+--------------------------------------------------------------------
+
+- AG-GEN nunca debe mostrarse como perfil incompleto; debe sentirse como configuracion normal.
+- Si el usuario despues elige tipo especifico, BIO-G migra AG-GEN -> AG-XX sin borrar historial.
+- La migracion recalcula calendario, ventanas activas, sensibilidad, coldRequirementClass y textos futuros; no reinicia cultivo.
+- Si el usuario no sabe fecha, se usa etapa manual y baja confianza del calendario.
+- Si el usuario sabe variedad pero no tipo, el alias debe resolver a perfil si esta en catalogo; si no, preguntar tipo/origen/foto sin bloquear.
+- Si la region/temporada contradice el frio requerido, no afirmar falla definitiva: mostrar "riesgo de mala diferenciacion" y pedir confirmacion.
+- No crear perfil biologico nuevo por cada marca comercial salvo ficha validada.
+- No activar hidroponia/sustrato inerte en v1; si aparece ese sistema, marcar como fuera de alcance o modo futuro.
+- No usar diente enfermo o lote con white rot/nematodo como si fuera simple problema de NPK.
+
+--------------------------------------------------------------------
+19. Reglas de no sobre-modelar en v1
+--------------------------------------------------------------------
+
+Tema                                  Decision v1
+
+Color/tunica                           Ajusta UX, textos, calidad visual y mercado; no crea cultivo separado.
+
+Vernalizacion/frio                     Si crea sensibilidad real. Es variable biologica dominante.
+
+Cuello duro/blando                     Ajusta escapo, almacenamiento y requerimiento de frio; no duplica cultivo madre.
+
+Variedad comercial                     Alias hacia perfil; no motor independiente sin ficha validada.
+
+Dosis fertilizante kg/ha               No pertenece al universal; se modela en Guia de Fertilizacion.
+
+Rendimiento t/ha                       No pertenece al universal; se modela en Rendimiento Aproximado.
+
+Sanidad especifica                     El universal solo deja puentes; sindromes van en Riesgos/Sanidad.
+
+Numero de dientes                      No se fija universal; se usa como atributo/expectativa por perfil si hay ficha.
+
+Escapo/floracion                       Evento o uso secundario, no etapa productiva de bulbo.
+
+Elephant garlic                        No se incluye como ajo v1; evaluar cultivo/perfil futuro separado.
+
+--------------------------------------------------------------------
+20. Fuentes y trazabilidad
+--------------------------------------------------------------------
+
+Fuentes internas BIO-G:
+- PERFIL UNIVERSAL BIO-G — AJO.pdf, base original aportada por el usuario.
+- PERFIL GENERICO AJO — AG-GEN.pdf, base original aportada por el usuario.
+- Alta de hortaliza cultivo.txt, criterio maestro para dossier tecnico por cultivo.
+- Paquete de Cebolla BIO-G: perfil universal, ON-GEN/SKIP, fertilizacion, rendimiento y sanidad como molde de estructura.
+
+Fuentes externas revisadas para reforzar criterio:
+- University of Georgia Cooperative Extension. Garlic Production for the Gardener. Uso: vernalizacion, plantacion, desarrollo, bulbing, riego y cosecha.
+- Utah State University Extension. How to Grow Garlic in Your Garden. Uso: suelo, pH, tipos hardneck/softneck, espaciamiento, riego, cosecha y curado.
+- University of Minnesota Extension. Growing garlic in home gardens. Uso: pH, N temprano, evitar N tarde, suelo suelto, maleza y plantacion.
+- Ohio State University Extension. Growing Garlic in the Garden. Uso: garlic as heavy feeder, soil test and pH.
+- UC IPM. Onion and Garlic Pest Management Guidelines. Uso: catalogo sanitario base para Allium.
+- University of Maine Cooperative Extension. Maine Garlic Pest Field Notebook. Uso: white rot, blue mold, Botrytis, rust, bloat nematode, manejo sanitario.
+- Pacific Northwest Pest Management Handbook. Garlic Rust. Uso: condiciones ambientales de roya y factores culturales.
+- INIFAP. "Orion" variedad de ajo tipo Perla. Uso: ciclo 210 dias, tipo Perla, dientes por bulbo y rendimiento regional.
+- Shannon & Grieve / USDA ARS. Tolerance of vegetable crops to salinity. Uso: umbral de salinidad de ajo y reduccion de rendimiento.
+- Frontiers in Plant Science 2026. Genotypic variation in garlic for salinity tolerance. Uso: actualizacion sobre variabilidad genetica y salinidad.
+- Wu et al. 2016. Response of garlic bolting and bulbing to temperature and photoperiod treatments. Uso: relacion frio, temperatura, fotoperiodo, bulbificacion y bolting.
+
+--------------------------------------------------------------------
+21. Cierre de producto
+--------------------------------------------------------------------
+
+Frase guia:
+En ajo, el frio decide si el bulbo puede diferenciarse; el agua, raiz, sanidad y nutricion deciden cuanto puede llenarse.
+
+Elemento                         Cierre
+
+Estado del perfil universal       Ajo Universal v2 mejorado listo
+
+Obligatorio en BIO-G              Si
+
+Compatible con perfiles           AG-GEN, AG-01, AG-02, AG-03, AG-04, AG-05
+
+Siguiente documento               Perfil Generico AG-GEN / SKIP v2 mejorado
+
+Listo para codigo                 Si, despues de cerrar fertilizacion, riesgos, rendimiento e imagenes

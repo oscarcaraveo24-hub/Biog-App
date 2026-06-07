@@ -1,0 +1,427 @@
+BIO-G / AJO - TEXTO EXTRAIDO Y MEJORADO PARA CODIGO
+Archivo TXT: 02_Perfil_Generico_BioG_Ajo_AG_GEN_SKIP_v2_mejorado.txt
+Archivo fuente base: PERFIL GENERICO AJO — AG-GEN.pdf
+Estado: Version v2 corregida, ampliada e investigada para BIO-G v1
+Cultivo madre: crop_garlic / CropKey.garlic
+Nota: documento tecnico interno. No sustituye analisis local, asesoria agronomica, extension agricola ni laboratorio.
+
+====================================================================
+PERFIL GENERICO BIO-G - AJO
+AG-GEN (SKIP) | Version v2 mejorada para codigo - BIO-G v1
+====================================================================
+
+Estado: Obligatorio - conservador - universal.
+Uso: No se / Otro ajo / configuracion rapida.
+El usuario NO ve que esta en SKIP.
+AG-GEN no busca maximo rendimiento; busca estabilidad, alertas utiles, minima probabilidad de error y migracion segura cuando el usuario refine tipo, variedad, origen del diente, requerimiento de frio, sistema o destino.
+
+--------------------------------------------------------------------
+0. Mejoras aplicadas sobre el borrador recibido
+--------------------------------------------------------------------
+
+Area                         Antes                              Ahora / mejora
+
+Rol del perfil                SKIP conservador.                  Se define como puerta segura de entrada, no perfil incompleto. No bloquea configuracion ni rompe UX.
+
+Vernalizacion                 Dominante.                         Se mantiene como eje, pero se matiza: frio suficiente + planta establecida + dias alargandose + temperatura posterior adecuada.
+
+Calendario                    Diferenciacion 95-130; cosecha     Se mantiene como rango orientativo, pero se separa por clovePlanting / sproutedClove / unknown.
+                              205-235 dias.
+
+Sistema                       Campo abierto asumido.             Se mantiene como default; no asume protegido, hidroponia, cuello duro/blando, semilla certificada ni almacenamiento largo.
+
+Organo objetivo               Bulbo/dientes.                     Se agrega calidad: calibre, dientes diferenciados, tunicas, cuello, curado y vida de anaquel.
+
+Alertas                       Generales.                         Se traducen a estados de motor: coldRisk, bulbDifferentiationRisk, bulbFillRisk, salinityRisk, waterloggingRisk, scapeRisk, curingRisk.
+
+Codigo                        Pocos campos.                      Se agregan campos de modelo, assets, migracion, confianza, alias y comportamiento esperado.
+
+--------------------------------------------------------------------
+1. Proposito del perfil AG-GEN
+--------------------------------------------------------------------
+
+AG-GEN se usa cuando el agricultor quiere registrar ajo pero no sabe o no desea especificar si es blanco/perla, jaspeado, morado, criollo, chino/coreano, cuello duro, cuello blando, semilla propia, semilla comprada, almacenamiento, proceso o variedad comercial.
+
+La funcion principal de AG-GEN es que BIO-G pueda empezar a leer el cultivo sin inventar precision falsa. En ajo esto es especialmente importante porque una planta puede verse vigorosa y aun asi diferenciar mal el bulbo si no tuvo frio fisiologico suficiente, si el diente semilla venia enfermo, si el calor acelero el ciclo, si se siguio empujando nitrogeno tarde o si la humedad/salinidad limitaron raiz y llenado.
+
+Filosofia AG-GEN:
+El perfil generico no adivina, protege. Permite iniciar rapido, alerta con prudencia y deja al sistema listo para migrar a un perfil mas preciso sin borrar historial.
+
+--------------------------------------------------------------------
+2. Identidad base
+--------------------------------------------------------------------
+
+Campo                              Valor AG-GEN
+
+Cultivo                            Ajo
+
+CropKey / clave tecnica            crop_garlic / CropKey.garlic
+
+Perfil BIO-G                       AG-GEN - Intermedio conservador
+
+Tipo UX visible                    No se / Otro ajo / Ajo generico
+
+Variedad                           No especificada
+
+Especie base asumida               Allium sativum L.
+
+Familia                            Amaryllidaceae
+
+Organo objetivo asumido            Bulbo fresco/seco generico compuesto por dientes
+
+Tipo de cosecha asumido            1 corte + curado como suposicion segura
+
+Sistema asumido                    Campo abierto en suelo
+
+Propagacion asumida                Diente de ajo / semilla vegetativa
+
+Requisito fisiologico asumido      Frio/vernalizacion media conservadora
+
+Estado                             Obligatorio dentro de BIO-G
+
+--------------------------------------------------------------------
+3. Cuando usar y cuando NO usar AG-GEN
+--------------------------------------------------------------------
+
+Usar AG-GEN:
+- El usuario solo dice "ajo".
+- No conoce color, tipo, origen, cuello duro/blando, destino o variedad.
+- No encuentra su variedad en el catalogo.
+- Quiere avanzar rapido.
+- El lote ya existe con datos incompletos.
+- Solo tiene etapa manual y no sabe fecha exacta.
+- La app todavia no puede resolver frio/region/fecha con confianza.
+- El usuario compro "ajo semilla" sin ficha clara.
+
+No usar AG-GEN:
+- El usuario elige ajo blanco/perla, jaspeado/calera, morado, criollo/regional o chino/coreano.
+- Selecciona una variedad reconocida que apunta a un perfil.
+- Declara destino claro: semilla, proceso, almacenamiento largo, fresco premium.
+- El modulo ya necesita fertilizacion fina, rendimiento o manejo local especifico.
+- El sistema detecta contradiccion fuerte de frio/fecha/zona y el usuario confirma el tipo correcto.
+- El material no es Allium sativum L. real, por ejemplo "ajo elefante" / Allium ampeloprasum.
+
+--------------------------------------------------------------------
+4. Supuestos agronomicos conservadores
+--------------------------------------------------------------------
+
+Parametro                         Base AG-GEN
+
+Uso generico                       Bulbo fresco/seco generico, sin definir color, pungencia, almacenamiento, proceso o semilla.
+
+Inicio de diferenciacion/bulbo     95-130 dias desde plantacion del diente, si el frio fisiologico fue suficiente y la planta llego con tamaño adecuado.
+
+Inicio de cosecha                  205-235 dias como rango conservador para campo abierto en condiciones comparables; puede moverse por perfil, region y manejo.
+
+Ciclo                              Intermedio conservador.
+
+Tipo de cosecha                    1 corte + curado; no asumir multiples cosechas.
+
+Arquitectura asumida               Bulbo medio con multiples dientes; tunicas externas; cuello/pseudotallo.
+
+Sistema asumido                    Campo abierto en suelo; no hidroponia ni sustrato inerte.
+
+Modo establecimiento default        unknown si el usuario no captura; clovePlanting si declara plantacion de diente.
+
+Sensibilidad asumida               Muy alta a frio insuficiente; alta a deficit en diferenciacion/llenado; alta a exceso de humedad en raiz/cuello; media-alta a calor; media-alta a salinidad en etapa joven/llenado.
+
+Confianza inicial                  Media si hay fecha + etapa + region; baja-media si solo hay cultivo; baja si no hay fecha, frio ni origen del diente.
+
+Lo que AG-GEN NO asume:
+- Blanco/perla, morado, jaspeado, criollo o chino/coreano.
+- Cuello duro vs cuello blando.
+- Numero de dientes objetivo.
+- Tamaño premium del bulbo.
+- Semilla certificada o libre de patogenos.
+- Densidad, calibre, rendimiento o mercado.
+- Manejo protegido, hidroponia o sustrato.
+- Variedad de semilla como motor independiente.
+- Que el frio de la region fue suficiente.
+- Que el diente comprado esta sano.
+
+--------------------------------------------------------------------
+5. Calendario y Dia 0
+--------------------------------------------------------------------
+
+El Dia 0 puede venir de plantacion del diente, diente ya brotado, fecha estimada o etapa manual. AG-GEN debe guardar el modo de establecimiento y no fingir precision cuando falta informacion.
+
+establishmentMode        Cuando aplica                         Comportamiento BIO-G
+
+clovePlanting            Usuario registro plantacion de diente. Usar ventanas por dias despues de plantacion; alta sensibilidad a diente sano, humedad, profundidad y salinidad.
+
+sproutedClove            Usuario registro diente ya brotado.    Puede adelantar emergencia, pero no reemplaza frio ni sanidad.
+
+seedGarlicUnknown        Usuario no sabe origen del diente.     Bajar confianza; subir vigilancia de stand, pudriciones, nematodo, white rot y uniformidad.
+
+unknown                  No sabe fecha o modo.                  Usar etapa manual y bajar confianza del calendario.
+
+Etapa BIO-G                         Ventana orientativa AG-GEN        Lectura conservadora
+
+Plantacion del diente                0-15 dias                         Raiz/brote subterraeo; humedad, temperatura, orientacion, diente sano y sales mandan.
+
+Emergencia / establecimiento         10-35 dias variable                Brote visible, raiz funcional, stand y maleza. Si emerge muy irregular, revisar diente/temperatura/humedad.
+
+Desarrollo vegetativo foliar         35-90/110 dias                     Construir hojas y raiz antes de diferenciacion. N y agua ayudan, pero sin exceso.
+
+Frio fisiologico / vernalizacion     establecimiento-120 dias aprox.    Ventana dominante; depende de perfil, fecha y zona. No es siempre visible.
+
+Diferenciacion de dientes            95-130 dias                        Solo si frio, planta y temperatura posterior corresponden.
+
+Llenado de bulbo                     120-190/210 dias                   Ventana critica de agua, K, CE, raiz y sanidad foliar.
+
+Maduracion                           185-230 dias                       Dejar de empujar hoja; vigilar hojas secas, N tardio, humedad y cosecha.
+
+Cosecha / curado                     205-245 dias segun perfil/clima    Cosechar por madurez real, no solo fecha; curado con sombra, ventilacion y baja humedad.
+
+Escapo / espigado                    Evento                             No es etapa productiva; registrar causa y evaluar manejo segun tipo.
+
+--------------------------------------------------------------------
+6. Rangos medibles para AG-GEN
+--------------------------------------------------------------------
+
+Variable                    Optimo / normal                    Observacion                    Alerta / critico
+
+Temperatura ambiente         10-20 C emergencia/arranque;      22-28 C sostenidos.            >30 C en diferenciacion/llenado: bulbo chico, madurez acelerada, estres.
+                             12-22 C vegetativo; 18-25 C
+                             bulbificacion.
+
+Temperatura de suelo         10-20/22 C favorable para          <8-10 C lento; >25-28 C       Frio + humedad = emergencia lenta; calor + CE = stand pobre.
+                             arranque.                         acelera/estresa.
+
+Frio fisiologico             Ventana fria suficiente segun      Frio parcial o irregular.      Frio insuficiente antes de diferenciacion = riesgo de mala division de dientes.
+                             perfil.
+
+Humedad suelo - AW           60-85% sin saturacion.             50-60% o variacion fuerte.     <50% en diferenciacion/llenado; >90-95% con drenaje pobre.
+
+Humedad ambiental / HR       Media, con buena ventilacion.      HR alta nocturna/rocio.        HR alta + hoja/cuello mojado = riesgo foliar y curado deficiente.
+
+pH suelo                     6.0-7.5 operativo; preferible      5.7-6.0 o 7.5-7.8.             <5.7 o >7.8: posible bloqueo; pedir analisis.
+                             6.0-7.0 / 6.2-7.0.
+
+Salinidad ECe                <2.0 dS/m conservador.            2.0-3.0 vigilar.               >3.0 en etapa critica; ~3.9 dS/m como umbral tecnico fuerte de reduccion de rendimiento.
+
+Compactacion                 <1.5 MPa.                         1.5-2.0 MPa.                   >2.0 MPa: raiz limitada, bulbo chico/deforme, drenaje pobre.
+
+NPK relativo                 N temprano controlado; P raiz;     Lectura baja segun etapa.      N alto tarde, K bajo en llenado o P bajo en arranque requieren guia de fertilizacion.
+                             K llenado/calidad.
+
+--------------------------------------------------------------------
+7. Peso conservador por etapa
+--------------------------------------------------------------------
+
+Etapa                         Deficit agua    Exceso agua     Frio insuf.  Calor      Salinidad    Compactacion   Nutricion
+
+Plantacion del diente          Alta            Alta            Media        Media      Alta         Alta           Baja
+Emergencia / establecimiento    Alta            Alta            Media        Media      Alta         Alta           Media
+Vegetativo foliar              Media-alta      Media           Alta         Media      Media        Media          Alta N/P
+Vernalizacion / pre-induccion  Alta            Media           Muy alta     Alta       Media        Media          Media
+Diferenciacion de dientes      Muy alta        Media-alta      Muy alta     Alta       Media-alta   Media          Alta balance
+Llenado de bulbo               Muy alta        Alta            Media        Alta       Alta         Alta           Alta K/N
+Maduracion                     Media           Muy alta        Baja         Media      Media        Media          Alta por exceso N
+Cosecha / curado               Baja-media      Muy alta HR     Baja         Alta sol   Baja         Baja           No aplica
+
+--------------------------------------------------------------------
+8. Alertas activadas en lenguaje humano
+--------------------------------------------------------------------
+
+Alerta                         Mensaje sugerido                                                                 Etapas sensibles
+
+Riesgo de frio insuficiente     El ajo podria no haber recibido suficiente frio para diferenciar bien los dientes. Mas fertilizante no corrige totalmente este problema. Vernalizacion / diferenciacion
+
+Bulbo no avanza                 El ajo ya esta en edad posible, pero el bulbo no se define. Revise frio, fecha, tamaño de planta, temperatura y nitrogeno. Diferenciacion / llenado
+
+Deficit hidrico                 El ajo puede estar corto de agua aunque no se vea dramatico. En esta etapa eso reduce calibre y dientes. Diferenciacion / llenado
+
+Exceso de humedad               Hay exceso de humedad en raiz o cuello. Puede favorecer pudricion basal, Botrytis y mala conservacion. Establecimiento / maduracion
+
+Salinidad elevada               La salinidad puede limitar absorcion de agua y bajar calibre. No conviene subir fertilizante sin revisar CE. Todas, sobre todo establecimiento/llenado
+
+Compactacion                    Aunque haya agua, la raiz puede estar limitada por suelo duro. Esto reduce tamaño y uniformidad del bulbo. Establecimiento / llenado
+
+N tardio / hoja muy verde        El cultivo puede estar demasiado vegetativo. Mas nitrogeno tarde puede retrasar maduracion y complicar curado. Diferenciacion / maduracion
+
+Calor sostenido                 El calor puede acelerar madurez y dejar bulbos mas pequenos. Vigile humedad y avance de hojas. Llenado / maduracion
+
+HR alta / sanidad foliar         Ambiente favorable a enfermedades foliares. Revise roya, manchas, moho y ventilacion del follaje. Vegetativo / llenado
+
+Escapo visible                  Hay escapo o tallo floral. Segun el tipo de ajo, registre el evento y evalúe si conviene retirarlo para proteger calibre. Vegetativo avanzado / diferenciacion
+
+Curado en riesgo                El curado requiere sombra, aire y baja humedad. Si el cuello queda humedo, sube riesgo de mohos y pudriciones. Cosecha / curado
+
+--------------------------------------------------------------------
+9. Reglas de migracion AG-GEN -> tipo especifico
+--------------------------------------------------------------------
+
+Evento                                             Migracion          Accion
+
+Usuario selecciona ajo blanco/perla                AG-GEN -> AG-01   Recalcular ciclo intermedio, frio medio, calidad de bulbo blanco, curado y riesgo por N tardio.
+
+Usuario selecciona ajo jaspeado/calera/rayado      AG-GEN -> AG-02   Cambiar a intermedio-largo, subir requerimiento de frio y sensibilidad a compactacion/deficit en llenado.
+
+Usuario selecciona ajo morado                      AG-GEN -> AG-03   Subir frio requerido, calidad visual, riesgo por calor temprano y curado.
+
+Usuario selecciona ajo criollo/regional            AG-GEN -> AG-04   Mantener intermedio conservador, confianza media/baja si no hay ficha, y usar historial real.
+
+Usuario selecciona ajo chino/coreano               AG-GEN -> AG-05   Resolver como comercial variable; confianza media si no hay ficha; ajustar ciclo intermedio-largo.
+
+Usuario selecciona variedad reconocida             AG-GEN -> AG-XX   Resolver alias. Si alias no existe, mantener AG-GEN y pedir tipo/origen/foto sin bloquear.
+
+Usuario ingresa region/fecha con frio dudoso        AG-GEN -> AG-GEN  Mantener perfil pero bajar confianza y mostrar alerta de frio, no sentencia definitiva.
+
+Regla de seguridad:
+La migracion NO borra historial, NO reinicia cultivo y NO cambia eventos pasados. Solo recalcula calendario, ventanas activas, sensibilidad y mensajes futuros.
+
+--------------------------------------------------------------------
+10. Comportamiento del sistema y confianza
+--------------------------------------------------------------------
+
+Caso                         Informacion disponible                  Confianza                  Respuesta BIO-G
+
+Datos completos              Tipo + fecha + etapa + sensores +       Alta                       Motor especifico preferible; AG-GEN ya no debe quedarse activo.
+                              region/frio/origen de diente
+
+Fecha y etapa, sin tipo       Fecha + etapa                           Media                      AG-GEN activo con calendario razonable, pero frio y tipo en vigilancia.
+
+Solo cultivo Ajo              Cultivo                                 Baja-media                 AG-GEN activo; pedir tipo/origen despues sin bloquear.
+
+Solo etapa manual             Etapa                                   Media para etapa, baja     La etapa manda; calendario estimado.
+                                                                     para calendario
+
+Lectura sensor sin contexto   Sensor aislado                          Baja                       Mostrar observacion, no diagnostico fuerte.
+
+Region contradice frio        Region/fecha vs requerimiento dudoso    Baja-media                 Mostrar riesgo de mala diferenciacion y pedir confirmar material/fecha.
+
+Diente sin origen             "Ajo semilla" sin ficha                  Baja-media                 Subir vigilancia de sanidad, uniformidad, white rot/nematodo y rendimiento.
+
+--------------------------------------------------------------------
+11. Traduccion futura a codigo
+--------------------------------------------------------------------
+
+Campo futuro                         Valor recomendado
+
+profileId                            AG-GEN
+
+cropKey                              CropKey.garlic / crop_garlic
+
+isGeneric                            true
+
+visibleName                          No se / Otro ajo
+
+establishmentMode                    clovePlanting / sproutedClove / seedGarlicUnknown / unknown
+
+coldRequirementClass                 medium assumed / unknown if no region
+
+hardneckSoftneckClass                unknown
+
+bulbDifferentiationDays              95-130 orientativo
+
+harvestStartDays                     205-235 orientativo
+
+cycleClass                           intermediate_conservative
+
+harvestPattern                       single_harvest_curing_assumed
+
+organTarget                          bulb_cloves
+
+migrationTargets                     AG-01 a AG-05
+
+defaultConfidence                    medium o low segun datos
+
+coldRiskAlwaysAvailable              true, severidad depende de etapa + fecha + region + perfil
+
+scapeRiskAvailable                   true, severidad depende de cuello duro/blando, frio, variedad, edad y estres
+
+curingRiskAvailable                  true desde maduracion/cosecha
+
+salinityRiskAvailable                true desde plantacion hasta llenado
+
+diseaseSeedRiskAvailable             true si origen del diente es desconocido
+
+--------------------------------------------------------------------
+12. Assets y nombres sugeridos
+--------------------------------------------------------------------
+
+Tipo                  Nombre de asset                                     Uso
+
+Icon wizard           ic_garlic_generic.png                               Entrada No se / Otro ajo
+
+Stage 1               garlic_stage_clove_planting.png                     Plantacion del diente
+
+Stage 2               garlic_stage_emergence_establishment.png            Emergencia / establecimiento
+
+Stage 3               garlic_stage_vegetative_leaf_growth.png             Desarrollo vegetativo foliar
+
+Stage 4               garlic_stage_vernalization_window.png               Frio fisiologico / vernalizacion
+
+Stage 5               garlic_stage_clove_differentiation.png              Diferenciacion de dientes
+
+Stage 6               garlic_stage_bulb_filling.png                       Llenado de bulbo
+
+Stage 7               garlic_stage_maturation_drydown.png                 Maduracion / secado de hojas
+
+Stage 8               garlic_stage_harvest_curing.png                     Cosecha / curado
+
+Optional event         garlic_stage_scape_bolting.png                     Escapo / espigado
+
+--------------------------------------------------------------------
+13. Limites de AG-GEN en v1
+--------------------------------------------------------------------
+
+- No calcula dosis fertilizante por hectarea; eso pertenece a la guia de fertilizacion.
+- No diagnostica plagas/enfermedades de forma cerrada; eso pertenece al documento de riesgos.
+- No promete rendimiento; el rendimiento va en ficha separada por tipo, sistema y manejo.
+- No modela precio, contrato, calibre exacto por comprador, cadena de frio o almacenamiento avanzado.
+- No reemplaza analisis de suelo, agua, tejido o asesoria local.
+- No cubre hidroponia ni sustrato inerte en v1.
+- No debe asegurar diferenciacion de dientes si el frio es desconocido o posiblemente insuficiente.
+- No debe asumir ajo blanco/perla si el usuario solo dice ajo.
+- No debe tratar "ajo elefante" como Allium sativum.
+- No debe confundir escapo en hardneck con floracion productiva.
+- No debe minimizar riesgo de diente semilla enfermo, white rot, nematodo o pudricion basal.
+
+--------------------------------------------------------------------
+14. Cierre de producto
+--------------------------------------------------------------------
+
+Frase guia:
+El perfil generico no adivina, protege.
+
+AG-GEN permite que Ajo nunca rompa la UX: el usuario puede iniciar rapido, BIO-G alerta con prudencia y el sistema queda listo para volverse mas preciso cuando haya mas informacion.
+
+Elemento                         Cierre
+
+Estado del perfil                AG-GEN v2 mejorado listo
+
+Obligatorio en BIO-G             Si
+
+Compatible con perfiles          AG-01 a AG-05
+
+Siguiente documento              Guia de fertilizacion Ajo
+
+Listo para codigo                Si, despues de cerrar fertilizacion, riesgos, rendimiento e imagenes
+
+--------------------------------------------------------------------
+15. Fuentes y trazabilidad
+--------------------------------------------------------------------
+
+Fuentes internas BIO-G:
+- PERFIL GENERICO AJO — AG-GEN.pdf, base original aportada por el usuario.
+- PERFIL UNIVERSAL BIO-G — AJO.pdf, base original aportada por el usuario.
+- Alta de hortaliza cultivo.txt, criterio maestro para expediente completo de alta de cultivo.
+- Paquete de Cebolla BIO-G: ON-GEN/SKIP y Perfil Universal como molde de estructura.
+
+Fuentes externas revisadas para reforzar criterio:
+- University of Georgia Cooperative Extension. Garlic Production for the Gardener.
+- Utah State University Extension. How to Grow Garlic in Your Garden.
+- University of Minnesota Extension. Growing garlic in home gardens.
+- Ohio State University Extension. Growing Garlic in the Garden.
+- UC IPM. Onion and Garlic Pest Management Guidelines.
+- University of Maine Cooperative Extension. Maine Garlic Pest Field Notebook.
+- Pacific Northwest Pest Management Handbook. Garlic Rust.
+- INIFAP. "Orion" variedad de ajo tipo Perla.
+- Shannon & Grieve / USDA ARS. Tolerance of vegetable crops to salinity.
+- Frontiers in Plant Science 2026. Genotypic variation in garlic for salinity tolerance.
+- Wu et al. 2016. Response of garlic bolting and bulbing to temperature and photoperiod treatments.
+
+Estado del documento:
+PERFIL GENERICO BIO-G - AJO AG-GEN / SKIP v2 mejorado queda listo para conectarse con el Perfil Universal de Ajo y con los documentos futuros de fertilizacion, riesgos y rendimiento.

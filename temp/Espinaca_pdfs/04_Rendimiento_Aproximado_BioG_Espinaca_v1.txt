@@ -1,0 +1,588 @@
+BIO-G / ESPINACA - TEXTO EXTRAIDO PARA CODIGO
+Archivo fuente: Rendimiento_Aproximado_BioG_Espinaca_v1.pdf
+Archivo TXT: 04_Rendimiento_Aproximado_BioG_Espinaca_v1.txt
+Paginas detectadas: 8
+Nota: texto extraido desde PDF y validado con pdftotext + PyMuPDF.
+
+
+
+===== PAGINA 1 / 8 =====
+
+                                                  BIO-G
+     Rendimiento aproximado de la espinaca
+     Base tecnica para calculadora de rendimiento - campo abierto, protegido en suelo, hoja fresca,
+                                    baby leaf y proceso - BIO-G v1
+
+
+
+ Documento tecnico interno. Rangos operativos, no promesa de produccion ni sustituto de historial local.
+
+
+
+ Objetivo
+ Definir rangos prudentes de rendimiento por hectarea, densidad/stand y reglas de resolucion para que BIO-G
+ pueda estimar produccion aproximada de espinaca a partir de superficie sembrada, semilla efectiva o poblacion
+ lograda, tipo de cosecha y condicion/cuidado del cultivo.
+
+ Alcance
+ ●
+      Cubre SP-GEN, SP-01 saboya/semi-saboya verano, SP-02 saboya/semi-saboya invierno, SP-03 lisa/baby leaf,
+      SP-04 oriental/manojo y SP-05 proceso/industria.
+ ●
+      El enfoque es hoja comercial fresca: manojo, hoja suelta, baby/teen leaf y proceso en suelo.
+ ●
+      No modela hidroponia, sustratos inertes, NFT, raiz flotante ni recetas de rendimiento garantizado en v1.
+ ●
+      Las variedades o marcas funcionan como alias de confianza hacia un perfil; no son motor biologico por si
+      solas sin ficha validada.
+
+ Decision de producto
+ Espinaca queda como cultivo madre crop_spinach. Los tipos UX viven dentro del cultivo y ajustan densidad,
+ ciclo, forma de cosecha, sensibilidad a calor/espigado y potencial comercial. En espinaca, el organo objetivo es
+ la hoja; por tanto, el rendimiento util no es solo biomasa: es hoja cosechable, limpia, tierna, sin espigado y sin
+ descarte sanitario.
+
+ Fuentes fuertes usadas
+ Se priorizaron universidades, extension y fuentes oficiales: UC ANR/UC Davis, Rutgers/Mid-Atlantic 2026/2027,
+ UCCE/Agricultural Issues Center, Oklahoma State/HortTechnology, MAPA Espana, DGSIAP/SIAP Mexico y
+ documentos internos BIO-G de referencia. Fuentes comerciales, foros y experiencias de campo se usaron solo
+ como senales de lenguaje y manejo, no como base normativa.
+
+
+
+
+BIO-G | Rendimiento aproximado | Espinaca v1                                                                   Pagina 1
+
+
+
+===== PAGINA 2 / 8 =====
+
+ 1. Como debe calcular rendimiento BIO-G
+ El calculo no debe usar un solo promedio nacional. La espinaca cambia mucho por destino de mercado,
+ densidad, edad de corte, sanidad, temperatura, humedad, descarte por calidad y manejo poscosecha. Para v1,
+ el motor debe resolver una referencia base por perfil/tipo de cosecha/sistema y despues aplicar factor de
+ poblacion y factor de manejo/cuidado.
+
+            Entrada                                                             Uso en el motor
+
+  Area sembrada                 Convertir a hectareas. Si el usuario captura m2, dividir entre 10,000.
+
+  Semillas / plantas            En espinaca de siembra directa leer como semilla efectiva, stand esperado o poblacion lograda, segun el tipo de
+                                cosecha. No tratar igual que una hortaliza trasplantada.
+
+  Tipo de cosecha               Manojo/planta completa, hojas sueltas, baby leaf/teen leaf, proceso o cortes multiples. Esta variable cambia mas
+                                el rendimiento que el nombre comercial de la semilla.
+
+  Rango base t/ha               Sale de YieldReference segun SP-GEN/SP-01/SP-05 y sistema. Debe expresarse como hoja comercial cosechada.
+
+  Rango de densidad             seedsLowPerHa / seedsHighPerHa deben representar poblacion o semilla util esperada para ese uso. Baby leaf
+                                requiere una escala de densidad mucho mayor.
+
+  Crop Care / Agro Score        Ajusta potencial por agua, temperatura, suelo/raiz, nutricion, sanidad y riesgo de espigado. En espinaca, calor +
+                                deficit + espigado deben pesar mucho.
+
+
+
+ Formula conceptual para producto
+ rendimiento proyectado = rendimiento base del perfil x factor de poblacion x factor de manejo x factor de calidad
+ comercial
+
+ Produccion total = rendimiento proyectado x hectareas. En espinaca, el factor de calidad comercial es
+ obligatorio porque el cultivo puede tener biomasa, pero quedar fuera de mercado por espigado, hojas amarillas,
+ tierra, minador, mildiu o mala poscosecha.
+
+ Principio de seguridad
+ BIO-G debe estimar, no prometer. La salida debe sonar como rango probable bajo condiciones comparables y
+ bajar confianza cuando falten tipo de cosecha, densidad, sistema, edad del cultivo, historial de riego,
+ temperatura o calidad sanitaria.
+
+
+ 2. Evidencia usada para calibrar rangos
+ Los rangos finales de BIO-G no copian una sola fuente. Se cruzan referencias de campo abierto, hoja fresca,
+ baby leaf, proceso, estadistica nacional y ensayos para evitar tanto subestimar como inflar techos.
+
+                  Fuente                                     Dato util                                   Conversion / lectura BIO-G
+
+  DGSIAP/SIAP Mexico 2024                 36,370 t en 2,659 ha reportadas al cierre 2024.    ≈13.7 t/ha. Sirve como referencia nacional
+                                                                                             prudente, no como techo.
+
+  MAPA Espana 2023                        Rendimiento 170 qm/ha y produccion 82.0 mil t.     17.0 t/ha. Confirma orden de magnitud europeo de
+                                                                                             campo.
+
+  UC ANR - Spinach Production in          Fresco en manojos: 900-1,900 cartones/acre de      ≈20.2-42.6 t/ha. Alto potencial comercial con
+  California                              20 lb.                                             densidad/configuracion adecuadas.
+
+  UC ANR - Spinach Production in          Proceso: 7-12 tons/acre.                           ≈15.7-26.9 t/ha. Buena base para SP-05 proceso.
+  California
+
+  UCCE Organic Spinach Central Coast      Baby/clip organico: 5,000-8,000 lb/acre;           ≈5.6-9.0 t/ha. Base para baby leaf/clip; no comparar
+                                          rendimiento representativo 6,500 lb/acre.          con manojo maduro.
+
+  Oklahoma State / HortTechnology         Ensayo de primavera: 11.9-14.9 tons/acre.          ≈26.7-33.4 t/ha. Techo de ensayo/cultivar, util para
+                                                                                             no subestimar campo bien manejado.
+
+  Ministerio de Agricultura Espana 1976   Extensivo 10 t/ha; intensivo 15-20 t/ha;           Referencia historica; se usa como contraste, no
+                                          invernadero intensivo hasta 50 t/ha.               como promesa v1.
+
+
+
+
+BIO-G | Rendimiento aproximado | Espinaca v1                                                                                              Pagina 2
+
+
+
+===== PAGINA 3 / 8 =====
+
+ 3. Conversiones rapidas para validar toneladas por hectarea
+                Referencia                                                    Calculo                                           Resultado
+
+  Mexico 2024                                  36,370 t / 2,659 ha                                                  13.7 t/ha
+
+  MAPA Espana 2023                             170 qm/ha x 100 kg/qm                                                17.0 t/ha
+
+  UC ANR fresco bajo                           900 cartones/ac x 20 lb x 1.12085 / 1000                             20.2 t/ha
+
+  UC ANR fresco alto                           1,900 cartones/ac x 20 lb x 1.12085 / 1000                           42.6 t/ha
+
+  UC Davis Ventura promedio                    600 cartones/ac x 20 lb x 1.12085 / 1000                             13.5 t/ha
+
+  UC ANR proceso bajo                          7 ton/ac x 2.2417                                                    15.7 t/ha
+
+  UC ANR proceso alto                          12 ton/ac x 2.2417                                                   26.9 t/ha
+
+  UCCE baby/clip bajo                          5,000 lb/ac x 1.12085 / 1000                                         5.6 t/ha
+
+  UCCE baby/clip alto                          8,000 lb/ac x 1.12085 / 1000                                         9.0 t/ha
+
+  Oklahoma spring bajo                         11.9 ton/ac x 2.2417                                                 26.7 t/ha
+
+  Oklahoma spring alto                         14.9 ton/ac x 2.2417                                                 33.4 t/ha
+
+
+ Lectura para BIO-G
+ Campo abierto comun y usuario generico deben quedarse en rangos prudentes de 8-18 t/ha. Produccion fresca
+ de buena densidad y manejo puede moverse entre 14-30 t/ha, y algunos sistemas/cultivares o manejos
+ intensivos pueden superar eso. Baby leaf suele tener menor peso por corte, pero puede ser mejor negocio por
+ calidad y rotacion rapida. Proceso se calibra mejor en 16-27 t/ha para v1. Techos mayores solo deben activarse
+ si el usuario declara sistema, densidad, ciclo y manejo coherentes.
+
+
+ 4. Tabla maestra recomendada para BIO-G
+ Los rangos son para hoja comercial cosechada. La confianza 'calibrated' indica que hay varias fuentes que
+ soportan el orden de magnitud; 'modeled' indica ajuste por analogia agronomica, mercado o subtipo donde la
+ evidencia directa es limitada.
+
+        ID sugerido                   Perfil            Producto/sistema        t/ha    poblacion/ha     conf.                 Lectura Bio-G
+
+  spinach_generic            SP-GEN                    desconocido / fresco    8-16     200k-700k      modeled      Skip conservador: no asume
+                                                       generico                                                     baby, proceso, protegido ni
+                                                                                                                    cortes multiples.
+
+  spinach_field_generic      Espinaca generica         hoja fresca             10-18    250k-800k      calibrated   Base de campo si no hay tipo
+                             campo                                                                                  especifico; cercana a
+                                                                                                                    Mexico/Espana.
+
+  spinach_savoy_field        SP-01/SP-02 saboya o      manojo / hoja           14-28    250k-800k      calibrated   Tipo fresco robusto;
+                             semi-saboya               madura                                                       rendimiento depende de no
+                                                                                                                    llegar a espigado.
+
+  spinach_savoy_summer       SP-01 verano/calor        hoja fresca             10-22    250k-800k      modeled      La tolerancia a calor protege
+                                                                                                                    calidad; no debe inflar
+                                                                                                                    rendimiento por si sola.
+
+  spinach_winter_field       SP-02 invierno/dias       fresco / manojo         14-30    250k-850k      calibrated   Mayor ventana de calidad si
+                             cortos                                                                                 hay buen drenaje y baja
+                                                                                                                    presion de humedad.
+
+  spinach_smooth_baby        SP-03 lisa / baby leaf    baby / teen leaf /      5-12     1.5M-9.5M      calibrated   Corte joven de alto valor;
+                                                       ensalada                         semilla util                menos t/ha por corte no
+                                                                                                                    significa peor cultivo.
+
+  spinach_smooth_mature      SP-03 lisa madura         hoja suelta / fresco    12-24    300k-1.2M      modeled      Usar si no es baby; hoja lisa
+                                                                                                                    puede ir a fresco premium o
+                                                                                                                    bolsa.
+
+
+
+
+BIO-G | Rendimiento aproximado | Espinaca v1                                                                                                   Pagina 3
+
+
+
+===== PAGINA 4 / 8 =====
+
+        ID sugerido                    Perfil           Producto/sistema         t/ha    poblacion/ha        conf.              Lectura Bio-G
+
+  spinach_oriental_bunch        SP-04                   manojo / fresco         12-25    250k-700k        modeled       Hoja erecta y cosecha por
+                                oriental/manojo                                                                         manojo; calidad visual pesa
+                                                                                                                        mucho.
+
+  spinach_process_field         SP-05                   proceso / corte         16-27    500k-1.5M        calibrated    Base UC ANR proceso; no
+                                proceso/industria       mecanizado                                                      confundir con baby leaf ni
+                                                                                                                        hidroponia.
+
+  spinach_protected_soil        Protegido en suelo      fresco / corte en       18-35    300k-1.5M        modeled       Solo si se declara
+                                                        suelo                                                           invernadero/casa malla en
+                                                                                                                        suelo; excluir hidroponia.
+
+  spinach_multi_cut_soil        Cortes multiples en     2+ cortes               20-40    350k-1.2M        modeled       Activar solo si se declara
+                                suelo                                                                                   rebrote/cortes y el riesgo de
+                                                                                                                        espigado es bajo.
+
+
+
+
+ 5. Reglas de resolucion por perfil / tipo UX
+           Perfil / condicion                         YieldReference                                      Regla de producto
+                                                       recomendado
+
+  SP-GEN / No se / Otra espinaca             spinach_generic                     No asumir baby, protegido ni proceso. Estimar prudente y permitir
+                                                                                 migracion posterior.
+
+  SP-01 saboya/semi-saboya verano            spinach_savoy_summer                Usar cuando el alias o temporada indique calor/verano. Aun con
+                                                                                 tolerancia, capar rendimiento si hay temperatura alta o deficit.
+
+  SP-02 saboya/semi-saboya invierno          spinach_winter_field                Usar para otoño-invierno/dias cortos. Subir potencial solo si humedad
+                                                                                 no esta saturando y sanidad esta estable.
+
+  SP-03 lisa / baby leaf                     spinach_smooth_baby o               Si alias contiene baby, teen, salad, bolsa, mezclas o hoja tierna:
+                                             spinach_smooth_mature               baby. Si es hoja madura: mature.
+
+  SP-04 oriental / manojo                    spinach_oriental_bunch              Usar para manojo/oriental/hoja erecta. Penalizar fuerte si hay tallo
+                                                                                 floral o hojas sucias/amarillas.
+
+  SP-05 proceso / industria                  spinach_process_field               Usar si el objetivo es proceso, congelado, industria, corte
+                                                                                 mecanizado o alto volumen.
+
+  Sistema protegido explicito                spinach_protected_soil              Palabras clave: protegido, invernadero, casa malla, malla sombra,
+                                                                                 high tunnel. No activar si es hidroponia.
+
+  Cortes multiples explicitos                spinach_multi_cut_soil              Solo si el manejo busca rebrote y el primer corte no destruye la
+                                                                                 corona. No usar en baby leaf sin evidencia.
+
+  Sistema desconocido                        spinach_generic o                   Mantener rango conservador aunque existan techos altos de
+                                             spinach_field_generic               California o ensayos.
+
+
+ Punto critico
+ En espinaca, el subtipo cambia menos el rendimiento que el destino de cosecha y la edad del corte. Un cultivo
+ baby puede ser excelente comercialmente con menos toneladas por hectarea que una espinaca madura. Por
+ eso BIO-G debe evitar comparar directamente baby leaf contra proceso o manojo maduro.
+
+
+ 6. Notas por tipo para rendimiento
+         Tipo                           Que cambia                                              Como afecta rendimiento
+
+  SP-GEN                   No se sabe tipo, sistema ni destino.       Debe ser conservador y migrable; no usa referencia protegida ni baby leaf
+                                                                      aunque el potencial exista.
+
+  SP-01 verano/calor       Mayor tolerancia relativa al espigado.     Mejora estabilidad en temporada dificil, pero calor sostenido aun reduce
+                                                                      rendimiento comercial.
+
+  SP-02 invierno/dias      Mejor ventana de calidad y menor           Puede sostener rangos medios-altos si hay drenaje, sanidad y humedad estable.
+  cortos                   presion de espigado.
+
+  SP-03 lisa/baby          Corte temprano, hoja tierna, mercado       Menos peso por corte; alta densidad y calidad visual determinan valor util.
+                           premium.
+
+
+
+
+BIO-G | Rendimiento aproximado | Espinaca v1                                                                                                     Pagina 4
+
+
+
+===== PAGINA 5 / 8 =====
+
+          Tipo                        Que cambia                                             Como afecta rendimiento
+
+  SP-04                   Arquitectura erecta y cosecha            Buen potencial si se evita tallo, hoja amarilla y daño mecanico.
+  oriental/manojo         manual/por manojo.
+
+  SP-05 proceso           Biomasa uniforme y corte mecanizado.     Rango mas estable para toneladas; calidad industrial tolera algo de tallo segun
+                                                                   especificacion, pero no maleza ni enfermedad.
+
+
+
+
+ 7. Densidad, poblacion y manejo
+ La espinaca no debe usar una sola lectura de 'plantas por hectarea'. En siembra directa, especialmente baby
+ leaf, la densidad real puede expresarse mejor como semilla util/ha, stand logrado o plantas por metro cuadrado.
+ BIO-G puede seguir usando seedsLowPerHa / seedsHighPerHa, pero la etiqueta UX debe aclarar que se trata de
+ semilla efectiva o poblacion lograda, no solo semillas compradas.
+
+        Sistema / destino                           Rango operativo                                            Lectura Bio-G
+
+  Hoja madura / manojo              20-60 plantas/m2 aprox. (200k-600k/ha); puede        Si esta muy baja, baja potencial por hectarea; si esta muy
+                                    subir segun cama y arreglo.                          alta, sube riesgo de hojas chicas, humedad y enfermedad.
+
+  Fresco saboya/semi-saboya         250k-800k plantas/ha como rango operativo            Permite hoja robusta y manojo; la densidad no debe
+                                    Bio-G.                                               cerrar ventilacion.
+
+  Baby leaf / salad / teen leaf     1.5M-9.5M semilla util/ha, segun cama y mercado.     Alta densidad no es error; es parte del sistema. Penalizar
+                                                                                         solo si el usuario escogio baby y queda muy abajo.
+
+  Proceso / industria               500k-1.5M plantas o stand util/ha.                   Se busca biomasa uniforme y corte mecanizado; maleza y
+                                                                                         tierra son fuertes limitantes.
+
+  Generico / usuario no sabe        200k-700k plantas/ha.                                Rango seguro para no sobreestimar y permitir migracion
+                                                                                         posterior.
+
+
+ Reglas de penalizacion sugeridas
+ ●
+     Poblacion baja: penalizar suavemente en hoja madura, pero con mensaje; la planta puede compensar algo si
+     tiene espacio y agua.
+ ●
+     Poblacion alta: penalizar por calidad si hay HR alta, hoja chica, amarillamiento, mildiu o mala ventilacion; no
+     penalizar automaticamente en baby leaf.
+ ●
+     Baby leaf: no comparar contra rangos de manojo; usar una familia de rendimiento distinta.
+ ●
+     Cortes multiples: el segundo corte solo debe estimarse si el primer corte deja corona viable y no hay
+     espigado/calor alto.
+
+
+ 8. Crop Care y factor de calidad comercial
+ En espinaca, el rendimiento comercial se pierde antes por calidad que por falta de biomasa. Un lote puede tener
+ peso, pero no ser vendible por tallo floral, hojas amarillas, hojas duras, tierra, dano de minador, mildiu,
+ pudriciones o mal enfriamiento.
+
+              Condicion                               Impacto                                           Decision del motor
+
+  Calor + dias largos                  Riesgo de espigado                        Capar rendimiento comercial aunque el peso siga aumentando.
+
+  Deficit hidrico                      Hoja pequena, fibrosa, sabor mas          Bajar potencial en desarrollo foliar y pre-cosecha.
+                                       fuerte, espigado
+
+  Exceso humedad / anoxia              Raiz pobre, amarillamiento, pudricion,    Bajar rendimiento y subir riesgo sanitario.
+                                       Pythium
+
+  HR alta / hoja mojada                Mildiu, manchas, Botrytis, descarte       Bajar factor de calidad; sugerir revision de envés y ventilacion.
+
+  N alto o desequilibrado              Hoja muy tierna, nitrato residual,        No traducir como mas rendimiento automaticamente.
+                                       crecimiento rapido vulnerable
+
+  Cosecha tardia                       Mas biomasa posible, peor calidad         Si hay tallo floral o sobre-madurez, limitar proyeccion.
+
+
+
+
+BIO-G | Rendimiento aproximado | Espinaca v1                                                                                                 Pagina 5
+
+
+
+===== PAGINA 6 / 8 =====
+
+ 9. Recomendacion directa para codigo
+ Crear o reutilizar una familia de rendimiento para hortalizas de hoja fresca. Espinaca no debe heredar
+ directamente una familia de fruto ni comportarse como grano. La familia debe reconocer corte joven, corte
+ maduro, proceso y descarte por calidad.
+ ●
+     Agregar YieldFamily.spinachLeafFresh, YieldFamily.spinachBabyLeaf y YieldFamily.spinachProcessing, o
+     mapear a una familia leafVegetableFresh si ya existe.
+ ●
+     Parametros sugeridos: spinachLeafFresh managementGamma 1.40, managementFloor 0.22;
+     spinachBabyLeaf managementGamma 1.55, managementFloor 0.18; spinachProcessing
+     managementGamma 1.25, managementFloor 0.25.
+ ●
+     Agregar referencias spinach_* de la tabla maestra al YieldReferenceCatalog.
+ ●
+     En _familyFor(reference): si cropId == spinach y useType == baby, devolver spinachBabyLeaf; si useType
+     == processing, devolver spinachProcessing; si no, spinachLeafFresh.
+ ●
+     En YieldProjectionSetupScreen: resolver por profileId SP-GEN/SP-01/SP-05, varietyAlias, productionSystem y
+     harvestForm.
+ ●
+     Mantener seedsLowPerHa/seedsHighPerHa como semilla efectiva/stand, no como semilla bruta si el usuario
+     captura kilos o sobres.
+ ●
+     Si el usuario captura solo 'semillas' sin saber densidad, mostrar advertencia: la estimacion mejora con
+     poblacion lograda o tipo de cosecha.
+
+ Campos sugeridos para modelo
+              Campo                                    Tipo sugerido                                                 Uso
+
+  profileId                       SP-GEN / SP-01 / SP-02 / SP-03 / SP-04 / SP-05         Resolver modificadores y rango base.
+
+  harvestForm                     bunch / mature_leaf / baby_leaf / processing /         Es la variable mas importante para rendimiento.
+                                  multi_cut / unknown
+
+  productionSystem                openField / protectedSoil / unknown                    Cambiar rango y riesgo, sin activar hidroponia.
+
+  densityMode                     plantsPerHa / seedsPerHa / plantsPerM2 / unknown       Evitar comparar baby leaf con manojo.
+
+  boltingRiskClass                low / watch / alert / critical                         Capar rendimiento comercial cuando hay tallo floral o calor
+                                                                                         fuerte.
+
+  qualityDiscardRisk              low / medium / high                                    Conecta sanidad, tierra, hojas amarillas, minador y mildiu.
+
+  harvestPattern                  single_cut / cut_and_come_again / multi_cut            Define si puede existir segundo corte.
+
+
+
+ 10. Resolver sugerido para YieldProjectionSetupScreen
+                                  Condicion                                                       YieldReference recomendado
+
+  SP-GEN o generic                                                         spinach_generic
+
+  SP-01 saboya verano/calor                                                spinach_savoy_summer
+
+  SP-02 saboya invierno/dias cortos                                        spinach_winter_field
+
+  SP-03 + alias baby/teen/salad/bolsa                                      spinach_smooth_baby
+
+  SP-03 lisa sin baby explicito                                            spinach_smooth_mature
+
+  SP-04 oriental/manojo                                                    spinach_oriental_bunch
+
+  SP-05 proceso/industria/congelado                                        spinach_process_field
+
+  cualquier perfil + invernadero/casa malla/protegido en suelo             spinach_protected_soil si no es hidroponia
+
+  cualquier perfil + cortes multiples/rebrote                              spinach_multi_cut_soil si la etapa y clima lo permiten
+
+  profileId desconocido pero crop == spinach                               spinach_field_generic
+
+
+
+
+BIO-G | Rendimiento aproximado | Espinaca v1                                                                                                  Pagina 6
+
+
+
+===== PAGINA 7 / 8 =====
+
+ 11. Notas agronomicas importantes
+ ●
+     Rendimiento de espinaca no debe leerse como fruta o grano. Es hoja comercial, y la calidad decide cuanto
+     de la biomasa cuenta.
+ ●
+     Baby leaf puede tener menos toneladas por hectarea por corte, pero mayor rotacion, valor y calidad. No
+     debe recibir mensaje de 'bajo rendimiento' por compararse con proceso.
+ ●
+     El espigado es el limite fisiologico de mercado. Si aparece tallo floral, la app debe hablar de cosechar/cerrar,
+     no de seguir acumulando biomasa.
+ ●
+     Cosechar tarde puede aumentar peso, pero reduce calidad por hojas duras, amargas, tallo, suciedad y
+     petiolos largos.
+ ●
+     El promedio nacional mexicano es util para usuario generico, pero no debe limitar sistemas intensivos ni
+     baby leaf con manejo especializado.
+ ●
+     Protegido no significa hidroponia. Los rangos de esta guia son para suelo bajo ambiente protegido;
+     hidroponia y sustrato quedan fuera de v1.
+ ●
+     En hoja, sanidad y poscosecha pesan mucho: enfriar rapido, no apretar cajas y evitar hojas mojadas/sucias
+     puede conservar rendimiento comercial.
+
+
+ 12. Mensajes BIO-G sugeridos para UX
+           Situacion                                                       Mensaje farmer-friendly
+
+  SP-GEN                        Usaremos una estimacion conservadora porque todavia no sabemos el tipo de espinaca ni el destino de cosecha.
+                                Puedes afinarla despues sin perder historial.
+
+  Baby leaf                     Este tipo se corta joven: produce menos peso por corte que hoja madura, pero puede tener mayor valor y
+                                rotacion rapida.
+
+  Poblacion baja                La poblacion por hectarea esta por debajo del rango esperado para este destino. La planta puede compensar
+                                algo, pero el potencial por hectarea baja.
+
+  Poblacion alta                La densidad parece alta para hoja madura. Vigile ventilacion, humedad, mildiu y tamaño de hoja.
+
+  Riesgo de espigado            La espinaca esta en riesgo de espigado. Si aparece tallo floral, el rendimiento comercial baja aunque la planta
+                                siga creciendo.
+
+  Protegido explicito           El sistema protegido puede subir estabilidad, pero solo si hay buena ventilacion, humedad controlada, nutricion y
+                                sanidad.
+
+  Cortes multiples              El segundo corte solo es razonable si el primer corte dejo corona viable y el clima no empuja espigado.
+
+  Sanidad foliar                Hay riesgo de perder rendimiento comercial por calidad de hoja. Revise envés, manchas, minador, hojas
+                                amarillas y humedad del dosel.
+
+
+
+
+BIO-G | Rendimiento aproximado | Espinaca v1                                                                                              Pagina 7
+
+
+
+===== PAGINA 8 / 8 =====
+
+ 13. Decisiones finales de producto
+                Decision                                                                   Resultado
+
+  Que mueve mas el rendimiento              Destino de cosecha, densidad, edad de corte, temperatura, agua, sanidad y calidad comercial.
+
+  Que no debe hacer BIO-G                   No usar un solo promedio nacional, no comparar baby leaf contra proceso, no prometer techos de
+                                            California al usuario generico.
+
+  Como usar los perfiles                    SP-01 a SP-05 ajustan referencia y mensajes. La variedad es alias, no motor independiente sin ficha
+                                            validada.
+
+  Como tratar el espigado                   Como falla fisiologica de mercado. Con bolting alto, limitar proyeccion y recomendar cosecha/cierre.
+
+  Que queda fuera                           Hidroponia, sustratos, NFT, solucion nutritiva, precio, contrato industrial y rendimiento garantizado.
+
+
+
+ 14. Fuentes y trazabilidad
+ Las fuentes siguientes fueron usadas para construir rangos operativos. Cuando una fuente reporta techos de
+ ensayo o sistemas muy intensivos, BIO-G los usa como referencia de calibracion, no como promesa de producto.
+
+  Clave                    Fuente                                               Uso                                          URL / origen
+
+  S1       UC ANR / UC Davis. Spinach                Clasificacion por mercado, seeding, ciclos 30-55 d fresco    https://my.ucanr.edu/repository/file
+           Production in California.                 y 70-120 d proceso, salinidad, riego, rendimientos           access.cfm?article=54021&p;=+P
+                                                     fresco/proceso y poscosecha.                                 UIVXP
+
+  S2       Rutgers/NJAES Mid-Atlantic                Seeding rates, spacing, trasplante si suelo caliente,        https://njaes.rutgers.edu/pubs/com
+           Commercial Vegetable Production           cosecha, cortes, poscosecha y consideraciones de             mercial-veg-rec/spinach.pdf
+           Recommendations 2026/2027 -               manejo comercial.
+           Spinach.
+
+  S3       UCCE/Agricultural Issues Center.          Baby/clip organico: ciclo 25-35 dias, 5,000-8,000 lb/acre,   https://coststudyfiles.ucdavis.edu/u
+           Organic Spinach Cost Study, Central       densidad alta y riesgo por presion sanitaria.                ploads/cs_public/79/02/79023ea8-8
+           Coast, 2015.                                                                                           0a8-4fba-b69e-5d60225dbf8b/201
+                                                                                                                  5_organicspinach-finaldraftjan29.p
+                                                                                                                  df
+
+  S4       UC Davis. Spinach Production:             Referencia de 600 cartones/acre y analisis de                https://coststudyfiles.ucdavis.edu/u
+           Sample Costs and Profitability            variabilidad de rendimiento/precio para hoja fresca.         ploads/cs_public/87/e2/87e23d27-0
+           Analysis, Ventura County.                                                                              f21-40d3-8096-f9b7f5879392/8032
+                                                                                                                  .pdf
+
+  S5       Brandenberger et al. Yield and            Ensayos de primavera: 11.9-14.9 tons/acre y efecto de        https://doi.org/10.21273/HORTTEC
+           Quality of Spinach Cultivars for          resistencia a espigado en calidad comercial.                 H.14.4.0602
+           Spring Production in Oklahoma.
+           HortTechnology.
+
+  S6       MAPA Espana. Anuario de Estadistica       Serie historica: 2023 con rendimiento 170 qm/ha y            https://www.mapa.gob.es/estadisti
+           2024 - Espinaca.                          produccion 82.0 mil t.                                       ca/pags/anuario/2024/FORMATO%2
+                                                                                                                  0PDF/AE24-C07/7.7.8.2.pdf
+
+  S7       DGSIAP/SIAP Mexico. Cierre de la          Contexto nacional 2024; produccion y superficie usadas       https://nube.agricultura.gob.mx/cie
+           produccion agricola / reportes 2024.      para calcular promedio prudente mexicano.                    rre_agricola/
+
+  S8       Ministerio de Agricultura de Espana.      Referencia historica: riego frecuente, N/K, manejo de        Documento PDF aportado por el
+           Cultivo de la espinaca, Hojas             cosecha y rangos de rendimiento                              usuario.
+           Divulgadoras 6/76.                        extensivo/intensivo/protegido.
+
+  S9       BIO-G. Rendimiento aproximado de          Estructura de producto, formula conceptual, tablas de        Documentos internos aportados
+           Berenjena v1 y Chile v1.                  YieldReference, resolucion por perfil y lenguaje de no       por el usuario.
+                                                     promesa.
+
+
+
+ Cierre de producto
+ La calculadora de rendimiento de espinaca queda lista para v1 si se integra con referencias por perfil, destino de
+ cosecha y sistema, sin sobrediferenciar por marca de semilla. La prioridad para codigo es resolver
+ SP-GEN/SP-01/SP-05, diferenciar baby leaf vs hoja madura vs proceso, detectar protegido en suelo, y usar
+ bolting/calidad comercial como limitantes fuertes.
+
+
+
+
+BIO-G | Rendimiento aproximado | Espinaca v1                                                                                                  Pagina 8

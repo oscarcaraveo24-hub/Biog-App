@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bio_g/widgets/environment/environment_asset_icon.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 
 class EnvironmentLocationCard extends StatelessWidget {
@@ -150,8 +151,8 @@ class _AssetIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final img = Image.asset(
-      path,
+    final img = EnvironmentAssetIcon(
+      assetPath: path,
       width: size,
       height: size,
       fit: BoxFit.contain,

@@ -24,8 +24,8 @@ abstract class BioGRepository {
   /// Live telemetry for the active device.
   Stream<BioGTelemetry?> watchLiveTelemetry();
 
-  /// Recent history window for the active device.
-  Stream<List<BioGTelemetry>> watchHistory({required Duration window});
+  /// History for the active device. A null window requests all available data.
+  Stream<List<BioGTelemetry>> watchHistory({required Duration? window});
 
   /// Latest alerts for the active device.
   Stream<List<BioGAlert>> watchAlerts({int limit = 50});

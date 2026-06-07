@@ -6,13 +6,14 @@ import 'history_screen.dart';
 import 'account_screen.dart';
 import 'seeds_screen.dart';
 import 'package:bio_g/screens/environment/environment_screen.dart';
+import 'package:bio_g/widgets/bottom_nav.dart';
 
 const int? kDevForceIndex = null;
 
 class AppShell extends StatefulWidget {
   final int initialIndex;
 
-  const AppShell({super.key, this.initialIndex = 4});
+  const AppShell({super.key, this.initialIndex = BioGTabIndex.dashboard});
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -75,6 +76,7 @@ class _AppShellState extends State<AppShell> {
         EnvironmentScreen(
           key: const PageStorageKey('environment'),
           currentIndex: index,
+          isActive: index == BioGTabIndex.environment,
           onNavTap: _onNavTap,
         ),
         DashboardScreen(

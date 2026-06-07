@@ -1,0 +1,605 @@
+BIO-G / CEBOLLA - TEXTO EXTRAIDO Y MEJORADO PARA CODIGO
+Archivo fuente base: PERFIL UNIVERSAL BIO-G - CEBOLLA.pdf
+Archivo TXT: 01_Perfil_Universal_BioG_Cebolla_v2_mejorado.txt
+Estado: Version corregida, ampliada e investigada para BIO-G v1
+Cultivo madre: crop_onion / CropKey.onion
+Nota: documento tecnico interno. No sustituye analisis local, asesoria agronomica, laboratorio de suelo/agua/tejido ni validacion regional de variedad.
+
+====================================================================
+PERFIL UNIVERSAL BIO-G - CEBOLLA
+Version v2 mejorada para codigo - BIO-G v1
+====================================================================
+
+Estado: Base universal mejorada para integracion progresiva en BIO-G v1.
+Cultivo: Cebolla - hortaliza de bulbo.
+Regla: cultivo madre -> tipo UX/perfil -> variedad como alias.
+El sistema debe proteger formacion de bulbo, calibre comercial, cuello sano, maduracion, curado y calidad poscosecha. La floracion/espigado se modela como falla fisiologica o cierre no deseado, no como etapa productiva.
+
+--------------------------------------------------------------------
+0. Mejoras aplicadas sobre el borrador recibido
+--------------------------------------------------------------------
+
+Area                         Borrador base                         Correccion BIO-G v2
+
+Identidad                    Correcta: Allium cepa, bulbo.         Se conserva y se vuelve codificable: CropKey.onion, organo objetivo bulb, familia Amaryllidaceae, planta bienal cultivada como anual.
+
+Etapas                       8 etapas + evento de espigado.        Se formaliza una estructura de 8 estados operativos BIO-G y un evento especial: bolting/seedstalk. Se separa maduracion de curado para no confundir produccion en campo con poscosecha.
+
+Fotoperiodo                  Reconocido como dominante.            Se refuerza como variable critica del cultivo: dia corto, intermedio y largo. La edad NO garantiza bulbo si el fotoperiodo no corresponde.
+
+Calendario                   Dia 0 siembra/trasplante.             Se obliga a guardar establishmentMode: directSeed, transplant, set, unknown. El modo cambia el reloj y la confianza.
+
+Rangos medibles              Temperatura, AW, pH, CE, suelo.       Se amplian con zonas optimo/observacion/alerta/critico, sensibilidad de salinidad mas estricta, raiz superficial y maduracion/curado.
+
+Nitrogeno                    Alto vegetativo, bajar en bulbo.      Se agrega regla de seguridad: exceso de N tarde retrasa madurez, engrosa cuello, empeora almacenamiento y puede elevar enfermedades.
+
+Riego                        Importante en induccion/llenado.      Se vuelve una ventana critica: cebolla no siempre "avisa" marchitez; requiere monitoreo de humedad por raiz superficial.
+
+Sanidad                      Solo alertas generales.               Se deja puente para documento de Riesgos: trips, mildiu, Botrytis, Stemphylium/purple blotch, Fusarium basal rot, pink root, bacterial rots, neck rot.
+
+Tipos UX                     ON-01 a ON-05.                        Se conservan, pero se aclara que color es UX y fotoperiodo/sistema/destino son motores biologicos. Variedades quedan como alias representativos.
+
+Codigo                       Base conceptual.                      Se agregan modelos sugeridos, assets, stage map, score weights, migracion, confianza y reglas de no sobre-modelar.
+
+--------------------------------------------------------------------
+1. Proposito y alcance
+--------------------------------------------------------------------
+
+Este documento define la base biologica y de producto para que BIO-G interprete sensores, etapa, alertas, historial, fertilizacion general futura, sanidad futura y rendimiento aproximado futuro de cebolla.
+
+La cebolla es una hortaliza de bulbo: el valor principal no es tener muchas hojas por si solas, sino convertir una planta con suficiente fabrica foliar en un bulbo comercial, con cuello cerrado, calibre util, piel/escamas sanas, baja pudricion y buena conservacion segun destino.
+
+Decision de arquitectura:
+- Cebolla queda como cultivo madre propio: crop_onion.
+- Los tipos UX viven dentro del cultivo madre: ON-GEN, ON-01, ON-02, ON-03, ON-04, ON-05.
+- La variedad/semilla comercial solo actua como alias hacia un perfil seleccionado, salvo que en el futuro exista ficha varietal validada.
+- El fotoperiodo es una variable biologica dominante. BIO-G no debe fingir que un buen riego o fertilizacion corrige una variedad mal ubicada por dia largo/corto.
+
+No es:
+- Una receta de produccion.
+- Una guia de dosis por hectarea.
+- Un modulo cerrado de plaguicidas.
+- Una promesa de rendimiento.
+- Un sustituto de analisis de suelo, agua, tejido, historial local o asesoria tecnica.
+
+--------------------------------------------------------------------
+2. Identidad del cultivo - universal
+--------------------------------------------------------------------
+
+Campo                                Valor BIO-G
+
+ID del cultivo                       ON
+
+Clave tecnica                        crop_onion / CropKey.onion
+
+Nombre comun                         Cebolla
+
+Nombre cientifico                    Allium cepa L.
+
+Familia botanica                     Amaryllidaceae
+
+Tipo de planta                       Hortaliza de bulbo; bienal botanica, cultivada normalmente como anual para bulbo
+
+Metabolismo                          C3
+
+Organo objetivo principal             Bulbo comercial: tamaño/calibre, firmeza, cuello, escamas/tunicas, sanidad y conservacion
+
+Organo objetivo secundario            Hoja + base en cebolla cambray/rama (ON-05)
+
+Floracion / espigado                 No productiva para BIO-G v1. Se interpreta como bolting/seedstalk, falla de calidad o cierre.
+
+Uso principal                        Bulbo fresco, mercado nacional, almacenamiento/bodega, proceso, manojo/cambray segun perfil
+
+Variedad / hibrido                   Opcional; se interpreta como alias hacia perfil/tipo
+
+Sistema base v1                      Campo abierto en suelo. Protegido en suelo puede existir como modificador futuro. Hidroponia/sustrato fuera de v1.
+
+--------------------------------------------------------------------
+3. Lo que SI y NO pertenece al perfil universal
+--------------------------------------------------------------------
+
+SI pertenece al universal:
+- Etapas biologicas base: germinacion, establecimiento, desarrollo foliar, induccion, bulbificacion, maduracion, cosecha y curado.
+- Fotoperiodo como variable de primer orden.
+- Rangos medibles: temperatura, humedad de suelo, pH, salinidad, compactacion/resistencia, HR como riesgo sanitario/curado.
+- Sensibilidad por etapa y ponderacion de Agro Score.
+- Reglas para interpretar riego, N, K, suelo y cuello.
+- Reglas de migracion ON-GEN -> ON-01..ON-05 sin borrar historial.
+- Lenguaje farmer-friendly para alertas y observaciones.
+
+NO pertenece al universal:
+- Dosis cerradas de N, P, K, S, Ca o micros sin laboratorio.
+- Recomendacion de ingredientes activos o plaguicidas.
+- Precio de mercado, contrato, empaque, calibre comercial exacto por comprador.
+- Duplicar cultivo por cada variedad comercial.
+- Prometer rendimiento.
+- Manejo hidroponico, NFT, sustratos o solucion recirculante.
+- Asumir que color de bulbo equivale a fisiologia completa.
+
+--------------------------------------------------------------------
+4. Arquitectura BIO-G recomendada para Cebolla
+--------------------------------------------------------------------
+
+Nivel                       Ejemplo                                  Uso
+
+Cultivo madre               Cebolla / crop_onion                     Define sensores, etapas universales, alertas base, assets y comportamiento general.
+
+Perfil generico             ON-GEN                                   Entrada segura cuando el usuario no sabe tipo, variedad, fotoperiodo o destino.
+
+Tipo UX / perfil            ON-01 a ON-05                            Ajusta fotoperiodo, calendario, destino, sensibilidad y textos.
+
+Alias / variedad            SV4043NM, PECOS, Rasta, Cimarron, etc.   Apunta al perfil del tipo. No modifica por si sola el motor biologico.
+
+Sistema                     Campo abierto, trasplante, directa       Modifica calendario, stand, riego, sanidad y confianza.
+
+Destino                     Bulbo fresco, almacenamiento, proceso,   Modifica cosecha, curado, calidad y rendimiento futuro.
+                            cambray/manojo
+
+Regla UX:
+Tipo = como lo pide el agricultor.
+Variedad = nombre de semilla o alias comercial.
+Perfil BIO-G = reloj biologico oculto.
+
+--------------------------------------------------------------------
+5. Estructura fenologica universal
+--------------------------------------------------------------------
+
+La cebolla no usa floracion como objetivo productivo. A diferencia de tomate, chile, pepino o berenjena, la floracion no es ventana deseable; en cebolla de bulbo representa espigado, seedstalk, cuello no comercial o cierre fisiologico. La cebolla cambray se cosecha antes del bulbo completo.
+
+#   Estado BIO-G                         Objetivo biologico                         Lectura del sistema
+
+1   Germinacion                          Imbibicion, radicula y emergencia          Temperatura de suelo, humedad fina, costra, sales y profundidad mandan.
+
+2   Emergencia / establecimiento          Plantula joven, hoja de "latigo", raiz    Alta sensibilidad a costra, deficit, saturacion, salinidad y maleza.
+                                         inicial y stand uniforme.
+
+3   Desarrollo vegetativo foliar          Construir hojas funcionales y cuello       La hoja es la fabrica del bulbo. N, agua, P, raiz y sanidad foliar pesan.
+                                         sano antes de induccion.
+
+4   Induccion a bulbificacion             Inicio fisiologico de bulbo por            Etapa critica: fotoperiodo correcto + planta con tamaño suficiente + agua estable.
+                                         fotoperiodo/temperatura/estado vegetal.
+
+5   Bulbificacion / llenado de bulbo       Engrosamiento de escamas y calibre         Agua, K, raiz, CE, compactacion y sanidad definen calibre. Exceso N puede retrasar maduracion.
+                                         comercial.
+
+6   Maduracion del bulbo / cuello          Caida o ablandamiento de cuello, cierre    Reducir crecimiento vegetativo; evitar humedad/N tardios; preparar cosecha.
+                                         de tunicas y fin de llenado util.
+
+7   Cosecha                               Extraccion/corte en momento de             Evitar daño mecanico, sol excesivo, lluvia y bulbos inmaduros/enfermos.
+                                         madurez comercial.
+
+8   Curado / fin de ciclo                  Secado de cuello y escamas externas,       No es crecimiento. Es proteccion de calidad: ventilacion, HR, temperatura y sanidad.
+                                         preparacion para almacenamiento/venta.
+
+Evento especial:
+E   Espigado / floracion / seedstalk       Emision de tallo floral no deseada.        Evento de falla o cierre. No recomendar "recuperar" como etapa productiva.
+
+Notas:
+- No fijar numero universal de hojas. La masa foliar antes de inducir bulbo influye en calibre, pero varia por perfil, densidad y fecha.
+- No fijar tamaño universal de bulbo. El calibre comercial depende de mercado, poblacion, fecha, variedad y manejo.
+- Cambray/rama puede cosecharse antes de bulbo completo; no debe castigarse como "falta de bulbo" si el perfil ON-05 esta activo.
+
+--------------------------------------------------------------------
+6. Calendario base y Dia 0
+--------------------------------------------------------------------
+
+El calendario debe guardar si el usuario registro siembra directa, trasplante, sets/bulbillos o etapa estimada. En cebolla, la edad por si sola NO garantiza bulbificacion; el fotoperiodo y la adaptacion del cultivar al sitio son decisivos.
+
+Campo tecnico                Valores                                   Regla BIO-G
+
+establishmentMode            directSeed / transplant / set / unknown    Define si el reloj usa dias despues de siembra, trasplante, colocacion de set o etapa manual.
+
+plantingDate                 fecha ingresada                            Base del reloj si el usuario conoce fecha.
+
+estimatedStage               etapa manual                               Se usa si no hay fecha; la etapa manda sobre calendario.
+
+photoperiodClass             shortDay / intermediateDay / longDay /     Si se conoce por variedad/perfil, domina la prediccion de bulbificacion.
+                             unknown
+
+regionLatitudeClass          lowLatitude / transition / highLatitude /  Futuro: ayuda a validar dia corto/intermedio/largo contra region.
+                             unknown
+
+stressDelayDays              0, +1 a +3, +3 a +7, +7 o mas              Estres acumulado mueve calendario, pero no cambia biologia.
+
+confidence                   alta / media / baja                        Depende de fecha, etapa, sensores, modo establecimiento, perfil y fotoperiodo.
+
+Calendario orientativo por perfil (no fechas rigidas):
+
+Perfil      Tipo UX dominante                         Induccion/bulbificacion     Cosecha orientativa       Lectura BIO-G
+
+ON-GEN      Generico / no se                          60-90 dias                  110-140 dias              Conservador; no asume color, almacenamiento ni dia intermedio/largo.
+
+ON-01       Blanca dia corto grano/bola                55-85 dias                  110-140 dias              Mercado fresco/nacional; cuidar cuello, N y humedad tardia.
+
+ON-02       Amarilla/dorada dia corto                  50-80 dias                  100-130 dias              Precoz-intermedio; vigilar deficit en llenado y calor.
+
+ON-03       Morada dia corto                           60-90 dias                  115-145 dias              Color/calidad visual y curado pesan fuerte.
+
+ON-04       Dia intermedio / transicion / altiplano     75-110 dias                 140-165 dias              Requiere fotoperiodo mayor; no usar como default en zona de dia corto.
+
+ON-05       Cambray/rama/manojo                         No busca bulbo completo     60-90 dias                Organo objetivo hoja+base; cosecha joven.
+
+Ajuste por establecimiento:
+- directSeed: arranque mas lento, mayor sensibilidad a costra, humedad, maleza y stand.
+- transplant: etapa inicial ya avanzada; si no se conoce edad de charola/plantula, bajar confianza del calendario.
+- set/bulbillo: puede acortar ciclo, pero no usar como modo comercial base si no hay datos; riesgo de bolting en sets grandes.
+- unknown: usar etapa manual y pedir refinamiento sin bloquear UX.
+
+--------------------------------------------------------------------
+7. Fotoperiodo - variable dominante de cebolla
+--------------------------------------------------------------------
+
+La cebolla forma bulbo en respuesta al dia largo relativo de su grupo varietal, no solamente por edad. En BIO-G v1, el fotoperiodo debe tratarse como variable de seguridad, no como detalle cosmetico.
+
+Clase BIO-G                  Umbral orientativo             Uso
+
+shortDay / dia corto          10-13 h o 10-12 h segun fuente  Zonas de menor latitud y temporadas donde el bulbo debe iniciar con dias relativamente cortos.
+
+intermediateDay / transicion  13-14 h o 12-14 h               Altiplano, zonas templadas, transicion entre dia corto y largo.
+
+longDay / dia largo           >14 h o 14-16 h                 Latitudes altas/norte; no asumir por default para Mexico si el usuario no lo declara.
+
+unknown                       Desconocido                     BIO-G debe bajar confianza y sugerir seleccionar tipo/variedad/region.
+
+Reglas BIO-G:
+- Si el perfil requiere dia corto y el usuario esta en region/temporada de dia largo, puede bulbificar temprano o con calibre bajo segun variedad.
+- Si el perfil requiere dia largo/intermedio y se siembra en condicion de dia corto, puede producir mucha hoja y bulbo pobre.
+- El fotoperiodo no se "corrige" con fertilizante. Se corrige con eleccion de variedad, fecha y region.
+- La planta debe tener suficiente tamaño foliar al entrar a induccion. Fotoperiodo correcto con planta chica = bulbo chico.
+- El calor puede acelerar madurez y reducir tamaño; el frio/vernalizacion y estres pueden favorecer bolting en materiales sensibles.
+
+--------------------------------------------------------------------
+8. Rangos fisiologicos medibles - version codificable
+--------------------------------------------------------------------
+
+Variable                      Optimo / normal                         Observacion                         Alerta                                  Critico / accion
+
+Temperatura ambiente          13-24 C para crecimiento foliar;        24-28 C sostenidos; noches           >30 C en induccion/llenado o            Calor fuerte acelera madurez, reduce calibre y aumenta estres.
+                              18-24 C dia como zona favorable.        calidas con deficit.                 maduracion temprana.
+
+Temperatura de suelo          Germinacion operativa aprox. 9-32 C;    <10 C retrasa emergencia;            Suelo frio + humedad alta;              Frio prolongado puede retrasar stand o predisponer problemas.
+                              mejor 15-25 C para arranque rapido.     >30 C puede reducir uniformidad.      suelo caliente + sales.
+
+Frio / helada                 Plantas establecidas toleran frio       Eventos frios leves segun etapa.      Helada o frio fuerte en plantula.        Daño severo si afecta punto de crecimiento; posible bolting/dobles.
+                              moderado mejor que calor extremo.
+
+Humedad suelo - AW            60-85/90% agua disponible sin           50-60% o fluctuacion fuerte.         <50% en induccion/llenado; >95%         Deficit reduce calibre; exceso produce anoxia y pudriciones.
+                              saturacion.                                                                   con mal drenaje.
+
+Raiz efectiva                 Raiz superficial; monitorear capa        Lectura superficial puede no          Sensores deben vigilar zona              Si hay suelo humedo arriba pero seco/compactado abajo, la absorcion falla.
+                              superior y zona baja de raiz.           representar bulbo.                    10-30 cm aprox. segun sistema.
+
+Humedad ambiental / HR        HR media con ventilacion y hoja seca     HR alta nocturna, rocio o lluvia.     Alta HR + hoja mojada + dosel cerrado.  Sube mildiu, Botrytis, Stemphylium, neck rot y mal curado.
+
+pH suelo                      Operativo 6.0-7.5; zona preferible       5.7-6.0 o 7.5-7.8.                   <5.7 o >7.8.                            Bloqueo nutrimental probable; pedir analisis antes de correccion fuerte.
+                              6.2-6.8/7.0 segun suelo.
+
+Salinidad ECe                 Ideal conservador <1.2-1.5 dS/m.        1.5-2.0 dS/m vigilar.                >2.0 dS/m en establecimiento o bulbo.   >3.0-4.0 dS/m: alto riesgo de bajo vigor/calibre; no subir fertilizante sin revisar CE.
+
+Compactacion / resistencia    <1.5 MPa.                               1.5-2.0 MPa.                         >2.0 MPa.                               Raiz limitada, bulbos pequeños/deformes, drenaje pobre.
+
+NPK relativo                  N alto-controlado en vegetativo;         Lectura baja segun etapa.            Exceso N en induccion/maduracion;       No dosificar aqui: mandar a guia de fertilizacion y laboratorio.
+                              P en arranque; K en llenado/calidad.                                          K bajo en llenado.
+
+Azufre relativo               Importante para Allium, metabolismo      Desbalance puede afectar color,       Falta probable en suelos ligeros o      No corregir a ciegas sin analisis; coordinar con guia de fertilizacion.
+                              y calidad/pungencia.                    vigor o franjas.                     lavados.
+
+--------------------------------------------------------------------
+9. Prioridad nutrimental relativa por etapa - NO dosis
+--------------------------------------------------------------------
+
+Etapa                         N                     P                 K                     Ca/Mg/S                 Lectura BIO-G
+
+Germinacion                   Baja                  Media             Baja                  Baja                    Prioridad: humedad, temperatura, cama de siembra y baja salinidad.
+
+Establecimiento               Media                 Alta              Media                 Media                   Raiz y stand uniforme; evitar sales cerca de semilla/raiz joven.
+
+Desarrollo vegetativo         Media-alta controlada Media             Media                 Media                   Construir hojas sanas; la hoja es fabrica del bulbo.
+
+Induccion a bulbificacion     Media, bajando        Media-baja        Media-alta            Media                   No empujar hoja a ciegas; fotoperiodo, agua y equilibrio mandan.
+
+Bulbificacion / llenado       Media-baja            Baja-media        Alta                  Media-alta              K/agua/suelo sostienen calibre y firmeza; exceso N retrasa maduracion.
+
+Maduracion / cuello           Baja                  Baja              Media                 Media                   Evitar N tardio y humedad excesiva; cerrar cuello y preparar cosecha.
+
+Cosecha                       Baja                  Baja              Baja-media            Baja-media              No fertilizar para "recuperar"; proteger calidad y evitar daño.
+
+Curado / fin de ciclo         No aplica             No aplica         No aplica             No aplica               Es manejo de secado, ventilacion y sanidad, no nutricion activa.
+
+Espigado / seedstalk          Baja                  Baja              Baja                  Baja                    Registrar causa; no tratar como etapa productiva.
+
+--------------------------------------------------------------------
+10. Matriz universal de sensibilidad por etapa
+--------------------------------------------------------------------
+
+Etapa                         Deficit agua       Exceso agua       Frio        Calor       Fotoperiodo     Salinidad     Compactacion   Nutricion
+
+Germinacion                   Alta               Alta              Media       Media       Baja            Alta          Alta           Baja
+Establecimiento               Alta               Alta              Media       Media       Baja            Alta          Alta           Media
+Desarrollo vegetativo          Media-alta         Media             Media       Media       Media           Media         Media          Alta N/P
+Induccion a bulbificacion      Muy alta           Media-alta        Media       Alta        Muy alta        Media-alta    Media          Muy alta N balance
+Bulbificacion / llenado        Muy alta           Alta              Baja        Alta        Alta            Alta          Alta           Alta K/N balance
+Maduracion / cuello            Media              Muy alta          Baja        Media       Baja            Media         Media          Alta por exceso N
+Cosecha                        Media              Muy alta          Baja        Alta sol    Baja            Baja          Baja           Baja
+Curado / fin de ciclo          Baja               Muy alta HR       Baja        Alta si sol Baja            Baja          Baja           No aplica
+Espigado / seedstalk           Media              Media             Alta       Media       Alta            Media         Baja           Media
+
+--------------------------------------------------------------------
+11. Ponderacion sugerida para Agro Score
+--------------------------------------------------------------------
+
+Etapa                         Agua     Temperatura   Suelo/raiz   Nutricion   Fotoperiodo   Sanidad/curado   Comentario motor
+
+Germinacion                   35%      25%           25%          10%         5%            0%               Humedad, temperatura y salinidad definen emergencia.
+
+Establecimiento               30%      20%           30%          15%         5%            0%               Raiz joven y stand: anoxia, costra, compactacion pesan fuerte.
+
+Desarrollo vegetativo          25%      20%           20%          25%         10%           0%               Construir fabrica foliar sin exceso de N ni stress.
+
+Induccion a bulbificacion      25%      20%           15%          15%         25%           0%               Fotoperiodo y agua son decisivos; no interpretar solo edad.
+
+Bulbificacion / llenado        35%      20%           20%          20%         5%            0%               Agua y raiz/salinidad determinan calibre.
+
+Maduracion / cuello            20%      15%           15%          25%         5%            20%              Exceso N/humedad y sanidad pesan mas que crecimiento.
+
+Cosecha                        15%      15%           10%          5%          0%            55%              Evitar daño, lluvia, sol, pudricion y cosecha inmadura.
+
+Curado / fin de ciclo          5%       20%           0%           0%          0%            75%              HR, ventilacion, temperatura y sanidad del cuello mandan.
+
+Bolting / seedstalk            15%      20%           10%          15%         25%           15%              Evento especial; penaliza calibre y calidad.
+
+--------------------------------------------------------------------
+12. Ventanas fisiologicas activas
+--------------------------------------------------------------------
+
+Ventana                     Activa desde               Activa hasta              Prioridad     Accion sistema
+
+Establecimiento seguro       Siembra/trasplante         3-4 hojas funcionales     Muy alta      Revisar humedad fina, costra, sales, maleza, temperatura y stand.
+
+Construccion foliar          Establecimiento            Pre-induccion             Alta          Hoja sana sin exceso de N; la fabrica foliar determina potencial.
+
+Fotoperiodo / induccion      Vegetativo avanzado        Inicio de bulbo           Critica       Validar perfil contra region/fecha; alertar si riesgo de no bulbificar.
+
+Riego de bulbo               Pre-induccion              Llenado de bulbo          Critica       Mantener humedad estable; deficit no siempre se ve por marchitez.
+
+Salinidad / CE               Germinacion                Llenado                   Alta          Subir severidad si coincide con plantula, calor o CE creciente.
+
+Calidad de cuello            Bulbificacion              Maduracion                Alta          Evitar N tardio, humedad excesiva y crecimiento vegetativo prolongado.
+
+Sanidad foliar               Vegetativo                 Cosecha                   Alta          Trips, mildiu, Botrytis, Stemphylium reducen fabrica y calibre.
+
+Maduracion / secado          Cuello blando              Curado                    Muy alta      Suspender crecimiento, evitar lluvias/humedad y proteger curado.
+
+Cierre de ciclo              Cosecha                    Curado                    Media         Registrar calidad, causa de descarte y preparar rotacion.
+
+--------------------------------------------------------------------
+13. Alertas universales en lenguaje humano
+--------------------------------------------------------------------
+
+Condicion detectada                   Mensaje sugerido                                                                 Etapas donde pesa mas
+
+Fotoperiodo no compatible              La cebolla puede crecer con buena hoja y aun asi no formar bulbo si el tipo no corresponde al dia de la zona. Confirme variedad o perfil.    Induccion
+
+Edad adecuada pero sin bulbo           La edad sola no asegura bulbificacion. Revise fotoperiodo, tamaño de planta, fecha de siembra y exceso de nitrogeno.                         Induccion / llenado
+
+Deficit hidrico en bulbo               El cultivo esta en una ventana sensible. La falta de agua puede reducir calibre aunque la planta no se vea marchita.                           Induccion / llenado
+
+Exceso de humedad                      Hay demasiada humedad en zona de raiz o cuello. Puede favorecer pudriciones y mala conservacion.                                                  Establecimiento / maduracion / cosecha
+
+Exceso de N tardio                     El nitrogeno tarde puede mantener hoja verde, engrosar cuello y retrasar madurez del bulbo.                                                       Induccion / maduracion
+
+Calor sostenido                        El calor puede acelerar maduracion y dejar bulbos mas chicos. Mantenga humedad estable y vigile avance de cuello.                               Llenado / maduracion
+
+Salinidad elevada                      La salinidad puede limitar absorcion de agua y reducir calibre. No suba fertilizante sin revisar CE y drenaje.                                   Establecimiento / llenado
+
+Suelo compactado                       Aunque haya agua, la raiz puede no explorar bien. La compactacion limita calibre y puede deformar bulbos.                                          Establecimiento / llenado
+
+HR alta + hoja mojada                  Ambiente favorable a enfermedades foliares. Revise manchas, puntas, color plateado por trips y ventilacion del dosel.                           Vegetativo / llenado
+
+Cuello no cierra                       El bulbo puede estar madurando mal. Revise exceso de N, humedad tardia, variedad, fecha y sanidad.                                                 Maduracion
+
+Espigado / tallo floral                La cebolla muestra espigado. La prioridad ya no es hacer mas hoja, sino evaluar cosecha, descarte y causa para el siguiente ciclo.              Cualquier etapa avanzada
+
+Curado con humedad alta                El curado esta en riesgo. La humedad alta o mala ventilacion pueden abrir puerta a pudriciones de cuello y almacenamiento.                      Curado
+
+--------------------------------------------------------------------
+14. Estados de salida BIO-G
+--------------------------------------------------------------------
+
+Salida                        Valores                                      Regla para cebolla
+
+Indice general                0-100                                        Debe ponderar etapa. El mismo deficit pesa mas en induccion/llenado que en vegetativo temprano.
+
+Subindices                    agua / temperatura / suelo / nutricion /     Fotoperiodo debe existir como subindice o factor de confianza, no mezclarse solo con clima.
+                              fotoperiodo / sanidad-curado
+
+Estado                        Optimo / Observacion / Alerta / Critico      Critico si se combinan fotoperiodo incorrecto + etapa de induccion, o humedad/CE severa en llenado.
+
+Tendencia                     Mejorando / Estable / Deteriorando           Se calcula por historial reciente, no por lectura instantanea.
+
+Confianza                     Alta / media / baja                          Baja si faltan perfil, fecha, etapa o modo establecimiento; baja-media si fotoperiodo desconocido.
+
+Memoria                       evento, etapa, severidad, duracion, impacto  Todo evento importante se guarda en History con lenguaje agricultor.
+
+--------------------------------------------------------------------
+15. Tipos, perfiles y alias - cobertura UX
+--------------------------------------------------------------------
+
+ID        Tipo UX visible                         Perfil BIO-G                         Uso dominante                         Alias representativos / notas
+
+ON-GEN    No se / Otra cebolla                    Intermedio conservador                Bulbo fresco generico                 Entrada segura; no asume color ni fotoperiodo fino.
+
+ON-01     Cebolla blanca grano/bola               Blanca dia corto, intermedio          Mercado nacional, fresco, bodega      SV4043NM, SV7030NS, AJUSCO, Stratus/EX 6800, LA JOYA, XON570W, Bella Luna, Carta Blanca, otra blanca dia corto.
+
+ON-02     Cebolla amarilla/dorada                 Amarilla dia corto, precoz-intermedio Fresco, alto volumen, dulce segun     PECOS, Nomad/SV2623NN, Plethora, Texas Grano/Granex como referencia regional, otra amarilla dia corto.
+                                                                                         material
+
+ON-03     Cebolla morada                          Morada dia corto, intermedio          Fresco, salsas, ensaladas, regional   Rasta, NuMex Crimson/rojas regionales como referencia, otra morada dia corto.
+
+ON-04     Cebolla de transicion / dia intermedio  Intermedio-largo, altiplano/templado  Fresco, malla, calibres grandes,      Cimarron, NUN 6005, Super Luna, NuMex Allure/variedades intermedias como referencia, otra dia intermedio.
+                                                                                         bodega segun material
+
+ON-05     Cebolla en rama / cambray / manojo      Precoz, cosecha joven                 Manojo, hoja + base/bulbo incipiente  SV4522NB, Baja Verde, otra cambray/rama.
+
+Notas:
+- Color ayuda a UX, pero no reemplaza fotoperiodo.
+- Dia corto/intermedio/largo debe ser dato de perfil o alias.
+- Variedades comerciales pueden cambiar por region y disponibilidad; no hacer motor biologico por marca sin ficha validada.
+- Long-day puede quedar como extension futura o mapearse a ON-04 con baja confianza si el usuario no esta en latitud adecuada.
+
+--------------------------------------------------------------------
+16. Traduccion futura a codigo
+--------------------------------------------------------------------
+
+Componente futuro                         Contenido esperado
+
+onion_models.dart                         OnionType, OnionProfile, OnionStage, OnionProfileId, OnionEstablishmentMode, OnionPhotoperiodClass.
+
+onion_profiles.dart                       ON-GEN y ON-01 a ON-05 con calendarios, photoperiodClass, sensibilidad, aliases, destino y flags de cosecha/curado.
+
+onion_engine.dart                         Resolver etapa actual, migracion ON-GEN -> tipo, stage copy, hero asset, alertas de etapa, photoperiod risk, bolting risk.
+
+onion_universal_profile.dart              Rangos medibles, matriz de sensibilidad, pesos de score y textos universales.
+
+onion_agro_score_engine.dart              Ponderacion por etapa y penalizaciones por agua, temperatura, suelo, salinidad, nutricion, fotoperiodo y curado.
+
+onion_catalog.dart                        Entradas UX para wizard: Cebolla, tipo, variedad/otra, etapa, fecha, modo establecimiento.
+
+plant_health/onion_syndromes.dart         Riesgos sanitarios posteriores: trips, mildiu, Botrytis, Stemphylium, purple blotch, Fusarium basal rot, pink root, bacterial rots, neck rot.
+
+yield/onion_yield_references.dart         Rendimiento por bulbo fresco, almacenamiento, proceso, cambray y sistema.
+
+fertilization/onion_fertilization.dart    Guia futura: N temprano, P raiz, K llenado, S calidad, CE, suspender N tarde, riego y curado.
+
+--------------------------------------------------------------------
+17. Assets y nombres sugeridos
+--------------------------------------------------------------------
+
+Asset de etapa Seeds                                  Etapa / uso
+
+onion_stage_germination.png                           Germinacion
+onion_stage_establishment.png                         Emergencia / establecimiento
+onion_stage_vegetative_leaf_growth.png                Desarrollo vegetativo foliar
+onion_stage_bulb_induction.png                        Induccion a bulbificacion
+onion_stage_bulb_filling.png                          Bulbificacion / engrosamiento de bulbo
+onion_stage_maturation_neck.png                       Maduracion del bulbo / cuello
+onion_stage_harvest.png                               Cosecha
+onion_stage_curing_end_cycle.png                      Curado / fin de ciclo
+onion_stage_bolting.png                               Evento: espigado / seedstalk, si se decide asset separado
+
+Icon de wizard                                        Uso
+
+ic_onion.png                                          Entrada madre Cebolla
+ic_onion_generic.png                                  No se / Otra cebolla
+ic_onion_white.png                                    Cebolla blanca grano/bola
+ic_onion_yellow.png                                   Cebolla amarilla/dorada
+ic_onion_red.png                                      Cebolla morada
+ic_onion_intermediate.png                             Cebolla de transicion / dia intermedio
+ic_onion_bunching.png                                 Cebolla cambray / rama / manojo
+
+Regla visual:
+- Morfologia real de Allium cepa: hojas tubulares/cerosas, cuello definido, bulbo por escamas, raices fasciculadas.
+- No usar cebolla generica tipo icono plano para assets fenologicos.
+- En germinacion: semilla/radicula/brote tipo gancho o latigo joven.
+- En vegetativo: hojas tubulares, sin bulbo exagerado.
+- En induccion: base empieza a ensanchar.
+- En llenado: bulbo visible y progresivo.
+- En maduracion: cuello cae/seca, hojas amarillan.
+- En curado: bulbo con tunicas secas, cuello seco, sin escena narrativa.
+
+--------------------------------------------------------------------
+18. Reglas de migracion y seguridad UX
+--------------------------------------------------------------------
+
+- ON-GEN nunca debe mostrarse como perfil incompleto; debe sentirse como configuracion normal.
+- Si el usuario despues elige tipo especifico, BIO-G migra ON-GEN -> ON-XX sin borrar historial.
+- La migracion recalcula calendario, ventanas activas, sensibilidad, photoperiodClass y textos futuros; no reinicia cultivo.
+- Si el usuario no sabe fecha, se usa etapa manual y baja confianza del calendario.
+- Si el usuario sabe variedad pero no tipo, el alias debe resolver a perfil si esta en catalogo; si no, preguntar tipo/fotoperiodo sin bloquear.
+- Si la region/temporada contradice el photoperiodClass, no afirmar falla definitiva: mostrar "riesgo de no bulbificar" y pedir confirmacion.
+- No crear perfil biologico nuevo por cada marca comercial salvo ficha validada.
+- No activar hidroponia/sustrato inerte en v1; si aparece ese sistema, marcar como fuera de alcance o modo futuro.
+
+--------------------------------------------------------------------
+19. Reglas de no sobre-modelar en v1
+--------------------------------------------------------------------
+
+Tema                                  Decision v1
+
+Color de bulbo                         Ajusta UX, textos, calidad visual y mercado; no crea cultivo separado.
+
+Fotoperiodo                            Si crea perfil/sensibilidad. Es variable biologica real.
+
+Variedad comercial                     Alias hacia perfil; no motor independiente sin ficha validada.
+
+Dosis fertilizante kg/ha               Queda para guia de fertilizacion con laboratorio y sistema.
+
+Azufre y micronutrientes               Se reconocen como importantes, pero no se dosifican aqui.
+
+Plagas/enfermedades                    Quedan para documento de riesgos y modulo Plant Health.
+
+Rendimiento                            Queda para documento de rendimiento aproximado por sistema y tipo.
+
+Cambray                                Es perfil UX con organo objetivo diferente; no debe penalizarse por no formar bulbo seco.
+
+Hidroponia/protegido avanzado          Fuera de v1 salvo modo futuro especializado.
+
+--------------------------------------------------------------------
+20. Resumen ejecutivo para continuar
+--------------------------------------------------------------------
+
+Elemento                    Cierre
+
+Estructura                  Cebolla queda como cultivo madre propio: crop_onion.
+
+Subtipos                    ON-GEN, blanca dia corto, amarilla dia corto, morada dia corto, transicion/dia intermedio y cambray/rama.
+
+Etapas                      8 estados operativos BIO-G + evento de espigado/seedstalk.
+
+Etapa critica               Induccion a bulbificacion -> bulbificacion/llenado -> maduracion/cuello.
+
+Sensor/variable clave       Humedad de suelo, temperatura, pH, EC, compactacion/resistencia, HR como factor de riesgo, fotoperiodo como logica/modelo.
+
+Riesgo central              No bulbificar por fotoperiodo equivocado; bulbo chico por planta chica/deficit/CE/calor; mala conservacion por N/humedad tardia.
+
+Siguiente documento         Perfil Generico ON-GEN / SKIP, conservador y migrable.
+
+--------------------------------------------------------------------
+21. Fuentes y trazabilidad
+--------------------------------------------------------------------
+
+S1. University of Georgia Extension. Vidalia Onion Production Guide / Onion Production Guide, Bulletin 1198, revision 2026.
+Uso BIO-G: fotoperiodo dia corto/intermedio/largo; pH; nitrogeno; riego; almacenamiento; curado; seguridad de N/agua antes de cosecha.
+URL: https://fieldreport.caes.uga.edu/publications/B1198/onion-production-guide/
+URL PDF: https://site.extension.uga.edu/vidaliaonion/files/2026/02/Vidalia-Onion-Production-Guide.pdf
+
+S2. New Mexico State University. Bulb Onion Culture and Management for Southern New Mexico, CR 563.
+Uso BIO-G: suelos, drenaje, salinidad, riego, fechas, trasplantes, industria de cebolla, trips, enfermedades, curado, humedad al cosechar.
+URL: https://pubs.nmsu.edu/_circulars/CR563/index.html
+
+S3. New Mexico State University. New Mexico Onion Varieties, CR 567.
+Uso BIO-G: variedades como alias, bolting resistance, pink root, shape, maturity, transplante vs siembra directa.
+URL: https://pubs.nmsu.edu/_circulars/CR567/index.html
+
+S4. Western IPM / NMSU Crop Profile for Onions in New Mexico.
+Uso BIO-G: raiz superficial, riego ligero/frecuente, fotoperiodo vs edad, factores de tamaño de bulbo, trips, pink root, Fusarium, curado.
+URL: https://ipmdata.ipmcenters.org/documents/cropprofiles/NMonions.pdf
+
+S5. UC IPM. Onion and Garlic Pest Management Guidelines.
+Uso BIO-G: catalogo de riesgos para documento de sanidad: thrips, maggots, leafminers, Botrytis, downy mildew, Fusarium basal rot, pink root, Stemphylium/purple blotch, white rot, nematodos.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/
+
+S6. Oregon State University / Malheur Experiment Station. Sustainable Onion Production - Nutrition.
+Uso BIO-G: suelo y tejido, N en incrementos, fertirriego como entrega precisa, nutricion por prueba.
+URL: https://agsci.oregonstate.edu/mes/sustainable-onion-production/nutrition
+
+S7. Oregon State University. Onions, Dry Bulb - Eastern Oregon / Western Oregon.
+Uso BIO-G: temperatura de germinacion, suelos, siembra/trasplante, curado/cosecha, rendimiento regional como calibracion futura.
+URL: https://horticulture.oregonstate.edu/oregon-vegetables/onions-dry-bulb-eastern-oregon
+URL: https://horticulture.oregonstate.edu/oregon-vegetables/onions-dry-bulb-western-oregon
+
+S8. Documentos internos BIO-G aportados por el usuario: Perfil Universal Cebolla y Perfil Generico ON-GEN.
+Uso BIO-G: estructura inicial ON-01 a ON-05, filosofia de perfil generico, lenguaje UX y decisiones de proyecto.
+
+Estado del documento:
+PERFIL UNIVERSAL BIO-G - CEBOLLA v2 mejorado queda listo para revisar Perfil Generico ON-GEN, y despues construir Guia de Fertilizacion, Riesgos/Sanidad y Rendimiento Aproximado antes de codigo.

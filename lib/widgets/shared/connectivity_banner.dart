@@ -6,11 +6,13 @@ import 'package:flutter/material.dart';
 class ConnectivityBanner extends StatefulWidget {
   final Widget child;
   final Duration checkInterval;
+  final bool enabled;
 
   const ConnectivityBanner({
     super.key,
     required this.child,
     this.checkInterval = const Duration(seconds: 15),
+    this.enabled = true,
   });
 
   @override
@@ -18,14 +20,28 @@ class ConnectivityBanner extends StatefulWidget {
 }
 
 class _ConnectivityBannerState extends State<ConnectivityBanner> {
+  static const List<String> _connectivityHosts = <String>[
+    'api.open-meteo.com',
+    'google.com',
+  ];
+
   bool _offline = false;
+  bool _checking = false;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _check();
-    _timer = Timer.periodic(widget.checkInterval, (_) => _check());
+    _syncChecks();
+  }
+
+  @override
+  void didUpdateWidget(covariant ConnectivityBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enabled != widget.enabled ||
+        oldWidget.checkInterval != widget.checkInterval) {
+      _syncChecks();
+    }
   }
 
   @override
@@ -34,23 +50,49 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
     super.dispose();
   }
 
-  Future<void> _check() async {
-    try {
-      final result = await InternetAddress.lookup(
-        'google.com',
-      ).timeout(const Duration(seconds: 4));
+  void _syncChecks() {
+    _timer?.cancel();
+    _timer = null;
 
-      if (!mounted) return;
-
-      final hasConnection =
-          result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-
-      if (_offline != !hasConnection) {
-        setState(() => _offline = !hasConnection);
+    if (!widget.enabled) {
+      if (_offline && mounted) {
+        setState(() => _offline = false);
       }
-    } catch (_) {
-      if (!mounted) return;
-      if (!_offline) setState(() => _offline = true);
+      return;
+    }
+
+    unawaited(_check());
+    _timer = Timer.periodic(
+      widget.checkInterval,
+      (_) => unawaited(_check()),
+    );
+  }
+
+  Future<void> _check() async {
+    if (!widget.enabled || _checking) return;
+    _checking = true;
+    bool hasConnection = false;
+
+    try {
+      for (final host in _connectivityHosts) {
+        try {
+          final result = await InternetAddress.lookup(
+            host,
+          ).timeout(const Duration(seconds: 4));
+
+          hasConnection = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+          if (hasConnection) break;
+        } catch (_) {
+          // Try the next host before showing the advisory banner.
+        }
+      }
+    } finally {
+      _checking = false;
+    }
+
+    if (!mounted || !widget.enabled) return;
+    if (_offline != !hasConnection) {
+      setState(() => _offline = !hasConnection);
     }
   }
 
@@ -89,7 +131,7 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
                           const SizedBox(width: 8),
                           const Expanded(
                             child: Text(
-                              'Sin conexión a internet',
+                              'Conectividad limitada. Algunos datos pueden tardar.',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 13,
@@ -98,7 +140,7 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: _check,
+                            onTap: () => unawaited(_check()),
                             child: const Text(
                               'Reintentar',
                               style: TextStyle(

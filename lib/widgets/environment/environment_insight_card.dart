@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bio_g/models/environment_models.dart';
+import 'package:bio_g/widgets/environment/environment_asset_icon.dart';
 
 class EnvironmentInsightCard extends StatelessWidget {
   final String text;
@@ -45,8 +46,8 @@ class EnvironmentInsightCard extends StatelessWidget {
           children: [
             Transform.scale(
               scale: 2.6,
-              child: Image.asset(
-                iconPath,
+              child: EnvironmentAssetIcon(
+                assetPath: iconPath,
                 width: 16,
                 height: 16,
                 fit: BoxFit.contain,

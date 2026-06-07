@@ -86,7 +86,10 @@ flutter:
     - assets/seeds/chili/
     - assets/seeds/eggplant/
     - assets/seeds/lettuce/
-    
+    - assets/seeds/spinach/
+    - assets/seeds/Onion/
+    - assets/seeds/Garlic/
+
   fonts:
     - family: Inter
       fonts:

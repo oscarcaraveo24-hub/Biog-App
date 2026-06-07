@@ -1,0 +1,826 @@
+BIO-G / CEBOLLA - TEXTO PARA CODIGO
+Archivo TXT: 05_Riesgos_Cultivo_Sanidad_BioG_Cebolla_v1.txt
+Documento: RIESGOS DEL CULTIVO DE CEBOLLA - SANIDAD VEGETAL / PLANT HEALTH
+Version: v1 investigada y lista para revision tecnica BIO-G
+Cultivo madre: crop_onion / CropKey.onion
+Perfiles BIO-G: ON-GEN, ON-01, ON-02, ON-03, ON-04, ON-05
+Documento relacionado: Perfil Universal BIO-G Cebolla v2, Perfil Generico ON-GEN/SKIP v2, Guia Tecnica de Fertilizacion Cebolla v3 reforzada y Rendimiento Aproximado Cebolla v1.1.
+Nota: documento tecnico interno. No sustituye diagnostico local, laboratorio, extension agricola, asesor agronomico ni normativa regional. BIO-G orienta, prioriza y pide confirmacion; no receta plaguicidas ni ingredientes activos en UX v1.
+
+======================================================================
+BIO-G
+RIESGOS DEL CULTIVO DE CEBOLLA
+Plagas, enfermedades, desordenes fisiologicos y traduccion a motor Plant Health
+Base tecnica para BIO-G v1
+======================================================================
+
+Alcance
+----------------------------------------------------------------------
+Este documento cubre cebolla en campo abierto, riego por goteo, surco/gravedad, aspersion, trasplante, siembra directa, bulbo fresco, bulbo seco/curado, almacenamiento, proceso y cebolla en rama/cambray en suelo.
+
+No cubre como modelo principal: hidroponia, NFT, raiz flotante, sustratos inertes, soluciones recirculantes, invernadero altamente tecnificado sin suelo, receta de agroquimicos, diagnostico final desde una sola foto ni recomendacion de ingredientes activos.
+
+Objetivo
+----------------------------------------------------------------------
+Consolidar una base confiable para que BIO-G interprete riesgos de sanidad y calidad en cebolla, compatible con el catalogo Plant Health, los perfiles ON-GEN, ON-01, ON-02, ON-03, ON-04 y ON-05, la guia de fertilizacion y la calculadora de rendimiento.
+
+La cebolla no debe leerse como fruto ni como hoja. Es una hortaliza de bulbo donde la sanidad afecta tres cosas al mismo tiempo:
+
+1. La fabrica de hoja que llena el bulbo.
+2. La raiz superficial que sostiene agua y nutrientes.
+3. El bulbo comercial, cuello, curado, almacenamiento y descarte.
+
+Regla de producto:
+En cebolla el organo objetivo es el bulbo, pero la hoja decide el llenado y la calidad final. Una planta puede verse verde y aun asi fallar por fotoperiodo, exceso de nitrogeno, cuello grueso, trips, enfermedad foliar o mala maduracion. Tambien puede producir bulbo, pero perder valor por pudricion, mal curado, bulbos dobles, rajados, cuello humedo o contaminacion.
+
+======================================================================
+1. Metodologia y lectura del codigo actual
+======================================================================
+
+El codigo de BIO-G debe leer cebolla como cultivo de bulbo fotoperiodico. La tarea de sanidad no es enlistar nombres cientificos sin jerarquia, sino traducir riesgos reales a sindromes accionables: organo, sintoma principal, senales fuertes y debiles, condiciones ambientales, etapa, diferenciales, perfil afectado y mensaje humano.
+
+Componente actual                       Como se usa                         Implicacion para cebolla
+----------------------------------------------------------------------
+PlantHealthStageBucket                  seedling, vegetativeEarly/Mid/      Agregar _fromOnion. Germinacion/emergencia -> seedling; desarrollo vegetativo -> vegetativeEarly/Mid; induccion a bulbificacion -> vegetativeLate; bulbificacion/engrosamiento -> grainFill u organFill si existe; maduracion/curado -> lateSeason; espigado -> lateSeason/reproductive anomaly, no floracion productiva.
+
+PlantHealthIds                          Organo, sintoma principal y         La mayoria de riesgos caben en leaf, neck, bulb, basalPlate, root, wholePlant, seedling. Conviene agregar senales finas: thrips_silver_scarring, downy_fuzzy_growth, purple_concentric_lesions, pink_roots, basal_plate_brown, neck_soft_rot, bulb_scale_water_soaked, white_mycelium_sclerotia, black_mold_spores, seedstalk_bolting, no_bulb_photoperiod, thick_neck.
+
+PlantHealthSyndrome                     Unidad principal del catalogo       Crear onion_syndromes.dart con 30-34 entradas priorizadas. Agrupar UX en hoja/manchas, raiz/basal, bulbo-cuello-almacenamiento, insectos-vectores, nematodos y estres fisiologico.
+
+VarietyModifier                         Ajusta score por profileId /        Usar ON-01 a ON-05 sin crear cultivos separados. Blanca/amarilla/morada/transicion/cambray ajustan sensibilidad comercial, curado, fotoperiodo, calidad visual, almacenamiento y tolerancia al descarte.
+                                         varietyId
+
+Environment flags                       highHumidity, wetCanopy,            Muy utiles para downy mildew, Botrytis, purple blotch, Stemphylium, bacterial rots, trips, IYSV, white rot, pink root, salinity, waterlogging, heatStress, frostStress y poorCuring.
+                                         coolDewyWindow, vectorPressure,
+                                         recentStress, heatStress,
+                                         waterlogging, salinityRisk
+
+PlantHealthRegistry                     Elige catalogo por cropId           Agregar import de onion_syndromes.dart y case CropCatalog.onionCropId / CropKey.onion.
+
+Criterio editorial:
+BIO-G debe decir "riesgo compatible con", "condiciones favorables a", "revise aqui", "confirme si avanza". No debe decir "tienes X enfermedad" con una sola foto, un solo sensor o una lectura aislada.
+
+======================================================================
+2. Resumen ejecutivo
+======================================================================
+
+En cebolla, el riesgo sanitario se concentra en seis familias:
+
+1. Enfermedades foliares que destruyen la fabrica de hoja y reducen calibre:
+   - Mildiu velloso / downy mildew.
+   - Botrytis leaf blight.
+   - Purple blotch / Alternaria.
+   - Stemphylium leaf blight.
+   - Rust regional.
+
+2. Plagas de hoja y vectores:
+   - Trips de la cebolla y trips de flores.
+   - Iris yellow spot virus (IYSV) asociado a trips.
+   - Minadores en cebolla verde/cambray.
+   - Orugas/cutworms, gusanos de suelo y plagas de establecimiento.
+
+3. Problemas de raiz, plato basal y suelo:
+   - Pink root.
+   - Fusarium basal rot.
+   - White rot.
+   - Southern blight.
+   - Damping-off/root rot.
+   - Nematodos, especialmente stem and bulb nematode y root-knot/stubby root segun zona.
+
+4. Pudriciones de bulbo, cuello y almacenamiento:
+   - Botrytis neck and bulb rot.
+   - Bacterial bulb rots: center rot, sour skin, slippery skin, soft rot, Enterobacter/Pantoea/Burkholderia/Pectobacterium complex.
+   - Black mold y blue mold poscosecha.
+   - Daño por heridas, cuello humedo, exceso de N y curado deficiente.
+
+5. Desordenes fisiologicos y manejo que parecen sanidad:
+   - Fotoperiodo incorrecto: no bulbifica.
+   - Espigado / seedstalk por frio-vernalizacion, edad/tamano de planta y variedad.
+   - Deficit hidrico en induccion y llenado: bulbo chico, doble o rajado.
+   - Exceso de humedad/anoxia: raiz pobre y pudriciones.
+   - Salinidad / sodio / boro: bajo vigor, puntas quemadas y calibre bajo.
+   - Exceso de nitrogeno: cuello grueso, madurez tardia, bulbos dobles, mala conservacion.
+   - Compactacion: bulbo deformado, raiz limitada, drenaje pobre.
+
+6. Malezas y competencia:
+   - La cebolla compite mal por su crecimiento inicial lento y follaje vertical; malezas reducen rendimiento, complican cosecha y pueden hospedar trips, virus y bacterias.
+
+Lectura BIO-G recomendada:
+La sanidad de cebolla debe cruzar etapa + perfil + ambiente + riego + N tardio + fotoperiodo + curado. La app no debe tratar una mancha de hoja igual en cambray que en cebolla de almacenamiento, ni una pudricion de cuello igual antes y despues de curar. La salida debe priorizar organo objetivo: bulbo vendible, cuello sano, maduracion y almacenamiento.
+
+======================================================================
+3. Panorama real del riesgo en cebolla
+======================================================================
+
+- La cebolla tiene raiz superficial y poca capacidad de explorar suelo profundo. Por eso el agua, la salinidad, la compactacion y los problemas radiculares se traducen rapido en follaje debil y bulbo pequeno.
+
+- La hoja tubular es la fabrica que llena el bulbo. Enfermedades foliares como mildiu, Botrytis, purple blotch y Stemphylium no solo manchan hoja: reducen fotosintesis, adelantan senescencia y bajan calibre.
+
+- Trips es la plaga eje de cebolla. Causa dano directo por raspado/succion, deja plateado o bronceado en hojas, reduce fotosintesis, favorece entrada de enfermedades y puede vectorizar IYSV. En algunas regiones tambien se relaciona con bacterias como center rot.
+
+- Los problemas de bulbo y cuello se definen muchas veces antes de cosecha: exceso de N, riego tardio, lluvia, cuello grueso, cosecha inmadura, heridas, mal curado, trips/maggots y altas temperaturas favorecen pudriciones en campo o almacenamiento.
+
+- La cebolla es muy sensible a fotoperiodo. Si el perfil no corresponde a la zona, puede no formar bulbo aunque la planta este grande. Esto no es enfermedad, pero se ve como "cultivo sano que no produce". BIO-G debe diferenciarlo de exceso de N, baja luz, frio o falta de K.
+
+- El espigado no es etapa productiva. Es un evento de perdida de calidad para bulbo comercial. Se asocia a planta grande expuesta a frio, variedad sensible, fecha de siembra incorrecta y estres. Una vez visible el tallo floral, el sistema debe hablar de decision de cosecha/cierre, no de recuperar bulbo normal.
+
+- En cebolla blanca/amarilla/morada de bulbo, el descarte puede ocurrir por calibre, cuello, pudricion o deformacion. En cambray, el descarte es mas visual y de textura: trips, minador, manchas, amarillamiento y base podrida pesan mas temprano.
+
+======================================================================
+4. Riesgos por sistema y destino
+======================================================================
+
+Sistema / destino                 Riesgos que mas pesan                                      Lectura BIO-G recomendada
+----------------------------------------------------------------------
+ON-GEN / desconocido              Fotoperiodo, trips, deficit/exceso de agua, salinidad,       Perfil conservador. Alertar sin asumir color, almacenamiento, cambray ni sistema intensivo. Preguntar o inferir tipo cuando haya datos.
+                                  exceso N, cuello grueso, pudricion de cuello.
+
+Campo abierto bulbo fresco        Trips, mildiu si hay frio/humedad, purple blotch/             Cruzar HR, mojado foliar, viento, riego, N tardio, etapa de bulbificacion y madurez.
+                                  Stemphylium, pink root, Fusarium, bacterial rots.
+
+Riego por goteo                   Menor mojado foliar; riesgo de franjas secas, CE alta,        Revisar uniformidad de humedad y CE del bulbo; no confundir salinidad o falla de goteo con falta de nutriente.
+                                  salinidad localizada, fertirriego excesivo.
+
+Riego por aspersion               Mayor mojado foliar, mildiu, Botrytis, bacterias,             Subir riesgo con HR alta + noche fresca + dosel cerrado; sugerir revisar hoja temprano y secado de follaje.
+                                  splash de suelo.
+
+Riego por surco/gravedad          Anoxia por exceso, distribucion irregular, pink root,          Diferenciar deficit vs suelo saturado; raiz superficial necesita humedad constante sin encharcar.
+                                  maggots, malezas.
+
+Bulbo seco / almacenamiento       Botrytis neck rot, bacterial rots, black mold, blue mold,      Subir peso de madurez, cuello seco, curado, heridas, N tardio y humedad de almacenamiento.
+                                  cuello grueso, heridas.
+
+Proceso / alto volumen            Uniformidad, calibre, pudriciones, maleza, leaf dieback.       No inflar rendimiento si el follaje murio temprano o hay pudricion/descartes.
+
+Cambray / rama / manojo           Trips, minador, Botrytis, manchas, base podrida,               Umbral visual bajo. La hoja es parte del producto; dano cosmetico pesa mas que en bulbo seco.
+                                  amarillamiento, textura fibrosa.
+
+Altiplano / transicion            Fotoperiodo, heladas, espigado, lluvias tardias,               Cuidar ventana de bulbo y curado; ON-04 sube sensibilidad a lluvia tardia y cuello grueso.
+                                  maduracion lenta.
+
+======================================================================
+5. Catalogo maestro propuesto de riesgos bioticos
+======================================================================
+
+La tabla prioriza riesgos con valor real para decision de campo y compatibles con un motor de sindromes. No es lista infinita; son entradas utiles para monitoreo, alerta y confirmacion.
+
+Riesgo                              Donde pesa mas                         Que lo favorece                              Clave visual / senal fuerte                         Etapa                  Prioridad
+----------------------------------------------------------------------
+Damping-off / muerte de plantula     Siembra directa, almacigo, trasplante  Suelo frio-humedo, exceso agua, semilla      No emerge, colapsa, cuello oscuro, raiz cafe         Germinacion-estab.     Alta
+                                                                          debil, compactacion, cama mal drenada.
+
+Root rot / anoxia complex            Suelos pesados, riego excesivo,        Saturacion, baja aireacion, compactacion,    Marchitez con suelo humedo, raiz pobre,              Estab.-vegetativo      Alta
+                                      charcos, surcos.                       drenaje bajo.                                parches, amarillamiento.
+
+Pink root / raiz rosada              Lotes con historial, regiones calidas  Monocultivo Allium, estres por calor/frio,   Raices rosa -> rojo/purpura -> negras;               Vegetativo-bulbo       Alta regional
+                                      o suelos contaminados.                 sequia/inundacion, suelo infestado.          plantas enanas, bulbos chicos.
+
+Fusarium basal rot                   Bulbo, plato basal, almacenamiento.    Suelo calido, heridas, bulbos madre/sets,    Plato basal cafe, pudricion seca desde la base,      Bulbificacion-cosecha  Alta regional
+                                                                          plagas secundarias.                           hojas amarillas desde puntas, bulbo se agrieta.
+
+White rot                            Campos con historial Allium.           Suelo fresco-humedo, esclerocios,             Micelio blanco en base, bolitas negras tipo          Desde establecimiento  Muy alta si aparece
+                                                                          movimiento de suelo/equipo/material.          semilla de amapola, planta se desprende facil.
+
+Southern blight                      Zonas calidas/humedas, materia         Calor, humedad, residuos organicos,           Micelio blanco tipo abanico en base, esclerocios     Vegetativo-cosecha     Media regional
+                                      organica.                              hospedantes previos.                         cafe, hojas amarillas y marchitez.
+
+Botrytis leaf blight                 Follaje y final de vegetativo.         Mojado foliar prolongado, rocio, mala         Manchas blancas pequeñas hundidas con halo,          5 hojas-bulbo          Alta en humedad
+                                                                          ventilacion, dosel cerrado.                   puntas secas, hoja muere si avanza.
+
+Downy mildew / mildiu velloso        Clima fresco-humedo, dosel cerrado.   HR muy alta, rocio, lluvia, hoja mojada,      Crecimiento gris/blanco/purpura en hojas,            Vegetativo-bulbo       Muy alta regional
+                                                                          drenaje pobre, Allium cercano.                parches amarillos que avanzan con viento.
+
+Purple blotch / Alternaria           Hojas viejas, dano por trips,          Humedad alta, mojado foliar, tejido viejo,   Lesiones elipticas tan/purpura, anillos              Vegetativo-maduracion  Alta
+                                      fin de ciclo.                          trips, estres.                                concentricos, halo amarillo, hoja se quiebra.
+
+Stemphylium leaf blight              Hojas estresadas, lesiones previas,    Humedad de dosel, rocio nocturno, calor/      Manchas oscuras oliva-negro, coalescencia,           Bulbo-maduracion       Alta regional
+                                      proceso y almacenamiento.              estres, mildiu/purple blotch previo.         tizne de hoja, defoliacion rapida.
+
+Rust regional                        Regiones frescas/humedas, Allium.     HR alta, temperaturas moderadas, ciclos       Pustulas naranjas/rojizas en hoja; luego oscuras.    Vegetativo-bulbo       Media regional
+                                                                          repetidos.
+
+Botrytis neck and bulb rot           Almacenamiento, curado, pre-cosecha.  N tardio, cuello grueso, cosecha inmadura,    Cuello blando, tejido acuoso cafe, moho gris         Maduracion-curado      Muy alta almacenamiento
+                                                                          humedad, mal curado, heridas.                 entre escamas.
+
+Bacterial bulb rot complex           Bulbo, cuello, cosecha, almacenamiento. Agua libre, calor >29 C, heridas, riego      Escamas internas acuosas/amarillas/cafes,            Bulbo-cosecha-curado   Muy alta en calor/humedad
+                                                                          por aspersion, N alto, curado lento.          cuello blando, olor, centro/escamas separadas.
+
+Center rot / Pantoea complex         Zonas calidas, presion de trips.       Trips, malezas hospedantes, calor, estres.    Hoja central clorotica/bleached, colapso de          Bulbo-maduracion       Alta regional
+                                                                                                                         centro, escamas rojizas cerca del cuello.
+
+Sour skin / Burkholderia             Cosecha con calor, bulbo maduro.       Temperaturas altas, agua contaminada,         Escamas amarillas/slimy, olor agrio/vinagre,         Cosecha-poscosecha     Alta regional
+                                                                          aspersion tardia, heridas.                    escamas internas se deslizan.
+
+Soft rot / Pectobacterium-Dickeya    Campo tardio, almacenamiento.          Heridas, lluvia/irrigacion, calor, insectos, Tejido muy blando, acuoso, olor, pudricion           Cosecha-poscosecha     Alta condicional
+                                                                          mala ventilacion.                             interna.
+
+Black mold / Aspergillus             Poscosecha, regiones calidas.          Altas temperaturas, heridas, humedad,         Masas negras de esporas bajo escamas externas.       Curado-almacenamiento  Media-alta calor
+                                                                          curado deficiente.                            Escamas externas secas o acuosas.
+
+Blue mold / Penicillium              Almacenamiento y transporte.           Heridas, humedad, mala ventilacion,           Moho verde-azul en escamas externas, suele           Almacenamiento         Media
+                                                                          condensacion.                                  aparecer despues de cosecha.
+
+Iris yellow spot virus (IYSV)        Follaje, bulbo comercial y semilla.    Trips viruliferos, malezas/voluntarios,       Lesiones pajizas/amarillas en forma de diamante      Vegetativo-bulbo       Alta donde hay trips
+                                                                          estres, exceso N.                              o huso; necrosis, muerte de hojas.
+
+Onion yellow dwarf virus / mosaicos  Cebolla verde, Allium perenne,         Material vegetativo infectado, vectores,      Estrias amarillas, hojas crinkled, mosaico,          Vegetativo             Media regional
+                                      semilla vegetativa/sets.               voluntarios.                                  menor vigor.
+
+Trips de cebolla                     Todas; mas critico en bulbificacion.  Calor/seco, campos vecinos, cereales/alfalfa, Plateado/bronceado, raspado, insectos dentro         Vegetativo-bulbo       Muy alta
+                                                                          malezas, N excesivo.                           de pliegues y cuello.
+
+Leafminers / minadores               Cambray/manojo y hoja comercial.      Hospederos cercanos, presion regional,         Galerias blancas serpenteantes; contaminacion        Estab.-cosecha         Alta en cambray
+                                                                          riego/manejo.                                  por larvas/pupas.
+
+Onion/seedcorn maggot                Siembra directa, almacigo, arranque.  Suelo fresco y humedo, MO fresca, residuos,    Semilla/plantula comida, fallas de stand, larvas     Germinacion-5 hojas    Alta condicional
+                                                                          rotacion con alfalfa/leguminosas.             blancas sin patas; despues puede atacar bulbo.
+
+Cutworms / orugas                    Plántula y hojas bajas.               Maleza previa, residuos, actividad nocturna.   Plantas cortadas al nivel del suelo, mordidas        Germinacion-vegetativo Media-alta
+                                                                                                                         irregulares.
+
+Bulb mites                           Bulbo, plato basal, material vegetal. Heridas, bulbos/sets contaminados, Fusarium,   Acaros pequeños perla; daño en base, pudricion       Estab.-almacenamiento  Media regional
+                                                                          humedad y almacenamiento.                      secundaria.
+
+Wireworms / gusanos de suelo         Campos con pastos/fallow/weed hosts. Historial de pastizal, maleza, residuos.       Plantas debiles, raices/bulbo mordidos.              Estab.-bulbo           Media condicional
+
+Slugs/snails                         Zonas humedas, huerto/protegido.      Humedad, mulch, residuos, sombra.              Mordidas irregulares, baba, daño nocturno.           Vegetativo-cambray     Condicional
+
+Nematodos: stem/bulb, root-knot,     Suelos con historial, semilla/sets,   Rotacion corta, material infestado, suelo      Raiz corta/agallada, bulbo deformado, tejido         Desde establecimiento  Media-alta regional
+stubby root                           zonas especificas.                    contaminado.                                  gris/blando en cuello si Ditylenchus.
+
+Malezas competidoras                 Todo el ciclo, mas critico temprano.  Crecimiento inicial lento, camas sin control.  Cebolla sombreada, menor calibre, cosecha dificil,   Germinacion-bulbo      Alta
+                                                                                                                         hospedaje de trips/virus/bacterias.
+
+======================================================================
+6. Riesgos abioticos y fisiologicos que deben entrar al motor
+======================================================================
+
+En cebolla, muchos sintomas comerciales no son plaga ni enfermedad: nacen de fotoperiodo, agua, salinidad, fertilizacion, compactacion, frio/calor, cosecha y curado. BIO-G debe cruzar sensores antes de sugerir riesgo biotico.
+
+Riesgo / desorden                  Que lo dispara                                  Que se observa                             Momento sensible             Lectura BIO-G recomendada
+----------------------------------------------------------------------
+Fotoperiodo incorrecto /           Variedad dia largo en zona dia corto,           Mucha hoja y poco bulbo, bulbo pobre,       Induccion-bulbo             No tratar como enfermedad ni falta de fertilizante. El fotoperiodo no se corrige con NPK.
+no bulbificacion                    fecha/zona incorrecta, perfil mal elegido.      cebolla tipo manojo no intencional.
+
+Espigado / seedstalk               Planta grande expuesta a frio, vernalizacion,   Tallo floral central, bulbo duro/           Vegetativo-bulbo             Evento de perdida de calidad. No es floracion productiva; registrar causa y considerar cosecha/cierre.
+                                      variedad sensible, fecha incorrecta.            deformado, baja calidad.
+
+Exceso de nitrogeno                N alto tarde, fertirriego sin control,          Cuello grueso, follaje muy verde/tierno,    Prebulbo-maduracion          Subir riesgo de Botrytis, bacterias, madurez tardia, bulbo doble y mala conservacion.
+                                      suelo residual alto.                           bulbos dobles, madurez retrasada.
+
+Deficit de nitrogeno               Suelo pobre, lixiviacion, baja MO.              Follaje palido, bajo vigor, bulbo chico.    Vegetativo temprano          Diferenciar de raiz, salinidad, frio y agua; no sobrerreaccionar cerca de madurez.
+
+Deficit hidrico                    Riego espaciado, viento, calor, raiz limitada.  Hoja azulada/flacida, puntas secas,         Induccion-llenado            Muy critico en llenado. Reduce calibre y puede favorecer rajado/doble bulbo si hay rehidratacion brusca.
+                                                                                     bulbo chico, pungencia alta.
+
+Exceso de humedad / anoxia         Riego pesado, lluvias, suelo arcilloso,          Marchitez con suelo humedo, raiz pobre,     Germinacion-bulbo            Diferenciar de sequia. Subir riesgo de raiz, bacterias, Botrytis y cuello humedo.
+                                      drenaje malo.                                  amarillamiento, pudricion.
+
+Riego tardio / lluvia pre-cosecha  Irrigacion cercana a madurez, lluvia tardia,     Cuello no seca, piel rajada, madurez        Maduracion-cosecha           Riesgo fuerte de curado malo, bacteria y Botrytis neck rot. Detener riego si ya corresponde por etapa.
+                                      cosecha inmadura.                              lenta, pudricion.
+
+Salinidad / sodio / boro           Agua salina, fertilizante alto, drenaje pobre,   Bajo vigor, puntas quemadas, bulbo chico,  Estab.-llenado               Cebolla es sensible a sales. No subir fertilizante si CE alta; revisar agua y lavado/drenaje.
+                                      evaporacion.                                   sintomas parecidos a sequia/K bajo.
+
+Compactacion / costra              Cama mal preparada, pisoteo, suelo pesado.       Emergencia irregular, raiz superficial,     Germinacion-bulbo            Raiz superficial + compactacion = mala absorcion. Cruza con anoxia y bulbos deformes.
+                                                                                     bulbo deformado.
+
+Densidad excesiva                  Siembra densa, aclareo insuficiente.             Bulbos chicos, cuello delgado o irregular, Desarrollo vegetativo-bulbo  Penalizar rendimiento/calibre, subir HR interna y enfermedad si dosel cerrado.
+                                                                                     competencia.
+
+Densidad baja                      Mala emergencia, maggots, semilla pobre.         Bulbos mas grandes pero bajo rendimiento    Establecimiento              Mostrar como potencial limitado por stand, no sanidad.
+                                                                                     por area.
+
+Herbicida / fitotoxicidad          Aplicacion, deriva, mezcla, etapa sensible.      Quemaduras uniformes, rayas, deformacion,  Cualquier etapa              Preguntar por aplicacion reciente; no confundir con mildiu, trips o nutricion.
+                                                                                     crecimiento frenado.
+
+Daño por frio/helada               Temperaturas bajas, plántula expuesta.           Puntas quemadas, hojas acuosas, estres;     Estab.-vegetativo            Puede predisponer a maggots y pudriciones por tejido dañado.
+                                                                                     si planta grande puede inducir espigado.
+
+Daño por calor/sunscald            Alta radiacion, cuello expuesto, bulbo sin       Escamas dañadas, heridas, entrada de        Llenado-cosecha              Subir riesgo de bacterias/black mold si coincide con heridas y calor.
+                                      cobertura.                                     patogenos.
+
+Curado deficiente                  Cosecha inmadura, cuello grueso, HR alta,        Cuello humedo, piel floja, moho,            Cosecha-poscosecha           No es enfermedad de campo solamente: guardar evento de calidad y riesgo de almacenamiento.
+                                      mala ventilacion.                              pudriciones en almacen.
+
+Maleza / competencia temprana      Falta de control, cama sucia.                    Plantas delgadas, bajo calibre, cosecha     Todo el ciclo, temprano      Registrar como factor de rendimiento y sanidad; maleza hospeda insectos y virus.
+                                                                                     dificil.
+
+======================================================================
+7. Priorizacion por perfil BIO-G
+======================================================================
+
+Cebolla queda como cultivo madre crop_onion. Los tipos UX no son cultivos separados; ajustan score, mensajes y sensibilidad comercial.
+
+Perfil                     Tipo UX / uso                             Riesgos que suben de peso                                      Notas para BIO-G
+----------------------------------------------------------------------
+ON-GEN                     No se / otra cebolla                      Fotoperiodo, trips, deficit/exceso agua, salinidad,             Conservador. No asume color, fotoperiodo fino, cambray, almacenamiento ni variedad validada.
+                                                                        exceso N, cuello grueso, pudricion de cuello.
+
+ON-01                      Blanca grano/bola dia corto               Trips, bacterial bulb rots, neck rot, exceso N,                  Mercado nacional/fresco/bodega. Cuidar cuello, madurez, calibre y pudriciones.
+                                                                        salinidad, pink root/Fusarium segun zona.
+
+ON-02                      Amarilla/dorada dia corto                 Trips, IYSV, center rot, Botrytis neck rot,                      Alto volumen/dulce segun material. Calor y bacterias pesan; no retrasar madurez con N.
+                                                                        purple blotch, leaf dieback.
+
+ON-03                      Morada dia corto                          Trips, color/curado deficiente, purple blotch,                   Calidad visual y color. Humedad pre-cosecha y curado afectan presentacion y almacenamiento.
+                                                                        bacterial rots, sunscald/heat stress.
+
+ON-04                      Transicion / dia intermedio               Fotoperiodo, lluvias tardias, mildiu, Botrytis,                  Altiplano/templado. Subir riesgo por frio/espigado y mala conservacion si maduracion coincide con lluvia.
+                                                                        cuello grueso, espigado, almacenamiento.
+
+ON-05                      Cambray / rama / manojo                   Trips, minador, Botrytis leaf blight, manchas,                   Hoja + base son producto. Umbral de dano visual muy bajo; no esperar hasta bulbo seco.
+                                                                        base podrida, amarillamiento, fitotoxicidad.
+
+Aliases / variedades:
+- ON-01: SV4043NM, SV7030NS, AJUSCO, Stratus/EX 6800, LA JOYA, XON570W, Bella Luna, Carta Blanca, otra blanca dia corto.
+- ON-02: PECOS, Nomad/SV2623NN, Plethora, Texas Grano/Granex como referencia regional, otra amarilla dia corto.
+- ON-03: Rasta, NuMex Crimson/rojas regionales como referencia, otra morada dia corto.
+- ON-04: Cimarron, NUN 6005, Super Luna, NuMex Allure/variedades intermedias como referencia, otra dia intermedio.
+- ON-05: SV4522NB, Baja Verde, otra cambray/rama.
+
+Regla de seguridad:
+La variedad apunta al perfil y puede ajustar confianza, texto y pequenas sensibilidades. No crea cultivo ni motor biologico independiente salvo ficha varietal validada.
+
+======================================================================
+8. Monitoreo y diagnostico: protocolo minimo confiable
+======================================================================
+
+Frecuencia recomendada:
+- Normal: 1 vez por semana.
+- En establecimiento, presion de trips, clima humedo, pre-bulbo, inicio de bulbificacion, pre-cosecha o almacenamiento destinado a bodega: 2 veces por semana.
+- En cambray/manojo: revisar mas frecuente porque el dano visual de hoja tiene impacto comercial inmediato.
+
+Donde revisar:
+1. Pliegues de hojas y cuello: trips se esconde dentro de hojas protegidas.
+2. Hojas externas viejas: Botrytis, purple blotch, Stemphylium, mildiu y dano por salinidad suelen verse temprano en puntas/hojas viejas.
+3. Hojas centrales: center rot, IYSV, fitotoxicidad, deformaciones y espigado.
+4. Base del bulbo/cuello: neck rot, bacterias, heridas, daño por maggots, bulbo doble.
+5. Raices: pink root, Fusarium, anoxia, salinidad, nematodos.
+6. Bordes del lote: thrips, malezas, virus, plagas migrantes.
+7. Zonas bajas/humedas: mildiu, Botrytis, bacterias, damping-off y white rot.
+8. Zonas con riego irregular: deficit/salinidad/falla de sistema.
+9. Cull piles, voluntarios y Allium vecinos: fuente de inoculo, trips, IYSV y white rot.
+
+Preguntas diagnosticas que BIO-G debe hacer o inferir:
+
+Pregunta                         Indica mas riesgo biotico                         Indica mas riesgo abiotico/manejo
+----------------------------------------------------------------------
+¿El patron es por focos o uniforme? Focos en bordes, zonas bajas, ventilas,          Uniforme por lote = riego, salinidad, fertilizante, fitotoxicidad, temperatura.
+                                     lineas de riego, plantas vecinas.
+
+¿Hay hoja mojada/rocio nocturno?    Mildiu, Botrytis, purple blotch, Stemphylium.   Si no hay patogeno visible, puede ser solo HR alta + dosel cerrado.
+
+¿Hay plateado y trips visibles?     Trips, IYSV, entrada de bacterias.              Dano viejo sin insecto puede confundirse con viento/sales/fitotoxicidad.
+
+¿La marchitez ocurre con suelo seco o humedo? Seco = deficit; humedo + raiz pobre = anoxia/root rot/Fusarium.  Revisar sensores antes de recomendar riego o fertilizante.
+
+¿El bulbo no crece pero la hoja esta grande? Fotoperiodo incorrecto o exceso N.     No tratar como enfermedad; revisar perfil y dia largo/corto.
+
+¿Hay cuello grueso o humedo cerca de cosecha? Botrytis neck rot, bacteria, curado malo. Exceso de N/riego tardio/madurez incompleta.
+
+¿Hubo aplicacion reciente?          Quemadura abre puerta a enfermedades.            Fitotoxicidad uniforme puede parecer mancha foliar.
+
+¿Hay olor agrio o tejido acuoso?     Bacterial soft rot/sour skin/center rot.        Daño por herida/calor/curado puede ser causa de entrada.
+
+¿Raices rosadas o plato basal cafe? Pink root / Fusarium.                            Salinidad/anoxia tambien pueden limitar raiz, pero no dan los mismos colores.
+
+======================================================================
+9. Reglas para el motor BIO-G
+======================================================================
+
+Senal BIO-G                                      Aumenta riesgo de                    Etapa donde pesa mas                Salida farmer-friendly sugerida
+----------------------------------------------------------------------
+HR alta + hoja mojada + noche fresca             Downy mildew / Botrytis / leaf spot  Vegetativo-bulbo                   Ambiente favorable a enfermedades foliares. Revise hojas temprano, sobre todo manchas, moho y zonas con poco aire.
+
+Crecimiento gris/blanco/purpura en hoja          Downy mildew                         Vegetativo-bulbo                   Dano compatible con mildiu. Evite manejar hojas mojadas y revise si el problema avanza por parches.
+
+Manchas blancas hundidas con halo                Botrytis leaf blight                 5 hojas-bulbo                      Manchas compatibles con Botrytis. Si aumentan, pueden secar puntas y reducir el tamano del bulbo.
+
+Lesiones elipticas purpuras con anillos          Purple blotch / Alternaria           Vegetativo-maduracion              Manchas compatibles con purple blotch. Revise si hubo rocio, trips o tejido viejo lesionado.
+
+Manchas oscuras oliva/negro coalescentes          Stemphylium leaf blight              Bulbo-maduracion                   El follaje esta perdiendo area activa. Esto puede bajar calibre aunque el bulbo siga vivo.
+
+Plateado/bronceado + insectos en pliegues        Trips                                Vegetativo-bulbo                   Posible trips. Revise dentro del cuello y pliegues; en bulbificacion puede bajar rendimiento y calidad.
+
+Trips + lesiones pajizas/diamante                IYSV                                 Vegetativo-bulbo                   Sintomas compatibles con virus transmitido por trips. Controle focos y revise malezas/voluntarios.
+
+Hoja central blanqueada/colapsada + trips        Center rot / bacterial complex        Bulbo-maduracion                   Posible problema bacteriano asociado a trips. Revise cuello y escamas internas; evite heridas y humedad.
+
+Cuello blando + tejido acuoso/cafe               Bacterial bulb rot / Botrytis neck    Maduracion-curado                  Riesgo de pudricion de cuello/bulbo. La prioridad es madurez, curado, ventilacion y evitar heridas.
+
+Moho gris entre escamas / cuello                 Botrytis neck rot                    Curado-almacenamiento              Riesgo de Botrytis de cuello. Puede originarse en campo y aparecer en almacenamiento.
+
+Escamas negras bajo piel                         Black mold                            Curado-almacenamiento              Dano compatible con moho negro; sube con calor, heridas y curado deficiente.
+
+Raices rosa-rojo-purpura                         Pink root                             Vegetativo-bulbo                   Raices compatibles con raiz rosada. Revise historial del lote y rotacion de Allium.
+
+Plato basal cafe / pudricion seca                Fusarium basal rot                   Bulbo-cosecha                      Pudricion desde la base compatible con Fusarium. Evite confundirla con bacteria que entra por cuello.
+
+Micelio blanco + esclerocios negros en base      White rot                             Cualquier etapa, mas medio ciclo   Senal fuerte de pudricion blanca. Evite mover suelo o material de ese foco a otros lotes.
+
+Larvas blancas sin patas en base/semilla         Maggots                              Germinacion-5 hojas / bulbo        Posible gusano de semilla/cebolla. Puede causar fallas de stand y pudricion secundaria.
+
+Galerias blancas serpenteantes en hoja           Leafminers                            Cambray/cosecha verde              Minador puede ser cosmetico en bulbo seco, pero en cambray afecta directamente el producto.
+
+CE alta + puntas secas + bajo vigor              Salinidad / estres osmotico           Estab.-llenado                     La salinidad puede parecer sequia o K bajo. No suba fertilizante sin revisar CE y drenaje.
+
+Suelo humedo + marchitez                         Anoxia / root rot                     Estab.-bulbo                       Marchitez con suelo humedo: revise raiz, drenaje y compactacion antes de regar mas.
+
+Bulbo no engorda + hoja grande                   Fotoperiodo incorrecto / exceso N     Induccion-bulbo                    La cebolla puede no estar recibiendo el dia correcto para bulbificar. Fertilizar mas no corrige fotoperiodo.
+
+Tallo floral visible                             Espigado / seedstalk                  Vegetativo-bulbo                   Espigado es perdida de calidad para bulbo. La prioridad es decidir cosecha/cierre y registrar causa.
+
+Cuello grueso + follaje muy verde tardio         Exceso N / madurez retrasada           Maduracion                         El cultivo esta demasiado empujado tarde. Aumenta riesgo de mala conservacion y pudriciones.
+
+Bulbo rajado o doble                             Agua irregular / N alto / estres       Llenado-maduracion                 Puede venir de riego irregular, exceso de N o estres en llenado. Revisar historial antes de culpar variedad.
+
+======================================================================
+10. Que debe quedar dado de alta en codigo
+======================================================================
+
+Catalogo base recomendado para lib/core/plant_health/catalog/onion_syndromes.dart con const List onionSyndromes.
+
+Los IDs siguen el estilo de tomate/chile/pepino/berenjena/espinaca, pero adaptados a cultivo de bulbo.
+
+#    ID sugerido                              Sindrome / diferencial principal                         Organo                    Sintoma principal                  Flags
+----------------------------------------------------------------------
+1    onion_damping_off_01                     Damping-off / muerte de plantula                         seedling/crown/root       seedling_collapse                  highHumidity, waterlogging
+2    onion_root_rot_anoxia_01                 Root rot / anoxia diferencial                            root/wholePlant           root_rot_wilt                      waterlogging, compaction
+3    onion_pink_root_01                       Pink root / Phoma terrestris                             root/bulb                 pink_roots                         heatStress, recentStress
+4    onion_fusarium_basal_rot_01              Fusarium basal rot                                        basalPlate/bulb/root      basal_plate_brown_rot              heatStress, recentStress
+5    onion_white_rot_01                       White rot / Stromatinia cepivora                         basalPlate/root/bulb      white_mycelium_sclerotia           coolDewyWindow, highHumidity
+6    onion_southern_blight_01                 Southern blight                                           basalPlate/bulb           white_fan_mycelium                 heatStress, highHumidity
+7    onion_downy_mildew_01                    Downy mildew / Peronospora destructor                     leaf                      fuzzy_downy_growth                 coolDewyWindow, wetCanopy
+8    onion_botrytis_leaf_blight_01            Botrytis leaf blight / B. squamosa                        leaf                      white_sunken_leaf_spots            wetCanopy, highHumidity
+9    onion_purple_blotch_01                   Purple blotch / Alternaria porri                         leaf                      purple_concentric_lesions          wetCanopy, recentStress
+10   onion_stemphylium_leaf_blight_01         Stemphylium leaf blight                                   leaf                      dark_olive_leaf_blight             wetCanopy, recentStress
+11   onion_rust_regional_01                   Rust regional                                             leaf                      orange_pustules                    highHumidity
+12   onion_botrytis_neck_rot_01               Botrytis neck and bulb rot                                neck/bulb                 neck_soft_gray_mold                poorCuring, highHumidity
+13   onion_bacterial_bulb_rot_complex_01      Bacterial bulb rots complex                               bulb/neck                 bulb_scale_water_soaked            heatStress, waterlogging
+14   onion_center_rot_01                      Center rot / Pantoea complex                              leaf/bulb/neck            center_leaf_bleaching              vectorPressure, heatStress
+15   onion_sour_skin_01                       Sour skin / Burkholderia                                  bulb/neck                 sour_slimy_scales                  heatStress, poorCuring
+16   onion_soft_rot_01                        Soft rot / Pectobacterium-Dickeya                         bulb                      soft_watery_rot                    heatStress, highHumidity
+17   onion_black_mold_01                      Black mold / Aspergillus niger                            bulb/scales               black_spores_outer_scales          heatStress, poorCuring
+18   onion_blue_mold_01                       Blue mold / Penicillium                                   bulb/scales               blue_green_mold                    highHumidity, poorCuring
+19   onion_iris_yellow_spot_virus_01          IYSV / trips vector                                       leaf/wholePlant           straw_diamond_lesions              vectorPressure, recentStress
+20   onion_yellow_dwarf_mosaic_01             Onion yellow dwarf / mosaic complex                       leaf/wholePlant           yellow_streaking                   vectorPressure
+21   onion_thrips_01                          Onion thrips / western flower thrips                      leaf/neck                 thrips_silver_scarring             heatStress, vectorPressure
+22   onion_leafminer_01                       Leafminers                                                leaf                      leaf_mines                         recentStress
+23   onion_maggot_seedcorn_maggot_01          Onion maggot / seedcorn maggot                            seed/root/bulb            maggot_larvae_stand_loss           coolDewyWindow, highHumidity
+24   onion_cutworms_01                        Cutworms / armyworm early stand damage                     seedling/leaf             cut_plants                         recentStress
+25   onion_bulb_mites_01                      Bulb mites / acarid mites                                 bulb/basalPlate           bulb_mite_secondary_rot            highHumidity, recentStress
+26   onion_wireworms_soil_insects_01          Wireworms / soil insects                                  root/bulb                 underground_feeding                recentStress
+27   onion_slugs_snails_01                    Slugs/snails conditional                                  leaf                      ragged_feeding_slime               highHumidity
+28   onion_nematodes_01                       Stem/bulb, root-knot, stubby root nematodes                root/bulb                 nematode_root_bulb_damage          recentStress
+29   onion_no_bulb_photoperiod_01             No bulbification / photoperiod mismatch                    wholePlant/bulb           no_bulb_photoperiod                photoperiodMismatch
+30   onion_seedstalk_bolting_01               Espigado / tallo floral                                   wholePlant                seedstalk_bolting                  coldStress, recentStress
+31   onion_water_deficit_bulb_quality_01      Deficit hidrico / calibre bajo                            wholePlant/bulb           wilting_bulb_small                 heatStress, recentStress
+32   onion_waterlogging_anoxia_01             Exceso humedad / anoxia                                    root/wholePlant           root_rot_wilt                      waterlogging
+33   onion_salinity_quality_01                Salinidad / CE alta / toxicidad osmotica                   leaf/root/bulb            leaf_tip_burn_small_bulb           salinityRisk
+34   onion_excess_n_thick_neck_01             Exceso de N / cuello grueso / mala maduracion              neck/bulb/wholePlant      thick_neck_late_green              nutrientImbalance
+35   onion_compaction_deformed_bulb_01        Compactacion / bulbo deforme                               root/bulb                 deformed_bulb_root_limit           compaction
+36   onion_phytotoxicity_01                   Fitotoxicidad / quemadura por mezcla/herbicida             leaf/wholePlant           leaf_burn_uniform                  recentApplication
+37   onion_poor_curing_storage_risk_01        Curado deficiente / riesgo de almacenamiento               neck/bulb                 poor_curing_neck_moist             poorCuring
+38   onion_weed_competition_01                Competencia de maleza / hospedaje de plagas                wholePlant                stunted_growth_weeds              weedPressure
+
+Nota: 34-38 pueden implementarse como sindromes abioticStress o como riskEvents si el catalogo Plant Health separa plagas/enfermedades de desordenes fisiologicos. Para BIO-G v1 conviene tenerlos disponibles porque explican descarte y rendimiento.
+
+======================================================================
+10.1 Nuevas senales opcionales recomendadas
+======================================================================
+
+Nuevo signalId sugerido                    Etiqueta UX                                    Uso
+----------------------------------------------------------------------
+signalThripsSilverScarring                  Plateado/bronceado por trips                    Confirmar trips y diferenciar de salinidad o fitotoxicidad.
+signalThripsInNeckFolds                     Trips en cuello/pliegues                         Trips se esconden dentro de hojas protegidas.
+signalDownyFuzzyGrowth                      Moho gris/blanco/purpura en hoja                 Diferenciar mildiu de clorosis o purple blotch.
+signalWhiteSunkenLeafSpots                  Manchas blancas hundidas                          Botrytis leaf blight.
+signalPurpleConcentricLesions               Lesiones purpuras con anillos                     Purple blotch / Alternaria.
+signalDarkOliveLeafBlight                   Manchas oscuras oliva/negro                        Stemphylium leaf blight.
+signalCenterLeafBleaching                   Hoja central blanqueada                            Center rot / bacterias / fitotoxicidad diferencial.
+signalStrawDiamondLesions                   Lesiones pajizas tipo diamante                      IYSV.
+signalPinkRoots                             Raices rosadas/rojas/purpuras                      Pink root.
+signalBasalPlateBrownRot                    Plato basal cafe/pudricion seca                    Fusarium basal rot.
+signalWhiteMyceliumBlackSclerotia           Micelio blanco con esclerocios negros               White rot.
+signalNeckSoft                              Cuello blando                                      Botrytis neck rot / bacterial rot.
+signalGrayMoldNeck                          Moho gris en cuello/escamas                        Botrytis neck rot.
+signalBulbScaleWaterSoaked                  Escamas acuosas                                    Bacterial bulb rot.
+signalSourSmell                             Olor agrio                                         Sour skin / soft rot.
+signalBlackMoldSpores                       Polvo/esporas negras bajo escamas                  Black mold.
+signalBlueGreenMold                         Moho azul-verde                                     Blue mold.
+signalMaggotLarvae                          Larvas blancas sin patas                            Maggots.
+signalLeafMinesOnOnion                      Galerias blancas en hoja                            Minadores.
+signalSeedstalkBolting                      Tallo floral visible                                Espigado no productivo.
+signalNoBulbPhotoperiod                     Mucha hoja, poco bulbo                              Fotoperiodo incompatible.
+signalThickNeck                             Cuello grueso                                       Exceso N, madurez tardia, curado malo.
+signalBulbSplitting                         Bulbo partido/rajado/doble                          Agua irregular, N alto, estres.
+signalPoorCuringNeckMoist                   Cuello humedo tras cosecha                           Riesgo almacenamiento.
+signalUniformLeafBurn                       Quemadura uniforme                                  Fitotoxicidad/salinidad.
+
+======================================================================
+11. Modificadores por tipo / variedad
+======================================================================
+
+Grupo profileIds sugeridos          diagnosisIds que suben score                                                scoreDelta        Razon
+----------------------------------------------------------------------
+ON-GEN generic                       thrips, no_bulb_photoperiod, water_deficit, salinity, thick_neck,          0 a +2            Perfil preventivo sin asumir color, fotoperiodo fino ni destino.
+                                     bacterial_bulb_rot, botrytis_neck_rot.
+
+ON-01 blanca grano/bola              thrips, bacterial_bulb_rot, botrytis_neck_rot, fusarium_basal_rot,        +3 a +6           Mercado fresco/bodega; cuello, curado y pudriciones determinan descarte.
+                                     pink_root, salinity_quality, excess_n_thick_neck.
+
+ON-02 amarilla/dorada                thrips, IYSV, center_rot, purple_blotch, stemphylium, botrytis_neck,      +3 a +7           Alto volumen y materiales tipo grano/granex; trips, bacterias y leaf dieback afectan calibre.
+                                     bacterial_bulb_rot.
+
+ON-03 morada                         purple_blotch, stemphylium, bacterial_bulb_rot, sunscald/heat,           +3 a +6           Color y apariencia pesan; humedad y curado deficiente bajan calidad visual.
+                                     poor_curing, salinity.
+
+ON-04 transicion/dia intermedio      downy_mildew, botrytis_leaf_blight, botrytis_neck_rot, bolting,           +4 a +7           Ventanas mas largas; altiplano/templado sube frio, lluvia tardia, mildiu y almacenamiento.
+                                     no_bulb_photoperiod, excess_n_thick_neck.
+
+ON-05 cambray/rama                   thrips, leafminer, botrytis_leaf_blight, bacterial_base_rot,              +5 a +8           Hoja + base son producto; umbral cosmetico mas bajo y ciclo corto.
+                                     phytotoxicity, slugs_snails, yellowing.
+
+Variety aliases:
+- Alias conocido aumenta confianza de profileId, pero no modifica diagnostico por si solo.
+- Si alias sugiere dia corto/intermedio y el usuario esta en region/fecha contradictoria, subir photoperiodMismatch.
+- Si alias pertenece a cambray/rama, ON-05 debe cambiar organo objetivo a hoja + base/bulbo incipiente y subir sensibilidad visual.
+
+======================================================================
+12. Integracion minima de codigo
+======================================================================
+
+1. Crear:
+   lib/core/plant_health/catalog/onion_syndromes.dart
+   con const List onionSyndromes.
+
+2. Agregar:
+   CropCatalog.onionCropId o equivalente.
+   CropKey.onion.
+   defaultProfileId ON-GEN.
+   profileIds ON-01, ON-02, ON-03, ON-04, ON-05.
+
+3. Actualizar PlantHealthRegistry:
+   import package:bio_g/core/plant_health/catalog/onion_syndromes.dart;
+   case CropCatalog.onionCropId: return onionSyndromes;
+
+4. Actualizar PlantHealthStageAdapter con _fromOnion:
+
+   OnionStage.germination -> PlantHealthStageBucket.seedling
+   OnionStage.emergenceEstablishment -> PlantHealthStageBucket.seedling
+   OnionStage.vegetativeLeafDevelopment -> PlantHealthStageBucket.vegetativeEarly / vegetativeMid
+   OnionStage.bulbInduction -> PlantHealthStageBucket.vegetativeLate
+   OnionStage.bulbEnlargement -> PlantHealthStageBucket.grainFill si el motor permite organFill; si no, vegetativeLate
+   OnionStage.bulbMaturation -> PlantHealthStageBucket.lateSeason
+   OnionStage.harvest -> PlantHealthStageBucket.lateSeason
+   OnionStage.curingEndCycle -> PlantHealthStageBucket.lateSeason
+   OnionEvent.boltingSeedstalk -> PlantHealthStageBucket.lateSeason o reproductiveAnomaly
+
+5. Usar package: imports, no imports relativos.
+
+6. No agregar ingredientes activos ni recetas de plaguicidas en UX v1. El catalogo puede nombrar sindromes y acciones culturales/observacionales, no tratamientos quimicos cerrados.
+
+7. Conectar con Fertilization/NutrientRecommendationEngine:
+   - excessNitrogen -> thickNeck, Botrytis neck rot, bacterial rots, IYSV/trips pressure.
+   - salinityRisk -> tip burn, low vigor, small bulb.
+   - residualNitrogenHigh -> madurez tardia y cuello grueso.
+   - irrigationLate -> bacterial rot, Botrytis neck, poor curing.
+   - sprinkler/wetCanopy -> downy mildew, Botrytis, bacterial spread.
+
+8. Conectar con YieldProjection:
+   - leafDiebackRisk high -> capar calibre comercial.
+   - bulbRotRisk high -> subir qualityDiscardRisk.
+   - photoperiodMismatch active -> rendimiento de bulbo casi nulo o muy bajo.
+   - bolting active -> capar rendimiento comercial.
+   - poorCuringRisk high -> bajar rendimiento almacenado/comercial.
+
+9. Conectar con History:
+   Guardar eventos importantes en lenguaje agricultor:
+   - "Se detecto riesgo de trips durante inicio de bulbo."
+   - "El cultivo tuvo humedad alta y hoja mojada; subio riesgo de mildiu/Botrytis."
+   - "La cebolla mostro señales de cuello grueso; posible exceso de nitrogeno o madurez retrasada."
+   - "Se registro riesgo de mala conservacion por curado incompleto."
+
+======================================================================
+13. Lenguaje de salida recomendado
+======================================================================
+
+Situacion                             No decir solo...                         Mejor salida BIO-G
+----------------------------------------------------------------------
+Trips visibles                        Plaga                                    Posible trips. Revise dentro del cuello y pliegues de hoja. En inicio de bulbo puede bajar calibre y abrir puerta a enfermedades.
+
+Mancha blanca en hoja                  Hongo                                    Manchas compatibles con Botrytis. Revise si hay rocio, hoja mojada o poca ventilacion.
+
+Mancha purpura con anillos             Alternaria                               Lesion compatible con purple blotch/Stemphylium. Suele subir con humedad, trips o tejido estresado.
+
+Moho gris/purpura en hoja              Mildiu                                   Ambiente favorable a mildiu. Revise temprano en la mañana y evite manejar hojas mojadas.
+
+Hoja amarilla uniforme                 Enfermedad                               El patron uniforme puede ser agua, salinidad, raiz, nitrogeno o fotoperiodo. Conviene cruzar sensores antes de diagnosticar.
+
+Marchitez con suelo humedo             Falta agua                               Marchitez con suelo humedo: revise raiz, compactacion y drenaje. Puede haber anoxia o pudricion radicular.
+
+Raices rosadas                         Raiz enferma                             Señal compatible con raiz rosada. Revise historial de Allium en el lote y si el crecimiento se esta quedando corto.
+
+Bulbo con plato basal cafe             Pudricion                                Pudricion desde la base compatible con Fusarium. Conviene confirmar antes de confundirla con bacteria.
+
+Cuello blando                          Pudricion                                Riesgo de pudricion de cuello. Revise madurez, exceso de N, riego tardio, curado y heridas.
+
+Bulbo acuoso/olor agrio                Bacteria                                 Posible pudricion bacteriana. El agua, calor, heridas y curado lento suelen agravarla.
+
+No forma bulbo                         Falta fertilizante                       Puede ser fotoperiodo incorrecto. En cebolla, mas fertilizante no corrige una variedad mal adaptada al dia.
+
+Tallo floral                           Va a florear                             Espigado. Para bulbo comercial es perdida de calidad; la prioridad es decidir cosecha/cierre y registrar la causa.
+
+Cuello grueso                          Le falta madurar                         Cuello grueso puede venir de exceso de N, riego tardio o cosecha inmadura. Aumenta riesgo de mala conservacion.
+
+Bulbo partido/doble                    Mala variedad                            Puede venir de agua irregular, exceso de N, estres o fecha. Registre el evento para ajustar el siguiente ciclo.
+
+Curado lento                           Falta sol                                El curado depende de cuello seco, ventilacion, humedad y madurez. Si el cuello queda humedo, sube riesgo de almacenamiento.
+
+======================================================================
+14. Reglas de no sobre-diagnosticar
+======================================================================
+
+- No diagnosticar trips solo por hoja plateada: confirmar insectos en pliegues/cuello.
+- No diagnosticar mildiu solo por amarillamiento: buscar crecimiento velloso gris/blanco/purpura y condiciones de HR/rocio.
+- No diagnosticar Botrytis solo por puntas secas: salinidad, viento, K bajo, sequia y edad tambien queman puntas.
+- No diagnosticar bacteria solo por cuello blando: comparar con Botrytis neck rot, heridas, riego tardio y curado.
+- No diagnosticar Fusarium sin revisar si la pudricion inicia en plato basal.
+- No diagnosticar pink root si las raices ya estan viejas/muertas; confirmar raices activas rosadas/rojas/purpuras.
+- No decir "falta agua" si el suelo esta humedo. Revisar raiz/anoxia.
+- No decir "falta fertilizante" si hay fotoperiodo incorrecto, salinidad alta o exceso de N.
+- No recomendar recuperar una cebolla espigada como si siguiera siendo bulbo normal.
+- No prometer almacenamiento si hubo N tardio, cuello grueso, lluvia pre-cosecha, curado deficiente o heridas.
+
+======================================================================
+15. Campos sugeridos para modelo Plant Health / Onion
+======================================================================
+
+Campo                             Tipo sugerido                                            Uso
+----------------------------------------------------------------------
+profileId                          ON-GEN / ON-01 / ON-02 / ON-03 / ON-04 / ON-05           Resolver sensibilidad y mensajes.
+productionSystem                   openField / drip / sprinkler / furrow / protectedSoil / unknown Cambiar riesgo por mojado foliar y drenaje.
+establishmentMode                  directSeed / transplant / set / unknown                 Ajustar maggots, damping-off y calendario.
+harvestDestination                 freshBulb / dryBulbStorage / processing / bunching / unknown Ajustar descarte y sensibilidad.
+photoperiodClass                   shortDay / intermediateDay / longDay / unknown           Resolver no bulbificacion.
+photoperiodMatch                   match / watch / mismatch / unknown                       Activar no_bulb_photoperiod.
+irrigationMethod                   drip / sprinkler / furrow / manual / unknown             Cruzar bacterias, mildiu y Botrytis.
+wetCanopyRisk                      low / watch / high / critical                            Foliares.
+thripsPressure                     low / watch / high / critical                            Dano directo y vectores.
+neckDrynessStatus                  green / drying / dry / wet / unknown                     Curado y neck rot.
+curingStatus                       notStarted / fieldCuring / cured / poorCuring / unknown  Riesgo almacenamiento.
+bulbRotRisk                        low / medium / high / critical                           Descarte.
+rootHealthRisk                     low / watch / high / critical                            Pink root/Fusarium/anoxia.
+salinityRiskClass                  low / watch / alert / critical                           Calidad y rendimiento.
+excessNitrogenRisk                 low / watch / high / critical                            Cuello grueso y pudriciones.
+boltingRisk                        low / watch / high / active                              Espigado.
+qualityDiscardRisk                 low / medium / high                                      Rendimiento comercial.
+storageRisk                        low / medium / high / critical                           Bulbo seco/bodega.
+
+======================================================================
+16. Mensajes BIO-G sugeridos para UX
+======================================================================
+
+Situacion                                      Mensaje farmer-friendly
+----------------------------------------------------------------------
+ON-GEN                                         Usaremos una lectura conservadora porque aun no sabemos el tipo de cebolla ni el fotoperiodo. Puedes afinarlo despues sin perder historial.
+
+Trips en pliegues                              Hay riesgo de trips. Revise dentro del cuello y pliegues; el dano puede bajar el area verde que llena el bulbo.
+
+Trips + inicio de bulbo                        Esta es una etapa sensible. Si trips sube ahora, puede reducir calibre y abrir entrada a enfermedades.
+
+HR alta + hoja mojada                          Ambiente favorable a mildiu, Botrytis y manchas foliares. Revise temprano en la manana y busque moho o manchas.
+
+Mildiu probable                                Posible mildiu: revise si hay crecimiento gris/blanco/purpura en hojas y si el dano avanza por parches.
+
+Purple/Stemphylium                             Manchas de hoja compatibles con purple blotch o Stemphylium. Revise trips, humedad nocturna y tejido viejo.
+
+Raiz rosada                                    Señal compatible con raiz rosada. El cultivo puede seguir vivo, pero el bulbo puede quedar chico.
+
+Fusarium basal                                 Pudricion desde el plato basal: revise si inicia de abajo hacia arriba. Puede afectar campo y almacenamiento.
+
+White rot                                      Señal fuerte de pudricion blanca. Evite mover suelo, bulbos o herramienta de ese foco a otros lotes.
+
+Bacteria / bulbo acuoso                        Posible pudricion bacteriana. El calor, agua libre, heridas y curado lento suelen empeorarla.
+
+Cuello grueso                                  El cuello grueso puede bajar conservacion. Revise nitrogeno tardio, riego pre-cosecha y madurez.
+
+Riego tardio                                   Si el bulbo ya va a madurez, regar tarde puede retrasar secado y subir pudriciones.
+
+Fotoperiodo no compatible                      La cebolla puede no formar bulbo por falta de horas de luz adecuadas. Esto no se corrige con fertilizante.
+
+Espigado activo                                Ya hay tallo floral. Para bulbo comercial, esto reduce calidad; conviene decidir cosecha/cierre y registrar causa.
+
+Cambray con minador                            En cambray, las galerias de minador son dano comercial directo porque la hoja tambien se vende.
+
+Curado deficiente                              El cuello aun no esta bien seco. Sin buen curado, sube riesgo de pudricion y menor vida de almacenamiento.
+
+Almacenamiento riesgoso                        El lote puede verse cosechado, pero si hubo cuello humedo, heridas o N tardio, el riesgo aparece despues en bodega.
+
+======================================================================
+17. Decisiones finales de producto
+======================================================================
+
+Decision                                   Resultado BIO-G
+----------------------------------------------------------------------
+Organo objetivo                            Bulbo comercial; en ON-05 tambien hoja + base.
+
+Floracion / espigado                       No productiva. Evento de perdida de calidad.
+
+Riesgo principal de plaga                   Trips, por dano directo y por papel como vector/puerta de entrada.
+
+Riesgo foliar principal                     Mildiu, Botrytis, purple blotch y Stemphylium segun clima.
+
+Riesgo de raiz principal                    Pink root, Fusarium basal rot, white rot, anoxia y nematodos segun zona.
+
+Riesgo de almacenamiento                    Botrytis neck rot, bacterial rots, black mold, blue mold y curado deficiente.
+
+Variable fisiologica unica                  Fotoperiodo: no bulbificacion si el tipo no corresponde.
+
+Cruce con fertilizacion                     Exceso N y N tardio suben cuello grueso, madurez tardia, Botrytis/bacterias, almacenamiento malo e IYSV por trips.
+
+Cruce con rendimiento                       Leaf dieback baja calibre; bulbRot y poorCuring bajan rendimiento comercial; photoperiodMismatch puede anular bulbo comercial.
+
+No debe hacer BIO-G                         No dar receta de plaguicidas, no diagnosticar cerrado por foto/sensor aislado, no crear cultivo por variedad, no tratar fotoperiodo como deficiencia.
+
+Debe hacer BIO-G                            Priorizar riesgo, organo, etapa, ambiente, confirmacion y lenguaje humano.
+
+======================================================================
+18. Fuentes base y trazabilidad
+======================================================================
+
+S1. UC IPM. Agriculture: Pest Management Guidelines - Onion and Garlic. Base maestra para plagas, enfermedades, nematodos, diagnostico diferencial y manejo integrado.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/
+
+S2. UC IPM. Thrips / Onion and Garlic. Base para trips como plaga comun, dano por raspado, condiciones hot-dry, etapa de bulbificacion y relacion con IYSV.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/thrips/
+
+S3. UC IPM. Iris Yellow Spot / Onion and Garlic. Base para IYSV, transmision por onion thrips, relacion con N excesivo y manejo cultural.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/iris-yellow-spot/
+
+S4. UC IPM. Identifying Pests of Onion and Garlic and Their Damage. Base para senales visuales: leafminer, maggots, thrips, Botrytis, downy mildew, purple blotch, bacterial soft rot, black mold, blue mold, Botrytis neck rot, Fusarium, pink root, white rot y nematodos.
+URL: https://ipm.ucanr.edu/PMG/Identification/OnionGarlic_pests_and_damage.html
+
+S5. UC IPM. Bacterial Bulb Rots / Onion and Garlic. Base para sintomas, factores: agua, calor, aspersion, N excesivo, heridas, curado lento, y manejo cultural.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/bacterial-soft-rot/
+
+S6. UC IPM. Botrytis Leaf Blight / Onion and Garlic. Base para manchas blancas hundidas, leaf wetness prolongado, aireacion y rotacion.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/botrytis-leafspot/
+
+S7. UC IPM. Botrytis Neck and Bulb Rot / Onion and Garlic. Base para infeccion de campo que aparece en almacenamiento, N tardio, cuello mal curado y humedad.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/botrytis-neck-and-bulb-rot/
+
+S8. UC IPM. Downy Mildew / Onion and Garlic. Base para Peronospora destructor, HR alta, hoja mojada, condiciones frescas y desarrollo rapido.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/downy-mildew/
+
+S9. UC IPM. Fusarium Basal Rot / Onion and Garlic. Base para plato basal cafe, pudricion seca, temperatura del suelo y diagnostico diferencial.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/basal-rot/
+
+S10. UC IPM. Pink Root / Onion and Garlic. Base para raiz rosada, permanencia en suelo, temperaturas optimas, rotacion y resistencia varietal.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/pink-root/
+
+S11. UC IPM. Purple Blotch and Stemphylium Leaf Blight / Onion and Garlic. Base para lesiones purpuras/anillos, humedad, leaf wetness, relacion con mildiu y estres.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/purple-blotch-and-stemphylium-leaf-blight/
+
+S12. UC IPM. White Rot / Onion and Garlic. Base para Sclerotium/Stromatinia, esclerocios, persistencia >20 anos, condiciones fresco-humedas y sanidad.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/white-rot/
+
+S13. UC IPM. Leafminers / Onion and Garlic. Base para galerias, importancia cosmetica en cebolla verde y contaminacion por larvas/pupas.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/leafminers/
+
+S14. UC IPM. Maggots / Onion and Garlic. Base para onion maggot / seedcorn maggot, daño en semillas/plántulas y bulbo, materia organica fresca y fallas de stand.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/maggots/
+
+S15. University of Georgia Extension. Vidalia Onion Production Guide, B1198 revised 2026. Base para short-day onion, enfermedades, trips, bacterial diseases, neck rot, purple blotch, Stemphylium, center rot, riego/curado y poscosecha.
+URL: https://fieldreport.caes.uga.edu/publications/B1198/onion-production-guide/
+PDF: https://site.extension.uga.edu/vidaliaonion/files/2026/02/Vidalia-Onion-Production-Guide.pdf
+
+S16. NIMSS W3008. Integrated Onion Pest and Disease Management. Base para importancia de trips, IYSV, patogenos fungicos/bacterianos importantes y perdidas potenciales.
+URL: https://nimss.org/projects/view/mrp/outline/18380
+
+S17. Universidad de Sonora. El cultivo de la cebolla, DAG/HORT-015, 2016. Documento aportado por el usuario. Base regional para Sonora: plagas frecuentes, pudricion rosada, mildiu, mancha purpura, riego, salinidad, curado y cosecha.
+Archivo: CEBOLLA-DAG-HORT-015.pdf
+
+S18. Fertilab. Necesidades de N, P y K para cebolla considerando analisis de suelo. Documento aportado por el usuario. Base para extraccion NPK, fertilizacion, demanda maxima en llenado activo y relacion nutricion-rendimiento.
+Archivo: Necesidades-de-N-P-y-K-para-Cebolla.pdf
+
+S19. BIO-G. Perfil Universal Cebolla v2 mejorado, Perfil Generico ON-GEN/SKIP v2 mejorado, Guia de Fertilizacion Cebolla v3 reforzada y Rendimiento Aproximado Cebolla v1.1. Base de arquitectura, perfiles ON-01 a ON-05, reglas de migracion, fotoperiodo y lenguaje de producto.
+Archivos internos BIO-G.
+
+======================================================================
+19. Cierre de producto
+======================================================================
+
+El modulo de sanidad de cebolla queda listo para BIO-G v1 si se integra como cultivo de bulbo fotoperiodico y no como copia de hortaliza de fruto u hoja. El valor del producto no esta en decir "tienes hongo"; esta en distinguir si el problema viene de trips, humedad de hoja, raiz, fotoperiodo, exceso de nitrogeno, salinidad, riego tardio, cuello grueso o curado deficiente.
+
+La cebolla exige que BIO-G piense en tres momentos:
+
+1. Antes del bulbo: proteger raiz, stand, hoja y fotoperiodo.
+2. Durante el bulbo: proteger agua, K, trips, hoja activa y calibre.
+3. Despues del bulbo: proteger cuello, curado, heridas, humedad y almacenamiento.
+
+Frase guia:
+En cebolla, sanidad no significa solo que la planta siga viva; significa que el bulbo cierre bien, cure bien y llegue vendible al mercado.
+
+Estado del documento: RIESGOS DEL CULTIVO / SANIDAD VEGETAL - CEBOLLA v1 queda listo para conectarse con Perfil Universal, ON-GEN/SKIP, Fertilizacion, Rendimiento, Plant Health Registry y futuro codigo de onion_syndromes.dart.

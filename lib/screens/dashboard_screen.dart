@@ -202,6 +202,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           extendBody: true,
           backgroundColor: Colors.transparent,
           body: ConnectivityBanner(
+            enabled: widget.currentIndex == _dashboardTabIndex,
             child: Stack(
               children: <Widget>[
                 const DashboardBackground(),

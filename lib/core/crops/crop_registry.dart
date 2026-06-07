@@ -5,9 +5,12 @@ import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/crop_types.dart';
 import 'package:bio_g/core/crops/cucumber/cucumber_crop_definition.dart';
 import 'package:bio_g/core/crops/eggplant/eggplant_crop_definition.dart';
+import 'package:bio_g/core/crops/garlic/garlic_crop_definition.dart';
 import 'package:bio_g/core/crops/lettuce/lettuce_crop_definition.dart';
 import 'package:bio_g/core/crops/maize/maize_crop_definition.dart';
 import 'package:bio_g/core/crops/oat/oat_crop_definition.dart';
+import 'package:bio_g/core/crops/onion/onion_crop_definition.dart';
+import 'package:bio_g/core/crops/spinach/spinach_crop_definition.dart';
 import 'package:bio_g/core/crops/squash/squash_crop_definition.dart';
 import 'package:bio_g/core/crops/tomato/tomato_crop_definition.dart';
 import 'package:bio_g/core/crops/wheat/wheat_crop_definition.dart';
@@ -27,6 +30,9 @@ class CropRegistry {
     CropKey.eggplant: EggplantCropDefinition(),
     CropKey.squash: SquashCropDefinition(),
     CropKey.lettuce: LettuceCropDefinition(),
+    CropKey.spinach: SpinachCropDefinition(),
+    CropKey.onion: OnionCropDefinition(),
+    CropKey.garlic: GarlicCropDefinition(),
   };
 
   static CropDefinition? byKey(CropKey key) => _definitions[key];

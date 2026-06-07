@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 
 /// When `true`, every read/write against the telemetry table prints a
-/// `[BioG/Telemetry]` line with the device id, table, row count, and
+/// `[BioG/HardwareFlow]` line with the device id, table, row count, and
 /// (for the latest read) the parsed battery/RSSI. Already gated by
 /// [kDebugMode], so the prints disappear in release builds.
 ///
@@ -19,6 +19,8 @@ const bool kBioGTelemetryDebugLogs = true;
 class TelemetrySupabaseSync {
   static const String _table = 'telemetry';
   static const int _defaultLimit = 2000;
+  static const int allHistoryLimit = 10000;
+  static const int _allHistoryPageSize = 1000;
   static const List<String> _timeColumns = <String>['timestamp', 'created_at'];
   static final RegExp _uuidPattern = RegExp(
     r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
@@ -33,7 +35,7 @@ class TelemetrySupabaseSync {
   void _log(String message) {
     if (!kDebugMode) return;
     if (!kBioGTelemetryDebugLogs) return;
-    debugPrint('[BioG/Telemetry] $message');
+    debugPrint('[BioG/HardwareFlow] $message');
   }
 
   /// Upload a batch of telemetry rows.
@@ -76,7 +78,7 @@ class TelemetrySupabaseSync {
     for (final timeColumn in _timeColumns) {
       try {
         _log(
-          'latest query table=$_table device_id=$normalizedDeviceId '
+          'latest telemetry query table=$_table device_id=$normalizedDeviceId '
           'order_by=$timeColumn desc limit=1',
         );
 
@@ -90,7 +92,7 @@ class TelemetrySupabaseSync {
         final rows = _rowsFrom(data);
         if (rows.isEmpty) {
           _log(
-            'latest empty table=$_table device_id=$normalizedDeviceId '
+            'latest telemetry result table=$_table device_id=$normalizedDeviceId '
             'order_by=$timeColumn rows=0',
           );
           continue;
@@ -109,12 +111,12 @@ class TelemetrySupabaseSync {
         }
 
         _log(
-          'latest parse_failed table=$_table device_id=$normalizedDeviceId '
+          'latest telemetry parse_failed table=$_table device_id=$normalizedDeviceId '
           'order_by=$timeColumn rows=${rows.length}',
         );
       } catch (e) {
         _log(
-          'latest error table=$_table device_id=$normalizedDeviceId '
+          'latest telemetry error table=$_table device_id=$normalizedDeviceId '
           'order_by=$timeColumn error=$e',
         );
       }
@@ -150,12 +152,14 @@ class TelemetrySupabaseSync {
     }
 
     final sinceIso = since.toUtc().toIso8601String();
+    final sinceLocalIso = since.toLocal().toIso8601String();
 
     for (final timeColumn in _timeColumns) {
       try {
         _log(
           'history query table=$_table device_id=$normalizedDeviceId '
-          'since=$sinceIso order_by=$timeColumn asc limit=$limit',
+          'since_utc=$sinceIso since_local=$sinceLocalIso '
+          'order_by=$timeColumn asc limit=$limit',
         );
 
         final data = await _client
@@ -177,6 +181,12 @@ class TelemetrySupabaseSync {
           'history result table=$_table device_id=$normalizedDeviceId '
           'order_by=$timeColumn rows=${rows.length} parsed=${parsed.length}',
         );
+        _logHistoryBounds(
+          rows: rows,
+          parsed: parsed,
+          deviceId: normalizedDeviceId,
+          source: 'history/$timeColumn',
+        );
 
         if (parsed.isNotEmpty) {
           return parsed;
@@ -196,11 +206,99 @@ class TelemetrySupabaseSync {
   ///
   /// Kept for backwards compatibility with existing code.
   Future<List<BioGTelemetry>> download(String deviceId) async {
+    return _downloadWithoutSince(
+      deviceId,
+      limit: _defaultLimit,
+      source: 'download',
+    );
+  }
+
+  /// Downloads the available telemetry history without a time cutoff.
+  ///
+  /// The explicit cap protects the mobile client from an unbounded response.
+  /// Results are requested newest-first so a capped response still contains
+  /// the most relevant samples, then normalized back to chronological order.
+  Future<List<BioGTelemetry>> downloadAll(
+    String deviceId, {
+    int limit = allHistoryLimit,
+  }) async {
     final normalizedDeviceId = deviceId.trim();
     if (normalizedDeviceId.isEmpty) return <BioGTelemetry>[];
     if (!isValidTelemetryDeviceId(normalizedDeviceId)) {
       _log(
-        'download skipped table=$_table device_id=$normalizedDeviceId '
+        'history_all skipped table=$_table device_id=$normalizedDeviceId '
+        'reason=not_uuid',
+      );
+      return <BioGTelemetry>[];
+    }
+
+    for (final timeColumn in _timeColumns) {
+      try {
+        final rows = <Map<String, dynamic>>[];
+        int offset = 0;
+
+        while (offset < limit) {
+          final int remaining = limit - offset;
+          final int pageSize = remaining < _allHistoryPageSize
+              ? remaining
+              : _allHistoryPageSize;
+          final int pageEnd = offset + pageSize - 1;
+          _log(
+            'history_all query table=$_table device_id=$normalizedDeviceId '
+            'order_by=$timeColumn desc range=$offset..$pageEnd',
+          );
+
+          final data = await _client
+              .from(_table)
+              .select()
+              .eq('device_id', normalizedDeviceId)
+              .order(timeColumn, ascending: false)
+              .range(offset, pageEnd);
+          final page = _rowsFrom(data);
+          rows.addAll(page);
+
+          if (page.length < pageSize) break;
+          offset += page.length;
+        }
+
+        final parsed = _telemetryListFromRows(
+          rows,
+          deviceId: normalizedDeviceId,
+          source: 'history_all/$timeColumn',
+        );
+        _log(
+          'history_all result table=$_table device_id=$normalizedDeviceId '
+          'order_by=$timeColumn rows=${rows.length} parsed=${parsed.length} '
+          'capped=${rows.length >= limit}',
+        );
+        _logHistoryBounds(
+          rows: rows,
+          parsed: parsed,
+          deviceId: normalizedDeviceId,
+          source: 'history_all/$timeColumn',
+        );
+        if (parsed.isNotEmpty) return parsed;
+      } catch (e) {
+        _log(
+          'history_all error table=$_table device_id=$normalizedDeviceId '
+          'order_by=$timeColumn error=$e',
+        );
+      }
+    }
+
+    return <BioGTelemetry>[];
+  }
+
+  Future<List<BioGTelemetry>> _downloadWithoutSince(
+    String deviceId, {
+    required int limit,
+    required String source,
+  }) async {
+    final normalizedDeviceId = deviceId.trim();
+    if (normalizedDeviceId.isEmpty) return <BioGTelemetry>[];
+    if (!isValidTelemetryDeviceId(normalizedDeviceId)) {
+      _log(
+        '$source skipped table=$_table device_id=$normalizedDeviceId '
         'reason=not_uuid',
       );
       return <BioGTelemetry>[];
@@ -209,27 +307,34 @@ class TelemetrySupabaseSync {
     for (final timeColumn in _timeColumns) {
       try {
         _log(
-          'download query table=$_table device_id=$normalizedDeviceId '
-          'order_by=$timeColumn asc limit=$_defaultLimit',
+          '$source query table=$_table device_id=$normalizedDeviceId '
+          'order_by=$timeColumn desc limit=$limit',
         );
 
         final data = await _client
             .from(_table)
             .select()
             .eq('device_id', normalizedDeviceId)
-            .order(timeColumn, ascending: true)
-            .limit(_defaultLimit);
+            .order(timeColumn, ascending: false)
+            .limit(limit);
 
         final rows = _rowsFrom(data);
         final parsed = _telemetryListFromRows(
           rows,
           deviceId: normalizedDeviceId,
-          source: 'download/$timeColumn',
+          source: '$source/$timeColumn',
         );
 
         _log(
-          'download result table=$_table device_id=$normalizedDeviceId '
-          'order_by=$timeColumn rows=${rows.length} parsed=${parsed.length}',
+          '$source result table=$_table device_id=$normalizedDeviceId '
+          'order_by=$timeColumn rows=${rows.length} parsed=${parsed.length} '
+          'capped=${rows.length >= limit}',
+        );
+        _logHistoryBounds(
+          rows: rows,
+          parsed: parsed,
+          deviceId: normalizedDeviceId,
+          source: '$source/$timeColumn',
         );
 
         if (parsed.isNotEmpty) {
@@ -237,13 +342,36 @@ class TelemetrySupabaseSync {
         }
       } catch (e) {
         _log(
-          'download error table=$_table device_id=$normalizedDeviceId '
+          '$source error table=$_table device_id=$normalizedDeviceId '
           'order_by=$timeColumn error=$e',
         );
       }
     }
 
     return <BioGTelemetry>[];
+  }
+
+  void _logHistoryBounds({
+    required List<Map<String, dynamic>> rows,
+    required List<BioGTelemetry> parsed,
+    required String deviceId,
+    required String source,
+  }) {
+    if (rows.isEmpty && parsed.isEmpty) return;
+
+    final rawFirst = rows.isEmpty ? null : rows.first['timestamp'];
+    final rawLast = rows.isEmpty ? null : rows.last['timestamp'];
+    final parsedOldest = parsed.isEmpty ? null : parsed.first.timestamp;
+    final parsedNewest = parsed.isEmpty ? null : parsed.last.timestamp;
+
+    _log(
+      'history bounds source=$source device_id=$deviceId '
+      'raw_first=$rawFirst raw_last=$rawLast '
+      'parsed_oldest_utc=${parsedOldest?.toUtc().toIso8601String()} '
+      'parsed_oldest_local=${parsedOldest?.toLocal().toIso8601String()} '
+      'parsed_newest_utc=${parsedNewest?.toUtc().toIso8601String()} '
+      'parsed_newest_local=${parsedNewest?.toLocal().toIso8601String()}',
+    );
   }
 
   /// Delete all cloud telemetry data for a device.
@@ -264,14 +392,14 @@ class TelemetrySupabaseSync {
       'timestamp': t.timestamp.toUtc().toIso8601String(),
       'air_temp_c': t.airTempC,
       'air_humidity_pct': t.airHumidityPct,
-      'soil_moisture_pct': t.soilMoisturePct,
-      'soil_temp_c': t.soilTempC,
-      'ph': t.ph,
+      'soil_moisture_pct': t.hasSoilMoistureData ? t.soilMoisturePct : null,
+      'soil_temp_c': t.hasSoilTempData ? t.soilTempC : null,
+      'ph': t.hasPhData ? t.ph : null,
       'ec': t.ec,
-      'resistance': t.resistance,
-      'n': t.n,
-      'p': t.p,
-      'k': t.k,
+      'resistance': t.hasResistanceData ? t.resistance : null,
+      'n': t.hasNitrogenData ? t.n : null,
+      'p': t.hasPhosphorusData ? t.p : null,
+      'k': t.hasPotassiumData ? t.k : null,
       'battery_pct': t.batteryPct,
       'signal_rssi': t.signalRssi,
     };
@@ -340,7 +468,7 @@ class TelemetrySupabaseSync {
     String timeColumn,
   ) {
     _log(
-      'latest found table=$_table device_id=${telemetry.deviceId} '
+      'latest telemetry parsed table=$_table device_id=${telemetry.deviceId} '
       'order_by=$timeColumn rows=$rowCount timestamp=${telemetry.timestamp.toIso8601String()} '
       'battery_pct=${telemetry.batteryPct} signal_rssi=${telemetry.signalRssi}',
     );
@@ -355,10 +483,7 @@ class TelemetrySupabaseSync {
       'device_id': m['device_id'] ?? m['deviceId'],
       'timestamp': preferLatestTimestamp
           ? _latestTimestampIso(m)
-          : (m['timestamp'] ??
-                m['created_at'] ??
-                m['createdAt'] ??
-                m['recorded_at']),
+          : _historyTimestampIso(m),
       'created_at': m['created_at'] ?? m['createdAt'],
       'recorded_at': m['recorded_at'],
       'air_temp_c': _asNullableDouble(
@@ -450,6 +575,20 @@ class TelemetrySupabaseSync {
     if (dates.isEmpty) return null;
     dates.sort((a, b) => b.compareTo(a));
     return dates.first.toIso8601String();
+  }
+
+  static String? _historyTimestampIso(Map<String, dynamic> m) {
+    for (final value in <dynamic>[
+      m['timestamp'],
+      m['created_at'],
+      m['createdAt'],
+      m['recorded_at'],
+    ]) {
+      final parsed = _asDateTime(value);
+      if (parsed != null) return parsed.toUtc().toIso8601String();
+    }
+
+    return null;
   }
 
   static DateTime? _asDateTime(dynamic value) {

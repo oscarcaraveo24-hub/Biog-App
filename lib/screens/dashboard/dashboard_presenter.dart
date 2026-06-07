@@ -48,7 +48,10 @@ class DashboardViewData {
   final String fieldLabel;
   final String cropLabel;
   final String cropIconAsset;
-  final double soilHealth;
+
+  /// Soil-health ring value (0.0–1.0), or `null` when there is no telemetry.
+  /// Null renders as "--" instead of a misleading 0%.
+  final double? soilHealth;
   final String soilHealthLabel;
   final String npkTitle;
   final String npkSubtitle;
@@ -134,14 +137,19 @@ class DashboardScreenPresenter {
       dashboardEvents,
     );
 
-    final double soilHealth = isPlanted
-        ? _calcSoilHealthRealistic(
-            t: telemetry,
-            eval: effectiveEval,
-            targets: targets,
-            cropKey: runtime.cropKeyName,
-          )
-        : _calcPreSowingSoilHealth(telemetry);
+    // No telemetry → no soil-health reading. Returning null (instead of 0.0)
+    // keeps the ring from rendering a misleading "0%" that reads like a real
+    // bad-soil score. The ring shows "--" for null, matching the metric tiles.
+    final double? soilHealth = telemetry == null
+        ? null
+        : (isPlanted
+              ? _calcSoilHealthRealistic(
+                  t: telemetry,
+                  eval: effectiveEval,
+                  targets: targets,
+                  cropKey: runtime.cropKeyName,
+                )
+              : _calcPreSowingSoilHealth(telemetry));
 
     final String moistureValue = telemetry == null
         ? '--'
@@ -339,7 +347,9 @@ class DashboardScreenPresenter {
       cropLabel: runtime.cropLabel,
       cropIconAsset: runtime.cropIconAsset,
       soilHealth: soilHealth,
-      soilHealthLabel: isPlanted
+      soilHealthLabel: telemetry == null
+          ? 'Sin datos del sensor'
+          : isPlanted
           ? 'Índice de salud del suelo'
           : isPlanned
           ? 'Índice de preparación de suelo'
@@ -575,11 +585,12 @@ class DashboardScreenPresenter {
     required String? cropKey,
     required StageTargets targets,
   }) {
-    final AgroRange? comparableRange = NutrientTargetRangeResolver.comparableRange(
-      nutrient: key,
-      cropKey: cropKey,
-      targets: targets,
-    );
+    final AgroRange? comparableRange =
+        NutrientTargetRangeResolver.comparableRange(
+          nutrient: key,
+          cropKey: cropKey,
+          targets: targets,
+        );
 
     if (comparableRange != null) {
       return _scoreFromRawRange(value: value, range: comparableRange);

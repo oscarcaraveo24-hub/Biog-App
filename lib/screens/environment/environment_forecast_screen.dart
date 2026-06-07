@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'package:bio_g/models/environment_models.dart';
 import 'package:bio_g/services/environment_service.dart';
+import 'package:bio_g/widgets/environment/environment_asset_icon.dart';
 import 'package:bio_g/widgets/environment/environment_location_card.dart';
 import 'package:bio_g/widgets/environment/environment_now_summary_card.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
@@ -126,6 +127,8 @@ class _EnvironmentForecastScreenState extends State<EnvironmentForecastScreen>
     switch (c) {
       case EnvCondition.sunny:
         return 'Soleado';
+      case EnvCondition.night:
+        return 'Despejado';
       case EnvCondition.partlyCloudy:
         return 'Parcialmente nublado';
       case EnvCondition.cloudy:
@@ -138,8 +141,14 @@ class _EnvironmentForecastScreenState extends State<EnvironmentForecastScreen>
         return 'Lluvia';
       case EnvCondition.thunder:
         return 'Tormenta';
+      case EnvCondition.stormStrong:
+        return 'Tormenta fuerte';
       case EnvCondition.snow:
         return 'Nieve';
+      case EnvCondition.frost:
+        return 'Helada';
+      case EnvCondition.heatwave:
+        return 'Calor extremo';
       case EnvCondition.unknown:
       default:
         return 'Clima';
@@ -161,6 +170,8 @@ class _EnvironmentForecastScreenState extends State<EnvironmentForecastScreen>
         d.condition != EnvCondition.unknown;
 
     if (d.condition == EnvCondition.thunder ||
+        d.condition == EnvCondition.stormStrong ||
+        d.condition == EnvCondition.frost ||
         d.condition == EnvCondition.snow ||
         d.condition == EnvCondition.rain ||
         d.condition == EnvCondition.drizzle) {
@@ -269,6 +280,7 @@ class _EnvironmentForecastScreenState extends State<EnvironmentForecastScreen>
                     builder: (context, snap) {
                       final isLoading =
                           snap.connectionState == ConnectionState.waiting;
+                      final hasRefreshError = !isLoading && snap.hasError;
 
                       // ✅ FIX “3 → 7”:
                       // - Mientras carga: NO usamos widget.days (evita ver 3 y luego 7)
@@ -276,6 +288,8 @@ class _EnvironmentForecastScreenState extends State<EnvironmentForecastScreen>
                       final List<EnvironmentDaily> week =
                           (!isLoading && snap.hasData)
                           ? (snap.data!.take(7).toList())
+                          : hasRefreshError
+                          ? widget.days.take(7).toList()
                           : const [];
 
                       if (week.isNotEmpty)
@@ -306,6 +320,14 @@ class _EnvironmentForecastScreenState extends State<EnvironmentForecastScreen>
                                   // ✅ Sin clip / sin “box anti-shadow”
                                   EnvironmentNowSummaryCard(
                                     condition: widget.now.condition,
+                                    weatherCode: widget.now.weatherCode,
+                                    observedAt: widget.now.observedAt,
+                                    isDay: widget.now.isDay,
+                                    precipitationMm:
+                                        widget.now.precipitationMm,
+                                    shortwaveRadiation:
+                                        widget.now.shortwaveWm2,
+                                    temperatureC: widget.now.tempC,
                                     title: widget.now.conditionLabel,
                                     subtitle: widget.now.agroNote,
                                     weatherIconScale: 3.6,
@@ -339,12 +361,18 @@ class _EnvironmentForecastScreenState extends State<EnvironmentForecastScreen>
                                     ),
                                     itemBuilder: (context, i) {
                                       final d = week[i];
+                                      final selectedDate =
+                                          d.forecastDate ?? _dateForIndex(i);
                                       final iconPath =
-                                          EnvironmentIconMapper.iconForCondition(
-                                            d.condition,
+                                          EnvironmentIconMapper.iconForDailyForecastWeather(
+                                            weatherCode: d.weatherCode,
+                                            day: selectedDate,
+                                            fallbackCondition: d.condition,
+                                            precipitationProbability:
+                                                d.rainProbPct,
+                                            precipitationMm:
+                                                d.precipitationMm,
                                           );
-
-                                      final selectedDate = _dateForIndex(i);
 
                                       return _StaggerIn(
                                         controller: _listAnim,
@@ -391,8 +419,12 @@ class _EnvironmentForecastScreenState extends State<EnvironmentForecastScreen>
                                       Expanded(
                                         child: Text(
                                           widget.footerNote ??
-                                              (week.isEmpty
-                                                  ? 'Cargando pronóstico...'
+                                              (hasRefreshError
+                                                  ? week.isEmpty
+                                                        ? 'No se pudo cargar el pronóstico. Intenta de nuevo más tarde.'
+                                                        : 'No se pudo actualizar. Mostrando datos guardados.'
+                                                  : week.isEmpty
+                                                  ? 'No hay pronóstico disponible.'
                                                   : _footerAuto(week)),
                                           style: TextStyle(
                                             fontSize: 13.5,
@@ -718,8 +750,8 @@ class _ForecastIcon extends StatelessWidget {
               opacity: 0.18,
               child: Transform.scale(
                 scale: scale,
-                child: Image.asset(
-                  path,
+                child: EnvironmentAssetIcon(
+                  assetPath: path,
                   width: 18,
                   height: 18,
                   fit: BoxFit.contain,
@@ -732,7 +764,12 @@ class _ForecastIcon extends StatelessWidget {
         ),
         Transform.scale(
           scale: scale,
-          child: Image.asset(path, width: 18, height: 18, fit: BoxFit.contain),
+          child: EnvironmentAssetIcon(
+            assetPath: path,
+            width: 18,
+            height: 18,
+            fit: BoxFit.contain,
+          ),
         ),
       ],
     );

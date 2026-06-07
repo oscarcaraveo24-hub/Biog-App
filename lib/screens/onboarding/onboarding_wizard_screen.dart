@@ -481,6 +481,12 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           ? 'Selecciona el tipo de calabaza'
           : cropId == CropCatalog.lettuceCropId
           ? 'Selecciona el tipo de lechuga'
+          : cropId == CropCatalog.spinachCropId
+          ? 'Selecciona el tipo de espinaca'
+          : cropId == CropCatalog.onionCropId
+          ? 'Selecciona el tipo de cebolla'
+          : cropId == CropCatalog.garlicCropId
+          ? 'Selecciona el tipo de ajo'
           : 'Selecciona variedad o perfil',
       options: varieties
           .map(
@@ -497,9 +503,15 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                                   ? 'Recomendado si no sabes el tipo de berenjena'
                                   : cropId == CropCatalog.squashCropId
                                   ? 'Recomendado si no sabes el tipo de calabaza'
-                                  : cropId == CropCatalog.lettuceCropId
-                                  ? 'Recomendado si no sabes el tipo de lechuga'
-                                  : 'Recomendado si no sabes la variedad')
+                                   : cropId == CropCatalog.lettuceCropId
+                                   ? 'Recomendado si no sabes el tipo de lechuga'
+                                   : cropId == CropCatalog.spinachCropId
+                                   ? 'Recomendado si no sabes el tipo de espinaca'
+                                   : cropId == CropCatalog.onionCropId
+                                   ? 'Recomendado si no sabes el tipo de cebolla'
+                                   : cropId == CropCatalog.garlicCropId
+                                   ? 'Recomendado si no sabes el tipo de ajo'
+                                   : 'Recomendado si no sabes la variedad')
                             : 'Disponible ahora')
                       : 'Próximamente'),
               iconPath: cropId == CropCatalog.maizeCropId
@@ -539,6 +551,21 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                     )
                   : cropId == CropCatalog.lettuceCropId
                   ? ConfigureSeedWizardAssets.lettuceTypedIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.spinachCropId
+                  ? ConfigureSeedWizardAssets.spinachTypedIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.onionCropId
+                  ? ConfigureSeedWizardAssets.onionTypedIconForVariety(
+                      varietyId: variety.id,
+                      label: variety.label,
+                    )
+                  : cropId == CropCatalog.garlicCropId
+                  ? ConfigureSeedWizardAssets.garlicTypedIconForVariety(
                       varietyId: variety.id,
                       label: variety.label,
                     )
@@ -658,6 +685,12 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return ConfigureSeedWizardAssets.cropSquash;
       case CropCatalog.lettuceCropId:
         return ConfigureSeedWizardAssets.cropLettuce;
+      case CropCatalog.spinachCropId:
+        return ConfigureSeedWizardAssets.cropSpinach;
+      case CropCatalog.onionCropId:
+        return ConfigureSeedWizardAssets.cropOnion;
+      case CropCatalog.garlicCropId:
+        return ConfigureSeedWizardAssets.cropGarlic;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }
@@ -687,6 +720,12 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return ConfigureSeedWizardAssets.cropSquash;
       case 'Lechuga':
         return ConfigureSeedWizardAssets.cropLettuce;
+      case 'Espinaca':
+        return ConfigureSeedWizardAssets.cropSpinach;
+      case 'Cebolla':
+        return ConfigureSeedWizardAssets.cropOnion;
+      case 'Ajo':
+        return ConfigureSeedWizardAssets.cropGarlic;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }
@@ -893,6 +932,21 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           )
         : cropId == CropCatalog.lettuceCropId
         ? ConfigureSeedWizardAssets.lettuceTypedIconForVariety(
+            varietyId: selectedVariety?.id ?? _draft.varietyAlias,
+            label: selectedVariety?.label ?? selectedVarietyLabel,
+          )
+        : cropId == CropCatalog.spinachCropId
+        ? ConfigureSeedWizardAssets.spinachTypedIconForVariety(
+            varietyId: selectedVariety?.id ?? _draft.varietyAlias,
+            label: selectedVariety?.label ?? selectedVarietyLabel,
+          )
+        : cropId == CropCatalog.onionCropId
+        ? ConfigureSeedWizardAssets.onionTypedIconForVariety(
+            varietyId: selectedVariety?.id ?? _draft.varietyAlias,
+            label: selectedVariety?.label ?? selectedVarietyLabel,
+          )
+        : cropId == CropCatalog.garlicCropId
+        ? ConfigureSeedWizardAssets.garlicTypedIconForVariety(
             varietyId: selectedVariety?.id ?? _draft.varietyAlias,
             label: selectedVariety?.label ?? selectedVarietyLabel,
           )

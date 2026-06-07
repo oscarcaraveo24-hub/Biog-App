@@ -4,10 +4,17 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/models/environment_models.dart';
+import 'package:bio_g/widgets/environment/environment_asset_icon.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 
 class EnvironmentNowSummaryCard extends StatelessWidget {
   final EnvCondition condition;
+  final int weatherCode;
+  final DateTime? observedAt;
+  final bool? isDay;
+  final double? precipitationMm;
+  final double? shortwaveRadiation;
+  final double? temperatureC;
   final String title;
   final String subtitle;
 
@@ -17,15 +24,16 @@ class EnvironmentNowSummaryCard extends StatelessWidget {
   const EnvironmentNowSummaryCard({
     super.key,
     required this.condition,
+    required this.weatherCode,
+    this.observedAt,
+    this.isDay,
+    this.precipitationMm,
+    this.shortwaveRadiation,
+    this.temperatureC,
     required this.title,
     required this.subtitle,
     this.weatherIconScale = 4.0, // 🔥 default grande
   });
-
-  bool get _isNight {
-    final hour = DateTime.now().hour;
-    return hour < 6 || hour >= 19; // 🌙 simple por hora local
-  }
 
   bool get _isClearLikeByTitle {
     final t = title.trim().toLowerCase();
@@ -40,15 +48,17 @@ class EnvironmentNowSummaryCard extends StatelessWidget {
   }
 
   String _resolvedIconPath() {
-    // ✅ Para "Despejado/Soleado", usa iconos día/noche del proyecto
-    if (_isClearLikeByTitle) {
-      return _isNight
-          ? 'assets/icons/weather/ic_weather_night.png'
-          : 'assets/icons/weather/ic_weather_sunny.png';
-    }
+    // Current weather uses observation data; forecast risk belongs elsewhere.
+    return EnvironmentIconMapper.iconForCurrentWeather(
+      weatherCode: weatherCode,
+      time: observedAt ?? DateTime.now(),
+      fallbackCondition: condition,
+      isDay: isDay,
+      precipitationMm: precipitationMm,
+      shortwaveRadiation: shortwaveRadiation,
+      temperatureC: temperatureC,
+    );
 
-    // 🔁 Para lo demás, usa tu mapper actual
-    return EnvironmentIconMapper.iconForCondition(condition);
   }
 
   @override
@@ -122,8 +132,8 @@ class _BigIcon extends StatelessWidget {
                 opacity: 0.22,
                 child: Transform.scale(
                   scale: scale,
-                  child: Image.asset(
-                    iconPath,
+                  child: EnvironmentAssetIcon(
+                    assetPath: iconPath,
                     width: 26,
                     height: 26,
                     fit: BoxFit.contain,
@@ -138,8 +148,8 @@ class _BigIcon extends StatelessWidget {
           // ✅ icon real encima
           Transform.scale(
             scale: scale,
-            child: Image.asset(
-              iconPath,
+            child: EnvironmentAssetIcon(
+              assetPath: iconPath,
               width: 26,
               height: 26,
               fit: BoxFit.contain,

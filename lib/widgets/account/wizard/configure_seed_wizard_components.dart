@@ -55,6 +55,47 @@ class ConfigureSeedWizardAssets {
   static const String lettuceLooseLeaf =
       'assets/icons/wizard/ic_lettuce_loose_leaf.png';
 
+  static const String cropSpinach = 'assets/icons/wizard/ic_spinach.png';
+  static const String spinachGeneric =
+      'assets/icons/wizard/ic_spinach_generic.png';
+  static const String spinachSavoySummer =
+      'assets/icons/wizard/ic_spinach_savoy_summer.png';
+  static const String spinachSavoyWinter =
+      'assets/icons/wizard/ic_spinach_savoy_winter.png';
+  static const String spinachSmoothBaby =
+      'assets/icons/wizard/ic_spinach_smooth_baby.png';
+  static const String spinachOrientalBunching =
+      'assets/icons/wizard/ic_spinach_oriental_bunching.png';
+  static const String spinachProcessing =
+      'assets/icons/wizard/ic_spinach_processing.png';
+
+  // Cebolla (cultivo madre crop_onion). El genérico usa el ícono ON-GEN.
+  static const String cropOnion = 'assets/icons/wizard/ic_onion_generic.png';
+  static const String onionGeneric =
+      'assets/icons/wizard/ic_onion_generic.png';
+  static const String onionWhite = 'assets/icons/wizard/ic_onion_white.png';
+  static const String onionYellow = 'assets/icons/wizard/ic_onion_yellow.png';
+  static const String onionPurple = 'assets/icons/wizard/ic_onion_purple.png';
+  static const String onionTransition =
+      'assets/icons/wizard/ic_onion_transition.png';
+  static const String onionCambray = 'assets/icons/wizard/ic_onion_cambray.png';
+
+  // Ajo (cultivo madre crop_garlic). El generico usa el icono AG-GEN; el
+  // icono madre limpio es ic_garlic.png.
+  static const String cropGarlic = 'assets/icons/wizard/ic_garlic.png';
+  static const String garlicGeneric =
+      'assets/icons/wizard/ic_garlic_generic.png';
+  static const String garlicWhite =
+      'assets/icons/wizard/ic_garlic_white.png';
+  static const String garlicJaspeado =
+      'assets/icons/wizard/ic_garlic_jaspeado.png';
+  static const String garlicPurple =
+      'assets/icons/wizard/ic_garlic_purple.png';
+  static const String garlicCreole =
+      'assets/icons/wizard/ic_garlic_criollo.png';
+  static const String garlicChinese =
+      'assets/icons/wizard/ic_garlic_chinese_korean.png';
+
   static const String cucumberSlicer =
       'assets/icons/wizard/ic_cucumber_slicer.png';
   static const String cucumberEnglishProtected =
@@ -594,6 +635,200 @@ class ConfigureSeedWizardAssets {
       return lettuceLooseLeaf;
     }
     return cropLettuce;
+  }
+
+  static String spinachTypedIconForVariety({
+    String? varietyId,
+    String? label,
+  }) {
+    final raw = '${varietyId ?? ''} ${label ?? ''}'.toLowerCase();
+    if (raw.contains('sp-gen') ||
+        raw.contains('spgen') ||
+        raw.contains('sp_gen') ||
+        raw.contains('generica') ||
+        raw.contains('generic') ||
+        raw.contains('otra') ||
+        raw.contains('no se')) {
+      return spinachGeneric;
+    }
+    if (raw.contains('sp-01') ||
+        raw.contains('sp01') ||
+        raw.contains('sp_01') ||
+        raw.contains('verano') ||
+        raw.contains('calor') ||
+        raw.contains('summer')) {
+      return spinachSavoySummer;
+    }
+    if (raw.contains('sp-02') ||
+        raw.contains('sp02') ||
+        raw.contains('sp_02') ||
+        raw.contains('invierno') ||
+        raw.contains('dias cortos') ||
+        raw.contains('winter')) {
+      return spinachSavoyWinter;
+    }
+    if (raw.contains('sp-03') ||
+        raw.contains('sp03') ||
+        raw.contains('sp_03') ||
+        raw.contains('lisa') ||
+        raw.contains('smooth') ||
+        raw.contains('baby') ||
+        raw.contains('premium')) {
+      return spinachSmoothBaby;
+    }
+    if (raw.contains('sp-04') ||
+        raw.contains('sp04') ||
+        raw.contains('sp_04') ||
+        raw.contains('oriental') ||
+        raw.contains('manojo') ||
+        raw.contains('bunch')) {
+      return spinachOrientalBunching;
+    }
+    if (raw.contains('sp-05') ||
+        raw.contains('sp05') ||
+        raw.contains('sp_05') ||
+        raw.contains('proceso') ||
+        raw.contains('industria') ||
+        raw.contains('processing')) {
+      return spinachProcessing;
+    }
+    return cropSpinach;
+  }
+
+  static String onionTypedIconForVariety({
+    String? varietyId,
+    String? label,
+  }) {
+    final raw = '${varietyId ?? ''} ${label ?? ''}'.toLowerCase();
+    if (raw.contains('on-gen') ||
+        raw.contains('ongen') ||
+        raw.contains('on_gen') ||
+        raw.contains('onion_generic') ||
+        raw.contains('generic') ||
+        raw.contains('generica') ||
+        raw.contains('otra cebolla') ||
+        raw.contains('otra variedad') ||
+        raw.contains('no se') ||
+        raw.contains('no sé')) {
+      return onionGeneric;
+    }
+    if (raw.contains('on-01') ||
+        raw.contains('on01') ||
+        raw.contains('on_01') ||
+        raw.contains('onion_white') ||
+        raw.contains('blanca') ||
+        raw.contains('white')) {
+      return onionWhite;
+    }
+    if (raw.contains('on-02') ||
+        raw.contains('on02') ||
+        raw.contains('on_02') ||
+        raw.contains('onion_yellow') ||
+        raw.contains('amarilla') ||
+        raw.contains('dorada') ||
+        raw.contains('yellow')) {
+      return onionYellow;
+    }
+    if (raw.contains('on-03') ||
+        raw.contains('on03') ||
+        raw.contains('on_03') ||
+        raw.contains('onion_purple') ||
+        raw.contains('onion_red') ||
+        raw.contains('morada') ||
+        raw.contains('roja') ||
+        raw.contains('red') ||
+        raw.contains('purple')) {
+      return onionPurple;
+    }
+    if (raw.contains('on-04') ||
+        raw.contains('on04') ||
+        raw.contains('on_04') ||
+        raw.contains('onion_transition') ||
+        raw.contains('transicion') ||
+        raw.contains('intermedio') ||
+        raw.contains('altiplano')) {
+      return onionTransition;
+    }
+    if (raw.contains('on-05') ||
+        raw.contains('on05') ||
+        raw.contains('on_05') ||
+        raw.contains('onion_cambray') ||
+        raw.contains('cambray') ||
+        raw.contains('rama') ||
+        raw.contains('manojo') ||
+        raw.contains('cebollin') ||
+        raw.contains('bunch')) {
+      return onionCambray;
+    }
+    return cropOnion;
+  }
+
+  static String garlicTypedIconForVariety({
+    String? varietyId,
+    String? label,
+  }) {
+    final raw = '${varietyId ?? ''} ${label ?? ''}'.toLowerCase();
+    if (raw.contains('ag-gen') ||
+        raw.contains('aggen') ||
+        raw.contains('ag_gen') ||
+        raw.contains('garlic_generic') ||
+        raw.contains('generic') ||
+        raw.contains('generico') ||
+        raw.contains('otro ajo') ||
+        raw.contains('otra variedad') ||
+        raw.contains('no se')) {
+      return garlicGeneric;
+    }
+    if (raw.contains('ag-01') ||
+        raw.contains('ag01') ||
+        raw.contains('ag_01') ||
+        raw.contains('garlic_white') ||
+        raw.contains('garlic_orion') ||
+        raw.contains('garlic_san_marqueno') ||
+        raw.contains('blanco') ||
+        raw.contains('perla') ||
+        raw.contains('orion') ||
+        raw.contains('san marqueno') ||
+        raw.contains('diamante') ||
+        raw.contains('egipto')) {
+      return garlicWhite;
+    }
+    if (raw.contains('ag-02') ||
+        raw.contains('ag02') ||
+        raw.contains('ag_02') ||
+        raw.contains('jaspeado') ||
+        raw.contains('calera') ||
+        raw.contains('rayado') ||
+        raw.contains('cezac') ||
+        raw.contains('barretero') ||
+        raw.contains('inifap') ||
+        raw.contains('tacatzcuaro') ||
+        raw.contains('tinguindin')) {
+      return garlicJaspeado;
+    }
+    if (raw.contains('ag-03') ||
+        raw.contains('ag03') ||
+        raw.contains('ag_03') ||
+        raw.contains('morado') ||
+        raw.contains('purple')) {
+      return garlicPurple;
+    }
+    if (raw.contains('ag-04') ||
+        raw.contains('ag04') ||
+        raw.contains('ag_04') ||
+        raw.contains('criollo') ||
+        raw.contains('regional')) {
+      return garlicCreole;
+    }
+    if (raw.contains('ag-05') ||
+        raw.contains('ag05') ||
+        raw.contains('ag_05') ||
+        raw.contains('chino') ||
+        raw.contains('coreano') ||
+        raw.contains('cedel')) {
+      return garlicChinese;
+    }
+    return cropGarlic;
   }
 
   static const String stagePlanned =

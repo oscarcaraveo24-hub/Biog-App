@@ -1,0 +1,431 @@
+BIO-G / ESPINACA - TEXTO EXTRAIDO PARA CODIGO
+Archivo fuente: Perfil_Generico_BioG_Espinaca_SP_GEN_SKIP_v2_mejorado.pdf
+Archivo TXT: 02_Perfil_Generico_BioG_Espinaca_SP_GEN_SKIP_v2_mejorado.txt
+Paginas detectadas: 5
+Nota: texto extraido desde PDF y validado con pdftotext + PyMuPDF.
+
+
+
+===== PAGINA 1 / 5 =====
+
+                                                                   BIO-G
+                     PERFIL GENERICO BIO-G - ESPINACA
+                         SP-GEN (SKIP) | Version corregida y ampliada para codigo - BIO-G v1
+
+
+ Estado: Obligatorio - conservador - universal. Uso: No se / Otra espinaca / configuracion rapida. El usuario NO ve que esta en
+ SKIP. SP-GEN no busca maximo rendimiento; busca estabilidad, alertas utiles, minima probabilidad de error y migracion
+ segura cuando el usuario refine tipo o variedad.
+
+
+ 0. Mejoras aplicadas sobre el borrador recibido
+  Area                Antes                              Ahora / mejora
+
+  Rol del perfil      SKIP conservador.                  Se define como puerta segura de entrada, no perfil incompleto. No bloquea la
+                                                         configuracion ni rompe UX.
+
+  Calendario          Expansion 20-30 dias; cosecha      Se conserva, pero se separa directSeed / transplant / unknown para no fingir precision.
+                      35-55 dias.                        La etapa manual puede mandar sobre el calendario.
+
+  Sistema             Campo abierto asumido.             Se mantiene como default, pero se aclara que baby/protegido/proceso no se asumen.
+
+  Calor               Siempre activo.                    Se traduce a bolting risk, quality decline y harvest urgency segun etapa.
+
+  Salinidad           Media-alta.                        Se matiza para no sobrealertar: espinaca tolera mas que lechuga, pero
+                                                         baby/fresco/calor reducen margen.
+
+  Codigo              Pocos campos.                      Se agregan campos de modelo, assets, migracion, confianza y comportamiento
+                                                         esperado.
+
+
+
+ 1. Proposito del perfil SP-GEN
+ SP-GEN se usa cuando el agricultor quiere registrar espinaca pero no sabe o no desea especificar si es saboya,
+ semi-saboya, lisa, baby leaf, oriental/manojo, proceso u otro tipo. El objetivo es no bloquear la configuracion y
+ mantener alertas utiles desde el primer dia.
+
+ Filosofia SP-GEN: este perfil no busca maximo rendimiento ni precision varietal. Busca estabilidad, proteccion de
+ calidad de hoja, bajo riesgo de error, alertas tempranas y una experiencia humana cuando la informacion del usuario
+ esta incompleta.
+
+
+ 2. Identidad base
+  Campo                                    Valor SP-GEN
+
+  Cultivo                                  Espinaca
+
+  CropKey / clave tecnica                  crop_spinach / CropKey.spinach
+
+  Perfil BIO-G                             SP-GEN - Intermedio conservador
+
+  Tipo UX visible                          No se / Otra espinaca / Espinaca generica
+
+  Variedad                                 No especificada
+
+  Especie base asumida                     Spinacia oleracea L.
+
+  Organo objetivo                          Hoja
+
+  Tipo de cosecha asumido                  1 corte o cosecha unica como suposicion segura
+
+  Estado                                   Obligatorio dentro de BIO-G
+
+
+
+ 3. Cuando usar y cuando NO usar SP-GEN
+  Regla                                    Criterio
+
+  Usar SP-GEN                              El usuario solo dice espinaca.
+
+
+
+
+BIO-G | Documento tecnico interno - Espinaca | No sustituye analisis local ni asesoria agronomica                                                  Pagina 1
+
+
+
+===== PAGINA 2 / 5 =====
+
+  Regla                                     Criterio
+
+  Usar SP-GEN                               No conoce tipo de hoja, destino comercial o variedad.
+
+  Usar SP-GEN                               Quiere avanzar rapido o el lote ya existe con datos incompletos.
+
+  Usar SP-GEN                               Solo tiene etapa manual y no sabe fecha exacta.
+
+  No usar SP-GEN                            El usuario elige saboya/semi-saboya, lisa/baby, oriental/manojo o proceso.
+
+  No usar SP-GEN                            Selecciona una variedad reconocida que apunta a un tipo.
+
+  No usar SP-GEN                            El modulo ya necesita fertilizacion fina, rendimiento o manejo local especifico.
+
+
+
+ 4. Supuestos agronomicos conservadores
+  Parametro                                      Base SP-GEN
+
+  Uso generico                                   Hoja fresca generica, sin definir baby, proceso, manojo o variedad.
+
+  Inicio de expansion foliar                     20-30 dias despues de siembra directa, si el clima esta fresco y hay establecimiento uniforme.
+
+  Inicio de cosecha                              35-55 dias despues de siembra directa; puede moverse por temporada, calor, frio, densidad y
+                                                 destino.
+
+  Ciclo                                          Intermedio conservador, de ventana comercial corta.
+
+  Tipo de cosecha                                1 corte/cosecha unica como suposicion segura; no asumir multiples cortes.
+
+  Arquitectura asumida                           Planta compacta, roseta de hoja media, sin textura/forma definida.
+
+  Sistema asumido                                Campo abierto en suelo, no hidroponia ni sustrato inerte.
+
+  Sensibilidad asumida                           Muy alta a calor/espigado; alta a deficit hidrico y exceso de humedad; media-alta a salinidad segun
+                                                 calidad; media a frio.
+
+  Confianza inicial                              Media si hay fecha/etapa; baja si solo se registra cultivo.
+
+ Lo que SP-GEN NO asume: baby leaf, saboya vs lisa, proceso industrial, multiples cortes, manejo protegido,
+ hidroponia, variedad de semilla, rendimiento exacto ni mercado premium.
+
+
+ 5. Calendario y Dia 0
+ El Dia 0 puede venir de siembra directa, trasplante/charola o una fecha estimada. En espinaca, BIO-G debe guardar el
+ modo de establecimiento y no fingir precision cuando la informacion falta.
+
+  establishmentMode            Cuando aplica                                 Comportamiento BIO-G
+
+  directSeed                   Usuario registro siembra directa.             Usar ventanas por dias despues de siembra. Es el modo default para
+                                                                             espinaca.
+
+  transplant                   Usuario registro trasplante desde             Iniciar en establecimiento o vegetativo temprano; bajar confianza del
+                               charola o plantula.                           calendario si no hay edad de charola.
+
+  unknown                      No sabe fecha o modo.                         Usar etapa manual y bajar confianza del calendario.
+
+  Etapa BIO-G                        Ventana orientativa SP-GEN              Lectura conservadora
+
+  Germinacion                        0-7/14 dias desde siembra               Solo si viene de siembra; temperatura y humedad mandan.
+
+  Emergencia / establecimiento       5-20 dias                               Raiz joven; alta sensibilidad a calor, saturacion y compactacion.
+
+  Vegetativo temprano                15-28 dias                              Construir roseta; revisar uniformidad y color.
+
+  Expansion foliar activa            20-35 dias                              Ventana critica de agua, N, temperatura y sanidad.
+
+  Madurez comercial                  35-55 dias                              Hoja optima; la ventana de cosecha puede ser corta.
+
+  Ventana de cosecha                 35-60 dias segun clima/mercado          No asumir multiples cortes; decidir por calidad.
+
+  Sobremadurez / perdida de          Tardio o por calor/edad                 Cambiar tono: cosechar pronto, cerrar o registrar perdida de calidad.
+  calidad
+
+  Espigado / senescencia             Evento por                              No es etapa productiva; prioridad es evitar o cerrar.
+                                     calor/fotoperiodo/edad/estres
+
+
+
+ 6. Rangos medibles para SP-GEN
+  Variable             Optimo                           Observacion                    Alerta                           Critico / accion
+
+  Temperatura          10-22 C                          22-25 C sostenidos             >25 C en expansion/madurez       >28-30 C: espigado rapido y
+  ambiente                                                                                                              perdida de calidad.
+
+
+
+BIO-G | Documento tecnico interno - Espinaca | No sustituye analisis local ni asesoria agronomica                                                      Pagina 2
+
+
+
+===== PAGINA 3 / 5 =====
+
+  Variable              Optimo                           Observacion                     Alerta                          Critico / accion
+
+  Humedad suelo -       65-90% sin saturacion            55-65% o variacion fuerte       <55% en etapa critica o         Deficit: hoja chica/dura;
+  AW                                                                                     >95% con mal drenaje            exceso: anoxia y pudricion.
+
+  Humedad               50-80% referencia                <40% con calor o >85%           Baja HR + calor; alta HR +      Factor de riesgo
+  ambiental                                              sostenido                       hoja mojada                     sanitario/reproductivo.
+
+  pH suelo              6.0-7.5                          5.7-6.0 o 7.5-7.8               <5.7 o >7.8                     Bloqueo nutrimental
+                                                                                                                         probable; pedir analisis.
+
+  Salinidad ECe         <2.0 dS/m conservador            2.0-3.5 dS/m                    >3.5-5.0 dS/m si hay calor o    >5.0 dS/m con calor sube
+                        para calidad                                                     baby/fresco                     riesgo; >7.0 dS/m puede
+                                                                                                                         reducir rendimiento/calidad.
+
+  Compactacion          <1.5 MPa                         1.5-2.0 MPa                     >2.0 MPa                        Raiz limitada; peor si coincide
+                                                                                                                         con exceso de agua.
+
+
+
+ 7. Peso conservador por etapa
+  Etapa                           Deficit agua        Exceso agua            Frio        Calor              Compactacion       Nutricion
+
+  Germinacion                     Alta                Alta                   Media       Alta               Alta               Baja
+
+  Establecimiento                 Alta                Muy alta               Media       Alta               Alta               Media
+
+  Vegetativo temprano             Alta                Alta                   Baja-medi   Alta               Media              Media-alta N
+                                                                             a
+
+  Expansion foliar                Alta                Alta sanitaria         Baja        Muy alta           Media              Muy alta N/K
+
+  Madurez comercial               Muy alta calidad    Alta sanitaria         Baja        Muy alta bolting   Media              Alta calidad
+
+  Cosecha                         Alta                Alta sanitaria         Baja        Muy alta           Media              Media
+
+  Bolting/senescencia             Media               Media                  Baja        Muy alta           Baja-media         Baja
+
+
+
+ 8. Alertas activadas en lenguaje humano
+  Alerta                           Mensaje sugerido                                                                      Etapas sensibles
+
+  Riesgo de calor                  La espinaca es muy sensible al calor. Si la temperatura sigue alta, puede perder      Vegetativo, expansion,
+                                   calidad o espigar.                                                                    madurez
+
+  Riesgo de espigado               Hay señales de riesgo de espigado. Conviene revisar etapa, temperatura y              Madurez, cosecha,
+                                   cercania a cosecha.                                                                   sobremadurez
+
+  Deficit hidrico                  El cultivo esta entrando en deficit hidrico. En esta etapa puede bajar tamano,        Establecimiento, expansion,
+                                   turgencia y calidad de hoja.                                                          madurez
+
+  Exceso de humedad                Hay exceso de humedad en raiz. Puede reducir oxigeno y favorecer problemas            Establecimiento, expansion,
+                                   radiculares o de hoja bajera.                                                         cosecha
+
+  Salinidad elevada                La salinidad puede limitar absorcion de agua y reducir calidad de hoja, sobre todo    Establecimiento, expansion,
+                                   con calor.                                                                            madurez
+
+  Compactacion                     Aunque haya agua, la raiz puede no absorber bien por compactacion.                    Establecimiento, vegetativo
+
+  HR alta / sanidad                Ambiente favorable a enfermedades foliares. Revise manchas, amarillamiento y          Expansion, madurez, cosecha
+                                   envés de hoja.
+
+  Nutricion desequilibrada         La lectura nutrimental no coincide con la etapa. Evite empujar solo hoja si el        Expansion, madurez
+                                   cultivo ya esta cerca de corte.
+
+
+
+ 9. Reglas de migracion SP-GEN -> tipo especifico
+ SP-GEN debe ser migrable. Esto permite que el usuario empiece rapido y despues refine el tipo sin perder historial del
+ lote ni continuidad del dispositivo BIO-G.
+
+  Evento                                    Migracion                    Accion
+
+  Usuario selecciona                        SP-GEN -> SP-01              Recalcular calendario, subir tolerancia relativa a calor pero mantener bolting
+  saboya/semi-saboya verano-calor                                        risk.
+
+  Usuario selecciona                        SP-GEN -> SP-02              Ajustar vigor en clima fresco, sanidad por humedad y ventana de cosecha.
+  saboya/semi-saboya invierno
+
+  Usuario selecciona lisa/baby              SP-GEN -> SP-03              Subir peso de calidad visual, textura, hoja limpia y cosecha corta.
+
+  Usuario selecciona oriental/manojo        SP-GEN -> SP-04              Ajustar arquitectura erecta, precocidad y cosecha por manojo.
+
+
+
+
+BIO-G | Documento tecnico interno - Espinaca | No sustituye analisis local ni asesoria agronomica                                                          Pagina 3
+
+
+
+===== PAGINA 4 / 5 =====
+
+  Evento                                 Migracion                     Accion
+
+  Usuario selecciona                     SP-GEN -> SP-05               Subir peso de biomasa, uniformidad, sanidad y rendimiento por volumen.
+  proceso/industria
+
+ Regla de seguridad: la migracion NO borra historial, NO reinicia cultivo y NO cambia eventos pasados. Solo recalcula
+ calendario, ventanas activas, sensibilidad y mensajes futuros.
+
+
+ 10. Comportamiento del sistema y confianza
+  Caso                         Informacion disponible           Confianza                   Respuesta BIO-G
+
+  Datos completos              Tipo + fecha + etapa +           Alta                        Motor especifico preferible; SP-GEN ya no debe
+                               sensores                                                     quedarse activo.
+
+  Fecha y etapa, sin tipo      Fecha + etapa                    Media                       SP-GEN activo con calendario razonable.
+
+  Solo cultivo Espinaca        Cultivo                          Baja-media                  SP-GEN activo; pedir tipo despues sin bloquear.
+
+  Solo etapa manual            Etapa                            Media para etapa, baja      La etapa manda; calendario estimado.
+                                                                para calendario
+
+  Lectura sensor sin           Sensor aislado                   Baja                        Mostrar observacion, no diagnostico fuerte.
+  contexto
+
+
+
+ 11. Traduccion futura a codigo
+  Campo futuro                                  Valor recomendado
+
+  profileId                                     SP-GEN
+
+  cropKey                                       CropKey.spinach / crop_spinach
+
+  isGeneric                                     true
+
+  visibleName                                   No se / Otra espinaca
+
+  establishmentMode                             directSeed / transplant / unknown
+
+  leafExpansionDays                             20-35
+
+  commercialMaturityDays                        35-55
+
+  cycleClass                                    intermediate_conservative
+
+  harvestPattern                                single_cut_assumed
+
+  migrationTargets                              SP-01 a SP-05
+
+  defaultConfidence                             medium o low segun datos
+
+  boltingRiskAlwaysAvailable                    true, pero severidad depende de etapa y temperatura acumulada
+
+
+
+ 12. Assets y nombres sugeridos
+  Tipo                 Nombre de asset                                          Uso
+
+  Icon wizard          ic_spinach_generic.png                                   Entrada No se / Otra espinaca
+
+  Stage 1              spinach_stage_germination.png                            Germinacion
+
+  Stage 2              spinach_stage_establishment.png                          Emergencia / establecimiento
+
+  Stage 3              spinach_stage_vegetative_early.png                       Vegetativo temprano
+
+  Stage 4              spinach_stage_leaf_expansion.png                         Expansion foliar activa
+
+  Stage 5              spinach_stage_commercial_maturity.png                    Madurez comercial
+
+  Stage 6              spinach_stage_harvest_window.png                         Ventana de cosecha / cortes
+
+  Stage 7              spinach_stage_quality_decline.png                        Sobremadurez / perdida de calidad
+
+  Stage 8              spinach_stage_bolting_senescence.png                     Espigado / senescencia
+
+
+
+ 13. Limites de SP-GEN en v1
+ • No calcula dosis fertilizante por hectarea; eso pertenece a la guia de fertilizacion.
+
+ • No diagnostica plagas/enfermedades de forma cerrada; eso pertenece al documento de riesgos.
+
+
+BIO-G | Documento tecnico interno - Espinaca | No sustituye analisis local ni asesoria agronomica                                               Pagina 4
+
+
+
+===== PAGINA 5 / 5 =====
+
+ • No promete rendimiento; el rendimiento va en ficha separada por tipo, sistema y manejo.
+
+ • No modela precio, contrato, calidad poscosecha avanzada, residuos, inocuidad o numero fijo de cortes.
+
+ • No reemplaza analisis de suelo, agua, tejido o asesoria local.
+
+ • No cubre hidroponia ni sustrato inerte en v1.
+
+
+ 14. Cierre de producto
+ Frase guia: El perfil generico no adivina, acompana. SP-GEN permite que Espinaca nunca rompa la UX: el usuario puede
+ iniciar rapido, BIO-G alerta con prudencia y el sistema queda listo para volverse mas preciso cuando haya mas informacion.
+
+  Elemento                                  Cierre
+
+  Estado del perfil                         SP-GEN v2 mejorado listo
+
+  Obligatorio en BIO-G                      Si
+
+  Compatible con perfiles                   SP-01 a SP-05
+
+  Siguiente documento                       Guia de fertilizacion Espinaca
+
+  Listo para codigo                         Si, despues de cerrar fertilizacion, riesgos, rendimiento e imagenes
+
+
+
+ 15. Fuentes y trazabilidad
+  ID        Fuente                                             Uso dentro de BIO-G
+
+  S1        Rutgers NJAES / Mid-Atlantic Commercial            Variedades por tipo, N-P-K por analisis de suelo, siembra, trasplante, temperatura
+            Vegetable Production Recommendations               de suelo y cosecha. URL:
+            2026/2027 - Spinach.                               https://njaes.rutgers.edu/pubs/commercial-veg-rec/spinach.pdf
+
+  S2        UC ANR / UC Davis. Spinach Production in           Ciclos fresco/proceso, suelos, sensibilidad a saturacion, salinidad relativa, riego y
+            California.                                        fertilizacion. URL:
+                                                               https://my.ucanr.edu/repository/fileaccess.cfm?article=54021&p=+PUIVXP
+
+  S3        UC IPM. Agriculture: Pest Management               Riesgos principales: downy mildew, damping-off/root rot, leaf spots, virus, aphids,
+            Guidelines for Spinach.                            leafminers, crown mite y nematodos. URL:
+                                                               https://ipm.ucanr.edu/agriculture/spinach/
+
+  S4        UC Davis Postharvest Research and Extension        Daños poscosecha, amarillamiento, sensibilidad a etileno, soft rot y manejo
+            Center. Spinach Produce Fact Sheet.                cuidadoso de hoja. URL:
+                                                               https://postharvest.ucdavis.edu/produce-facts-sheets/spinach
+
+  S5        Desert Ag Solutions / University of Arizona        Ciclo baby spinach, ETc, Kc, umbral salino historico y evidencia moderna de mayor
+            context. Baby Spinach ETc and salinity             tolerancia en condiciones frescas. URL: https://desertagsolutions.org/research-are
+            management.                                        as-and-initiatives/increasing-irrigation-efficiency/water-use-and-management/upd
+                                                               ated-crop-evapotranspiration-et-salinity-management/baby-spinach
+
+  S6        Ors & Suarez / USDA-ARS. Salt tolerance of         Matiz importante: la tolerancia a salinidad depende de clima/temporada; el calor
+            spinach as related to seasonal climate.            reduce margen de seguridad. URL:
+                                                               https://www.ars.usda.gov/arsuserfiles/20360500/pdf_pubs/P2473.pdf
+
+  S7        Documentos internos BIO-G aportados por el         Base inicial de estructura, perfiles SP-01 a SP-05, filosofia SKIP y reglas de
+            usuario: Perfil Universal Espinaca y Perfil        migracion.
+            Generico SP-GEN.
+
+ Estado del documento: PERFIL GENERICO BIO-G - ESPINACA SP-GEN / SKIP v2 mejorado queda listo para conectarse con el
+ Perfil Universal de Espinaca y con los documentos de fertilizacion, riesgos y rendimiento.
+
+
+
+
+BIO-G | Documento tecnico interno - Espinaca | No sustituye analisis local ni asesoria agronomica                                                      Pagina 5

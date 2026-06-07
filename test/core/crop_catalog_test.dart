@@ -3,6 +3,7 @@
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/widgets/seeds/maize_profiles.dart';
+import 'package:bio_g/widgets/seeds/wheat_profiles.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -205,7 +206,7 @@ void main() {
       final crop = CropCatalog.cropById('wheat');
       expect(crop, isNotNull);
       expect(crop!.cropId, 'wheat');
-      expect(crop.enabled, isFalse);
+      expect(crop.enabled, isTrue);
     });
 
     test('returns barley entry for "barley"', () {
@@ -282,11 +283,11 @@ void main() {
       expect(result, kMzgGenB);
     });
 
-    test('fallback chain for crop without profiles', () {
-      // wheat has empty profiles list and no defaultProfileId
+    test('crop-level default profile used for wheat (tr_gen)', () {
+      // Trigo ya esta habilitado y tiene perfiles; su perfil por defecto es
+      // tr_gen, asi que resuelve a el (no al sintetico "{cropId}_generic").
       final result = CropCatalog.resolveProfileId(cropId: 'wheat');
-      // Should fall through to synthetic "{cropId}_generic"
-      expect(result, 'wheat_generic');
+      expect(result, kTrGen);
     });
 
     test('unknown crop falls back to synthetic generic id', () {

@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/services/biog/identity/active_device_store.dart';
 import 'package:bio_g/services/biog/identity/device_identity_repository.dart';
+
+const bool kBioGHardwareFlowIdentityDebugLogs = true;
 
 /// Supabase-backed implementation of [DeviceIdentityRepository].
 ///
@@ -97,8 +100,17 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
     final List<BioGDevice> local =
         List<BioGDevice>.from(_inMemoryByUser[_userKey(userId)] ?? const []);
 
+    _logHardwareFlow(
+      'account hardware load started has_session=${userId != null && userId.isNotEmpty} '
+      'local_devices=${local.length}',
+    );
+
     if (userId == null || userId.isEmpty) {
       // Unauthenticated: only local cache is available.
+      _logHardwareFlow(
+        'account hardware load local_only reason=no_session '
+        'devices=${local.length}',
+      );
       return List<BioGDevice>.unmodifiable(local);
     }
 
@@ -117,6 +129,7 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
         final id = m['device_id'] as String?;
         if (id != null && id.isNotEmpty) deviceIds.add(id);
       }
+      _logHardwareFlow('device memberships resolved rows=${deviceIds.length}');
 
       List<Map<String, dynamic>> rows = <Map<String, dynamic>>[];
       if (deviceIds.isNotEmpty) {
@@ -131,6 +144,9 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
           .map(_fromSupabaseRow)
           .whereType<BioGDevice>()
           .toList(growable: false);
+      _logHardwareFlow(
+        'remote devices resolved rows=${rows.length} parsed=${remote.length}',
+      );
 
       // Last-write-wins merge by updatedAt.
       final List<BioGDevice> merged = _mergeByUpdatedAt(
@@ -153,7 +169,10 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
       }
 
       return List<BioGDevice>.unmodifiable(merged);
-    } catch (_) {
+    } catch (e) {
+      _logHardwareFlow(
+        'remote devices failed fallback=local type=${e.runtimeType} message=$e',
+      );
       // Network / RLS / schema error — stick with local cache.
       return List<BioGDevice>.unmodifiable(local);
     }
@@ -439,5 +458,10 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
   DateTime? _parseDate(dynamic value) {
     if (value == null) return null;
     return DateTime.tryParse(value.toString());
+  }
+
+  void _logHardwareFlow(String message) {
+    if (!kDebugMode || !kBioGHardwareFlowIdentityDebugLogs) return;
+    debugPrint('[BioG/HardwareFlow] $message');
   }
 }

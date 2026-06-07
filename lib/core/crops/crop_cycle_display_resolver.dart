@@ -1,3 +1,4 @@
+import 'package:bio_g/widgets/seeds/onion_profiles.dart';
 import 'package:bio_g/widgets/seeds/squash_profiles.dart';
 
 /// Línea de presentación del ciclo del cultivo (label/value/helper).
@@ -98,6 +99,119 @@ CropCycleDisplayLine resolveCycleDisplayLine({
     return CropCycleDisplayLine(
       label: 'Estimado a primera cosecha:',
       value: hasDays ? '$daysValue días' : 'Pendiente',
+    );
+  }
+
+  // Hortalizas de bulbo (cebolla / ajo): calibre, cuello, dientes y curado.
+  if (family == _CropFamily.bulbVeg) {
+    final isGarlic = crop == 'garlic' || crop == 'crop_garlic' || crop == 'ajo';
+    if (isGarlic) {
+      final isScapeEvent = stage.contains('escapo') ||
+          stage.contains('canuto') ||
+          stage.contains('escobete') ||
+          stage.contains('broom') ||
+          stage.contains('scape') ||
+          stage.contains('bolting');
+      final isVernalization = stage.contains('vernal') ||
+          stage.contains('frio') ||
+          stage.contains('cold');
+      final isMaturity = stage.contains('madur') ||
+          stage.contains('cosech') ||
+          stage.contains('harvest') ||
+          stage.contains('curado') ||
+          stage.contains('curing');
+      final isBulbFormation = stage.contains('diferenci') ||
+          stage.contains('diente') ||
+          stage.contains('bulb') ||
+          stage.contains('bulbo') ||
+          stage.contains('llenado') ||
+          stage.contains('fill');
+
+      if (isScapeEvent) {
+        return const CropCycleDisplayLine(
+          label: 'Evento fisiologico:',
+          value: 'Escapo / escobeteado',
+          helper:
+              'Compatible con estres, frio irregular o N tardio; no se corrige con NPK.',
+        );
+      }
+      if (isVernalization) {
+        return CropCycleDisplayLine(
+          label: 'Ventana de frio:',
+          value: hasDays ? '$daysValue dias aprox.' : 'En evaluacion',
+          helper:
+              'La vernalizacion define potencial de dientes; no la fuerces con fertilizante.',
+        );
+      }
+      if (isMaturity) {
+        return CropCycleDisplayLine(
+          label: 'Maduracion / curado:',
+          value: hasDays ? '$daysValue dias aprox.' : 'Revisar en campo',
+          helper:
+              'Baja N y agua tardia; cuida cuello, curado y descarte comercial.',
+        );
+      }
+      if (isBulbFormation) {
+        return CropCycleDisplayLine(
+          label: 'Llenado de bulbo estimado:',
+          value: hasDays ? 'en $daysValue dias aprox.' : 'En curso',
+          helper:
+              'K, agua estable y CE baja sostienen calibre; revisa sanidad de bulbo.',
+        );
+      }
+      return CropCycleDisplayLine(
+        label: 'Ventana de cosecha estimada:',
+        value: hasDays ? 'en $daysValue dias aprox.' : 'Pendiente',
+      );
+    }
+
+    final isBunching = _canonicalOnionProfile(profileId) == kOn05;
+    final isBolting = stage.contains('espig') ||
+        stage.contains('bolting') ||
+        stage.contains('seedstalk');
+    final isMaturity = stage.contains('madur') ||
+        stage.contains('cosech') ||
+        stage.contains('harvest') ||
+        stage.contains('curado');
+    final isBulbFormation = stage.contains('induccion') ||
+        stage.contains('bulb') ||
+        stage.contains('bulbo') ||
+        stage.contains('llenado') ||
+        stage.contains('fill');
+
+    if (isBolting) {
+      return const CropCycleDisplayLine(
+        label: 'Cierre de ciclo:',
+        value: 'Espigado / fuera de punto',
+        helper:
+            'El tallo floral no es productivo; revisa cosecha y registra la causa.',
+      );
+    }
+    if (isMaturity) {
+      return CropCycleDisplayLine(
+        label: isBunching ? 'Ventana de cosecha:' : 'Maduración / cosecha:',
+        value: hasDays ? '$daysValue días aprox.' : 'Revisar en campo',
+        helper: isBunching
+            ? 'Corta el manojo en su punto; no esperes bulbo seco completo.'
+            : 'Revisa cuello, madurez y curado; evita N y riego tardíos.',
+      );
+    }
+    if (isBulbFormation) {
+      return CropCycleDisplayLine(
+        label: isBunching
+            ? 'Cosecha de manojo estimada:'
+            : 'Maduración estimada:',
+        value: hasDays ? 'en $daysValue días aprox.' : 'En curso',
+        helper: isBunching
+            ? 'El objetivo es hoja + base tierna.'
+            : 'Protege calibre con agua estable y salinidad controlada.',
+      );
+    }
+    return CropCycleDisplayLine(
+      label: isBunching
+          ? 'Cosecha de manojo estimada:'
+          : 'Ventana de cosecha estimada:',
+      value: hasDays ? 'en $daysValue días aprox.' : 'Pendiente',
     );
   }
 
@@ -235,6 +349,12 @@ String? _canonicalSquashProfile(String? profileId) {
   return kCaGen;
 }
 
+String? _canonicalOnionProfile(String? profileId) {
+  final raw = profileId?.trim().toLowerCase();
+  if (raw == null || raw.isEmpty) return null;
+  return resolveCanonicalOnionProfileId(raw);
+}
+
 bool _isLateStage(String stage) {
   if (stage.contains('progresiv')) return false;
   return stage.contains('senesc') ||
@@ -256,13 +376,23 @@ bool _isProgressiveHarvest(String stage) {
       stage.contains('cosecha_progres');
 }
 
-enum _CropFamily { grain, fruitVeg, leafVeg, tree, ornamental, generic }
+enum _CropFamily { grain, fruitVeg, bulbVeg, leafVeg, tree, ornamental, generic }
 
 _CropFamily _resolveFamily(String crop) {
   switch (crop) {
     case 'lettuce':
     case 'lechuga':
+    case 'spinach':
+    case 'crop_spinach':
+    case 'espinaca':
       return _CropFamily.leafVeg;
+    case 'onion':
+    case 'crop_onion':
+    case 'cebolla':
+    case 'garlic':
+    case 'crop_garlic':
+    case 'ajo':
+      return _CropFamily.bulbVeg;
     case 'maize':
     case 'maiz':
     case 'corn':

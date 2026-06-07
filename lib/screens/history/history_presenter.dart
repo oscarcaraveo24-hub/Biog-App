@@ -24,7 +24,7 @@ class HistoryHeaderUiData {
 
 class HistoryMetricChartUiData {
   final String title;
-  final double currentValue;
+  final double? currentValue;
   final String Function(double) valueFormatter;
   final bool isPercentScale;
   final double minSpan;
@@ -213,9 +213,9 @@ class HistoryScreenPresenter {
             ph: t.ph,
             resistance: t.resistance,
             soilTemp: t.soilTempC,
-            n: t.n.toDouble(),
-            p: t.p.toDouble(),
-            k: t.k.toDouble(),
+            n: t.hasNitrogenData ? t.n.toDouble() : null,
+            p: t.hasPhosphorusData ? t.p.toDouble() : null,
+            k: t.hasPotassiumData ? t.k.toDouble() : null,
           ),
         )
         .toList();

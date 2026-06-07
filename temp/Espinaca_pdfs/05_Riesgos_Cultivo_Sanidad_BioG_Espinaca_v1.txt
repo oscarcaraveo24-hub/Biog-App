@@ -1,0 +1,646 @@
+BIO-G / ESPINACA - TEXTO EXTRAIDO PARA CODIGO
+Archivo fuente: Riesgos_Cultivo_Sanidad_BioG_Espinaca_v1.pdf
+Archivo TXT: 05_Riesgos_Cultivo_Sanidad_BioG_Espinaca_v1.txt
+Paginas detectadas: 8
+Nota: texto extraido desde PDF y validado con pdftotext + PyMuPDF.
+
+
+
+===== PAGINA 1 / 8 =====
+
+BIO-G | Riesgos del cultivo - Espinaca | Sanidad vegetal | v1
+
+
+
+
+                                                                                   BIO-G
+
+                               RIESGOS DEL CULTIVO DE ESPINACA
+  Plagas, enfermedades, desordenes fisiologicos y traduccion a motor
+                            Plant Health
+  Alcance: espinaca en campo abierto, camas/bancales, casa malla e invernadero en suelo. No incluye hidroponia, NFT, raiz flotante,
+  sustratos inertes ni soluciones recirculantes como sistema principal en BIO-G v1.
+  Objetivo: consolidar una base confiable para el modulo Riesgos del Cultivo / Sanidad Vegetal de BIO-G v1, compatible con un catalogo
+  de sindromes de Plant Health y con los perfiles SP-GEN, SP-01, SP-02, SP-03, SP-04 y SP-05.
+  Criterio editorial: BIO-G orienta, prioriza y pide confirmacion. No receta plaguicidas, no reemplaza diagnostico local y no convierte una
+  foto o un sensor aislado en sentencia agronomica.
+  Regla de producto: en espinaca el organo objetivo es la hoja. La sanidad afecta calidad visual, inocuidad, textura, turgencia, vida de
+  anaquel y rechazo comercial, no solamente toneladas.
+
+                   Documento                                                                      Estado BIO-G
+
+   Perfil Universal Espinaca               Base biologica definida: hortaliza de hoja, ciclo corto, roseta, calidad de hoja y espigado como evento de falla fisiologica.
+
+   SP-GEN / SKIP                           Entrada conservadora y migrable cuando el usuario no sabe tipo, variedad o sistema. No se muestra como incompleto.
+
+   Fertilizacion                           Debe cruzarse con sanidad: exceso N, CE, riego y HR alta pueden parecer enfermedad o agravar pulgones/mildiu.
+
+   Rendimiento                             La sanidad afecta hoja comercial, rechazo por manchas, contaminacion por insectos, corte oportuno y poscosecha.
+
+   Este documento                          Define riesgos, sintomas, senales, diferenciales y reglas para catalogo Plant Health.
+
+
+
+
+Documento tecnico para catalogo BIO-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                Pagina 1 de 8
+
+
+
+===== PAGINA 2 / 8 =====
+
+BIO-G | Riesgos del cultivo - Espinaca | Sanidad vegetal | v1
+
+
+
+
+  1. Metodologia y lectura del codigo actual
+  El codigo de BIO-G debe leer espinaca como una hortaliza de hoja, no como fruto. La tarea de sanidad no es enlistar nombres cientificos
+  sin jerarquia, sino traducir riesgos reales a sindromes accionables: organo, sintoma principal, senales fuertes y debiles, condiciones
+  ambientales, etapa, diferenciales y mensaje humano.
+
+      Componente actual                        Como se usa                                                Implicacion para espinaca
+
+   PlantHealthStageBucket        seedling, vegetativeEarly/Mid/Late,        Agregar _fromSpinach. Germinacion/establecimiento -> seedling; expansion foliar ->
+                                 reproductiveEarly/Mid, grainFill,          vegetativeEarly/Mid; madurez comercial/ventana cosecha -> vegetativeLate;
+                                 lateSeason                                 sobre-madurez/espigado -> lateSeason.
+
+   PlantHealthIds                Organo, sintoma principal y senales        La mayoria de riesgos caben en leaf, crown, root, whole_plant. Conviene agregar senales
+                                 reutilizables                              finas: purple_downy_sporulation, leaf_mines, crown_distortion, bolting_stem,
+                                                                            tan_papery_spots.
+
+   PlantHealthSyndrome           Unidad principal del catalogo              Crear spinach_syndromes.dart con 24-28 entradas priorizadas. Agrupar UX en
+                                                                            hoja/manchas, raiz/establecimiento, insectos-contaminacion, vectores-virus y estres
+                                                                            fisiologico.
+
+   VarietyModifier               Ajusta score por profileId / varietyId     Usarlo para SP-01 a SP-05 sin crear cultivos separados. Baby leaf y proceso suben peso
+                                                                            de calidad visual e inocuidad; verano sube bolting/calor; invierno sube humedad/mildiu.
+
+   Environment flags             highHumidity, coolDewyWindow,              Muy utiles para downy mildew, manchas foliares, pulgones, leafminer, damping-off,
+                                 vectorPressure, recentStress,              bolting, anoxia y fitotoxicidad.
+                                 wetCanopy, heatStress
+
+   PlantHealthRegistry           Elige catalogo por cropId                  Agregar import de spinach_syndromes.dart y case CropCatalog.spinachCropId.
+
+
+
+  2. Resumen ejecutivo
+  En espinaca, el riesgo sanitario se concentra en cuatro familias: (1) calidad de hoja y manchas foliares, principalmente mildiu velloso y
+  complejos de leaf spot; (2) establecimiento y raiz, donde el exceso de agua se confunde con damping-off/root rot; (3) plagas que
+  contaminan o destruyen hoja comercial, especialmente minadores, pulgones, orugas y acaro de corona; y (4) desordenes fisiologicos de
+  calor, agua, salinidad, compactacion, densidad y espigado.
+
+            Sistema                                 Riesgos que mas pesan                                            Lectura BIO-G recomendada
+
+   Campo abierto                Mildiu velloso si hay frio-humedad, minador, pulgones, orugas,     Cruzar temperatura, dias largos, humedad de suelo, lluvia/rocio,
+                                damping-off en suelos pesados, bolting por calor/dias largos,      HR alta, densidad, hojas con minas, envés con esporulacion y
+                                salinidad y deficit hidrico.                                       borde del lote.
+
+   Camas/bancales/huerto        Riego irregular, exceso de humedad, minador, pulgones,            Priorizar mensajes simples: humedad constante sin encharcar,
+                                damping-off en semillero, plantas apretadas y espigado por calor. revisar envés, retirar hojas dañadas, no retrasar cosecha si sube
+                                                                                                  calor.
+
+   Protegido en suelo           Mildiu, Botrytis, manchas foliares, pulgones, trips/virus          Priorizar ventilacion, mojado foliar, HR nocturna, CE del bulbo,
+                                condicionales, crown mite en condiciones frescas-humedas, CE       focos en puertas/ventilas y calidad visual de hojas.
+                                alta y ventilacion deficiente.
+
+   Baby leaf / hoja lisa        Rechazo por manchas, minador, pulgones, residuos de suelo,         Subir peso de calidad visual e inocuidad; umbral de tolerancia
+                                necrosis marginal, fitotoxicidad y textura dura.                   comercial es mas bajo que en hoja madura.
+
+   Proceso/industria            Uniformidad, biomasa, contaminacion por insectos/maleza,           Subir peso de lote uniforme y rechazo por contaminantes; no
+                                mildiu, leaf spots y humedad al corte.                             interpretar biomasa como calidad si hay manchas.
+
+
+
+  3. Panorama real del riesgo en espinaca
+  ●    La espinaca es una hortaliza de hoja de ciclo corto; cuando una enfermedad mancha la hoja, el dano es comercial inmediato aunque
+       la planta siga viva.
+  ●    El mildiu velloso es el riesgo foliar mas importante en muchas zonas productoras: clima fresco, humedad alta y dosel cerrado pueden
+       disparar rechazo de lotes.
+  ●    El minador y los pulgones no solo bajan vigor: contaminan el producto y vuelven invendible una hoja que biologicamente podria
+       seguir creciendo.
+  ●    El exceso de riego puede parecer falta de agua porque la planta se marchita, pero la causa puede ser anoxia o raiz podrida. El motor
+       debe diferenciar suelo humedo vs seco.
+  ●    El espigado no es una etapa productiva; es un evento de perdida de calidad. Calor, fotoperiodo largo, edad fisiologica y deficit hidrico
+       acortan la ventana comercial.
+  ●    En baby leaf y hoja lisa, la tolerancia a manchas, agujeros y fitotoxicidad debe ser menor que en hoja madura o proceso, porque el
+       organo cosechado es la superficie visible.
+
+
+
+
+Documento tecnico para catalogo BIO-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                           Pagina 2 de 8
+
+
+
+===== PAGINA 3 / 8 =====
+
+BIO-G | Riesgos del cultivo - Espinaca | Sanidad vegetal | v1
+
+
+
+
+  4. Catalogo maestro propuesto de riesgos bioticos
+  La tabla prioriza riesgos con valor real para decision de campo y compatibles con un motor de sindromes. No es una lista infinita; son
+  entradas utiles para monitoreo, alerta y confirmacion.
+          Riesgo               Donde pesa mas                      Que lo favorece                           Clave visual                      Etapa             Prioridad
+
+   Damping-off / muerte    Siembra directa, charola,      Suelo frio-humedo, drenaje pobre,        No emerge o colapsa; cuello          Germinacion-estab      Alta
+   de plantula             cama humeda                    semilla debil, compactacion              oscuro; raiz cafe/negra              lecimiento
+
+   Root rot complex: Pyt   Suelos pesados o con           Exceso de humedad, anoxia, baja          Parches con vigor bajo, amarilleo, Establecimiento-ve       Alta
+   hium/Rhizoctonia/Fus    historial                      aireacion, rotacion corta                marchitez con suelo humedo         getativo
+   arium
+
+   Fusarium wilt /         Historial de espinaca,         Rotacion pobre, suelos infestados,       Amarilleo, marchitez, menor          Vegetativo-cosech      Media-alta
+   marchitez vascular      semilla o suelo                estres radicular                         crecimiento; confirmar raiz/tallo    a                      regional
+                           contaminado
+
+   Downy mildew /          Campo fresco-humedo y          HR alta, mojado foliar, rocio, dosel     Manchas amarillas arriba;            Expansion-cosech       Muy alta
+   mildiu velloso          protegido                      denso, variedad susceptible              esporulacion purpura/gris en         a
+                                                                                                   envés
+
+   Cladosporium leaf       Primavera lluviosa, baby       Lluvia, semilla infectada, humedad       Manchas redondas/tan con             Vegetativo-cosech      Media-alta
+   spot                    leaf                           foliar                                   esporulacion verde oscura            a
+
+   Stemphylium leaf        Hoja comercial y baby          Semilla infectada, humedad, hojas        Manchas pequenas gris-verdes         Vegetativo-cosech      Media
+   spot                    leaf                           sensibles                                que se vuelven tan/papelosas         a
+
+   Anthracnose             Hoja y peciolo, humedad        Lluvia, heridas, residuos, salpique      Lesiones circulares o punteado       Vegetativo-cosech      Media
+                                                                                                   oscuro, necrosis en hoja/peciolo     a
+
+   Bacterial leaf spot     Riego por                      Mojado foliar, lluvia de primavera,      Manchas acuosas angulares,           Vegetativo-cosech      Media-alta si
+                           aspersion/lluvias              semilla, manejo en humedo                pardas, visibles por ambos lados     a                      hay aspersion
+
+   White rust / Albugo     Zonas frescas-humedas          HR alta, variedades susceptibles,        Pustulas blancas en envés,           Vegetativo-cosech      Media regional
+                                                          residuos                                 clorosis en haz                      a
+
+   Botrytis / moho gris    Protegido y poscosecha         HR alta, tejido viejo, mala              Moho gris y pudricion blanda en      Madurez-cosecha        Media-alta
+                                                          ventilacion, hojas dañadas               tejido lesionado                                            protegido
+
+   Virus complex: CMV/     Bordes, malezas,               Pulgones, trips, chicharritas,           Mosaico, clorosis, anillos, hojas    Temprano-cosech        Media-alta por
+   BWYV/BCTV/INSV/T        vectores                       maleza hospedera                         deformes, enanismo                   a                      zona
+   SWV/TRV
+
+          Riesgo               Donde pesa mas                      Que lo favorece                           Clave visual                      Etapa             Prioridad
+
+   Leafminers /            Baby leaf, hoja lisa,          Cultivos vecinos infestados, clima       Galerias blancas serpenteantes;      Cotiledon-cosecha      Muy alta
+   minadores               campo abierto                  calido, pupas en suelo                   hoja invendible                                             calidad
+
+   Pulgones: green         Primavera/otono,               Exceso de N, maleza, clima               Colonias en envés/brotes,            Establecimiento-co     Alta
+   peach / potato aphid    protegido, brotes              templado, baja fauna benefica            mielecilla, contaminacion, virus     secha
+
+   Orugas / armyworms      Campo, bordes, maleza          Malezas, cultivos vecinos,               Mordidas, perforaciones, plantas     Emergencia-cosec       Media-alta
+   / loopers / cutworms                                   temperaturas favorables                  cortadas, excretas                   ha
+
+   Spinach crown mite      Suelos frescos y               Condiciones cool-wet, residuos,          Hojas nuevas deformadas,             Establecimiento-ve     Media-alta
+                           humedos con MO alta            corona cerrada                           pequenos agujeros en centro          getativo               regional
+
+   Seedcorn maggot /       Semilla y arranque             Materia organica fresca, suelo frio,     Fallas de emergencia, semillas       Germinacion            Condicional
+   bulb mites /                                           residuos, siembra temprana               dañadas, plantas debiles
+   wireworms
+
+   Flea beetles /          Campo y bordes                 Malezas, clima templado,                 Agujeros pequenos tipo tiro; dano    Establecimiento-ve     Media
+   escarabajos                                            hospederos cercanos                      cosmetico                            getativo
+   pequeños
+
+   Slugs / snails          Huerto, protegido, zonas       Mulch humedo, alta HR, sombra,           Mordidas irregulares, baba, dano     Vegetativo-cosech      Condicional
+                           humedas                        residuos                                 nocturno                             a
+
+   Nematodos               Suelos con historial y         Hospederos, suelos ligeros, ciclos       Parches debiles, raiz con agallas    Desde                  Media si hay
+   agalladores / quistes   rotacion pobre                 repetidos                                o menor volumen                      establecimiento        historial
+
+
+
+  5. Riesgos abioticos y fisiologicos que deben entrar al motor
+  En espinaca, muchos sintomas comerciales no son plaga: pueden nacer de calor, agua, salinidad, densidad, cosecha tardia, pH,
+  nutricion o fitotoxicidad. BIO-G debe cruzar sensores antes de sugerir riesgo biotico.
+
+           Riesgo                    Que lo dispara                       Que se observa                 Momento sensible               Lectura BIO-G recomendada
+
+   Espigado / bolting       Calor sostenido, dias largos,         Tallo central se alarga; hojas       Desarrollo                  No tratar como floracion productiva. Es
+                            deficit hidrico, edad fisiologica,    mas pequenas, duras y                foliar-madurez              evento de perdida de calidad; alertar antes
+                            variedad no adaptada                  amargas                                                          de que aparezca tallo visible.
+
+   Deficit hidrico          Riegos espaciados, calor,             Hojas lacias, menor tamano,          Establecimiento-cosec       Alerta fuerte si coincide con calor o
+                            viento, raiz limitada, baja           textura dura, sabor mas intenso,     ha                          pre-cosecha; recomendar humedad
+                            reserva de agua                       espigado acelerado                                               constante sin saturar.
+
+
+
+
+Documento tecnico para catalogo BIO-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                      Pagina 3 de 8
+
+
+
+===== PAGINA 4 / 8 =====
+
+BIO-G | Riesgos del cultivo - Espinaca | Sanidad vegetal | v1
+
+
+
+
+           Riesgo                       Que lo dispara                      Que se observa                   Momento sensible             Lectura BIO-G recomendada
+
+   Exceso de humedad /          Riego excesivo, drenaje pobre,      Amarillamiento, marchitez con    Germinacion-vegetativ          Diferenciar de sequia: suelo humedo + raiz
+   anoxia                       lluvia, compactacion, camas         suelo humedo, raiz cafe, plantas o                              pobre = riesgo raiz/anoxia.
+                                bajas                               por parches
+
+   Salinidad / CE alta          Agua salina, fertirriego cargado,   Bajo vigor, borde quemado, hoja Establecimiento-cosec           Espinaca tolera cierta salinidad, pero
+                                evaporacion, lavado insuficiente    mas pequeña, menor              ha                              calidad de hoja baja; no subir fertilizante si
+                                                                    turgencia/calidad                                               CE ya sube.
+
+   Calor / golpe termico        Temperaturas >25 C                  Crecimiento rapido pero mala         Expansion-madurez          Cruzar con fotoperiodo, humedad y perfil
+                                sostenidas, baja HR, radiacion,     calidad; marchitez diurna;                                      SP-01/SP-02.
+                                falta de sombra                     bolting
+
+   Frio / helada                Siembra tardia, heladas, vientos    Crecimiento lento, bordes            Germinacion-estableci      Espinaca tolera frio mejor que calor, pero
+                                frios                               dañados, hojas oscuras o             miento                     plantula y calidad pueden dañarse.
+                                                                    acuosas tras helada
+
+   Compactacion                 Camas mal preparadas,               Raiz limitada, manchas de vigor      Establecimiento-vegeta     Cruzar resistencia de suelo + humedad +
+                                pisoteo, suelo pesado, costra       bajo, respuesta baja a               tivo                       crecimiento lento.
+                                                                    riego/fertilizacion
+
+   Densidad excesiva /          Siembra muy cerrada, aclareo        Hojas pequenas, dosel humedo,        Expansion-cosecha          Subir riesgo sanitario por HR interna y
+   poca ventilacion             insuficiente, baby leaf muy         mayor mildiu/leaf spots                                         bajar calidad si la hoja no alcanza calibre.
+                                denso
+
+   Desbalance nutricional       N bajo/alto, pH fuera,              Clorosis, hoja palida, necrosis      Vegetativo-cosecha         Conectar con guia de fertilizacion; no
+                                K/Mg/Ca/Fe alterados                marginal, crecimiento blando                                    diagnosticar enfermedad si el patron es
+                                                                                                                                    uniforme.
+
+   Fitotoxicidad /              Aplicacion reciente, mezcla         Quemado uniforme, manchas            Cualquier etapa            Preguntar por aplicacion reciente y
+   quemadura foliar             fuerte, sales, foliar con calor     parecidas a leaf spot, bordes                                   distribucion antes de culpar patogeno.
+                                                                    necroticos
+
+   Manejo poscosecha            Corte con calor, hojas mojadas,     Pudricion, hoja flacida, menor       Cosecha-poscosecha         No es sanidad de campo sola; guardar
+   deficiente                   lavado/empacado incorrecto          vida de anaquel                                                 evento de calidad y cosecha.
+
+
+
+  6. Priorizacion por tipo BIO-G
+  Espinaca queda como cultivo madre crop_spinach. Los tipos UX no son cultivos separados; ajustan score, mensajes y sensibilidad
+  comercial.
+
+                Perfil                                   Riesgos que suben de peso                                                   Notas para BIO-G
+
+   SP-GEN - Generico / no se           Mildiu, minador, pulgon, bolting, deficit/exceso de agua,              Perfil conservador: alerta antes que fallar tarde; no asume
+                                       compactacion                                                           baby/proceso/protegido.
+
+   SP-01 - Saboya/semi-saboya          Bolting, deficit hidrico, leafminer, pulgones, salinidad, hoja dura    Subir calor/fotoperiodo aunque sea tolerante; no prometer que
+   verano/calor                                                                                               aguanta calor extremo.
+
+   SP-02 - Saboya/semi-saboya          Mildiu, Botrytis, crown mite, damping-off, anoxia, leaf spots          Clima fresco-humedo: subir HR/mojado foliar y drenaje; bajar
+   invierno                                                                                                   peso de calor salvo tendencia.
+
+   SP-03 - Lisa / baby leaf /          Minador, pulgon-contaminacion, manchas foliares, fitotoxicidad,        Mercado visual: umbral bajo para manchas, agujeros y residuos.
+   premium                             necrosis marginal                                                      Calidad pesa mas que biomasa.
+
+   SP-04 - Oriental / manojo           Bolting, deficit hidrico, minador, pulgones, deformacion de hoja       Porte erecto y manojo: calidad de hoja y uniformidad visual de
+                                       nueva                                                                  roseta/manojo.
+
+   SP-05 - Proceso / industria         Mildiu, leaf spots, contaminacion por insectos/maleza,                 Subir lote uniforme y contaminacion; no inflar rendimiento si hay
+                                       densidad, humedad al corte                                             manchas o hojas dañadas.
+
+
+
+  7. Monitoreo y diagnostico: protocolo minimo confiable
+  La app debe empujar revision simple pero disciplinada. BIO-G no debe prometer diagnostico definitivo desde una foto o sensor aislado.
+  ●    Frecuencia normal: 1 vez por semana. En baby leaf, protegido, clima fresco-humedo, pre-cosecha o alta presion de insectos: 2
+       veces por semana.
+  ●    Revisar cotiledones, primeras hojas verdaderas, envés, centro de la roseta/corona, hojas externas, raices sospechosas, bordes del
+       lote, puertas/ventilas y zonas con mal drenaje.
+  ●    Para mildiu: buscar manchas amarillas arriba y esporulacion purpura/gris por debajo temprano en la manana o tras noches
+       humedas.
+  ●    Para minador: revisar cotiledones y primeras hojas. Las galerias pueden verse mejor por el envés; en baby leaf el dano comercial es
+       inmediato.
+  ●    Para pulgones: revisar envés y brotes/centro; distinguir dano de contaminacion comercial y de riesgo viral.
+  ●    Para marchitez: no diagnosticar sequia sin revisar humedad real del suelo. Marchitez con suelo humedo exige revisar raiz, cuello,
+       drenaje y compactacion.
+
+
+Documento tecnico para catalogo BIO-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                          Pagina 4 de 8
+
+
+
+===== PAGINA 5 / 8 =====
+
+BIO-G | Riesgos del cultivo - Espinaca | Sanidad vegetal | v1
+
+
+
+
+  ●        Para manchas foliares: preguntar por rocio/lluvia, riego por aspersion, densidad, aplicacion foliar reciente y etapa de cosecha.
+  ●        Para bolting: vigilar tendencia de calor, longitud de dia, variedad y edad del cultivo 5-7 dias antes de cosecha estimada.
+           Pregunta de diagnostico                          Indica mas riesgo biotico                                    Indica mas riesgo abiotico/nutricional
+
+   ¿Focos o uniforme?                      Focos en bordes, ventilas, manchones, plantas vecinas o            Patron uniforme por lote, riego, fertilizacion, aplicacion o
+                                           lineas de riego.                                                   clima.
+
+   ¿Organo inicial?                        Envés/corona = insectos/mildiu; raiz = damping-off/root rot;       Hoja vieja/nueva por movilidad de nutriente; toda planta por
+                                           hoja con minas = leafminer.                                        agua/salinidad/calor.
+
+   ¿Marchitez con suelo humedo o           Humedo + raiz cafe = anoxia/root rot; parches =                    Seco + recupera nocturno = deficit hidrico; CE alta = estres
+   seco?                                   suelo/patogeno.                                                    osmotico.
+
+   ¿Hay vectores o contaminantes?          Pulgones/trips/minadores elevan riesgo de virus/rechazo.           Sin insectos y ligado a calor/riego: revisar estres primero.
+
+   ¿Hay aplicacion reciente?               Puede abrir puerta a enfermedad si hubo heridas/estres.            Quemado o manchas uniformes despues de mezcla sugieren
+                                                                                                              fitotoxicidad.
+
+
+
+  8. Reglas para el motor BIO-G
+               Senal BIO-G                     Aumenta riesgo de                Etapa donde pesa mas                             Salida farmer-friendly
+
+   HR alta + noche fresca + mojado      Downy mildew, Botrytis, leaf spots      Expansion-cosecha            Ambiente favorable a mildiu/manchas: revise envés de hojas y
+   foliar / rocio                                                                                            ventilacion.
+
+   Manchas amarillas +                  Downy mildew                            Vegetativo-cosecha           Dano compatible con mildiu: confirme envés y evite manejar
+   esporulacion purpura/gris abajo                                                                           hojas mojadas.
+
+   Galerias blancas serpenteantes       Leafminers                              Cotiledon-cosecha            Posible minador: revise hojas jovenes; el dano vuelve la hoja
+   en hoja                                                                                                   invendible.
+
+   Colonias en envés + mielecilla /     Aphids, virus                           Establecimiento-cosecha      Foco de pulgon: revise envés y brotes; puede contaminar hoja
+   contaminacion                                                                                             y transmitir virus.
+
+   Humedad suelo alta + drenaje         Damping-off/root rot/anoxia             Germinacion-vegetativo       Riesgo radicular por exceso de humedad: revise raiz, cuello y
+   pobre + raiz cafe                                                                                         drenaje.
+
+   Calor sostenido + dias largos +      Bolting / perdida de calidad            Madurez-cosecha              Riesgo de espigado: coseche a tiempo y mantenga humedad
+   etapa madura                                                                                              estable.
+
+   CE alta + hoja chica/borde           Salinidad / estres osmotico             Establecimiento-cosecha      La salinidad puede reducir turgencia y calidad; no suba
+   quemado                                                                                                   fertilizante sin revisar CE.
+
+   Manchas tan/papelosas sin            Stemphylium/fitotoxicidad/dano          Vegetativo-cosecha           Manchas de hoja: revise humedad reciente y aplicaciones
+   esporulacion visible                 foliar                                                               antes de diagnosticar.
+
+   Hojas nuevas deformadas /            Spinach crown mite                      Establecimiento-vegetati     Revise centro de la roseta; condiciones frescas y humedas
+   agujeros en corona + cool-wet                                                vo                           favorecen acaro de corona.
+
+   Mosaico, anillos, clorosis y         Virus complex                           Temprano-cosecha             Sintomas compatibles con virosis: revise vectores y maleza
+   vectores visibles                                                                                         hospedera; confirme si avanza.
+
+
+
+  9. Que debe quedar dado de alta en codigo
+  Catalogo base recomendado para spinach_syndromes.dart. Los IDs siguen el estilo de tomate/chile/pepino/berenjena, pero adaptados a
+  hortaliza de hoja.
+
+       #               ID sugerido                      Sindrome / diferencial principal                    Organo            Sintoma principal                   Flags
+
+   1         spinach_damping_off_01             Damping-off: Pythium/Rhizoctonia/Fusarium            crown/root/whole_     seedling_collapse              highHumidity
+                                                                                                     plant
+
+   2         spinach_root_rot_complex_01        Root rot / anoxia diferencial                        root/crown            root_rot_wilt                  highHumidity/recent
+                                                                                                                                                          Stress
+
+   3         spinach_fusarium_wilt_01           Fusarium wilt / vascular                             root/whole_plant      wilt_vascular                  recentStress
+
+   4         spinach_downy_mildew_01            Peronospora effusa/farinosa f.sp. spinaciae          leaf                  yellow_leaf_spots              coolDewyWindow/hi
+                                                                                                                                                          ghHumidity
+
+   5         spinach_cladosporium_leaf_spot_    Cladosporium variabile                               leaf                  tan_leaf_spots                 highHumidity
+             01
+
+   6         spinach_stemphylium_leaf_spot_     Stemphylium leaf spot                                leaf                  tan_papery_spots               highHumidity/recent
+             01                                                                                                                                           Stress
+
+   7         spinach_anthracnose_01             Colletotrichum spp.                                  leaf/petiole          necrotic_foliar_spots          highHumidity
+
+   8         spinach_bacterial_leaf_spot_01     Pseudomonas / bacterial leaf spot                    leaf                  water_soaked_spots             highHumidity
+
+   9         spinach_white_rust_01              Albugo / white rust                                  leaf                  white_pustules                 highHumidity
+
+   10        spinach_botrytis_gray_mold_01      Botrytis / gray mold                                 leaf/crown            gray_mold_necrosis             highHumidity
+
+   11        spinach_virus_complex_01           CMV/BWYV/BCTV/INSV/TSWV/TRV                          leaf/whole_plant      mosaic_yellowing               vectorPressure
+
+
+
+Documento tecnico para catalogo BIO-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                     Pagina 5 de 8
+
+
+
+===== PAGINA 6 / 8 =====
+
+BIO-G | Riesgos del cultivo - Espinaca | Sanidad vegetal | v1
+
+
+
+
+      #              ID sugerido                       Sindrome / diferencial principal                     Organo              Sintoma principal                  Flags
+
+   12      spinach_leafminer_01                 Liriomyza spp. leafminers                            leaf                   leaf_mines                      recentStress
+
+   13      spinach_aphids_01                    Green peach / potato aphids                          leaf/whole_plant       aphid_colonies                  vectorPressure
+
+   14      spinach_caterpillars_01              Armyworms/loopers/cutworms                           leaf/crown             feeding_holes                   recentStress
+
+   15      spinach_crown_mite_01                Spinach crown mite                                   crown/leaf             leaf_deformation                coolDewyWindow
+
+   16      spinach_seedcorn_maggot_wirew        Seed/stand loss insect complex                       seed/root              poor_emergence                  recentStress
+           orm_01
+
+   17      spinach_flea_beetle_01               Small shot-hole chewing pests                        leaf                   shot_hole_feeding               recentStress
+
+   18      spinach_slugs_snails_01              Slugs/snails conditional                             leaf                   ragged_feeding                  highHumidity
+
+   19      spinach_nematodes_01                 Root-knot/cyst nematode complex                      root/whole_plant       root_galls                      recentStress
+
+   20      spinach_bolting_heat_stress_01       Bolting / espigado por calor/fotoperiodo             whole_plant            bolting_stem                    heatStress
+
+   21      spinach_water_deficit_quality_01     Deficit hidrico / hoja dura                          whole_plant/leaf       wilting_leaf_quality            recentStress
+
+   22      spinach_waterlogging_anoxia_01       Exceso humedad / anoxia                              root/whole_plant       root_rot_wilt                   highHumidity
+
+   23      spinach_salinity_quality_01          Salinidad / CE alta                                  leaf/whole_plant       leaf_edge_burn                  recentStress
+
+   24      spinach_compaction_root_limit_0      Compactacion / raiz limitada                         root/whole_plant       stunted_growth                  recentStress
+           1
+
+   25      spinach_nutrient_imbalance_01        NPK/pH imbalance diferencial                         leaf/whole_plant       chlorosis                       recentStress
+
+   26      spinach_phytotoxicity_01             Fitotoxicidad / quemadura por mezcla                 leaf                   leaf_burn_uniform               recentStress
+
+   27      spinach_postharvest_quality_01       Pudricion/vida de anaquel por manejo                 leaf                   soft_rot_quality                highHumidity
+
+
+  9.1 Nuevas senales opcionales recomendadas
+             Nuevo signalId sugerido                                    Etiqueta UX                                                         Uso
+
+   signalPurpleDownySporulation                      Moho gris/morado por debajo de la hoja                 Diferenciar mildiu de clorosis, leaf spot o deficiencia.
+
+   signalLeafMines                                   Galerias blancas dentro de la hoja                     Confirmar minador; dano directo a hoja comercial.
+
+   signalCrownDistortion                             Centro de roseta deformado                             Crown mite, fitotoxicidad, dano por orugas o estres.
+
+   signalBoltingStem                                 Tallo floral emergiendo                                Evento de perdida de calidad, no floracion productiva.
+
+   signalTanPaperySpots                              Manchas tan secas/papelosas                            Stemphylium, Cladosporium, fitotoxicidad o dano foliar.
+
+   signalWaterSoakedSpots                            Manchas acuosas/angulares                              Bacterial leaf spot o fitotoxicidad por humedad/aplicacion.
+
+   signalDenseWetCanopy                              Dosel cerrado y humedo                                 Mildiu, Botrytis y leaf spots en baby/protegido.
+
+   signalAphidContamination                          Pulgones presentes sobre hoja cosechable               Rechazo comercial aun con vigor aceptable.
+
+
+
+  10. Modificadores por tipo / variedad
+      Grupo profileIds sugeridos                       diagnosisIds que suben score                             scoreDelta                            Razon
+
+   SP-GEN generic                        downy_mildew, leafminer, aphids, bolting, waterlogging,             0 a +2               Perfil preventivo sin asumir sistema ni
+                                         water_deficit                                                                            mercado.
+
+   SP-01 verano/calor                    bolting_heat_stress, water_deficit_quality, salinity_quality,       +4 a +7              Aunque sea tolerante, el calor acorta
+                                         aphids, leafminer                                                                        ventana comercial.
+
+   SP-02 invierno/dias cortos            downy_mildew, botrytis_gray_mold, crown_mite,                       +4 a +7              Fresco-humedo sube sanidad foliar y raiz.
+                                         damping_off, leaf_spots
+
+   SP-03 smooth/baby                     leafminer, aphids, cladosporium, stemphylium, phytotoxicity,        +5 a +8              Umbral comercial bajo: manchas/agujeros
+                                         postharvest_quality                                                                      contaminan lote.
+
+   SP-04 oriental/manojo                 bolting_heat_stress, aphids, leafminer, crown_distortion,           +3 a +6              Manojo requiere roseta uniforme y hoja
+                                         water_deficit_quality                                                                    visualmente sana.
+
+   SP-05 proceso/industria               downy_mildew, leaf_spots, aphid_contamination,                      +3 a +6              La biomasa no sirve si hay contaminacion o
+                                         dense_wet_canopy, waterlogging                                                           manchas.
+
+
+
+  11. Integracion minima de codigo
+  ●       Crear lib/core/plant_health/catalog/spinach_syndromes.dart con const List spinachSyndromes.
+  ●       Agregar spinachCropId, defaultProfileId SP-GEN y perfiles SP-01 a SP-05 en CropCatalog cuando se integre el cultivo.
+  ●       Actualizar PlantHealthRegistry: import de spinach_syndromes.dart y case CropCatalog.spinachCropId.
+
+
+
+
+Documento tecnico para catalogo BIO-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                    Pagina 6 de 8
+
+
+
+===== PAGINA 7 / 8 =====
+
+BIO-G | Riesgos del cultivo - Espinaca | Sanidad vegetal | v1
+
+
+
+
+  ●      Actualizar PlantHealthStageAdapter con _fromSpinach: germinacion/establecimiento -> seedling; expansion foliar ->
+         vegetativeEarly/Mid; madurez/ventana cosecha -> vegetativeLate; sobre-madurez/espigado -> lateSeason.
+  ●      Usar package: imports y no imports relativos.
+  ●      No agregar ingredientes activos ni recetas de plaguicidas en UX v1.
+  ●      No separar SP-01 a SP-05 como cultivos; son perfiles/variedades de crop_spinach.
+  ●      Conectar con Fertilization/NutrientRecommendationEngine solo como diferencial: exceso N, CE, pH y riego pueden parecer sanidad
+         o agravar pulgones/mildiu.
+
+
+  12. Lenguaje de salida recomendado
+              Situacion                      No decir solo...                                             Mejor salida BIO-G
+
+   Mancha amarilla + HR alta        Mildiu                           Ambiente favorable a mildiu. Revise el envés: si hay moho gris/morado, confirme y evite manejar
+                                                                     hojas mojadas.
+
+   Galerias en hoja                 Plaga                            Dano compatible con minador. En espinaca, aun poca mina puede bajar calidad comercial.
+
+   Pulgones en envés                Insectos                         Foco de pulgon: revise envés y brotes. Puede contaminar hoja y elevar riesgo de virus.
+
+   Marchitez con suelo humedo       Falta agua                       Marchitez con suelo humedo: revise raiz, drenaje y compactacion; puede haber anoxia o
+                                                                     pudricion radicular.
+
+   Calor + cosecha cerca            Ya va a florear                  Riesgo de espigado. La hoja puede endurecerse y amargar; considere adelantar cosecha si el
+                                                                     cultivo ya esta comercial.
+
+   Manchas tan despues de           Hongo                            Manchas de hoja: revise humedad reciente y aplicaciones foliares antes de diagnosticar
+   aplicacion                                                        enfermedad.
+
+   Hoja palida uniforme             Enfermedad                       Patron uniforme puede ser nutricion, pH, riego o salinidad. Conviene cruzar sensores y guia de
+                                                                     fertilizacion.
+
+
+
+  13. Conclusion tecnica
+  Espinaca necesita un modulo de sanidad distinto al de fruto. El problema central no es sostener floracion o llenado, sino proteger la hoja
+  comercial durante una ventana corta. El mildiu, las manchas foliares, minadores, pulgones y errores de agua/calor pueden convertir un
+  cultivo vivo en un producto no comercial. Por eso BIO-G debe hablar en terminos de riesgo, confirmacion y calidad de hoja.
+  La decision para BIO-G v1 es crear un catalogo robusto pero no excesivo: 27 entradas maximas, agrupadas en UX como hoja/manchas,
+  raiz/establecimiento, insectos-contaminacion, vectores-virus y estres fisiologico. La app debe decir: "esto se parece a", "esto lo favorece",
+  "revisa aqui" y "confirma si avanza", sin transformarse en recetario cerrado.
+
+
+  14. Fuentes base y trazabilidad
+      Clave                                           Fuente / uso                                                                   URL
+
+   S1         UC IPM. Agriculture: Pest Management Guidelines for Spinach. Base maestra para            https://ipm.ucanr.edu/agriculture/spinach/
+              invertebrados, enfermedades, nematodos y manejo integrado.
+
+   S2         UC IPM. Downy Mildew / Spinach. Sintomas, condiciones cool-wet, dosel denso, razas y      https://ipm.ucanr.edu/agriculture/spinach/downy-mildew/
+              manejo preventivo.
+
+   S3         UC IPM. Damping-Off and Root Rot / Spinach. Pythium, Rhizoctonia, Fusarium, drenaje y     https://ipm.ucanr.edu/agriculture/spinach/damping-off-and-ro
+              diferencias con exceso de agua.                                                           ot-rot/
+
+   S4         UC IPM. Leafminers / Spinach. Galerias, dano comercial, monitoreo de plantulas y pupas    https://ipm.ucanr.edu/agriculture/spinach/leafminers/
+              en suelo.
+
+   S5         UC IPM. Green Peach and Potato Aphids / Spinach. Contaminacion, vectores virales y        https://ipm.ucanr.edu/agriculture/spinach/green-peach-and-p
+              relacion con exceso de nitrogeno.                                                         otato-aphids/
+
+   S6         UC IPM. Bacterial Leaf Spot / Spinach. Manchas acuosas/angulares y relacion con           https://ipm.ucanr.edu/agriculture/spinach/bacterial-leaf-spot/
+              aspersion/lluvia.
+
+   S7         UC IPM. Cladosporium Leaf Spot / Spinach. Manchas tan y esporulacion verde oscura.        https://ipm.ucanr.edu/agriculture/spinach/cladosporium-leaf-s
+                                                                                                        pot/
+
+   S8         UC IPM. Stemphylium Leaf Spot / Spinach. Manchas tan/papelosas y diferencial con          https://ipm.ucanr.edu/agriculture/spinach/stemphylium-leaf-s
+              fitotoxicidad.                                                                            pot/
+
+   S9         UC IPM. Virus Diseases / Spinach. CMV, BWYV, BCTV, INSV, TSWV, TRV y sintomas             https://ipm.ucanr.edu/agriculture/spinach/virus-diseases/
+              confundibles.
+
+   S10        UC IPM. Caterpillars / Spinach. Armyworms, loopers, cutworms, monitoreo y dano en         https://ipm.ucanr.edu/agriculture/spinach/caterpillars-lepidopt
+              corona/hoja.                                                                              erous-pests/
+
+   S11        UC IPM. Spinach Crown Mite. Dano en corona, hojas deformadas y condiciones cool-wet.      https://ipm.ucanr.edu/agriculture/spinach/spinach-crown-mite
+                                                                                                        /
+
+
+
+Documento tecnico para catalogo BIO-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                               Pagina 7 de 8
+
+
+
+===== PAGINA 8 / 8 =====
+
+BIO-G | Riesgos del cultivo - Espinaca | Sanidad vegetal | v1
+
+
+
+
+   Clave                                          Fuente / uso                                                                        URL
+
+   S12      UMass Extension. Spinach Downy Mildew fact sheet. Alta humedad, high tunnels, sintomas        https://www.umass.edu/agriculture-food-environment/sites/a
+            y rotacion.                                                                                   g.umass.edu/files/fact-sheets/pdf/spinach_dm_fact_sheet.pd
+                                                                                                          f
+
+   S13      University of Arizona / Arizona Crop Information Site. Spinach diseases. Contexto de mildiu   https://acis.cals.arizona.edu/agricultural-ipm/vegetables/spin
+            y especificidad de hospederos.                                                                ach/diseases
+
+   S14      Rutgers/NJAES. Mid-Atlantic Commercial Vegetable Production Recommendations                   https://njaes.rutgers.edu/pubs/commercial-veg-rec/spinach.p
+            2026/2027 - Spinach. Base comercial y criterio IPM.                                           df
+
+   S15      Virginia Tech / VCE. Management of Aphids in Spinach. Importancia comercial por               https://vtechworks.lib.vt.edu/bitstreams/dd4e87ca-d453-47ee
+            contaminacion de pulgones.                                                                    -977b-33a7f9585f78/download
+
+   S16      BIO-G. Perfil Universal, SP-GEN, fertilizacion y rendimiento de espinaca generados para el    Documento interno BIO-G
+            proyecto. Usados para arquitectura, perfiles SP-01 a SP-05 y lenguaje de producto.
+
+
+
+
+Documento tecnico para catalogo BIO-G v1. No sustituye diagnostico de campo, laboratorio ni asesoria local.                                                                Pagina 8 de 8

@@ -22,9 +22,9 @@ class HistoryNpkChartCard extends StatelessWidget {
   /// Límite inferior de la meta de la etapa
   final String title;
   final List<String> labels;
-  final List<double> nValues;
-  final List<double> pValues;
-  final List<double> kValues;
+  final List<double?> nValues;
+  final List<double?> pValues;
+  final List<double?> kValues;
 
   /// ppm max del chart. Si viene null, se calcula con base a datos.
   final double? yMax;
@@ -46,15 +46,9 @@ class HistoryNpkChartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Usa el valor live del sensor si existe; si no, cae al último bucket.
-    final nNow = (liveN ?? (nValues.isNotEmpty ? nValues.last : 0))
-        .clamp(0, 999999)
-        .toDouble();
-    final pNow = (liveP ?? (pValues.isNotEmpty ? pValues.last : 0))
-        .clamp(0, 999999)
-        .toDouble();
-    final kNow = (liveK ?? (kValues.isNotEmpty ? kValues.last : 0))
-        .clamp(0, 999999)
-        .toDouble();
+    final nNow = _clampReading(liveN ?? _lastReading(nValues));
+    final pNow = _clampReading(liveP ?? _lastReading(pValues));
+    final kNow = _clampReading(liveK ?? _lastReading(kValues));
 
     final status = _neutralStatus(nNow, pNow, kNow);
 
@@ -64,7 +58,7 @@ class HistoryNpkChartCard extends StatelessWidget {
 
     final lr = lastReadingText ?? 'Reciente';
 
-    final computedMax = _autoYMax([
+    final computedMax = _autoYMax(<double?>[
       ...nValues,
       ...pValues,
       ...kValues,
@@ -147,9 +141,21 @@ class HistoryNpkChartCard extends StatelessWidget {
     );
   }
 
-  static double _autoYMax(List<double> values, {required double fallback}) {
-    if (values.isEmpty) return fallback;
-    final maxV = values.fold<double>(0.0, (m, v) => v > m ? v : m);
+  static double? _lastReading(List<double?> values) {
+    for (final double? value in values.reversed) {
+      if (value != null) return value;
+    }
+    return null;
+  }
+
+  static double? _clampReading(double? value) {
+    return value?.clamp(0, 999999).toDouble();
+  }
+
+  static double _autoYMax(List<double?> values, {required double fallback}) {
+    final List<double> existing = values.whereType<double>().toList();
+    if (existing.isEmpty) return fallback;
+    final maxV = existing.fold<double>(0.0, (m, v) => v > m ? v : m);
     if (maxV <= 0) return fallback;
 
     final padded = maxV * 1.15;
@@ -157,29 +163,30 @@ class HistoryNpkChartCard extends StatelessWidget {
     return rounded.clamp(fallback, 999999.0);
   }
 
-  static _NpkState _neutralStatus(double n, double p, double k) {
-    final hasAny = n > 0 || p > 0 || k > 0;
+  static _NpkState _neutralStatus(double? n, double? p, double? k) {
+    final hasAny = n != null || p != null || k != null;
     if (!hasAny) {
       return const _NpkState('Sin lectura suficiente', Color(0xFF8A8F98));
     }
     return const _NpkState('Lectura reciente', Color(0xFF3E9F86));
   }
 
-  static _Trend _trendFromSeries(List<double> values) {
-    if (values.length < 2) return _Trend.steady;
+  static _Trend _trendFromSeries(List<double?> values) {
+    final List<double> existing = values.whereType<double>().toList();
+    if (existing.length < 2) return _Trend.steady;
 
     double avg(List<double> xs) =>
         xs.isEmpty ? 0 : xs.reduce((a, b) => a + b) / xs.length;
 
-    if (values.length >= 6) {
-      final a = avg(values.sublist(values.length - 3));
-      final b = avg(values.sublist(values.length - 6, values.length - 3));
+    if (existing.length >= 6) {
+      final a = avg(existing.sublist(existing.length - 3));
+      final b = avg(existing.sublist(existing.length - 6, existing.length - 3));
       final diff = a - b;
       if (diff > 1.2) return _Trend.up;
       if (diff < -1.2) return _Trend.down;
       return _Trend.steady;
     } else {
-      final diff = values.last - values[values.length - 2];
+      final diff = existing.last - existing[existing.length - 2];
       if (diff > 1.2) return _Trend.up;
       if (diff < -1.2) return _Trend.down;
       return _Trend.steady;
@@ -284,7 +291,7 @@ class _NpkWideChips extends StatelessWidget {
     required this.iconK,
   });
 
-  final double n, p, k;
+  final double? n, p, k;
   final _Trend trendN, trendP, trendK;
   final String iconN, iconP, iconK;
 
@@ -296,7 +303,7 @@ class _NpkWideChips extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget chip({
       required String iconPath,
-      required double v,
+      required double? v,
       required Color accent,
       required _Trend trend,
     }) {
@@ -328,7 +335,7 @@ class _NpkWideChips extends StatelessWidget {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      '${v.round()}',
+                      v == null ? '--' : '${v.round()}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
@@ -556,6 +563,21 @@ class _TrendArrowPainter extends CustomPainter {
 }
 
 class _NpkChartPainter extends CustomPainter {
+  static const Set<String> _monthLabels = <String>{
+    'Ene',
+    'Feb',
+    'Mar',
+    'Abr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dic',
+  };
+
   final List<String> labels;
   final _ChartGeometry geomN;
   final _ChartGeometry geomP;
@@ -658,8 +680,7 @@ class _NpkChartPainter extends CustomPainter {
   }
 
   void _drawSeries(Canvas canvas, _ChartGeometry geom, Color color) {
-    final pts = geom.smoothPoints;
-    if (pts.isEmpty) return;
+    if (geom.basePoints.isEmpty) return;
 
     final shadowPaint = Paint()
       ..color = Colors.black.withValues(alpha: 0.045)
@@ -675,17 +696,20 @@ class _NpkChartPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    final path = Path()..moveTo(pts.first.dx, pts.first.dy);
-    for (final p in pts.skip(1)) {
-      path.lineTo(p.dx, p.dy);
+    final pts = geom.smoothPoints;
+    if (pts.length >= 2) {
+      final path = Path()..moveTo(pts.first.dx, pts.first.dy);
+      for (final p in pts.skip(1)) {
+        path.lineTo(p.dx, p.dy);
+      }
+
+      canvas.save();
+      canvas.translate(0, 1);
+      canvas.drawPath(path, shadowPaint);
+      canvas.restore();
+
+      canvas.drawPath(path, linePaint);
     }
-
-    canvas.save();
-    canvas.translate(0, 1);
-    canvas.drawPath(path, shadowPaint);
-    canvas.restore();
-
-    canvas.drawPath(path, linePaint);
 
     if (geom.basePoints.isNotEmpty) {
       final basePts = geom.basePoints;
@@ -731,11 +755,17 @@ class _NpkChartPainter extends CustomPainter {
       fontWeight: FontWeight.w800,
       color: Colors.black.withValues(alpha: 0.35),
     );
-    if (labels.length < 2) return;
+    if (labels.isEmpty) return;
 
     final n = labels.length;
-    final bool isMonths = (n == 12 && labels.first == 'E');
-    final int maxVisible = isMonths ? 12 : 7;
+    if (n == 1) {
+      final tp = _tp(labels.first, style);
+      tp.paint(canvas, Offset(plot.center.dx - (tp.width / 2), plot.bottom + 14));
+      return;
+    }
+
+    final bool isMonths = labels.every(_monthLabels.contains);
+    final int maxVisible = isMonths ? 6 : 7;
     final step = (n <= maxVisible) ? 1 : ((n - 1) / (maxVisible - 1)).ceil();
 
     final dx = plot.width / (n - 1);
@@ -770,25 +800,25 @@ class _NpkChartPainter extends CustomPainter {
 
 class _ChartGeometry {
   final Size size;
-  final Rect plot;
-  final List<Offset> basePoints;
-  final List<Offset> smoothPoints;
+  late final Rect plot;
+  late final List<Offset> basePoints;
+  late final List<Offset> smoothPoints;
 
   _ChartGeometry({
     required this.size,
-    required List<double> values,
+    required List<double?> values,
     required double yMin,
     required double yMax,
-  }) : plot = _plotRect(size),
-       basePoints = values.length >= 2
-           ? _toPoints(_plotRect(size), values, yMin, yMax)
-           : const <Offset>[],
-       smoothPoints = values.length >= 2
-           ? _sampleSmooth(
-               _toPoints(_plotRect(size), values, yMin, yMax),
-               samplesPerSegment: 40,
-             )
-           : const <Offset>[];
+  }) {
+    plot = _plotRect(size);
+    basePoints = _toValidPoints(
+      plot,
+      values,
+      yMin,
+      yMax,
+    );
+    smoothPoints = _sampleSmooth(basePoints, samplesPerSegment: 40);
+  }
 
   static Rect _plotRect(Size size) {
     const leftPad = 42.0;
@@ -803,22 +833,28 @@ class _ChartGeometry {
     );
   }
 
-  static List<Offset> _toPoints(
+  static List<Offset> _toValidPoints(
     Rect plot,
-    List<double> values,
+    List<double?> values,
     double yMin,
     double yMax,
   ) {
-    final dx = plot.width / (values.length - 1);
-    final span = (yMax - yMin).abs().clamp(0.0001, 99999999.0);
+    if (values.isEmpty) return const <Offset>[];
 
-    return List.generate(values.length, (i) {
+    final dx = values.length == 1 ? 0.0 : plot.width / (values.length - 1);
+    final span = (yMax - yMin).abs().clamp(0.0001, 99999999.0);
+    final List<Offset> points = <Offset>[];
+
+    for (int i = 0; i < values.length; i++) {
       final v = values[i];
+      if (v == null) continue;
       final t = ((v - yMin) / span).clamp(0.0, 1.0);
       final y = plot.bottom - (t * plot.height);
-      final x = plot.left + dx * i;
-      return Offset(x, y);
-    });
+      final x = values.length == 1 ? plot.center.dx : plot.left + dx * i;
+      points.add(Offset(x, y));
+    }
+
+    return points;
   }
 
   static List<Offset> _sampleSmooth(

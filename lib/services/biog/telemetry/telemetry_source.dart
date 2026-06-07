@@ -14,9 +14,11 @@ abstract class TelemetrySource {
   Stream<BioGTelemetry?> watchLive(String deviceId);
 
   /// Watches historical telemetry for a device inside a time window.
+  ///
+  /// A null [window] requests all available history.
   Stream<List<BioGTelemetry>> watchHistory(
     String deviceId, {
-    required Duration window,
+    required Duration? window,
   });
 
   /// Refresh telemetry for a device from its backing source.
@@ -26,7 +28,7 @@ abstract class TelemetrySource {
   /// For local-only/dev mode, this may be a no-op.
   Future<void> refresh(
     String deviceId, {
-    Duration window = const Duration(days: 7),
+    Duration? window = const Duration(days: 7),
   });
 
   /// Release stream controllers, timers, and subscriptions.

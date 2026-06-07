@@ -1,0 +1,675 @@
+BIO-G / ESPINACA - TEXTO EXTRAIDO PARA CODIGO
+Archivo fuente: Guia_Fertilizacion_BioG_Espinaca_v2_mejorada.pdf
+Archivo TXT: 03_Guia_Fertilizacion_BioG_Espinaca_v2_mejorada.txt
+Paginas detectadas: 10
+Nota: texto extraido desde PDF y validado con pdftotext + PyMuPDF.
+
+
+
+===== PAGINA 1 / 10 =====
+
+                                                                         BIO-G
+            GUIA TECNICA DE FERTILIZACION DE ESPINACA
+                 Campo abierto, baby leaf, hoja madura, proceso y protegido en suelo - Base tecnica para BIO-G v1
+
+Version v2 mejorada: integra riego, fertirriego, aclareo/densidad, espigado, cosecha, poscosecha, sanidad foliar y reglas de codigo. No
+sustituye analisis de suelo, agua, tejido ni asesoria agronomica local.
+
+Cultivo madre: crop_spinach. Perfiles BIO-G: SP-GEN, SP-01 saboya/semi-saboya calor, SP-02 saboya/semi-saboya invierno, SP-03 lisa/baby,
+SP-04 oriental/manojo, SP-05 proceso/industria.
+
+Documento base                                  Uso dentro de BIO-G
+
+Perfil Universal Espinaca                       Define biologia, etapa, rangos medibles, perfiles UX y ventanas de riesgo.
+
+SP-GEN / SKIP                                   Entrada conservadora cuando el usuario no sabe tipo, variedad, sistema o quiere avanzar rapido.
+
+Esta guia de fertilizacion                      Traduce suelo, agua, tejido, NPK, riego, espigado y calidad de hoja a reglas operativas.
+
+Riesgos y rendimiento                           Deben cruzarse con esta guia para no confundir falta de nutriente con agua, raiz, calor o enfermedad.
+
+
+
+
+                                BIO-G | Guia tecnica de fertilizacion de espinaca v2 mejorada | Documento interno | Pagina 1
+
+
+
+===== PAGINA 2 / 10 =====
+
+1. Decision ejecutiva
+La espinaca debe usar una guia base de fertilizacion con modificadores por sistema, destino comercial y perfil. No conviene crear recetas NPK
+totalmente separadas para saboya, lisa, oriental, baby leaf o proceso. Lo que si cambia con fuerza es el destino de cosecha, la duracion del ciclo,
+el numero de cortes, la densidad, el nitrogeno residual, el riesgo de espigado, la salinidad y la calidad visual de la hoja.
+
+Principio central: en espinaca el organo objetivo es la hoja. El motor no debe perseguir flor, fruto ni raiz comercial; debe sostener hoja
+verde, tierna, firme y comercial sin empujar exceso de nitratos, hoja blanda, tipburn, enfermedades foliares o espigado.
+
+La frase de producto es: suelo primero, agua siempre, N con control, P/K por laboratorio, Ca/Mg/S como balance y correcciones solo cuando los
+datos lo justifiquen.
+
+
+2. Alcance
+- Incluye espinaca en campo abierto, aspersion, goteo, baby leaf, manojo/fresco, proceso y protegido en suelo.
+- No incluye hidroponia, sustratos inertes ni soluciones recirculantes como sistema principal de v1.
+- No recomienda marcas comerciales ni recetas cerradas de fertilizantes.
+- En huerto o escala pequena puede traducir recomendaciones a lenguaje simple, pero el motor comercial debe depender de laboratorio y
+sensores.
+- Toda dosis se considera orientativa; la recomendacion final debe ajustarse con analisis de suelo, agua, tejido y normativa local.
+
+
+3. Metodologia y criterio de confiabilidad
+La guia se construyo priorizando extension universitaria y fuentes oficiales: Rutgers/Mid-Atlantic 2026/2027, UC ANR/UC Davis, Penn State
+Agricultural Analytical Services Laboratory, University of Arizona / Desert Ag Solutions, Utah State University, Oregon State University y el
+documento historico del Ministerio de Agricultura de Espana como contraste regional. Las fuentes comerciales y de jardin se usan solo como
+senales de lenguaje o practicas generales, no como base normativa.
+
+Tipo de evidencia                            Uso dentro de BIO-G                                                                   Confianza
+
+Extension universitaria / oficial            Base para N, P, K, pH, azufre, timing, suelo, salinidad, riego y cosecha.             Alta
+
+Laboratorio suelo/tejido                     Bandas de suficiencia, alertas por exceso/deficiencia y verificacion del programa.    Alta si hay protocolo claro
+
+Investigacion academica                      Ajustes finos: nitratos, oxalatos, forma de N, salinidad, goteo y calidad.            Media-alta
+
+Guia historica / regional                    Contraste de fisiologia, riego frecuente, potasio, subida a flor, manejo de cortes.   Media como apoyo, no norma actual
+
+Experiencia de campo / foros                 Sintomas frecuentes, lenguaje humano y errores comunes; no dosis.                     Baja-media
+
+
+
+4. Hallazgos tecnicos firmes
+- La espinaca es una hortaliza de hoja de ciclo corto y clima fresco. La temperatura, la humedad uniforme y la densidad explican mucha calidad
+antes que la fertilizacion por si sola.
+- El N define biomasa, color y vigor de hoja; pero demasiado N puede producir hoja blanda, mayor tipburn, mayor acumulacion de nitratos y peor
+conservacion.
+- P importa en germinacion, raiz y establecimiento, sobre todo en frio; K sostiene turgencia, calidad, resistencia al estres y conservacion
+poscosecha.
+- P y K deben salir de analisis de suelo. La etapa indica prioridad fisiologica, pero no reemplaza el laboratorio.
+- La espinaca tolera salinidad mejor que lechuga, pero la calidad de hoja premium puede caer antes que las toneladas. BIO-G debe alertar antes
+en baby leaf y mercado fresco.
+- El riego debe ser frecuente y de bajo volumen. La falta de agua favorece hoja chica, dura y espigado; el exceso favorece anoxia, amarillamiento,
+pudriciones, mildiu y hoja no comercial.
+- El riego por goteo es muy valioso despues de la emergencia: reduce mojado foliar y puede bajar presion de mildiu, ademas de ser vehiculo de
+fertirriego.
+- El espigado no es una etapa productiva: para BIO-G es evento de falla fisiologica asociado a calor, dia largo, estres hidrico, edad fisiologica y, a
+veces, fertilidad/competencia mal manejadas.
+- El aclareo/densidad cambia la lectura de nutrientes: alta densidad puede parecer falta de N por competencia, pero corregir solo con N puede
+cerrar el dosel y elevar sanidad.
+- La cosecha y poscosecha deben influir en fertilizacion tardia: subir N cerca de cosecha puede perjudicar vida de anaquel, turgencia y calidad
+visual.
+
+
+5. Reglas maestras para el motor BIO-G
+
+
+
+                                    BIO-G | Guia tecnica de fertilizacion de espinaca v2 mejorada | Documento interno | Pagina 2
+
+
+
+===== PAGINA 3 / 10 =====
+
+Regla                                   Decision de producto
+
+Suelo primero                           pH, MO, textura, P, K, Ca, Mg, CE, sodio, drenaje y nitrato residual definen el programa. Sin laboratorio: modo conservador.
+
+Agua siempre                            No interpretar nutricion de hoja sin humedad uniforme. Suelo seco o saturado puede parecer deficiencia.
+
+N con control                           N da hoja y color, pero exceso puede volver la hoja blanda, subir nitratos y agravar tipburn o sanidad.
+
+P/K por laboratorio                     P es arranque/raiz; K es turgencia/calidad. Ambos se ajustan por buckets de suelo, no por costumbre.
+
+Ca no se corrige a ciegas               Tipburn cruza crecimiento rapido, calor, N alto, transpiracion, raiz y agua; no solo falta de Ca en suelo.
+
+Salinidad con doble lectura             Espinaca tolera mas que lechuga, pero baby leaf y hoja premium pierden calidad antes de perder toneladas.
+
+Destino manda                           Baby leaf, manojo, savoy/lisa y proceso comparten biologia; cambian ciclo, densidad, calidad y reposiciones.
+
+Sin hidroponia v1                       Protegido en suelo puede usar fertirriego y CE del bulbo, pero no soluciones recirculantes como modelo principal.
+
+
+
+6. Informacion minima antes de recomendar
+- Perfil BIO-G: SP-GEN, SP-01, SP-02, SP-03, SP-04 o SP-05.
+- Destino: baby leaf, manojo/fresco, hoja madura, proceso o desconocido.
+- Sistema: campo abierto, campo con goteo, campo con aspersion, protegido en suelo o desconocido.
+- Fecha de siembra, etapa, posible ventana de cosecha y si habra uno o varios cortes.
+- pH, materia organica, textura, drenaje y compactacion.
+- Nitrato-N del suelo si existe, cultivo anterior y fertilizacion reciente.
+- P disponible y K intercambiable por laboratorio.
+- CE/salinidad, Ca, Mg, sodio/bicarbonatos si existen.
+- Clima reciente: calor, dia largo, lluvia, baja luz, HR alta, helada o viento.
+- Estado de hoja: color, turgencia, grosor, tipburn, amarillamiento, hoja blanda, manchas o espigado.
+
+
+
+
+                                    BIO-G | Guia tecnica de fertilizacion de espinaca v2 mejorada | Documento interno | Pagina 3
+
+
+
+===== PAGINA 4 / 10 =====
+
+7. Campo abierto: guia de fertilizacion
+En campo abierto, la recomendacion mas confiable combina analisis de suelo, historial de N residual, destino de cosecha y ciclo. BIO-G no debe
+usar un promedio unico. En espinaca, el mismo lote puede necesitar poco N si viene de una hortaliza bien fertilizada, o mas N si es primer cultivo,
+suelo arenoso, bajo en materia organica o con mucha lixiviacion.
+
+7.1 Referencias fuertes por analisis de suelo
+Componente                         Referencia fuerte                                                         Conversion util                          Lectura BIO-G
+
+N total estacional                 Mid-Atlantic: 100-230 lb/A en primavera/otono. UC ANR: 80-200             112-258 kg/ha; UC: 90-224 kg/ha          No usar default alto. Ajustar por ciclo, baby/proceso, N residual, textura, MO
+                                   lb/A segun duracion y destino.                                                                                     y lluvia.
+
+N base / incorporado               Mid-Atlantic: 50-75 lb/A broadcast/disk-in. UC: aprox. 50 lb/A            56-84 kg/ha                              Base de arranque si el suelo lo necesita; evitar sales concentradas cerca de
+                                   preplant y luego aplicaciones.                                                                                     semilla.
+
+N topdress                         Mid-Atlantic: 25-40 lb/A sidedress/topdress; 40-60 lb/A despues de        28-45 kg/ha; 45-67 kg/ha                 Usar con 4 hojas verdaderas, baja vigor/N, o rebrote. No aplicar si N
+                                   cada corte.                                                                                                        residual alto.
+
+P2O5                               Mid-Atlantic: 200/150/100/0 lb/A por suelo bajo/medio/alto/muy            224/168/112/0 kg/ha; UC 56-112           P manda en arranque, raiz y frio. No aplicar alto si suelo suficiente.
+                                   alto. UC: 50-100 lb/A si se requiere; P >30 ppm puede no requerir         kg/ha
+                                   P.
+
+K2O                                Mid-Atlantic: 200/150/100/0 lb/A por suelo. UC: K >150 ppm                224/168/112/0 kg/ha                      K sostiene turgencia/calidad; revisar CE y Mg/Ca antes de subirlo.
+                                   generalmente no requiere K adicional.
+
+Azufre                             Mid-Atlantic: 20-30 lb/A S para la mayoria de suelos.                     22-34 kg/ha S                            Apoya metabolismo de N y color. Considerar fuentes sulfatadas si faltan.
+
+Ca/Mg                              Definir por analisis, pH y balance.                                       Sin dosis universal                      No corregir tipburn con Ca a ciegas: revisar agua, raiz, N, calor y
+                                                                                                                                                      crecimiento rapido.
+
+
+
+7.2 Timing recomendado en campo abierto
+Momento                                      N                                          P                                    K                                   Mensaje BIO-G
+
+Antes de siembra                             Parte de la base si el suelo lo            Todo o casi todo segun analisis      Parte o todo segun analisis         Preparar suelo sin concentrar sales en la linea de semilla.
+                                             requiere
+
+Emergencia - 4 hojas                         Bajo a medio; observar vigor               Normalmente ya aplicado              Normalmente ya aplicado             Si hay mala emergencia, revisar agua, costra, frio, salinidad y
+                                                                                                                                                                 compactacion antes de fertilizar mas.
+
+4 hojas verdaderas / arranque vegetativo     Topdress moderado si N bajo o vigor        Solo si laboratorio/arranque frio    Solo si K bajo o hoja pierde        La hoja necesita N, pero no conviene empujar blando desde
+                                             palido                                     lo justifica                         turgencia                           temprano.
+
+Expansion foliar intensa                     Alto controlado                            Medio si hay limitacion              Medio-alto a alto                   Etapa de mayor valor: color, turgencia y sanidad pesan mas que
+                                                                                                                                                                 crecimiento bruto.
+
+5-10 dias antes de cosecha                   Evitar subidas fuertes sin evidencia       Normalmente no                       Mantener si hay demanda y CE        No arruinar calidad de hoja por una correccion tardia de N.
+                                                                                                                             baja
+
+Despues de corte para rebrote                Reposicion moderada si hay segundo         Normalmente no                       Reposicion si K bajo o corte        Solo si el mercado y el cultivo justifican un segundo corte.
+                                             corte                                                                           largo
+
+
+
+
+8. Riego como parte de fertilizacion
+En espinaca, riego y fertilizacion son inseparables. La planta necesita humedad uniforme para producir hoja tierna, pero teme la saturacion. A
+escala pequena se usa con frecuencia la referencia de 2.5 a 4 cm de agua por semana; para produccion comercial BIO-G debe preferir humedad
+de suelo, textura, clima y etapa antes que una lamina fija.
+
+Situacion                                  Riesgo si falta agua                                  Riesgo si sobra agua                                 Regla BIO-G
+
+Germinacion                                Nascencia irregular, costra, baja poblacion.          Damping-off, semilla podrida, anoxia.                Riegos ligeros y frecuentes; evitar charcos.
+
+Plantula joven                             Se seca rapido; menor raiz y competencia.             Raiz pobre y amarillamiento.                         Revisar mas seguido que plantas maduras.
+
+Expansion foliar                           Hoja pequena, dura, mas amarga, espigado.             Mildiu, hojas amarillas/bajeras no comerciales.      Mantener humedad estable; corregir riego antes de subir N.
+
+Pre-cosecha                                Pierde turgencia y peso fresco.                       Hoja mojada aumenta pudricion y quiebre.             Cosechar con hoja seca cuando aplique; no forzar N tarde.
+
+Goteo despues de emergencia                Si esta mal disenado, franjas secas y baja            Si exceso, anoxia localizada.                        Preferible para fertirriego y menor mojado foliar; requiere buen diseno.
+                                           uniformidad.
+
+
+Salida farmer-friendly: "Antes de subir fertilizante, revise si la humedad es estable. En espinaca, el agua irregular puede verse como falta
+de nutriente y tambien puede adelantar el espigado."
+
+
+
+
+                                                 BIO-G | Guia tecnica de fertilizacion de espinaca v2 mejorada | Documento interno | Pagina 4
+
+
+
+===== PAGINA 5 / 10 =====
+
+9. Baby leaf, fresco premium, manojo y proceso
+Baby leaf y proceso no deben tratarse como cultivos biologicamente separados. Son destinos de cosecha con ciclos, densidad, calibre de hoja,
+calidad y riesgo de nitrato diferentes. BIO-G debe preguntar o inferir destino, pero mantener una base comun.
+
+Destino                        Riesgo principal                                              Lectura N                                                         Lectura P/K y calidad
+
+Baby leaf / hoja tierna        Ciclo corto, nitrato, hoja blanda, sanidad por alta           Usar N ajustado a residual. En segunda siembra puede              K para turgencia; vigilar CE. Calidad visual pesa mas que
+                               densidad.                                                     no requerir N temprano; evitar N alto cerca de cosecha.           biomasa.
+
+Manojo / fresco tradicional    Uniformidad, hoja grande sin espigado, color y textura.       N moderado-alto controlado; topdress si hay vigor bajo.           P en arranque; K y agua estable para hoja firme.
+
+Saboya/semi-saboya             Textura, tierra atrapada, HR alta y mildiu.                   No empujar hoja blanda; buscar firmeza.                           K/Ca/Mg y ventilacion de dosel importan para calidad.
+
+Lisa / premium / embolsado     Daño visual, amarillamiento, nitrato y vida de anaquel.       N fino, no exceso final; validar con tejido si aplica.            K alto-controlado, Ca/Mg y agua uniforme.
+
+Proceso / industria            Biomasa, hoja uniforme, ciclo mas largo, cortes               Puede requerir mas N total y reposiciones, pero siempre           K y S sostienen biomasa; P si suelo bajo o frio.
+                               mecanizables.                                                 por suelo/tejido.
+
+
+
+
+10. Protegido en suelo y fertirriego
+En protegido en suelo o malla, la guia no debe convertirse en hidroponia. El enfoque correcto es fertirriego fraccionado con lectura de CE del
+bulbo, humedad, vigor, color de hoja, nitrato del suelo/tejido y temperatura. El riego por goteo puede ser una herramienta fuerte para entregar
+nutrientes sin mojar la hoja, pero aumenta la necesidad de uniformidad.
+
+Punto de control                                   Regla BIO-G
+
+pH antes de sembrar                                Objetivo operativo cercano a 6.5-7.0 si el suelo lo permite; pH acido reduce crecimiento y disponibilidad.
+
+Base pre-siembra                                   Aplicar P/K segun analisis; N inicial moderado si hay residual o cultivo anterior fertilizado.
+
+Fertirriego                                        Pulsos pequenos y frecuentes; no copiar dosis de campo como si fuera solucion nutritiva.
+
+CE del bulbo                                       Alerta si sube durante baby/pre-cosecha; no subir N/K si la planta ya esta bajo estres osmótico.
+
+Nitrato vs amonio                                  Priorizar N disponible y controlado. Evitar dominancia amoniacal o urea tardia sin razon; vigilar hoja blanda/nitratos.
+
+Ventilacion/HR                                     Fertilizacion alta + dosel cerrado + hoja mojada = mas riesgo sanitario.
+
+
+
+11. Traduccion BIO-G por etapa - prioridad, no dosis
+Etapa BIO-G                      N                         P                         K                        Ca/Mg/S                                 Enfoque operativo
+
+Germinacion                      Bajo                      Medio                     Bajo                     Bajo                                    Humedad estable, temperatura fresca y evitar sales cerca de
+                                                                                                                                                      semilla.
+
+Emergencia / establecimiento     Medio                     Alto                      Medio                    Medio                                   Raiz y poblacion uniforme. P importa si suelo frio o bajo; no
+                                                                                                                                                      salinizar.
+
+Expansion foliar                 Alto controlado           Medio                     Medio-alto               Mg/S medios                             Construir hoja verde sin exceso blando; agua uniforme.
+
+Madurez comercial                Medio-alto                Bajo-medio                Alto                     Ca/Mg altos                             Calidad de hoja: color, turgencia, textura y sanidad.
+
+Ventana de cosecha               Medio o bajo segun        Bajo                      Medio-alto               Mantenimiento                           Evitar correcciones tardias de N; sostener turgencia y vida
+                                 tejido                                                                                                               poscosecha.
+
+Rebrote / segundo corte          Medio si rentable         Bajo                      Medio                    Mantenimiento                           Solo si hay segundo corte y vigor suficiente; evitar invertir en
+                                                                                                                                                      cultivo ya cerrado.
+
+Sobre-madurez / espigado         Bajo                      Bajo                      Bajo                     Bajo                                    No perseguir recuperacion. Cosechar/retirar y registrar causa.
+
+
+
+
+                                     BIO-G | Guia tecnica de fertilizacion de espinaca v2 mejorada | Documento interno | Pagina 5
+
+
+
+===== PAGINA 6 / 10 =====
+
+12. Modificadores por perfil BIO-G
+Perfil                    Tipo UX                                       Ajuste nutrimental                                                           Mensaje BIO-G
+
+SP-GEN                    No se / otra espinaca                         Base conservadora; N moderado-alto solo si etapa y datos lo justifican; K    No asumimos baby/proceso/protegido. Usaremos alertas prudentes y
+                                                                        desde expansion.                                                             luego puedes afinar.
+
+SP-01                     Saboya/semi-saboya calor                      Subir vigilancia de agua, K y CE; N controlado para no cerrar demasiado      Aunque tolere mas calor, el espigado sigue siendo riesgo.
+                                                                        dosel.
+
+SP-02                     Saboya/semi-saboya invierno                   P y arranque pesan mas en frio; evitar saturacion y bajo Mg.                 El frio baja velocidad: no corrijas lento crecimiento solo con N.
+
+SP-03                     Lisa/baby/premium                             Control fino de N, CE y K; mayor sensibilidad a calidad visual y nitratos.   En baby leaf, exceso de N cerca de cosecha puede perjudicar calidad.
+
+SP-04                     Oriental/manojo                               Balance N/K para porte erecto, hoja firme y cosecha limpia.                  La uniformidad de manojo pesa tanto como el tamaño.
+
+SP-05                     Proceso/industria                             Puede tolerar mayor demanda total por ciclo largo/corte; reposiciones por    Biomasa importa, pero no a costa de tallo, hoja vieja o sanidad.
+                                                                        tejido.
+
+
+
+
+13. Aclareo, densidad y nutricion
+El aclareo no es una practica ajena a la fertilizacion: determina competencia por N, agua y luz. Cuando las plantas quedan demasiado juntas, el
+cultivo puede verse palido o lento aunque el suelo tenga nutrientes; aplicar mas N sin corregir densidad puede empeorar el dosel, humedad y
+sanidad.
+
+Caso                                                        Lectura BIO-G
+
+Hoja madura / manojo                                        Buscar separacion suficiente para roseta, aireacion y hoja de buen tamaño. En huerto: 7.5-15 cm puede ser referencia humana; en produccion usar
+                                                            densidad del sistema.
+
+Baby leaf                                                   Generalmente no requiere aclareo individual; la densidad es parte del sistema. Fertilizacion y riego deben ser muy uniformes.
+
+Alta densidad + HR alta                                     Subir riesgo de mildiu, amarillamiento y hoja bajera no comercial. No resolver solo con fertilizante.
+
+Baja densidad                                               Plantas grandes pero menor rendimiento por area; puede bajar demanda total por hectarea.
+
+
+
+14. Espigado: evento de falla fisiologica
+En espinaca, floracion/espigado no es etapa productiva sino perdida de calidad. Una vez que inicia el tallo floral, la hoja tiende a volverse mas
+dura, pequeña y amarga. BIO-G debe tratarlo como evento de cierre, no como una ventana que se pueda salvar con fertilizante.
+
+Disparador                                                  Como se cruza con fertilizacion
+
+Calor sostenido                                             Aumenta demanda de agua y estres; subir N no resuelve. Priorizar riego, sombreo/ventilacion y cosecha temprana.
+
+Dia largo                                                   Riesgo fenologico; si variedad no es adecuada, el manejo solo retrasa parcialmente.
+
+Deficit hidrico                                             Puede acelerar espigado; corregir humedad antes de ajustar nutrientes.
+
+Edad fisiologica                                            Cosechar a tiempo. Fertilizar tarde puede perderse si la ventana comercial ya paso.
+
+Competencia/densidad                                        Alta densidad puede estresar y cerrar dosel; ajustar siembra/aclareo para proximos ciclos.
+
+
+
+15. Roles de nutrientes y desbalances
+Nutriente           Rol en espinaca                                                         Riesgo si falta                                              Riesgo si sobra / desbalance
+
+N                   Clorofila, area foliar, color, velocidad de crecimiento.                Hoja vieja palida, bajo vigor, menor biomasa.                Hoja blanda, nitratos, tipburn, mas sensibilidad a sanidad y peor
+                                                                                                                                                         anaquel.
+
+P                   Raiz, energia, arranque, establecimiento en frio.                       Raiz debil, crecimiento lento, tonos oscuros/purpura.        Innecesario en suelo alto; puede afectar micronutrientes.
+
+K                   Turgencia, balance hidrico, calidad, firmeza, estres.                   Bordes amarillos/necrosados, hoja flacida, menor calidad.    Sube CE y antagoniza Mg/Ca si se excede.
+
+Ca                  Pared celular, integridad de hoja, menor tipburn.                       Puntas/bordes necrosados, hoja joven dañada.                 No suele ser toxicidad directa; su absorcion depende de
+                                                                                                                                                         agua/transpiracion.
+
+Mg                  Centro de clorofila, fotosintesis.                                      Clorosis intervenal en hojas viejas.                         Puede competir con Ca/K si se sobredosifica.
+
+S                   Proteinas, enzimas, uso de N y color.                                   Amarillamiento general en hojas jovenes, bajo vigor.         Usualmente bajo riesgo, pero vigilar sales.
+
+Fe/Mn/Zn/B          Color, enzimas, crecimiento joven.                                      Clorosis, deformacion o bajo desarrollo segun elemento.      Boro y Mn tienen margen estrecho; no aplicar sin criterio.
+
+
+
+
+                                               BIO-G | Guia tecnica de fertilizacion de espinaca v2 mejorada | Documento interno | Pagina 6
+
+
+
+===== PAGINA 7 / 10 =====
+
+16. Analisis foliar y verificacion
+El analisis foliar no reemplaza el analisis de suelo. Sirve para verificar si el programa esta entrando a planta y para evitar confundir deficiencia con
+riego, raiz, salinidad, plaga, enfermedad o clima. En espinaca, por ser hoja comestible, el protocolo de muestreo y la cercania a cosecha importan
+mucho.
+
+Nutriente                     Bajo                            Normal aproximado                          Alto / excesivo                           Lectura BIO-G
+
+N (% MS)                      <3.5                            4.0-6.0                                    >6.0                                      Bajo: hoja palida. Alto: revisar exceso, nitratos y calidad.
+
+P (% MS)                      <0.25                           0.30-0.70                                  >0.70                                     Interpretar con suelo y etapa; no subir si suelo suficiente.
+
+K (% MS)                      <2.0                            2.5-3.5                                    >3.5                                      Clave para turgencia; alto puede presionar Mg/Ca y CE.
+
+Ca (% MS)                     <0.50                           0.70-1.20                                  >1.20                                     Leer con tipburn, riego, calor y raiz; no solo dosis.
+
+Mg (% MS)                     <0.40                           1.00-1.60                                  >1.60                                     Vigilar con K alto o pH/CE alterados.
+
+S (% MS)                      <0.10                           0.20-1.00                                  >1.00                                     Apoya metabolismo de N; revisar fuentes sulfatadas.
+
+B (ppm)                       <15                             25-60                                      >60                                       Margen estrecho; evitar correcciones ciegas.
+
+Fe/Mn/Zn                      Bajo segun laboratorio          Rango normal por laboratorio               Puede contaminarse por aspersiones        No diagnosticar solo por hoja asperjada.
+
+- Muestrear hojas representativas, limpias y sin residuos recientes de foliares, fungicidas o polvo.
+- Registrar etapa, perfil SP-XX, sistema, fecha, riego, CE, pH, clima y aplicaciones recientes.
+- No mezclar hojas viejas, hojas nuevas y hojas con sintomas severos en una sola muestra diagnostica.
+- Si hay salinidad, anoxia, raiz enferma o HR alta, el problema puede no ser falta de fertilizante.
+- En baby leaf o hoja de empaque, interpretar con especial cuidado por cercania a cosecha.
+
+
+17. Deficiencias, excesos y diagnostico diferencial
+Elemento / problema                    Sintoma tipico                                        Diferenciales probables                                   Accion BIO-G
+
+N bajo                                 Hoja vieja palida, menor tamaño, crecimiento lento.   Frio, raiz pobre, suelo seco, baja luz, exceso de         Revisar etapa, humedad y N residual; topdress moderado si datos
+                                                                                             agua.                                                     apoyan.
+
+N alto                                 Hoja muy verde/blanda, crecimiento rapido, mas        Variedad, baja luz, alta densidad.                        Frenar N tardio; revisar K/Ca/Mg, agua y cosecha.
+                                       tipburn o nitratos.
+
+P bajo                                 Arranque lento, raiz debil, posible tono              Suelo frio, pH alto/bajo, compactacion.                   P segun analisis; no aplicar si suelo alto.
+                                       oscuro/purpura.
+
+K bajo                                 Turgencia baja, bordes amarillos/necrosados, peor     Deficit hidrico, salinidad, enfermedad foliar.            Subir solo si CE y Mg/Ca lo permiten.
+                                       anaquel.
+
+Ca/tipburn                             Puntas/bordes necrosados en hoja joven; hoja no       Calor, crecimiento rapido, N alto, agua irregular, raiz   No culpar solo a Ca; revisar riego, velocidad de crecimiento y clima.
+                                       comercial.                                            pobre.
+
+Mg bajo                                Clorosis intervenal en hojas viejas.                  K alto, pH bajo, lixiviacion.                             Confirmar con tejido y balance catiónico.
+
+Fe/Mn/Zn                               Clorosis en hojas nuevas o crecimiento alterado.      pH alto, bicarbonatos, raiz dañada.                       Corregir pH/agua primero; evitar foliar ciego.
+
+Salinidad                              Crecimiento bajo, hoja menos tierna, bordes           Sequía, K alto, agua salina, drenaje malo.                Revisar CE del suelo/bulbo y agua; no subir fertilizante.
+                                       dañados.
+
+
+
+
+18. Organico, huerto y formulas tipo 30-10-10
+El texto de huerto que menciona fertilizante alto en N, como 30-10-10, es util como lenguaje simple: la espinaca necesita N para follaje. Pero
+BIO-G no debe convertir esa formula en receta universal. En produccion seria, el N se decide por suelo, etapa y destino. En organico, harina de
+soya, emulsiones de pescado, compostas maduras u otras fuentes pueden funcionar, pero su liberacion depende de temperatura, humedad y
+microbiologia.
+
+Fuente / practica                                      Uso posible                                                                            Riesgo si se usa mal
+
+Composta madura / materia organica                     Mejora estructura, humedad y liberacion gradual.                                       Composta fresca puede traer malezas, sales o liberacion impredecible.
+
+Harina de soya / fuentes organicas N                   Aporta N de liberacion mas lenta.                                                      Puede llegar tarde en ciclo corto si suelo frio.
+
+Emulsion de pescado                                    Correcciones suaves o fertirriego organico.                                            Olor, salinidad o quemadura si se concentra.
+
+30-10-10 u otra formula alta en N                      Referencia de jardineria cuando solo se busca follaje.                                 No usar como default comercial; puede subir nitratos, hoja blanda y
+                                                                                                                                              tipburn.
+
+Fertilizante balanceado cada 2-3 semanas               Puede servir en maceta/huerto con baja reserva.                                        En campo puede ser exceso si ya hay N/P/K suficientes.
+
+
+
+
+                                              BIO-G | Guia tecnica de fertilizacion de espinaca v2 mejorada | Documento interno | Pagina 7
+
+
+
+===== PAGINA 8 / 10 =====
+
+19. Calendario operativo sugerido BIO-G
+Momento                         Que revisar                                                  Que hacer                                                 Mensaje humano posible
+
+Antes de siembra                pH, P, K, MO, textura, CE, drenaje, N residual.              Corregir pH/base; plan de P/K; evitar sales cerca de      Antes de fertilizar fuerte, conviene saber que ya tiene tu suelo.
+                                                                                             semilla.
+
+Germinacion                     Humedad, costra, temperatura, salinidad.                     Riegos ligeros; evitar saturacion.                        Aqui el agua pareja vale mas que empujar fertilizante.
+
+Establecimiento                 Poblacion, raiz, color, compactacion.                        Topdress solo si vigor/N bajo y humedad estable.          Si la planta no arranca, puede ser suelo, frio o agua, no solo
+                                                                                                                                                       comida.
+
+Expansion foliar                Color, turgencia, hoja blanda, N/K, HR.                      N controlado, K y Mg/S si hay demanda.                    Va creciendo hoja: no conviene pasarla de nitrogeno.
+
+Pre-cosecha                     Tamaño, textura, tipburn, espigado, CE.                      Evitar N fuerte; sostener humedad y K si procede.         Ya manda la calidad de hoja, no el crecimiento a ciegas.
+
+Cosecha                         Hoja seca, manchas, amarillos, tallo floral.                 Cortar en hora fresca; retirar enfermas.                  Si empieza a espigar, no esperes: la calidad cae rapido.
+
+Segundo corte                   Rebrote, vigor, sanidad, rentabilidad.                       Reposicion moderada si vale la pena.                      Solo conviene seguir si el cultivo aun responde y el mercado paga.
+
+Cierre                          Causa de perdida, clima, N/agua, sanidad.                    Registrar y preparar rotacion.                            Este cierre ayuda a mejorar el siguiente ciclo.
+
+
+
+
+20. Cosecha, almacenamiento y fertilizacion tardia
+La fertilizacion debe pensar en el destino final. La espinaca fresca se deteriora rapido por su alta respiracion y gran superficie de hoja. Hoja
+excesivamente tierna por N alto, mojada al corte o mal enfriada pierde valor aunque haya buen peso de campo.
+
+Practica                                                  Regla BIO-G
+
+Corte de hojas externas                                   Apto para huerto/autoconsumo. No retirar demasiado follaje si se espera rebrote.
+
+Corte total                                               Comun en produccion; cortar antes de tallo floral. Evitar esperar por mas peso si cae calidad.
+
+Cosecha en horas frescas                                  Mantiene turgencia y reduce perdida de agua.
+
+Hoja seca antes del corte                                 Reduce quiebre, pudricion y problemas de empaque.
+
+Almacenamiento                                            Enfriar rapido; evitar empaque apretado y exceso de humedad libre.
+
+Fertilizacion tardia                                      Evitar N fuerte cerca de cosecha si no hay evidencia; puede afectar textura y vida de anaquel.
+
+
+
+21. Sanidad y fertilizacion: cruces minimos
+La guia de sanidad vegetal ira en documento separado. Pero el motor de fertilizacion debe evitar errores: muchas veces una hoja amarilla, una
+mancha o una planta frenada no significan falta de nutriente.
+
+Sintoma / riesgo                                     No decir solo...                          Mejor salida BIO-G
+
+Manchas amarillas con HR alta                        Falta nitrogeno                           Revise mildiu/manchas foliares y ventilacion. La fertilizacion no corrige una enfermedad activa.
+
+Hojas con galerias                                   Deficiencia                               Daño compatible con minador; la hoja puede quedar no comercial aunque el nutriente este bien.
+
+Pulgones y melaza                                    Falta vigor                               Revise envés y focos. Los chupadores bajan calidad y pueden confundir lectura de hoja.
+
+Marchitez con suelo humedo                           Falta agua                                Puede haber anoxia o problema radicular. No suba fertilizante hasta revisar raiz/drenaje.
+
+Tipburn                                              Falta calcio                              Puede cruzar N alto, calor, crecimiento rapido, raiz y agua irregular.
+
+Espigado                                             Falta fertilizante                        Es cierre de calidad por calor/dia largo/estres/edad. Priorizar cosecha y registro.
+
+
+
+
+                                            BIO-G | Guia tecnica de fertilizacion de espinaca v2 mejorada | Documento interno | Pagina 8
+
+
+
+===== PAGINA 9 / 10 =====
+
+22. Recomendaciones directas para implementacion en codigo
+- Crear o extender SpinachFertilizationProfile separado del perfil fenologico. La fenologia dice cuando pesa; fertilizacion dice que recomendar
+segun suelo/sistema/perfil/destino.
+- Asegurar que FertilizationPlanner y NutrientRecommendationEngine reciban profileId, productionSystem, harvestDestination, irrigationMethod,
+soilBucketP, soilBucketK, residualNitrogenClass y salinityRiskClass.
+- No crear recetas completas separadas para SP-01 a SP-05. Crear modificadores: nitrogenSensitivity, nitrateAccumulationRisk, boltingRisk,
+leafQualitySensitivity, regrowthPotential, salinityTolerance, diseaseHumidityRisk.
+- Si soilBucketP o soilBucketK son unknown, usar modo conservador: prioridad por etapa + recomendar analisis antes de dosis.
+- Si residualNitrogenClass es high o previousCropHeavyFertilized es true, reducir recomendacion de N inicial y pedir confirmacion antes de
+topdress.
+- Si la etapa esta cerca de cosecha o hay boltingRisk alto, no recomendar subidas fuertes de N; enfocar en cosecha, agua y calidad.
+- Si irrigationMethod == drip, permitir mensajes de fertirriego y menor mojado foliar; si sprinkler, subir riesgo de hoja mojada y mildiu.
+- Para baby leaf, subir nitrateAccumulationRisk y leafQualitySensitivity; para proceso, subir biomassDemand y regrowthPotential solo si hay
+segundo corte.
+- Agregar mensajes: "El N ayuda a la hoja, pero aqui puede ablandarla", "Primero estabiliza el riego", "Tu suelo puede tener N residual", "No subas
+K si la CE ya va alta".
+
+
+23. Campos sugeridos para modelo
+Campo                                      Tipo sugerido                                                              Uso
+
+profileId                                  SP-GEN / SP-01 / SP-02 / SP-03 / SP-04 / SP-05                             Resolver sensibilidad y lenguaje.
+
+productionSystem                           openField / openFieldDrip / sprinkler / protectedSoil / unknown            Cambiar timing, fertirriego y riesgo sanitario.
+
+harvestDestination                         babyLeaf / bunchFresh / matureLeaf / processing / unknown                  Ajustar N, calidad, ciclo y corte.
+
+irrigationMethod                           drip / sprinkler / furrow / manual / unknown                               Cruzar agua, sanidad y fertirriego.
+
+soilBucketP                                low / medium / high / veryHigh / unknown                                   Evitar P universal.
+
+soilBucketK                                low / medium / high / veryHigh / unknown                                   Ajustar K sin subir CE.
+
+residualNitrogenClass                      low / medium / high / unknown                                              Evitar sobredosificar despues de cultivos fertilizados.
+
+salinityRiskClass                          low / watch / alert / critical                                             Conectar CE con turgencia, hoja premium y raiz.
+
+boltingRisk                                low / watch / high / active                                                Reducir recomendaciones tardias y priorizar cosecha.
+
+leafQualitySensitivity                     normal / high / premium                                                    SP-03 y baby leaf suben calidad visual.
+
+regrowthPotential                          none / possible / planned                                                  Ajusta reposicion de N/K despues de corte.
+
+
+
+
+24. Mensajes BIO-G sugeridos para UX
+Situacion                                       Mensaje farmer-friendly
+
+N bajo probable                                 La hoja se ve corta de nitrogeno, pero primero confirmemos humedad y raiz. En espinaca, suelo seco o frio puede parecer deficiencia.
+
+N alto / hoja blanda                            La planta puede estar demasiado empujada. Mas nitrogeno puede dar hoja blanda, tipburn o menor vida de anaquel.
+
+P bajo / arranque lento                         El arranque puede necesitar fosforo si el suelo esta bajo o frio. Evite aplicar P por costumbre si el analisis ya esta alto.
+
+K bajo / turgencia baja                         El potasio ayuda a la turgencia y calidad de hoja, pero debe revisarse junto con agua y salinidad.
+
+CE alta                                         La salinidad puede limitar absorcion de agua. No conviene subir fertilizante hasta revisar drenaje y riego.
+
+Riego irregular                                 La espinaca necesita humedad constante. Riegos ligeros y frecuentes suelen funcionar mejor que un riego pesado y tardio.
+
+Espigado probable                               El cultivo esta cerca de perder calidad por espigado. Priorice cosecha y registre la causa para el proximo ciclo.
+
+Mildiu/HR alta                                  La hoja mojada y la humedad alta favorecen enfermedades. El goteo o mejor ventilacion pueden ayudar mas que fertilizar.
+
+SP-GEN                                          Usaremos una guia conservadora porque aun no sabemos el tipo o destino. Puedes afinarla despues sin perder historial.
+
+
+
+25. Decisiones finales de producto
+Decision                                                        Resultado
+
+Cambian mucho los tipos de espinaca?                            No para recetas NPK separadas. Si para calidad, ciclo, densidad, N residual, espigado y cosecha.
+
+Que es mas importante?                                          Sistema, destino, suelo/agua, etapa, N residual, CE, temperatura y tejido.
+
+Que error evitar?                                               Dar una formula simple tipo 30-10-10 como receta universal. Eso puede servir en huerto, no como motor BIO-G.
+
+Que debe salir en v1?                                           Guia base universal + modificadores por perfil/destino + modo conservador si faltan datos.
+
+Que queda fuera?                                                Hidroponia, sustrato inerte, receta por marca, dosis exacta sin laboratorio, promesa de rendimiento y plaguicidas.
+
+
+
+26. Fuentes y trazabilidad
+
+                                       BIO-G | Guia tecnica de fertilizacion de espinaca v2 mejorada | Documento interno | Pagina 9
+
+
+
+===== PAGINA 10 / 10 =====
+
+S1. Rutgers/NJAES. Mid-Atlantic Commercial Vegetable Production Recommendations 2026/2027 - Spinach. Base para N, P, K, S, timing, overwinter, corte y poscosecha.
+URL: https://njaes.rutgers.edu/pubs/commercial-veg-rec/spinach.pdf
+S2. UC ANR / UC Davis. Spinach Production in California. Base para clima, suelos, salinidad, riego, fertilizacion, N, P, K, petiole sampling, cosecha y poscosecha. URL:
+https://my.ucanr.edu/repository/fileaccess.cfm?article=54021&p=+PUIVXP
+S3. Penn State Agricultural Analytical Services Laboratory. Spinach, Any - Interpretive Nutrient Levels for Plant Analysis. Base para rangos foliares N, P, K, Ca, Mg, S y
+micronutrientes. URL: https://agsci.psu.edu/aasl/plant-analysis/plant-tissue-total-analysis/interpretive-nutrient-levels-for-plant-analysis/spinach-any
+S4. Penn State AASL. Spinach Crop Code 3118. Base para pH goal 6.5, split fertilization y ajuste por cultivo anterior fertilizado. URL:
+https://agsci.psu.edu/aasl/soil-testing/fertility/handbooks/vegetables/recommendations/3118-spinach/@@download/file/3118%20Spinach.pdf
+S5. UC ANR. Drip irrigation shows promise for spinach growers. Base para goteo, menor mojado foliar, fertirriego y reduccion de mildiu. URL:
+https://ucanr.edu/blog/uc-delivers/article/drip-irrigation-shows-promise-spinach-growers
+S6. Utah State University Extension. Soil and Fertility - Leafy Greens. Base para leafy greens, pH 6.5-7.5, N 75-150 lb/A y tipburn por exceso de N. URL:
+https://extension.usu.edu/vegetableguide/leafy-greens/soil-fertility
+S7. Oregon State University. Spinach. Base para pH 6.2-6.9, mal crecimiento bajo pH 6.0 y manejo general. URL:
+https://horticulture.oregonstate.edu/oregon-vegetables/spinach-0
+S8. Ministerio de Agricultura de Espana. Cultivo de la espinaca, Hojas Divulgadoras 6/76. Referencia historica para riego frecuente, exigencia de N/K, potasio y calidad,
+ciclos y corte. No se usan sus plaguicidas como recomendacion actual.
+S9. BIO-G. Perfil Universal Bio-G - Espinaca v2 y Perfil Generico SP-GEN/SKIP v2, generados para este cultivo.
+S10. BIO-G. Guias de fertilizacion de berenjena y pepino usadas como arquitectura documental y criterio de producto.
+
+
+27. Cierre de producto
+La guia de fertilizacion de espinaca queda lista para BIO-G v1 si se integra como motor de hoja, no como copia de hortaliza de fruto. El
+valor del producto no esta en decir "pon mas nitrogeno", sino en distinguir cuando la hoja necesita N, cuando necesita agua, cuando el
+suelo ya tiene residual, cuando la CE impide absorber y cuando la ventana comercial ya se esta cerrando por espigado. Esa lectura es lo
+que vuelve a BIO-G util y pagable.
+
+
+
+
+                                      BIO-G | Guia tecnica de fertilizacion de espinaca v2 mejorada | Documento interno | Pagina 10

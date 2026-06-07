@@ -36,6 +36,94 @@ class EventEngineRulesResolver {
       );
     }
 
+    if (crop == 'spinach' || crop == 'crop_spinach' || crop == 'espinaca') {
+      final qualityStage = _containsAny(stage, const <String>[
+        'expansion',
+        'foliar',
+        'madurez',
+        'commercial',
+        'comercial',
+        'ventana',
+        'cosecha',
+        'harvest',
+        'perdida',
+        'decline',
+        'espig',
+        'bolting',
+        'senesc',
+      ]);
+
+      return EventEngineRules(
+        frostThresholdC: 0.0,
+        highAirTempThresholdC: qualityStage ? 25.0 : 26.0,
+        criticalAirTempThresholdC: qualityStage ? 28.0 : 30.0,
+        lowAirHumidityThresholdPct: 40.0,
+        highAirHumidityThresholdPct: 85.0,
+        goodStructureMaxResistance: 1.5,
+        moistureStableTolerance: 5.0,
+      );
+    }
+
+    if (crop == 'onion' || crop == 'crop_onion' || crop == 'cebolla') {
+      final criticalStage = _containsAny(stage, const <String>[
+        'induccion',
+        'bulbo',
+        'llenado',
+        'maduracion',
+        'cosecha',
+        'cuello',
+        'espig',
+        'bolting',
+        'senesc',
+      ]);
+
+      return EventEngineRules(
+        frostThresholdC: 0.0,
+        highAirTempThresholdC: criticalStage ? 28.0 : 30.0,
+        criticalAirTempThresholdC: criticalStage ? 30.0 : 33.0,
+        lowAirHumidityThresholdPct: 30.0,
+        highAirHumidityThresholdPct: 85.0,
+        goodStructureMaxResistance: 1.5,
+        moistureStableTolerance: 5.0,
+      );
+    }
+
+    if (crop == 'garlic' || crop == 'crop_garlic' || crop == 'ajo') {
+      final criticalStage = _containsAny(stage, const <String>[
+        'vernal',
+        'frio',
+        'cold',
+        'diferenci',
+        'bulbo',
+        'bulb',
+        'diente',
+        'llenado',
+        'fill',
+        'maduracion',
+        'matur',
+        'cosecha',
+        'harvest',
+        'curado',
+        'curing',
+        'escapo',
+        'canuto',
+        'escobete',
+        'broom',
+        'scape',
+        'senesc',
+      ]);
+
+      return EventEngineRules(
+        frostThresholdC: 0.0,
+        highAirTempThresholdC: criticalStage ? 28.0 : 30.0,
+        criticalAirTempThresholdC: criticalStage ? 30.0 : 33.0,
+        lowAirHumidityThresholdPct: 30.0,
+        highAirHumidityThresholdPct: 85.0,
+        goodStructureMaxResistance: 1.5,
+        moistureStableTolerance: 5.0,
+      );
+    }
+
     if (crop == 'maize') {
       if (_containsAny(stage, const <String>['tass', 'flower'])) {
         return const EventEngineRules(

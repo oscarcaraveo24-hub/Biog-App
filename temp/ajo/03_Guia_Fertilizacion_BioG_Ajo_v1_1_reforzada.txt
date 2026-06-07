@@ -1,0 +1,1209 @@
+BIO-G / AJO - TEXTO PARA CODIGO
+Archivo TXT: 03_Guia_Fertilizacion_BioG_Ajo_v1_1_reforzada.txt
+Documento: GUIA TECNICA DE FERTILIZACION DE AJO
+Version: v1.1 reforzada para BIO-G v1
+Cultivo madre: crop_garlic / CropKey.garlic
+Perfiles BIO-G: AG-GEN, AG-01, AG-02, AG-03, AG-04, AG-05
+Estado: Base tecnica investigada y reforzada para motor de fertilizacion, NutrientRecommendationEngine, conversiones a gramos y mensajes farmer-friendly.
+Nota: no sustituye analisis de suelo, agua, tejido ni asesoria agronomica local.
+
+======================================================================
+BIO-G
+GUIA TECNICA DE FERTILIZACION DE AJO
+Campo abierto, diente-semilla, riego, fertirriego, bulbo fresco/seco, curado y almacenamiento
+Version v1.1 reforzada con N-P-K, S, Ca, Mg, micronutrientes, salinidad, riego, fertirriego, vernalizacion, escobeteado/canutos y conversiones a gramos
+Base tecnica para BIO-G v1
+======================================================================
+
+Documento tecnico interno. Esta guia traduce suelo, agua, NPK, etapa, vernalizacion, diferenciacion de dientes, llenado de bulbo, salinidad, riego, maduracion, curado y calidad comercial a reglas operativas para BIO-G. No recomienda marcas comerciales ni recetas cerradas de fertilizante. Toda dosis debe ajustarse con analisis local de suelo, agua y tejido.
+
+Refuerzo v1 integrado:
+- Se usa el paquete BIO-G de cebolla como molde de arquitectura, pero NO se copia la biologia de cebolla. Ajo es Allium de bulbo, pero el organo comercial es una cabeza formada por dientes a partir de diente-semilla vegetativo.
+- Se integra el eje dominante del ajo: crecimiento vegetativo temprano + frio fisiologico/vernalizacion + dias crecientes + temperatura posterior. El fertilizante no sustituye la vernalizacion.
+- Se reconcilian fuentes que difieren mucho en dosis: guias conservadoras de extension, estudios de nitrogeno en zonas templadas, guias comerciales de produccion, referencias mexicanas bajo goteo y fertirriego intensivo.
+- Se separa capa BIO-G segura de capa tecnica intensiva. BIO-G no debe usar una sola tabla como receta universal.
+- Se refuerza la logica de fraccionamiento: N temprano/primavera o vegetativo activo, P y K por laboratorio/base, K y Ca/Mg/S como balance de calidad, y bloqueo de N fuerte cuando el bulbo ya diferencia/llena o cuando se acerca maduracion.
+- Se incluyen conversiones a kg/ha, g/m2 y gramos de producto para calculadora, pero con advertencia: conversion no es receta.
+
+Refuerzo v1.1 integrado con nueva informacion del usuario:
+- Se incorpora el criterio de nutricion balanceada: la fertilizacion no es “cuanto mas mejor”, sino satisfacer demanda real por etapa, suelo, agua, densidad, clima, variedad y destino.
+- Se agrega la extraccion nutrimental reportada por Burba (1992) para 10 t/ha: N y K como principales, S significativo, y P/Ca/Mg relativamente menores; se usa como referencia de demanda, no como dosis directa.
+- Se refuerza la necesidad de analisis de suelo antes de plantacion, analisis de agua de riego, analisis foliar y, en sistemas intensivos, seguimiento de solucion del suelo.
+- Se integra la recomendacion regional de Universidad de Sonora / Zamora: 120-240 kg N/ha y 60-80 kg P/ha como rango dependiente del suelo; primera aplicacion al sembrar o antes del primer riego de auxilio y segunda 50-60 dias despues.
+- Se integra la regla de Reveles-Hernandez et al. para surcos/doble hilera con riego por gravedad: todo el P, mitad del N y mitad del K en siembra o despues de nascencia; resto de N/K 60 dias despues, nunca despues de iniciada la formacion de bulbos.
+- Se integra la formula intensiva de referencia Bravo y Echavarria para fertirriego/goteo: 250 N - 100 P - 265 K - 120 Ca, activable solo como capa tecnica intensiva con analisis, control de CE y alto rendimiento objetivo.
+- Se agrega el riesgo fisiologico de escobeteado/ramaleo/canutos: asociado a exceso de vigor, N alto o tardio, bajas densidades, siembras tempranas, riegos tardios y mala transicion a maduracion.
+- Se refuerza fertirriego: dosis pequenas y frecuentes, pH final orientativo 5.5-6.5, CE moderada, compatibilidad de mezclas y separacion de calcio frente a fosfatos/sulfatos en tanques concentrados.
+- Se agrega logica ETc = ETo x Kc como futuro modo Pro de riego/fertirriego; Kc y mm por ciclo quedan como referencia de programacion, no como regla fija universal.
+
+Documentos base                                Uso dentro de BIO-G
+
+Perfil Universal Ajo                           Define biologia, etapas, vernalizacion, rangos medibles, perfiles UX y ventanas criticas.
+AG-GEN / SKIP                                  Entrada conservadora cuando el usuario no sabe tipo, variedad, sistema o destino.
+Esta guia de fertilizacion                     Traduce suelo, agua, NPK, vernalizacion, riego, diferenciacion de dientes, bulbo y curado a reglas.
+Riesgos / Sanidad futura                       Debe cruzarse con pudricion basal, white rot, nematodos, Botrytis, roya, trips, acaros, anoxia y salinidad.
+Rendimiento futuro                             Debe cruzar calibre, poblacion, tamano de diente-semilla, numero de dientes, scape/espigado, descarte y curado.
+
+======================================================================
+1. DECISION EJECUTIVA
+======================================================================
+
+El ajo debe usar una guia de fertilizacion propia. No debe copiar la logica de hortalizas de fruto, hoja, grano ni cebolla. Ajo y cebolla comparten sensibilidad Allium, raiz relativamente superficial, problemas de sales/agua y peso de curado; pero ajo tiene tres diferencias decisivas:
+
+1. Se establece por diente-semilla, no por semilla verdadera ni trasplante.
+2. El bulbo comercial depende de diferenciacion de dientes, no solo de engrosamiento de una base bulbosa.
+3. La vernalizacion/frio fisiologico y el crecimiento vegetativo previo condicionan el potencial de bulbo. El fertilizante no corrige una falla de frio, variedad o fecha.
+
+Principio central:
+BIO-G no debe recomendar fertilizante para "forzar" la formacion de cabeza o dientes cuando la falla principal es vernalizacion insuficiente, fecha incorrecta, material mal adaptado, diente-semilla pobre, calor temprano o falta de crecimiento vegetativo antes de bulbo.
+
+Frase de producto:
+Diente sano, suelo suelto, frio suficiente, hoja fuerte temprano, N con limite, P en arranque, K para llenado, agua pareja y cierre limpio antes de curado.
+
+Tesis BIO-G:
+El ajo no se fertiliza para que "haga hojas" indefinidamente. Se fertiliza para construir una planta con suficiente area foliar y raiz antes de la diferenciacion, sostener el llenado del bulbo sin salinizar ni encharcar, y luego dejar que madure y cure. El error mas peligroso es confundir vigor verde tardio con calidad de cabeza.
+
+Tesis reforzada de nutricion balanceada:
+La nutricion del ajo debe entenderse como equilibrio fisiologico y sanitario. El objetivo no es producir la planta mas verde ni el follaje mas tierno, sino un cultivo suficientemente fuerte para diferenciar dientes, llenar cabeza, madurar y curar sin deformaciones. Un ajo demasiado vigoroso por N tardio, agua excesiva o densidad baja puede verse "bonito" antes de cosecha, pero terminar con escobeteado, canutos, dientes descubiertos, maduracion lenta, mala tunica, pudriciones o baja vida de anaquel. En BIO-G, una lectura de vigor excesivo cerca de bulbificacion/maduracion debe ser advertencia, no felicitacion automatica.
+
+Reglas principales:
+
+- El nitrogeno es importante en ajo, pero su ventana util es temprana: establecimiento, rebrote/vegetativo activo y antes del inicio fuerte de bulbificacion. N excesivo o tardio puede retrasar madurez, favorecer cuello/tallo verde, reducir conservacion y elevar riesgo sanitario.
+- El fosforo pesa en raiz y establecimiento; debe decidirse por analisis de suelo y colocacion. No se debe aplicar por costumbre si el suelo ya esta alto.
+- El potasio sostiene turgencia, balance hidrico, llenado de bulbo, firmeza y calidad. Pero muchas fuentes de K suben CE; no se debe subir K si la salinidad ya esta en alerta.
+- El azufre es biologicamente importante en ajo como Allium y se relaciona con compuestos de aroma/sabor. En BIO-G v1 puede quedar como observacion tecnica/balance, no como motor central de dosis salvo modo Pro o analisis.
+- Calcio y magnesio se interpretan principalmente desde pH, suelo, agua y balance con K. No corregir Ca/Mg a ciegas.
+- Micronutrientes como Zn y B pueden importar, pero tienen margen estrecho. No recomendar sin analisis.
+- El riego es parte de la fertilizacion: raiz relativamente superficial, bulbo sensible a deficit en diferenciacion/llenado y alta susceptibilidad a pudriciones con exceso.
+- La salinidad y el exceso de fertilizante pueden reducir calibre, numero/calidad de dientes y stand. Si CE sube, el primer mensaje no es "fertiliza mas".
+- AG-GEN protege: no busca maximo rendimiento; usa rangos prudentes, baja confianza y pide suelo/agua/etapa cuando faltan datos.
+
+======================================================================
+2. ALCANCE
+======================================================================
+
+Incluye:
+- Ajo verdadero: Allium sativum L.
+- Produccion en suelo, principalmente campo abierto.
+- Diente-semilla / propagacion vegetativa.
+- Ajo blanco/perla, jaspeado/calera, morado, criollo/regional, chino/coreano como perfiles UX.
+- Bulbo fresco, bulbo seco, curado, semilla comercial propia y mercado nacional.
+- Riego por goteo, surco/gravedad, aspersion limitada y manejo manual/huerto como escala menor.
+- Fertilizacion basada en suelo, agua, etapa, perfil, sistema, salinidad, clima, calidad de diente-semilla y destino comercial.
+- Modo conservador cuando faltan datos.
+- Traduccion a campos de codigo para FertilizationPlanner y NutrientRecommendationEngine.
+
+No incluye en v1:
+- Hidroponia, NFT, sustratos inertes ni soluciones recirculantes.
+- Recetas exactas por marca comercial.
+- Recomendaciones de plaguicidas o ingredientes activos.
+- Garantia de rendimiento, calibre, numero de dientes o calidad de curado.
+- Manejo avanzado de ajo semilla certificado como modulo independiente.
+- Ajo elefante como ajo verdadero; si aparece, debe marcarse como Allium ampeloprasum / pariente de puerro y modo futuro.
+- Fertilizacion organica profesional cerrada con mineralizacion calculada por laboratorio, salvo observaciones y reglas de seguridad.
+
+Nota sobre perfiles:
+AG-01 a AG-05 son perfiles de comportamiento y UX, no cultivos separados. La variedad comercial o nombre local apunta al perfil, pero no crea motor biologico independiente sin ficha tecnica validada.
+
+======================================================================
+3. METODOLOGIA Y CRITERIO DE CONFIABILIDAD
+======================================================================
+
+La guia se construyo priorizando extension universitaria, guias tecnicas oficiales, literatura agronomica y referencias regionales. Fuentes comerciales, blogs y foros se usan solo para lenguaje, problemas frecuentes y validacion de dudas reales de productores; no se usan como base unica de dosis.
+
+Tipo de evidencia                         Uso dentro de BIO-G                                           Confianza
+
+Extension universitaria / oficial          Base para N, P, K, pH, riego, salinidad, suelo y cosecha.      Alta
+Guias regionales de produccion             Ajuste por sistema, clima, riego, material y region.           Alta-media
+Ensayos academicos                         Respuesta a N, agua, sistema, cultivar y calidad.               Media-alta
+Laboratorio suelo/agua/tejido              Motor de decision cuando existe dato del usuario.               Alta
+Experiencia de campo / foros               Lenguaje, sintomas, errores frecuentes y preguntas reales.       Baja-media
+Fuentes comerciales                         Solo contexto tecnico si citan base verificable; no dosis sola. Baja-media
+
+Regla de producto:
+Cuando las fuentes difieren, BIO-G debe elegir por sistema, suelo, etapa y confianza. Sin laboratorio ni contexto local, debe usar criterio conservador. Es mejor decir "falta dato para afinar" que fingir precision.
+
+======================================================================
+4. HALLAZGOS TECNICOS FIRMES
+======================================================================
+
+1. El ajo se propaga vegetativamente por diente. El tamano, sanidad y calidad del diente-semilla condicionan vigor, emergencia, poblacion, calibre y rendimiento. No todo se corrige con fertilizante.
+
+2. El ajo necesita formar suficiente hoja y raiz antes de la fase de bulbo. Cuando comienza la bulbificacion, la iniciacion de nuevas hojas pierde protagonismo; el potencial ya depende de la fabrica foliar existente, sanidad, agua y temperatura.
+
+3. La vernalizacion/frio fisiologico es una ancla critica. Sin frio suficiente o con material mal adaptado, puede haber mala diferenciacion de dientes, bulbo chico, deformidad o retraso. Fertilizar mas no corrige esta causa.
+
+4. La demanda de N es real, pero no ilimitada. Fuentes de extension reportan demandas moderadas-altas y recomendaciones de N temprano; ensayos de Cornell en hardneck no encontraron respuesta por encima de 50 lb/A de N aplicado en primavera en condiciones con creditos de materia organica/manure. Estudios mexicanos bajo goteo encontraron respuesta a dosis mayores, con maximo cercano a 180 kg N/ha en un contexto especifico. Por eso BIO-G no debe usar una sola dosis universal.
+
+5. La respuesta a N depende de creditos de suelo: materia organica, nitratos residuales, fertilizacion organica, cultivo anterior, agua de riego y mineralizacion. El N aplicado no es igual al N absorbido.
+
+6. El P y K deben basarse en analisis de suelo. P es clave para raiz temprana, pero si el suelo ya esta alto, aplicar mas puede ser desperdicio y riesgo ambiental. K ayuda al llenado y calidad, pero puede agravar sales si se aplica sin necesidad.
+
+7. Ajo es sensible a mal drenaje y compactacion. Suelo suelto, friable y con buena estructura permite expansion del bulbo; suelo pesado/compactado genera bulbos deformes y absorcion deficiente aunque haya nutrientes.
+
+8. El ajo requiere humedad pareja. Deficit en diferenciacion/llenado reduce calibre y puede causar dientes chicos/deformes; exceso de agua favorece pudriciones, anoxia, manchas y mala conservacion.
+
+9. La salinidad es un limite importante. Algunas referencias ubican umbral de ajo alrededor de 3.9 dS/m, menos sensible que cebolla; aun asi, en BIO-G debe alertarse antes, especialmente en establecimiento, calor, suelos ligeros, fertirriego y llenado.
+
+10. La fertilizacion tardia no arregla la maduracion. Cerca de cosecha el objetivo cambia: dejar de empujar crecimiento, proteger tunicas, cuello/tallo, curado, sanidad y almacenamiento.
+
+11. El azufre no debe ignorarse porque ajo es Allium y su calidad organoleptica depende de compuestos azufrados; pero BIO-G v1 no debe convertir S en receta activa sin analisis.
+
+12. El manejo organico/composta ayuda estructura y nutricion, pero puede liberar N tarde, subir P/K/sales, introducir maleza o alterar sanidad si no esta bien compostado. BIO-G debe registrar historial organico y bajar confianza de dosis si no hay analisis.
+
+13. El diente-semilla alimenta los primeros dias/primeras fases. Por eso la absorcion inicial de nutrientes externos es reducida, pero el suelo debe quedar preparado con P/K/base adecuados para cuando se agoten reservas y la raiz empiece a demandar.
+
+14. La absorcion de nutrientes es constante pero no uniforme durante el ciclo. Cambia por etapa: baja en arranque por reservas del diente, alta en desarrollo foliar para N/K, transicional en iniciacion de bulbo y enfocada en K/Ca/Mg/S/calidad durante llenado.
+
+15. La nutricion mineral modifica la sanidad. Exceso o deficiencia no solo afecta rendimiento; tambien cambia susceptibilidad a plagas, enfermedades y desordenes fisiologicos. BIO-G debe cruzar nutricion con Plant Health para no diagnosticar por separado lo que en campo ocurre junto.
+
+16. El escobeteado/ramaleo/canutos no debe tratarse como simple rareza visual. Es una alerta de manejo y fisiologia: puede asociarse a exceso de vigor, N alto/tardio, siembra temprana, baja densidad, riego cercano a cosecha o transicion mal manejada hacia bulbo/maduracion.
+
+======================================================================
+5. REGLAS MAESTRAS PARA EL MOTOR BIO-G
+======================================================================
+
+Regla                                    Decision de producto
+
+Vernalizacion manda                       Si hay riesgo de frio insuficiente, no recomendar NPK para corregir mala diferenciacion. Alertar como riesgo fisiologico.
+Diente-semilla primero                    Si el material es chico, dañado, enfermo o no adaptado, bajar confianza de respuesta a fertilizante.
+Suelo primero                             pH, textura, drenaje, CE, P, K, N residual, sodio/boro, MO y compactacion definen el programa.
+Agua antes que fertilizante               No interpretar deficiencia sin humedad estable. Suelo seco/saturado puede parecer falta de nutriente.
+N temprano con limite                     Usar N para hoja/raiz temprano; reducir antes de bulbificacion fuerte y bloquear N tardio.
+P por laboratorio                         P en arranque/raiz; no aplicar alto si suelo suficiente.
+K por laboratorio y etapa                 K pesa mas en llenado/calidad; vigilar CE antes de subirlo.
+S como balance Allium                     S es importante en ajo, pero v1 debe manejarlo como observacion/balance, salvo analisis o modo Pro.
+Salinidad bloquea decisiones              Si CE alta, no subir fertilizante como primera respuesta.
+Maduracion cambia el objetivo             Cerca de cosecha no se empuja crecimiento: se protege curado, tunicas, cuello/tallo y sanidad.
+Perfil UX ajusta, no reinventa             AG-01..AG-05 ajustan ciclo, frio, vigor, sensibilidad y mensajes; no son cultivos separados.
+AG-GEN protege                            Si faltan datos, usar rangos conservadores, baja confianza y pedir suelo/agua/etapa.
+Sin hidroponia v1                         Sistemas sin suelo quedan fuera o modo futuro.
+
+======================================================================
+6. INFORMACION MINIMA ANTES DE RECOMENDAR
+======================================================================
+
+Para una recomendacion confiable, BIO-G deberia capturar o inferir:
+
+- Perfil BIO-G: AG-GEN, AG-01, AG-02, AG-03, AG-04, AG-05.
+- Tipo de ajo: blanco/perla, jaspeado/calera, morado, criollo/regional, chino/coreano, otro/no se.
+- Variedad o alias si existe.
+- Procedencia del diente-semilla: local, comprado, propio, importado, desconocido.
+- Tamano/calibre del diente-semilla.
+- Estado sanitario del diente: sano, manchado, blando, con moho, con acaros, desconocido.
+- Fecha de plantacion.
+- Etapa actual: plantacion, emergencia, vegetativo, vernalizacion/induccion, diferenciacion/engrosamiento, maduracion, cosecha, curado.
+- Exposicion a frio/vernalizacion probable, si el sistema puede estimarla.
+- Sistema: campo abierto, goteo, surco, aspersion, huerto, desconocido.
+- Textura: arenoso, franco, arcilloso, pesado, desconocido.
+- Drenaje y compactacion.
+- pH.
+- CE/salinidad del suelo o agua.
+- Nitrato-N residual o historial de fertilizacion/cultivo anterior.
+- P disponible y K intercambiable por laboratorio.
+- Calcio, magnesio, azufre, boro, zinc si existen.
+- Metodo de riego e historial de humedad.
+- Lluvias recientes o riegos fuertes.
+- Estado visual: color de hojas, puntas amarillas, vigor, numero aproximado de hojas, inicio de cabeza, dientes visibles, scape/espigado, pudricion basal, raices, manchas, trips/acaros.
+- Distancia a cosecha o avance de maduracion.
+- Destino: fresco, seco/almacenamiento, semilla, proceso, desconocido.
+
+Si faltan datos:
+- Usar AG-GEN conservador.
+- No entregar dosis cerrada.
+- Priorizar mensajes de suelo/agua/etapa/vernalizacion.
+- Bajar confidence.
+
+======================================================================
+7. REFERENCIAS TECNICAS DE DOSIS - NO RECETA UNIVERSAL
+======================================================================
+
+Conversiones utiles:
+- 1 lb/acre = 1.12085 kg/ha.
+- 1 kg/ha = 0.1 g/m2.
+- kg/ha de nutriente x 0.1 = gramos de nutriente por m2.
+- gramos de producto = gramos de nutriente / fraccion del nutriente en el producto.
+- P elemental a P2O5: P x 2.29 = P2O5.
+- P2O5 a P elemental: P2O5 x 0.436 = P.
+- K elemental a K2O: K x 1.205 = K2O.
+- K2O a K elemental: K2O x 0.83 = K.
+
+Importante:
+Los rangos siguientes son referencias para construir el motor. No son receta universal. BIO-G debe ajustar por analisis de suelo, agua, tejido, tipo de ajo, etapa, rendimiento esperado, sistema de riego, clima y material.
+
+La guia debe manejar dos capas:
+1. Capa BIO-G segura: rangos conservadores cuando faltan datos.
+2. Capa tecnica alta confianza: ajustes por analisis de suelo/agua/tejido, fertirriego, rendimiento objetivo y etapa.
+
+7.1 Nitrogeno total estacional orientativo
+
+El N construye hoja y vigor temprano. En ajo, hoja temprana fuerte aumenta potencial de bulbo, pero N tardio o excesivo puede retrasar bulbo/madurez, dejar tejidos suculentos y bajar conservacion.
+
+Sistema / destino                         Rango referencia N             Conversion kg/ha N        Lectura BIO-G
+
+AG-GEN bulbo generico                      70-120 lb/A                    78-135 kg/ha              Conservador si no hay laboratorio; no buscar maximo rendimiento.
+Guia conservadora tipo hardneck            50-105 lb/A adicional/estacional 56-118 kg/ha             Valido si hay MO/composta/cultivo anterior y suelo con buen credito.
+Produccion comercial extension             100-150 lb/A                   112-168 kg/ha             Rango comun en guias de produccion con buen manejo.
+Produccion comercial alta                   150-175 lb/A                   168-196 kg/ha             Solo con analisis, bajo credito de suelo y respuesta esperada.
+Rango Universidad de Sonora / Zamora         120-240 kg/ha                  120-240 kg/ha             Referencia regional Mexico/Sonora; depende de suelo, cultivo anterior, fertilizante y densidad.
+Rango amplio Wikifarmer                      60-300 kg/ha                   60-300 kg/ha              Rango muy amplio; BIO-G no debe usarlo como receta, solo como techo/piso de referencia.
+Ensayo Sonora goteo Tocumbo                 180 kg/ha como maximo reportado 180 kg/ha                Referencia regional especifica; no default universal.
+Fertirriego intensivo Zacatecas/Bravo        250 kg/ha N                    250 kg/ha                 Solo sistema intensivo, analisis, goteo, alto rendimiento y control CE.
+Suelo con N residual/organicos altos        reducir 20-80 lb/A             reducir 22-90 kg/ha       Por MO, compost, manure, cultivo anterior, agua con nitratos o PSNT alto.
+Cerca de maduracion                         0                              0                         No empujar N.
+
+Lectura importante:
+- Cornell reporto que en sus ensayos de ajo hardneck en Nueva York no hubo respuesta entre 50, 100 y 150 lb/A de N aplicado en primavera, y que 50 lb/A fue suficiente bajo sus condiciones, con creditos organicos/cobertura en algunos sitios.
+- MSU recomienda limitar N preplant a 25 lb/A y aplicar 40 lb/A en marzo/abril y otros 40 lb/A alrededor de mayo 1 en su contexto.
+- UGA recomienda 1/4 a 1/3 del N antes de plantar y el resto en primavera, evitando N despues de la primera semana de abril en su calendario.
+- En Sonora bajo goteo, el rendimiento mas alto reportado fue con 180 kg N/ha; esto muestra que en sistemas especificos de riego y clima puede haber respuesta mayor, pero no convierte 180 kg/ha en regla universal.
+- Referencias mexicanas de fertirriego intensivo pueden llegar a 250 kg N/ha, pero BIO-G debe activarlas solo como capa intensiva con analisis, no como default.
+
+Estrategia de fraccionamiento N:
+- Aplicar una fraccion baja-moderada al establecimiento/pre-siembra/plantacion cuando el analisis lo justifique.
+- En regiones con invierno frio, no cargar N soluble alto en otoño si el cultivo no lo usara y hay riesgo de lixiviacion.
+- Reforzar N en primavera o vegetativo activo, cuando la planta retoma crecimiento y antes de bulbo.
+- Hacer 2-4 aplicaciones fraccionadas segun sistema, textura, riego y etapa.
+- En surco/gravedad tradicional, una pauta regional es aplicar la mitad o una tercera parte del N al sembrar/primer riego de auxilio y el resto 50-60 dias despues.
+- En doble hilera con gravedad, una pauta tipo Reveles-Hernandez es aplicar todo el P, mitad del N y mitad del K al sembrar o despues de nascencia, y el resto de N/K 60 dias despues, nunca despues de iniciada la formacion de bulbos.
+- En goteo/fertirriego, usar dosis pequenas frecuentes: una base baja y 7-8 fracciones o aplicaciones semanales/quincenales segun etapa, CE y analisis; no copiar una dosis de gravedad como si fuera solucion nutritiva.
+- Detener N alto cuando inicia la diferenciacion/engrosamiento claro del bulbo o cuando scape/espigado indica transicion en hardneck.
+- No aplicar N fuerte en maduracion, tops-down, curado o cuando falta poco para cosecha.
+
+Deficiencia N:
+- Amarillamiento en hojas viejas/puntas.
+- Poco vigor.
+- Plantas chicas antes de bulbificacion.
+- Menor area foliar y menor potencial de bulbo.
+- Puede confundirse con frio, raiz pobre, salinidad, anoxia, acaros/trips, enfermedad foliar o falta de agua.
+
+Exceso N:
+- Mucha hoja verde tardia.
+- Retraso de bulbificacion/madurez.
+- Tejido suculento.
+- Mayor riesgo de pudriciones/curado deficiente.
+- Posible calidad de almacenamiento menor.
+- Escobeteado, ramaleo, canutos/chiflotes o dientes descubiertos si coincide con exceso de vigor, baja densidad, siembra temprana o riego tardio.
+- En hardneck, no confundir scape normal con necesidad de N.
+
+Regla de seguridad BIO-G:
+Si el motor detecta diferenciacion/engrosamiento avanzado, scape visible, maduracion, tops-down, curado, cuello/tallo verde tardio o humedad alta, bloquear recomendaciones de N fuerte y cambiar el lenguaje a calidad/maduracion.
+
+7.2 Fosforo P / P2O5 orientativo por analisis de suelo
+
+El P es esencial para raiz y arranque. En ajo se aplica preferentemente antes o al momento de plantacion, cerca de la zona radicular, sin quemar dientes. El P es poco movil; en suelos frios, alcalinos, calcareos o compactados puede estar presente pero poco disponible.
+
+Reglas:
+- Aplicar P con base en analisis.
+- Aplicar todo o la mayor parte del P antes de plantacion o al establecimiento.
+- Evitar exceso de P si el suelo ya esta alto.
+- Guardar metodo de laboratorio: Olsen, Bray, Mehlich u otro.
+- No interpretar una planta chica como falta de P sin revisar frio, raiz, humedad, salinidad, diente-semilla y compactacion.
+
+SoilBucketP / P disponible                  P2O5 referencia              Conversion kg/ha P2O5      Lectura BIO-G
+
+Muy deficiente / low                         100-200 lb/A                 112-224 kg/ha              Arranque/raiz; ajustar por metodo y colocacion.
+Medium / intermedio                          60-150 lb/A                  67-168 kg/ha               Moderado; no exagerar si pH/raiz estan bien.
+High                                         0-80 lb/A                    0-90 kg/ha                 Mantenimiento/arranque si se justifica.
+VeryHigh / overload                          0                            0                          No aplicar por costumbre.
+Produccion comercial referencia              150 lb/A P2O5                168 kg/ha P2O5              Referencia alta de guias comerciales, no default sin analisis.
+Rango Universidad de Sonora / Zamora         60-80 kg/ha P                137-183 kg/ha P2O5          Si la fuente expresa P elemental; validar metodo/localidad.
+Fertirriego intensivo Mexico                 75-100 kg/ha P               172-229 kg/ha P2O5          Solo si fuente expresa P elemental y sistema lo justifica.
+Unknown                                      modo conservador             pedir analisis              Mensaje: P se decide por suelo.
+
+Mensaje BIO-G:
+"El fosforo ayuda al arranque y raiz del ajo, pero debe decidirse por analisis y colocacion. Si el suelo esta frio, alcalino o compactado, puede parecer falta de P aunque haya fertilizante."
+
+7.3 Potasio K / K2O orientativo por analisis de suelo
+
+El K regula agua, turgencia, transferencia de energia, llenado de bulbo, firmeza y calidad. En ajo pesa desde desarrollo vegetativo fuerte hasta llenado. El riesgo es que muchas fuentes de K suben CE; no se debe subir K si la salinidad ya esta en alerta.
+
+SoilBucketK / K disponible                  K2O referencia              Conversion kg/ha K2O       Lectura BIO-G
+
+Muy deficiente / low                         100-200 lb/A                112-224 kg/ha              K clave para agua, bulbo y firmeza; vigilar CE.
+Medium / intermedio                          60-150 lb/A                 67-168 kg/ha               Fraccionar si suelo arenoso/lixiviacion.
+High                                         0-100 lb/A                  0-112 kg/ha                Mantenimiento; evitar subir sales.
+VeryHigh / overload                          0                            0                         No aplicar por costumbre.
+Produccion comercial referencia              100-150 lb/A K2O             112-168 kg/ha              Rango comun de extension/comercial, por analisis.
+Rango amplio Wikifarmer                      80-300 kg/ha K2O             80-300 kg/ha               Rango amplio; no usar como receta sin suelo/CE.
+Fertirriego intensivo Mexico/Bravo           265 kg/ha K                  319 kg/ha K2O              Capa intensiva, no default universal.
+Unknown                                      modo conservador             pedir analisis              Mensaje: K se decide por suelo + CE.
+
+Estrategia de aplicacion K:
+- Si el suelo esta bajo, aplicar parte antes de plantacion y parte antes/durante llenado, segun sistema.
+- En suelos arenosos o goteo frecuente, fraccionar para reducir perdida y sales puntuales.
+- Evitar KCl cerca del diente o raiz joven si hay riesgo de salinidad/cloruros; preferir lectura por CE y fuente.
+- Si K alto y Mg/Ca bajo, vigilar antagonismos.
+
+Sintomas de deficiencia K:
+- Puntas y bordes de hojas viejas con quemado/margen seco.
+- Menor turgencia.
+- Bulbos chicos o pobre llenado.
+- Puede confundirse con salinidad, sequia o raiz limitada.
+
+Mensaje BIO-G:
+"El potasio ayuda al llenado y firmeza de la cabeza, pero si la CE esta alta puede empeorar el estres. Primero revisa salinidad y humedad."
+
+7.4 Calcio Ca - calidad, estructura y lectura indirecta
+
+El Ca participa en paredes celulares, crecimiento de tejidos y calidad. En ajo se interpreta principalmente desde pH, suelo, agua, raiz y manejo de humedad.
+
+Reglas:
+- Si pH es bajo y Ca bajo, corregir pH con cal calcitica/dolomitica segun analisis.
+- Si pH es correcto pero hay problemas de tejido, revisar agua, raiz, salinidad y sanidad antes de recomendar Ca.
+- En fertirriego intensivo, Ca puede ser parte del programa, pero no debe recomendarse sin analisis de agua/suelo y compatibilidad de mezclas.
+- No mezclar fuentes incompatibles en fertirriego sin criterio tecnico; riesgo de precipitados.
+
+Sintomas/lectura:
+- Clavos/blandos o tejidos acuosos pueden venir de sanidad, exceso de humedad, cosecha/curado y no solo Ca.
+- Ca deficiente real es menos comun que problemas de absorcion por raiz, pH o humedad.
+
+Referencias de dosis:
+- En programas amplios se citan hasta 30 kg Ca/ha como complemento cuando el analisis lo requiere.
+- En formula intensiva de fertirriego de referencia Mexico/Zacatecas puede aparecer 120 kg Ca/ha; activar solo como capa tecnica con analisis, agua, pH, CE y compatibilidad de mezcla.
+
+BIO-G v1:
+Ca queda como observacion tecnica y balance; no motor activo central de dosis, salvo si hay analisis o modo Pro.
+
+7.5 Magnesio Mg - clorofila y fotosintesis
+
+Mg es parte central de la clorofila. En ajo, una hoja funcional sostiene el llenado de la cabeza.
+
+Reglas:
+- Si Mg de suelo es bajo, puede aplicarse en base o correctivo moderado.
+- Si pH bajo + Mg bajo, cal dolomitica puede ser mejor estrategia.
+- Si K esta muy alto, vigilar antagonismo K-Mg.
+- No recomendar Mg por rutina sin analisis.
+
+Referencias de dosis:
+- Algunas guias generales citan hasta 60 kg Mg/ha si el suelo/agua/tejido lo justifican.
+- En pH bajo con Mg bajo, preferir correccion de base con cal dolomitica cuando aplique, no foliares improvisados.
+
+BIO-G v1:
+Mg queda como observacion tecnica/alerta de balance, no como motor principal de dosis salvo que exista analisis.
+
+7.6 Azufre S - importante en Allium, calidad y aroma
+
+El S participa en compuestos caracteristicos de ajo. La calidad sensorial del ajo esta relacionada con compuestos organoazufrados. Esto no significa que aplicar S siempre suba rendimiento.
+
+Condicion                                  S referencia                  Conversion kg/ha S         Lectura BIO-G
+
+Programa general de hortalizas              20-40 lb/A                    22-45 kg/ha                Aplicar temprano si suelo/agua lo justifican.
+Fertirriego/ensayos con N+S                  16-32 kg/ha S                 16-32 kg/ha                Referencia experimental, no receta universal.
+Suelo/agua bajos en sulfato                  20-45 kg/ha                   segun analisis             Confirmar con suelo/agua.
+Sulfato suficiente en suelo/agua             0 adicional                   0                          No agregar por costumbre.
+BIO-G v1                                    observacion                    no motor activo             S queda para texto tecnico/futuro Pro.
+
+Estrategia:
+- Aplicar temprano o antes de llenado, no tarde sin necesidad.
+- Contabilizar S aportado por sulfato de amonio, sulfato de potasio, yeso, Sul-Po-Mag, compost y agua.
+- Vigilar CE: algunas fuentes aportan sales.
+
+Mensaje BIO-G:
+"El azufre es parte importante de la calidad del ajo, pero no debe aplicarse a ciegas. Conviene revisarlo con suelo/agua y cuidar salinidad."
+
+7.7 Boro B, Zinc Zn y otros micronutrientes
+
+Boro:
+- Margen estrecho entre deficiencia y toxicidad.
+- No aplicar sin analisis.
+- Si agua/suelo tienen boro alto, bloquear B.
+
+Zinc:
+- Puede limitarse en suelos calcareos/pH alto.
+- Aplicar solo con analisis de suelo/tejido.
+- En suelos alcalinos, baja disponibilidad puede parecer crecimiento lento general.
+- Algunas guias comerciales mencionan sulfato de zinc foliar cercano a 4 g/L; BIO-G v1 NO debe mostrarlo como receta automatica, solo como referencia tecnica si hay modo Pro y asesor local.
+
+Hierro/Manganeso/Cobre:
+- Interpretar por pH, suelo y tejido.
+- No aplicar por rutina.
+
+BIO-G:
+- Guardar micronutrientStatus: unknown / low / sufficient / high.
+- Si unknown, no recomendar B/Zn; solo sugerir analisis.
+- Si waterBoronRisk == high, bloquear B y revisar toxicidad.
+
+7.8 Extraccion nutrimental y formula de dosis N
+
+El ajo puede extraer cantidades relevantes de N y K, pero la extraccion no equivale a dosis de fertilizante. La dosis depende de rendimiento objetivo, suelo, MO, nitratos, agua, eficiencia, clima, variedad y sistema.
+
+Extraccion nutrimental orientativa para 10 t/ha de ajo, Burba (1992):
+
+Nutriente              Extraccion kg/ha para 10 t/ha       Lectura BIO-G
+N                      100-250                              Demanda alta; motor por etapa y creditos de suelo.
+K                      70-170                               Demanda alta; clave para agua, llenado y firmeza.
+S                      20-60                                Significativo en Allium; calidad/aroma, no receta ciega.
+P                      15-50                                Menor que N/K; esencial en raiz, por analisis.
+Ca                     15-30                                Menor que N/K; interpretar por pH, agua, raiz y calidad.
+Mg                     5-15                                 Menor que N/K; clorofila/fotosintesis, balance K-Mg.
+
+Lectura de producto:
+- Esta tabla sirve para entender demanda y balance, no para aplicar fertilizante directo.
+- Si la meta de rendimiento cambia, la extraccion cambia; si el suelo ya aporta nutrientes, la dosis baja.
+- BIO-G debe separar extraccion, requerimiento, dosis recomendada y conversion a producto.
+- N y K son los ejes cuantitativos principales; S es mas importante de lo que suele parecer en un Allium; P/Ca/Mg no se ignoran, pero se deciden por suelo, pH, agua y etapa.
+
+Formula conceptual para N:
+DN = ((MR x Ne) - (Nm + Ni + Nr + No + Naw) x EfCredito) / EfFert
+
+Donde:
+- DN = dosis de N a aplicar, kg/ha.
+- MR = meta de rendimiento, t/ha.
+- Ne = N requerido/extraido por tonelada de ajo, kg/t.
+- Nm = N mineralizado por materia organica, kg/ha.
+- Ni = N inorganico/nitrato en suelo, kg/ha.
+- Nr = aporte o inmovilizacion por residuo/cultivo anterior, kg/ha.
+- No = aporte de enmiendas organicas, kg/ha.
+- Naw = aporte de nitratos en agua de riego, kg/ha.
+- EfCredito = factor de disponibilidad de creditos.
+- EfFert = eficiencia esperada del fertilizante, segun sistema.
+
+Uso BIO-G:
+Este calculo puede servir para una calculadora futura Pro. En v1, no mostrar como receta directa; usarlo para explicar que el N no depende solo de una tabla.
+
+======================================================================
+8. CONVERSION A GRAMOS POR M2 Y "CADA CUANTO"
+======================================================================
+
+Esta seccion es para que BIO-G pueda traducir a escala pequena o calculadoras, pero NO debe mostrarse como receta universal sin advertencia.
+
+8.1 Formula general
+
+1. Definir nutriente objetivo:
+   Ejemplo: 100 kg/ha de N = 10 g de N por m2.
+
+2. Convertir a producto:
+   Producto necesario (g/m2) = nutriente objetivo (g/m2) / porcentaje del nutriente en decimal.
+
+Ejemplos:
+- Urea 46-0-0: 10 g N/m2 / 0.46 = 21.7 g de urea/m2.
+- Nitrato de calcio 15.5-0-0: 10 g N/m2 / 0.155 = 64.5 g de producto/m2.
+- Sulfato de amonio 21-0-0 + S: 10 g N/m2 / 0.21 = 47.6 g de producto/m2.
+- MAP 11-52-0: 10 g P2O5/m2 / 0.52 = 19.2 g de producto/m2 y aporta 2.1 g N/m2.
+- DAP 18-46-0: 10 g P2O5/m2 / 0.46 = 21.7 g de producto/m2 y aporta 3.9 g N/m2.
+- Sulfato de potasio 0-0-50: 10 g K2O/m2 / 0.50 = 20 g de producto/m2.
+- Cloruro de potasio 0-0-60: 10 g K2O/m2 / 0.60 = 16.7 g de producto/m2, pero en ajo se debe tener cuidado con cloruro/salinidad.
+
+8.2 Reglas de fraccionamiento para producto
+
+Contexto comercial:
+- No aplicar todo el N al inicio.
+- Evitar N soluble alto en otoño/invierno si el cultivo no lo absorbera y existe riesgo de lixiviacion.
+- Fraccionar N en establecimiento/vegetativo activo/pre-bulbo, segun region.
+- P normalmente va antes o cerca de la plantacion, segun laboratorio.
+- K puede ir en base y/o fraccionado antes/durante llenado si suelo y CE lo permiten.
+- Detener N alto cuando el bulbo empieza a diferenciar/engrosar claramente o cuando el sistema marca ventana de maduracion.
+- No aplicar fertilizante seco concentrado en contacto directo con diente-semilla o raiz joven.
+
+Contexto huerto/pequena escala:
+- El sistema puede traducir a "gramos por m2", pero debe advertir: "Esto es conversion de nutriente, no receta cerrada."
+- Para N, dividir la cantidad total en 2-4 aplicaciones pequenas desde emergencia/rebrote hasta antes de bulbificacion fuerte.
+- Si el usuario pide "cada cuanto", una pauta segura de app es cada 2-4 semanas en crecimiento activo, no durante plantacion fria ni maduracion.
+- Si los bulbos ya empiezan a engrosar o faltan pocas semanas para cosecha, no seguir empujando N.
+- Si hay sales, puntas quemadas, planta muy blanda, exceso de humedad o pudricion, no agregar mas N/K.
+
+8.3 Ejemplos de conversion a gramos de producto
+
+Ejemplo A: AG-GEN conservador 100 kg N/ha
+- 100 kg N/ha = 10 g N/m2 por temporada.
+- Dividir en 3 aplicaciones = 3.33 g N/m2 por aplicacion.
+- En urea: 3.33 / 0.46 = 7.2 g urea/m2 por aplicacion.
+- En sulfato de amonio: 3.33 / 0.21 = 15.9 g producto/m2 por aplicacion; considerar S y CE.
+- No aplicar la ultima si el ajo ya esta en bulbo avanzado o maduracion.
+
+Ejemplo B: Produccion comercial 150 kg N/ha
+- 150 kg N/ha = 15 g N/m2 por temporada.
+- 25% preplant = 37.5 kg N/ha = 3.75 g N/m2.
+- 75% restante = 112.5 kg N/ha = 11.25 g N/m2.
+- Si se divide en 3 aplicaciones: 37.5 kg N/ha por aplicacion = 3.75 g N/m2.
+- En urea: 3.75 / 0.46 = 8.2 g urea/m2 por aplicacion.
+- En nitrato de calcio: 3.75 / 0.155 = 24.2 g producto/m2 por aplicacion.
+
+Ejemplo C: Fertirriego intensivo 250 kg N/ha
+- 250 kg N/ha = 25 g N/m2 por temporada.
+- Esta capa NO se debe mostrar a usuario generico.
+- Solo activar con sistema de goteo, analisis, rendimiento objetivo alto, CE controlada y contexto regional.
+- Debe restar N de agua, suelo, compost, fuentes fosfatadas y nitrato de potasio/calcio.
+
+Ejemplo D: K2O 150 kg/ha
+- 150 kg K2O/ha = 15 g K2O/m2.
+- En sulfato de potasio 0-0-50: 15 / 0.50 = 30 g producto/m2 por temporada.
+- Si se divide en base + llenado, no aplicar si CE esta alta.
+
+Ejemplo E: S 30 kg/ha
+- 30 kg S/ha = 3 g S/m2.
+- En sulfato de amonio 24% S aprox.: 3 / 0.24 = 12.5 g producto/m2 equivalente de S, pero tambien aporta N.
+- Contabilizar N y CE.
+
+Mensaje BIO-G sugerido:
+"Esta es una conversion de referencia. En ajo, conviene dividir el nitrogeno y dejar de empujar cuando la cabeza ya empieza a formarse. Si no tenemos analisis de suelo, usaremos modo conservador."
+
+======================================================================
+9. TIMING OPERATIVO POR ETAPA
+======================================================================
+
+9.1 Antes de plantacion
+
+Que revisar:
+- pH, CE, textura, drenaje, compactacion, P, K, N residual, sodio/boro si hay agua de riego.
+- Historial: ajo/cebolla/allium reciente, cultivo fertilizado, leguminosa, estiercol, compost, sales.
+- Calidad y tamano del diente-semilla.
+- Adaptacion del perfil a frio/region/fecha.
+
+Que hacer:
+- Corregir pH con tiempo si esta bajo.
+- Aplicar P/K segun analisis.
+- Aplicar N base bajo-moderado si el suelo lo requiere.
+- Evitar sales en contacto con diente.
+- No usar estiercol fresco ni compost salino justo antes de plantacion.
+
+Mensaje BIO-G:
+"Antes de fertilizar fuerte, conviene saber pH, CE, P y K. En ajo, el diente-semilla y el suelo suelto pesan tanto como la dosis."
+
+9.2 Plantacion del diente
+
+Prioridad real:
+- Diente sano y grande.
+- Suelo suelto y bien drenado.
+- Humedad suficiente, no charcos.
+- Baja salinidad cerca del diente.
+- Raiz inicial sin quemadura por fertilizante.
+
+N:
+- Bajo-moderado.
+- No aplicar fuerte pegado al diente.
+
+P:
+- Medio-alto si suelo bajo/frio, definido por laboratorio.
+
+K:
+- Medio si suelo bajo; cuidado CE.
+
+Mensaje BIO-G:
+"Aqui todavia no manda empujar con nitrogeno. Manda que el diente enraice bien, sin sales, compactacion ni exceso de agua."
+
+9.3 Emergencia / establecimiento
+
+Prioridad:
+- Raiz funcional.
+- Stand uniforme.
+- Sin anoxia.
+- Sin sales.
+- P disponible si suelo frio o raiz lenta.
+
+N:
+- Bajo-medio.
+- Evitar sobrefertilizar planta joven.
+
+P:
+- Alto relativo si suelo bajo, frio o alcalino.
+
+K:
+- Medio si suelo bajo; cuidado CE.
+
+Mensaje:
+"Si el ajo esta lento, no siempre es falta de nitrogeno. Revise frio, diente-semilla, salinidad, pH, raiz y humedad."
+
+9.4 Desarrollo vegetativo / hoja
+
+Prioridad:
+- Construir area foliar y raiz antes de diferenciacion.
+- Mantener vigor sin exceso de N.
+- Controlar humedad, maleza y sanidad foliar.
+
+N:
+- Medio-alto controlado.
+- Buen momento para aplicaciones fraccionadas si N bajo o vigor insuficiente.
+- Si hay N residual alto, reducir.
+
+P:
+- Ya deberia estar resuelto; no aplicar a ciegas.
+
+K:
+- Medio; preparar para bulbo si suelo bajo.
+
+S:
+- Si falta, temprano; no dejarlo tarde.
+
+Mensaje:
+"Esta etapa construye la fabrica de la cabeza. El nitrogeno ayuda, pero pasarse puede dejar mucho verde y mala maduracion."
+
+9.5 Vernalizacion / induccion fisiologica
+
+Prioridad:
+- Frio fisiologico suficiente.
+- Planta con crecimiento adecuado.
+- Agua estable.
+- No exceso de N.
+- CE controlada.
+
+N:
+- Medio, no alto.
+- Si la planta esta chica y aun hay ventana, N moderado puede ayudar si humedad/raiz/CE estan bien.
+- Si hay calor/frio insuficiente, N no corrige el problema.
+
+P:
+- No es palanca principal salvo deficiencia comprobada.
+
+K:
+- Medio.
+
+Mensaje:
+"El ajo necesita cumplir su frio fisiologico. Mas fertilizante no corrige una mala vernalizacion o material mal adaptado."
+
+9.6 Diferenciacion y engrosamiento del bulbo
+
+Prioridad:
+- Agua constante.
+- K suficiente.
+- Salinidad baja.
+- Hoja sana.
+- Reducir N progresivamente.
+
+N:
+- Medio-bajo.
+- No aplicar fuerte si ya hay buen follaje y bulbo diferenciando.
+- No aplicar tarde cerca de maduracion.
+
+P:
+- Bajo-medio segun laboratorio.
+
+K:
+- Alto relativo, siempre segun suelo y CE.
+- Si K bajo + buena humedad + CE normal: recomendacion posible.
+- Si CE alta: no subir K hasta revisar salinidad.
+
+Mensaje:
+"Ahora el ajo debe llenar cabeza, no seguir haciendo hoja a ciegas. Mantenga agua pareja y evite exceso de nitrogeno."
+
+9.7 Maduracion del bulbo
+
+Prioridad:
+- Tunicas/escamas sanas.
+- Tallo/cuello secando.
+- Evitar humedad excesiva.
+- Detener N.
+- Preparar cosecha/curado.
+
+N:
+- Bajo / cero.
+- No recomendar N.
+
+K:
+- Normalmente no corregir tarde.
+
+Agua:
+- Reducir o suspender segun suelo/clima cuando corresponda.
+- No causar estres extremo temprano si el bulbo aun no lleno.
+
+Mensaje:
+"Ya no conviene empujar crecimiento. La prioridad es madurar bien, proteger tunicas y evitar pudriciones."
+
+9.8 Cosecha / curado
+
+Fertilizacion:
+- Ninguna.
+- Registrar causa de cierre.
+- Cuidar dano mecanico, sol excesivo, humedad, ventilacion y curado.
+
+Mensaje:
+"En curado ya no se corrige con fertilizante. Lo importante es secar y conservar la cabeza sin pudricion ni quemadura."
+
+======================================================================
+10. PRIORIDAD NUTRIMENTAL RELATIVA POR ETAPA - NO DOSIS
+======================================================================
+
+Etapa BIO-G                         N                P               K              Ca/Mg/S              Lectura BIO-G
+
+Plantacion del diente                Bajo             Medio-alto      Bajo-medio     Medio                Diente sano, humedad y baja salinidad pesan mas que fertilizante fuerte.
+Emergencia / establecimiento         Medio-bajo       Alto            Medio          Medio                Raiz joven; P ayuda si suelo bajo/frio; evitar sales.
+Desarrollo vegetativo                Medio-alto       Medio           Medio          Medio                Construir hoja/raiz sin exceso de N.
+Vernalizacion / induccion            Medio            Bajo-medio      Medio          Medio                Frio fisiologico + agua + N controlado.
+Diferenciacion / engrosamiento        Bajo-medio       Bajo-medio      Alto           Medio-alto           K/agua/calidad pesan; N se reduce.
+Maduracion del bulbo                 Bajo/cero        Bajo            Medio          Bajo-medio           No empujar crecimiento; proteger tunicas y curado.
+Cosecha / curado                     Cero             Cero            Cero           Cero                 Sin fertilizacion; manejar secado/calidad.
+Espigado / scape                     Bajo             Bajo            Bajo-medio     Bajo-medio           No tratar como falla siempre; en hardneck es normal, pero retirar puede mejorar bulbo.
+
+======================================================================
+11. MODIFICADORES POR PERFIL BIO-G
+======================================================================
+
+Perfil      Tipo UX                               Ajuste nutrimental                                      Mensaje BIO-G
+
+AG-GEN      No se / otro ajo                       N conservador; P/K por laboratorio; no asume frio,       Usaremos una guia prudente porque aun no sabemos tipo, ciclo ni destino.
+                                                  calibre, hardneck/softneck ni rendimiento alto.
+AG-01       Blanco / Perla                         N temprano controlado; P raiz; K llenado; cuidar         El ajo blanco necesita buen arranque y cierre limpio; N tarde puede afectar maduracion.
+                                                  curado y sanidad.
+AG-02       Jaspeado / Calera                      Ciclo intermedio-largo; mayor cuidado con K/agua en      El jaspeado suele exigir buen frio y llenado; compactacion o deficit baja calibre.
+                                                  llenado; vigilar compactacion.
+AG-03       Morado                                 Mayor exigencia a frio; evitar calor temprano; K/agua    El morado puede castigar calidad si hay calor, humedad tardia o curado malo.
+                                                  y curado pesan.
+AG-04       Criollo / regional                     Conservador; respetar adaptacion local; no asumir        El criollo puede estar adaptado, pero la dosis debe seguir suelo, agua y etapa.
+                                                  maximo rendimiento.
+AG-05       Chino / coreano                        Vigor alto posible; N moderado-alto temprano si datos    En materiales vigorosos, no confundas mas hoja con mejor cabeza; controla N y CE.
+                                                  lo sostienen; vigilar CE y calor.
+
+======================================================================
+12. RIEGO COMO PARTE DE FERTILIZACION
+======================================================================
+
+El ajo tiene raiz relativamente superficial y requiere humedad estable. El fertilizante solo funciona si la raiz puede absorberlo. Deficit y exceso producen sintomas que se confunden con nutricion.
+
+Reglas generales:
+- Plantacion: humedad suficiente para enraizar, sin charcos.
+- Establecimiento: evitar saturacion; raiz joven necesita oxigeno.
+- Vegetativo: humedad estable para construir hoja.
+- Diferenciacion/llenado: etapa critica. Deficit baja calibre y calidad; exceso sube pudricion/anoxia.
+- Maduracion: reducir/suspender riego segun suelo/clima para permitir secado y curado.
+- No irrigar tarde cuando las hojas/tallos comienzan a secar y la cabeza ya esta madura.
+
+Criterio de programacion:
+- Mantener humedad estable en zona radicular, especialmente 0-30 cm.
+- En riegos por goteo, evitar pulsos que concentren sales en el bulbo.
+- En suelos arenosos, aplicar mas frecuente y menor lamina.
+- En suelos pesados, espaciar y vigilar anoxia.
+- No usar intervalo fijo si hay lluvia, suelo arcilloso, goteo profundo o salinidad.
+
+Riesgo si falta agua:
+- Menor tamaño de cabeza.
+- Dientes chicos.
+- Deformidad o diferenciacion irregular.
+- Mayor pungencia/estres.
+- Witches-brooming o brotacion anormal asociada a estres en algunas referencias.
+
+Riesgo si sobra agua:
+- Anoxia.
+- Pudricion basal.
+- White rot/Botrytis/bacterias favorecidas por humedad.
+- Mala maduracion.
+- Tunicas manchadas o mal curado.
+
+Salida farmer-friendly:
+"Antes de subir fertilizante, revise si la humedad esta pareja. El ajo no aprovecha nutrientes si la raiz esta seca, saturada o limitada por compactacion."
+
+======================================================================
+13. SALINIDAD, CE, SODIO Y BORO
+======================================================================
+
+El ajo tolera mas salinidad que cebolla en algunas tablas, pero sigue siendo sensible a sales durante establecimiento, calor, fertirriego, suelos arenosos y llenado de bulbo. Muchos fertilizantes aumentan conductividad electrica.
+
+Rangos operativos BIO-G para ECe / salinidad del suelo:
+- Optimo conservador: <1.8 dS/m.
+- Observacion: 1.8-2.5 dS/m.
+- Alerta: 2.5-3.9 dS/m, especialmente en establecimiento o llenado.
+- Critico: 3.9-6.0 dS/m si hay sintomas o etapa sensible.
+- Muy critico: >6.0 dS/m.
+- Perdida fuerte: alrededor de 7.4 dS/m puede acercarse a 50% de reduccion en algunas referencias.
+
+Lectura:
+- Salinidad temprana: menor enraizamiento y vigor.
+- Salinidad en llenado: baja calibre y numero/calidad de dientes.
+- Salinidad + K/N altos: riesgo de agravar el problema.
+- Sodio/boro en agua: puede causar toxicidad y no se corrige con NPK.
+
+Regla BIO-G:
+Si salinityRiskClass == alert o critical:
+- No recomendar subir fertilizante como primera respuesta.
+- Revisar agua de riego, drenaje, CE, sodio, boro y acumulacion de sales.
+- Priorizar riego/lavado si agronomicamente procede y hay drenaje.
+- Bajar confianza de cualquier diagnostico de deficiencia.
+
+Mensaje:
+"La CE esta alta. No conviene subir fertilizante sin revisar agua, drenaje y sales; el ajo puede quedar con cabeza chica o dientes mal formados."
+
+======================================================================
+14. SUELO, pH Y COMPACTACION
+======================================================================
+
+pH:
+- Operativo general BIO-G: 6.0-7.5.
+- Optimo frecuente: 6.5-7.0.
+- pH <6.0: riesgo de baja disponibilidad, menor raiz, problemas de Ca/Mg/P y menor rendimiento.
+- pH alto/calcareo: P, Zn, Fe y micronutrientes pueden estar bloqueados.
+
+Textura:
+- Franco, franco arenoso o suelo friable con buen drenaje es favorable.
+- Arenoso extremo: lixivia N/K/S y seca rapido.
+- Arcilloso pesado: drenaje y oxigeno limitantes; pudriciones; dificultad de forma de bulbo.
+
+Compactacion:
+- Resistencia >2 MPa o capa dura: raiz limitada, agua mal distribuida y bulbos pequeños/deformes.
+- No arreglar compactacion con mas fertilizante.
+- Si hay humedad suficiente pero poco crecimiento, revisar raiz y resistencia del suelo.
+
+Mensaje:
+"Si el suelo esta compactado, aunque haya fertilizante, la raiz no puede usarlo bien. Primero hay que resolver aireacion, drenaje y cama de plantacion."
+
+======================================================================
+15. ANALISIS DE TEJIDO Y VERIFICACION
+======================================================================
+
+El analisis foliar no reemplaza suelo ni agua. Sirve para verificar si el programa entra a planta y para no confundir deficiencia con raiz, salinidad, acaros/trips, enfermedad, mala humedad o vernalizacion.
+
+Muestra recomendada:
+- Usar hoja recientemente madura o tejido indicado por laboratorio.
+- Tomar muestra representativa por zona/lote.
+- No mezclar plantas sanas con plantas muy enfermas si el objetivo es diagnostico diferencial.
+- Registrar etapa, perfil, fecha, riego, CE, pH, clima, aplicaciones recientes y sintomas.
+- No muestrear justo despues de foliares, polvo, fungicidas o fertirriego que contaminen la hoja.
+
+Lectura BIO-G:
+- N suficiente temprano no significa que convenga aplicar N tarde.
+- Si N sigue alto cerca de bulbo/madurez, puede ser mala señal para maduracion aunque la hoja se vea verde.
+- Si K bajo y CE alta, no responder automaticamente con K; revisar si la planta no absorbe por estres osmotico.
+- Si P bajo y suelo es calcareo, revisar pH, colocacion del P, micorrizas, temperatura y raiz.
+- Si Zn bajo y pH alto, confirmar por suelo/tejido; no aplicar por rutina.
+
+Rangos foliares orientativos para motor v1 (requieren calibracion local):
+
+Guia Universidad de Sonora / Lorenz y Maynard citada por Zamora - hoja mas nueva y totalmente elongada:
+
+Momento de muestreo                                      PO4-P deficiente    PO4-P suficiente    K deficiente    K suficiente
+Temprano en desarrollo, antes de formacion de bulbo       2000 ppm           3000 ppm            3%              4%
+A mediados de desarrollo                                  2000 ppm           3000 ppm            2%              3%
+Tarde en temporada, despues de formacion de bulbo         2000 ppm           3000 ppm            1%              2%
+
+Lectura BIO-G:
+- La hoja a muestrear debe ser la mas nueva y totalmente elongada, o la parte indicada por el laboratorio.
+- K suficiente baja conforme avanza la temporada; no usar el mismo umbral temprano en maduracion.
+- PO4-P se mantiene como referencia, pero debe cruzarse con suelo, metodo de laboratorio, pH y raiz.
+
+Rangos generales complementarios para motor v1:
+
+Etapa temprana / vegetativo activo:
+- N: bajo <2.5%, adecuado 2.5-3.5%, alto >3.5%.
+- P: bajo <0.20%, adecuado 0.20-0.50%.
+- K: bajo <1.5%, adecuado 1.5-3.5%.
+
+Etapa bulbo / llenado:
+- N alto debe interpretarse con cuidado; no perseguir hoja verde a costa de madurez.
+- K bajo pesa mas si CE es normal y humedad estable.
+
+Nota:
+Estos rangos son orientativos para BIO-G v1 y deben quedar como baja-media confianza hasta que existan tablas locales por laboratorio, etapa y variedad.
+
+Mensaje BIO-G:
+"El analisis foliar ayuda a verificar si el nutriente entro a la planta. Pero en ajo, una lectura baja puede venir de raiz, salinidad, pH, agua o frio, no solo de falta de fertilizante."
+
+======================================================================
+16. DEFICIENCIAS, EXCESOS Y DIAGNOSTICO DIFERENCIAL
+======================================================================
+
+Problema / nutriente     Sintoma probable                          Diferenciales importantes                         Accion BIO-G
+
+N bajo                   Hojas palidas, puntas amarillas, poco vigor Frio, raiz pobre, pH, salinidad, acaros/trips, agua Revisar humedad/raiz/N residual; aplicar fraccionado si datos apoyan.
+N alto                   Hoja muy verde tarde, madurez retrasada     Variedad, fecha, exceso agua, frio insuficiente    Frenar N; vigilar maduracion y sanidad.
+P bajo                   Arranque lento, raiz debil, tonos oscuros  Suelo frio, pH alto/bajo, compactacion            P por analisis; no foliar para deficiencia fuerte.
+K bajo                   Baja turgencia, puntas/margenes secos      Deficit hidrico, salinidad, raiz limitada         Subir K solo si CE y analisis lo permiten.
+S bajo                   Bajo vigor/calidad sensorial incierta      N bajo, Mg, sanidad, frio                          En v1 observacion; confirmar suelo/agua.
+Mg bajo                  Clorosis en hojas viejas                   K alto, pH bajo, lixiviacion                      Confirmar tejido/suelo.
+Zn bajo                  Crecimiento lento, hojas pequeñas          pH alto, suelo calcareo                            Corregir solo con analisis.
+B bajo/alto              Deformacion, problemas de crecimiento      Toxicidad por agua, salinidad                      Margen estrecho; no aplicar ciego.
+Salinidad                Bajo vigor, puntas quemadas, cabeza chica  Sequía, K alto, agua mala                          Revisar CE/agua/drenaje antes de fertilizar.
+Cabeza pequena           Bajo calibre                               Frio insuficiente, diente chico, agua, salinidad   No culpar solo a NPK.
+Dientes mal diferenciados Diferenciacion irregular                  Vernalizacion, calor, estres hidrico, almacenamiento semilla No resolver con N tardio.
+Escobeteado/canutos      Dientes descubiertos, ramaleo, follaje tipo escobeta Exceso N/vigor, baja densidad, siembra temprana, riego tardio Frenar N, revisar densidad/fecha/agua y registrar para siguiente ciclo.
+Pudricion basal          Raiz/base enferma                          Exceso humedad, white rot, Fusarium, diente infectado No fertilizar; revisar sanidad/drenaje.
+Maduracion pobre         Tallo/cuello verde, curado lento           N tarde, riego tarde, cosecha inmadura, variedad   Frenar N; manejar agua y curado.
+Scape/espigado           Tallo floral en hardneck                   Normal en hardneck; estres/variedad                No tratar como etapa productiva; retirar si objetivo es bulbo.
+
+======================================================================
+17. FERTIRRIEGO Y SISTEMA DE RIEGO
+======================================================================
+
+Decision de producto:
+El fertirriego en ajo debe verse como precision, no como permiso para fertilizar mas. La ventaja es aplicar dosis pequenas, frecuentes y ajustadas a la etapa en la zona de raiz activa. El riesgo es concentrar sales, precipitar fertilizantes, tapar goteros o seguir aplicando N cuando la planta ya debe madurar.
+
+Goteo:
+- Permite fraccionar N, K, Ca, Mg y micronutrientes.
+- Reduce hoja mojada frente a aspersion.
+- Exige monitorear CE en zona de bulbo, pH/CE del agua y uniformidad de goteros.
+- No aplicar pulsos fuertes si el suelo ya esta salino.
+- En diferenciacion/llenado, mantener humedad constante.
+- Capa intensiva mexicana puede usar formulas altas, pero solo con analisis, goteo, CE controlada y rendimiento objetivo.
+
+Programa conceptual por etapa en goteo / fertirriego:
+
+Etapa BIO-G                         Enfoque nutricional                         Regla de seguridad
+Establecimiento                     N bajo, P inicial, K moderado               Arranque suave; no quemar raiz joven ni subir CE.
+Crecimiento de hoja                 N y K mas activos, Mg moderado              Construir hoja sin producir vigor excesivo.
+Iniciacion de bulbo                 Bajar N, sostener K, P, S, Zn/B si aplica   Cambiar de hoja a bulbo; no perseguir verde.
+Bulbilizacion / llenado             K alto relativo, Ca/Mg/S balanceados        CE y humedad mandan; N bajo-moderado.
+Maduracion                          N muy bajo/cero, K mantenimiento prudente   Preparar cosecha/curado; no estimular rebrote.
+
+Frecuencia orientativa por clima, no receta:
+- Clima templado: 2-3 fertirriegos/semana en establecimiento; 3-5 en crecimiento de hoja; 4-6 en iniciacion/llenado; bajar en maduracion.
+- Clima calido: mas frecuencia y menor concentracion por evento; evitar estres hidrico y acumulacion de sales.
+- Si hay lluvia, suelo pesado o humedad alta, bajar frecuencia y subir alerta de anoxia/sanidad.
+
+Formula intensiva de referencia:
+- Bravo y Echavarria / Campo Experimental Zacatecas reportan una formula de equilibrio aproximado 250 N - 100 P - 265 K - 120 Ca bajo fertirrigacion por goteo.
+- BIO-G debe tratarla como capa intensiva de referencia, NO como recomendacion default.
+- Activarla solo con: goteo funcional, analisis de suelo/agua, rendimiento objetivo alto, CE controlada, textura conocida, monitoreo de humedad y asesor local.
+
+ETc y programacion de riego/fertirriego - futuro modo Pro:
+- ETc = ETo x Kc.
+- Valores Kc orientativos citados para ajo: inicial 0.7, desarrollo 0.95, media 1.0, final 0.7.
+- El requerimiento de agua puede rondar 425 mm en condiciones de demanda plena, con reportes de picos Kc 1.3-1.4 en algunos ambientes.
+- BIO-G v1 puede guardar estos datos como referencia tecnica; no debe convertirlos en calendario fijo sin ETo local, humedad de suelo y textura.
+
+Compatibilidad de mezclas:
+- No mezclar calcio con fosfatos o sulfatos en tanques madre concentrados.
+- Separar nitrato calcico de MAP/MKP o sulfato de magnesio en soluciones concentradas; usar tanque A/B o dias distintos.
+- Fosfatos + micronutrientes no quelatados tienen riesgo de precipitado; revisar compatibilidad.
+- Medir pH y CE de la solucion final si existe modo Pro.
+- Mantener pH final orientativo de solucion entre 5.5 y 6.5 cuando el sistema lo permita y el agua lo justifique.
+- Aguas con bicarbonatos altos pueden requerir acidificacion tecnica; BIO-G no debe instruir manejo de acidos sin asesor/seguridad.
+
+Aspersion:
+- Puede favorecer humedad foliar y enfermedades.
+- Puede lixiviar N/K si hay exceso de agua.
+- Subir alertas de HR/hoja mojada en futuras guias de sanidad.
+
+Surco/gravedad:
+- Mayor variabilidad de humedad.
+- Revisar zonas secas y saturadas.
+- Riesgo de sales en hombros/camas si lavado irregular.
+- Aplicacion de fertilizante puede ser menos precisa.
+- Pauta regional: 2 epocas fuertes de fertilizacion; primera en siembra/primer riego de auxilio, segunda 50-60 dias despues.
+
+Manual/huerto:
+- Riegos profundos y parejos suelen ser mejores que mojar poquito y seguido, salvo establecimiento.
+- En maceta o cama elevada, salinidad puede subir rapido.
+- Aplicar menos, mas dividido y observar respuesta.
+
+Mensaje BIO-G:
+"En ajo fertirrigado, mas eventos no significan mas fertilizante. Significan dosis pequenas, raiz activa, CE controlada y cambio oportuno: primero hoja, luego cabeza, despues maduracion."
+
+======================================================================
+18. ESTIERCOL, COMPOSTA Y ORGANICO
+======================================================================
+
+El estiercol/composta puede mejorar estructura y aportar N/P/K/S/micronutrientes, pero en ajo debe manejarse con cuidado.
+
+Beneficios:
+- Mejora estructura del suelo.
+- Aumenta retencion de agua.
+- Favorece vida del suelo.
+- Puede aportar N gradual, P, K, S y micros.
+
+Riesgos:
+- Sales.
+- Liberacion impredecible de N.
+- Exceso de P/K acumulado.
+- N tardio.
+- Patogenos si no esta compostado.
+- Malezas.
+- Acaros/plagas o inoculo si el material no esta limpio.
+- Crecimiento blando y mala maduracion.
+
+Reglas BIO-G:
+- No usar estiercol fresco cerca de plantacion/cosecha.
+- Si hay compost/estiercol previo, reducir N inicial y subir incertidumbre.
+- Si la CE esta alta, no recomendar organicos salinos.
+- En organico, preferir fuentes estables y programas basados en analisis.
+- Registrar previousOrganicAmendment=true y organicNUncertainty=medium/high.
+
+Mensaje:
+"La composta puede ayudar al suelo, pero en ajo tambien puede subir sales o liberar nitrogeno tarde. Conviene saber CE e historial antes de recomendar mas."
+
+======================================================================
+19. LOGICA ESPECIAL DE VERNALIZACION + FERTILIZACION
+======================================================================
+
+Caso: mucha hoja, cabeza pobre o dientes mal diferenciados
+- Revisar frio/vernalizacion.
+- Revisar fecha de plantacion.
+- Revisar perfil AG-01..AG-05.
+- Revisar diente-semilla y almacenamiento previo.
+- Revisar exceso de N y agua.
+- Revisar salinidad.
+- No recomendar fertilizante para "hacer dientes" si la causa es vernalizacion o material.
+
+Caso: planta chica antes de bulbo
+- Si falta hoja por N bajo y aun hay tiempo, N moderado puede ayudar.
+- Si falta hoja por raiz pobre, salinidad, compactacion, diente chico o agua, N no resuelve.
+- Si la ventana de bulbo ya inicio, no perseguir crecimiento vegetativo excesivo.
+
+Caso: bulbo ya engrosando con N alto
+- Frenar N.
+- Revisar K/agua/CE.
+- Vigilar sanidad y maduracion.
+- Cambiar salida a calidad/curado.
+
+Caso: hardneck con scape
+- El scape puede ser normal en hardneck.
+- No interpretarlo automaticamente como falla.
+- Si el objetivo es bulbo, sugerir retiro oportuno como practica de manejo si corresponde.
+- No usar scape como razon para aplicar N.
+
+======================================================================
+20. CAMPOS SUGERIDOS PARA CODIGO
+======================================================================
+
+Campo                                  Tipo sugerido                                      Uso
+
+cropKey                                CropKey.garlic / crop_garlic                        Resolver motor de ajo.
+profileId                              AG-GEN / AG-01 / AG-02 / AG-03 / AG-04 / AG-05      Resolver perfil, ciclo y sensibilidad.
+garlicType                             whitePearl / jaspeadoCalera / purple / criollo / chinoCoreano / unknown UX visible.
+establishmentMode                      clovePlanting / unknown                             Ajo v1 usa diente; no semilla verdadera.
+seedCloveQuality                       high / medium / low / unknown                       Ajusta confianza y potencial.
+seedCloveSize                          large / medium / small / mixed / unknown            Ajusta vigor y rendimiento.
+vernalizationRisk                      low / watch / high / critical                       Riesgo de mala diferenciacion.
+bulbDifferentiationStage               preBulb / initiation / cloveDifferentiation / fill / mature / unknown Etapa para N/K.
+productionSystem                       openFieldIrrigated / drip / furrow / sprinkler / lowInput / garden / unknown Sistema.
+soilTexture                            sandy / loam / clay / heavy / unknown               Lixiviacion, agua y CE.
+pHStatus                               low / optimal / high / unknown                      Disponibilidad.
+salinityRisk                           low / watch / alert / critical                      Bloquea fertilizante.
+soilNitrateStatus                      low / medium / high / unknown                       N.
+soilPStatus                            low / medium / high / overload / unknown            P.
+soilKStatus                            low / medium / high / overload / unknown            K.
+organicAmendmentHistory                none / compost / manure / coverCrop / unknown        Creditos y riesgos.
+waterStressClass                       stable / deficit / excess / alternating / unknown   Diferencial con deficiencia.
+curingRisk                             low / medium / high / critical                      Cierre y bloqueo N.
+confidence                             high / medium / low                                  Salida transparente.
+
+======================================================================
+21. REGLAS PARA FertilizationPlanner / NutrientRecommendationEngine
+======================================================================
+
+1. Resolver etapa antes de resolver dosis.
+2. Si etapa == plantacion o establecimiento:
+   - Priorizar P/K por analisis, baja salinidad, humedad, pH y diente sano.
+   - N bajo-moderado.
+3. Si etapa == vegetativo:
+   - Permitir N fraccionado si N bajo y CE/humedad/raiz estan bien.
+   - Mantener P solo si analisis indica bajo.
+   - Preparar K si suelo bajo.
+4. Si etapa == vernalizacion/induccion:
+   - Si vernalizationRisk alto, alertar fisiologia, no recomendar NPK como solucion.
+   - N medio, no alto.
+5. Si etapa == diferenciacion/engrosamiento:
+   - Bajar N.
+   - Subir peso de K/agua/CE.
+   - No recomendar K si salinityRisk alert/critical.
+6. Si etapa == maduracion/cosecha/curado:
+   - Bloquear N fuerte.
+   - Bloquear fertilizacion correctiva tardia salvo mensaje tecnico de cierre.
+7. Si soilPStatus high/overload:
+   - Bloquear P rutinario.
+8. Si soilKStatus high/overload:
+   - Bloquear K rutinario y revisar Mg/Ca.
+9. Si organicAmendmentHistory != none:
+   - Pedir analisis y calcular creditos.
+   - Bajar recomendacion N por defecto.
+10. Si salinityRisk alert/critical:
+   - Priorizar agua/drenaje/CE.
+   - Bajar confianza de diagnostico nutrimental.
+11. Si seedCloveQuality low:
+   - No prometer respuesta a fertilizante.
+12. Si scape/espigado activo en hardneck:
+   - Cambiar mensaje a manejo de scape/calidad, no a fertilizacion.
+
+======================================================================
+22. MENSAJES BIO-G SUGERIDOS PARA UX
+======================================================================
+
+Situacion                                      Mensaje farmer-friendly
+
+AG-GEN                                         Usaremos una guia prudente porque todavia no sabemos tipo, frio requerido ni destino. Puedes afinarlo despues sin perder historial.
+N bajo temprano                                El ajo parece corto de nitrogeno en una etapa donde todavia puede construir hoja. Si humedad, raiz y CE estan bien, una aplicacion fraccionada puede ayudar.
+N tarde / bulbo avanzando                       Ya no conviene empujar tanto nitrogeno. La prioridad ahora es llenar cabeza, madurar y curar bien.
+P desconocido                                  El fosforo ayuda al arranque, pero en ajo debe decidirse por analisis. Aplicarlo por costumbre puede no servir si el suelo ya esta alto.
+K bajo con CE normal                            El potasio puede apoyar llenado y firmeza de la cabeza, siempre que la salinidad y humedad esten controladas.
+K bajo con CE alta                              Aunque el potasio sea importante, con CE alta no conviene subir sales. Primero revisa agua, drenaje y acumulacion de fertilizante.
+Frio insuficiente                               El ajo puede no diferenciar bien los dientes si no cumplio frio fisiologico. Fertilizar mas no corrige esa causa.
+Diente-semilla chico                            El material de siembra limita el potencial. El fertilizante ayuda, pero no siempre compensa un diente chico o debil.
+Exceso de humedad                               Hay demasiada humedad en raiz o base. Puede parecer falta de nutriente, pero tambien aumenta riesgo de pudricion.
+Salinidad alta                                  La salinidad puede reducir calibre y calidad de dientes. No subas fertilizante sin revisar CE, agua y drenaje.
+Maduracion                                     En esta etapa ya no se corrige con fertilizante. Hay que proteger tunicas, secado, curado y evitar pudriciones.
+Organico/composta                               La composta puede ayudar al suelo, pero tambien puede aportar N tarde, P/K o sales. Conviene revisar analisis antes de sumar mas.
+
+======================================================================
+23. LIMITES Y NO SOBRE-RECOMENDACIONES
+======================================================================
+
+- No recomendar NPK para corregir vernalizacion insuficiente.
+- No recomendar N fuerte despues de inicio claro de bulbificacion o cerca de maduracion.
+- No aplicar P/K sin analisis si el suelo puede estar alto.
+- No ignorar N de compost, manure, cultivo anterior, agua o fertilizantes mixtos.
+- No convertir fertirriego intensivo de Zacatecas en default nacional.
+- No recomendar micronutrientes sin analisis.
+- No recomendar B a ciegas.
+- No diagnosticar deficiencia nutrimental si hay salinidad alta, anoxia, pudricion basal o raiz limitada.
+- No prometer rendimiento por dosis.
+- No confundir ajo elefante con ajo verdadero.
+- No tratar scape de hardneck como falla absoluta; puede ser normal, pero afecta energia del bulbo.
+- No usar una guia de cebolla como sustituto de ajo.
+
+======================================================================
+24. FUENTES Y TRAZABILIDAD
+======================================================================
+
+S1. University of Georgia Extension. Garlic Production for the Gardener.
+Uso BIO-G: biologia, tipos, necesidad de crecimiento vegetativo antes de bulbo, riego, pH, N/P/K, evitar N tardio, cosecha y curado.
+URL: https://fieldreport.caes.uga.edu/publications/C854/garlic-production-for-the-gardener/
+
+S2. UC IPM. Cultural Tips for Growing Onions and Garlic.
+Uso BIO-G: fertilizacion por bandas, N frecuente ligero, riego, detener riego al acercarse madurez, manejo cultural.
+URL: https://ipm.ucanr.edu/home-and-landscape/cultural-tips-for-growing-onions-and-garlic/
+
+S3. Michigan State University Extension. Producing Garlic in Michigan.
+Uso BIO-G: bulbing por longitud de dia, diferencias hardneck/softneck, N preplant y primavera, riesgo de recomendaciones de cebolla demasiado altas, agua y scape removal.
+URL: https://www.canr.msu.edu/resources/producing_garlic_in_michigan
+
+S4. University of Minnesota Extension. Growing garlic in home gardens.
+Uso BIO-G: pH, N moderado-alto, evitar N despues de inicio de mayo, P alto por uso continuo de fertilizantes, agua, cosecha y curado.
+URL: https://extension.umn.edu/vegetables/growing-garlic
+
+S5. Cornell Cooperative Extension / Cornell Vegetable Program. Nitrogen Requirements in Garlic: 50 lb/A is Enough!
+Uso BIO-G: reconciliacion de dosis; ensayos sin respuesta por encima de 50 lb/A N en condiciones especificas; importancia de creditos de suelo y organicos.
+URL: https://cvp.cce.cornell.edu/submission.php?id=763
+
+S6. University of Maine Cooperative Extension. Bulletin #2063, Growing Garlic in Maine.
+Uso BIO-G: hardneck, pH, NPK preplant, sidedress de N en emergencia y 2-3 semanas despues, no aplicar N tarde, scape y sanidad.
+URL: https://extension.umaine.edu/publications/2063e/
+
+S7. Oregon State University. Garlic, College of Agricultural Sciences.
+Uso BIO-G: pH ideal 6.5-7.0, N 100-150 lb/A segun suelo/variedad, P/K por analisis, riego, detener riego, calidad y rendimiento.
+URL: https://horticulture.oregonstate.edu/oregon-vegetables/garlic-1
+
+S8. Oregon State University Extension. Nutrient Management for Sustainable Vegetable Cropping Systems in Western Oregon.
+Uso BIO-G: pH minimo para ajo, efectos de exceso de N, manejo de P/K/S/Ca/Mg, sales, pruebas de nitrato y creditos organicos.
+URL: https://extension.oregonstate.edu/catalog/pub/em-9165-nutrient-management-sustainable-vegetable-cropping-systems-western-oregon
+
+S9. Huez-Lopez et al. 2010. Fertilizacion nitrogenada en el cultivo de ajo bajo riego por goteo en la Costa de Hermosillo. Biotecnia / Universidad de Sonora.
+Uso BIO-G: respuesta regional a N; referencia de 180 kg N/ha con mayor rendimiento en un contexto especifico.
+URL: https://dialnet.unirioja.es/servlet/articulo?codigo=7930471
+
+S10. INIFAP / Zacatecas. Tecnologia para cultivar ajo en Zacatecas; y referencias de fertirriego citadas por INTAGRI.
+Uso BIO-G: contexto mexicano, fertirriego intensivo, fraccionamiento de N/P/K/Ca y formula de alta tecnologia como capa no-default.
+URL: https://zacatecas.inifap.gob.mx/publicaciones/Tecnologia%20para%20cultivar%20ajo%20en%20Zac.pdf
+URL secundaria consultada: https://www.intagri.com/articulos/nutricion-vegetal/el-fertirriego-en-ajo?p=registro
+
+S11. PSU Extension. Garlic Production.
+Uso BIO-G: referencia comercial de fertilizacion pesada y NPK para produccion.
+URL: https://extension.psu.edu/garlic-production/
+
+S12. Universidad de Sonora / Everardo Zamora. El cultivo del ajo. Serie guias - produccion de hortalizas DAG/HORT-014, Mayo 2016.
+Uso BIO-G: clima, suelo, salinidad, densidad, marco de plantacion, fertilizacion regional 120-240 kg N/ha y 60-80 kg P/ha, dos epocas de aplicacion, analisis de tejido, riego por textura, ultimo riego 15-20 dias antes de cosecha, escobeteado, cosecha y rendimiento regional.
+Archivo aportado por el usuario: AJO-DAG-HORT-014.pdf
+
+S13. InfoAgro Mexico. Fertilizacion en el cultivo de ajo.
+Uso BIO-G: nutricion balanceada, extraccion Burba 1992 para 10 t/ha, analisis de suelo/agua/foliar/solucion de suelo, riesgos de N excesivo, escobeteado y recomendaciones de Reveles-Hernandez / Bravo-Echavarria / Zamora.
+URL: https://mexico.infoagro.com/fertilizacion-en-el-cultivo-de-ajo/
+
+S14. Wikifarmer. Fertilizacion del ajo.
+Uso BIO-G: rangos amplios de N, P2O5 y K2O; importancia de analisis de suelo/agua/tejido; fraccionamiento de N; recomendaciones generales para P/K, Ca/Mg/S/micros y advertencia de no usar recetas sin analisis local.
+URL: https://wikifarmer.com/library/es/article/fertilizacion-del-ajo
+
+S15. PortalFruticola. Fertirriego en ajo - guia completa para 2026.
+Uso BIO-G: fertirriego por etapa, pH 5.5-6.5, CE moderada, compatibilidad de mezclas, ETc=ETo x Kc, Kc orientativos y enfoque de dosis pequenas/frecuentes. Fuente blog tecnico/comercial: usar como apoyo operativo, no como base normativa unica.
+URL: https://www.portalfruticola.com/noticias/2026/05/19/fertirriego-en-ajo/
+
+S12. Documentos internos BIO-G aportados por el usuario: Perfil Universal Ajo v2 mejorado, Perfil Generico AG-GEN/SKIP v2 mejorado, Perfil Universal Cebolla, Perfil Generico Cebolla, Guia de Fertilizacion Cebolla.
+Uso BIO-G: arquitectura, estilo, UX, perfiles, lenguaje farmer-friendly y reglas de motor.
+
+Estado del documento:
+GUIA TECNICA DE FERTILIZACION DE AJO v1.1 reforzada queda lista para revision tecnica BIO-G y para conectarse posteriormente con Rendimiento Aproximado y Riesgos/Sanidad Vegetal del Ajo.

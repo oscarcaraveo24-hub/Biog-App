@@ -35,8 +35,173 @@ class PlantHealthStageAdapter {
         return _fromSquash(stage, daySinceSowing);
       case CropCatalog.lettuceCropId:
         return _fromLettuce(stage, daySinceSowing);
+      case CropCatalog.spinachCropId:
+        return _fromSpinach(stage, daySinceSowing);
+      case CropCatalog.onionCropId:
+        return _fromOnion(stage, daySinceSowing);
+      case CropCatalog.garlicCropId:
+        return _fromGarlic(stage, daySinceSowing);
     }
     return null;
+  }
+
+  static PlantHealthStageBucket _fromGarlic(String stage, int? day) {
+    if (_matches(stage, const <String>['plant', 'clove', 'diente'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['emerg', 'establec'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['veget', 'foliar'])) {
+      if (day != null) {
+        if (day <= 35) return PlantHealthStageBucket.vegetativeEarly;
+        if (day <= 70) return PlantHealthStageBucket.vegetativeMid;
+      }
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['vernal', 'frio', 'cold'])) {
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (_matches(stage, const <String>['diferenci', 'clove_diff'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['llenado', 'bulb_fill', 'fill'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>[
+      'madur',
+      'matur',
+      'cosech',
+      'harvest',
+      'curado',
+      'curing',
+    ])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>[
+      'escapo',
+      'canuto',
+      'escobete',
+      'broom',
+      'scape',
+      'senesc',
+    ])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (day != null) {
+      if (day <= 14) return PlantHealthStageBucket.seedling;
+      if (day <= 45) return PlantHealthStageBucket.vegetativeEarly;
+      if (day <= 80) return PlantHealthStageBucket.vegetativeMid;
+      if (day <= 115) return PlantHealthStageBucket.vegetativeLate;
+      if (day <= 145) return PlantHealthStageBucket.reproductiveEarly;
+      if (day <= 175) return PlantHealthStageBucket.reproductiveMid;
+      if (day <= 205) return PlantHealthStageBucket.grainFill;
+    }
+    return PlantHealthStageBucket.lateSeason;
+  }
+
+  /// Cebolla: hortaliza de bulbo fotoperiodica con 8 etapas + espigado. No
+  /// hay floracion productiva: la induccion y el bulbo se mapean a buckets
+  /// vegetativos tardios y reproductivos; maduracion/cosecha cae en
+  /// grainFill (organ fill del bulbo) y el espigado en lateSeason.
+  static PlantHealthStageBucket _fromOnion(String stage, int? day) {
+    if (_matches(stage, const <String>['germin'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['emerg'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['establec', 'transplant'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['induccion', 'pre_bulb', 'prebulb'])) {
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (_matches(stage, const <String>['iniciobulbo', 'bulb_init', 'initiation'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['llenado', 'bulb_fill', 'fill'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>[
+      'madur',
+      'maturity',
+      'cosech',
+      'harvest',
+      'cuello',
+      'curado',
+    ])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>['espig', 'bolting', 'seedstalk', 'senesc'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (_matches(stage, const <String>['vegetativo', 'vegetative', 'foliar'])) {
+      if (day != null) {
+        if (day <= 28) return PlantHealthStageBucket.vegetativeEarly;
+        if (day <= 60) return PlantHealthStageBucket.vegetativeMid;
+      }
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (day != null) {
+      if (day <= 10) return PlantHealthStageBucket.seedling;
+      if (day <= 28) return PlantHealthStageBucket.vegetativeEarly;
+      if (day <= 60) return PlantHealthStageBucket.vegetativeMid;
+      if (day <= 90) return PlantHealthStageBucket.vegetativeLate;
+      if (day <= 120) return PlantHealthStageBucket.reproductiveEarly;
+      if (day <= 140) return PlantHealthStageBucket.grainFill;
+    }
+    return PlantHealthStageBucket.lateSeason;
+  }
+
+  /// Espinaca: hortaliza de hoja con 8 etapas. No se mapea a floracion
+  /// productiva; madurez/ventana son buckets vegetativos tardios y el
+  /// espigado cae en lateSeason.
+  static PlantHealthStageBucket _fromSpinach(String stage, int? day) {
+    if (_matches(stage, const <String>['germin'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['establec', 'emerg', 'transplant'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['temprano', 'early'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['expansion', 'foliar'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['madurez', 'maturity', 'comercial'])) {
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (_matches(stage, const <String>['cosecha', 'ventana', 'harvest'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>[
+      'perdida',
+      'sobremadur',
+      'decline',
+      'espig',
+      'bolting',
+      'senesc',
+      'cierre',
+    ])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (_matches(stage, const <String>['vegetativo', 'vegetative'])) {
+      if (day != null) {
+        if (day <= 18) return PlantHealthStageBucket.vegetativeEarly;
+        if (day <= 34) return PlantHealthStageBucket.vegetativeMid;
+      }
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (day != null) {
+      if (day <= 10) return PlantHealthStageBucket.seedling;
+      if (day <= 22) return PlantHealthStageBucket.vegetativeEarly;
+      if (day <= 38) return PlantHealthStageBucket.vegetativeMid;
+      if (day <= 50) return PlantHealthStageBucket.vegetativeLate;
+      if (day <= 68) return PlantHealthStageBucket.grainFill;
+    }
+    return PlantHealthStageBucket.lateSeason;
   }
 
   /// Lechuga: hortaliza de hoja con 6 etapas BIO-G. El bucket

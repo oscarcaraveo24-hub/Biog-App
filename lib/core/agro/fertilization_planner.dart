@@ -2,8 +2,11 @@ import 'dart:math' as math;
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/chili_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/eggplant_nutrition_modifier.dart';
+import 'package:bio_g/core/agro/garlic_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/lettuce_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
+import 'package:bio_g/core/agro/onion_nutrition_modifier.dart';
+import 'package:bio_g/core/agro/spinach_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/squash_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
@@ -157,6 +160,45 @@ class FertilizationPlanner {
           fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
         );
       }
+      if (crop == 'spinach' || crop == 'espinaca' || crop == 'crop_spinach') {
+        final modifier = resolveSpinachNutritionModifier(
+          profileId: profileId,
+          varietyId: varietyId,
+          alias: varietyAlias,
+          calendarId: calendarId ?? cultivationScaleId,
+        );
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Nivel alto detectado. Pausa este nutriente en espinaca: puede subir salinidad, ablandar hoja, elevar nitratos o bajar vida de anaquel. Revisa CE y agua antes de agregar mas.',
+          fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
+        );
+      }
+      if (crop == 'onion' || crop == 'cebolla' || crop == 'crop_onion') {
+        final modifier = resolveOnionNutritionModifier(
+          profileId: profileId,
+          varietyId: varietyId,
+          alias: varietyAlias,
+          calendarId: calendarId ?? cultivationScaleId,
+        );
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Nivel alto detectado. Pausa este nutriente en cebolla: el exceso puede subir salinidad, engrosar cuello, retrasar madurez o bajar conservacion del bulbo. Revisa CE y agua antes de agregar mas.',
+          fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
+        );
+      }
+      if (crop == 'garlic' || crop == 'ajo' || crop == 'crop_garlic') {
+        final modifier = resolveGarlicNutritionModifier(
+          profileId: profileId,
+          varietyId: varietyId,
+          alias: varietyAlias,
+          calendarId: calendarId ?? cultivationScaleId,
+        );
+        return NutrientDoseGuide(
+          doseGuideEs:
+              'Nivel alto detectado. Pausa este nutriente en ajo: el exceso puede subir salinidad, provocar vigor tardio, escobeteado/canutos, mala maduracion, pudriciones o curado deficiente. Revisa CE, agua y etapa antes de agregar mas.',
+          fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
+        );
+      }
       if ((crop == 'barley' || crop == 'cebada') &&
           nutrient == AgroMetricKey.n &&
           _isBarleyMalt(profileId)) {
@@ -250,6 +292,39 @@ class FertilizationPlanner {
     }
     if (crop == 'lettuce' || crop == 'lechuga' || crop == 'crop_lettuce') {
       return _lettuceGuide(
+        nutrient,
+        stageKey,
+        cultivationScaleId,
+        profileId: profileId,
+        varietyId: varietyId,
+        varietyAlias: varietyAlias,
+        calendarId: calendarId,
+      );
+    }
+    if (crop == 'spinach' || crop == 'espinaca' || crop == 'crop_spinach') {
+      return _spinachGuide(
+        nutrient,
+        stageKey,
+        cultivationScaleId,
+        profileId: profileId,
+        varietyId: varietyId,
+        varietyAlias: varietyAlias,
+        calendarId: calendarId,
+      );
+    }
+    if (crop == 'onion' || crop == 'cebolla' || crop == 'crop_onion') {
+      return _onionGuide(
+        nutrient,
+        stageKey,
+        cultivationScaleId,
+        profileId: profileId,
+        varietyId: varietyId,
+        varietyAlias: varietyAlias,
+        calendarId: calendarId,
+      );
+    }
+    if (crop == 'garlic' || crop == 'ajo' || crop == 'crop_garlic') {
+      return _garlicGuide(
         nutrient,
         stageKey,
         cultivationScaleId,
@@ -2092,6 +2167,223 @@ class FertilizationPlanner {
       default:
         base =
             'Revisa la nutricion de la lechuga con apoyo de analisis de suelo y criterio tecnico local.';
+    }
+
+    return NutrientDoseGuide(
+      doseGuideEs: base,
+      fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
+    );
+  }
+
+  /// Espinaca: la lectura NPK es riesgo/desequilibrio, no receta. BIO-G v1
+  /// prioriza suelo, agua, CE y calidad de hoja; no entrega kg/ha cerrados.
+  static NutrientDoseGuide _spinachGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    String? scale, {
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+    String? calendarId,
+  }) {
+    final stage = (stageKey ?? '').toLowerCase();
+    final modifier = resolveSpinachNutritionModifier(
+      profileId: profileId,
+      varietyId: varietyId,
+      alias: varietyAlias,
+      calendarId: calendarId ?? scale,
+    );
+    final isHarvest = stage.contains('madurez') ||
+        stage.contains('cosecha') ||
+        stage.contains('ventana');
+    final isLate = stage.contains('perdida') ||
+        stage.contains('espig') ||
+        stage.contains('senesc');
+    final isEstablishment = stage.contains('establec') ||
+        stage.contains('emerg') ||
+        stage.contains('germin');
+
+    String base;
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (isLate) {
+          base =
+              'La lectura de nitrogeno viene baja, pero la espinaca ya esta en perdida de calidad o espigado. BIO-G no recomienda N tardio: cosecha/cierra y registra causa.';
+        } else if (isHarvest) {
+          base =
+              'La lectura de nitrogeno viene baja cerca de corte. En espinaca no conviene empujar N fuerte: prioriza turgencia, sanidad y cosecha oportuna; valida solo si la hoja pierde vigor.';
+        } else {
+          base =
+              'La lectura de nitrogeno viene corta para expansion de hoja. BIO-G no fija dosis cerradas: primero confirma humedad estable, CE y color de hoja; evita exceso que ablanda tejido o sube nitratos.';
+        }
+        break;
+      case AgroMetricKey.p:
+        base = isEstablishment
+            ? 'La lectura de fosforo viene corta en arranque, la ventana clave para raiz temprana. Revisa P de base o starter segun analisis de suelo y criterio tecnico, sin dosis ciega.'
+            : 'La lectura de fosforo viene corta. En espinaca el P rinde mas al establecimiento; revisa pH y analisis de suelo antes de ajustar.';
+        break;
+      case AgroMetricKey.k:
+        base =
+            'La lectura de potasio viene corta. El K sostiene turgencia y calidad de hoja; revisa con analisis de suelo y mantenimiento prudente, cuidando no subir salinidad.';
+        break;
+      default:
+        base =
+            'Revisa la nutricion de la espinaca con apoyo de analisis de suelo, agua y criterio tecnico local.';
+    }
+
+    return NutrientDoseGuide(
+      doseGuideEs: base,
+      fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
+    );
+  }
+
+  /// Cebolla: la lectura NPK es riesgo/desequilibrio, no receta. El organo
+  /// objetivo es el bulbo: N temprano con control y detener tarde, P para
+  /// arranque/raiz, K para llenado/calidad. El fotoperiodo manda y no se
+  /// corrige con fertilizante. BIO-G v1 no entrega kg/ha cerrados.
+  static NutrientDoseGuide _onionGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    String? scale, {
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+    String? calendarId,
+  }) {
+    final stage = (stageKey ?? '').toLowerCase();
+    final modifier = resolveOnionNutritionModifier(
+      profileId: profileId,
+      varietyId: varietyId,
+      alias: varietyAlias,
+      calendarId: calendarId ?? scale,
+    );
+    final isBulb = stage.contains('llenado') ||
+        stage.contains('iniciobulbo') ||
+        stage.contains('bulbo') ||
+        stage.contains('induccion');
+    final isLate = stage.contains('maduracion') ||
+        stage.contains('cosecha') ||
+        stage.contains('curado') ||
+        stage.contains('espig') ||
+        stage.contains('senesc');
+    final isEstablishment = stage.contains('establec') ||
+        stage.contains('emerg') ||
+        stage.contains('germin');
+
+    String base;
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (isLate) {
+          base =
+              'La lectura de nitrogeno viene baja, pero la cebolla ya esta en maduracion/cuello o espigado. BIO-G no recomienda N tardio: detener N protege cuello, curado y conservacion.';
+        } else if (isBulb) {
+          base =
+              'La lectura de nitrogeno viene baja en etapa de bulbo. No conviene empujar N fuerte: el exceso engruesa cuello y retrasa madurez. Prioriza agua pareja, K y fotoperiodo correcto; valida solo si la hoja pierde vigor.';
+        } else {
+          base =
+              'La lectura de nitrogeno viene corta para construir hoja (la fabrica del bulbo). BIO-G no fija dosis cerradas: fracciona el N, confirma humedad estable y CE, y evita el exceso que ablanda tejido o sube cuello grueso.';
+        }
+        break;
+      case AgroMetricKey.p:
+        base = isEstablishment
+            ? 'La lectura de fosforo viene corta en arranque, la ventana clave para raiz superficial. Revisa P de base o starter segun analisis de suelo, sobre todo en suelo frio o alcalino, sin dosis ciega.'
+            : 'La lectura de fosforo viene corta. En cebolla el P rinde mas al establecimiento; revisa pH, micorrizas y analisis de suelo antes de ajustar.';
+        break;
+      case AgroMetricKey.k:
+        base =
+            'La lectura de potasio viene corta. El K es el nutriente del bulbo: sostiene agua, turgencia, calibre y firmeza. Revisa con analisis de suelo y CE, sin subir salinidad.';
+        break;
+      default:
+        base =
+            'Revisa la nutricion de la cebolla con apoyo de analisis de suelo, agua y criterio tecnico local.';
+    }
+
+    return NutrientDoseGuide(
+      doseGuideEs: base,
+      fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
+    );
+  }
+
+  /// Ajo: Allium de bulbo propagado por diente. N temprano con control,
+  /// P por analisis al arranque, K para diferenciacion/llenado y calidad.
+  /// Vernalizacion, salinidad, anoxia, diente-semilla y curado no se corrigen
+  /// con fertilizante. BIO-G v1 mantiene NPK como motor activo.
+  static NutrientDoseGuide _garlicGuide(
+    AgroMetricKey nutrient,
+    String? stageKey,
+    String? scale, {
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+    String? calendarId,
+  }) {
+    final stage = (stageKey ?? '').toLowerCase();
+    final modifier = resolveGarlicNutritionModifier(
+      profileId: profileId,
+      varietyId: varietyId,
+      alias: varietyAlias,
+      calendarId: calendarId ?? scale,
+    );
+    final isEstablishment = stage.contains('plant') ||
+        stage.contains('clove') ||
+        stage.contains('diente') ||
+        stage.contains('emerg') ||
+        stage.contains('establec');
+    final isVegetative = stage.contains('veget') || stage.contains('foliar');
+    final isVernalization = stage.contains('vernal') ||
+        stage.contains('frio') ||
+        stage.contains('cold');
+    final isBulb = stage.contains('diferenci') ||
+        stage.contains('llenado') ||
+        stage.contains('bulb') ||
+        stage.contains('bulbo') ||
+        stage.contains('fill');
+    final isLate = stage.contains('maduracion') ||
+        stage.contains('matur') ||
+        stage.contains('cosecha') ||
+        stage.contains('harvest') ||
+        stage.contains('curado') ||
+        stage.contains('curing') ||
+        stage.contains('escapo') ||
+        stage.contains('canuto') ||
+        stage.contains('escobete') ||
+        stage.contains('scape') ||
+        stage.contains('broom') ||
+        stage.contains('senesc');
+
+    String base;
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (isLate) {
+          base =
+              'La lectura de nitrogeno viene baja, pero el ajo ya esta en maduracion/cosecha/curado o evento de escapo. BIO-G no recomienda N tardio: detener N protege maduracion, curado, descarte y almacenamiento.';
+        } else if (isVernalization) {
+          base =
+              'La lectura de nitrogeno viene corta durante vernalizacion. No uses NPK para corregir frio insuficiente: confirma temperatura acumulada, humedad, CE y sanidad antes de tocar el plan.';
+        } else if (isBulb) {
+          base =
+              'La lectura de nitrogeno viene baja en diferenciacion/llenado. Maneja con mucha cautela: N alto tarde favorece exceso de hoja, escobeteado/canutos, mala maduracion, pudriciones y mal curado.';
+        } else if (isVegetative) {
+          base =
+              'La lectura de nitrogeno viene corta en desarrollo foliar. Puede apoyar hoja temprana si se fracciona y se confirma agua/CE; evita llevar N fuerte hacia bulbo.';
+        } else {
+          base =
+              'La lectura de nitrogeno viene corta. Primero confirma diente-semilla sano, raiz, humedad y salinidad; planta joven de ajo no necesita N agresivo.';
+        }
+        break;
+      case AgroMetricKey.p:
+        base = isEstablishment
+            ? 'La lectura de fosforo viene corta en plantacion/emergencia. Es la ventana clave para raiz del diente; valida con analisis de suelo, pH y humedad antes de aplicar.'
+            : 'La lectura de fosforo viene corta. En ajo el P rinde mas al establecimiento; fuera de esa ventana revisa pH/disponibilidad y no lo uses como rescate de frio o bulbo.';
+        break;
+      case AgroMetricKey.k:
+        base = isBulb || isVernalization
+            ? 'La lectura de potasio viene corta en diferenciacion/llenado. K apoya firmeza, calibre y calidad de bulbo, pero si CE/salinidad o agua estan mal, no subas fertilizante como primera respuesta.'
+            : 'La lectura de potasio viene corta. Prepara el llenado de bulbo con manejo moderado, agua estable y CE baja; el K no compensa anoxia, diente malo ni mala vernalizacion.';
+        break;
+      default:
+        base =
+            'Revisa la nutricion del ajo con analisis de suelo, agua, CE, etapa fisiologica y criterio tecnico local.';
     }
 
     return NutrientDoseGuide(

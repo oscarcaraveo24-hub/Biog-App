@@ -107,9 +107,9 @@ class AgroEventInputFactory {
       soilTemp: live?.soilTempC,
       airTemp: live?.airTempC,
       airHumidity: live?.airHumidityPct,
-      n: live?.n.toDouble(),
-      p: live?.p.toDouble(),
-      k: live?.k.toDouble(),
+      n: live?.hasNitrogenData == true ? live!.n.toDouble() : null,
+      p: live?.hasPhosphorusData == true ? live!.p.toDouble() : null,
+      k: live?.hasPotassiumData == true ? live!.k.toDouble() : null,
       currentBands: isGenericMode
           ? const <String, AgroBand>{}
           : safeCurrentBands(effectiveEval),

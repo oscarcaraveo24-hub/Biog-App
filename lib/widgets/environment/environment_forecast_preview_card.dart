@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/models/environment_models.dart';
+import 'package:bio_g/widgets/environment/environment_asset_icon.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 
 class EnvironmentForecastPreviewCard extends StatelessWidget {
@@ -126,8 +127,14 @@ class _DayCol extends StatelessWidget {
     // ✅ antes tenías un hack con "Miércoles". Mejor: usa isLast.
     final rightPad = isLast ? 0.0 : 8.0;
 
-    final iconPath = EnvironmentIconMapper.iconForCondition(day.condition);
-    Transform.translate(
+    final iconPath = EnvironmentIconMapper.iconForDailyForecastWeather(
+      weatherCode: day.weatherCode,
+      day: day.forecastDate ?? DateTime.now(),
+      fallbackCondition: day.condition,
+      precipitationProbability: day.rainProbPct,
+      precipitationMm: day.precipitationMm,
+    );
+    final weatherIcon = Transform.translate(
       offset: const Offset(0, -2), // ✅ un poco arriba (menos flat)
       child: Stack(
         alignment: Alignment.center,
@@ -141,8 +148,8 @@ class _DayCol extends StatelessWidget {
                 opacity: 0.20,
                 child: Transform.scale(
                   scale: iconScale,
-                  child: Image.asset(
-                    iconPath,
+                  child: EnvironmentAssetIcon(
+                    assetPath: iconPath,
                     width: 22,
                     height: 22,
                     fit: BoxFit.contain,
@@ -157,8 +164,8 @@ class _DayCol extends StatelessWidget {
           // icon real
           Transform.scale(
             scale: iconScale,
-            child: Image.asset(
-              iconPath,
+            child: EnvironmentAssetIcon(
+              assetPath: iconPath,
               width: 22,
               height: 22,
               fit: BoxFit.contain,
@@ -182,19 +189,7 @@ class _DayCol extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // ✅ PNG dinámico según condición (no Material icons)
-          Transform.translate(
-            offset: const Offset(0, -2), // 🔥 súbelo 2px
-            child: Transform.scale(
-              scale: iconScale,
-              child: Image.asset(
-                iconPath,
-                width: 22,
-                height: 22,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
+          weatherIcon,
           const SizedBox(height: 8),
           Text(
             '${day.maxC}°/${day.minC}°',

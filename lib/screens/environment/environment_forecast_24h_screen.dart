@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 
 import 'package:bio_g/models/environment_models.dart';
 import 'package:bio_g/services/environment_service.dart';
+import 'package:bio_g/widgets/environment/environment_asset_icon.dart';
 import 'package:bio_g/widgets/environment/environment_location_card.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
+import 'package:bio_g/widgets/shared/connectivity_banner.dart';
 
 class EnvironmentForecast24hScreenDark extends StatefulWidget {
   final EnvironmentLocation location;
@@ -26,7 +28,7 @@ class EnvironmentForecast24hScreenDark extends StatefulWidget {
 class _EnvironmentForecast24hScreenDarkState
     extends State<EnvironmentForecast24hScreenDark>
     with SingleTickerProviderStateMixin {
-  late final Future<List<_HourRow>> _future;
+  late Future<List<_HourRow>> _future;
   final ScrollController _scroll = ScrollController();
 
   // ===== knobs (match ForecastScreen) =====
@@ -39,10 +41,6 @@ class _EnvironmentForecast24hScreenDarkState
 
   static const double kRowSurfaceOpacity = 0.78;
   static const double kNowSurfaceOpacity = 0.92;
-
-  // ✅ night icon (cuando está despejado de noche)
-  static const String _nightIconPath =
-      'assets/icons/weather/ic_weather_night.png';
 
   // para jump inicial (aprox)
   static const double _rowApproxHeight = 76;
@@ -125,6 +123,9 @@ class _EnvironmentForecast24hScreenDarkState
       final temp = (m['tempC'] as num?)?.toDouble() ?? 0;
       final wind = (m['windKmh'] as num?)?.toDouble() ?? 0;
       final pop = (m['rainProbPct'] as int?) ?? 0;
+      final precipitation = (m['precipitationMm'] as num?)?.toDouble();
+      final weatherCode = (m['weatherCode'] as int?) ?? 0;
+      final isDay = m['isDay'] as bool?;
 
       final cond = m['condition'] is EnvCondition
           ? (m['condition'] as EnvCondition)
@@ -136,6 +137,9 @@ class _EnvironmentForecast24hScreenDarkState
           tempC: temp,
           windKmh: wind,
           rainProbPct: pop.clamp(0, 100),
+          precipitationMm: precipitation,
+          weatherCode: weatherCode,
+          isDay: isDay,
           condition: cond,
         ),
       );
@@ -177,6 +181,12 @@ class _EnvironmentForecast24hScreenDarkState
     return rows;
   }
 
+  void _retry() {
+    setState(() {
+      _future = _load();
+    });
+  }
+
   void _restartListAnimIfNeeded(int count) {
     if (_lastAnimatedCount == count) return;
     _lastAnimatedCount = count;
@@ -193,6 +203,8 @@ class _EnvironmentForecast24hScreenDarkState
     switch (c) {
       case EnvCondition.sunny:
         return 'Soleado';
+      case EnvCondition.night:
+        return 'Despejado';
       case EnvCondition.partlyCloudy:
         return 'Parcialmente nublado';
       case EnvCondition.cloudy:
@@ -205,8 +217,14 @@ class _EnvironmentForecast24hScreenDarkState
         return 'Lluvia';
       case EnvCondition.thunder:
         return 'Tormenta';
+      case EnvCondition.stormStrong:
+        return 'Tormenta fuerte';
       case EnvCondition.snow:
         return 'Nieve';
+      case EnvCondition.frost:
+        return 'Helada';
+      case EnvCondition.heatwave:
+        return 'Calor extremo';
       case EnvCondition.unknown:
       default:
         return 'Clima';
@@ -277,7 +295,7 @@ class _EnvironmentForecast24hScreenDarkState
                             icon: Icon(
                               Icons.arrow_back_ios_new,
                               size: 18,
-                              color: Colors.black.withValues(alpha:0.65),
+                              color: Colors.black.withValues(alpha: 0.65),
                             ),
                           ),
                         ),
@@ -305,9 +323,25 @@ class _EnvironmentForecast24hScreenDarkState
                       final isLoading =
                           snap.connectionState == ConnectionState.waiting;
 
+                      if (!isLoading && snap.hasError) {
+                        return BioGErrorState(
+                          message:
+                              'No se pudo cargar el pronóstico por hora. Intenta de nuevo.',
+                          onRetry: _retry,
+                        );
+                      }
+
                       final rows = (!isLoading && snap.hasData)
                           ? snap.data!
                           : const <_HourRow>[];
+
+                      if (!isLoading && rows.isEmpty) {
+                        return BioGErrorState(
+                          message:
+                              'No hay datos disponibles para este día. Intenta de nuevo.',
+                          onRetry: _retry,
+                        );
+                      }
 
                       return CustomScrollView(
                         controller: _scroll,
@@ -368,15 +402,16 @@ class _EnvironmentForecast24hScreenDarkState
                                           r.time.day == now.day &&
                                           r.time.hour == now.hour;
 
-                                      // ✅ icon day/night (solo para "sunny" por ahora)
-                                      final isNight = _isNightHour(r.time);
                                       final iconPath =
-                                          (r.condition == EnvCondition.sunny &&
-                                              isNight)
-                                          ? _nightIconPath
-                                          : EnvironmentIconMapper.iconForCondition(
-                                              r.condition,
-                                            );
+                                          EnvironmentIconMapper.iconForForecastWeather(
+                                            weatherCode: r.weatherCode,
+                                            time: r.time,
+                                            fallbackCondition: r.condition,
+                                            isDay: r.isDay,
+                                            precipitationProbability:
+                                                r.rainProbPct,
+                                            precipitationMm: r.precipitationMm,
+                                          );
 
                                       return _StaggerIn(
                                         controller: _listAnim,
@@ -419,6 +454,9 @@ class _HourRow {
   final double tempC;
   final double windKmh;
   final int rainProbPct;
+  final double? precipitationMm;
+  final int weatherCode;
+  final bool? isDay;
   final EnvCondition condition;
 
   const _HourRow({
@@ -426,6 +464,9 @@ class _HourRow {
     required this.tempC,
     required this.windKmh,
     required this.rainProbPct,
+    required this.precipitationMm,
+    required this.weatherCode,
+    required this.isDay,
     required this.condition,
   });
 }
@@ -464,9 +505,9 @@ class _HourRowCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(_radius),
-          color: Colors.white.withValues(alpha:surfaceOpacity),
+          color: Colors.white.withValues(alpha: surfaceOpacity),
           border: Border.all(
-            color: Colors.white.withValues(alpha:highlight ? 0.75 : 0.65),
+            color: Colors.white.withValues(alpha: highlight ? 0.75 : 0.65),
           ),
         ),
         child: Padding(
@@ -517,7 +558,7 @@ class _HourRowCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black.withValues(alpha:0.52),
+                        color: Colors.black.withValues(alpha: 0.52),
                         height: 1.10,
                       ),
                       maxLines: 1,
@@ -538,7 +579,7 @@ class _HourRowCard extends StatelessWidget {
                       Icon(
                         Icons.water_drop_outlined,
                         size: 14,
-                        color: Colors.black.withValues(alpha:0.40),
+                        color: Colors.black.withValues(alpha: 0.40),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -546,7 +587,7 @@ class _HourRowCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
-                          color: Colors.black.withValues(alpha:0.52),
+                          color: Colors.black.withValues(alpha: 0.52),
                         ),
                       ),
                     ],
@@ -557,7 +598,7 @@ class _HourRowCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      color: Colors.black.withValues(alpha:0.45),
+                      color: Colors.black.withValues(alpha: 0.45),
                     ),
                   ),
                 ],
@@ -584,8 +625,8 @@ class _SkeletonHourRow extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(_radius),
-          color: Colors.white.withValues(alpha:0.72),
-          border: Border.all(color: Colors.white.withValues(alpha:0.65)),
+          color: Colors.white.withValues(alpha: 0.72),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.65)),
         ),
         child: Padding(
           padding: _EnvironmentForecast24hScreenDarkState.kRowPadding,
@@ -596,7 +637,7 @@ class _SkeletonHourRow extends StatelessWidget {
                 height: 12,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  color: Colors.black.withValues(alpha:0.07),
+                  color: Colors.black.withValues(alpha: 0.07),
                 ),
               ),
               const SizedBox(width: 8),
@@ -605,7 +646,7 @@ class _SkeletonHourRow extends StatelessWidget {
                 height: 18,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  color: Colors.black.withValues(alpha:0.06),
+                  color: Colors.black.withValues(alpha: 0.06),
                 ),
               ),
               const SizedBox(width: 10),
@@ -618,7 +659,7 @@ class _SkeletonHourRow extends StatelessWidget {
                       width: 64,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        color: Colors.black.withValues(alpha:0.07),
+                        color: Colors.black.withValues(alpha: 0.07),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -627,7 +668,7 @@ class _SkeletonHourRow extends StatelessWidget {
                       width: 190,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        color: Colors.black.withValues(alpha:0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                       ),
                     ),
                   ],
@@ -642,7 +683,7 @@ class _SkeletonHourRow extends StatelessWidget {
                     width: 44,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                      color: Colors.black.withValues(alpha:0.07),
+                      color: Colors.black.withValues(alpha: 0.07),
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -651,7 +692,7 @@ class _SkeletonHourRow extends StatelessWidget {
                     width: 64,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                      color: Colors.black.withValues(alpha:0.06),
+                      color: Colors.black.withValues(alpha: 0.06),
                     ),
                   ),
                 ],
@@ -724,8 +765,8 @@ class _ForecastIcon extends StatelessWidget {
               opacity: 0.18,
               child: Transform.scale(
                 scale: scale,
-                child: Image.asset(
-                  path,
+                child: EnvironmentAssetIcon(
+                  assetPath: path,
                   width: 18,
                   height: 18,
                   fit: BoxFit.contain,
@@ -738,7 +779,12 @@ class _ForecastIcon extends StatelessWidget {
         ),
         Transform.scale(
           scale: scale,
-          child: Image.asset(path, width: 18, height: 18, fit: BoxFit.contain),
+          child: EnvironmentAssetIcon(
+            assetPath: path,
+            width: 18,
+            height: 18,
+            fit: BoxFit.contain,
+          ),
         ),
       ],
     );
@@ -800,7 +846,7 @@ class _GlowBlob extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: _brandMid.withValues(alpha:opacity),
+          color: _brandMid.withValues(alpha: opacity),
         ),
       ),
     );

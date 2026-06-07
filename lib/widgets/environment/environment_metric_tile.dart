@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bio_g/widgets/environment/environment_asset_icon.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 
 class EnvironmentMetricTile extends StatelessWidget {
@@ -147,8 +148,8 @@ class _IconBox extends StatelessWidget {
     if (assetPath != null && assetPath!.trim().isNotEmpty) {
       child = Transform.scale(
         scale: scale,
-        child: Image.asset(
-          assetPath!,
+        child: EnvironmentAssetIcon(
+          assetPath: assetPath!,
           width: 22,
           height: 22,
           fit: BoxFit.contain,

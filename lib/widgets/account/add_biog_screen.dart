@@ -60,7 +60,7 @@ class AddBioGScreen extends StatelessWidget {
     final store = BioGScope.of(context);
 
     try {
-      final created = await store.addDemoDevice(
+      final created = await store.addDevice(
         name: name.isEmpty ? 'Bio-G' : name,
         locationName: _defaultLocationNameFromName(name),
         seedId: null,

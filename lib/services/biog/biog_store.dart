@@ -35,8 +35,7 @@ class BioGStore extends ChangeNotifier {
            yieldProjectionStorage ?? SharedPrefsYieldProjectionStorage(),
        _yieldProjectionSync =
            yieldProjectionSync ?? YieldProjectionSupabaseSync(),
-       _cropCareHistorySync =
-           cropCareHistorySync ?? CropCareHistorySync() {
+       _cropCareHistorySync = cropCareHistorySync ?? CropCareHistorySync() {
     _subs.add(
       _repo.watchDevices().listen((v) {
         devices = v;
@@ -667,11 +666,13 @@ class BioGStore extends ChangeNotifier {
     // Upload today's score and refresh the lifetime average.
     final cropContext = _cropByDevice[resolvedDeviceId];
     if (cropContext != null) {
-      unawaited(_syncCropCareScore(
-        resolvedDeviceId,
-        cropContext.cropId,
-        eval.soilControlScore01,
-      ));
+      unawaited(
+        _syncCropCareScore(
+          resolvedDeviceId,
+          cropContext.cropId,
+          eval.soilControlScore01,
+        ),
+      );
     }
   }
 
@@ -747,10 +748,7 @@ class BioGStore extends ChangeNotifier {
           'reason=not_uuid',
           onceKey: 'invalid:${deviceId.trim()}',
         );
-        return _telemetryStreamsByDevice.putIfAbsent(
-          'invalid:${deviceId.trim()}',
-          () => Stream<BioGTelemetry?>.value(null).asBroadcastStream(),
-        );
+        return Stream<BioGTelemetry?>.value(null);
       }
 
       _logTelemetry(
@@ -767,6 +765,22 @@ class BioGStore extends ChangeNotifier {
     return Stream<BioGTelemetry?>.value(null);
   }
 
+  Future<void> refreshTelemetryForDevice(String deviceId) async {
+    final repo = _repo;
+    if (repo is! HybridBioGRepository) return;
+
+    final telemetryDeviceId = telemetryDeviceIdForDeviceId(deviceId);
+    if (telemetryDeviceId == null) {
+      _logTelemetry(
+        'manual refresh skipped ui_id=${deviceId.trim()} reason=not_uuid',
+        onceKey: 'manual_invalid:${deviceId.trim()}',
+      );
+      return;
+    }
+
+    await repo.telemetrySource.refresh(telemetryDeviceId);
+  }
+
   String? telemetryDeviceIdForDeviceId(String deviceId) {
     final normalized = deviceId.trim();
     if (BioGDevice.isTelemetryDeviceId(normalized)) return normalized;
@@ -780,7 +794,7 @@ class BioGStore extends ChangeNotifier {
     return null;
   }
 
-  Stream<List<BioGTelemetry>> watchHistory(Duration window) =>
+  Stream<List<BioGTelemetry>> watchHistory(Duration? window) =>
       _repo.watchHistory(window: window);
 
   Stream<List<BioGAlert>> watchAlerts({int limit = 50}) =>
@@ -791,6 +805,18 @@ class BioGStore extends ChangeNotifier {
   Stream<BioGDevice?> watchActiveDevice() => _repo.watchActiveDevice();
 
   Future<void> setActiveDevice(String id) async {
+    // Invalidate the previous device's live telemetry IMMEDIATELY, before the
+    // repository swaps streams. When the active BioG changes the dashboard must
+    // clear stale humidity / pH / temperature / NPK at once — it must not wait
+    // for the new device's stream (or for a Supabase failure) to catch up.
+    //
+    // The new device's live stream re-populates `live` only if it actually has
+    // telemetry; a BioG without a valid telemetryDeviceId leaves this at null,
+    // so the dashboard stays in its "sin datos" (`--`) state.
+    if (activeDevice?.id != id) {
+      live = null;
+      notifyListeners();
+    }
     await _repo.setActiveDevice(id);
   }
 
@@ -807,21 +833,6 @@ class BioGStore extends ChangeNotifier {
       name: name,
     );
   }
-
-  /// Legacy alias kept so existing callers (e.g. `AddBioGScreen`) do
-  /// not break during the transition. Prefer [addDevice] in new code.
-  Future<BioGDevice> addDemoDevice({
-    String? seedId,
-    String? profileId,
-    String? locationName,
-    String? name,
-  }) =>
-      addDevice(
-        seedId: seedId,
-        profileId: profileId,
-        locationName: locationName,
-        name: name,
-      );
 
   Future<void> removeDevice(String id) async {
     _cropByDevice.remove(id);
@@ -1051,7 +1062,7 @@ class BioGStore extends ChangeNotifier {
     if (!_loggedTelemetryIds.add(onceKey)) return;
     if (!kBioGMisBioGStoreDebugLogs) return;
     assert(() {
-      debugPrint('[BioG/MisBioG] $message');
+      debugPrint('[BioG/HardwareFlow] $message');
       return true;
     }());
   }

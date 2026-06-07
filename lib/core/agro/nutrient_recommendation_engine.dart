@@ -3,8 +3,11 @@ import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/chili_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/eggplant_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/fertilization_planner.dart';
+import 'package:bio_g/core/agro/garlic_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/lettuce_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
+import 'package:bio_g/core/agro/onion_nutrition_modifier.dart';
+import 'package:bio_g/core/agro/spinach_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/squash_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
@@ -129,6 +132,33 @@ class NutrientRecommendationEngine {
             calendarId: calendarId ?? cultivationScaleId,
           )
         : null;
+    final isSpinachCrop = _isSpinachCrop(cropKey);
+    final spinachModifier = isSpinachCrop
+        ? resolveSpinachNutritionModifier(
+            profileId: profileId,
+            varietyId: varietyId,
+            alias: varietyAlias,
+            calendarId: calendarId ?? cultivationScaleId,
+          )
+        : null;
+    final isOnionCrop = _isOnionCrop(cropKey);
+    final onionModifier = isOnionCrop
+        ? resolveOnionNutritionModifier(
+            profileId: profileId,
+            varietyId: varietyId,
+            alias: varietyAlias,
+            calendarId: calendarId ?? cultivationScaleId,
+          )
+        : null;
+    final isGarlicCrop = _isGarlicCrop(cropKey);
+    final garlicModifier = isGarlicCrop
+        ? resolveGarlicNutritionModifier(
+            profileId: profileId,
+            varietyId: varietyId,
+            alias: varietyAlias,
+            calendarId: calendarId ?? cultivationScaleId,
+          )
+        : null;
 
     final combinedStagePressure01 = _combineStagePressure01(
       baseStagePressure01: baseStagePressure01,
@@ -151,6 +181,21 @@ class NutrientRecommendationEngine {
           stageKey: stageKey,
         ) ??
         lettuceModifier?.adjustStagePressure(
+          combinedStagePressure01,
+          nutrient: nutrient,
+          stageKey: stageKey,
+        ) ??
+        spinachModifier?.adjustStagePressure(
+          combinedStagePressure01,
+          nutrient: nutrient,
+          stageKey: stageKey,
+        ) ??
+        onionModifier?.adjustStagePressure(
+          combinedStagePressure01,
+          nutrient: nutrient,
+          stageKey: stageKey,
+        ) ??
+        garlicModifier?.adjustStagePressure(
           combinedStagePressure01,
           nutrient: nutrient,
           stageKey: stageKey,
@@ -209,6 +254,9 @@ class NutrientRecommendationEngine {
       eggplantModifier: eggplantModifier,
       squashModifier: squashModifier,
       lettuceModifier: lettuceModifier,
+      spinachModifier: spinachModifier,
+      onionModifier: onionModifier,
+      garlicModifier: garlicModifier,
     );
 
     final practicalRecommendation = _mergePracticalAndDose(
@@ -470,6 +518,30 @@ class NutrientRecommendationEngine {
       );
     }
 
+    if (_isSpinachCrop(cropKey)) {
+      return _spinachShortRecommendation(
+        nutrientName: nutrientName,
+        label: label,
+        isExcess: isExcess,
+      );
+    }
+
+    if (_isOnionCrop(cropKey)) {
+      return _onionShortRecommendation(
+        nutrientName: nutrientName,
+        label: label,
+        isExcess: isExcess,
+      );
+    }
+
+    if (_isGarlicCrop(cropKey)) {
+      return _garlicShortRecommendation(
+        nutrientName: nutrientName,
+        label: label,
+        isExcess: isExcess,
+      );
+    }
+
     if (isExcess) {
       if (nutrient == AgroMetricKey.n) {
         return 'Frena el nitrógeno. Hay reserva de sobra.';
@@ -532,6 +604,75 @@ class NutrientRecommendationEngine {
     return 'Faltan datos para evaluar $nutrientName en lechuga.';
   }
 
+  static String _spinachShortRecommendation({
+    required String nutrientName,
+    required NutrientPriorityLabel label,
+    required bool isExcess,
+  }) {
+    if (isExcess) {
+      return 'Pausa $nutrientName y revisa CE, agua y calidad de hoja.';
+    }
+    if (label == NutrientPriorityLabel.noPriority ||
+        label == NutrientPriorityLabel.lowPriority) {
+      return '$nutrientName en zona manejable para espinaca.';
+    }
+    if (label == NutrientPriorityLabel.mediumPriority) {
+      return '$nutrientName va bajando; vigila turgencia y hoja comercial.';
+    }
+    if (label == NutrientPriorityLabel.highPriority ||
+        label == NutrientPriorityLabel.actionRecommended ||
+        label == NutrientPriorityLabel.reviewManagement) {
+      return 'Revisa $nutrientName antes de ajustar manejo.';
+    }
+    return 'Faltan datos para evaluar $nutrientName en espinaca.';
+  }
+
+  static String _onionShortRecommendation({
+    required String nutrientName,
+    required NutrientPriorityLabel label,
+    required bool isExcess,
+  }) {
+    if (isExcess) {
+      return 'Pausa $nutrientName y revisa CE, agua y etapa del bulbo.';
+    }
+    if (label == NutrientPriorityLabel.noPriority ||
+        label == NutrientPriorityLabel.lowPriority) {
+      return '$nutrientName en zona manejable para cebolla.';
+    }
+    if (label == NutrientPriorityLabel.mediumPriority) {
+      return '$nutrientName va bajando; vigila etapa y calidad del bulbo.';
+    }
+    if (label == NutrientPriorityLabel.highPriority ||
+        label == NutrientPriorityLabel.actionRecommended ||
+        label == NutrientPriorityLabel.reviewManagement) {
+      return 'Revisa $nutrientName antes de ajustar manejo.';
+    }
+    return 'Faltan datos para evaluar $nutrientName en cebolla.';
+  }
+
+  static String _garlicShortRecommendation({
+    required String nutrientName,
+    required NutrientPriorityLabel label,
+    required bool isExcess,
+  }) {
+    if (isExcess) {
+      return 'Pausa $nutrientName y revisa CE, agua, frio y curado del ajo.';
+    }
+    if (label == NutrientPriorityLabel.noPriority ||
+        label == NutrientPriorityLabel.lowPriority) {
+      return '$nutrientName en zona manejable para ajo.';
+    }
+    if (label == NutrientPriorityLabel.mediumPriority) {
+      return '$nutrientName va bajando; vigila bulbo, frio y curado.';
+    }
+    if (label == NutrientPriorityLabel.highPriority ||
+        label == NutrientPriorityLabel.actionRecommended ||
+        label == NutrientPriorityLabel.reviewManagement) {
+      return 'Revisa $nutrientName antes de ajustar manejo en ajo.';
+    }
+    return 'Faltan datos para evaluar $nutrientName en ajo.';
+  }
+
   // =========================================================================
   // RECOMENDACIÓN PRÁCTICA
   // =========================================================================
@@ -547,6 +688,9 @@ class NutrientRecommendationEngine {
     EggplantNutritionModifier? eggplantModifier,
     SquashNutritionModifier? squashModifier,
     LettuceNutritionModifier? lettuceModifier,
+    SpinachNutritionModifier? spinachModifier,
+    OnionNutritionModifier? onionModifier,
+    GarlicNutritionModifier? garlicModifier,
   }) {
     final stage = (stageKey ?? '').toLowerCase();
     final crop = (cropKey ?? '').toLowerCase();
@@ -660,6 +804,36 @@ class NutrientRecommendationEngine {
         stagePressure01,
         targets,
         lettuceModifier,
+      );
+    }
+    if (crop == 'spinach' || crop == 'espinaca' || crop == 'crop_spinach') {
+      return _spinachPracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+        targets,
+        spinachModifier,
+      );
+    }
+    if (crop == 'onion' || crop == 'cebolla' || crop == 'crop_onion') {
+      return _onionPracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+        targets,
+        onionModifier,
+      );
+    }
+    if (crop == 'garlic' || crop == 'ajo' || crop == 'crop_garlic') {
+      return _garlicPracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        stagePressure01,
+        targets,
+        garlicModifier,
       );
     }
 
@@ -2424,6 +2598,536 @@ class NutrientRecommendationEngine {
     }
   }
 
+  // Espinaca: hortaliza de hoja. N controlado, P temprano, K para
+  // turgencia/calidad; no dosis cerradas ni empuje tardio.
+  static String _spinachPracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    double? stagePressure01,
+    StageTargets? targets,
+    SpinachNutritionModifier? modifier,
+  ) {
+    final isGerm = stage.contains('germin');
+    final isEstablishment =
+        stage.contains('establec') || stage.contains('emerg');
+    final isVeg = stage.contains('vegetativo') ||
+        stage.contains('expansion') ||
+        stage.contains('foliar');
+    final isHarvest = stage.contains('madurez') ||
+        stage.contains('cosecha') ||
+        stage.contains('ventana');
+    final isLate = stage.contains('perdida') ||
+        stage.contains('espig') ||
+        stage.contains('bolting') ||
+        stage.contains('senesc') ||
+        _isLateStage(stage);
+
+    if (isLate) {
+      final base = _hortalizaLateCycleMessage(nutrient: nutrient, label: label);
+      final caution = modifier?.practicalCaution(nutrient, stage);
+      if (caution == null || caution.trim().isEmpty) return base;
+      return '$base ${caution.trim()}';
+    }
+
+    final windowLabel = targets?.windowLabelFor(nutrient);
+    final profileHint = targets?.plannerHintFor(nutrient);
+
+    String withModifier(String base) {
+      final caution = modifier?.practicalCaution(nutrient, stage);
+      if (caution == null || caution.trim().isEmpty) return base;
+      return '$base $caution';
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isHarvest) {
+            return withModifier(
+              'N alto cerca de corte. En espinaca puede ablandar hoja, subir nitratos y bajar vida de anaquel; pausa N y revisa CE.',
+            );
+          }
+          return withModifier(
+            'N alto. Pausa nitrogeno y confirma si el follaje ya viene blando o la CE subio.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          if (isHarvest) {
+            return withModifier(
+              'N suficiente. Cerca de corte no conviene empujar crecimiento tierno; prioriza turgencia y sanidad.',
+            );
+          }
+          return withModifier(
+            'N en zona manejable para espinaca; vigila agua y salinidad.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isHarvest) {
+            return withModifier(
+              'N va bajando cerca de cosecha. No empujes por rutina: prioriza calidad y corte oportuno.',
+            );
+          }
+          if (isVeg) {
+            return withModifier(
+              'N empieza a bajar en expansion foliar. Revisa manejo con cautela y confirma humedad estable.',
+            );
+          }
+          return withModifier('N empieza a bajar. Vigila hoja y tendencia.');
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement) {
+          if (isGerm) {
+            return withModifier(
+              'N bajo en germinacion. No empujar N: la semilla usa reservas y las sales bajas mandan.',
+            );
+          }
+          if (isEstablishment) {
+            return withModifier(
+              'N bajo en establecimiento. Primero confirma raiz, humedad y P; el N fuerte en planta joven no es la prioridad.',
+            );
+          }
+          if (isHarvest) {
+            return withModifier(
+              'N bajo cerca de cosecha. Valida solo si la hoja pierde vigor; BIO-G no recomienda N fuerte tardio.',
+            );
+          }
+          return withModifier(
+            'N bajo en expansion de hoja. Revisa manejo sin excederte para no ablandar tejido.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el nitrogeno de la espinaca.',
+        );
+
+      case AgroMetricKey.p:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return withModifier(
+            'P alto. Pausa fosforo; su exceso puede bloquear micronutrientes y no mejora la hoja al final.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            'P suficiente. En espinaca pesa sobre todo en raiz y establecimiento.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement ||
+            label == NutrientPriorityLabel.mediumPriority) {
+          if (isEstablishment || isGerm) {
+            return withModifier(
+              'P bajo en arranque. Es la ventana clave para raiz temprana, especialmente en suelo fresco.',
+            );
+          }
+          return withModifier(
+            'P bajo fuera del arranque. Revisa con criterio tecnico; agua, CE y hoja comercial siguen mandando.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el fosforo de la espinaca.',
+        );
+
+      case AgroMetricKey.k:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return withModifier(
+            'K alto. Pausa potasio y revisa CE; en espinaca el golpe salino puede bajar turgencia.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            'K suficiente para sostener turgencia y calidad de hoja.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement ||
+            label == NutrientPriorityLabel.mediumPriority) {
+          if (isHarvest || isVeg) {
+            return withModifier(
+              'K bajo en etapa de calidad. Revisa balance con humedad pareja: K ayuda a turgencia, pero no compensa salinidad ni falta de agua.',
+            );
+          }
+          return withModifier(
+            'K bajo. Valora apoyo moderado para preparar turgencia de hoja.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el potasio de la espinaca.',
+        );
+
+      case AgroMetricKey.soilMoisture:
+      case AgroMetricKey.soilTemp:
+      case AgroMetricKey.ph:
+      case AgroMetricKey.ec:
+      case AgroMetricKey.resistance:
+        return withModifier('Revisa el manejo de nutrientes de la espinaca.');
+    }
+  }
+
+  // Cebolla: hortaliza de bulbo. N temprano con control y detener tarde,
+  // P para arranque/raiz, K para llenado/calidad; fotoperiodo manda y no
+  // se corrige con fertilizante.
+  static String _onionPracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    double? stagePressure01,
+    StageTargets? targets,
+    OnionNutritionModifier? modifier,
+  ) {
+    final isGerm = stage.contains('germin');
+    final isEstablishment = stage.contains('establec') ||
+        stage.contains('emergencia') ||
+        stage.contains('emerg');
+    final isVeg = stage.contains('vegetativo');
+    final isInduction = stage.contains('induccion');
+    final isBulbFill = stage.contains('llenado') ||
+        stage.contains('iniciobulbo') ||
+        stage.contains('bulbo');
+    final isLate = stage.contains('maduracion') ||
+        stage.contains('cosecha') ||
+        stage.contains('curado') ||
+        stage.contains('espig') ||
+        stage.contains('senesc') ||
+        _isLateStage(stage);
+
+    if (isLate) {
+      final base = _hortalizaLateCycleMessage(nutrient: nutrient, label: label);
+      final caution = modifier?.practicalCaution(nutrient, stage);
+      if (caution == null || caution.trim().isEmpty) return base;
+      return '$base ${caution.trim()}';
+    }
+
+    final windowLabel = targets?.windowLabelFor(nutrient);
+    final profileHint = targets?.plannerHintFor(nutrient);
+
+    String withModifier(String base) {
+      final caution = modifier?.practicalCaution(nutrient, stage);
+      if (caution == null || caution.trim().isEmpty) return base;
+      return '$base $caution';
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isBulbFill || isInduction) {
+            return withModifier(
+              'N alto en bulbo. El exceso de N tarde engruesa cuello, retrasa madurez y empeora conservacion; pausa N y revisa CE.',
+            );
+          }
+          return withModifier(
+            'N alto. Pausa nitrogeno y confirma si el follaje viene muy verde/blando o la CE subio.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          if (isBulbFill) {
+            return withModifier(
+              'N suficiente. En llenado no conviene empujar N: prioriza agua pareja y K; el calibre se juega aqui.',
+            );
+          }
+          return withModifier(
+            'N en zona manejable para cebolla; vigila agua, salinidad y fotoperiodo.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isInduction || isBulbFill) {
+            return withModifier(
+              'N va bajando en bulbo. No empujes por rutina: el fotoperiodo y el agua mandan, no mas hoja.',
+            );
+          }
+          return withModifier('N empieza a bajar. Vigila hoja y tendencia.');
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement) {
+          if (isGerm) {
+            return withModifier(
+              'N bajo en germinacion. No empujar N: manda la cama de siembra, humedad fina y baja salinidad.',
+            );
+          }
+          if (isEstablishment) {
+            return withModifier(
+              'N bajo en establecimiento. Primero confirma raiz, humedad y P; planta joven no necesita N fuerte.',
+            );
+          }
+          if (isVeg) {
+            return withModifier(
+              'N bajo en desarrollo foliar. La hoja es la fabrica del bulbo; aplica fraccionado sin excederte para no engrosar cuello.',
+            );
+          }
+          return withModifier(
+            'N bajo en etapa de bulbo. Valida solo si la hoja pierde vigor; BIO-G no recomienda N fuerte tardio.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el nitrogeno de la cebolla.',
+        );
+
+      case AgroMetricKey.p:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return withModifier(
+            'P alto. Pausa fosforo; su exceso puede bloquear micronutrientes (Zn) y no mejora el bulbo al final.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            'P suficiente. En cebolla pesa sobre todo en raiz superficial y establecimiento.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement ||
+            label == NutrientPriorityLabel.mediumPriority) {
+          if (isEstablishment || isGerm) {
+            return withModifier(
+              'P bajo en arranque. Es la ventana clave para raiz temprana, sobre todo en suelo frio o alcalino; coloca cerca de raiz.',
+            );
+          }
+          return withModifier(
+            'P bajo fuera del arranque. Revisa pH y analisis de suelo; agua, CE y fotoperiodo siguen mandando.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el fosforo de la cebolla.',
+        );
+
+      case AgroMetricKey.k:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return withModifier(
+            'K alto. Pausa potasio y revisa CE; en cebolla el golpe salino baja calibre y absorcion de agua.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            'K suficiente para sostener llenado, firmeza y calidad del bulbo.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement ||
+            label == NutrientPriorityLabel.mediumPriority) {
+          if (isBulbFill || isInduction) {
+            return withModifier(
+              'K bajo en llenado de bulbo. Apoya con humedad pareja: el K define calibre y firmeza, pero no compensa salinidad ni falta de agua.',
+            );
+          }
+          return withModifier(
+            'K bajo. Valora apoyo moderado para preparar el llenado del bulbo, cuidando CE.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el potasio de la cebolla.',
+        );
+
+      case AgroMetricKey.soilMoisture:
+      case AgroMetricKey.soilTemp:
+      case AgroMetricKey.ph:
+      case AgroMetricKey.ec:
+      case AgroMetricKey.resistance:
+        return withModifier('Revisa el manejo de nutrientes de la cebolla.');
+    }
+  }
+
+  static String _garlicPracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    double? stagePressure01,
+    StageTargets? targets,
+    GarlicNutritionModifier? modifier,
+  ) {
+    final isPlanting = stage.contains('plant') ||
+        stage.contains('clove') ||
+        stage.contains('diente');
+    final isEstablishment = isPlanting ||
+        stage.contains('emerg') ||
+        stage.contains('establec');
+    final isVeg = stage.contains('veget') || stage.contains('foliar');
+    final isVernalization = stage.contains('vernal') ||
+        stage.contains('frio') ||
+        stage.contains('cold');
+    final isBulb = stage.contains('diferenci') ||
+        stage.contains('llenado') ||
+        stage.contains('bulb') ||
+        stage.contains('bulbo') ||
+        stage.contains('fill');
+    final isLate = stage.contains('maduracion') ||
+        stage.contains('matur') ||
+        stage.contains('cosecha') ||
+        stage.contains('harvest') ||
+        stage.contains('curado') ||
+        stage.contains('curing') ||
+        stage.contains('escapo') ||
+        stage.contains('canuto') ||
+        stage.contains('escobete') ||
+        stage.contains('scape') ||
+        stage.contains('broom') ||
+        stage.contains('senesc') ||
+        _isLateStage(stage);
+
+    if (isLate) {
+      final base = _hortalizaLateCycleMessage(nutrient: nutrient, label: label);
+      final caution = modifier?.practicalCaution(nutrient, stage);
+      if (caution == null || caution.trim().isEmpty) return base;
+      return '$base ${caution.trim()}';
+    }
+
+    final windowLabel = targets?.windowLabelFor(nutrient);
+    final profileHint = targets?.plannerHintFor(nutrient);
+
+    String withModifier(String base) {
+      final caution = modifier?.practicalCaution(nutrient, stage);
+      if (caution == null || caution.trim().isEmpty) return base;
+      return '$base $caution';
+    }
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          if (isVernalization || isBulb) {
+            return withModifier(
+              'N alto en ajo durante frio/bulbo. Pausa N: aumenta riesgo de vigor tardio, escobeteado, canutos, mala maduracion, pudriciones y curado pobre.',
+            );
+          }
+          return withModifier(
+            'N alto. Pausa nitrogeno y confirma CE, humedad, follaje excesivo y sanidad de cuello/bulbo.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          if (isBulb || isVernalization) {
+            return withModifier(
+              'N suficiente. No uses N para corregir frio insuficiente ni para forzar dientes; cuida agua, CE y K.',
+            );
+          }
+          return withModifier(
+            'N en zona manejable para ajo; vigila desarrollo foliar sin empujar vigor de mas.',
+          );
+        }
+        if (label == NutrientPriorityLabel.mediumPriority) {
+          if (isVernalization) {
+            return withModifier(
+              'N va bajando, pero la vernalizacion manda. No corrijas frio con fertilizante; confirma temperatura, agua y sanidad.',
+            );
+          }
+          if (isBulb) {
+            return withModifier(
+              'N va bajando en bulbo. Maneja con cautela: mas hoja tarde puede bajar calidad y curado.',
+            );
+          }
+          return withModifier(
+            'N empieza a bajar. Vigila hoja activa, tendencia y humedad antes de ajustar.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement) {
+          if (isEstablishment) {
+            return withModifier(
+              'N bajo en establecimiento. Primero confirma diente-semilla sano, raiz, humedad y P; evita N fuerte en planta joven.',
+            );
+          }
+          if (isVeg) {
+            return withModifier(
+              'N bajo en desarrollo foliar. Puede apoyar hoja si va fraccionado y sin exceso; no lo lleves tarde a bulbo.',
+            );
+          }
+          if (isVernalization || isBulb) {
+            return withModifier(
+              'N bajo en frio/bulbo. Revisa si es deficit real: agua, CE, anoxia, frio y sanidad pueden parecer falta de N.',
+            );
+          }
+          return withModifier(
+            'Revisa N con prudencia; en ajo el exceso tarde baja maduracion, curado y rendimiento comercial.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el nitrogeno del ajo.',
+        );
+
+      case AgroMetricKey.p:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return withModifier(
+            'P alto. Pausa fosforo y confirma pH/analisis; exceso puede bloquear balance y no arregla vernalizacion.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            'P suficiente. En ajo pesa mas al arranque, raiz y establecimiento del diente.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement ||
+            label == NutrientPriorityLabel.mediumPriority) {
+          if (isEstablishment) {
+            return withModifier(
+              'P bajo en arranque. Es la ventana clave para raiz; confirma analisis de suelo, pH y humedad antes de aplicar.',
+            );
+          }
+          return withModifier(
+            'P bajo fuera del arranque. Revisa pH y disponibilidad; no sustituye frio, diente sano ni manejo de agua.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el fosforo del ajo.',
+        );
+
+      case AgroMetricKey.k:
+        if (label == NutrientPriorityLabel.possibleExcess ||
+            label == NutrientPriorityLabel.reviewAccumulation) {
+          return withModifier(
+            'K alto. Pausa potasio y revisa CE/salinidad; en ajo la sal reduce absorcion, calibre y calidad de curado.',
+          );
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return withModifier(
+            'K suficiente para diferenciacion, llenado, firmeza y calidad de bulbo.',
+          );
+        }
+        if (label == NutrientPriorityLabel.highPriority ||
+            label == NutrientPriorityLabel.actionRecommended ||
+            label == NutrientPriorityLabel.reviewManagement ||
+            label == NutrientPriorityLabel.mediumPriority) {
+          if (isBulb || isVernalization) {
+            return withModifier(
+              'K bajo en diferenciacion/llenado. Puede apoyar firmeza y calibre, pero primero confirma CE baja, agua estable y sanidad de raiz.',
+            );
+          }
+          return withModifier(
+            'K bajo. Prepara llenado de bulbo con manejo moderado y CE controlada.',
+          );
+        }
+        return withModifier(
+          profileHint ?? windowLabel ?? 'Revisa el potasio del ajo.',
+        );
+
+      case AgroMetricKey.soilMoisture:
+      case AgroMetricKey.soilTemp:
+      case AgroMetricKey.ph:
+      case AgroMetricKey.ec:
+      case AgroMetricKey.resistance:
+        return withModifier('Revisa el manejo de nutrientes del ajo.');
+    }
+  }
+
   static String _genericPracticalRecommendation(
     AgroMetricKey nutrient,
     NutrientPriorityLabel label,
@@ -2457,6 +3161,39 @@ class NutrientRecommendationEngine {
 
     if (_isLettuceCrop(cropKey)) {
       return _lettuceJustification(
+        nutrientName: nutrientName,
+        rawPpm: rawPpm,
+        targets: targets,
+        cropKey: cropKey,
+        nutrient: nutrient,
+        label: label,
+      );
+    }
+
+    if (_isSpinachCrop(cropKey)) {
+      return _spinachJustification(
+        nutrientName: nutrientName,
+        rawPpm: rawPpm,
+        targets: targets,
+        cropKey: cropKey,
+        nutrient: nutrient,
+        label: label,
+      );
+    }
+
+    if (_isOnionCrop(cropKey)) {
+      return _onionJustification(
+        nutrientName: nutrientName,
+        rawPpm: rawPpm,
+        targets: targets,
+        cropKey: cropKey,
+        nutrient: nutrient,
+        label: label,
+      );
+    }
+
+    if (_isGarlicCrop(cropKey)) {
+      return _garlicJustification(
         nutrientName: nutrientName,
         rawPpm: rawPpm,
         targets: targets,
@@ -2526,6 +3263,108 @@ class NutrientRecommendationEngine {
     }
 
     return 'La lechuga puede necesitar más $nutrientName según etapa y calidad observada. Confirma en campo antes de ajustar el plan.';
+  }
+
+  static String _spinachJustification({
+    required String nutrientName,
+    required double rawPpm,
+    required StageTargets? targets,
+    required String? cropKey,
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+  }) {
+    if (label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation) {
+      return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName en espinaca. La lectura se toma como riesgo de desequilibrio: puede subir CE, ablandar hoja, elevar nitratos o bajar vida de anaquel. Pausa ese nutriente y confirma con agua, pH, CE y etapa.';
+    }
+
+    if (label == NutrientPriorityLabel.noPriority ||
+        label == NutrientPriorityLabel.lowPriority) {
+      return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName. Para espinaca esta en zona manejable; mantenga monitoreo y no empuje crecimiento por rutina.';
+    }
+
+    final range = NutrientTargetRangeResolver.comparableRange(
+      nutrient: nutrient,
+      cropKey: cropKey,
+      targets: targets,
+    );
+    if (range != null) {
+      final targetMidPpm = (range.optimalMin + range.optimalMax) / 2.0;
+      final diff = math.max(0, (targetMidPpm - rawPpm)).round();
+      if (diff > 0) {
+        return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName y queda corto contra la referencia de la etapa. En espinaca BIO-G usa esa diferencia ($diff puntos) como senal de revision de manejo, no como receta de dosis.';
+      }
+    }
+
+    return 'La espinaca puede necesitar mas $nutrientName segun etapa, turgencia y calidad observada. Confirma agua, CE y hoja comercial antes de ajustar el plan.';
+  }
+
+  static String _onionJustification({
+    required String nutrientName,
+    required double rawPpm,
+    required StageTargets? targets,
+    required String? cropKey,
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+  }) {
+    if (label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation) {
+      return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName en cebolla. La lectura se toma como riesgo de desequilibrio: puede subir CE, engrosar cuello, retrasar madurez o bajar conservacion. Pausa ese nutriente y confirma con agua, pH, CE, etapa y fotoperiodo.';
+    }
+
+    if (label == NutrientPriorityLabel.noPriority ||
+        label == NutrientPriorityLabel.lowPriority) {
+      return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName. Para cebolla esta en zona manejable; manten monitoreo y no empujes crecimiento por rutina cerca del bulbo.';
+    }
+
+    final range = NutrientTargetRangeResolver.comparableRange(
+      nutrient: nutrient,
+      cropKey: cropKey,
+      targets: targets,
+    );
+    if (range != null) {
+      final targetMidPpm = (range.optimalMin + range.optimalMax) / 2.0;
+      final diff = math.max(0, (targetMidPpm - rawPpm)).round();
+      if (diff > 0) {
+        return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName y queda corto contra la referencia de la etapa. En cebolla BIO-G usa esa diferencia ($diff puntos) como senal de revision de manejo, no como receta de dosis.';
+      }
+    }
+
+    return 'La cebolla puede necesitar mas $nutrientName segun etapa, fotoperiodo y estado del bulbo. Confirma agua, CE, raiz y maduracion antes de ajustar el plan.';
+  }
+
+  static String _garlicJustification({
+    required String nutrientName,
+    required double rawPpm,
+    required StageTargets? targets,
+    required String? cropKey,
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+  }) {
+    if (label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation) {
+      return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName en ajo. La lectura se toma como riesgo de desequilibrio: puede subir CE, favorecer vigor tardio, escobeteado/canutos, mala maduracion, pudriciones o curado deficiente. Pausa ese nutriente y confirma agua, pH, CE, etapa, frio y sanidad.';
+    }
+
+    if (label == NutrientPriorityLabel.noPriority ||
+        label == NutrientPriorityLabel.lowPriority) {
+      return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName. Para ajo esta en zona manejable; manten monitoreo y no empujes crecimiento por rutina cerca de vernalizacion, bulbo o curado.';
+    }
+
+    final range = NutrientTargetRangeResolver.comparableRange(
+      nutrient: nutrient,
+      cropKey: cropKey,
+      targets: targets,
+    );
+    if (range != null) {
+      final targetMidPpm = (range.optimalMin + range.optimalMax) / 2.0;
+      final diff = math.max(0, (targetMidPpm - rawPpm)).round();
+      if (diff > 0) {
+        return 'El sensor lee ${rawPpm.round()} mg/kg de $nutrientName y queda corto contra la referencia de la etapa. En ajo BIO-G usa esa diferencia ($diff puntos) como senal de revision de manejo, no como receta: vernalizacion, diente-semilla, agua, CE y curado pueden limitar mas que NPK.';
+      }
+    }
+
+    return 'El ajo puede necesitar mas $nutrientName segun etapa y calidad de bulbo. Confirma diente-semilla, frio, agua, CE, raiz, sanidad y curado antes de ajustar el plan.';
   }
 
   // =========================================================================
@@ -2888,6 +3727,114 @@ class NutrientRecommendationEngine {
       }
     }
 
+    if (crop == 'spinach' || crop == 'espinaca' || crop == 'crop_spinach') {
+      final early = stage.contains('germin') ||
+          stage.contains('emerg') ||
+          stage.contains('establec');
+      final expansion =
+          stage.contains('vegetativo') || stage.contains('expansion');
+      final quality = stage.contains('madurez') ||
+          stage.contains('cosecha') ||
+          stage.contains('ventana');
+      final late = stage.contains('perdida') ||
+          stage.contains('espig') ||
+          stage.contains('senesc');
+      if (nutrient == AgroMetricKey.n) {
+        if (early) return 'Arranque bajo en N';
+        if (expansion) return 'Hoja con N controlado';
+        if (quality || late) return 'N a la baja';
+        return 'Demanda foliar controlada';
+      }
+      if (nutrient == AgroMetricKey.p) {
+        if (early) return 'Raiz y establecimiento';
+        if (late) return 'Cierre de P';
+        return 'P de soporte';
+      }
+      if (nutrient == AgroMetricKey.k) {
+        if (expansion || quality) return 'Turgencia y calidad de hoja';
+        if (late) return 'Cierre de K';
+        return 'Reserva de potasio';
+      }
+    }
+
+    if (crop == 'onion' || crop == 'cebolla' || crop == 'crop_onion') {
+      final early = stage.contains('germin') ||
+          stage.contains('emerg') ||
+          stage.contains('establec');
+      final foliar = stage.contains('vegetativo');
+      final induction = stage.contains('induccion');
+      final bulb = stage.contains('llenado') ||
+          stage.contains('iniciobulbo') ||
+          stage.contains('bulbo');
+      final late = stage.contains('maduracion') ||
+          stage.contains('cosecha') ||
+          stage.contains('espig') ||
+          stage.contains('senesc');
+      if (nutrient == AgroMetricKey.n) {
+        if (early) return 'Arranque bajo en N';
+        if (foliar) return 'Hoja con N controlado';
+        if (induction) return 'N a la baja, fotoperiodo manda';
+        if (bulb || late) return 'Detener N';
+        return 'Demanda foliar controlada';
+      }
+      if (nutrient == AgroMetricKey.p) {
+        if (early) return 'Raiz y arranque';
+        if (late) return 'Cierre de P';
+        return 'P de soporte';
+      }
+      if (nutrient == AgroMetricKey.k) {
+        if (bulb || induction) return 'Llenado y calidad del bulbo';
+        if (late) return 'Mantenimiento de K';
+        return 'Reserva de potasio';
+      }
+    }
+
+    if (crop == 'garlic' || crop == 'ajo' || crop == 'crop_garlic') {
+      final early = stage.contains('plant') ||
+          stage.contains('clove') ||
+          stage.contains('diente') ||
+          stage.contains('emerg') ||
+          stage.contains('establec');
+      final foliar = stage.contains('veget') || stage.contains('foliar');
+      final vernalization = stage.contains('vernal') ||
+          stage.contains('frio') ||
+          stage.contains('cold');
+      final bulb = stage.contains('diferenci') ||
+          stage.contains('llenado') ||
+          stage.contains('bulb') ||
+          stage.contains('bulbo') ||
+          stage.contains('fill');
+      final late = stage.contains('maduracion') ||
+          stage.contains('matur') ||
+          stage.contains('cosecha') ||
+          stage.contains('harvest') ||
+          stage.contains('curado') ||
+          stage.contains('curing') ||
+          stage.contains('escapo') ||
+          stage.contains('canuto') ||
+          stage.contains('escobete') ||
+          stage.contains('senesc');
+      if (nutrient == AgroMetricKey.n) {
+        if (early) return 'Arranque bajo en N';
+        if (foliar) return 'Hoja con N controlado';
+        if (vernalization) return 'N a la baja: frio manda';
+        if (bulb || late) return 'Detener N';
+        return 'Demanda foliar controlada';
+      }
+      if (nutrient == AgroMetricKey.p) {
+        if (early) return 'Raiz y arranque';
+        if (late) return 'Cierre de P';
+        return 'P de soporte';
+      }
+      if (nutrient == AgroMetricKey.k) {
+        if (bulb || vernalization) {
+          return 'Diferenciacion/llenado y firmeza';
+        }
+        if (late) return 'Mantenimiento de K';
+        return 'Reserva de potasio';
+      }
+    }
+
     return 'Demanda actual';
   }
 
@@ -2921,6 +3868,21 @@ class NutrientRecommendationEngine {
   static bool _isLettuceCrop(String? cropKey) {
     final crop = (cropKey ?? '').toLowerCase();
     return crop == 'lettuce' || crop == 'lechuga' || crop == 'crop_lettuce';
+  }
+
+  static bool _isSpinachCrop(String? cropKey) {
+    final crop = (cropKey ?? '').toLowerCase();
+    return crop == 'spinach' || crop == 'espinaca' || crop == 'crop_spinach';
+  }
+
+  static bool _isOnionCrop(String? cropKey) {
+    final crop = (cropKey ?? '').toLowerCase();
+    return crop == 'onion' || crop == 'cebolla' || crop == 'crop_onion';
+  }
+
+  static bool _isGarlicCrop(String? cropKey) {
+    final crop = (cropKey ?? '').toLowerCase();
+    return crop == 'garlic' || crop == 'ajo' || crop == 'crop_garlic';
   }
 
   // Hortalizas de fruto SIN recomendación dedicada (cae al genérico).

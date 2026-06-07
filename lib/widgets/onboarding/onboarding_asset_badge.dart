@@ -24,6 +24,9 @@ class OnboardingUiAssets {
   static const String eggplant = 'assets/icons/wizard/ic_eggplant.png';
   static const String squash = 'assets/icons/wizard/ic_squash_generic.png';
   static const String lettuce = 'assets/icons/wizard/ic_lettuce_generic.png';
+  static const String spinach = 'assets/icons/wizard/ic_spinach.png';
+  static const String onion = 'assets/icons/wizard/ic_onion_generic.png';
+  static const String garlic = 'assets/icons/wizard/ic_garlic_generic.png';
   static const String variety = 'assets/icons/wizard/ic_variedad.png';
   static const String configureCrop =
       'assets/icons/wizard/ic_configurar_cultivo.png';
@@ -111,7 +114,19 @@ class OnboardingUiAssets {
       case 'lettuce':
       case 'lechuga':
         return lettuce;
+      case 'spinach':
+      case 'crop_spinach':
+      case 'espinaca':
+        return spinach;
       case 'onion':
+      case 'crop_onion':
+      case 'cebolla':
+        return onion;
+      case 'garlic':
+      case 'crop_garlic':
+      case 'ajo':
+      case 'ajos':
+        return garlic;
       case 'carrot':
       case 'calabacin':
         return vegetable;

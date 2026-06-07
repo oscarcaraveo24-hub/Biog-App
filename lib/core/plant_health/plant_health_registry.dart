@@ -5,8 +5,11 @@ import 'package:bio_g/core/plant_health/catalog/chili_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/maize_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/cucumber_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/eggplant_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/garlic_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/lettuce_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/oat_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/onion_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/spinach_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/squash_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/tomato_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/wheat_syndromes.dart';
@@ -39,6 +42,12 @@ class PlantHealthRegistry {
         return squashSyndromes;
       case CropCatalog.lettuceCropId:
         return lettuceSyndromes;
+      case CropCatalog.spinachCropId:
+        return spinachSyndromes;
+      case CropCatalog.onionCropId:
+        return onionSyndromes;
+      case CropCatalog.garlicCropId:
+        return garlicSyndromes;
       default:
         return const <PlantHealthSyndrome>[];
     }

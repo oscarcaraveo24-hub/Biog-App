@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
@@ -356,6 +357,9 @@ class _SeedsScreenState extends State<SeedsScreen>
         (math.max(topBgHeight, panelBottom) + SeedsScreenLayout.extraScrollPx)
             .clamp(240.0, 5000.0);
 
+    // Fondo + posicion resueltos por cultivo (cebolla usa onionBg*).
+    final bgSpec = SeedsScreenLayout.backgroundSpecForCrop(resolvedCropId);
+
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
@@ -401,19 +405,7 @@ class _SeedsScreenState extends State<SeedsScreen>
                           ).createShader(rect);
                         },
                         blendMode: BlendMode.dstIn,
-                        child: ClipRect(
-                          child: Transform.translate(
-                            offset: const Offset(0, SeedsScreenLayout.topBgDy),
-                            child: Transform.scale(
-                              scale: SeedsScreenLayout.topBgScale,
-                              child: Image.asset(
-                                SeedsScreenLayout.bgAsset,
-                                fit: BoxFit.cover,
-                                alignment: SeedsScreenLayout.topBgAlignment,
-                              ),
-                            ),
-                          ),
-                        ),
+                        child: ClipRect(child: _SeedsBgContent(spec: bgSpec)),
                       ),
                     ),
                   ),
@@ -580,6 +572,94 @@ class _SeedsScreenState extends State<SeedsScreen>
   }
 }
 
+/// Fondo de SeedsScreen: asset + transform. Permite posicionar cada fondo
+/// (por ejemplo el de cebolla) de forma independiente del resto.
+class SeedsBackgroundSpec {
+  const SeedsBackgroundSpec({
+    required this.asset,
+    required this.dy,
+    required this.scale,
+    required this.alignment,
+    this.blurSigma = 0,
+    this.blurStart = 0.5,
+  });
+
+  /// Ruta del PNG de fondo.
+  final String asset;
+
+  /// Desplazamiento vertical en px: POSITIVO baja la imagen, NEGATIVO la sube.
+  final double dy;
+
+  /// Escala de la imagen (1.0 = tamano normal).
+  final double scale;
+
+  /// Anclaje de la imagen dentro de su marco.
+  final Alignment alignment;
+
+  /// Intensidad del blur del corte inferior (0 = sin blur). Simula que el
+  /// cultivo se hunde bajo tierra hacia el corte.
+  final double blurSigma;
+
+  /// Fraccion de altura (0..1) donde empieza a entrar el blur del corte.
+  /// Menor = el blur sube mas; mayor = se concentra mas abajo.
+  final double blurStart;
+}
+
+/// Contenido del fondo de SeedsScreen. Si [SeedsBackgroundSpec.blurSigma] > 0,
+/// superpone una copia difuminada de la imagen, enmascarada hacia el corte
+/// inferior (transparente arriba -> opaca abajo), para simular que el cultivo
+/// (cebolla) se hunde bajo tierra. Si es 0, dibuja la imagen nitida (otros
+/// cultivos quedan exactamente igual que antes).
+class _SeedsBgContent extends StatelessWidget {
+  const _SeedsBgContent({required this.spec});
+
+  final SeedsBackgroundSpec spec;
+
+  Widget _transformed({double blur = 0}) {
+    Widget image = Image.asset(
+      spec.asset,
+      fit: BoxFit.cover,
+      alignment: spec.alignment,
+    );
+    if (blur > 0) {
+      image = ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: image,
+      );
+    }
+    return Transform.translate(
+      offset: Offset(0, spec.dy),
+      child: Transform.scale(scale: spec.scale, child: image),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget sharp = _transformed();
+    if (spec.blurSigma <= 0) return sharp;
+
+    final double start = spec.blurStart.clamp(0.0, 1.0).toDouble();
+    return Stack(
+      fit: StackFit.passthrough,
+      children: <Widget>[
+        sharp,
+        ShaderMask(
+          shaderCallback: (rect) {
+            return LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: const <Color>[Colors.transparent, Colors.white],
+              stops: <double>[start, 1.0],
+            ).createShader(rect);
+          },
+          blendMode: BlendMode.dstIn,
+          child: _transformed(blur: spec.blurSigma),
+        ),
+      ],
+    );
+  }
+}
+
 class SeedsScreenLayout {
   static const String genericPlantIconAsset =
       'assets/icons/wizard/ic_planta_generica.png';
@@ -665,8 +745,97 @@ class SeedsScreenLayout {
     'assets/seeds/lettuce/lettuce_stage_germination.png',
     'assets/seeds/lettuce/lettuce_stage_senescence.png',
   ];
+  static const String spinachIconAsset = 'assets/icons/wizard/ic_spinach.png';
+  static const double spinachIconScale = 2.55;
+  static const List<String> spinachHeroFallbackAssets = <String>[
+    'assets/seeds/spinach/spinach_stage_leaf_expansion.png',
+    'assets/seeds/spinach/spinach_stage_commercial_maturity.png',
+    'assets/seeds/spinach/spinach_stage_harvest_window.png',
+    'assets/seeds/spinach/spinach_stage_vegetative_early.png',
+    'assets/seeds/spinach/spinach_stage_establishment.png',
+    'assets/seeds/spinach/spinach_stage_germination.png',
+    'assets/seeds/spinach/spinach_stage_quality_decline.png',
+    'assets/seeds/spinach/spinach_stage_bolting_senescence.png',
+  ];
+  static const String onionIconAsset =
+      'assets/icons/wizard/ic_onion_generic.png';
+  static const double onionIconScale = 2.55;
+  static const List<String> onionHeroFallbackAssets = <String>[
+    'assets/seeds/Onion/onion_stage_bulb_fill.png',
+    'assets/seeds/Onion/onion_stage_bulb_initiation.png',
+    'assets/seeds/Onion/onion_stage_pre_bulbing.png',
+    'assets/seeds/Onion/onion_stage_vegetative.png',
+    'assets/seeds/Onion/onion_stage_establishment.png',
+    'assets/seeds/Onion/onion_stage_establishment_early.png',
+    'assets/seeds/Onion/onion_stage_germination.png',
+    'assets/seeds/Onion/onion_stage_maturity_harvest.png',
+    'assets/seeds/Onion/onion_stage_bolting_event.png',
+  ];
+  static const String garlicIconAsset =
+      'assets/icons/wizard/ic_garlic_generic.png';
+  static const double garlicIconScale = 2.55;
+  static const List<String> garlicHeroFallbackAssets = <String>[
+    'assets/seeds/Garlic/garlic_stage_germination.png',
+    'assets/seeds/Garlic/garlic_stage_emergence_establishment.png',
+    'assets/seeds/Garlic/garlic_stage_vegetative_leaf_growth.png',
+    'assets/seeds/Garlic/garlic_stage_vernalization_window.png',
+    'assets/seeds/Garlic/garlic_stage_clove_differentiation.png',
+    'assets/seeds/Garlic/garlic_stage_bulb_filling.png',
+    'assets/seeds/Garlic/garlic_stage_maturation_drydown.png',
+    'assets/seeds/Garlic/garlic_stage_harvest_curing.png',
+    'assets/seeds/Garlic/garlic_stage_scape_bolting.png',
+  ];
 
   static const String bgAsset = 'assets/images/bg_image_seeds.png';
+
+  /// Fondo alterno para cebolla: a diferencia de hoja/fruto, el bulbo crece
+  /// bajo tierra, por lo que usa una escena de hortaliza de bulbo.
+  static const String bgAssetHortaliza =
+      'assets/images/bg_image_seeds_hortaliza.png';
+
+  // ── Posicion del fondo de CEBOLLA (perillas independientes) ────────────
+  // Estas 3 perillas SOLO afectan al fondo de cebolla y son independientes
+  // entre si y del fondo por defecto. Cambia una sin tocar las demas:
+  //   onionBgDy        -> mueve vertical: POSITIVO baja, NEGATIVO sube (px).
+  //   onionBgScale     -> tamano: 1.0 normal, 1.1 = 10% mas grande.
+  //   onionBgAlignment -> anclaje de la imagen dentro de su marco.
+  static const double onionBgDy = 100;
+  static const double onionBgScale = 1.0;
+  static const Alignment onionBgAlignment = Alignment.topCenter;
+
+  // Blur del corte inferior SOLO para cebolla (simula el bulbo bajo tierra).
+  // Independientes entre si y del resto:
+  //   onionBgBlurSigma -> que tan difuminado: 0 = sin blur, 10-16 = fuerte.
+  //   onionBgBlurStart -> 0..1, donde entra el blur (0.5 = mitad hacia abajo;
+  //                       subelo para pegar el difuminado mas al corte).
+  static const double onionBgBlurSigma = 10;
+  static const double onionBgBlurStart = 0.5;
+
+  /// Resuelve fondo + posicion de SeedsScreen segun el cultivo. SOLO cebolla
+  /// y ajo usan la escena de bulbo bajo tierra; cualquier otro cultivo
+  /// conserva el fondo por defecto.
+  static SeedsBackgroundSpec backgroundSpecForCrop(String? cropId) {
+    final canonicalCropId = CropCatalog.canonicalCropKey(cropId);
+    final bool isUndergroundBulb =
+        canonicalCropId == CropCatalog.onionCropId ||
+        canonicalCropId == CropCatalog.garlicCropId;
+    return isUndergroundBulb
+        ? const SeedsBackgroundSpec(
+            asset: bgAssetHortaliza,
+            dy: onionBgDy,
+            scale: onionBgScale,
+            alignment: onionBgAlignment,
+            blurSigma: onionBgBlurSigma,
+            blurStart: onionBgBlurStart,
+          )
+        : const SeedsBackgroundSpec(
+            asset: bgAsset,
+            dy: topBgDy,
+            scale: topBgScale,
+            alignment: topBgAlignment,
+          );
+  }
+
   static const double topBgHeightFactor = 1.0;
   static const double topBgDy = -20;
   static const double topBgScale = 1.0;
@@ -827,6 +996,12 @@ class SeedsScreenLogic {
         return 'Calabaza';
       case 'lettuce':
         return 'Lechuga';
+      case 'spinach':
+        return 'Espinaca';
+      case 'onion':
+        return 'Cebolla';
+      case 'garlic':
+        return 'Ajo';
       case '':
         return 'Cultivo';
       default:
@@ -930,6 +1105,15 @@ class SeedsScreenLogic {
       if (cropId == CropCatalog.lettuceCropId) {
         return '$cropDisplayName - Lechuga generica';
       }
+      if (cropId == CropCatalog.spinachCropId) {
+        return '$cropDisplayName - Espinaca generica';
+      }
+      if (cropId == CropCatalog.garlicCropId) {
+        return '$cropDisplayName - Ajo generico';
+      }
+      if (cropId == CropCatalog.onionCropId) {
+        return '$cropDisplayName - Cebolla genérica';
+      }
       return '$cropDisplayName – Perfil genérico';
     }
 
@@ -980,6 +1164,12 @@ class SeedsScreenLogic {
           return SeedsScreenLayout.squashIconAsset;
         case CropCatalog.lettuceCropId:
           return SeedsScreenLayout.lettuceIconAsset;
+        case CropCatalog.spinachCropId:
+          return SeedsScreenLayout.spinachIconAsset;
+        case CropCatalog.onionCropId:
+          return SeedsScreenLayout.onionIconAsset;
+        case CropCatalog.garlicCropId:
+          return SeedsScreenLayout.garlicIconAsset;
         default:
           return SeedsScreenLayout.genericPlantIconAsset;
       }
@@ -1008,6 +1198,12 @@ class SeedsScreenLogic {
         return SeedsScreenLayout.squashIconAsset;
       case CropCatalog.lettuceCropId:
         return SeedsScreenLayout.lettuceIconAsset;
+      case CropCatalog.spinachCropId:
+        return SeedsScreenLayout.spinachIconAsset;
+      case CropCatalog.onionCropId:
+        return SeedsScreenLayout.onionIconAsset;
+      case CropCatalog.garlicCropId:
+        return SeedsScreenLayout.garlicIconAsset;
       default:
         return SeedsScreenLayout.genericPlantIconAsset;
     }
@@ -1072,6 +1268,21 @@ class SeedsScreenLogic {
       return SeedsScreenLayout.lettuceIconScale;
     }
 
+    if (asset == SeedsScreenLayout.spinachIconAsset ||
+        cropId == CropCatalog.spinachCropId) {
+      return SeedsScreenLayout.spinachIconScale;
+    }
+
+    if (asset == SeedsScreenLayout.onionIconAsset ||
+        cropId == CropCatalog.onionCropId) {
+      return SeedsScreenLayout.onionIconScale;
+    }
+
+    if (asset == SeedsScreenLayout.garlicIconAsset ||
+        cropId == CropCatalog.garlicCropId) {
+      return SeedsScreenLayout.garlicIconScale;
+    }
+
     return SeedsScreenLayout.genericPlantIconScale;
   }
 
@@ -1120,6 +1331,27 @@ class SeedsScreenLogic {
 
     if (cropId == CropCatalog.lettuceCropId) {
       for (final asset in SeedsScreenLayout.lettuceHeroFallbackAssets) {
+        add(asset);
+      }
+    }
+
+    if (cropId == CropCatalog.spinachCropId) {
+      for (final asset in SeedsScreenLayout.spinachHeroFallbackAssets) {
+        add(asset);
+      }
+    }
+
+    if (cropId == CropCatalog.onionCropId) {
+      for (final asset in SeedsScreenLayout.onionHeroFallbackAssets) {
+        add(asset);
+      }
+    }
+
+    if (cropId == CropCatalog.garlicCropId) {
+      for (final asset in SeedsScreenLayout.garlicHeroFallbackAssets) {
+        add(asset);
+      }
+      for (final asset in SeedsScreenLayout.onionHeroFallbackAssets) {
         add(asset);
       }
     }

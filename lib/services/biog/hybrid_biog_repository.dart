@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/services/biog/biog_repository.dart';
@@ -8,6 +10,8 @@ import 'package:bio_g/services/biog/identity/supabase_device_identity_repository
 import 'package:bio_g/services/biog/telemetry/offline_first_telemetry_source.dart';
 import 'package:bio_g/services/biog/telemetry/sensor_simulator.dart';
 import 'package:bio_g/services/biog/telemetry/telemetry_source.dart';
+
+const bool kBioGHardwareFlowRepositoryDebugLogs = true;
 
 /// Transitional implementation of [BioGRepository] that combines:
 ///
@@ -58,6 +62,7 @@ class HybridBioGRepository implements BioGRepository {
   BioGDevice? _activeDevice;
   String? _currentUserId;
   bool _simulatorStarted = false;
+  final Set<String> _loggedHardwareFlowStates = <String>{};
 
   DeviceIdentityRepository get identity => _identity;
   SensorSimulator get simulator => _simulator;
@@ -115,6 +120,11 @@ class HybridBioGRepository implements BioGRepository {
     if (active != null) {
       _activeDevice = active;
       _activeDeviceCtrl.add(active);
+      _logHardwareFlowOnce(
+        'active device resolved ui_device_id=${active.id} '
+        'telemetry_device_id=${active.telemetryDeviceId}',
+        onceKey: 'active:${active.id}:${active.telemetryDeviceId}',
+      );
 
       await _identity.setActiveDeviceId(userId: userId, deviceId: active.id);
 
@@ -122,6 +132,10 @@ class HybridBioGRepository implements BioGRepository {
     } else {
       _activeDevice = null;
       _activeDeviceCtrl.add(null);
+      _logHardwareFlowOnce(
+        'active device resolved device_id=null reason=no_device',
+        onceKey: 'active:none',
+      );
     }
 
     // 4) Keep simulator configured for alert fallback only.
@@ -184,13 +198,21 @@ class HybridBioGRepository implements BioGRepository {
     Duration window = const Duration(days: 7),
   }) {
     final telemetryDeviceId = device.telemetryDeviceId;
-    if (telemetryDeviceId == null || telemetryDeviceId.isEmpty) return;
+    if (telemetryDeviceId == null || telemetryDeviceId.isEmpty) {
+      _logHardwareFlowOnce(
+        'latest telemetry skipped ui_device_id=${device.id} '
+        'reason=no_valid_telemetry_device_id',
+        onceKey: 'telemetry_id_missing:${device.id}',
+      );
+      return;
+    }
     unawaited(_telemetrySource.refresh(telemetryDeviceId, window: window));
   }
 
-  Stream<BioGDevice?> _activeDeviceSelections() async* {
-    yield _activeDevice;
-    yield* _activeDeviceCtrl.stream;
+  void _logHardwareFlowOnce(String message, {required String onceKey}) {
+    if (!_loggedHardwareFlowStates.add(onceKey)) return;
+    if (!kDebugMode || !kBioGHardwareFlowRepositoryDebugLogs) return;
+    debugPrint('[BioG/HardwareFlow] $message');
   }
 
   // ---------------------------------------------------------------------------
@@ -210,86 +232,203 @@ class HybridBioGRepository implements BioGRepository {
   }
 
   @override
-  Stream<BioGTelemetry?> watchLiveTelemetry() async* {
-    // Emit an initial null so UI can render fast even before any device.
-    yield null;
+  Stream<BioGTelemetry?> watchLiveTelemetry() {
+    // STALE-STATE FIX.
+    //
+    // The previous implementation used a NESTED `await for`: an outer loop
+    // over active-device changes and an inner loop over the active device's
+    // telemetry. The inner loop only re-checked the active device AFTER the
+    // OLD device's telemetry stream emitted again. Because the offline-first
+    // source only emits on refresh (TTL-throttled + 10-min polling), changing
+    // the active device left the pipeline blocked on the previous device, so
+    // the dashboard kept showing the prior BioG's values until the old stream
+    // happened to tick.
+    //
+    // This version swaps the inner subscription the instant the active device
+    // changes: it cancels the previous telemetry subscription, emits `null`
+    // immediately (so the UI clears without waiting for Supabase), and only
+    // re-subscribes when the new device has a valid telemetry device id.
+    late final StreamController<BioGTelemetry?> out;
+    StreamSubscription<BioGDevice?>? activeSub;
+    StreamSubscription<BioGTelemetry?>? liveSub;
+    String? boundTelemetryId;
+    bool bound = false;
 
-    // Re-pipe the offline-first active-device live stream every time the
-    // active device changes. This stream reads local first and refreshes cloud.
-    await for (final active in _activeDeviceSelections()) {
-      if (active == null) {
-        yield null;
-        continue;
-      }
+    void bindActive(BioGDevice? active) {
+      if (out.isClosed) return;
 
-      final telemetryDeviceId = active.telemetryDeviceId;
-      if (telemetryDeviceId == null || telemetryDeviceId.isEmpty) {
-        yield null;
-        continue;
-      }
+      final String? raw = active?.telemetryDeviceId;
+      final String? nextId = (raw == null || raw.isEmpty) ? null : raw;
 
-      unawaited(_telemetrySource.refresh(telemetryDeviceId));
+      // Same telemetry identity as before → keep the live subscription.
+      // Avoids a spurious `null` flicker when the devices list republishes
+      // the same active device.
+      if (bound && nextId == boundTelemetryId) return;
+      bound = true;
 
-      await for (final t in _telemetrySource.watchLive(telemetryDeviceId)) {
-        yield t;
+      // The active device changed: the previous device's telemetry is invalid
+      // as of now. Drop it and clear the UI immediately — never wait for the
+      // network to fail first.
+      liveSub?.cancel();
+      liveSub = null;
+      boundTelemetryId = nextId;
+      out.add(null);
 
-        // Break out if active device changes again.
-        if (_activeDevice?.id != active.id) break;
-      }
+      // A device with no valid telemetry device id (e.g. a Bluetooth-added
+      // BioG not linked to Supabase) stays at `null` — no telemetry.
+      if (nextId == null) return;
+
+      unawaited(_telemetrySource.refresh(nextId));
+      liveSub = _telemetrySource
+          .watchLive(nextId)
+          .listen(
+            (t) {
+              if (boundTelemetryId == nextId && !out.isClosed) out.add(t);
+            },
+            onError: (Object _, StackTrace _) {
+              if (boundTelemetryId == nextId && !out.isClosed) out.add(null);
+            },
+          );
     }
+
+    out = StreamController<BioGTelemetry?>(
+      onListen: () {
+        // bindActive() always emits an initial value for the current active
+        // device (null when there is none / no telemetry id).
+        bindActive(_activeDevice);
+        activeSub = _activeDeviceCtrl.stream.listen(bindActive);
+      },
+      onCancel: () async {
+        await activeSub?.cancel();
+        await liveSub?.cancel();
+        activeSub = null;
+        liveSub = null;
+      },
+    );
+
+    return out.stream;
   }
 
   @override
-  Stream<List<BioGTelemetry>> watchHistory({required Duration window}) async* {
-    yield const <BioGTelemetry>[];
+  Stream<List<BioGTelemetry>> watchHistory({required Duration? window}) {
+    // Same stale-state fix as watchLiveTelemetry: swap the history
+    // subscription the moment the active device changes, instead of nesting
+    // `await for` loops that stayed bound to the previous device's stream.
+    late final StreamController<List<BioGTelemetry>> out;
+    StreamSubscription<BioGDevice?>? activeSub;
+    StreamSubscription<List<BioGTelemetry>>? historySub;
+    String? boundTelemetryId;
+    bool bound = false;
 
-    await for (final active in _activeDeviceSelections()) {
-      if (active == null) {
-        yield const <BioGTelemetry>[];
-        continue;
+    void bindActive(BioGDevice? active) {
+      if (out.isClosed) return;
+
+      final String? raw = active?.telemetryDeviceId;
+      final String? nextId = (raw == null || raw.isEmpty) ? null : raw;
+
+      if (bound && nextId == boundTelemetryId) return;
+      final bool activeDeviceChanged = bound;
+      bound = true;
+
+      historySub?.cancel();
+      historySub = null;
+      boundTelemetryId = nextId;
+
+      // A blank history is a real invalidation only when the active BioG
+      // changes. A newly-created stream for another range of the same BioG
+      // must not force the UI through a transient empty state.
+      if (activeDeviceChanged || nextId == null) {
+        out.add(const <BioGTelemetry>[]);
       }
 
-      final telemetryDeviceId = active.telemetryDeviceId;
-      if (telemetryDeviceId == null || telemetryDeviceId.isEmpty) {
-        yield const <BioGTelemetry>[];
-        continue;
-      }
+      if (nextId == null) return;
 
-      unawaited(_telemetrySource.refresh(telemetryDeviceId, window: window));
-
-      await for (final list in _telemetrySource.watchHistory(
-        telemetryDeviceId,
-        window: window,
-      )) {
-        yield list;
-
-        if (_activeDevice?.id != active.id) break;
-      }
+      unawaited(_telemetrySource.refresh(nextId, window: window));
+      historySub = _telemetrySource
+          .watchHistory(nextId, window: window)
+          .listen(
+            (list) {
+              if (boundTelemetryId == nextId && !out.isClosed) out.add(list);
+            },
+            onError: (Object _, StackTrace _) {
+              if (boundTelemetryId == nextId && !out.isClosed) {
+                out.add(const <BioGTelemetry>[]);
+              }
+            },
+          );
     }
+
+    out = StreamController<List<BioGTelemetry>>(
+      onListen: () {
+        bindActive(_activeDevice);
+        activeSub = _activeDeviceCtrl.stream.listen(bindActive);
+      },
+      onCancel: () async {
+        await activeSub?.cancel();
+        await historySub?.cancel();
+        activeSub = null;
+        historySub = null;
+      },
+    );
+
+    return out.stream;
   }
 
   @override
-  Stream<List<BioGAlert>> watchAlerts({int limit = 50}) async* {
-    // TEMPORARY:
-    // Alerts still come from SensorSimulator until the alert engine is extracted.
-    // Do not remove this yet, or several UI flows may lose alert data.
-    yield const <BioGAlert>[];
+  Stream<List<BioGAlert>> watchAlerts({int limit = 50}) {
+    // TEMPORARY: alerts still come from SensorSimulator until the alert engine
+    // is extracted. Same stale-state fix as the telemetry streams — swap the
+    // alert subscription the moment the active device changes so a newly
+    // selected BioG never inherits the previous device's alerts.
+    late final StreamController<List<BioGAlert>> out;
+    StreamSubscription<BioGDevice?>? activeSub;
+    StreamSubscription<List<BioGAlert>>? alertsSub;
+    String? boundDeviceId;
+    bool bound = false;
 
-    await for (final active in _activeDeviceSelections()) {
-      if (active == null) {
-        yield const <BioGAlert>[];
-        continue;
-      }
+    void bindActive(BioGDevice? active) {
+      if (out.isClosed) return;
 
-      await for (final list in _simulator.watchAlerts(
-        active.id,
-        limit: limit,
-      )) {
-        yield list;
+      final String? nextId = active?.id;
 
-        if (_activeDevice?.id != active.id) break;
-      }
+      if (bound && nextId == boundDeviceId) return;
+      bound = true;
+
+      alertsSub?.cancel();
+      alertsSub = null;
+      boundDeviceId = nextId;
+      out.add(const <BioGAlert>[]);
+
+      if (nextId == null) return;
+
+      alertsSub = _simulator
+          .watchAlerts(nextId, limit: limit)
+          .listen(
+            (list) {
+              if (boundDeviceId == nextId && !out.isClosed) out.add(list);
+            },
+            onError: (Object _, StackTrace _) {
+              if (boundDeviceId == nextId && !out.isClosed) {
+                out.add(const <BioGAlert>[]);
+              }
+            },
+          );
     }
+
+    out = StreamController<List<BioGAlert>>(
+      onListen: () {
+        bindActive(_activeDevice);
+        activeSub = _activeDeviceCtrl.stream.listen(bindActive);
+      },
+      onCancel: () async {
+        await activeSub?.cancel();
+        await alertsSub?.cancel();
+        activeSub = null;
+        alertsSub = null;
+      },
+    );
+
+    return out.stream;
   }
 
   @override
@@ -398,5 +537,6 @@ class HybridBioGRepository implements BioGRepository {
     _simulator.dispose();
     _devicesCtrl.close();
     _activeDeviceCtrl.close();
+    _loggedHardwareFlowStates.clear();
   }
 }

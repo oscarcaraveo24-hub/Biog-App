@@ -408,8 +408,8 @@ class QuickReportBuilder {
     return normalized;
   }
 
-  List<double> _normalizeDoubleList(List<double> source) {
-    final List<double> values = List<double>.from(source);
+  List<double?> _normalizeDoubleList(List<double?> source) {
+    final List<double?> values = List<double?>.from(source);
 
     if (values.length == _expectedHistoryPoints) return values;
 
@@ -417,9 +417,9 @@ class QuickReportBuilder {
       return values.sublist(values.length - _expectedHistoryPoints);
     }
 
-    final List<double> normalized = List<double>.filled(
+    final List<double?> normalized = List<double?>.filled(
       _expectedHistoryPoints,
-      0.0,
+      null,
     );
 
     final int start = _expectedHistoryPoints - values.length;

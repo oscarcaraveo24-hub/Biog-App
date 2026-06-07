@@ -53,6 +53,19 @@ enum YieldFamily {
   squashFruit,
   squashSeed,
   lettuceLeaf,
+  spinachLeafFresh,
+  spinachBabyLeaf,
+  spinachProcessing,
+  onionDryBulbFresh,
+  onionStorageBulb,
+  onionSweetFresh,
+  onionProcessing,
+  onionBunchingGreen,
+  garlicBulbFresh,
+  garlicPremiumCured,
+  garlicProcessing,
+  garlicSeedStock,
+  garlicLowInput,
   other,
 }
 
@@ -250,6 +263,49 @@ class YieldProjectionEngine {
             : YieldFamily.squashFruit;
       case 'lettuce':
         return YieldFamily.lettuceLeaf;
+      case 'spinach':
+        final id = reference.id.toLowerCase();
+        if (id.contains('baby')) return YieldFamily.spinachBabyLeaf;
+        if (id.contains('process')) return YieldFamily.spinachProcessing;
+        return YieldFamily.spinachLeafFresh;
+      case 'onion':
+        final id = reference.id.toLowerCase();
+        final useType = reference.useType.toLowerCase();
+        if (id.contains('cambray') ||
+            id.contains('bunch') ||
+            useType == 'bunching') {
+          return YieldFamily.onionBunchingGreen;
+        }
+        if (id.contains('process') || useType == 'processing') {
+          return YieldFamily.onionProcessing;
+        }
+        if (id.contains('storage') || useType == 'storage') {
+          return YieldFamily.onionStorageBulb;
+        }
+        if (id.contains('sweet') ||
+            id.contains('transplanted') ||
+            useType == 'sweet') {
+          return YieldFamily.onionSweetFresh;
+        }
+        return YieldFamily.onionDryBulbFresh;
+      case 'garlic':
+        final id = reference.id.toLowerCase();
+        final useType = reference.useType.toLowerCase();
+        if (id.contains('low_input') || id.contains('bajo')) {
+          return YieldFamily.garlicLowInput;
+        }
+        if (id.contains('storage') ||
+            id.contains('curado') ||
+            useType == 'storage') {
+          return YieldFamily.garlicPremiumCured;
+        }
+        if (id.contains('process') || useType == 'processing') {
+          return YieldFamily.garlicProcessing;
+        }
+        if (id.contains('seed') || useType == 'seed') {
+          return YieldFamily.garlicSeedStock;
+        }
+        return YieldFamily.garlicBulbFresh;
       default:
         return YieldFamily.other;
     }
@@ -373,6 +429,117 @@ class YieldProjectionEngine {
         betaHigh: 1.22,
         managementGamma: 1.45,
         managementFloor: 0.22,
+      ),
+      YieldFamily.spinachLeafFresh => const _YieldFamilyParams(
+        alphaLow: 0.92,
+        betaLow: 1.30,
+        alphaHigh: 0.84,
+        betaHigh: 1.22,
+        managementGamma: 1.40,
+        managementFloor: 0.22,
+      ),
+      YieldFamily.spinachBabyLeaf => const _YieldFamilyParams(
+        alphaLow: 0.85,
+        betaLow: 1.25,
+        alphaHigh: 0.72,
+        betaHigh: 1.15,
+        managementGamma: 1.55,
+        managementFloor: 0.18,
+      ),
+      YieldFamily.spinachProcessing => const _YieldFamilyParams(
+        alphaLow: 0.78,
+        betaLow: 1.22,
+        alphaHigh: 0.78,
+        betaHigh: 1.18,
+        managementGamma: 1.25,
+        managementFloor: 0.25,
+      ),
+      // Cebolla de bulbo seco/fresco. Sensible a fotoperiodo, agua en
+      // llenado, salinidad, N tardio y curado. Gamma alto: un cultivo
+      // bonito puede no rendir bulbo comercial si el manejo falla.
+      YieldFamily.onionDryBulbFresh => const _YieldFamilyParams(
+        alphaLow: 0.90,
+        betaLow: 1.30,
+        alphaHigh: 0.82,
+        betaHigh: 1.20,
+        managementGamma: 1.35,
+        managementFloor: 0.22,
+      ),
+      // Almacenamiento: exige curado, cuello cerrado y baja pudricion.
+      YieldFamily.onionStorageBulb => const _YieldFamilyParams(
+        alphaLow: 0.92,
+        betaLow: 1.32,
+        alphaHigh: 0.84,
+        betaHigh: 1.22,
+        managementGamma: 1.45,
+        managementFloor: 0.20,
+      ),
+      // Dulce/trasplantada: prioriza calibre y calidad, menos t/ha.
+      YieldFamily.onionSweetFresh => const _YieldFamilyParams(
+        alphaLow: 0.88,
+        betaLow: 1.28,
+        alphaHigh: 0.80,
+        betaHigh: 1.18,
+        managementGamma: 1.30,
+        managementFloor: 0.24,
+      ),
+      // Proceso/field-run: tolera mas, pero descarta por sanidad/calibre.
+      YieldFamily.onionProcessing => const _YieldFamilyParams(
+        alphaLow: 0.80,
+        betaLow: 1.22,
+        alphaHigh: 0.80,
+        betaHigh: 1.18,
+        managementGamma: 1.20,
+        managementFloor: 0.25,
+      ),
+      // Cambray/manojo: cosecha joven; sin bulbo seco, ventana corta.
+      YieldFamily.onionBunchingGreen => const _YieldFamilyParams(
+        alphaLow: 0.85,
+        betaLow: 1.25,
+        alphaHigh: 0.80,
+        betaHigh: 1.18,
+        managementGamma: 1.25,
+        managementFloor: 0.25,
+      ),
+      YieldFamily.garlicBulbFresh => const _YieldFamilyParams(
+        alphaLow: 0.88,
+        betaLow: 1.30,
+        alphaHigh: 0.80,
+        betaHigh: 1.20,
+        managementGamma: 1.35,
+        managementFloor: 0.20,
+      ),
+      YieldFamily.garlicPremiumCured => const _YieldFamilyParams(
+        alphaLow: 0.90,
+        betaLow: 1.35,
+        alphaHigh: 0.82,
+        betaHigh: 1.24,
+        managementGamma: 1.45,
+        managementFloor: 0.18,
+      ),
+      YieldFamily.garlicProcessing => const _YieldFamilyParams(
+        alphaLow: 0.80,
+        betaLow: 1.22,
+        alphaHigh: 0.78,
+        betaHigh: 1.18,
+        managementGamma: 1.20,
+        managementFloor: 0.25,
+      ),
+      YieldFamily.garlicSeedStock => const _YieldFamilyParams(
+        alphaLow: 0.84,
+        betaLow: 1.28,
+        alphaHigh: 0.78,
+        betaHigh: 1.18,
+        managementGamma: 1.30,
+        managementFloor: 0.20,
+      ),
+      YieldFamily.garlicLowInput => const _YieldFamilyParams(
+        alphaLow: 0.78,
+        betaLow: 1.18,
+        alphaHigh: 0.72,
+        betaHigh: 1.12,
+        managementGamma: 1.10,
+        managementFloor: 0.18,
       ),
       YieldFamily.other => const _YieldFamilyParams(
         alphaLow: 1.00,

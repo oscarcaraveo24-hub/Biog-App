@@ -137,6 +137,13 @@ class BioGTelemetry {
     required this.k,
     required this.batteryPct,
     required this.signalRssi,
+    this.hasSoilMoistureData = true,
+    this.hasSoilTempData = true,
+    this.hasPhData = true,
+    this.hasResistanceData = true,
+    this.hasNitrogenData = true,
+    this.hasPhosphorusData = true,
+    this.hasPotassiumData = true,
     this.hasSensorData = true,
   });
 
@@ -154,10 +161,21 @@ class BioGTelemetry {
   final double ec; // mS/cm (o la unidad que uses)
   final double resistance; //Mpa (compactacion suelo)
 
+  final bool hasSoilMoistureData;
+  final bool hasSoilTempData;
+  final bool hasPhData;
+  final bool hasResistanceData;
+
   // Nutrientes
   final double n; // ppm (ejemplo)
   final double p; // ppm
   final double k; // ppm
+
+  /// Presence flags preserve the difference between a real `0` and a
+  /// nutrient that was absent from the source payload.
+  final bool hasNitrogenData;
+  final bool hasPhosphorusData;
+  final bool hasPotassiumData;
 
   // Estado dispositivo
   final double? batteryPct; // %
@@ -179,9 +197,16 @@ class BioGTelemetry {
     'ph': ph,
     'ec': ec,
     'resistance': resistance,
+    'has_soil_moisture_data': hasSoilMoistureData,
+    'has_soil_temp_data': hasSoilTempData,
+    'has_ph_data': hasPhData,
+    'has_resistance_data': hasResistanceData,
     'n': n,
     'p': p,
     'k': k,
+    'has_nitrogen_data': hasNitrogenData,
+    'has_phosphorus_data': hasPhosphorusData,
+    'has_potassium_data': hasPotassiumData,
     'battery_pct': batteryPct,
     'signal_rssi': signalRssi,
     'has_sensor_data': hasSensorData,
@@ -287,6 +312,27 @@ class BioGTelemetry {
       json['potassium'],
       json['potassium_ppm'],
     ]);
+    final bool? explicitHasNitrogenData = _asBool(
+      json['has_nitrogen_data'] ?? json['hasNitrogenData'],
+    );
+    final bool? explicitHasSoilMoistureData = _asBool(
+      json['has_soil_moisture_data'] ?? json['hasSoilMoistureData'],
+    );
+    final bool? explicitHasSoilTempData = _asBool(
+      json['has_soil_temp_data'] ?? json['hasSoilTempData'],
+    );
+    final bool? explicitHasPhData = _asBool(
+      json['has_ph_data'] ?? json['hasPhData'],
+    );
+    final bool? explicitHasResistanceData = _asBool(
+      json['has_resistance_data'] ?? json['hasResistanceData'],
+    );
+    final bool? explicitHasPhosphorusData = _asBool(
+      json['has_phosphorus_data'] ?? json['hasPhosphorusData'],
+    );
+    final bool? explicitHasPotassiumData = _asBool(
+      json['has_potassium_data'] ?? json['hasPotassiumData'],
+    );
 
     final bool? explicitHasSensorData = _asBool(
       json['has_sensor_data'] ?? json['hasSensorData'],
@@ -319,6 +365,14 @@ class BioGTelemetry {
       n: n ?? 0.0,
       p: p ?? 0.0,
       k: k ?? 0.0,
+      hasSoilMoistureData:
+          explicitHasSoilMoistureData ?? soilMoisturePct != null,
+      hasSoilTempData: explicitHasSoilTempData ?? soilTempC != null,
+      hasPhData: explicitHasPhData ?? ph != null,
+      hasResistanceData: explicitHasResistanceData ?? resistance != null,
+      hasNitrogenData: explicitHasNitrogenData ?? n != null,
+      hasPhosphorusData: explicitHasPhosphorusData ?? p != null,
+      hasPotassiumData: explicitHasPotassiumData ?? k != null,
       batteryPct: _firstNullableDouble(<dynamic>[
         json['battery_pct'],
         json['batteryPct'],
@@ -346,6 +400,13 @@ class BioGTelemetry {
     double? n,
     double? p,
     double? k,
+    bool? hasSoilMoistureData,
+    bool? hasSoilTempData,
+    bool? hasPhData,
+    bool? hasResistanceData,
+    bool? hasNitrogenData,
+    bool? hasPhosphorusData,
+    bool? hasPotassiumData,
     double? batteryPct,
     int? signalRssi,
     bool? hasSensorData,
@@ -363,6 +424,14 @@ class BioGTelemetry {
       n: n ?? this.n,
       p: p ?? this.p,
       k: k ?? this.k,
+      hasSoilMoistureData:
+          hasSoilMoistureData ?? this.hasSoilMoistureData,
+      hasSoilTempData: hasSoilTempData ?? this.hasSoilTempData,
+      hasPhData: hasPhData ?? this.hasPhData,
+      hasResistanceData: hasResistanceData ?? this.hasResistanceData,
+      hasNitrogenData: hasNitrogenData ?? this.hasNitrogenData,
+      hasPhosphorusData: hasPhosphorusData ?? this.hasPhosphorusData,
+      hasPotassiumData: hasPotassiumData ?? this.hasPotassiumData,
       batteryPct: batteryPct ?? this.batteryPct,
       signalRssi: signalRssi ?? this.signalRssi,
       hasSensorData: hasSensorData ?? this.hasSensorData,

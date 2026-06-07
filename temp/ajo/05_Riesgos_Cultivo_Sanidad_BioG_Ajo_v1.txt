@@ -1,0 +1,917 @@
+BIO-G / AJO - TEXTO PARA CODIGO
+Archivo TXT: 05_Riesgos_Cultivo_Sanidad_BioG_Ajo_v1.txt
+Documento: RIESGOS DEL CULTIVO DE AJO - SANIDAD VEGETAL / PLANT HEALTH
+Version: v1 investigada y lista para revision tecnica BIO-G
+Cultivo madre: crop_garlic / CropKey.garlic
+Perfiles BIO-G: AG-GEN, AG-01, AG-02, AG-03, AG-04, AG-05
+Documentos relacionados:
+- 01_Perfil_Universal_BioG_Ajo_v2_mejorado.txt
+- 02_Perfil_Generico_BioG_Ajo_AG_GEN_SKIP_v2_mejorado.txt
+- 03_Guia_Fertilizacion_BioG_Ajo_v1_1_reforzada.txt
+- 04_Rendimiento_Aproximado_BioG_Ajo_v1_variedades.txt
+
+Nota:
+Documento tecnico interno. No sustituye diagnostico local, laboratorio, extension agricola, asesor agronomico ni normativa regional. BIO-G orienta, prioriza y pide confirmacion; no receta plaguicidas ni ingredientes activos en UX v1.
+
+======================================================================
+BIO-G
+RIESGOS DEL CULTIVO DE AJO
+Plagas, enfermedades, desordenes fisiologicos y traduccion a motor Plant Health
+Base tecnica para BIO-G v1
+======================================================================
+
+Alcance
+----------------------------------------------------------------------
+Este documento cubre ajo comun (Allium sativum L.) en campo abierto y suelo mineral, con plantacion de diente-semilla, riego por gravedad, goteo, aspersion de establecimiento, cultivo comercial de bulbo fresco/seco, ajo para mercado nacional, exportacion, proceso, semilla propia o material regional.
+
+No cubre como modelo principal:
+- Hidroponia, NFT, raiz flotante, sustratos inertes o soluciones recirculantes.
+- Invernadero altamente tecnificado sin suelo.
+- Produccion profesional de semilla libre de patogenos como modulo independiente.
+- Receta de agroquimicos, dosis de ingredientes activos o decisiones regulatorias.
+- Diagnostico definitivo desde una sola foto, sensor aislado o sintoma unico.
+- Certificacion fitosanitaria de semilla o campo.
+
+Objetivo
+----------------------------------------------------------------------
+Consolidar una base confiable para que BIO-G interprete riesgos de sanidad y calidad en ajo, compatible con el catalogo Plant Health, los perfiles AG-GEN, AG-01, AG-02, AG-03, AG-04 y AG-05, la guia de fertilizacion, el rendimiento aproximado y la futura integracion de codigo.
+
+La sanidad del ajo debe entenderse como un sistema de cuatro puertas:
+
+1. El diente-semilla:
+   El ajo se propaga vegetativamente. Esto significa que muchos problemas entran al lote desde el diente: Fusarium, Penicillium, Botrytis, nematodos, acaros, virus y pudriciones latentes.
+
+2. El suelo:
+   White rot, Fusarium, nematodos, pink root, Sclerotinia, anoxia, compactacion y salinidad pueden limitar raiz, vigor, bulbificacion y calidad de bulbo.
+
+3. La hoja:
+   La hoja es la fabrica del bulbo. Roya, mildiu, purple blotch, Stemphylium, Botrytis, trips, virus y fitotoxicidad reducen fotosintesis y calibre.
+
+4. El bulbo / cuello / curado:
+   Muchas perdidas no aparecen en verde: aparecen en cosecha, curado o almacenamiento. Neck rot, blue mold, black mold, Fusarium, bacterias, heridas, humedad excesiva y mal secado convierten un buen cultivo en bajo rendimiento comercial.
+
+Regla de producto:
+En ajo, el diagnostico no debe preguntar solo "que enfermedad tiene". Debe preguntar: ¿el problema vino de la semilla, del suelo, del agua, del frio fisiologico, del nitrogeno, de la hoja, del bulbo o del curado?
+
+======================================================================
+1. DECISION EJECUTIVA
+======================================================================
+
+El ajo debe tener catalogo de sanidad propio. No debe copiarse exactamente de cebolla, aunque ambos sean Allium.
+
+La razon principal:
+- Cebolla puede entrar por semilla o trasplante.
+- Ajo entra por diente-semilla vegetativo.
+- Por eso el ajo hereda problemas del material de plantacion con mas facilidad.
+- La sanidad inicial del diente pesa tanto como suelo, clima y manejo.
+
+Tesis BIO-G:
+La sanidad del ajo no empieza cuando aparece una mancha en la hoja. Empieza antes de plantar: con la calidad sanitaria del diente, el historial de Allium del lote, el drenaje, la salinidad, la vernalizacion, el manejo del nitrogeno y la capacidad de curar el bulbo sin heridas ni humedad.
+
+Las familias de riesgo mas importantes son:
+
+1. Enfermedades transmitidas por semilla/diente y almacenamiento:
+   - Penicillium / blue mold.
+   - Fusarium basal rot.
+   - Botrytis neck rot.
+   - Black mold.
+   - Bacterial soft rots secundarias.
+   - Virus y mosaicos.
+   - Acaros y nematodos en diente.
+
+2. Enfermedades de suelo y raiz:
+   - White rot.
+   - Fusarium basal rot.
+   - Pink root.
+   - Sclerotinia / southern blight segun zona.
+   - Damping-off / decay de diente.
+   - Stem and bulb nematode.
+   - Root-knot / stubby root donde aplique.
+   - Anoxia por exceso de humedad.
+
+3. Enfermedades foliares que bajan calibre:
+   - Rust / roya del ajo.
+   - Downy mildew / mildiu velloso.
+   - Purple blotch / Alternaria.
+   - Stemphylium leaf blight.
+   - Botrytis leaf blight.
+   - Virus: garlic mosaic, onion yellow dwarf, leek yellow stripe, IYSV regional.
+
+4. Plagas:
+   - Trips.
+   - Onion maggot / seedcorn maggot.
+   - Leafminers.
+   - Bulb mites / acarid mites.
+   - Eriophyid mites.
+   - Cutworms.
+   - Wireworms y plagas de suelo.
+   - Slugs/snails en huerto o zonas humedas.
+   - Malezas como competencia y hospedaje.
+
+5. Desordenes fisiologicos y manejo:
+   - Frio insuficiente / mala vernalizacion.
+   - No diferenciacion correcta de dientes.
+   - Escobeteado / brooming / dientes expuestos.
+   - Exceso de nitrogeno y vigor.
+   - Densidad baja.
+   - Siembra demasiado temprana.
+   - Deficit hidrico en diferenciacion/llenado.
+   - Exceso de humedad, anoxia, pudriciones.
+   - Salinidad.
+   - Compactacion y suelo pesado.
+   - Riego tardio o lluvia cerca de cosecha.
+   - Curado deficiente.
+   - Daño mecanico, sol, heridas y brotacion en almacenamiento.
+
+Lectura BIO-G recomendada:
+El valor no esta en decir "tienes hongo". El valor esta en ordenar el riesgo y decir:
+- "Esto parece de semilla/diente".
+- "Esto parece de suelo/raiz".
+- "Esto parece de humedad/curado".
+- "Esto parece foliar y puede bajar calibre".
+- "Esto parece fisiologico, no plaga".
+- "Esto necesita confirmacion local antes de actuar".
+
+======================================================================
+2. METODOLOGIA Y CRITERIO DE CONFIABILIDAD
+======================================================================
+
+La guia se construyo priorizando extension universitaria, guias oficiales, IPM, literatura tecnica y documentos internos BIO-G. Las fuentes comerciales, blogs y experiencias de productor se usan solo como apoyo de lenguaje, problemas frecuentes y validacion de sintomas, no como base para diagnostico o manejo regulado.
+
+Tipo de evidencia                         Uso dentro de BIO-G                                           Confianza
+
+UC IPM / Extension universitaria           Base de catalogo de plagas/enfermedades, señales, diferenciales. Alta
+Guias regionales Mexico / Sonora           Contexto desertico, plagas frecuentes, riego, cosecha, escobeteado. Alta-media
+Pest Management Strategic Plan / IPM        Riesgos por sistema, semilla, nematodos, white rot, prioridades. Alta-media
+Articulos academicos                        Apoyo para patogenos emergentes, virulencia, poscosecha, diagnostico. Media-alta
+Laboratorio fitopatologico                  Fuente decisiva si hay muestra real. Alta
+Foros / blogs / productores                 Lenguaje, sintomas cotidianos, errores frecuentes. Baja-media
+Fuentes comerciales                         Nombres comunes, narrativa de campo, no receta. Baja
+
+Regla de producto:
+Cuando las fuentes difieren, BIO-G debe elegir una salida conservadora, pedir confirmacion y no recomendar quimicos. Es mejor decir "compatible con" o "riesgo alto de" que dar diagnostico cerrado.
+
+======================================================================
+3. LECTURA DEL CODIGO ACTUAL Y DIFERENCIA CON CEBOLLA
+======================================================================
+
+El patron de cebolla sirve como arquitectura, pero ajo exige ajustes:
+
+Elemento                            Cebolla                                         Ajo
+
+Propagacion                         Semilla/trasplante principalmente              Diente-semilla vegetativo
+Riesgo de material inicial           Existe, pero menor en semilla certificada       Muy alto: diente puede traer Fusarium, Penicillium, Botrytis, nematodos, acaros, virus
+Organo objetivo                      Bulbo por escamas                              Cabeza/bulbo compuesto por dientes
+Floracion / escapo                   Falla o evento no productivo                   En hardneck puede ser normal; en softneck/comercial puede ser defecto si no esperado
+Evento fisiologico clave             Fotoperiodo + bulbificacion                    Vernalizacion + fotoperiodo + diferenciacion de dientes
+Defecto de vigor                     Cuello grueso / mala maduracion                Escobeteado, canutos, dientes expuestos, mala cobertura
+Curado                               Muy importante                                 Muy importante; define almacenamiento, mohos y pudriciones
+Catalogo Plant Health                Onion syndromes                                Crear garlic_syndromes.dart
+
+Componente BIO-G                     Implicacion para ajo
+
+PlantHealthStageBucket               Agregar _fromGarlic. Plantacion/emergencia -> seedling. Vegetativo -> vegetativeEarly/Mid. Vernalizacion -> vegetativeMid/physiologicalWindow. Diferenciacion -> vegetativeLate/organInitiation. BulbFill -> organFill/grainFill. Maduracion/cosecha/curado -> lateSeason/postHarvest. Escapo/espigado -> reproductiveAnomaly o stageEvent.
+
+PlantHealthIds                       La mayoria de riesgos caben en clove, seedClove, root, basalPlate, bulb, neck, leaf, wholePlant, storage, soil, postHarvest. Conviene agregar señales finas: white_mycelium_black_sclerotia, basal_plate_brown_dry_rot, blue_green_mold, orange_rust_pustules, purple_concentric_lesions, mosaic_streaks, thrips_silver_scarring, bulb_mite_scars, stem_bulb_nematode_distortion, exposed_cloves_brooming, poor_curing_moist_neck.
+
+PlantHealthSyndrome                  Crear garlic_syndromes.dart con 35-40 entradas priorizadas. Agrupar por: diente/semilla, suelo/raiz, hoja, plagas, nematodos, fisiologia, cosecha/curado y almacenamiento.
+
+VarietyModifier                      AG-01..AG-05 ajustan sensibilidad: blanco/perla, jaspeado/hardneck-like, morado, criollo/regional, chino/coreano. La variedad no crea cultivo separado.
+
+Environment flags                    highHumidity, wetCanopy, coolDewyWindow, heatStress, waterlogging, salinityRisk, compaction, recentStress, recentApplication, poorCuring, vectorPressure, weedPressure, coldInsufficient, vernalizationRisk, seedCloveRisk.
+
+Regla editorial:
+BIO-G debe decir "compatible con", "riesgo de", "condiciones favorables a", "revise si", "confirme con laboratorio si avanza". No debe decir "tienes Fusarium" o "aplica X" por foto.
+
+======================================================================
+4. PANORAMA REAL DEL RIESGO EN AJO
+======================================================================
+
+4.1. El diente-semilla es la primera decision sanitaria
+----------------------------------------------------------------------
+El ajo se multiplica por dientes. Si el diente viene contaminado, el problema entra al lote antes de que el sensor mida algo. Por eso BIO-G debe preguntar:
+
+- ¿El material venia sano, firme y sin moho?
+- ¿Era semilla certificada, regional, propia o comprada sin trazabilidad?
+- ¿Se desgranó con cuidado?
+- ¿Hubo heridas al separar dientes?
+- ¿Se almacenó con humedad?
+- ¿Habia dientes blandos, azules/verdes, mohosos, con manchas hundidas o secos?
+- ¿El lote anterior tuvo ajo/cebolla/puerro?
+
+Regla BIO-G:
+Si hay mala emergencia, plantas en parches y material de semilla dudoso, subir seedCloveRisk antes de culpar al fertilizante.
+
+4.2. White rot es riesgo de lote, no solo de planta
+----------------------------------------------------------------------
+White rot / pudricion blanca es uno de los riesgos mas graves en Allium. Sus esclerocios pueden persistir muchos años en el suelo y moverse con tierra, agua, herramientas, maquinaria o material vegetal. En UX, BIO-G debe marcarlo como riesgo de bioseguridad del lote.
+
+Señal fuerte:
+- Planta amarilla o enana en focos.
+- Raiz/base podrida.
+- Micelio blanco algodonoso en base/bulbo.
+- Esclerocios negros pequeños, como semillas negras, sobre bulbo/base.
+
+Salida:
+"Señal compatible con pudricion blanca. Evite mover suelo o material de ese foco a otros lotes y confirme con diagnostico local."
+
+4.3. Fusarium basal rot es central en ajo
+----------------------------------------------------------------------
+Fusarium en ajo puede entrar por semilla o suelo. La pudricion normalmente inicia en el plato basal/base del bulbo y puede extenderse hacia dientes. Es facil confundirlo con bacteria, anoxia, daño de acaros o white rot.
+
+Señales:
+- Amarillamiento y muerte descendente de hojas.
+- Plantas enanas o con bajo vigor.
+- Plato basal cafe o rojizo.
+- Pudricion seca desde la base.
+- Raices oscuras.
+- Dientes blandos si hay infeccion avanzada o colonizacion secundaria.
+
+Regla:
+Si el daño inicia en el plato basal y hay pudricion seca, subir Fusarium. Si hay olor fuerte, tejido acuoso y calor/humedad, subir bacteria secundaria.
+
+4.4. Roya es especialmente importante en ajo
+----------------------------------------------------------------------
+La roya puede ser mas importante en ajo que en cebolla. Se reconoce por pustulas anaranjadas, rojizas o marron-naranja en hojas. Si avanza, seca follaje y reduce tamaño/calidad de bulbo.
+
+Señales:
+- Pustulas ovaladas o romboidales anaranjadas.
+- Primero en hojas viejas, despues hojas jovenes.
+- En infecciones severas, hojas amarillas y secas.
+- Baja calibre por perdida de fotosintesis.
+
+4.5. Trips y hoja dañada bajan calibre
+----------------------------------------------------------------------
+Trips raspa tejido, causa plateado/bronceado, reduce fotosintesis, estresa la planta y puede abrir puerta a otros problemas. En ajo puede no ser siempre el unico problema, pero cuando coincide con bulbificacion/llenado, puede bajar calibre.
+
+Regla:
+No diagnosticar trips solo por plateado. Confirmar insectos en pliegues, cuello o hojas protegidas.
+
+4.6. Curado y almacenamiento son parte de sanidad
+----------------------------------------------------------------------
+En ajo, cosechar no termina el riesgo. Penicillium, Botrytis, black mold, bacterias, Fusarium y brotacion pueden aparecer o empeorar despues. La humedad, heridas, corte muy cercano, ventilacion deficiente, sol directo o curado incompleto son factores de descarte.
+
+Mensaje:
+"En ajo, sanidad no es solo llegar a cosecha; es llegar con bulbo seco, firme, cerrado y sin entrada para mohos."
+
+======================================================================
+5. RIESGOS POR SISTEMA, PERFIL Y DESTINO
+======================================================================
+
+Sistema / destino                 Riesgos que mas pesan                                      Lectura BIO-G recomendada
+
+AG-GEN / desconocido              Semilla dudosa, vernalizacion insuficiente, Fusarium,       Perfil conservador. Preguntar origen del diente, fecha, frio, riego, suelo y etapa antes de diagnosticar fuerte.
+                                  white rot, salinidad, exceso N, escobeteado, trips.
+
+Campo abierto con riego            Trips, roya, Fusarium, white rot, blue mold en semilla,     Cruzar humedad, CE, N tardio, historial Allium, calidad de diente y riego cercano a cosecha.
+                                  pudriciones de bulbo/cuello.
+
+Riego por gravedad                 Anoxia en suelos pesados, zonas secas/saturadas,             Preguntar textura y frecuencia. Marchitez con suelo humedo no es falta de agua.
+                                  Fusarium, pink root, white rot, maleza.
+
+Riego por goteo                    Salinidad localizada, falla de uniformidad, exceso             Revisar CE del bulbo, humedad por zona, compatibilidad de fertirriego y obstruccion de goteros.
+                                  fertirriego, raiz superficial, N/K tardios.
+
+Aspersion de establecimiento       Mojado foliar, mildiu/Botrytis/roya si se prolonga,            Usar solo como contexto; si hay HR alta + hoja mojada, subir foliar disease risk.
+                                  bacteria por splash y humedad.
+
+Bulbo fresco                       Calidad visual, calibre, piel/tunica, daño por trips,          Pesa hoja activa, uniformidad, heridas y cosecha oportuna.
+                                  escobeteado, manchas, mohos.
+
+Bulbo seco / almacenamiento        Botrytis neck rot, blue mold, black mold, Fusarium,            Subir peso de curado, humedad, ventilacion, daño mecanico, corte de tallo/raiz y madurez.
+                                  brotacion, heridas.
+
+Proceso/deshidratado               Uniformidad, pudriciones, materia seca, sanidad del            Field-run puede tolerar distinto calibre, pero no pudricion o material enfermo.
+                                  bulbo, descarte por moho.
+
+Semilla propia o regional          Virus, nematodos, acaros, Fusarium, Penicillium,               Pedir historial y seleccionar dientes sanos. Alta importancia de diagnostico preventivo.
+                                  white rot, mezcla de calibres.
+
+Huerto/pequena escala              Exceso de agua, suelos compactados, poca rotacion,             Mensajes simples: no repetir Allium, usar dientes sanos, secar bien, evitar charcos.
+                                  mohos de almacenamiento, maleza.
+
+======================================================================
+6. PRIORIZACION POR PERFIL BIO-G
+======================================================================
+
+Perfil                     Tipo UX / uso                             Riesgos que suben de peso                                      Notas para BIO-G
+
+AG-GEN                     No se / otra ajo                         Semilla dudosa, vernalizacion, Fusarium, white rot,             Conservador. No asume blanco/morado/criollo/chino, hardneck/softneck ni destino fino.
+                                                                        exceso N, escobeteado, curado.
+
+AG-01                      Ajo blanco / Perla                       Fusarium basal rot, Penicillium/blue mold, trips,                Mercado amplio. Cuidar diente sano, calibre, exceso de N, escobeteado y curado limpio.
+                                                                        escobeteado, neck rot, almacenamiento.
+
+AG-02                      Jaspeado / Calera / rayado               Roya, vernalizacion insuficiente, deficit hidrico,               Perfil de ciclo medio-largo y vigor. Si tiene escapo esperado, no marcarlo automaticamente como falla.
+                                                                        compactacion, Fusarium, white rot.
+
+AG-03                      Ajo morado                               Requerimiento de frio, roya, purple blotch/Stemphylium,          Calidad visual y pigmentacion. Calor temprano y lluvias tardias bajan calidad.
+                                                                        curado deficiente, pudriciones.
+
+AG-04                      Criollo / regional                       Variabilidad de semilla, virus, nematodos, acaros,                Material local puede estar adaptado, pero si es semilla propia debe subir seedCloveRisk.
+                                                                        Fusarium, mezcla de calibres, curado irregular.
+
+AG-05                      Chino / coreano                          Procedencia de semilla, virus/nematodos/acaros, vigor alto,       No asumir superioridad. Alta necesidad de trazabilidad, prueba visual y ajuste por zona.
+                                                                        exceso N, mala diferenciacion, curado.
+
+Reglas de seguridad por perfil:
+- Si el perfil es jaspeado/morado/hardneck-like y aparece escapo, preguntar si el escapo es esperado antes de diagnosticar "espigado" como falla.
+- Si el perfil es blanco/perla/softneck-like y aparecen canutos/escapos o escobeteado, subir riesgo fisiologico y revisar N, densidad, fecha, frio y vigor.
+- Si el usuario usa semilla propia, subir seedCloveRisk aunque el cultivo se vea bien.
+- Si hubo Allium en el lote recientemente, subir soilborneAlliumRisk.
+- Si hay historial de white rot, no tratar como enfermedad normal: marcar bioseguridad del lote.
+
+======================================================================
+7. CATALOGO MAESTRO PROPUESTO DE RIESGOS BIOTICOS
+======================================================================
+
+La tabla prioriza riesgos con valor real para decision de campo y compatibles con un motor de sindromes. No busca listar todo lo posible; busca entradas utiles para diagnostico, monitoreo, confirmacion y UX.
+
+Riesgo                              Donde pesa mas                         Que lo favorece                              Clave visual / senal fuerte                         Etapa                  Prioridad
+
+Damping-off / decay de diente        Plantacion, emergencia, mala semilla   Diente herido, suelo frio-humedo, Penicillium,  No emerge, brote podrido, raiz cafe, diente blando   Plantacion-estab.      Alta
+                                                                            exceso agua, material infectado.
+
+Penicillium / blue mold              Diente-semilla y almacenamiento        Heridas al desgranar, humedad, mal curado,       Moho azul/verde, dientes blandos, mala emergencia    Preplant-almacen       Alta
+                                                                            almacenamiento de bulbos infectados.
+
+Fusarium basal rot                   Plato basal, raiz, bulbo, almacen      Semilla infectada, suelo calido, heridas,        Plato basal cafe/rojizo, pudricion seca desde base,  Estab.-almacen         Muy alta
+                                                                            acaros/maggots/nematodos, estres.               hoja amarilla, muerte de raices.
+
+White rot                            Lotes con historial Allium             Suelo fresco-humedo, esclerocios, movimiento     Micelio blanco algodonoso + esclerocios negros       Cualquier etapa        Muy alta / bioseguridad
+                                                                            de suelo/equipo/semilla.                        pequeños en base/bulbo.
+
+Botrytis neck rot                    Cuello, bulbo, curado, almacen         Semilla infectada, N tardio, cuello humedo,      Cuello blando, moho gris, pudricion en cuello        Maduracion-almacen     Alta
+                                                                            curado pobre, humedad.
+
+Bacterial soft rot complex           Bulbo, cuello, almacenamiento          Heridas, calor, agua libre, curado lento,        Tejido acuoso, blando, olor fuerte, escamas          Bulbo-almacen          Alta condicional
+                                                                            insectos y pudriciones previas.                 descompuestas.
+
+Black mold / Aspergillus             Poscosecha, regiones calidas           Calor, heridas, humedad, mal curado.             Polvo/esporas negras bajo tunicas externas           Curado-almacen         Media-alta calor
+
+Pink root                            Raiz, base, suelos con historial       Monocultivo Allium, estres, calor, raiz debil.   Raices rosa -> rojo/purpura -> negras, planta chica  Vegetativo-bulbo       Media regional
+
+Sclerotinia / southern blight        Base/bulbo en zonas humedas/calidas    Humedad, residuos, materia organica, calor       Micelio blanco, esclerocios, marchitez en focos      Vegetativo-cosecha     Media regional
+                                      segun patogeno                         segun complejo.
+
+Rust / roya del ajo                  Hojas                                  HR moderada/alta, dosel cerrado, Allium          Pustulas naranja/rojizas ovaladas o romboidales      Vegetativo-bulbo       Muy alta en ajo
+                                                                            cercano, variedades susceptibles.
+
+Downy mildew / mildiu velloso        Hojas                                  Fresco-humedo, rocio, hoja mojada, mala          Vello gris/blanco/purpura, parches amarillos,        Vegetativo-bulbo       Alta regional
+                                                                            ventilacion.                                    colapso de hoja.
+
+Purple blotch / Alternaria           Hojas viejas, tejido estresado         Humedad, trips, edad de hoja, lesion previa.     Lesiones purpuras/tan con anillos, halo amarillo     Vegetativo-maduracion  Media-alta
+
+Stemphylium leaf blight              Hojas estresadas, fin de ciclo         Rocio nocturno, humedad, calor/estres, lesiones  Manchas oscuras oliva-negro, tizne, secado rapido    Bulbo-maduracion       Media-alta regional
+                                                                            previas.
+
+Botrytis leaf blight                 Hoja                                   Mojado foliar, rocio, alta HR, dosel cerrado.    Manchas blancas hundidas con halo, puntas secas      Vegetativo-bulbo       Media-alta
+
+Garlic mosaic / OYDV / LYSV          Hoja, vigor, bulbo                     Semilla vegetativa infectada, aphids/vectores,   Mosaico, estrias amarillas, hojas deformes, bajo     Vegetativo             Alta si semilla propia
+                                                                            material viejo.                                  vigor.
+
+Iris yellow spot virus               Hojas / escapo regional                Trips, malezas, Allium voluntario, estres.       Lesiones pajizas tipo diamante/huso, necrosis        Vegetativo-bulbo       Media regional
+
+Thrips                               Hojas, cuello, pliegues                Calor/seco, malezas, Allium cercano, N alto.     Plateado/bronceado, insectos en pliegues, raspado    Vegetativo-bulbo       Alta
+
+Leafminers                           Hoja                                   Presion regional, hospederos cercanos.           Galerias blancas serpenteantes, larvas/pupas         Estab.-cosecha         Media
+
+Onion maggot / seedcorn maggot       Diente, raiz, stand, bulbo             Suelo fresco-humedo, materia organica fresca,    Larvas blancas sin patas, fallas de stand,           Plantacion-5 hojas     Alta condicional
+                                                                            residuos, Allium previo.                         pudricion secundaria.
+
+Bulb mites / acarid mites            Diente, bulbo, plato basal             Heridas, Fusarium, humedad, almacenamiento,       Acaros pequeños perlados, cicatrices marron,         Preplant-almacen       Alta condicional
+                                                                            material contaminado.                            pudricion secundaria.
+
+Eriophyid mites / Aceria tulipae      Diente-semilla y almacen              Material infectado, almacenamiento, semilla.      Manchas hundidas/cafes, estrias en dientes,          Preplant-almacen       Media-alta
+                                                                                                                            deformacion o bajo vigor.
+
+Stem and bulb nematode               Diente, cuello, bulbo, planta          Material infectado, suelo contaminado, rotacion   Hinchazon/deformacion, tejidos blandos, bajo stand,  Desde plantacion       Muy alta si aparece
+(Ditylenchus dipsaci)                                                       corta.                                           bulbo deforme.
+
+Root-knot / stubby root nematodes    Raiz                                   Suelo infestado, hospedantes, textura ligera.     Raiz corta/agallada, bajo vigor, parches             Estab.-bulbo           Media regional
+
+Wireworms / soil insects             Raiz, diente, bulbo                    Historial de pastos, maleza, suelo con larvas.   Mordidas en diente/bulbo, plantas debiles            Plantacion-bulbo       Media condicional
+
+Cutworms                             Plantula/hoja                          Maleza previa, residuos, actividad nocturna.     Plantas cortadas a nivel de suelo                    Emergencia-vegetativo  Media
+
+Slugs/snails                         Huerto, protegido, zonas humedas        Humedad, mulch, sombra, residuos.                Mordidas irregulares, baba, daño nocturno            Vegetativo             Condicional
+
+Malezas competidoras                 Todo el ciclo, fuerte temprano          Ajo crece lento, mala cama, poca escarda.         Plantas sombreadas, menor calibre, hospedaje plagas  Plantacion-bulbo       Alta
+
+======================================================================
+8. RIESGOS ABIOTICOS Y FISIOLOGICOS QUE DEBEN ENTRAR AL MOTOR
+======================================================================
+
+Muchos sintomas de ajo no son plaga ni enfermedad. BIO-G debe cruzar sensores, etapa, perfil y manejo antes de sugerir riesgo biotico.
+
+Riesgo / desorden                  Que lo dispara                                  Que se observa                             Momento sensible             Lectura BIO-G recomendada
+
+Frio insuficiente / mala            Falta de exposicion a frio fisiologico,         Bulbo chico, sin buena division de dientes, Estab.-diferenciacion       No tratar como falta de fertilizante. La vernalizacion no se corrige tarde.
+vernalizacion                        fecha/zona inadecuada, material mal adaptado.   cuello vegetativo prolongado.
+
+Mala diferenciacion de dientes       Frio insuficiente, calor temprano, estres,      Pocos dientes, dientes irregulares, bulbo   Diferenciacion-bulbo        Cruzar con perfil AG-01..AG-05, fecha y temperatura acumulada.
+                                      exceso N o agua irregular.                     poco segmentado.
+
+Escobeteado / brooming               Exceso de vigor, altas dosis de N, baja         Follaje tipo escobeta; dientes perifericos  Bulbo-maduracion            Fisiologico/agronomico. Revisar N, densidad, siembra temprana y vigor.
+                                      densidad, siembra temprana.                    descubiertos, mala cobertura del bulbo.
+
+Canutos / ramaleo / escapo no        Exceso N, riego tardio, vigor, frio/variedad    Emision de tallos/escapos no deseados,      Vegetativo-bulbo            Preguntar si el perfil es hardneck/jaspeado esperado antes de penalizar.
+esperado                              sensible, manejo tardio.                       defectos de bulbo.
+
+Exceso de nitrogeno tardio           N alto durante bulbo/maduracion, fertirriego    Follaje muy verde/tierno, madurez lenta,    Diferenciacion-maduracion   No recomendar mas N. Subir riesgo de escobeteado, canutos, pudriciones y mala conservacion.
+                                      sin corte.                                     cuello humedo, mala cobertura.
+
+Deficit de nitrogeno temprano        Suelo pobre, lixiviacion, baja MO.              Amarilleo, poco vigor, poco follaje.        Vegetativo temprano         Diferenciar de raiz, salinidad, frio, virus y agua.
+
+Deficit hidrico                      Riego insuficiente, calor/viento, raiz          Hojas flacidas/azuladas, puntas secas,      Diferenciacion-llenado      Muy critico para calibre. No siempre se recupera aunque se riegue despues.
+                                      limitada, goteo irregular.                     bulbo chico, dientes pequeños.
+
+Exceso de humedad / anoxia           Riegos pesados, lluvia, suelo arcilloso,        Marchitez con suelo humedo, raiz pobre,     Plantacion-bulbo            Diferenciar de sequia. Subir Fusarium, bacterias, white rot y root rot.
+                                      drenaje malo.                                  pudricion.
+
+Riego tardio / lluvia precosecha     Irrigacion cerca de madurez, lluvias,           Cuello humedo, tunicas flojas, pudricion,   Maduracion-cosecha          Reducir agua segun etapa. Alto riesgo de mal curado y mohos.
+                                      cosecha inmadura.                              almacenamiento malo.
+
+Salinidad / CE alta                  Agua salina, fertilizante concentrado,          Bajo vigor, puntas quemadas, bulbo chico,  Estab.-llenado              No subir fertilizante si CE esta alta; revisar agua, lavado/drenaje y fertirriego.
+                                      evaporacion, drenaje pobre.                    sintomas parecidos a sequia/K bajo.
+
+Compactacion / suelo pesado          Cama mal preparada, textura pesada,             Raiz limitada, bulbo deformado, zonas       Plantacion-llenado          No se corrige con fertilizante. Revisar aireacion, escarda, drenaje y profundidad.
+                                      pisoteo, capa dura.                            encharcadas.
+
+Diente-semilla pequeno o dañado      Seleccion pobre, dientes chicos, heridas,       Baja emergencia, plantas desuniformes,      Plantacion-estab.           Registrar como problema de establecimiento; no culpar solo a clima o NPK.
+                                      "vaciado", almacen prolongado.                 menor potencial de bulbo.
+
+Densidad baja                        Baja poblacion, fallas de stand, siembra        Bulbos grandes pero menos t/ha; mas vigor   Estab.-bulbo                En algunos contextos sube escobeteado. Ajustar rendimiento y riesgo fisiologico.
+                                      irregular.                                     individual.
+
+Densidad excesiva                    Siembra muy cerrada, mala separacion.           Bulbos pequeños, competencia, HR interna,   Vegetativo-bulbo            Penalizar calibre; subir foliar disease risk si dosel cerrado.
+                                                                                     ventilacion baja.
+
+Calor sostenido                      >30 C, suelo caliente, clima seco.              Ciclo corto, bulbo pequeño, estres,         Diferenciacion-maduracion   Subir riesgo de calibre bajo y madurez acelerada.
+                                                                                     senescencia temprana.
+
+Frio/helada fuerte                   Helada intensa, plantas expuestas.              Hojas acuosas/quemadas, retraso, daño       Estab.-vegetativo           Diferenciar vernalizacion util de daño severo por frio.
+                                                                                     de tejido.
+
+Fitotoxicidad / herbicida            Deriva, mezcla, aplicacion en etapa sensible.   Quemadura uniforme, rayas, deformacion,     Cualquier etapa             Preguntar por aplicacion reciente; no confundir con mildiu/roya/trips.
+                                                                                     frenado brusco.
+
+Daño de sol / asoleado               Bulbos expuestos en cosecha, mal enchorizado,   Decoloracion, escamas dañadas, heridas.     Cosecha-poscosecha          Cuidar curado en campo; proteger bulbos de sol directo excesivo.
+                                      radiacion fuerte.                             
+
+Curado deficiente                    Cosecha inmadura, cuello grueso, HR alta,       Cuello humedo, moho, olor, brotacion,       Cosecha-almacen             Es evento de sanidad poscosecha. Bajar rendimiento comercial/almacenado.
+                                      mala ventilacion.                              pudricion.
+
+Brotacion en almacenamiento          Temperatura/humedad inadecuada, curado          Brotes verdes, perdida de calidad.          Almacenamiento              No es enfermedad primaria; revisar madurez, curado y almacenamiento.
+                                      incompleto, variedad.
+
+======================================================================
+9. PROTOCOLO DE MONITOREO Y PREGUNTAS DIAGNOSTICAS
+======================================================================
+
+Frecuencia recomendada:
+- Normal: 1 vez por semana.
+- Plantacion/emergencia, clima humedo, presion de trips/roya, inicio de diferenciacion, llenado, pre-cosecha y curado: 2 veces por semana.
+- Si hay focos de pudricion, white rot, Fusarium, nematodos o pudriciones de almacenamiento: monitoreo inmediato y confirmacion.
+
+Donde revisar:
+1. Diente-semilla antes de plantar: moho azul/verde, blandura, manchas, cicatrices, acaros, dientes vaciados.
+2. Focos de baja emergencia: diente podrido, larvas, suelo frio/humedo, Penicillium, maggots.
+3. Pliegues y cuello: trips, acaros, humedad, pudricion.
+4. Hojas viejas: roya, purple blotch, Stemphylium, Botrytis, salinidad.
+5. Hojas centrales: virus, fitotoxicidad, crecimiento irregular, escapo.
+6. Raices y plato basal: Fusarium, pink root, nematodos, anoxia.
+7. Base del bulbo: white rot, micelio blanco, esclerocios negros.
+8. Bulbo cortado: dientes diferenciados, pudriciones internas, escamas acuosas, mal curado.
+9. Bordes del lote: trips, leafminers, malezas, focos externos.
+10. Zonas bajas/humedas: mildiu, Botrytis, white rot, anoxia, bacterias.
+11. Zonas secas/salinas: puntas quemadas, bulbo chico, baja turgencia.
+12. Area de curado/almacen: ventilacion, HR, mohos, brotacion, heridas.
+
+Preguntas que BIO-G debe hacer o inferir:
+
+Pregunta                                              Indica mas riesgo biotico                         Indica mas riesgo abiotico/manejo
+
+¿El problema esta en focos o uniforme?                 Focos: white rot, Fusarium, nematodos, maggots,   Uniforme: salinidad, riego, fitotoxicidad, frio/calor, N.
+                                                       riego localizado, semilla infectada.
+
+¿El diente de siembra venia sano?                      Penicillium, Fusarium, acaros, nematodos, virus.  Dientes pequeños/heridos = bajo vigor sin patogeno principal.
+
+¿Hubo Allium en el lote recientemente?                 White rot, Fusarium, nematodos, pink root.        Cansancio de suelo / malezas / salinidad.
+
+¿El suelo esta seco o humedo cuando la planta cae?      Humedo + raiz podrida = root rot/anoxia/Fusarium. Seco = deficit hidrico o falla de riego.
+
+¿Hay micelio blanco y puntitos negros en la base?       White rot.                                        No tratar como deficiencia.
+
+¿La pudricion inicia en plato basal?                   Fusarium basal rot, nematodos/acaros asociados.   Daño mecanico o anoxia puede entrar por base.
+
+¿Hay moho azul/verde?                                  Penicillium / blue mold.                          Mal curado/heridas/almacenamiento.
+
+¿Hay pustulas naranja/rojizas?                         Roya.                                             No confundir con polvo/salinidad.
+
+¿Hay manchas purpuras con anillos?                     Purple blotch / Stemphylium.                      Hoja vieja/estres puede predisponer.
+
+¿Hay plateado + insectos pequeños en pliegues?          Trips.                                            Plateado viejo sin insecto puede ser viento/fitotoxicidad/sales.
+
+¿Hay galerias blancas en hojas?                        Leafminer.                                        Daño cosmetico/foliar segun destino.
+
+¿El bulbo no se divide bien en dientes?                Virus/semilla si ademas hay mosaico.              Frio insuficiente, calor, N, agua, perfil incorrecto.
+
+¿Hay follaje tipo escobeta y dientes expuestos?         Puede haber sanidad secundaria.                   Escobeteado por N alto, baja densidad, siembra temprana, vigor.
+
+¿Hubo aplicacion reciente?                             Tejido quemado puede abrir puerta a hongos.        Fitotoxicidad uniforme.
+
+¿El cuello esta humedo o el curado fue lento?           Botrytis, bacteria, blue mold, black mold.        Riego tardio, cosecha inmadura, mala ventilacion.
+
+======================================================================
+10. REGLAS PARA EL MOTOR BIO-G
+======================================================================
+
+Senal BIO-G                                      Aumenta riesgo de                    Etapa donde pesa mas                Salida farmer-friendly sugerida
+
+Diente blando/moho azul-verde antes de plantar    Penicillium / seed clove decay       Preplant / emergencia              El material de siembra puede venir contaminado o herido. Separe dientes blandos o con moho y registre riesgo de mala emergencia.
+
+Falla de stand en parches + larvas blancas         Maggots / seedcorn maggot            Plantacion-5 hojas                 Posible gusano de semilla/cebolla. Revise dientes y base de plantas en zonas con fallas.
+
+Planta amarilla + micelio blanco + esclerocios     White rot                            Cualquier etapa                    Señal compatible con pudricion blanca. Evite mover tierra o material de ese foco y confirme localmente.
+
+Plato basal cafe/rojizo + pudricion seca           Fusarium basal rot                   Estab.-almacen                     Pudricion desde la base compatible con Fusarium. Puede venir de semilla, suelo o heridas.
+
+Raices rosadas/rojas/purpuras                      Pink root                            Vegetativo-bulbo                   Raices compatibles con raiz rosada. Revise historial de Allium, calor/estres y vigor del cultivo.
+
+Pustulas naranja/rojizas en hojas                  Rust / roya                          Vegetativo-bulbo                   Señal compatible con roya. Si avanza, seca hoja y puede bajar calibre del bulbo.
+
+Moho gris/blanco/purpura en hoja                   Downy mildew                         Vegetativo-bulbo                   Ambiente favorable a mildiu. Revise temprano, especialmente si hubo rocio, hoja mojada o HR alta.
+
+Lesiones purpuras con anillos                      Purple blotch / Stemphylium          Vegetativo-maduracion              Manchas compatibles con complejo foliar. Trips, humedad o tejido estresado pueden predisponer.
+
+Manchas blancas hundidas con halo                  Botrytis leaf blight                 Vegetativo-bulbo                   Manchas compatibles con Botrytis foliar. Puede reducir hoja activa para llenar bulbo.
+
+Plateado/bronceado + trips visibles                Thrips                               Vegetativo-bulbo                   Posible trips. Revise pliegues y cuello; en llenado puede bajar calibre.
+
+Mosaico/estrias amarillas + bajo vigor             Virus / mosaic complex               Vegetativo                         Sintomas compatibles con virus. En ajo, la semilla vegetativa puede arrastrar infecciones.
+
+Dientes con manchas hundidas/cafes + acaros        Bulb/eriophyid mites                 Preplant-almacen                   Posible daño de acaros. Revise semilla, heridas y pudriciones secundarias.
+
+Bulbo/cuello acuoso + olor fuerte                  Bacterial soft rot                   Bulbo-almacen                      Posible pudricion bacteriana. Heridas, calor y humedad suelen agravarla.
+
+Cuello blando + moho gris                          Botrytis neck rot                    Maduracion-almacen                 Riesgo de pudricion de cuello. Revise madurez, N tardio, curado y ventilacion.
+
+Bulbo con esporas negras bajo tunica               Black mold                           Curado-almacen                     Dano compatible con moho negro; sube con calor, heridas y curado deficiente.
+
+Bulbo sin buena division de dientes                Vernalization / bulb differentiation Diferenciacion-bulbo               Puede faltar frio fisiologico o haber estres. Mas fertilizante no corrige esto tarde.
+
+Follaje tipo escobeta + dientes expuestos          Escobeteado / exceso vigor           Bulbo-maduracion                   Señal de desorden fisiologico. Revise N alto, baja densidad, siembra temprana y vigor excesivo.
+
+Follaje muy verde tarde + cuello humedo            Exceso N / maduracion pobre           Maduracion                         El cultivo sigue demasiado vegetativo. No conviene empujar mas N; sube riesgo de mala conservacion.
+
+CE alta + puntas quemadas + bajo vigor             Salinidad / estres osmotico           Estab.-llenado                     La salinidad puede parecer sequia o falta de K. No suba fertilizante sin revisar CE y drenaje.
+
+Suelo humedo + marchitez                           Anoxia / root rot                     Estab.-bulbo                       Marchitez con suelo humedo: revise raiz, drenaje y compactacion antes de regar mas.
+
+Bulbos deformes + suelo duro                       Compactacion                          Bulbificacion-llenado              El suelo duro limita expansion de bulbo. No se corrige con mas fertilizante.
+
+Lluvia/riego tarde + cuello humedo                 Poor curing / storage risk            Maduracion-cosecha-curado          Alto riesgo de mal curado. Priorice secado, ventilacion y manejo suave.
+
+Quemadura uniforme tras aplicacion                 Phytotoxicity                         Cualquier etapa                    Patron compatible con fitotoxicidad. Pregunte por aplicaciones recientes antes de diagnosticar enfermedad.
+
+======================================================================
+11. CATALOGO RECOMENDADO PARA CODIGO
+======================================================================
+
+Crear:
+lib/core/plant_health/catalog/garlic_syndromes.dart
+
+con:
+const List<PlantHealthSyndrome> garlicSyndromes = [...]
+
+IDs sugeridos:
+
+#    ID sugerido                                  Sindrome / diferencial principal                         Organo                    Sintoma principal                  Flags
+
+1    garlic_damping_off_clove_decay_01            Damping-off / pudricion de diente                        seedClove/root            seedling_collapse_clove_rot        waterlogging, coolWetSoil
+2    garlic_penecillium_blue_mold_01              Penicillium / blue mold                                  clove/bulb/storage        blue_green_mold                    poorCuring, seedCloveRisk
+3    garlic_fusarium_basal_rot_01                 Fusarium basal rot                                       basalPlate/root/bulb      basal_plate_brown_dry_rot          heatStress, seedCloveRisk
+4    garlic_white_rot_01                          White rot / Sclerotium/Stromatinia                       basalPlate/root/bulb      white_mycelium_black_sclerotia     coolDewyWindow, alliumHistory
+5    garlic_botrytis_neck_rot_01                  Botrytis neck and bulb rot                               neck/bulb/storage         neck_soft_gray_mold                poorCuring, highHumidity
+6    garlic_bacterial_soft_rot_01                 Bacterial soft rot complex                               bulb/neck                 soft_watery_rot_sour_smell         heatStress, waterlogging
+7    garlic_black_mold_01                         Black mold / Aspergillus                                 bulb/scales/storage       black_spores_outer_scales          heatStress, poorCuring
+8    garlic_pink_root_01                          Pink root                                                root/bulb                 pink_roots                         heatStress, alliumHistory
+9    garlic_sclerotinia_southern_blight_01        Sclerotinia / southern blight regional                   basalPlate/bulb/root      white_fan_mycelium                 highHumidity, heatStress
+10   garlic_rust_01                               Rust / Puccinia                                          leaf                      orange_rust_pustules               highHumidity, wetCanopy
+11   garlic_downy_mildew_01                       Downy mildew                                             leaf                      fuzzy_downy_growth                 coolDewyWindow, wetCanopy
+12   garlic_purple_blotch_stemphylium_01          Purple blotch / Stemphylium                              leaf                      purple_concentric_lesions          wetCanopy, recentStress
+13   garlic_botrytis_leaf_blight_01               Botrytis leaf blight                                     leaf                      white_sunken_leaf_spots            wetCanopy, highHumidity
+14   garlic_mosaic_oydv_lysv_01                   Garlic mosaic / OYDV / LYSV                              leaf/wholePlant           mosaic_yellow_streaking            vectorPressure, seedCloveRisk
+15   garlic_iris_yellow_spot_virus_01             IYSV regional                                            leaf/scape                straw_diamond_lesions              vectorPressure, recentStress
+16   garlic_thrips_01                             Onion thrips / western flower thrips                     leaf/neck                 thrips_silver_scarring             heatStress, vectorPressure
+17   garlic_leafminer_01                          Leafminers                                               leaf                      leaf_mines                         recentStress
+18   garlic_maggot_seedcorn_maggot_01             Onion maggot / seedcorn maggot                           seedClove/root/bulb       maggot_larvae_stand_loss           coolWetSoil, organicResidue
+19   garlic_bulb_mites_01                         Bulb mites / acarid mites                                clove/bulb/basalPlate     bulb_mite_brown_scars              highHumidity, seedCloveRisk
+20   garlic_eriophyid_mites_01                    Eriophyid mites / Aceria tulipae                         clove/bulb                sunken_brown_clove_streaks         storageRisk, seedCloveRisk
+21   garlic_stem_bulb_nematode_01                 Stem and bulb nematode                                   clove/bulb/root           distorted_bulb_spongy_tissue       seedCloveRisk, alliumHistory
+22   garlic_root_knot_stubby_nematode_01          Root-knot / stubby root nematodes                        root                      nematode_root_damage               alliumHistory
+23   garlic_wireworms_soil_insects_01             Wireworms / soil insects                                 clove/root/bulb           underground_feeding                recentStress
+24   garlic_cutworms_01                           Cutworms / early stand damage                            seedling/leaf             cut_plants                         weedPressure
+25   garlic_slugs_snails_01                       Slugs/snails conditional                                 leaf                      ragged_feeding_slime               highHumidity
+26   garlic_weed_competition_01                   Maleza / competencia / hospedaje                         wholePlant                stunted_growth_weeds               weedPressure
+27   garlic_vernalization_no_bulb_01              Frio insuficiente / no diferenciacion                    wholePlant/bulb           poor_clove_differentiation         vernalizationRisk
+28   garlic_brooming_escobeteado_01               Escobeteado / brooming / dientes expuestos               wholePlant/bulb           exposed_cloves_brooming            excessNitrogen, lowDensity
+29   garlic_unexpected_scape_canuto_01            Canuto / escapo no esperado                              wholePlant/scape          unexpected_scape                   varietyMismatch, excessNitrogen
+30   garlic_excess_n_late_vigor_01                Exceso N / vigor tardio                                  wholePlant/neck           late_green_excess_vigor            nutrientImbalance
+31   garlic_water_deficit_bulb_quality_01         Deficit hidrico / calibre bajo                           wholePlant/bulb           wilting_small_bulb                 heatStress, recentStress
+32   garlic_waterlogging_anoxia_01                Exceso de humedad / anoxia                               root/wholePlant           root_rot_wilt                      waterlogging
+33   garlic_salinity_quality_01                   Salinidad / CE alta                                      leaf/root/bulb            leaf_tip_burn_small_bulb           salinityRisk
+34   garlic_compaction_deformed_bulb_01           Compactacion / bulbo deforme                             root/bulb                 deformed_bulb_root_limit           compaction
+35   garlic_heat_stress_small_bulb_01             Calor sostenido / bulbo chico                            wholePlant/bulb           heat_small_bulb                    heatStress
+36   garlic_frost_damage_01                       Daño por frio/helada                                     leaf/wholePlant           frost_leaf_burn                    coldStress
+37   garlic_phytotoxicity_01                      Fitotoxicidad / herbicida                                leaf/wholePlant           uniform_leaf_burn                  recentApplication
+38   garlic_poor_curing_storage_risk_01           Curado deficiente / riesgo almacenamiento                neck/bulb/storage         poor_curing_neck_moist             poorCuring
+39   garlic_sprouting_storage_01                  Brotacion en almacenamiento                              bulb/storage              storage_sprouting                  poorCuring, storageRisk
+40   garlic_sunscald_postharvest_01               Asoleado / daño poscosecha                               bulb/scales               sunscald_outer_scales              heatStress, harvestEvent
+
+Nota:
+- Los riesgos 27-40 pueden vivir como abioticStress, physiologicalDisorder, postHarvestRisk o riskEvent si el catalogo Plant Health separa biotico y abiotico.
+- Para BIO-G v1 conviene tenerlos visibles porque explican rendimiento comercial, descarte, curado y calidad.
+
+======================================================================
+12. NUEVAS SEÑALES OPCIONALES RECOMENDADAS
+======================================================================
+
+Nuevo signalId sugerido                    Etiqueta UX                                    Uso
+
+signalSeedCloveBlueGreenMold               Moho azul/verde en diente                       Penicillium / blue mold / semilla mala.
+signalSoftCloveBeforePlanting              Diente blando antes de plantar                  Riesgo de mala emergencia.
+signalBasalPlateBrownDryRot                Plato basal cafe y pudricion seca               Fusarium basal rot.
+signalWhiteMyceliumBlackSclerotia          Micelio blanco con puntos negros                White rot.
+signalOrangeRustPustules                   Pustulas naranja/rojizas en hoja                Roya.
+signalFuzzyDownyGrowth                     Moho/vello gris-blanco-purpura en hoja          Mildiu.
+signalPurpleConcentricLesions              Lesiones purpuras con anillos                   Alternaria / Stemphylium.
+signalWhiteSunkenLeafSpots                 Manchas blancas hundidas                        Botrytis leaf blight.
+signalMosaicYellowStreaking                Mosaico / estrias amarillas                     Virus.
+signalStrawDiamondLesions                  Lesiones pajizas tipo diamante                  IYSV.
+signalThripsSilverScarring                 Plateado/bronceado por trips                    Trips.
+signalThripsInLeafFolds                    Trips en pliegues/cuello                        Confirmacion de trips.
+signalLeafMinesOnGarlic                    Galerias blancas en hoja                        Minadores.
+signalMaggotLarvae                         Larvas blancas sin patas                        Maggots.
+signalBulbMiteBrownScars                   Cicatrices marron por acaros                    Bulb/eriophyid mites.
+signalDistortedSpongyBulb                  Bulbo deformado/esponjoso                       Nematodos / pudricion.
+signalPinkRoots                            Raices rosadas                                  Pink root.
+signalPoorCloveDifferentiation             Mala division de dientes                        Vernalizacion/estres.
+signalExposedClovesBrooming                Dientes expuestos / escobeteado                 Exceso vigor / N / densidad.
+signalUnexpectedScape                      Escapo/canuto no esperado                       Perfil/fisiologia.
+signalLateGreenExcessVigor                 Follaje muy verde tarde                         Exceso N / madurez pobre.
+signalPoorCuringNeckMoist                  Cuello humedo en curado                         Riesgo almacenamiento.
+signalSourSmell                            Olor agrio                                     Bacteria/soft rot.
+signalBlackMoldSpores                      Esporas negras bajo tunicas                     Black mold.
+signalStorageSprouting                     Brotacion en almacenamiento                     Curado/almacenamiento.
+signalUniformLeafBurn                      Quemadura uniforme                             Fitotoxicidad/salinidad.
+signalSunscaldOuterScales                  Asoleado / escamas dañadas                      Poscosecha.
+
+======================================================================
+13. MODIFICADORES POR TIPO / PERFIL
+======================================================================
+
+Grupo profileIds sugeridos          diagnosisIds que suben score                                                scoreDelta        Razon
+
+AG-GEN generic                       white_rot, fusarium_basal_rot, seed_clove_decay, vernalization_no_bulb,       0 a +2            Perfil preventivo sin asumir tipo ni destino. Prioriza no sub-alertar.
+                                     salinity, escobeteado, poor_curing, thrips.
+
+AG-01 blanco/perla                   fusarium_basal_rot, penicillium_blue_mold, escobeteado, excess_n_late,        +3 a +6           Blanco/perla exige calibre y cobertura limpia. Cuidar exceso N, curado y semilla.
+                                     botrytis_neck_rot, storage_molds.
+
+AG-02 jaspeado/calera                rust, vernalization_no_bulb, water_deficit, compaction, white_rot,            +3 a +7           Ciclo medio-largo y posible escapo. No penalizar escapo sin confirmar si es esperado.
+                                     fusarium_basal_rot.
+
+AG-03 morado                         rust, purple_blotch_stemphylium, poor_curing, heat_stress, white_rot,         +3 a +7           Calidad visual/pigmentacion. Calor y lluvias tardias reducen calidad.
+                                     botrytis_neck_rot.
+
+AG-04 criollo/regional               seed_clove_decay, virus_mosaic, nematodes, bulb_mites, fusarium,              +4 a +8           Semilla propia/regional: puede estar adaptada, pero trae mayor incertidumbre sanitaria.
+                                     poor_curing.
+
+AG-05 chino/coreano                  seed_clove_risk, virus_mosaic, nematodes, white_rot, excess_vigor,            +3 a +7           Material comercial/importado o seleccionado. Pedir trazabilidad; no asumir superioridad.
+                                     poor_clove_differentiation.
+
+Regla:
+El alias mejora la confianza del perfil, pero no diagnostica por si solo. Si el usuario no sabe si su material es blanco, jaspeado, morado, criollo o chino/coreano, AG-GEN mantiene sensibilidad conservadora.
+
+======================================================================
+14. INTEGRACION MINIMA DE CODIGO
+======================================================================
+
+1. Crear:
+   lib/core/plant_health/catalog/garlic_syndromes.dart
+   con const List garlicSyndromes.
+
+2. Agregar en PlantHealthRegistry:
+   import package:bio_g/core/plant_health/catalog/garlic_syndromes.dart;
+   case CropCatalog.garlicCropId: return garlicSyndromes;
+
+3. Actualizar PlantHealthStageAdapter con _fromGarlic:
+
+   GarlicStage.clovePlanting -> PlantHealthStageBucket.seedling
+   GarlicStage.emergenceEstablishment -> PlantHealthStageBucket.seedling
+   GarlicStage.vegetativeLeafDevelopment -> PlantHealthStageBucket.vegetativeEarly / vegetativeMid
+   GarlicStage.coldInductionVernalization -> PlantHealthStageBucket.vegetativeMid o physiologicalWindow
+   GarlicStage.bulbDifferentiation -> PlantHealthStageBucket.vegetativeLate o organInitiation
+   GarlicStage.bulbFilling -> PlantHealthStageBucket.grainFill / organFill si existe
+   GarlicStage.bulbMaturation -> PlantHealthStageBucket.lateSeason
+   GarlicStage.harvest -> PlantHealthStageBucket.lateSeason
+   GarlicStage.curingRest -> PlantHealthStageBucket.postHarvest o lateSeason
+   GarlicEvent.scapeBolting -> PlantHealthStageBucket.reproductiveAnomaly / lateSeason
+   GarlicEvent.broomingEscobeteado -> PlantHealthStageBucket.lateSeason / physiologicalDisorder
+
+4. Usar package: imports, no imports relativos.
+
+5. No agregar ingredientes activos ni recetas de plaguicidas en UX v1.
+
+6. Conectar con Fertilization/NutrientRecommendationEngine:
+   - excessNitrogen -> escobeteado, unexpectedScape, poorCuring, Botrytis neck rot, bacterial soft rot.
+   - lateNitrogen -> lateGreenExcessVigor, poorCuring.
+   - salinityRisk -> tip burn, small bulb, poor root uptake.
+   - waterlogging -> root rot, Fusarium, white rot, bacterial rot.
+   - irrigationLate -> poorCuring, Botrytis neck rot, bacterial rot.
+   - coldInsufficient / vernalizationRisk -> poorCloveDifferentiation.
+   - KLow + good moisture + low CE -> small bulb / poor fill.
+   - highHumidity + wetCanopy -> downy mildew, Botrytis, purple blotch/Stemphylium, rust.
+
+7. Conectar con YieldProjection:
+   - foliarDiebackRisk high -> bajar calibre.
+   - basalRotRisk high -> bajar marketable yield.
+   - whiteRotRisk high -> bajar rendimiento y marcar bioseguridad.
+   - seedCloveRisk high -> bajar stand y confianza.
+   - vernalizationFailure active -> capar rendimiento comercial.
+   - broomingEscobeteado active -> subir descarte.
+   - poorCuringRisk high -> bajar rendimiento comercial/almacenado.
+
+8. Conectar con History:
+   Guardar eventos importantes en lenguaje agricultor:
+   - "Se detecto riesgo de semilla/diente contaminado al establecimiento."
+   - "Se registro riesgo de pudricion blanca en foco; evitar mover suelo."
+   - "El cultivo presento riesgo de Fusarium basal por daño en plato basal."
+   - "Se observo roya en etapa de llenado; puede reducir area foliar y calibre."
+   - "Se registro escobeteado/canuto; revisar N, densidad, fecha y perfil."
+   - "Se detecto riesgo de curado deficiente por humedad tardia."
+
+======================================================================
+15. LENGUAJE DE SALIDA RECOMENDADO
+======================================================================
+
+Situacion                             No decir solo...                         Mejor salida BIO-G
+
+Diente con moho azul                  Hongo                                    Posible moho azul/Penicillium en semilla. Ese material puede bajar emergencia y contaminar otros dientes.
+
+Planta amarilla en foco               Le falta nitrogeno                        El patron en foco puede venir de raiz, Fusarium, nematodos, pudricion blanca o humedad. Revise base y raices.
+
+Micelio blanco + puntos negros        Pudricion                                Señal fuerte compatible con pudricion blanca. Evite mover tierra o material del foco y confirme localmente.
+
+Plato basal cafe                      Pudricion                                Pudricion desde la base compatible con Fusarium. Puede venir de semilla, suelo o heridas.
+
+Pustulas naranja                      Roya                                     Señal compatible con roya. Si avanza, seca hojas y puede bajar calibre.
+
+Mancha purpura                        Alternaria                               Lesion compatible con purple blotch/Stemphylium; suele subir con humedad, trips o tejido estresado.
+
+Plateado en hoja                      Trips                                    Posible trips, pero confirme insectos en pliegues/cuello. El daño viejo puede confundirse con viento o sales.
+
+Mosaico amarillo                      Virus                                    Sintoma compatible con virus. En ajo la semilla vegetativa puede arrastrar infecciones.
+
+Bulbo sin dientes definidos           Falta fertilizante                       Puede faltar frio fisiologico o haber estres en diferenciacion. Mas fertilizante tarde no corrige vernalizacion.
+
+Escobeteado                           Se enfermo                               Escobeteado es un desorden fisiologico asociado a exceso de vigor, N alto, baja densidad o siembra temprana.
+
+Follaje muy verde tarde               Va bien                                  El cultivo puede estar demasiado vegetativo para madurar bien. Exceso de N tarde sube riesgo de mal curado.
+
+Marchitez con suelo humedo            Falta agua                               Marchitez con suelo humedo: revise raiz, drenaje, compactacion y pudriciones antes de regar mas.
+
+Puntas quemadas                       Falta potasio                            Puede ser salinidad, sequia, viento, K bajo, fitotoxicidad o edad. Revise CE y humedad antes de fertilizar.
+
+Cuello humedo en curado               Le falta sol                             El curado requiere cuello seco, ventilacion y baja humedad. Si queda humedo, sube riesgo de mohos y pudriciones.
+
+Brotacion almacenada                  Enfermedad                               Brotacion puede ser problema de madurez, curado o almacenamiento, no necesariamente patogeno.
+
+======================================================================
+16. REGLAS DE NO SOBRE-DIAGNOSTICAR
+======================================================================
+
+- No diagnosticar white rot sin revisar micelio blanco y esclerocios negros.
+- No diagnosticar Fusarium sin revisar si la pudricion inicia en plato basal.
+- No diagnosticar bacteria solo por bulbo blando; comparar con Fusarium, Botrytis, heridas y curado.
+- No diagnosticar trips solo por plateado; confirmar insectos.
+- No diagnosticar roya solo por manchas anaranjadas si puede ser suelo/polvo; buscar pustulas elevadas.
+- No diagnosticar virus solo por amarillamiento; buscar mosaico/estrias y patron persistente.
+- No decir "falta agua" si el suelo esta humedo.
+- No decir "falta fertilizante" si hay vernalizacion insuficiente, salinidad, anoxia, raiz dañada o semilla mala.
+- No marcar escapo como falla si el perfil es hardneck/jaspeado y el escapo es esperado.
+- No prometer almacenamiento si hubo heridas, curado pobre, N tardio, riego/lavado tardio o mohos.
+- No recomendar recuperar un ajo con pudricion avanzada como si siguiera sano.
+- No recomendar mover tierra o material vegetal de focos sospechosos de white rot.
+- No usar foros/blogs como fuente de diagnostico final.
+
+======================================================================
+17. CAMPOS SUGERIDOS PARA MODELO PLANT HEALTH / GARLIC
+======================================================================
+
+Campo                             Tipo sugerido                                            Uso
+
+profileId                          AG-GEN / AG-01 / AG-02 / AG-03 / AG-04 / AG-05           Resolver sensibilidad y textos.
+garlicType                         whitePearl / jaspeadoCalera / purple / criollo / chineseKorean / unknown
+seedCloveSource                    certified / ownSeed / localMarket / imported / unknown   Subir/bajar seed risk.
+seedCloveHealth                    clean / suspect / moldy / wounded / mixed / unknown      Base de emergencia y pudriciones.
+alliumHistory                      none / 1to2Years / 3to4Years / recent / unknown          White rot/Fusarium/nematodos.
+stage                              clovePlanting / emergence / vegetative / vernalization / differentiation / bulbFill / maturation / harvest / curing
+system                             openField / drip / furrow / sprinklerStart / homeGarden / unknown
+soilTexture                        sandy / loam / clay / heavy / unknown
+drainageClass                      good / moderate / poor / unknown
+salinityRisk                       low / watch / alert / critical / unknown
+waterStressClass                   stable / deficit / excess / alternating / unknown
+vernalizationRisk                  low / watch / high / critical / unknown
+foliarDiseaseRisk                  low / medium / high / critical
+soilborneDiseaseRisk               low / medium / high / critical
+storageRisk                        low / medium / high / critical
+poorCuringRisk                     low / medium / high / critical
+thripsPressure                     low / medium / high / unknown
+weedPressure                       low / medium / high / unknown
+recentNitrogenClass                low / adequate / high / lateHigh / unknown
+recentApplication                  none / herbicide / fertilizer / foliar / unknown
+symptomPattern                     uniform / patches / edges / lowSpots / irrigationLines / unknown
+confidence                         high / medium / low
+recommendedActionClass             observe / inspectRoots / inspectCloves / confirmLab / isolateFocus / adjustWater / improveCuring / contactAdvisor
+
+======================================================================
+18. FUENTES BASE Y TRAZABILIDAD
+======================================================================
+
+S1. UC IPM. Agriculture: Pest Management Guidelines - Onion and Garlic.
+Uso BIO-G: base maestra para plagas, enfermedades, nematodos, diagnostico diferencial y manejo integrado.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/
+
+S2. UC IPM. Fusarium Basal Rot / Onion and Garlic.
+Uso BIO-G: Fusarium en ajo, sintomas en plato basal, diagnostico diferencial con white rot y bacterias, importancia de semilla infectada.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/basal-rot/
+
+S3. UC IPM. White Rot / Onion and Garlic.
+Uso BIO-G: Sclerotium/Stromatinia, persistencia en suelo, esclerocios, manejo preventivo.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/white-rot/
+
+S4. UC IPM. Rust / Onion and Garlic.
+Uso BIO-G: roya como enfermedad importante de ajo, pustulas naranja/rojizas, reduccion de tamaño/calidad cuando severa.
+URL: https://ipm.ucanr.edu/agriculture/onion-and-garlic/rust/
+
+S5. UC IPM. Onion and Garlic Photo Guide.
+Uso BIO-G: señales visuales para leafminers, maggots, mites, thrips, Botrytis, downy mildew, mosaic, IYSV, purple blotch, rust, Fusarium, pink root y otros.
+URL: https://ipm.ucanr.edu/PMG/Identification/OnionGarlic_pests_and_damage.html
+
+S6. University of Maine Cooperative Extension. Maine Garlic Pest Field Notebook.
+Uso BIO-G: white rot, blue mold, Botrytis, manejo de semilla/diente y curado.
+URL: https://extension.umaine.edu/agriculture/garlic/maine-garlic-pest-field-notebook/
+
+S7. Oregon State University. Garlic - Oregon Vegetables.
+Uso BIO-G: importancia de usar material libre de plagas; diente-semilla puede portar white rot, Fusarium, Botrytis, Penicillium y nematodos.
+URL: https://horticulture.oregonstate.edu/oregon-vegetables/garlic-1
+
+S8. University of Minnesota Extension. Growing garlic in home gardens.
+Uso BIO-G: importancia de diagnostico correcto, maggot, aster yellows, bulb mites, rotacion, curado y semilla sana.
+URL: https://extension.umn.edu/vegetables/growing-garlic
+
+S9. Western IPM Center / Garlic PMSP 2019.
+Uso BIO-G: semilla vegetativa, white rot/nematodos, raiz superficial, pH, suelos ligeros, malezas y manejo cultural.
+URL: https://ipmdata.ipmcenters.org/documents/pmsps/2019%20Garlic%20PMSP.pdf
+
+S10. Universidad de Sonora. El cultivo del ajo, DAG/HORT-014, 2016. Documento aportado por el usuario.
+Uso BIO-G: contexto Sonora/Mexico; plagas comunes como Thrips tabaci, Hylemia antiqua y Aceria tulipae; enfermedades como mancha purpura, mildiu, pudricion blanca, Botrytis, Fusarium, roya, pink root, moho negro; escobeteado por exceso de vigor, N alto, baja densidad y siembra temprana; criterios de cosecha y curado.
+Archivo: AJO-DAG-HORT-014.pdf
+
+S11. BIO-G. Perfil Universal Ajo v2, AG-GEN/SKIP v2, Guia de Fertilizacion Ajo v1.1 y Rendimiento Ajo v1.
+Uso BIO-G: arquitectura crop_garlic, perfiles AG-GEN/AG-01..AG-05, vernalizacion, etapas, NPK, rendimiento, mensajes y reglas de no sobre-modelar.
+
+======================================================================
+19. CIERRE DE PRODUCTO
+======================================================================
+
+El modulo de sanidad de ajo queda listo para BIO-G v1 si se integra como cultivo de bulbo propagado por diente-semilla, no como copia directa de cebolla ni como hortaliza generica.
+
+La prioridad del modulo debe ser:
+
+1. Antes de plantar:
+   Semilla sana, diente firme, sin moho, sin heridas, sin acaros/nematodos visibles, con trazabilidad y lote sin historial fuerte de Allium.
+
+2. Establecimiento:
+   Stand uniforme, humedad sin saturacion, raiz sana, baja salinidad, sin pudricion de diente.
+
+3. Vegetativo/vernalizacion:
+   Hoja funcional, frio fisiologico suficiente, no exceso de N, control de maleza y plagas tempranas.
+
+4. Diferenciacion/llenado:
+   Proteger agua, K, raiz, hoja y sanidad foliar. Detectar roya, trips, Fusarium, salinidad y compactacion.
+
+5. Maduracion/cosecha:
+   Reducir exceso de agua/N, evitar heridas, cosechar por madurez real y cuidar escobeteado/canutos.
+
+6. Curado/almacenamiento:
+   Secar cuello y tunicas, evitar humedad, calor excesivo, heridas, mohos, brotacion y pudriciones.
+
+Frase guia:
+En ajo, la sanidad empieza en el diente, se decide en la raiz y la hoja, y se confirma en el curado.
+
+Estado del documento:
+RIESGOS DEL CULTIVO / SANIDAD VEGETAL - AJO v1 queda listo para conectarse con Perfil Universal, AG-GEN/SKIP, Fertilizacion, Rendimiento, Plant Health Registry y futuro codigo de garlic_syndromes.dart.

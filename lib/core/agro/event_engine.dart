@@ -894,7 +894,10 @@ class EventEngine {
           severity: [nBand, pBand, kBand].contains(AgroBand.critical)
               ? AgronomicEventSeverity.warning
               : AgronomicEventSeverity.caution,
-          title: _isLettuce(input)
+          title: _isLettuce(input) ||
+                  _isSpinach(input) ||
+                  _isOnion(input) ||
+                  _isGarlic(input)
               ? 'Revisión nutricional'
               : 'Fertilización recomendada',
           message: _fertilizationRecommendationMessage(input, nBand, pBand, kBand),
@@ -1051,6 +1054,41 @@ class EventEngine {
       return 'La temperatura ambiente es de ${value}°C. La lechuga$stageText '
           'empieza a salir de su rango fresco; vigila turgencia y tallo central.';
     }
+    if (_isSpinach(input)) {
+      final stage = input.stageLabel?.trim();
+      final stageText = stage != null && stage.isNotEmpty ? ' en $stage' : '';
+      if (isCriticalAirTemp) {
+        return 'La temperatura ambiente es de ${value} C. Para espinaca$stageText '
+            'esto puede disparar espigado y perdida de calidad de hoja; revisa '
+            'riego, sombra, ventilacion y oportunidad de corte.';
+      }
+      return 'La temperatura ambiente es de ${value} C. La espinaca$stageText '
+          'empieza a salir de su rango fresco; vigila turgencia, tallo central '
+          'y avance de cosecha.';
+    }
+    if (_isOnion(input)) {
+      final stage = input.stageLabel?.trim();
+      final stageText = stage != null && stage.isNotEmpty ? ' en $stage' : '';
+      if (isCriticalAirTemp) {
+        return 'La temperatura ambiente es de ${value} C. Para cebolla$stageText '
+            'el calor fuerte puede acelerar madurez y dejar bulbos mas chicos; '
+            'manten humedad estable y vigila avance de cuello.';
+      }
+      return 'La temperatura ambiente es de ${value} C. La cebolla$stageText '
+          'empieza a salir de su rango; el calor en induccion/llenado reduce '
+          'calibre, asi que cuida el agua de la zona de raiz.';
+    }
+    if (_isGarlic(input)) {
+      final stage = input.stageLabel?.trim();
+      final stageText = stage != null && stage.isNotEmpty ? ' en $stage' : '';
+      if (isCriticalAirTemp) {
+        return 'La temperatura ambiente es de ${value} C. Para ajo$stageText '
+            'el calor fuerte puede acelerar madurez, reducir calibre y complicar '
+            'curado; no se corrige con fertilizante si falto frio.';
+      }
+      return 'La temperatura ambiente es de ${value} C. El ajo$stageText '
+          'empieza a salir de su rango; cuida agua estable, CE y avance de bulbo.';
+    }
 
     return 'La temperatura ambiente es de ${value}°C. '
         'El calor extremo puede provocar estrés hídrico y reducir la fotosíntesis.';
@@ -1062,6 +1100,24 @@ class EventEngine {
       return 'La humedad relativa del aire es de $value%. En lechuga, la HR alta '
           'favorece mildiu velloso, Botrytis, tip burn y pudriciones si hay '
           'mojado foliar o poca ventilación.';
+    }
+
+    if (_isSpinach(input)) {
+      return 'La humedad relativa del aire es de $value%. En espinaca, la HR alta '
+          'favorece mildiu, Botrytis y manchas foliares; revisa enves, dosel '
+          'mojado y ventilacion porque la hoja es el producto comercial.';
+    }
+
+    if (_isOnion(input)) {
+      return 'La humedad relativa del aire es de $value%. En cebolla, la HR alta '
+          'con hoja mojada favorece mildiu, Botrytis, mancha purpura y '
+          'pudriciones de cuello; revisa hojas, cuello y curado del bulbo.';
+    }
+
+    if (_isGarlic(input)) {
+      return 'La humedad relativa del aire es de $value%. En ajo, la HR alta '
+          'con hoja o cuello mojado favorece roya, mildiu, Botrytis y pudriciones; '
+          'revisa hojas, cuello, bulbo, curado y almacenamiento.';
     }
 
     return 'La humedad relativa del aire es de $value%. '
@@ -1089,6 +1145,48 @@ class EventEngine {
       return 'La humedad$value sugiere ajustar riego para mantener estable la '
           'lechuga$stageText. Evita secados fuertes y encharcamientos: ambos '
           'pegan directo en calidad de hoja.';
+    }
+
+    if (_isSpinach(input)) {
+      final stageText = stage != null && stage.isNotEmpty
+          ? ' en $stage'
+          : '';
+      if (moistureBand == AgroBand.critical) {
+        return 'La humedad$value esta en deficit critico para espinaca$stageText. '
+            'Conviene revisar riego hoy: la hoja pierde turgencia y el estres '
+            'puede parecer falta de nutriente.';
+      }
+      return 'La humedad$value sugiere estabilizar riego en espinaca$stageText. '
+          'Evita secados fuertes y saturacion: ambos reducen calidad de hoja y '
+          'pueden favorecer espigado o pudriciones.';
+    }
+
+    if (_isOnion(input)) {
+      final stageText = stage != null && stage.isNotEmpty
+          ? ' en $stage'
+          : '';
+      if (moistureBand == AgroBand.critical) {
+        return 'La humedad$value esta en deficit critico para cebolla$stageText. '
+            'En induccion/llenado el agua define calibre; la cebolla no siempre '
+            'se marchita, asi que revisa la zona de raiz (10-30 cm) hoy.';
+      }
+      return 'La humedad$value sugiere estabilizar riego en cebolla$stageText. '
+          'Evita deficit en bulbo y saturacion del cuello: el exceso sube '
+          'pudriciones y retrasa el curado.';
+    }
+
+    if (_isGarlic(input)) {
+      final stageText = stage != null && stage.isNotEmpty
+          ? ' en $stage'
+          : '';
+      if (moistureBand == AgroBand.critical) {
+        return 'La humedad$value esta en deficit critico para ajo$stageText. '
+            'En diferenciacion y llenado baja calibre y dientes; revisa raiz y '
+            'humedad sin confundir estres hidrico con falta de nutriente.';
+      }
+      return 'La humedad$value sugiere estabilizar riego en ajo$stageText. '
+          'Evita deficit en bulbo y exceso de humedad/anoxia: ambos reducen '
+          'calibre y el exceso favorece pudriciones y mal curado.';
     }
 
     if (stage != null && stage.isNotEmpty) {
@@ -1141,6 +1239,44 @@ class EventEngine {
           'dosis: revisa historial, humedad, pH, CE y calidad de hoja antes '
           'de ajustar el manejo.';
     }
+    if (_isSpinach(input)) {
+      final stageText = stage != null && stage.isNotEmpty
+          ? ' en $stage'
+          : '';
+      final issue = issueText.isEmpty
+          ? 'un desbalance posible de NPK'
+          : 'niveles $issueText';
+      return 'Las lecturas muestran $issue$stageText. En espinaca BIO-G v1 '
+          'lo interpreta como riesgo de desequilibrio, no como receta de dosis: '
+          'confirma humedad estable, pH, CE y calidad de hoja antes de ajustar.';
+    }
+
+    if (_isOnion(input)) {
+      final stageText = stage != null && stage.isNotEmpty
+          ? ' en $stage'
+          : '';
+      final issue = issueText.isEmpty
+          ? 'un desbalance posible de NPK'
+          : 'niveles $issueText';
+      return 'Las lecturas muestran $issue$stageText. En cebolla BIO-G v1 '
+          'lo interpreta como riesgo de desequilibrio, no como receta de dosis: '
+          'recuerda que el N tardio engruesa cuello y el fotoperiodo manda la '
+          'bulbificacion. Confirma agua, CE, etapa y maduracion antes de ajustar.';
+    }
+
+    if (_isGarlic(input)) {
+      final stageText = stage != null && stage.isNotEmpty
+          ? ' en $stage'
+          : '';
+      final issue = issueText.isEmpty
+          ? 'un desbalance posible de NPK'
+          : 'niveles $issueText';
+      return 'Las lecturas muestran $issue$stageText. En ajo BIO-G v1 '
+          'lo interpreta como riesgo de desequilibrio, no como receta de dosis: '
+          'N tardio puede favorecer escobeteado/canutos, mala maduracion y mal '
+          'curado; la vernalizacion no se corrige con fertilizante. Confirma '
+          'agua, CE, etapa, diente-semilla y sanidad antes de ajustar.';
+    }
 
     if (stage != null && stage.isNotEmpty) {
       if (_containsAny(stage.toLowerCase(), const <String>['germin', 'emerg', 'tempr', 'macoll', 'veg'])) {
@@ -1176,6 +1312,36 @@ class EventEngine {
 
     final seedAlias = input.seedAlias?.trim().toLowerCase() ?? '';
     return seedAlias.contains('lechuga') || seedAlias.contains('lettuce');
+  }
+
+  static bool _isSpinach(EventEngineInput input) {
+    final cropId = input.cropId?.trim().toLowerCase();
+    if (cropId == 'spinach' || cropId == 'crop_spinach' || cropId == 'espinaca') {
+      return true;
+    }
+
+    final seedAlias = input.seedAlias?.trim().toLowerCase() ?? '';
+    return seedAlias.contains('espinaca') || seedAlias.contains('spinach');
+  }
+
+  static bool _isOnion(EventEngineInput input) {
+    final cropId = input.cropId?.trim().toLowerCase();
+    if (cropId == 'onion' || cropId == 'crop_onion' || cropId == 'cebolla') {
+      return true;
+    }
+
+    final seedAlias = input.seedAlias?.trim().toLowerCase() ?? '';
+    return seedAlias.contains('cebolla') || seedAlias.contains('onion');
+  }
+
+  static bool _isGarlic(EventEngineInput input) {
+    final cropId = input.cropId?.trim().toLowerCase();
+    if (cropId == 'garlic' || cropId == 'crop_garlic' || cropId == 'ajo') {
+      return true;
+    }
+
+    final seedAlias = input.seedAlias?.trim().toLowerCase() ?? '';
+    return seedAlias.contains('ajo') || seedAlias.contains('garlic');
   }
 
   static List<AgronomicEvent> _dedupeAndSort(List<AgronomicEvent> events) {

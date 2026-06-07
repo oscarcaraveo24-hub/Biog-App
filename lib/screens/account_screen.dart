@@ -201,9 +201,9 @@ class _AccountScreenState extends State<AccountScreen>
   }
 
   Future<void> _openConfigureCrop() async {
-    await Navigator.of(context).push(
-      BioGPageRoute(builder: (_) => const ConfigureSeedWizardScreen()),
-    );
+    await Navigator.of(
+      context,
+    ).push(BioGPageRoute(builder: (_) => const ConfigureSeedWizardScreen()));
 
     if (!mounted) return;
     setState(() {});

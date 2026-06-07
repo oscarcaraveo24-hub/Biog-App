@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+abstract final class BioGTabIndex {
+  static const int history = 0;
+  static const int account = 1;
+  static const int seeds = 2;
+  static const int environment = 3;
+  static const int dashboard = 4;
+}
+
 class BioGBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int>? onTap;
@@ -96,16 +104,20 @@ class BioGBottomNav extends StatelessWidget {
                             child: _NavItem(
                               iconPath: _kNavHistory,
                               label: 'Historial',
-                              active: currentIndex == 0,
-                              onTap: onTap == null ? null : () => onTap!(0),
+                              active: currentIndex == BioGTabIndex.history,
+                              onTap: onTap == null
+                                  ? null
+                                  : () => onTap!(BioGTabIndex.history),
                             ),
                           ),
                           Expanded(
                             child: _NavItem(
                               iconPath: _kNavAccount,
                               label: 'Cuenta',
-                              active: currentIndex == 1,
-                              onTap: onTap == null ? null : () => onTap!(1),
+                              active: currentIndex == BioGTabIndex.account,
+                              onTap: onTap == null
+                                  ? null
+                                  : () => onTap!(BioGTabIndex.account),
                             ),
                           ),
                           const SizedBox(width: ctaOuter),
@@ -113,16 +125,20 @@ class BioGBottomNav extends StatelessWidget {
                             child: _NavItem(
                               iconPath: _kNavSeeds,
                               label: 'Semillas',
-                              active: currentIndex == 2,
-                              onTap: onTap == null ? null : () => onTap!(2),
+                              active: currentIndex == BioGTabIndex.seeds,
+                              onTap: onTap == null
+                                  ? null
+                                  : () => onTap!(BioGTabIndex.seeds),
                             ),
                           ),
                           Expanded(
                             child: _NavItem(
                               iconPath: _kNavEnvironment,
                               label: 'Entorno',
-                              active: currentIndex == 3,
-                              onTap: onTap == null ? null : () => onTap!(3),
+                              active: currentIndex == BioGTabIndex.environment,
+                              onTap: onTap == null
+                                  ? null
+                                  : () => onTap!(BioGTabIndex.environment),
                             ),
                           ),
                         ],
@@ -138,7 +154,9 @@ class BioGBottomNav extends StatelessWidget {
               bottom: bottomInset + ctaLift,
               child: _CenterCTATapTarget(
                 size: ctaOuter + 30,
-                onTap: onTap == null ? null : () => onTap!(4),
+                onTap: onTap == null
+                    ? null
+                    : () => onTap!(BioGTabIndex.dashboard),
                 child: _CenterCTA(
                   outerSize: ctaOuter,
                   innerSize: ctaInner,

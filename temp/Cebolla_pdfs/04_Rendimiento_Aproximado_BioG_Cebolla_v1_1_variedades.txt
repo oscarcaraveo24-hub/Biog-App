@@ -1,0 +1,688 @@
+BIO-G / CEBOLLA - TEXTO PARA CODIGO
+Archivo TXT: 04_Rendimiento_Aproximado_BioG_Cebolla_v1.txt
+Estado: Version v1 investigada para BIO-G
+Cultivo madre: crop_onion / CropKey.onion
+Documento relacionado: Perfil Universal BIO-G Cebolla v2, Perfil Generico ON-GEN/SKIP v2 y Guia Tecnica de Fertilizacion Cebolla v3 reforzada.
+Nota: documento tecnico interno. Los rangos son operativos y prudentes; no son promesa de produccion ni sustituyen historial local, analisis de suelo/agua/tejido, validacion varietal ni asesoria agronomica regional.
+
+====================================================================
+RENDIMIENTO APROXIMADO DE LA CEBOLLA
+Base tecnica para calculadora de rendimiento - bulbo fresco, blanco, amarillo, morado, transicion, almacenamiento, proceso y cambray - BIO-G v1
+====================================================================
+
+Objetivo
+--------------------------------------------------------------------
+Definir rangos prudentes de rendimiento por hectarea, densidad/stand, descarte comercial y reglas de resolucion para que BIO-G pueda estimar produccion aproximada de cebolla a partir de superficie, poblacion lograda, tipo UX/perfil, sistema, establecimiento, fotoperiodo, destino comercial, Crop Care / Agro Score y condicion de calidad.
+
+Alcance
+--------------------------------------------------------------------
+- Cubre ON-GEN, ON-01 cebolla blanca dia corto grano/bola, ON-02 cebolla amarilla dia corto, ON-03 cebolla morada dia corto, ON-04 cebolla de transicion/dia intermedio y ON-05 cebolla en rama/cambray.
+- El enfoque principal es cebolla en suelo: campo abierto, riego, trasplante o siembra directa, bulbo fresco, bulbo seco/almacenamiento, proceso y manojo/cambray.
+- No modela hidroponia, sustratos inertes, solucion nutritiva recirculante, produccion forzada en invernadero como sistema principal, precio de mercado ni contrato industrial.
+- Las variedades o marcas funcionan como alias hacia un perfil. No son motor biologico independiente sin ficha varietal validada.
+- En cebolla, el rendimiento util no es solamente peso: es bulbo comercial, con calibre util, cuello cerrado, curado aceptable, baja pudricion, bajo descarte por deformidad y fotoperiodo correcto.
+
+Decision de producto
+--------------------------------------------------------------------
+Cebolla queda como cultivo madre crop_onion. Los tipos UX viven dentro del cultivo y ajustan fotoperiodo, ciclo, destino, tolerancia comercial, poblacion esperada, calibre, forma de cosecha y peso del factor de calidad. La calculadora debe distinguir:
+
+1) Produccion biologica / field-run:
+   Peso total de bulbos levantados antes de clasificacion completa.
+
+2) Rendimiento comercial / marketable yield:
+   Bulbo vendible despues de descartar chicos, deformes, dobles, partidos, brotados, con cuello grueso, podridos, dañados por trips/enfermedades, mal curados o fuera de calibre.
+
+BIO-G v1 debe mostrar principalmente rendimiento comercial aproximado. Puede guardar field-run como valor interno avanzado si el usuario declara manejo comercial.
+
+Fuentes fuertes usadas
+--------------------------------------------------------------------
+Se priorizaron universidades, extension y fuentes oficiales/tecnicas: UC ANR / University of California para rendimientos de bulbo fresco en California; UGA Extension 2026 para cebolla Vidalia/dia corto, poblacion, riego, costos y cajas de 40 lb; Oregon State University / Idaho para cebolla de almacenamiento y referencias de sacos/cwt; New Mexico State University y USDA Crop Profile/IPM Centers para poblacion, fotoperiodo, riego frecuente y curado; Michigan State University para rendimientos promedio, irrigados y cebolla verde; Universidad de Sonora para contexto mexicano/sonorense, fotoperiodo, etapas, riego, cosecha y curado; Fertilab/SIAP-SAGARPA 2016 para rango mexicano por estado y formula de calculo nutrimental.
+
+Fuentes comerciales, foros y experiencias de campo solo se usan como senales de lenguaje, problemas frecuentes y validacion de rangos, no como base normativa.
+
+====================================================================
+1. COMO DEBE CALCULAR RENDIMIENTO BIO-G
+====================================================================
+
+El calculo no debe usar un solo promedio nacional. La cebolla cambia por fotoperiodo, establecimiento, densidad, calibre, sanidad, salinidad, agua, N tardio, tipo de mercado y curado. El motor debe resolver primero una referencia base por perfil/tipo/sistema y despues aplicar factores.
+
+Formula conceptual:
+
+rendimiento_comercial_estimado = rendimiento_base_t_ha
+  x factor_poblacion
+  x factor_bulbificacion
+  x factor_manejo_crop_care
+  x factor_calidad_comercial
+  x factor_curado_cosecha
+
+produccion_total = rendimiento_comercial_estimado x hectareas
+
+Donde:
+
+- rendimiento_base_t_ha: sale de YieldReference segun ON-GEN/ON-01..ON-05, destino y sistema.
+- factor_poblacion: compara poblacion lograda contra rango esperado para ese destino.
+- factor_bulbificacion: protege contra fotoperiodo incorrecto, planta chica al iniciar bulbo, exceso de N, estres hidrico o calor.
+- factor_manejo_crop_care: usa agua, temperatura, suelo/raiz, nutricion, sanidad y tendencia.
+- factor_calidad_comercial: descuenta descarte por calibre, cuello grueso, dobles, partidos, pudricion, trips, manchas, salinidad o daño mecanico.
+- factor_curado_cosecha: descuenta si hubo lluvia tardia, riego tarde, cuello verde, cosecha inmadura o curado deficiente.
+
+Principio de seguridad:
+BIO-G debe estimar, no prometer. Si faltan fotoperiodo, tipo, sistema, densidad, fecha o estado de bulbo, la salida debe ser conservadora y de baja confianza.
+
+====================================================================
+2. ENTRADAS QUE DEBE PEDIR O RECIBIR EL MOTOR
+====================================================================
+
+Entrada                                   Uso en el motor
+--------------------------------------------------------------------
+Area sembrada                             Convertir a ha. Si el usuario captura m2, dividir entre 10,000.
+
+profileId                                ON-GEN / ON-01 / ON-02 / ON-03 / ON-04 / ON-05. Resuelve referencia base y sensibilidad.
+
+photoperiodClass                         shortDay / intermediateDay / longDay / unknown. En cebolla puede decidir si hay bulbo o no.
+
+establishmentMode                        directSeed / transplant / set / unknown. Cambia reloj, poblacion y confianza.
+
+productionSystem                         openFieldIrrigated / openFieldLowInput / furrow / drip / sprinkler / protectedSoilLimited / unknown.
+
+destination / marketUse                  freshBulb / dryBulbStorage / sweetFresh / redFresh / processing / cambrayBunch / unknown.
+
+populationMode                           plantsPerHa / plantsPerM2 / seedRateKgHa / seedRateLbAcre / standsEstimated / unknown.
+
+populationAchieved                       Plantas logradas o stand final. Si solo hay semilla comprada, bajar confianza.
+
+bulbSizeTarget                           small / medium / jumbo / colossal / unknown. No todo alto rendimiento es mejor si el mercado pide calibre.
+
+bulbStage                                preBulb / bulbInitiation / bulbFill / neckSoftening / topsDown / curing / unknown.
+
+cropCareScore                            0-100. Factor de manejo, no reemplaza datos de campo.
+
+qualityDiscardRisk                       low / medium / high. Conecta sanidad, curado, cuello, pudricion, trips, deformes y salinidad.
+
+boltingRisk                              low / watch / high / active. Tallo floral baja rendimiento comercial aunque haya biomasa.
+
+salinityRisk                             low / watch / alert / critical. Cebolla es sensible; baja calibre y stand.
+
+waterStressClass                         stable / deficit / excess / alternating / unknown. Agua define calibre y dobles/partidos.
+
+curingRisk                               low / medium / high. Maduracion y curado definen mercado y almacenamiento.
+
+====================================================================
+3. EVIDENCIA USADA PARA CALIBRAR RANGOS
+====================================================================
+
+Las referencias se convierten a t/ha para mantener consistencia BIO-G.
+
+Conversiones utiles:
+- 1 ton/ac, usando short ton de EE.UU., equivale aprox. a 2.2417 t/ha.
+- 1 cwt/ac equivale aprox. a 0.1121 t/ha.
+- 1 saco de 50 lb/ac equivale aprox. a 0.0560 t/ha.
+- 1 caja de 40 lb/ac equivale aprox. a 0.0448 t/ha.
+
+Fuente / referencia                                Dato original                         Conversion / lectura BIO-G
+--------------------------------------------------------------------
+UC ANR - Fresh-market bulb onion California         20.2-22.3 tons/ac promedio 1995-1997  ≈45.3-50.0 t/ha. Base fuerte de cebolla fresca irrigada en California.
+
+NMSU / New Mexico onion production                  450-460 cwt/ac promedio regional      ≈50.4-51.6 t/ha. Base fuerte para cebolla fresca en zonas aridas irrigadas.
+
+OSU Extension - Malheur County marketable           1,140 sacos de 50 lb/ac               ≈63.9 t/ha comercial empacado. Base alta para almacenamiento/Idaho-Oregon.
+
+OSU Extension - Idaho marketable                    1,115 sacos de 50 lb/ac               ≈62.5 t/ha comercial empacado. Base alta para almacenamiento/Idaho.
+
+OSU Extension - field-run Malheur                   695 cwt/ac                            ≈77.9 t/ha field-run. No usar como default de usuario generico.
+
+OSU Extension - field-run Idaho                     680 cwt/ac                            ≈76.2 t/ha field-run. Usar solo con sistema intensivo declarado.
+
+UGA Vidalia 2026                                    600 cajas de 40 lb/ac en presupuesto  ≈26.9 t/ha. Base para cebolla dulce/trasplantada/dia corto con alto descarte/calidad.
+
+UGA Vidalia 2026                                    306 cajas de 40 lb/ac break-even      ≈13.7 t/ha. Piso economico de presupuesto, no meta agronomica.
+
+Michigan State University                           16.5 tons/ac promedio                 ≈37.0 t/ha. Cebolla amarilla pungente promedio.
+
+Michigan State University                           20-25 tons/ac con riego y buen manejo ≈44.8-56.0 t/ha. Rango buen manejo.
+
+Michigan State University                           Cebolla verde 8-10 tons/ac            ≈17.9-22.4 t/ha. Base para ON-05/cambray si se mide por peso fresco.
+
+Fertilab / SIAP-SAGARPA 2016 Mexico                 Nacional 30 t/ha; estados 18-54 t/ha Base mexicana prudente; Chihuahua 54 t/ha como alto estatal.
+
+Universidad de Sonora DAG/HORT-015                  Sonora 20 t/ha medio; 30 t/ha alto    Base regional desertica; util para usuario generico/low-input.
+
+Lectura para BIO-G:
+- Un usuario generico en Mexico no debe recibir un techo de 70-80 t/ha como expectativa base.
+- Un sistema irrigado bien manejado puede moverse cerca de 35-55 t/ha en bulbo fresco.
+- Sistemas intensivos de almacenamiento/proceso con alta densidad, riego, sanidad y curado pueden superar 60 t/ha.
+- Cebolla dulce/trasplantada tipo Vidalia puede tener menos t/ha que cebolla de almacenamiento, pero alto valor por calidad.
+- Cambray/rama no debe compararse con bulbo seco; su rendimiento es por manojo/peso fresco, no por bulbo curado.
+
+====================================================================
+4. TABLA MAESTRA RECOMENDADA PARA BIO-G
+====================================================================
+
+Los rangos son para rendimiento comercial aproximado en toneladas por hectarea. No son techo biologico. La confianza "calibrated" significa que hay varias fuentes de extension/estadistica que sostienen el orden de magnitud; "modeled" significa ajuste por analogia agronomica, mercado o subtipo.
+
+ID sugerido                         Perfil / condicion                  Producto/sistema                         t/ha        poblacion/ha             conf.        Lectura BIO-G
+--------------------------------------------------------------------
+onion_generic                       ON-GEN                              desconocido / fresco generico            20-40       250k-750k                modeled      Skip conservador: no asume color, almacenamiento, proceso ni cambray.
+
+onion_field_generic_irrigated        Cebolla generica campo              bulbo fresco irrigado                    28-50       300k-850k                calibrated   Base de campo con riego; cercana a rangos Mexico/California/NM.
+
+onion_white_short_day_grano          ON-01 blanca dia corto              grano/bola mercado nacional              30-58       350k-850k                calibrated   Buen potencial si fotoperiodo, agua y N tardio estan bien.
+
+onion_yellow_short_day_fresh         ON-02 amarilla dia corto            fresco / alto volumen                    25-52       300k-800k                modeled      Amarilla/dulce puede priorizar calidad; no inflar si es tipo suave.
+
+onion_red_short_day_fresh            ON-03 morada dia corto              fresco / color / mercado regional        24-48       300k-800k                modeled      Color y sanidad pesan; descarte visual puede ser mayor.
+
+onion_intermediate_transition        ON-04 transicion                    dia intermedio / altiplano / fresco      32-62       350k-900k                calibrated   Mayor ciclo y calibre si coincide fotoperiodo y hay riego.
+
+onion_storage_intensive              ON-04 o sistema declarado           almacenamiento / bulbo seco              40-70       400k-950k                calibrated   Activar solo con sistema intensivo, curado y densidad coherentes.
+
+onion_processing_field_run           Proceso / industria                 proceso / deshidratado / field-run       45-80       450k-1.0M                modeled      Usar con cautela: field-run puede ser mayor que comercial neto.
+
+onion_transplanted_sweet             ON-02/ON-01 + transplant/sweet      dulce / Vidalia-like / fresco premium    20-38       210k-280k                calibrated   Menos toneladas que almacenamiento; valor depende de tamaño y calidad.
+
+onion_low_input_or_semiarid          Sistema bajo insumo/temporal        bulbo fresco baja tecnologia             10-28       150k-550k                modeled      Usar si no hay riego confiable, densidad baja o manejo incompleto.
+
+onion_cambray_bunch                  ON-05 cambray/rama                  manojo / cebolla verde                   12-25       800k-2.5M                calibrated   No comparar contra bulbo seco. Peso fresco por manojo/base/hoja.
+
+onion_home_garden_small_scale        Huerto / escala pequena             autoconsumo / no comercial               5-20        variable                 modeled      Solo para UX no comercial; no usar en calculadora agricola principal.
+
+Regla de techo:
+BIO-G solo debe mostrar rangos por arriba de 60 t/ha si se cumplen varias condiciones: fotoperiodo correcto, riego estable, poblacion coherente, buen Crop Care, bajo riesgo de salinidad, baja presion de trips/enfermedad, etapa de bulbificacion bien lograda y destino almacenamiento/proceso/fresh intensivo.
+
+
+====================================================================
+4.1 RESOLUCION OBLIGATORIA POR TIPO UX, PERFIL Y ALIAS DE VARIEDAD
+====================================================================
+
+Esta seccion es obligatoria para BIO-G porque el usuario puede entrar por tipo comercial, por color, por destino o por nombre de semilla. La variedad comercial NO crea por si sola un motor biologico independiente; funciona como alias hacia un perfil BIO-G y una referencia de rendimiento. Solo debe modificar rangos si existe ficha varietal validada o si el alias trae informacion agronomica clara: dia corto/intermedio, sweet/dulce, storage/bodega, cambray/rama, proceso o trasplante.
+
+Regla central:
+- Tipo UX visible = como lo entiende el agricultor.
+- Perfil BIO-G = motor oculto de etapa, fotoperiodo, sensibilidad y rendimiento.
+- Alias/variedad = entrada de confianza que apunta al perfil; no es cultivo separado.
+- YieldReference = referencia base de rendimiento, ajustada despues por poblacion, sistema, Crop Care, fotoperiodo, agua, salinidad, sanidad, N tardio y curado.
+
+Tabla maestra de perfiles y aliases para rendimiento:
+
+Tipo UX visible                         Perfil BIO-G                               Uso dominante                         Alias representativos / notas                                                   YieldReference base                         Rango base t/ha       Regla de rendimiento
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ON-GEN - No se / Otra cebolla            Intermedio conservador                     Bulbo fresco generico                 Entrada segura; no asume color ni fotoperiodo fino.                             onion_generic                             20-40                Conservador y migrable; si no hay riego, densidad o fotoperiodo, bajar confianza.
+
+ON-01 - Cebolla blanca grano/bola        Blanca dia corto, intermedio               Mercado nacional, fresco, bodega      SV4043NM, SV7030NS, AJUSCO, Stratus/EX 6800, LA JOYA, XON570W, Bella Luna, Carta Blanca, otra blanca dia corto. onion_white_short_day_grano              30-58                Buen potencial comercial; solo activar techo alto con fotoperiodo correcto, riego estable y curado sano.
+
+ON-02 - Cebolla amarilla/dorada          Amarilla dia corto, precoz-intermedio       Fresco, alto volumen, dulce segun material PECOS, Nomad/SV2623NN, Plethora, Texas Grano/Granex como referencia regional, otra amarilla dia corto. onion_yellow_short_day_fresh             25-52                Si alias indica sweet/dulce o trasplante tipo Vidalia, resolver a onion_transplanted_sweet.
+
+ON-03 - Cebolla morada                   Morada dia corto, intermedio               Fresco, salsas, ensaladas, regional   Rasta, NuMex Crimson/rojas regionales como referencia, otra morada dia corto.     onion_red_short_day_fresh                24-48                El color y la sanidad visual pesan mas; no inflar si hay quemado, mal curado o descarte por piel/color.
+
+ON-04 - Cebolla de transicion / dia intermedio Intermedio-largo, altiplano/templado Fresco, malla, calibres grandes, bodega segun material Cimarron, NUN 6005, Super Luna, NuMex Allure/variedades intermedias como referencia, otra dia intermedio. onion_intermediate_transition            32-62                Si destino es storage/bodega y el manejo lo sostiene, resolver a onion_storage_intensive.
+
+ON-05 - Cebolla en rama / cambray / manojo Precoz, cosecha joven                    Manojo, hoja + base/bulbo incipiente  SV4522NB, Baja Verde, otra cambray/rama.                                         onion_cambray_bunch                      12-25                No exigir bulbo completo ni curado de bulbo seco; rendimiento por peso fresco/manojo.
+
+4.1.1 Alias resolver recomendado para codigo
+
+Alias o texto capturado                               profileId sugerido          YieldReference sugerido                 Ajuste / nota
+------------------------------------------------------------------------------------------------------------------------------------------
+"no se", "otra cebolla", "generica"                 ON-GEN                      onion_generic                            No asumir color, storage, proceso ni cambray.
+"SV4043NM"                                           ON-01                       onion_white_short_day_grano              Alias blanca dia corto.
+"SV7030NS"                                           ON-01                       onion_white_short_day_grano              Alias blanca dia corto.
+"AJUSCO"                                             ON-01                       onion_white_short_day_grano              Alias blanca dia corto.
+"Stratus", "EX 6800"                                 ON-01                       onion_white_short_day_grano              Alias blanca dia corto.
+"LA JOYA"                                            ON-01                       onion_white_short_day_grano              Alias blanca dia corto OP; no crear motor aparte.
+"XON570W"                                            ON-01                       onion_white_short_day_grano              Alias blanca dia corto.
+"Bella Luna"                                         ON-01                       onion_white_short_day_grano              Alias blanca dia corto si no hay ficha superior.
+"Carta Blanca"                                       ON-01                       onion_white_short_day_grano              Alias blanca dia corto.
+"otra blanca dia corto"                              ON-01                       onion_white_short_day_grano              Mantener rango normal y confianza media.
+"PECOS"                                              ON-02                       onion_yellow_short_day_fresh             Amarilla/dorada dia corto.
+"Nomad", "SV2623NN"                                  ON-02                       onion_yellow_short_day_fresh             Amarilla/dorada dia corto.
+"Plethora"                                           ON-02                       onion_yellow_short_day_fresh             Amarilla plana/dia corto; no sobreestimar si es dulce/suave.
+"Texas Grano", "Granex"                              ON-02                       onion_yellow_short_day_fresh             Referencia regional; si el sistema indica trasplante dulce, usar onion_transplanted_sweet.
+"otra amarilla dia corto"                            ON-02                       onion_yellow_short_day_fresh             Confianza media si no hay sistema.
+"Rasta"                                              ON-03                       onion_red_short_day_fresh                Morada/roja dia corto.
+"NuMex Crimson"                                      ON-03                       onion_red_short_day_fresh                Roja/morada regional; validar fotoperiodo local.
+"roja regional", "otra morada dia corto"             ON-03                       onion_red_short_day_fresh                Subir sensibilidad a color, piel y descarte visual.
+"Cimarron"                                           ON-04                       onion_intermediate_transition            Dia intermedio/transicion; buen calibre si coincide zona.
+"NUN 6005"                                           ON-04                       onion_intermediate_transition            Morada/intermedia segun catalogo; perfil ON-04 por fotoperiodo.
+"Super Luna", "Súper Luna"                           ON-04                       onion_intermediate_transition            Transicion/intermedia.
+"NuMex Allure"                                       ON-04                       onion_intermediate_transition            Variedad intermedia como referencia; no usar en dia corto sin validar.
+"otra dia intermedio", "transicion", "altiplano"     ON-04                       onion_intermediate_transition            Bajar confianza si no hay fecha/zona.
+"SV4522NB"                                           ON-05                       onion_cambray_bunch                      Cebolla de racimo/cambray.
+"Baja Verde"                                         ON-05                       onion_cambray_bunch                      Cebolla verde/cambray; no comparar contra bulbo seco.
+"cambray", "rama", "cebollin", "manojo"             ON-05                       onion_cambray_bunch                      Cosecha joven; rendimiento por manojo/peso fresco.
+
+4.1.2 Reglas de seguridad por alias
+
+- Si una variedad aparece en el catalogo pero el usuario selecciona una zona/fotoperiodo incompatible, el motor debe priorizar el fotoperiodo sobre el alias.
+- Si el alias es blanco/amarillo/morado pero no se sabe si es dia corto o intermedio, mantener profileId por color solo con confianza media y pedir confirmacion futura.
+- Si el alias indica cambray/rama, no activar etapa de bulbificacion completa ni rendimiento de bulbo seco.
+- Si el alias indica dulce/sweet/Granex/Vidalia-like y hay trasplante o poblacion baja, usar onion_transplanted_sweet y no el techo de almacenamiento.
+- Si el alias indica bodega/storage o el usuario declara almacenamiento largo, usar onion_storage_intensive solo si hay curado, cuello cerrado, riego suspendido y baja sanidad.
+- Si el usuario despues cambia ON-GEN a ON-01..ON-05, no borrar historial; recalcular solo rendimiento futuro, ventanas, referencias y confianza.
+- Si la variedad comercial no esta en la lista, resolver por tipo UX. Si tampoco hay tipo, usar ON-GEN.
+
+4.1.3 Nota BIO-G para salida humana
+
+"La variedad ayuda a ubicar el perfil, pero la estimacion de rendimiento depende mas de fotoperiodo correcto, poblacion lograda, agua, salinidad, sanidad, nitrogeno tardio, tamaño del bulbo y curado. Usaremos el rango del tipo de cebolla y lo iremos afinando con los datos reales del lote."
+
+====================================================================
+5. REGLAS DE RESOLUCION POR PERFIL / TIPO UX
+====================================================================
+
+Perfil / condicion                                      YieldReference recomendado                  Regla de producto
+--------------------------------------------------------------------
+ON-GEN / No se / Otra cebolla                            onion_generic                              No asumir color, proceso, almacenamiento, cambray ni alto rendimiento. Estimar prudente.
+
+ON-01 blanca dia corto grano/bola                        onion_white_short_day_grano                Usar si el usuario eligio blanca. Penalizar si fotoperiodo no corresponde o hay N tarde.
+
+ON-02 amarilla dia corto                                 onion_yellow_short_day_fresh               Usar si es amarilla fresca. Si alias indica dulce/sweet/transplant, resolver a onion_transplanted_sweet.
+
+ON-03 morada dia corto                                   onion_red_short_day_fresh                  Usar para morada fresca. Subir peso de calidad visual/color/curado.
+
+ON-04 dia intermedio/transicion                          onion_intermediate_transition              Usar para altiplano/zonas templadas. Si destino es bodega, usar onion_storage_intensive.
+
+ON-05 cambray/rama                                       onion_cambray_bunch                        No exigir bulbificacion completa. Medir peso/manojo/calidad de hoja-base.
+
+Destino storage/bodega explicito                         onion_storage_intensive                    Requiere curado, cuello cerrado y descarte por almacenamiento.
+
+Destino proceso/deshidratado explicito                   onion_processing_field_run                 Puede usar field-run; mostrar comercial neto si hay datos de descarte.
+
+Establecimiento transplant + sweet/premium               onion_transplanted_sweet                   Usar poblacion 85k-110k plantas/ac equivalente a 210k-272k/ha.
+
+Sistema bajo insumo o humedad incierta                   onion_low_input_or_semiarid                Mantener rango conservador aunque el perfil tenga potencial.
+
+profileId desconocido pero crop == onion                 onion_field_generic_irrigated u onion_generic Si hay riego y fecha, field; si no hay datos, generic.
+
+Punto critico:
+En cebolla, el perfil de color mueve menos el rendimiento que fotoperiodo, densidad, agua, sanidad, salinidad, N tardio, destino y curado. Una cebolla blanca puede rendir alto o bajo segun manejo; una cebolla morada puede valer mas aunque rinda menos. BIO-G no debe comparar valor economico, solo rendimiento aproximado.
+
+====================================================================
+6. POBLACION, DENSIDAD Y CALIBRE
+====================================================================
+
+La cebolla es muy sensible a densidad porque cada planta forma normalmente un bulbo comercial. A diferencia de cultivos que compensan con ramificacion o frutos multiples, la perdida de stand reduce rapidamente bulbos por hectarea. Pero densidad excesiva aumenta bulbos pequeños, cuello delgado, competencia, sanidad y descarte por calibre.
+
+Sistema / destino                          Rango operativo BIO-G                       Lectura BIO-G
+--------------------------------------------------------------------
+Bulbo fresco generico                       300k-850k plantas/ha                         Rango amplio para siembra directa o trasplante; ajustar por calibre.
+
+Transplante dulce / Vidalia-like            210k-272k plantas/ha                         Poblacion menor, bulbos grandes, calidad premium; no comparar contra almacenamiento.
+
+Blanca grano/bola                            350k-850k plantas/ha                         Alta poblacion puede subir toneladas, pero bajar calibre si se excede.
+
+Amarilla fresca                              300k-800k plantas/ha                         Resolver segun dulce vs almacenamiento.
+
+Morada fresca                                300k-800k plantas/ha                         Mantener calidad visual; descarte por deformes/color pesa.
+
+Transicion / almacenamiento                  400k-950k plantas/ha                         Mejor potencial si riego, fertilidad y sanidad sostienen bulbo.
+
+Proceso / deshidratado                       450k-1.0M plantas/ha                         Biomasa y uniformidad importan; tamaño extremo no siempre es objetivo.
+
+Cambray / rama                               800k-2.5M plantas/ha                         Alta densidad es normal. No penalizar por no formar bulbo completo.
+
+Si el usuario captura semilla comprada:
+- Convertir solo si hay porcentaje de germinacion y establecimiento.
+- Si falta stand, usar confidence baja/media.
+- No estimar rendimiento alto solo por kilos de semilla; BIO-G necesita poblacion lograda.
+
+Reglas de penalizacion por poblacion:
+- Poblacion baja: reduce produccion por hectarea, pero puede aumentar calibre individual si agua/nutricion son buenas.
+- Poblacion alta: aumenta riesgo de bulbo chico, cuello, competencia, enfermedades foliares y curado disparejo.
+- Si el mercado busca jumbo/colossal, densidad muy alta baja calidad comercial aunque suba peso bruto.
+- Si el mercado busca proceso, densidad mayor puede ser aceptable si el calibre objetivo lo permite.
+
+====================================================================
+7. FACTOR DE BULBIFICACION
+====================================================================
+
+La cebolla es un cultivo especial: la edad no garantiza bulbo. La bulbificacion depende de fotoperiodo, temperatura, tamaño de planta y manejo de nitrogeno/agua.
+
+Condicion detectada                              Efecto sugerido en motor
+--------------------------------------------------------------------
+Fotoperiodo correcto + planta suficiente          factor_bulbificacion 0.90-1.10
+
+Fotoperiodo desconocido                           factor_bulbificacion 0.70-0.95; confidence baja/media
+
+Fotoperiodo posiblemente incorrecto               factor_bulbificacion 0.30-0.65; mensaje de riesgo fuerte
+
+Fotoperiodo claramente incompatible               factor_bulbificacion 0.10-0.40; no prometer bulbo comercial
+
+Planta chica al iniciar bulbo                     factor 0.60-0.85; bulbo chico aunque el fotoperiodo sea correcto
+
+Exceso de N durante induccion                     factor 0.70-0.90; cuello grueso, retraso, baja conservacion
+
+Deficit hidrico en induccion/llenado              factor 0.55-0.85; bulbo chico, dobles/partidos
+
+Calor/fase seca moderada en maduracion            puede ayudar curado si el bulbo ya esta hecho; no penalizar automaticamente
+
+Lluvia/riego tarde en maduracion                  factor_curado 0.60-0.85; riesgo de cuello/pudricion
+
+Mensaje BIO-G:
+"La cebolla puede estar en edad de formar bulbo, pero si el fotoperiodo, el tamaño de planta o el manejo de agua/nitrogeno no acompañan, el rendimiento comercial baja aunque el cultivo se vea verde."
+
+====================================================================
+8. CROP CARE Y FACTOR DE CALIDAD COMERCIAL
+====================================================================
+
+En cebolla, rendimiento comercial se pierde por tres vias:
+1) No se forma suficiente bulbo.
+2) Se forma bulbo, pero no alcanza calibre.
+3) El bulbo pesa, pero se descarta por calidad, curado, cuello, pudricion, daño o deformidad.
+
+Condicion                               Impacto sobre rendimiento                         Decision del motor
+--------------------------------------------------------------------
+Agua estable en induccion/llenado        Aumenta calibre y uniformidad                     Factor positivo si humedad esta estable.
+
+Deficit hidrico                          Bulbos chicos, partidos/dobles, pungencia alta    Penalizar fuerte en bulbo.
+
+Exceso de humedad                        Anoxia, enfermedades, cuello, pudricion           Penalizar en establecimiento y pre-cosecha.
+
+Salinidad                                Menor stand, menor calibre, cuello pobre          Penalizar desde establecimiento; severidad alta si ECe sube.
+
+N bajo temprano                          Planta chica antes de induccion                   Penalizar por poca fabrica foliar.
+
+N alto tarde                             Retrasa madurez, cuello grueso, dobles, almacen malo Penalizar calidad, no necesariamente biomasa inmediata.
+
+K bajo / CE alta                         Baja turgencia y llenado                          Penalizar llenado y calidad.
+
+Trips                                    Reduce area foliar y tamaño de bulbo              Penalizar si hay alta presion antes de bulbo completo.
+
+Mildiu / Stemphylium / Botrytis           Menos hoja funcional, curado pobre               Penalizar sanidad/calidad.
+
+Pink root / Fusarium basal rot            Raiz limita agua/nutrientes                       Penalizar fuerte; puede bajar potencial aunque riego parezca bueno.
+
+Malezas antes de bulbificacion            Baja stand/hoja y calibre                        Penalizar fuerte: cebolla compite mal.
+
+Cosecha inmadura                          Cuello verde, mala piel, pudricion               Penalizar curado/almacen.
+
+Cosecha demasiado tarde                   Brote, pudricion, daño mecanico                  Penalizar calidad si clima/riego no ayudan.
+
+====================================================================
+9. FACTORES NUMERICOS SUGERIDOS PARA MOTOR
+====================================================================
+
+9.1 Factor por Crop Care Score
+--------------------------------------------------------------------
+score 90-100     factor_manejo 1.00-1.10     Solo si no hay fotoperiodo incorrecto ni calidad critica.
+score 75-89      factor_manejo 0.88-1.00     Buen cultivo, rendimiento dentro del rango base.
+score 60-74      factor_manejo 0.70-0.88     Observacion; bajar techo.
+score 45-59      factor_manejo 0.50-0.70     Alerta; probable perdida de calibre/calidad.
+score <45        factor_manejo 0.25-0.50     Critico; no prometer recuperacion.
+
+9.2 Factor por poblacion lograda
+--------------------------------------------------------------------
+Dentro de rango objetivo                   0.95-1.05
+10-25% abajo del minimo                    0.75-0.95
+>25% abajo del minimo                      0.45-0.75
+10-25% arriba del maximo                   0.85-1.00, pero subir riesgo de calibre chico
+>25% arriba del maximo                     0.65-0.90, salvo cambray/proceso
+
+9.3 Factor por calidad/descarte
+--------------------------------------------------------------------
+qualityDiscardRisk low                     0.90-1.00
+qualityDiscardRisk medium                  0.70-0.90
+qualityDiscardRisk high                    0.40-0.70
+qualityDiscardRisk critical                0.15-0.40
+
+9.4 Factor por curado/maduracion
+--------------------------------------------------------------------
+Cuello cerrado, clima seco, riego suspendido a tiempo          0.95-1.05
+Maduracion algo irregular                                      0.80-0.95
+Lluvia/riego tarde o cuello grueso                              0.60-0.85
+Pudricion/neck rot/curado malo                                  0.30-0.65
+
+9.5 Factor por fotoperiodo
+--------------------------------------------------------------------
+compatible                                 0.90-1.05
+unknown                                    0.70-0.95
+watch / possible mismatch                   0.40-0.75
+incompatible                                0.10-0.40
+
+Regla de prioridad:
+El factor de fotoperiodo no debe ser compensado completamente por Crop Care. Un cultivo bonito, verde y bien regado puede no producir bulbo comercial si el fotoperiodo no corresponde.
+
+====================================================================
+10. RECOMENDACION DIRECTA PARA CODIGO
+====================================================================
+
+Crear o extender una familia de rendimiento para hortalizas de bulbo:
+
+YieldFamily.onionDryBulbFresh
+YieldFamily.onionStorageBulb
+YieldFamily.onionSweetFresh
+YieldFamily.onionProcessing
+YieldFamily.onionBunchingGreen
+
+Parametros sugeridos iniciales:
+
+YieldFamily.onionDryBulbFresh:
+- managementGamma: 1.35
+- managementFloor: 0.22
+- qualityRequired: high
+- photoperiodSensitive: true
+
+YieldFamily.onionStorageBulb:
+- managementGamma: 1.45
+- managementFloor: 0.20
+- qualityRequired: veryHigh
+- curingRequired: true
+- photoperiodSensitive: true
+
+YieldFamily.onionSweetFresh:
+- managementGamma: 1.30
+- managementFloor: 0.24
+- qualityRequired: premium
+- bruisingSensitivity: high
+
+YieldFamily.onionProcessing:
+- managementGamma: 1.20
+- managementFloor: 0.25
+- fieldRunAllowed: true
+- qualityRequired: mediumHigh
+
+YieldFamily.onionBunchingGreen:
+- managementGamma: 1.25
+- managementFloor: 0.25
+- bulbRequired: false
+- harvestWindowShort: true
+
+Agregar referencias onion_* de la tabla maestra a YieldReferenceCatalog.
+
+En _familyFor(reference):
+- si cropId == onion y useType == cambray/bunching -> onionBunchingGreen
+- si useType == processing -> onionProcessing
+- si useType == storage/dryBulb -> onionStorageBulb
+- si useType == sweetFresh/transplantSweet -> onionSweetFresh
+- si no -> onionDryBulbFresh
+
+En YieldProjectionSetupScreen:
+- Resolver por profileId ON-GEN/ON-01..ON-05.
+- Preguntar o inferir photoperiodClass si no existe.
+- Separar establishmentMode de productionSystem.
+- Pedir poblacion lograda o spacing si el usuario quiere estimacion precisa.
+- Si solo conoce semilla o variedad, bajar confidence.
+- Si fotoperiodo incompatible, mostrar advertencia antes de calcular alto.
+
+Campos sugeridos para modelo:
+
+Campo                                  Tipo sugerido                                      Uso
+--------------------------------------------------------------------
+profileId                              ON-GEN / ON-01 / ON-02 / ON-03 / ON-04 / ON-05      Resolver rango y textos.
+
+photoperiodClass                       shortDay / intermediateDay / longDay / unknown      Control de bulbificacion.
+
+establishmentMode                      directSeed / transplant / set / unknown             Reloj y poblacion.
+
+marketUse                              freshBulb / dryStorage / sweetFresh / redFresh / processing / cambrayBunch / unknown
+
+productionSystem                       openFieldIrrigated / drip / furrow / sprinkler / lowInput / unknown
+
+populationMode                         plantsPerHa / plantsPerM2 / seedRate / spacing / unknown
+
+populationAchieved                     double?                                             Stand final.
+
+bulbStage                              preBulb / bulbInitiation / bulbFill / neckSoftening / topsDown / curing / unknown
+
+bulbabilityRisk                        low / watch / high / critical                       Riesgo de no formar bulbo.
+
+qualityDiscardRisk                     low / medium / high / critical                      Descarte comercial.
+
+curingRisk                             low / medium / high / critical                      Maduracion/almacenamiento.
+
+salinityRisk                           low / watch / alert / critical                      Baja calibre/stand.
+
+boltingRisk                            low / watch / high / active                         Tallo floral.
+
+storageIntent                          none / short / medium / long / unknown              Cambia peso de curado.
+
+confidence                             high / medium / low                                  Salida transparente.
+
+====================================================================
+11. RESOLVER SUGERIDO PARA YieldProjectionSetupScreen
+====================================================================
+
+Condicion                                                                 YieldReference recomendado
+--------------------------------------------------------------------
+ON-GEN / generic                                                           onion_generic
+ON-01 blanca dia corto grano/bola                                           onion_white_short_day_grano
+ON-02 amarilla dia corto sin sweet explicito                                onion_yellow_short_day_fresh
+ON-02/ON-01 + sweet/dulce/transplant/premium                                onion_transplanted_sweet
+ON-03 morada                                                               onion_red_short_day_fresh
+ON-04 dia intermedio/transicion                                             onion_intermediate_transition
+ON-04 + storage/bodega/almacenamiento                                       onion_storage_intensive
+Cualquier perfil + proceso/deshidratado/industria                           onion_processing_field_run
+ON-05 cambray/rama/cebollin/manojo                                          onion_cambray_bunch
+Sistema bajo insumo / temporal / sin riego confiable                        onion_low_input_or_semiarid
+profileId desconocido pero crop == onion + riego declarado                  onion_field_generic_irrigated
+profileId desconocido sin riego/densidad/fotoperiodo                        onion_generic
+
+Regla de salida si fotoperiodo no corresponde:
+- No resolver a un YieldReference alto aunque el perfil sea ON-01..ON-04.
+- Mostrar rendimiento como "muy incierto" o "potencial de bulbo limitado".
+- Sugerir revisar tipo de semilla/variedad y fecha/zona.
+- Si el cultivo puede aprovecharse como rama/cambray, ofrecer estimacion secundaria ON-05 solo si el usuario lo desea o si el sistema UX lo permite.
+
+====================================================================
+12. NOTAS AGRONOMICAS IMPORTANTES
+====================================================================
+
+- Cebolla no es una hortaliza de fruto: el numero de plantas se acerca mucho al numero potencial de bulbos.
+- La fabrica foliar antes de bulbificacion determina el tamaño posible del bulbo.
+- Fotoperiodo incorrecto puede destruir el potencial de rendimiento aunque el cultivo se vea sano.
+- Deficiencia de agua en induccion y llenado reduce calibre y puede causar bulbos dobles/partidos.
+- Exceso de N tarde puede dar plantas verdes pero mala cebolla comercial: cuello grueso, madurez lenta, dobles, pudricion y peor almacenamiento.
+- El rendimiento field-run puede verse alto pero el rendimiento comercial puede bajar mucho por descarte.
+- Cebolla de almacenamiento necesita mas peso del factor curado que una cebolla de venta inmediata.
+- Cebolla dulce puede tener menor t/ha que cebolla de almacenamiento y aun asi ser mejor negocio; BIO-G no debe juzgar valor economico solo por toneladas.
+- Cambray/rama es otra forma de cosecha: no debe penalizarse por no formar bulbo completo.
+- Malezas tempranas son especialmente peligrosas porque la cebolla compite mal y crece lento al inicio.
+- Trips y enfermedades foliares reducen tamaño porque dañan hojas, que son la fabrica del bulbo.
+- Salinidad debe bajar techo aun con riego, porque la cebolla es sensible.
+- Cosechar con cuello inmaduro o con riego/lluvia tardia puede transformar un buen rendimiento biologico en mal rendimiento vendible.
+
+====================================================================
+13. MENSAJES BIO-G SUGERIDOS PARA UX
+====================================================================
+
+Situacion                                      Mensaje farmer-friendly
+--------------------------------------------------------------------
+ON-GEN                                         Usaremos una estimacion conservadora porque todavia no sabemos tipo, fotoperiodo ni destino. Puedes afinarla despues sin perder historial.
+
+Fotoperiodo desconocido                         En cebolla, la edad no garantiza bulbo. La estimacion mejora si confirmas si es dia corto, intermedio o largo.
+
+Fotoperiodo incompatible                         Hay riesgo de que la cebolla no forme bulbo comercial. Buen riego o fertilizante no corrigen una variedad mal adaptada al dia.
+
+Poblacion baja                                   La poblacion esta por debajo del rango esperado. Los bulbos pueden crecer mas grandes, pero el potencial por hectarea baja.
+
+Poblacion alta                                   La densidad puede subir peso bruto, pero tambien puede bajar calibre y aumentar competencia. Vigile tamaño de bulbo y ventilacion.
+
+Deficit hidrico en llenado                       El cultivo esta en una etapa donde el agua define calibre. Si falta humedad, el bulbo puede quedar chico o partirse.
+
+Exceso de humedad pre-cosecha                    Hay riesgo de cuello grueso, pudricion o curado deficiente. El rendimiento comercial puede bajar aunque el bulbo pese.
+
+N alto tarde                                     La planta puede verse verde, pero demasiado nitrogeno tarde retrasa madurez y puede reducir almacenamiento.
+
+Trips / hoja dañada                              Si la hoja pierde area funcional, el bulbo pierde fabrica. El rendimiento puede bajar por tamaño, no solo por daño visual.
+
+Cebolla dulce / transplantada                    Este tipo busca calidad y tamaño comercial; no siempre compite en toneladas contra cebolla de almacenamiento.
+
+Cambray/rama                                     Esta cebolla se cosecha joven. La estimacion se mide por manojo/peso fresco, no por bulbo seco completamente formado.
+
+Curado deficiente                                Parte del rendimiento puede perderse despues de levantar el cultivo si el cuello no seca bien o hay mala ventilacion.
+
+Alta confianza                                   La estimacion usa perfil, fotoperiodo, fecha, etapa, poblacion y sensores; por eso el rango puede ser mas cerrado.
+
+Baja confianza                                   Faltan datos importantes. BIO-G prefiere darte un rango prudente antes que prometer un rendimiento falso.
+
+====================================================================
+14. DECISIONES FINALES DE PRODUCTO
+====================================================================
+
+Decision                                                        Resultado
+--------------------------------------------------------------------
+Que mueve mas el rendimiento                                     Fotoperiodo correcto, planta grande antes de bulbo, poblacion, agua en llenado, N temprano/tardio, sanidad foliar, salinidad y curado.
+
+Que no debe hacer BIO-G                                          No usar un solo promedio nacional, no comparar cambray con bulbo seco, no prometer 70+ t/ha a usuario generico, no ignorar fotoperiodo.
+
+Como usar los perfiles                                           ON-01 a ON-05 ajustan referencia y mensajes. Variedad es alias; sin ficha validada no cambia motor por si sola.
+
+Como tratar field-run                                             Puede ser interno o avanzado. La salida principal debe ser rendimiento comercial aproximado.
+
+Como tratar fotoperiodo                                           Como factor limitante mayor. No se compensa totalmente con buen Agro Score.
+
+Como tratar almacenamiento                                        Exigir cuello cerrado, curado, humedad baja, baja pudricion y descarte. Peso sin curado no es rendimiento almacenado.
+
+Como tratar ON-GEN                                                Conservador, migrable y no visible como incompleto.
+
+Que queda fuera                                                   Hidroponia/sustrato, precio, contrato, rendimiento garantizado, prediccion exacta por marca y diagnostico cerrado de plagas.
+
+====================================================================
+15. FUENTES Y TRAZABILIDAD
+====================================================================
+
+S1. UC ANR / University of California. Fresh-Market Bulb Onion Production in California, Publication 7242.
+Uso: rendimiento promedio 20.2-22.3 tons/ac, fotoperiodo 12-15 h, produccion fresca y clases de mercado.
+URL: https://my.ucanr.edu/repository/fileaccess.cfm?article=54050&p=+DEQFFU
+
+S2. University of Georgia Extension. Vidalia Onion Production Guide, revised 2026.
+Uso: cebolla dia corto, poblacion 85,000-110,000 plantas/ac, riego, factores de calidad, 600 cajas de 40 lb/ac en presupuesto, break-even 306 cajas/ac.
+URL: https://site.extension.uga.edu/vidaliaonion/files/2026/02/Vidalia-Onion-Production-Guide.pdf
+
+S3. Oregon State University Extension. Cost of Onion Production in Eastern Oregon and Idaho.
+Uso: referencias de sacos de 50 lb/ac, cwt/ac, rendimiento comercial/field-run para almacenamiento intensivo.
+URL: https://extension.oregonstate.edu/catalog/cost-onion-production-eastern-oregon-idaho
+
+S4. Oregon State University, Washington State University, University of Idaho. Nutrient Management for Onions in the Pacific Northwest, PNW 546.
+Uso: crecimiento por fases, uptake minimo antes de bulb initiation, uptake rapido desde bulb initiation y relacion entre nutricion, calidad y rendimiento.
+URL: https://verso.uidaho.edu/view/pdfCoverPage?download=true&filePid=13325535400001851&instCode=01ALLIANCE_UID
+
+S5. New Mexico State University. Onion Production and Marketing in New Mexico, Circular 577.
+Uso: datos de produccion regional, promedio 450-460 cwt/ac, contexto de mercado y manejo.
+URL: https://pubs.nmsu.edu/_circulars/CR577.pdf
+
+S6. USDA/IPM Centers. Crop Profile for Onions in New Mexico.
+Uso: siembra directa, seed rates, lower/higher seeding rates, fotoperiodo por cultivar, riego frecuente, curado 3-5 dias.
+URL: https://ipmdata.ipmcenters.org/documents/cropprofiles/NMonions.pdf
+
+S7. Michigan State University Extension. Producing Onion Production.
+Uso: rendimiento promedio 16.5 tons/ac, 20-25 tons/ac con riego y buen manejo, cebolla verde 8-10 tons/ac, malezas y competencia.
+URL: https://www.canr.msu.edu/foodsystems/uploads/files/producing-onion-production.pdf
+
+S8. Universidad de Sonora. El cultivo de la cebolla, Serie guias DAG/HORT-015, 2016.
+Uso: rendimientos Sonora 20-30 t/ha, etapas, fotoperiodo, riego, cosecha, curado, analisis foliar y contexto semidesertico mexicano.
+Documento PDF aportado por el usuario: CEBOLLA-DAG-HORT-015.pdf
+
+S9. Fertilab. Necesidades de N, P y K para Cebolla considerando analisis de suelo.
+Uso: estadistica mexicana 2015, rendimiento nacional 30 t/ha, rangos estatales 18-54 t/ha, extraccion N-P-K por tonelada y formula de calculo de N.
+Documento PDF aportado por el usuario: Necesidades-de-N-P-y-K-para-Cebolla.pdf
+
+S10. BIO-G. Perfil Universal Cebolla v2, Perfil Generico ON-GEN/SKIP v2 y Guia de Fertilizacion Cebolla v3 reforzada.
+Uso: arquitectura crop_onion, perfiles ON-GEN/ON-01..ON-05, fotoperiodo, etapas, alerts y reglas de no sobre-modelar.
+
+====================================================================
+16. CIERRE DE PRODUCTO
+====================================================================
+
+La calculadora de rendimiento de cebolla queda lista para BIO-G v1 si se integra con referencias por perfil, fotoperiodo, destino, poblacion, riego, sanidad y curado. La prioridad para codigo es resolver ON-GEN/ON-01..ON-05, distinguir bulbo fresco vs almacenamiento/proceso vs cambray, y aplicar el factor de bulbificacion como limitante fuerte.
+
+La frase de producto es:
+"En cebolla, no basta con tener planta: hay que lograr bulbo, calibre, cuello y curado. BIO-G estima rendimiento comercial, no solo peso verde en campo."
+

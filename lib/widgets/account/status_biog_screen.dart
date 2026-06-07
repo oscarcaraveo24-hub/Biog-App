@@ -7,6 +7,8 @@ import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/screens/account/biog_hardware_health.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 
+const bool kBioGHardwareFlowUiDebugLogs = true;
+
 class StatusBioGScreen extends StatefulWidget {
   final Map<String, dynamic> device;
 
@@ -39,7 +41,9 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
   Stream<BioGTelemetry?>? _telemetryStream;
   BioGTelemetry? _latestTelemetry;
   bool _firstSnapshotReceived = false;
+  bool _retryingTelemetry = false;
   Timer? _ticker;
+  final Set<String> _loggedHardwareStates = <String>{};
 
   Map<String, dynamic> get device => widget.device;
   String get _deviceId => (device['id'] ?? '').toString().trim();
@@ -124,6 +128,21 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
     Navigator.pop(context, {'changedDisplayed': true, 'deviceId': id});
   }
 
+  Future<void> _retryTelemetry() async {
+    if (_retryingTelemetry) return;
+
+    setState(() => _retryingTelemetry = true);
+    try {
+      await BioGScope.of(context).refreshTelemetryForDevice(
+        _telemetryDeviceId,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _retryingTelemetry = false);
+      }
+    }
+  }
+
   Future<void> _deleteThisBioG() async {
     final id = _deviceId;
     final name = (device['name'] ?? 'Bio-G').toString();
@@ -193,6 +212,11 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
                     BioGHardwareHealth.fromTelemetry(telemetry);
                 final bool isLoading =
                     !_firstSnapshotReceived && telemetry == null;
+                _logHardwareState(
+                  loading: isLoading,
+                  telemetry: telemetry,
+                  error: snapshot.error,
+                );
 
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -242,6 +266,31 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
                               health: health,
                               isLoading: isLoading,
                             ),
+                            if (!isLoading && !health.hasReading) ...[
+                              const SizedBox(height: 6),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  onPressed: _retryingTelemetry
+                                      ? null
+                                      : _retryTelemetry,
+                                  icon: _retryingTelemetry
+                                      ? const SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.refresh_rounded),
+                                  label: Text(
+                                    _retryingTelemetry
+                                        ? 'Reintentando...'
+                                        : 'Reintentar',
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 10),
                             _ChipsRow(health: health, isLoading: isLoading),
                           ],
@@ -283,6 +332,25 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
         ],
       ),
     );
+  }
+
+  void _logHardwareState({
+    required bool loading,
+    required BioGTelemetry? telemetry,
+    required Object? error,
+  }) {
+    final errorType = error?.runtimeType ?? 'none';
+    final key = '$loading|${telemetry?.timestamp.toIso8601String()}|$errorType';
+    if (!_loggedHardwareStates.add(key)) return;
+    if (!kBioGHardwareFlowUiDebugLogs) return;
+    assert(() {
+      debugPrint(
+        '[BioG/HardwareFlow] UI build loading=$loading '
+        'hasHardware=${telemetry != null} error=$errorType '
+        'ui_device_id=$_deviceId telemetry_device_id=$_telemetryDeviceId',
+      );
+      return true;
+    }());
   }
 }
 
@@ -870,6 +938,7 @@ class _SignalBarsState extends State<_SignalBars>
       },
     );
   }
+
 }
 
 class _AnimatedChipPill extends StatelessWidget {

@@ -5,7 +5,10 @@ import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/widgets/seeds/chili_profiles.dart';
 import 'package:bio_g/widgets/seeds/cucumber_profiles.dart';
 import 'package:bio_g/widgets/seeds/eggplant_profiles.dart';
+import 'package:bio_g/widgets/seeds/garlic_profiles.dart';
 import 'package:bio_g/widgets/seeds/lettuce_profiles.dart';
+import 'package:bio_g/widgets/seeds/onion_profiles.dart';
+import 'package:bio_g/widgets/seeds/spinach_profiles.dart';
 import 'package:bio_g/widgets/seeds/squash_profiles.dart';
 import 'package:bio_g/widgets/seeds/tomato_profiles.dart';
 
@@ -148,6 +151,49 @@ class CropPresentationResolver {
       'assets/icons/wizard/ic_lettuce_butterhead.png';
   static const String _lettuceLooseLeafIconAsset =
       'assets/icons/wizard/ic_lettuce_loose_leaf.png';
+  static const String _spinachIconAsset =
+      'assets/icons/wizard/ic_spinach.png';
+  static const String _spinachGenericIconAsset =
+      'assets/icons/wizard/ic_spinach_generic.png';
+  static const String _spinachSavoySummerIconAsset =
+      'assets/icons/wizard/ic_spinach_savoy_summer.png';
+  static const String _spinachSavoyWinterIconAsset =
+      'assets/icons/wizard/ic_spinach_savoy_winter.png';
+  static const String _spinachSmoothBabyIconAsset =
+      'assets/icons/wizard/ic_spinach_smooth_baby.png';
+  static const String _spinachOrientalBunchingIconAsset =
+      'assets/icons/wizard/ic_spinach_oriental_bunching.png';
+  static const String _spinachProcessingIconAsset =
+      'assets/icons/wizard/ic_spinach_processing.png';
+  static const String _onionIconAsset =
+      'assets/icons/wizard/ic_onion_generic.png';
+  static const String _onionGenericIconAsset =
+      'assets/icons/wizard/ic_onion_generic.png';
+  static const String _onionWhiteIconAsset =
+      'assets/icons/wizard/ic_onion_white.png';
+  static const String _onionYellowIconAsset =
+      'assets/icons/wizard/ic_onion_yellow.png';
+  static const String _onionPurpleIconAsset =
+      'assets/icons/wizard/ic_onion_purple.png';
+  static const String _onionTransitionIconAsset =
+      'assets/icons/wizard/ic_onion_transition.png';
+  static const String _onionCambrayIconAsset =
+      'assets/icons/wizard/ic_onion_cambray.png';
+  // Icono del cultivo madre Ajo (sin variedad/perfil). AG-GEN usa el generico.
+  static const String _garlicIconAsset =
+      'assets/icons/wizard/ic_garlic.png';
+  static const String _garlicGenericIconAsset =
+      'assets/icons/wizard/ic_garlic_generic.png';
+  static const String _garlicWhiteIconAsset =
+      'assets/icons/wizard/ic_garlic_white.png';
+  static const String _garlicJaspeadoIconAsset =
+      'assets/icons/wizard/ic_garlic_jaspeado.png';
+  static const String _garlicPurpleIconAsset =
+      'assets/icons/wizard/ic_garlic_purple.png';
+  static const String _garlicCreoleIconAsset =
+      'assets/icons/wizard/ic_garlic_criollo.png';
+  static const String _garlicChineseIconAsset =
+      'assets/icons/wizard/ic_garlic_chinese_korean.png';
 
   static CropPresentationData resolve({
     required DeviceCropContext? cropContext,
@@ -284,6 +330,9 @@ class CropPresentationResolver {
     if (!isGenericSelection) return fallback;
     if (cropId == CropCatalog.squashCropId) return 'Calabaza genérica';
     if (cropId == CropCatalog.lettuceCropId) return 'Lechuga genérica';
+    if (cropId == CropCatalog.spinachCropId) return 'Espinaca generica';
+    if (cropId == CropCatalog.garlicCropId) return 'Ajo generico';
+    if (cropId == CropCatalog.onionCropId) return 'Cebolla genérica';
     return fallback;
   }
 
@@ -299,6 +348,15 @@ class CropPresentationResolver {
     }
     if (cropId == CropCatalog.lettuceCropId) {
       return '$cropDisplayName - Lechuga genérica';
+    }
+    if (cropId == CropCatalog.spinachCropId) {
+      return '$cropDisplayName - Espinaca generica';
+    }
+    if (cropId == CropCatalog.garlicCropId) {
+      return '$cropDisplayName - Ajo generico';
+    }
+    if (cropId == CropCatalog.onionCropId) {
+      return '$cropDisplayName - Cebolla generica';
     }
     return fallback;
   }
@@ -374,9 +432,136 @@ class CropPresentationResolver {
         return _resolveSquashIcon(rawVarietyValue);
       case CropCatalog.lettuceCropId:
         return _resolveLettuceIcon(rawVarietyValue);
+      case CropCatalog.spinachCropId:
+        return _resolveSpinachIcon(rawVarietyValue);
+      case CropCatalog.onionCropId:
+        return _resolveOnionIcon(rawVarietyValue);
+      case CropCatalog.garlicCropId:
+        return _resolveGarlicIcon(rawVarietyValue);
       default:
         return _genericPlantIconAsset;
     }
+  }
+
+  static String _resolveSpinachIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return _spinachIconAsset;
+
+    final canonical = resolveCanonicalSpinachProfileId(raw);
+    switch (canonical) {
+      case kSpGen:
+        return _spinachGenericIconAsset;
+      case kSp01:
+        return _spinachSavoySummerIconAsset;
+      case kSp02:
+        return _spinachSavoyWinterIconAsset;
+      case kSp03:
+        return _spinachSmoothBabyIconAsset;
+      case kSp04:
+        return _spinachOrientalBunchingIconAsset;
+      case kSp05:
+        return _spinachProcessingIconAsset;
+    }
+
+    final variety = CropCatalog.varietyByAny(CropCatalog.spinachCropId, raw);
+    switch (variety?.id) {
+      case 'spinach_generic':
+        return _spinachGenericIconAsset;
+      case 'spinach_savoy_summer':
+        return _spinachSavoySummerIconAsset;
+      case 'spinach_savoy_winter':
+        return _spinachSavoyWinterIconAsset;
+      case 'spinach_smooth_baby':
+        return _spinachSmoothBabyIconAsset;
+      case 'spinach_oriental_bunching':
+        return _spinachOrientalBunchingIconAsset;
+      case 'spinach_processing':
+        return _spinachProcessingIconAsset;
+    }
+
+    return _spinachIconAsset;
+  }
+
+  static String _resolveOnionIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return _onionIconAsset;
+
+    final canonical = resolveCanonicalOnionProfileId(raw);
+    switch (canonical) {
+      case kOnGen:
+        return _onionGenericIconAsset;
+      case kOn01:
+        return _onionWhiteIconAsset;
+      case kOn02:
+        return _onionYellowIconAsset;
+      case kOn03:
+        return _onionPurpleIconAsset;
+      case kOn04:
+        return _onionTransitionIconAsset;
+      case kOn05:
+        return _onionCambrayIconAsset;
+    }
+
+    final variety = CropCatalog.varietyByAny(CropCatalog.onionCropId, raw);
+    switch (variety?.id) {
+      case 'onion_generic':
+        return _onionGenericIconAsset;
+      case 'onion_white':
+        return _onionWhiteIconAsset;
+      case 'onion_yellow':
+        return _onionYellowIconAsset;
+      case 'onion_purple':
+        return _onionPurpleIconAsset;
+      case 'onion_transition':
+        return _onionTransitionIconAsset;
+      case 'onion_cambray':
+        return _onionCambrayIconAsset;
+    }
+
+    return _onionIconAsset;
+  }
+
+  static String _resolveGarlicIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return _garlicIconAsset;
+
+    final canonical = resolveCanonicalGarlicProfileId(raw);
+    switch (canonical) {
+      case kAgGen:
+        return _garlicGenericIconAsset;
+      case kAg01:
+        return _garlicWhiteIconAsset;
+      case kAg02:
+        return _garlicJaspeadoIconAsset;
+      case kAg03:
+        return _garlicPurpleIconAsset;
+      case kAg04:
+        return _garlicCreoleIconAsset;
+      case kAg05:
+        return _garlicChineseIconAsset;
+    }
+
+    final variety = CropCatalog.varietyByAny(CropCatalog.garlicCropId, raw);
+    switch (variety?.id) {
+      case 'garlic_generic':
+        return _garlicGenericIconAsset;
+      case 'garlic_white_pearl':
+      case 'garlic_orion':
+      case 'garlic_san_marqueno':
+        return _garlicWhiteIconAsset;
+      case 'garlic_jaspeado_calera':
+      case 'garlic_cezac_06':
+      case 'garlic_barretero':
+        return _garlicJaspeadoIconAsset;
+      case 'garlic_purple':
+        return _garlicPurpleIconAsset;
+      case 'garlic_criollo_regional':
+        return _garlicCreoleIconAsset;
+      case 'garlic_chinese_korean':
+        return _garlicChineseIconAsset;
+    }
+
+    return _garlicIconAsset;
   }
 
   static String _resolveLettuceIcon(String? rawVarietyValue) {

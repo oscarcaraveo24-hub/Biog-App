@@ -12,5 +12,8 @@ enum CropKey {
   eggplant,
   squash,
   lettuce,
+  spinach,
+  onion,
+  garlic,
   generic,
 }

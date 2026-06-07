@@ -1,0 +1,1250 @@
+BIO-G / CEBOLLA - TEXTO PARA CODIGO
+Archivo TXT: 03_Guia_Fertilizacion_BioG_Cebolla_v3_reforzada.txt
+Documento: GUIA TECNICA DE FERTILIZACION DE CEBOLLA
+Version: v3 reforzada para BIO-G v1
+Cultivo madre: crop_onion / CropKey.onion
+Perfiles BIO-G: ON-GEN, ON-01, ON-02, ON-03, ON-04, ON-05
+Estado: Base tecnica investigada y reforzada para motor de fertilizacion, NutrientRecommendationEngine, conversiones a gramos y mensajes farmer-friendly.
+Nota: no sustituye analisis de suelo, agua, tejido ni asesoria agronomica local.
+
+======================================================================
+BIO-G
+GUIA TECNICA DE FERTILIZACION DE CEBOLLA
+Campo abierto, siembra directa, trasplante, bulbo fresco/seco, almacenamiento y cambray/rama
+Version v3 reforzada con N-P-K, S, Mg, B, Zn, analisis foliar, riego, salinidad y conversiones a gramos
+Base tecnica para BIO-G v1
+======================================================================
+
+Documento tecnico interno. Esta guia traduce suelo, agua, NPK, etapa, fotoperiodo, bulbificacion, salinidad, riego, maduracion, curado y calidad comercial a reglas operativas para BIO-G. No recomienda marcas comerciales ni recetas cerradas de fertilizante. Toda dosis debe ajustarse con analisis local de suelo, agua y tejido.
+
+Refuerzo v3 integrado:
+- Se integran las referencias nuevas aportadas por el usuario: necesidades N-P-K para cebolla, guia Universidad de Sonora DAG/HORT-015, tabla de analisis foliar por etapa, umbrales de salinidad, fraccionamiento N/K, S temprano, Mg/B/Zn por analisis y reglas de riego/suspension.
+- Se amplian las conversiones a kg/ha, g/m2 y gramos de producto para que BIO-G pueda traducir dosis a escala pequena sin convertirlas en receta universal.
+- Se reconcilian rangos regionales: guias universitarias de EE. UU. suelen usar rangos moderados por acre segun suelo y sistema; algunas guias intensivas de bulbo seco y alto rendimiento reportan 200-300 kg N/ha, 100-150 kg P/ha y 300-400 kg K/ha como requerimientos tipicos. BIO-G debe elegir por sistema, rendimiento objetivo, analisis de suelo/agua/tejido y etapa, no por una sola tabla.
+
+
+Documentos base                                Uso dentro de BIO-G
+
+Perfil Universal Cebolla                       Define biologia, etapas, fotoperiodo, rangos medibles, perfiles UX y ventanas criticas.
+ON-GEN / SKIP                                  Entrada conservadora cuando el usuario no sabe tipo, variedad o sistema.
+Esta guia de fertilizacion                     Traduce suelo, agua, NPK, riego, fotoperiodo, bulbificacion y calidad de bulbo a reglas.
+Riesgos / Sanidad futura                       Debe cruzarse con esta guia para no confundir nutricion con trips, mildiu, pudricion o anoxia.
+Rendimiento futuro                             Debe cruzar calibre, densidad, calidad, maduracion y descarte por cuello grueso/pudricion.
+
+======================================================================
+1. DECISION EJECUTIVA
+======================================================================
+
+La cebolla debe usar una guia de fertilizacion propia. No se debe copiar la logica de hortalizas de fruto ni de hoja. En cebolla el organo objetivo es el bulbo, y el bulbo no se forma por "dar mas comida": se forma cuando coinciden fotoperiodo correcto, edad fisiologica, hoja suficiente, raiz funcional, agua estable, salinidad controlada y nutricion equilibrada.
+
+Principio central:
+BIO-G no debe recomendar fertilizante para "forzar" la bulbificacion cuando el fotoperiodo es incorrecto. Si el fotoperiodo no corresponde al perfil, la cebolla puede crecer hoja, pero no formar bulbo comercial aunque tenga buen nitrogeno, fosforo o potasio.
+
+Frase de producto:
+Suelo primero, agua pareja, fotoperiodo manda, N temprano con control, P para arranque, K para bulbo, S como calidad Allium y cierre limpio antes de maduracion.
+
+Las reglas principales son:
+
+- El nitrogeno construye hoja y fabrica fotosintetica antes de bulbo, pero demasiado nitrogeno tarde retrasa maduracion, aumenta cuello grueso, puede ablandar bulbo, empeorar curado y elevar riesgo sanitario.
+- El fosforo pesa en raiz, establecimiento y arranque, especialmente con frio, suelos alcalinos o disponibilidad baja.
+- El potasio sostiene relaciones hidricas, turgencia, llenado, firmeza y calidad del bulbo, pero puede subir salinidad si se aplica sin necesidad.
+- El azufre es importante en Allium, pero en BIO-G v1 se maneja como balance/observacion tecnica, no como recomendacion activa central NPK. Puede mejorar crecimiento y compuestos de sabor, pero aplicaciones altas o tardias pueden aumentar pungencia; en cebolla dulce/fresco premium debe manejarse con cuidado.
+- La salinidad es una limitante fuerte: la cebolla es sensible a sales, sodio y boro. Cuando la CE sube, no conviene responder con mas fertilizante.
+- El riego es parte de la fertilizacion: con raiz superficial, la cebolla puede no mostrar marchitez clara aun cuando ya esta en estres. Sensores de humedad valen mucho.
+- La etapa de bulbificacion pesa mas que el calendario. Si el cultivo esta en induccion o llenado, las alertas de agua, N, K, salinidad y temperatura suben de severidad.
+- ON-GEN no busca maximo rendimiento; busca no romper UX, alertar con prudencia y dejar migracion segura a ON-01..ON-05.
+
+======================================================================
+2. ALCANCE
+======================================================================
+
+Incluye:
+- Cebolla de bulbo en campo abierto.
+- Siembra directa y trasplante.
+- Cebolla blanca, amarilla/dorada, morada y de transicion/dia intermedio como perfiles UX.
+- Cebolla cambray/rama como destino de cosecha temprana con hoja + base/bulbo incipiente.
+- Fertilizacion basada en suelo, agua, etapa, perfil, sistema, riego, salinidad, clima y destino comercial.
+- Modo conservador cuando faltan datos.
+- Traduccion a campos de codigo para FertilizationPlanner y NutrientRecommendationEngine.
+
+No incluye en v1:
+- Hidroponia, NFT, sustratos inertes ni soluciones recirculantes.
+- Recetas exactas por marca comercial.
+- Fertilizacion de semillero profesional como modulo independiente avanzado.
+- Recomendaciones de agroquimicos.
+- Garantia de rendimiento o calibre.
+- Correcciones activas avanzadas de Ca, Mg, S, B, Zn como motor principal. Para BIO-G v1, el motor activo se mantiene en NPK; Ca/Mg/S/micronutrientes quedan como observacion tecnica, mensaje de balance y futuro modo Pro.
+
+Nota sobre cambray/rama:
+En muchos mercados "cebolla cambray", "cebolla de rabo", "green onion", "bunching onion" o "scallion" pueden referirse a cosecha joven de Allium cepa o a tipos de racimo cercanos a Allium fistulosum. Para BIO-G v1, ON-05 se modela como cebolla de cosecha temprana hoja + base, no como cultivo botanico separado. Si en el futuro se decide separar Allium fistulosum, ON-05 debera migrarse o bifurcarse.
+
+======================================================================
+3. METODOLOGIA Y CRITERIO DE CONFIABILIDAD
+======================================================================
+
+La guia se construyo priorizando extension universitaria, guias oficiales y literatura tecnica. Las experiencias de campo, foros y practicas de productores sirven como senales de lenguaje y de problemas frecuentes, pero no como base de dosis.
+
+Tipo de evidencia                         Uso dentro de BIO-G                                           Confianza
+
+Extension universitaria / oficial          Base para N, P, K, S, pH, riego, salinidad, tejido y cosecha. Alta
+Guias regionales de produccion             Ajuste por sistema, clima, trasplante/directa y almacenamiento. Alta-media
+Ensayos academicos                         Ajuste de respuesta a N/S, agua, calidad y rendimiento.          Media-alta
+Laboratorio suelo/agua/tejido              Motor de decision cuando existe dato del usuario.               Alta
+Experiencia de campo / foros               Lenguaje, sintomas comunes, errores frecuentes.                 Baja-media
+Fuentes comerciales                         Solo alias/mercado/lenguaje; no dosis.                         Baja
+
+Regla de producto:
+Cuando las fuentes difieren, BIO-G debe preferir el criterio conservador si faltan laboratorio y contexto local. Es mejor decir "falta dato para afinar" que fingir precision.
+
+======================================================================
+4. HALLAZGOS TECNICOS FIRMES
+======================================================================
+
+1. La cebolla tiene raiz superficial, poco ramificada y muy sensible a humedad irregular, sales, compactacion y anoxia. Por eso la nutricion no puede interpretarse sin agua y suelo.
+
+2. La fase temprana de cebolla es lenta. Antes de 3-4 hojas, la demanda real de nutrientes es baja; muchos problemas de crecimiento temprano se deben a frio, pH, salinidad, costra, herbicida, compactacion o mala humedad, no solo a falta de fertilizante.
+
+3. La demanda de nutrientes sube fuerte desde la bulbificacion/inicio de bulbo y durante el crecimiento del bulbo. El motor debe aumentar peso de N/K/agua en esa ventana, pero con cuidado de no prolongar N demasiado.
+
+4. El fotoperiodo es una variable dominante. Si el perfil no corresponde al dia corto/intermedio/largo de la zona/temporada, el fertilizante no corrige la falla.
+
+5. Nitrogeno:
+   - Bajo N: planta chica, poca hoja, poco potencial de bulbo.
+   - N excesivo o tardio: cuello grueso, maduracion lenta, bulbo blando, peor curado, mas susceptibilidad a enfermedades y posible mayor bolting/seed stem en condiciones predisponentes.
+   - El N debe fraccionarse, no meter todo al inicio.
+   - El N debe disminuir o detenerse antes de cosecha/maduracion.
+
+6. Fosforo:
+   - Pesa en raiz y arranque.
+   - En suelos frios, calcareos o alcalinos puede estar presente pero poco disponible.
+   - Debe basarse en analisis de suelo. P foliar no corrige deficiencias mayores en cebolla.
+
+7. Potasio:
+   - Es clave para relaciones hidricas, firmeza, calidad de bulbo y resistencia a estres.
+   - La cebolla puede tomar cantidades similares de K y N en produccion intensiva.
+   - Aplicar K sin necesidad puede subir sales y afectar germinacion o crecimiento.
+
+8. Azufre:
+   - Es esencial para cebolla como Allium y participa en compuestos de sabor/aroma.
+   - Puede aumentar pungencia si se aplica alto o tarde.
+   - En v1 debe ser observacion tecnica y futuro motor Pro; no usarlo como receta universal.
+
+9. Salinidad:
+   - La cebolla es sensible. Las sales pueden reducir emergencia, crecimiento, tamaño de bulbo y calidad.
+   - Si CE sube, el mensaje principal no es "fertiliza mas"; es revisar agua, drenaje, fertirriego, sales, sodio/boro y manejo de lavado.
+
+10. Riego:
+   - La cebolla no siempre se marchita de forma evidente bajo estres.
+   - En bulbificacion/llenado, el deficit de agua baja calibre y rendimiento.
+   - El exceso de humedad aumenta pudriciones, anoxia y mala maduracion.
+   - El sensor de humedad vale mucho para BIO-G.
+
+11. Curado y cosecha:
+   - Fertilizar tarde no arregla un cultivo en maduracion.
+   - En maduracion el sistema debe cambiar de tono: dejar de empujar crecimiento, proteger cuello, piel, sanidad, secado y curado.
+
+======================================================================
+5. REGLAS MAESTRAS PARA EL MOTOR BIO-G
+======================================================================
+
+Regla                                    Decision de producto
+
+Fotoperiodo manda                        Si hay incompatibilidad de fotoperiodo, no recomendar NPK para corregir bulbificacion. Alertar como riesgo fisiologico.
+Suelo primero                            pH, textura, drenaje, CE, P, K, N residual, sodio/boro y compactacion definen el programa.
+Agua antes que fertilizante              No interpretar deficiencia sin humedad estable. Suelo seco/saturado puede parecer falta de nutriente.
+N temprano con control                   Usar N para construir hoja antes de bulbo; reducir/terminar tarde para evitar cuello grueso y mala maduracion.
+P por laboratorio                         P en arranque/raiz; no aplicar alto si suelo suficiente.
+K por laboratorio y etapa                 K pesa mas en llenado/calidad; vigilar CE antes de subirlo.
+S como balance, no como receta v1         S es importante en Allium, pero en v1 no debe ser motor activo de dosis; usar como observacion y alerta de calidad.
+Salinidad bloquea decisiones              Si CE alta, no subir fertilizante hasta revisar agua, drenaje, lavado y fuente de sales.
+Maduracion cambia el objetivo             Cerca de cosecha no se empuja crecimiento: se protege curado, cuello y vida de anaquel.
+Variedad es alias                         La variedad apunta a perfil; no crea motor biologico independiente sin ficha validada.
+ON-GEN protege                            Si faltan datos, usar rangos conservadores, baja confianza y pedir suelo/agua/etapa antes de afinar.
+Sin hidroponia v1                         Protegido en suelo puede mencionarse como futuro; soluciones nutritivas quedan fuera.
+
+======================================================================
+6. INFORMACION MINIMA ANTES DE RECOMENDAR
+======================================================================
+
+Para una recomendacion confiable, BIO-G deberia capturar o inferir:
+
+- Perfil BIO-G: ON-GEN, ON-01, ON-02, ON-03, ON-04, ON-05.
+- Tipo de cebolla: blanca, amarilla, morada, dia intermedio/transicion, cambray/rama, otra/no se.
+- Destino: bulbo fresco, bulbo seco/almacenamiento, mercado dulce, bodega, cambray/manojo, desconocido.
+- Modo de establecimiento: directSeed / transplant / unknown.
+- Fecha de siembra o trasplante.
+- Etapa actual: germinacion, establecimiento, vegetativo, induccion, bulbificacion, maduracion, cosecha/curado.
+- Fotoperiodo esperado del perfil y ubicacion/temporada si se tiene.
+- Sistema: campo abierto, goteo, aspersion, surco, protegido en suelo, desconocido.
+- Textura: arenoso, franco, arcilloso, pesado, desconocido.
+- Drenaje y compactacion.
+- pH.
+- CE/salinidad del suelo o agua.
+- Nitrato-N residual o historial de cultivo anterior.
+- P disponible y K intercambiable por laboratorio.
+- Calcio, magnesio, azufre, boro, zinc si existen.
+- Metodo de riego e historial de humedad.
+- Lluvias recientes o riegos fuertes.
+- Estado visual: color de hoja, vigor, numero aproximado de hojas, cuello, tamaño de bulbo, punta seca, manchas, trips, pudricion, espigado.
+- Distancia a cosecha o maduracion estimada.
+- Si el usuario busca calibre grande, almacenamiento, sabor suave/dulce o manojo.
+
+Si faltan datos:
+- Usar ON-GEN conservador.
+- No entregar dosis cerrada.
+- Priorizar mensajes de suelo/agua/etapa.
+- Bajar confidence.
+
+======================================================================
+7. REFERENCIAS TECNICAS DE DOSIS - NO RECETA UNIVERSAL
+======================================================================
+
+Conversiones utiles:
+- 1 lb/acre = 1.12085 kg/ha.
+- 1 kg/ha = 0.1 g/m2.
+- kg/ha de nutriente x 0.1 = gramos de nutriente por m2.
+- gramos de producto = gramos de nutriente / fraccion del nutriente en el producto.
+- P elemental a P2O5: P x 2.29 = P2O5.
+- P2O5 a P elemental: P2O5 x 0.436 = P.
+- K elemental a K2O: K x 1.205 = K2O.
+- K2O a K elemental: K2O x 0.83 = K.
+- 1 meq K/100 g suelo equivale aproximadamente a 391 ppm K intercambiable. Ojo: usar solo si el metodo de laboratorio lo permite.
+
+Importante:
+Los rangos siguientes son referencias para construir el motor. No son receta universal. BIO-G debe ajustar por analisis de suelo, agua, tejido, tipo de cebolla, etapa, rendimiento esperado, sistema de riego y clima.
+
+La guia debe manejar dos capas:
+1. Capa BIO-G segura: rangos conservadores cuando faltan datos.
+2. Capa tecnica alta confianza: ajustes por rendimiento objetivo, analisis de suelo, agua, tejido, sistema y etapa.
+
+7.1 Nitrogeno total estacional orientativo
+
+El N es decisivo para hoja, fotosintesis y potencial de bulbo, pero en cebolla tiene doble filo: ayuda temprano y puede perjudicar tarde. BIO-G debe evitar que el usuario interprete "mas hoja verde" como siempre positivo.
+
+Sistema / destino                         Rango referencia N             Conversion kg/ha N        Lectura BIO-G
+
+ON-GEN bulbo generico                      80-140 lb/A                    90-157 kg/ha              Conservador si no hay laboratorio; no buscar maximo rendimiento.
+Bulbo seco/fresco trasplantado             100-120 lb/A                   112-135 kg/ha             Base universitaria para bulbo seco de trasplante en algunos sistemas de dia corto.
+Campo abierto regional Mexico/Sonora       150-200 kg/ha                  150-200 kg/ha             Rango regional frecuente para bulbo/proceso; validar con suelo y agua.
+Bulbo seco intensivo alto rendimiento      200-300 kg/ha                  200-300 kg/ha             Solo con analisis, rendimiento objetivo alto, buen riego y salinidad controlada.
+Zonas arenosas/alta lixiviacion            variable + fraccionado         segun sensor/lluvia       Subir frecuencia, no necesariamente dosis total; vigilar lixiviacion.
+Suelo con N residual alto                   reducir 20-60 lb/A             reducir 22-67 kg/ha       Por cultivo anterior, agua con nitratos, estiercol o mineralizacion.
+Cambray/rama ON-05                          50-100 lb/A                    56-112 kg/ha              N se orienta a hoja/base tierna, no bulbo de almacenamiento.
+Cerca de maduracion                         0                              0                         No empujar N.
+
+Estrategia de fraccionamiento N para bulbo seco / alto rendimiento:
+- Incorporar 25-30% del N total antes de siembra o trasplante cuando el sistema regional lo justifique y el riesgo de lixiviacion sea bajo.
+- Aplicar 70-75% restante en fracciones cada 10-14 dias durante 2 a 2.5 meses.
+- En siembra directa larga, la etapa de fraccionamiento fuerte puede comenzar alrededor de 60 dias despues de siembra si coincide con desarrollo vegetativo activo/inicio de bulbo.
+- En trasplante o ciclos precoces, no usar el dia calendario a ciegas: iniciar fracciones cuando la raiz ya este activa y el cultivo tenga demanda real.
+- Evitar aplicaciones de N cuando el bulbo haya alcanzado aproximadamente 2/3 de su tamaño final.
+- Detener N 4-6 semanas antes de cosecha o antes si el cultivo entra a maduracion/cuello.
+
+Deficiencia N:
+- Limita severamente crecimiento, reduce area foliar, baja fotosintesis y reduce calibre/rendimiento.
+- Puede confundirse con frio, salinidad, raiz pobre, anoxia, trips o falta de agua.
+
+Exceso N:
+- Plantas demasiado suculentas.
+- Mayor vulnerabilidad a heladas, enfermedades y floracion/espigado prematuro en condiciones predisponentes.
+- Retraso de madurez, cuello grueso, reverdecimiento, bulbos blandos o de mala conservacion.
+- Riesgo de bulbos dobles, partidos o con doble centro.
+- Menor calidad de almacenamiento.
+
+Regla de seguridad BIO-G:
+Si el motor detecta bulbificacion avanzada, bulbo a 2/3 de tamaño final, cuello grueso, maduracion cercana, tops-down o curado, bloquear recomendaciones de N fuerte y cambiar el lenguaje a maduracion/calidad.
+
+7.2 Fosforo P / P2O5 orientativo por analisis de suelo
+
+El P es esencial para raiz y desarrollo temprano. En cebolla pesa mucho porque la raiz es superficial y poco exploradora. En suelos frios, alcalinos o calcareos, puede haber P total alto pero P disponible bajo.
+
+Reglas:
+- Aplicar la mayor parte del P antes de siembra/trasplante o hasta antes del desarrollo fuerte de bulbo.
+- P es poco movil: colocarlo cerca de la zona radicular, sin quemar semilla o raiz.
+- En suelos alcalinos, el P aplicado con mucha anticipacion puede precipitarse y perder disponibilidad.
+- Cebolla depende de micorrizas arbusculares para absorber P en suelos bajos/medios; tambien ayudan con Zn y otros micronutrientes en suelos calcáreos.
+- No sobrecorregir P si el laboratorio marca suficiente/alto.
+
+SoilBucketP / P disponible                  P2O5 referencia              Conversion kg/ha P2O5      Lectura BIO-G
+
+Muy deficiente / low                         120-250 lb/A                 135-280 kg/ha              Raiz/arranque; ajustar por metodo, pH y colocacion.
+Medium / intermedio                          80-150 lb/A                  90-168 kg/ha               Moderado; no exagerar si pH/raiz estan bien.
+High                                         30-80 lb/A                   34-90 kg/ha                Mantenimiento/arranque si se justifica.
+VeryHigh / overload                          0-30 lb/A                    0-34 kg/ha                 No aplicar por costumbre.
+Bulbo seco intensivo                         100-150 kg P/ha              229-344 kg P2O5/ha         Solo si la fuente usa P elemental y el analisis/rendimiento lo justifican.
+Unknown                                      modo conservador             pedir analisis              Mensaje: P se decide por suelo.
+
+Objetivos de suelo y lectura de laboratorio:
+- Para metodo Olsen, algunos criterios clasifican P como muy deficiente 0-5 ppm, deficiente 5-9 ppm, intermedio 10-15 ppm y suficiente >15 ppm.
+- Para programas intensivos, puede usarse como objetivo operativo P disponible cercano a 25 ppm cuando el laboratorio/metodo lo soporte.
+- Regla local aportada: por cada 1 ppm de P disponible por debajo del objetivo de 25 ppm, aplicar 1 kg P/ha. Equivalente aproximado: 2.29 kg P2O5/ha por cada ppm faltante.
+- BIO-G debe guardar el metodo de laboratorio: Olsen, Bray, Mehlich u otro. No mezclar umbrales de distintos metodos.
+
+Sintomas de deficiencia P:
+- Crecimiento lento.
+- Maduracion tardia.
+- Hojas verde opaco.
+- Secado de puntas.
+- Bulbos de cuello grueso.
+- A diferencia de N o K, puede no haber amarillamiento claro.
+
+Mensaje BIO-G:
+"El fosforo ayuda al arranque y raiz, pero en cebolla debe decidirse por analisis y colocacion. Si el suelo esta frio, alcalino o compactado, puede parecer falta de P aunque haya fertilizante."
+
+7.3 Potasio K / K2O orientativo por analisis de suelo
+
+El K regula agua, turgencia, transferencia de energia, firmeza, pared celular y calidad de bulbo. En cebolla pesa especialmente desde desarrollo vegetativo fuerte hasta llenado de bulbo. El riesgo es que muchas fuentes de K suben CE; no se debe subir K si la salinidad ya esta en alerta.
+
+SoilBucketK / K disponible                  K2O referencia              Conversion kg/ha K2O       Lectura BIO-G
+
+Muy deficiente / low                         120-240 lb/A                135-269 kg/ha              K clave para agua, bulbo y firmeza; vigilar CE.
+Medium / intermedio                          90-180 lb/A                 101-202 kg/ha              Fraccionar si suelo arenoso/lixiviacion.
+High                                         30-90 lb/A                  34-101 kg/ha               Mantenimiento; evitar subir sales.
+VeryHigh / overload                          0-30 lb/A                   0-34 kg/ha                 No aplicar por costumbre.
+Bulbo seco intensivo                         300-400 kg K/ha             361-482 kg K2O/ha          Solo si se expresa en K elemental y el analisis/rendimiento lo justifican.
+Unknown                                      modo conservador            pedir analisis              Mensaje: K se decide por suelo + CE.
+
+Objetivos de suelo y lectura de laboratorio:
+- Metodo acetato de amonio: referencia aportada para clasificacion K: muy deficiente <40 ppm, deficiente 40-80 ppm, intermedio 80-120 ppm, suficiente >120 ppm.
+- Metodo CaCl2/meq: referencia aportada como objetivo 12 meq/100 g; BIO-G debe marcarlo como metodo especifico y no convertirlo automaticamente si el laboratorio no usa esa escala.
+- Cuando hay K suficiente/alto, no agregar K por costumbre porque puede agravar salinidad y antagonismos con Mg/Ca.
+
+Estrategia de aplicacion K:
+- Aplicar 30-50% del K total antes de siembra/trasplante cuando el analisis lo justifique.
+- Aplicar el resto durante desarrollo vegetativo/bulbo, especialmente antes y durante engrosamiento, cuidando CE.
+- En suelos arenosos o riego frecuente, fraccionar para reducir perdida y sales puntuales.
+- Aplicacion regional aportada: 200-300 kg/ha de nitrato de potasio como cobertura antes del inicio del engrosamiento del bulbo. Si se usa KNO3 13-0-46, esto aporta aprox. 26-39 kg N/ha y 92-138 kg K2O/ha. BIO-G debe contar ese N dentro del total de N para no sobredosificar.
+
+Sintomas de deficiencia K:
+- Follaje verde oscuro.
+- Puntas marchitas, sobre todo en la superficie superior.
+- Hojas caidas.
+- Textura tipo papel.
+- Clorosis que puede parecer deficiencia de N.
+- Menor turgencia, menor calibre y peor calidad de bulbo.
+
+Mensaje BIO-G:
+"El potasio ayuda al llenado y firmeza del bulbo, pero si la CE ya esta alta puede empeorar el estres. Primero revisa salinidad y humedad."
+
+7.4 Magnesio Mg - observacion tecnica con accion si hay analisis
+
+El Mg es parte central de la clorofila y de la fotosintesis. En cebolla, una hoja funcional es la fabrica del bulbo; por eso Mg bajo puede limitar llenado aunque N y K parezcan suficientes.
+
+Reglas:
+- Si el contenido de Mg en suelo es bajo, aplicar aprox. 30 kg Mg/ha antes de siembra/trasplante.
+- En guias de EE. UU. tambien aparece una referencia cercana a 25 lb/A Mg (~28 kg/ha) si pH esta adecuado y Mg de suelo es bajo.
+- Si pH bajo + Mg bajo, la cal dolomitica puede ser mejor estrategia de base.
+- Si K esta alto, vigilar antagonismo K-Mg.
+
+Sintomas de deficiencia:
+- Crecimiento lento.
+- Amarillamiento uniforme o clorosis en hojas viejas.
+
+BIO-G v1:
+Mg queda como observacion tecnica/alerta de balance, no como motor principal de dosis salvo que exista analisis.
+
+7.5 Azufre S - importante en Allium, temprano y con cuidado
+
+El S participa en proteinas, enzimas y compuestos caracteristicos de Allium. En cebolla no debe eliminarse del programa, pero tampoco debe aplicarse tarde o en exceso sin objetivo, porque puede afectar pungencia/sabor y contribuir a salinidad.
+
+Condicion                                  S referencia                  Conversion kg/ha S         Lectura BIO-G
+
+Programa general aportado                  45-70 kg S/ha                 45-70 kg/ha                Usar solo si sistema/localidad lo justifica y CE permite.
+Rango universitario moderado               20-40 lb/A                    22-45 kg/ha                Aplicar temprano; comun en cebolla dulce/dia corto.
+Suelo/agua bajos en sulfato                22-70 kg/ha                   segun analisis             Confirmar con suelo/agua.
+Cebolla dulce/fresco suave                 bajo-moderado temprano         variable                   Evitar aplicaciones tardias que suban pungencia.
+Sulfato suficiente en suelo/agua            0 adicional                   0                          No agregar por costumbre.
+BIO-G v1                                   observacion                    no motor activo             S queda para texto tecnico/futuro Pro.
+
+Estrategia aportada:
+- Aplicar S en dos etapas: mitad en siembra/trasplante y mitad antes del desarrollo del bulbo.
+- Evitar S tardio si el objetivo es cebolla dulce, baja pungencia o almacenaje limpio, salvo deficiencia confirmada.
+- No excluir S del plan solo porque el suelo parezca rico; revisar agua, sulfatos, CE y objetivo comercial.
+
+Mensaje BIO-G:
+"El azufre es importante en cebolla, pero debe manejarse temprano y con analisis. Tarde o en exceso puede afectar sabor y sales."
+
+7.6 Boro B y Zinc Zn - micronutrientes de margen estrecho
+
+Boro:
+- Importante para paredes celulares y desarrollo de tejidos.
+- Aplicar aprox. 1 kg B/ha antes de siembra/trasplante solo si el analisis de suelo indica deficiencia.
+- En guias de lb/A la referencia puede aparecer como 1 lb/A B (~1.12 kg/ha).
+- No exceder: el boro puede ser toxico para cebolla.
+- Sintomas de deficiencia: crecimiento distorsionado o reducido, hojas quebradizas, decoloracion gris o azul verdosa, clorosis y grietas cerca de la base de hoja.
+
+Zinc:
+- Cebolla es sensible a deficiencia de Zn, especialmente en suelos calcareos/pH alto.
+- Aplicar aprox. 6 kg Zn/ha solo si analisis confirma deficiencia.
+- En guias de lb/A, referencia cercana: 5 lb/A Zn (~5.6 kg/ha).
+- Exceso de Zn puede ser toxico; no aplicar por rutina.
+- Sintomas: crecimiento reducido, clorosis intervenal, torsion de hojas.
+- Se aplica normalmente en fertilizacion de base.
+
+Clasificacion de suelo aportada:
+Elemento / ppm           Muy deficiente       Deficiente          Intermedio          Suficiente
+Fosforo Olsen            0-5                  5-9                 10-15               >15
+Potasio acetato NH4      <40                  40-80               80-120              >120
+Zinc                     <0.3                 0.3-0.5             0.5-0.8             >0.8
+
+BIO-G:
+- Guardar micronutrientStatus: unknown / low / sufficient / high.
+- Si unknown, no recomendar B/Zn; solo sugerir analisis.
+- Si waterBoronRisk == high, bloquear B y revisar toxicidad.
+
+7.7 Extraccion nutrimental y formula de dosis N
+
+Extraccion por tonelada de cebolla fresca reportada:
+- N: 1.5-2.5 kg/t como rango conservador de extraccion; algunos calculos intensivos usan 2.7 kg N/t.
+- P-P2O5: 0.20-0.30 kg/t en una tabla de extraccion; otros programas expresan requerimiento de P como P elemental o P2O5 segun metodo.
+- K-K2O: 1.40-2.50 kg/t en tabla de extraccion; algunos calculos de fertilizacion usan 4.5 kg K/t segun sistema y rendimiento.
+
+Para 80 t/ha, una tabla de extraccion reporta aproximadamente:
+- 120-200 kg N/ha.
+- 16-24 kg P-P2O5/ha segun la forma expresada en la fuente.
+- 112-200 kg K-K2O/ha.
+
+Formula conceptual para N:
+DN = ((MR x Ne) - (Nm + Ni + Nr + No) x Ef) / Ef
+
+Donde:
+- DN = dosis de N a aplicar, kg/ha.
+- MR = meta de rendimiento, t/ha.
+- Ne = N extraido por tonelada, kg/t.
+- Nm = N mineralizado por materia organica, kg/ha.
+- Ni = N inorganico/nitrato en suelo, kg/ha.
+- Nr = aporte o inmovilizacion por residuo/cultivo anterior, kg/ha.
+- No = aporte de enmiendas organicas, kg/ha.
+- Ef = eficiencia de uso de N, 0.25-0.90 segun sistema.
+
+Ejemplo tecnico aportado:
+- MR 90 t/ha.
+- Ne 2.7 kg N/t.
+- Nm 38.75 kg/ha.
+- Ni 105.3 kg/ha.
+- Ef 0.7.
+- Resultado aproximado: 203 kg N/ha.
+
+Uso BIO-G:
+Este calculo puede servir para una calculadora futura Pro. En v1, no mostrar como receta directa; usarlo para explicar que el N no depende solo de una tabla, sino de suelo, MO, nitratos, cultivo anterior, rendimiento y eficiencia.
+
+======================================================================
+8. CONVERSION A GRAMOS POR M2 Y "CADA CUANTO"
+======================================================================
+
+Esta seccion es para que BIO-G pueda traducir a escala pequena o calculadoras, pero NO debe mostrarse como receta universal sin advertencia.
+
+8.1 Formula general
+
+1. Definir nutriente objetivo:
+   Ejemplo: 100 kg/ha de N = 10 g de N por m2.
+
+2. Convertir a producto:
+   Producto necesario (g/m2) = nutriente objetivo (g/m2) / porcentaje del nutriente en decimal.
+
+Ejemplos:
+- Urea 46-0-0: 10 g N/m2 / 0.46 = 21.7 g de urea/m2.
+- Nitrato de calcio 15.5-0-0: 10 g N/m2 / 0.155 = 64.5 g de producto/m2.
+- Sulfato de amonio 21-0-0 + S: 10 g N/m2 / 0.21 = 47.6 g de producto/m2.
+- MAP 11-52-0: 10 g P2O5/m2 / 0.52 = 19.2 g de producto/m2 y aporta 2.1 g N/m2.
+- DAP 18-46-0: 10 g P2O5/m2 / 0.46 = 21.7 g de producto/m2 y aporta 3.9 g N/m2.
+- Sulfato de potasio 0-0-50: 10 g K2O/m2 / 0.50 = 20 g de producto/m2.
+- Cloruro de potasio 0-0-60: 10 g K2O/m2 / 0.60 = 16.7 g de producto/m2, pero en cebolla se debe tener cuidado con cloruro y salinidad.
+
+8.2 Reglas de fraccionamiento para producto
+
+Contexto comercial:
+- No aplicar todo el N al inicio.
+- Para bulbo seco intensivo, usar como referencia 25-30% del N al establecimiento/pre-siembra y 70-75% en fracciones de 10-14 dias durante 2 a 2.5 meses, siempre que coincida con etapa y demanda real.
+- Para sistemas trasplantados o con alta lixiviacion, considerar que una pre-siembra muy alta de N puede perderse; ajustar con suelo, lluvia/riego y eficiencia.
+- Fraccionar N en preplant/establecimiento/vegetativo/previo a bulbificacion.
+- Reducir N fuerte durante bulbificacion avanzada.
+- Detener N cuando el bulbo alcance 2/3 del tamaño final o 4-6 semanas antes de cosecha.
+- P normalmente va antes o cerca del establecimiento, segun laboratorio y metodo.
+- K puede ir 30-50% preplant y el resto antes/durante engrosamiento si suelo y CE lo permiten.
+- S debe ir temprano; mitad en siembra/trasplante y mitad antes de desarrollo de bulbo si el programa lo justifica.
+- B y Zn solo por analisis.
+- No aplicar fertilizante seco concentrado sobre semilla/raiz joven.
+
+Contexto huerto/pequena escala:
+- El sistema puede traducir a "gramos por m2", pero debe advertir: "Esto es conversion de nutriente, no receta cerrada."
+- Para N, dividir la cantidad total en 3-6 aplicaciones pequenas desde establecimiento hasta inicio de bulbo.
+- Si el usuario pide "cada cuanto", una pauta segura de app es cada 10-14 dias en crecimiento activo, no durante germinacion ni maduracion.
+- Cuando el bulbo empiece a formarse, no seguir empujando N como si fuera hoja.
+- Si el bulbo ya llego a 2/3 de tamaño final, bloquear N fuerte.
+- Si hay sales, puntas quemadas, crecimiento blando, cuello grueso o exceso de humedad, no agregar mas N.
+- Si el cultivo esta en cambray/rama, el objetivo es hoja/base tierna, por lo que N puede mantenerse moderado hasta antes de cosecha, siempre cuidando sanidad y textura.
+
+8.3 Ejemplos de conversion a gramos de producto
+
+Ejemplo A: N total estacional 200 kg/ha en bulbo seco intensivo
+- 200 kg N/ha = 20 g N/m2 en toda la temporada.
+- 25% pre-siembra = 50 kg N/ha = 5 g N/m2.
+- 75% restante = 150 kg N/ha = 15 g N/m2.
+- Si se divide en 6 aplicaciones cada 10-14 dias: 25 kg N/ha por aplicacion = 2.5 g N/m2 por aplicacion.
+- En urea 46-0-0: 2.5 / 0.46 = 5.4 g urea/m2 por aplicacion.
+- En nitrato de calcio 15.5-0-0: 2.5 / 0.155 = 16.1 g producto/m2 por aplicacion.
+- En sulfato de amonio 21-0-0: 2.5 / 0.21 = 11.9 g producto/m2 por aplicacion; considerar aporte de S y CE.
+
+Ejemplo B: ON-GEN conservador 120 kg N/ha
+- 120 kg N/ha = 12 g N/m2 por temporada.
+- Dividir en 4 aplicaciones = 3 g N/m2 por aplicacion.
+- En urea: 3 / 0.46 = 6.5 g urea/m2 por aplicacion.
+- En sulfato de amonio: 3 / 0.21 = 14.3 g producto/m2 por aplicacion.
+- No aplicar las 4 si el cultivo ya entro a maduracion o bulbo 2/3.
+
+Ejemplo C: nitrato de potasio 200-300 kg/ha antes de engrosamiento
+- Producto: 200-300 kg/ha = 20-30 g producto/m2.
+- Si KNO3 es 13-0-46: aporta 2.6-3.9 g N/m2 y 9.2-13.8 g K2O/m2.
+- BIO-G debe sumar ese N al total de la temporada.
+- No aplicar si CE esta alta o si el N tardio ya no conviene.
+
+Ejemplo D: azufre 45-70 kg S/ha
+- 45-70 kg S/ha = 4.5-7.0 g S/m2.
+- Si se divide mitad y mitad: 2.25-3.5 g S/m2 en siembra/trasplante y 2.25-3.5 g S/m2 antes de bulbo.
+- En cebolla dulce/fresco suave, evitar S tardio salvo deficiencia.
+
+Ejemplo E: Boro 1 kg B/ha y Zinc 6 kg Zn/ha
+- B: 1 kg/ha = 0.1 g B/m2. Dosis muy pequena; riesgo alto de error si el usuario pesa mal.
+- Zn: 6 kg/ha = 0.6 g Zn/m2.
+- En UX, no traducir B/Zn a cucharadas ni puños; solo con analisis y producto formulado.
+
+Mensaje BIO-G sugerido:
+"Esta es una conversion de referencia. En cebolla, conviene dividir el nitrogeno y dejar de empujar cuando el bulbo ya va madurando. Si no tenemos analisis de suelo, usaremos modo conservador."
+
+======================================================================
+9. TIMING OPERATIVO POR ETAPA
+======================================================================
+
+9.1 Antes de siembra o trasplante
+
+Que revisar:
+- pH, CE, textura, drenaje, compactacion, P, K, N residual, sodio/boro si hay agua de riego.
+- Historial: cebolla/ajo/allium reciente, cultivo fertilizado, leguminosa, estiercol, compost, sales.
+- Fotoperiodo del perfil para la zona.
+
+Que hacer:
+- Corregir pH con tiempo si esta bajo.
+- Aplicar P/K segun analisis.
+- N base bajo-moderado si el suelo lo requiere.
+- Evitar exceso de sales cerca de semilla o raiz joven.
+- No usar estiercol fresco ni compost salino justo antes de siembra directa.
+
+Mensaje BIO-G:
+"Antes de fertilizar fuerte, conviene saber pH, CE, P y K. En cebolla, el exceso de sales en arranque puede costar plantas."
+
+9.2 Germinacion / emergencia
+
+Prioridad real:
+- Humedad pareja.
+- Temperatura adecuada.
+- Cama fina, sin costra.
+- Baja salinidad.
+- Evitar encharcamiento.
+
+N:
+- Bajo.
+- No aplicar fuerte encima de semilla.
+
+P:
+- Medio si suelo bajo/frio, pero definido por laboratorio o programa base.
+
+K:
+- Bajo-medio si se aplico preplant; no subir si CE alta.
+
+Mensaje BIO-G:
+"Aqui todavia no manda la comida; manda lograr stand uniforme. Si la cebolla no emerge, revise humedad, costra, salinidad y temperatura antes de fertilizar mas."
+
+9.3 Emergencia / establecimiento
+
+Prioridad:
+- Raiz funcional.
+- Plantas firmes.
+- Sin anoxia.
+- Sin sales.
+- P disponible si suelo frio o raiz lenta.
+
+N:
+- Bajo-medio.
+- Evitar sobrefertilizar planta joven.
+
+P:
+- Alto relativo si suelo bajo, frio o alcalino.
+
+K:
+- Medio si suelo bajo; cuidado CE.
+
+Mensaje:
+"Si la planta esta lenta, no siempre es falta de N. En cebolla temprana el frio, el pH, la salinidad y la raiz pesan mucho."
+
+9.4 Desarrollo vegetativo / hoja
+
+Prioridad:
+- Construir hoja suficiente antes de bulbificacion.
+- Mantener vigor sin cerrar demasiado o ablandar planta.
+- Controlar N, agua y sanidad.
+
+N:
+- Medio-alto controlado.
+- Buen momento para aplicaciones fraccionadas si N bajo o vigor insuficiente.
+- Si hay N residual alto, reducir.
+
+P:
+- Ya deberia estar resuelto; no aplicar a ciegas.
+
+K:
+- Medio; preparar para bulbo si suelo bajo.
+
+S:
+- Si falta, temprano; no dejarlo tarde.
+
+Mensaje:
+"Esta etapa construye la fabrica del bulbo. El nitrogeno ayuda, pero pasarse puede retrasar la maduracion y hacer cuello grueso."
+
+9.5 Induccion a bulbificacion
+
+Prioridad:
+- Fotoperiodo correcto.
+- Hoja suficiente.
+- Agua estable.
+- Evitar exceso de N.
+- CE controlada.
+
+N:
+- Medio, no alto.
+- Si el bulbo inicia, comenzar a bajar intensidad.
+- Si N alto + cuello grueso + crecimiento vegetativo excesivo: alerta.
+
+P:
+- Normalmente no es la palanca principal, salvo deficiencia comprobada.
+
+K:
+- Medio-alto si suelo lo justifica.
+- Vigilar CE.
+
+Mensaje:
+"La cebolla esta entrando a la etapa donde el fotoperiodo manda. Mas fertilizante no corrige un fotoperiodo equivocado."
+
+9.6 Bulbificacion / engrosamiento de bulbo
+
+Prioridad:
+- Agua constante.
+- K suficiente.
+- Salinidad baja.
+- No sobreactivar hoja.
+- Reducir N progresivamente.
+
+N:
+- Medio-bajo.
+- No aplicar fuerte si ya hay buen follaje y bulbo creciendo.
+- No aplicar tarde cerca de maduracion.
+
+P:
+- Bajo-medio segun laboratorio.
+
+K:
+- Alto relativo, siempre segun suelo y CE.
+- Si K bajo + buena humedad + CE normal: recomendacion posible.
+- Si CE alta: no subir K hasta revisar salinidad.
+
+Mensaje:
+"Ahora el cultivo debe llenar bulbo, no seguir haciendo hoja a ciegas. Mantenga agua pareja y evite exceso de nitrogeno."
+
+9.7 Maduracion del bulbo / cuello
+
+Prioridad:
+- Cuello cerrando.
+- Piel y escamas externas.
+- Evitar humedad excesiva.
+- Detener N.
+- Preparar cosecha/curado.
+
+N:
+- Bajo / cero.
+- No recomendar N.
+
+K:
+- Solo mantenimiento si hay deficiencia comprobada y aun falta; normalmente no corregir tarde.
+
+Agua:
+- Reducir segun suelo/clima y sistema para no provocar pudriciones, pero sin causar daño extremo por calor.
+
+Mensaje:
+"Ya no conviene empujar crecimiento. La prioridad es madurar bien, cerrar cuello y evitar pudriciones."
+
+9.8 Cosecha / curado
+
+Fertilizacion:
+- Ninguna.
+- Registrar causa de cierre.
+- Cuidar daño mecanico, humedad, sol excesivo y curado.
+
+Mensaje:
+"En curado ya no se corrige con fertilizante. Lo importante es secar cuello y piel sin pudrir ni asolear el bulbo."
+
+======================================================================
+10. PRIORIDAD NUTRIMENTAL RELATIVA POR ETAPA - NO DOSIS
+======================================================================
+
+Etapa BIO-G                         N                P               K              Ca/Mg/S              Lectura BIO-G
+
+Germinacion                         Bajo             Medio           Bajo           Bajo                 Humedad, temperatura y salinidad pesan mas que fertilizante.
+Emergencia / establecimiento         Medio-bajo       Alto            Medio          Medio                Raiz joven; P ayuda si suelo bajo/frio; evitar sales.
+Desarrollo vegetativo                Medio-alto       Medio           Medio          Medio                Construir hoja sin exceso de N.
+Induccion a bulbificacion            Medio            Bajo-medio      Medio-alto     Medio                Fotoperiodo + agua + N controlado; evitar cuello grueso.
+Bulbificacion / engrosamiento        Bajo-medio       Bajo-medio      Alto           Medio                K/agua/calidad pesan; N se reduce.
+Maduracion del bulbo                 Bajo             Bajo            Medio          Bajo-medio           No empujar crecimiento; cerrar cuello y bulbo.
+Cosecha / curado                     Cero             Cero            Cero           Cero                 Sin fertilizacion; manejar secado/calidad.
+Espigado / falla                     Bajo             Bajo            Bajo           Bajo                 No tratar como etapa productiva; registrar y cerrar/decidir.
+
+======================================================================
+11. MODIFICADORES POR PERFIL BIO-G
+======================================================================
+
+Perfil      Tipo UX                               Ajuste nutrimental                                      Mensaje BIO-G
+
+ON-GEN      No se / otra cebolla                   N conservador; P/K por laboratorio; no asume dulce,      Usaremos una guia prudente porque aun no sabemos tipo, fotoperiodo ni destino.
+                                                  almacenamiento ni cambray.
+ON-01       Blanca dia corto grano/bola            N temprano controlado; detener N tarde; K para           La blanca necesita buen bulbo y curado limpio; exceso de N puede dejar cuello grueso.
+                                                  calibre; cuidar S si busca suavidad.
+ON-02       Amarilla/dorada dia corto              Si es dulce/fresco, cuidar S y N tarde; si es volumen,   El amarillo puede dar alto volumen, pero el bulbo no se llena bien con deficit de agua o sales.
+                                                  K/agua/calibre.
+ON-03       Morada dia corto                       Mantener K/agua para color/calidad; evitar exceso        El color y la piel sufren con humedad irregular, calor y curado deficiente.
+                                                  de humedad precosecha.
+ON-04       Dia intermedio/transicion              Ciclo mas largo; potencial mayor; mas cuidado con        En ciclos largos, no confundir mas hoja con mejor bulbo. Controle N y maduracion.
+                                                  N residual y maduracion.
+ON-05       Cambray/rama                           N mas orientado a hoja/base tierna; no modelar           En cambray el objetivo es manojo tierno, no bulbo seco. El calor y exceso de humedad bajan calidad.
+
+======================================================================
+12. RIEGO COMO PARTE DE FERTILIZACION
+======================================================================
+
+La cebolla tiene raiz superficial, poco ramificada y sensible a sequia, salinidad, compactacion y anoxia. En muchas situaciones no avisa con marchitez clara. Por eso BIO-G debe leer humedad y no basarse solo en la foto.
+
+Reglas generales:
+- Germinacion: humedad ligera y constante, sin charcos.
+- Establecimiento: evitar saturacion; raiz joven necesita oxigeno.
+- Desarrollo vegetativo: humedad estable para construir hoja.
+- Induccion/bulbo: etapa de mayor sensibilidad. Deficit reduce calibre; exceso sube pudricion/anoxia.
+- Maduracion: bajar humedad excesiva; evitar riegos que mantengan cuello verde y retrasen secado.
+- Suspender riego 15-25 dias antes de cosecha cuando el sistema, suelo y clima lo permitan.
+- En bulbo de mesa, la suspension puede iniciar cuando se observe avance de doblado/cuello; algunas guias regionales usan 25% de hojas caidas como señal temprana.
+- En bulbo para deshidratar/curado fuerte, algunas guias esperan mayor caida de follaje antes de corte, pero no debe mantenerse exceso de agua.
+
+Criterio de programacion:
+- Riego frecuente y ligero cuando se haya agotado aproximadamente 25% del agua disponible en los primeros 30 cm de suelo.
+- Intervalo tipico: cada 2-4 dias en suelos/sistemas que lo requieren, ajustando por textura, clima y sensor.
+- No usar intervalo fijo si hay lluvia, suelo arcilloso, goteo profundo o salinidad.
+- Sensores recomendados: zona principal de raiz 10-30 cm. En cebolla, lecturas muy profundas pueden hacer creer que hay agua disponible cuando la raiz no la alcanza.
+
+Riesgo si falta agua:
+- Menor tamaño de bulbo.
+- Menor rendimiento.
+- Bulbos rajados o dobles/multiples.
+- Mayor pungencia.
+- Estrés en etapa de formacion de bulbo.
+
+Riesgo si sobra agua:
+- Anoxia.
+- Podredumbre blanca, mildiu, pudriciones y problemas de cuello.
+- Retraso de madurez.
+- Grietas en piel del bulbo si hay riego tardio.
+- Mala conservacion.
+
+Sistema de riego:
+- Goteo: permite fertirriego preciso y menor mojado foliar; exige control de CE del bulbo y uniformidad.
+- Aspersion: util en emergencia, pero aumenta mojado foliar y riesgo de enfermedades si se usa tarde/frecuente.
+- Gravedad/surco: revisar uniformidad, zonas saturadas, zonas secas y acumulacion de sales.
+- Nutrigation/fertirriego: permite suministro constante y balanceado; debe programarse con CE, humedad y etapa. No copiar dosis de campo como si fuera solucion hidroponica.
+- Liberacion controlada: puede ayudar a estabilidad, pero no debe reemplazar monitoreo de etapa/CE/agua.
+
+Salida farmer-friendly:
+"Antes de subir fertilizante, revise si la humedad esta pareja. La cebolla tiene raiz superficial; puede quedarse sin absorber nutrientes por falta o exceso de agua."
+
+======================================================================
+13. SALINIDAD, CE, SODIO Y BORO
+======================================================================
+
+La cebolla es sensible a salinidad. Esto es clave para BIO-G porque muchos fertilizantes aumentan conductividad electrica. La salinidad puede reducir rendimiento antes de que el usuario entienda que no era falta de fertilizante.
+
+Tabla de efecto de salinidad en rendimiento aproximado:
+
+ECe / conductividad           Disminucion esperada             Lectura BIO-G
+1.2 dS/m                      0%                               Optimo/conservador.
+1.8 dS/m                      10%                              Observacion; cuidar germinacion y bulbo.
+2.8 dS/m                      25%                              Alerta; revisar agua/drenaje/fertilizante.
+4.3 dS/m                      50%                              Critico; no subir sales con N/K.
+7.5 dS/m                      100%                             Inviable para rendimiento comercial.
+
+Rangos operativos BIO-G para ECe / salinidad del suelo:
+- Optimo conservador: <1.2 dS/m.
+- Observacion: 1.2-1.8 dS/m.
+- Alerta: 1.8-2.8 dS/m, especialmente en germinacion, establecimiento o bulbificacion.
+- Critico: 2.8-4.3 dS/m si hay sintomas o etapa sensible.
+- Muy critico: >4.3 dS/m; riesgo fuerte de perdida comercial.
+- Inviable/daño extremo: cercano a 7.5 dS/m.
+
+Matiz por textura:
+- Suelos arcillosos pueden volverse mas problematicos a CE menor por mala aireacion/drenaje.
+- Suelos arenosos pueden tolerar algo mas si hay lavado y agua buena, pero tambien lixivian N/K.
+- La incorporacion de fertilizantes en camas antes de siembra puede elevar sales y dañar plantulas.
+- Una vez establecida, la cebolla puede tolerar algo mas que la plantula, pero sigue siendo sensible.
+
+Lectura:
+- Salinidad temprana: baja emergencia y stand.
+- Salinidad en bulbificacion: baja calibre y calidad.
+- Salinidad + K/N altos: riesgo de agravar el problema.
+- Sodio/boro en agua: puede causar toxicidad y no se corrige con NPK.
+- Boro puede ser nutriente o toxico: no aplicar B si hay riesgo de B en agua/suelo.
+
+Regla BIO-G:
+Si salinityRiskClass == alert o critical:
+- No recomendar subir fertilizante como primera respuesta.
+- Revisar agua de riego, drenaje, CE, sodio, boro y acumulacion de sales.
+- Priorizar riego/lavado si agronomicamente procede y hay drenaje.
+- Bajar confianza de cualquier diagnostico de deficiencia.
+
+Mensaje:
+"La CE esta alta. No conviene subir fertilizante sin revisar agua, drenaje y sales; la cebolla es sensible y el bulbo puede quedar chico."
+
+======================================================================
+14. SUELO, pH Y COMPACTACION
+======================================================================
+
+pH:
+- Operativo general BIO-G: 6.0-7.5.
+- Optimo frecuente para cebolla dulce/corta en guias universitarias: 6.2-6.5.
+- pH <6.0: riesgo de baja disponibilidad, menor raiz, problemas de Ca/P/Mg y menor rendimiento.
+- pH alto/calcareo: P, Zn, Fe y micronutrientes pueden estar bloqueados.
+
+Textura:
+- Franco arenoso/franco con buen drenaje es favorable.
+- Arenoso extremo: lixivia N/K/S y seca rapido.
+- Arcilloso pesado: drenaje y oxigeno limitantes; pudriciones; dificultad de forma de bulbo.
+
+Compactacion:
+- Resistencia >2 MPa o capa dura: raiz limitada, agua mal distribuida y bulbos pequeños/deformes.
+- No arreglar compactacion con mas fertilizante.
+- Si hay humedad suficiente pero poco crecimiento, revisar raiz y resistencia del suelo.
+
+Mensaje:
+"Si el suelo esta compactado, aunque haya fertilizante, la raiz no puede usarlo bien. Primero hay que resolver aireacion, drenaje y cama de siembra."
+
+======================================================================
+15. ANALISIS DE TEJIDO Y VERIFICACION
+======================================================================
+
+El analisis foliar no reemplaza suelo ni agua. Sirve para verificar si el programa entra a planta y para no confundir deficiencia con raiz, salinidad, trips, enfermedad, mala humedad o fotoperiodo.
+
+Muestra recomendada:
+- La parte de la planta usada en varias guias es la hoja mas alta o la hoja recientemente madura, segun laboratorio.
+- Para BIO-G, guardar sampleTissuePart: highest_leaf / most_recent_mature_leaf / unknown.
+- Tomar 20-30 hojas representativas por zona/lote cuando el laboratorio lo requiera.
+- No mezclar plantas sanas con plantas muy enfermas si el objetivo es diagnostico diferencial.
+- Registrar etapa, perfil, fecha, riego, CE, pH, clima, aplicaciones recientes y sintomas.
+- No muestrear justo despues de foliares, polvo, fungicidas o fertirriego que contaminen la hoja.
+
+15.1 Guia foliar por etapa aportada para N, PO4-P y K soluble
+
+Etapa temprana: antes de formacion de bulbo
+Nutriente              Deficiente             Intermedio             Suficiente
+Total N (%)            <3                     3-4                    >4
+PO4-P (ppm)            <1000                  1000-2000              >2000
+K soluble (%)          <3                     3-4                    >4
+
+Etapa media: formacion del bulbo
+Nutriente              Deficiente             Intermedio             Suficiente
+Total N (%)            <2.5                   2.5-3                  >3
+PO4-P (ppm)            <1000                  1000-2000              >2000
+K soluble (%)          <2.5                   2.5-4                  >4
+
+Etapa final: despues de formacion del bulbo
+Nutriente              Deficiente             Intermedio             Suficiente
+Total N (%)            <2                     2-2.5                  >2.5
+PO4-P (ppm)            <1000                  1000-2000              >2000
+K soluble (%)          <2                     2-3                    >3
+
+Lectura BIO-G:
+- El N suficiente baja conforme avanza la temporada. No usar el mismo umbral temprano en maduracion.
+- Si N sigue alto al final, puede ser mala señal para maduracion/almacenamiento aunque la hoja se vea verde.
+- PO4-P bajo temprano pesa mas que tarde.
+- K bajo en formacion de bulbo afecta turgencia/calibre; K alto con CE alta puede ser problema.
+
+15.2 Rangos criticos adicionales para tejido de cebolla seca
+
+Rangos de referencia antes de bulbificacion / bulbo temprano:
+
+Nutriente        Deficiente             Adecuado aproximado        Alto / excesivo             Lectura BIO-G
+
+N (%)            <2.0                   2.0-3.5                    >3.5                        Bajo: poco vigor. Alto: revisar cuello grueso, exceso N y maduracion.
+P (%)            <0.20                  0.20-0.50                  >0.50                       Leer con pH, suelo y raiz.
+K (%)            <1.5                   1.5-3.5                    >3.5                        Bajo: turgencia/calibre. Alto: vigilar CE/Mg/Ca.
+Ca (%)           <0.6                   0.6-0.8                    >0.8                        No usar como dosis ciega; revisar raiz/agua/pH.
+Mg (%)           <0.15                  0.15-0.30                  >0.30                       Bajo posible con pH bajo/K alto.
+S (%)            <0.2                   0.2-0.6                    >0.6                        En v1 observacion; afecta calidad/sabor.
+Fe (ppm)         <50                    50-100                     >100                        Confirmar pH alto antes de foliar.
+Mn (ppm)         <10                    10-20                      >20                         Toxicidad posible en pH bajo.
+Zn (ppm)         <15                    15-20                      >20                         Cebolla sensible a baja disponibilidad.
+B (ppm)          <10                    10-25                      >25                         Margen estrecho; toxicidad posible.
+Cu (ppm)         <5                     5-10                       >10                         Revisar fungicidas/cobre externo.
+Mo (ppm)         sin rango universal    confirmar laboratorio       -                           Posible en suelos acidificados.
+
+Reglas:
+- Si tejido muestra N alto pero planta se ve mala, revisar agua, raiz, salinidad, enfermedades y fotoperiodo antes de recomendar mas fertilizante.
+- Si tejido muestra K bajo y CE alta, no responder automaticamente con K; revisar si la planta no absorbe por estres osmotico.
+- Si P foliar bajo y suelo es calcareo, revisar pH, micorrizas, colocacion del P y temperatura del suelo.
+- Si Zn bajo y pH alto, priorizar confirmacion por suelo/tejido; no aplicar por rutina.
+
+Mensaje BIO-G:
+"El analisis foliar ayuda a verificar si el nutriente entro a la planta. Pero en cebolla, una lectura baja puede venir de raiz, salinidad, pH o agua, no solo de falta de fertilizante."
+
+======================================================================
+16. DEFICIENCIAS, EXCESOS Y DIAGNOSTICO DIFERENCIAL
+======================================================================
+
+Problema / nutriente     Sintoma probable                          Diferenciales importantes                         Accion BIO-G
+
+N bajo                   Hoja palida, poco vigor, bulbo chico       Frio, raiz pobre, pH, salinidad, trips, agua      Revisar humedad/raiz/N residual; aplicar fraccionado si datos apoyan.
+N alto                   Hoja muy vigorosa, cuello grueso, retraso  Variedad, fecha, exceso agua, fotoperiodo         Frenar N; vigilar maduracion y sanidad.
+P bajo                   Arranque lento, raiz debil, tonos oscuros  Suelo frio, pH alto/bajo, compactacion            P por analisis; no foliar para deficiencia fuerte.
+K bajo                   Baja turgencia, bulbo menor, estres        Deficit hidrico, salinidad, raiz limitada         Subir K solo si CE y analisis lo permiten.
+S bajo                   Rayado/amarillamiento, bajo vigor          N bajo, Mg, sanidad, frio                          En v1 observacion; confirmar suelo/agua.
+S alto/tarde             Mayor pungencia, sales                     Tipo de cebolla, sequia                           Evitar aplicaciones tardias si busca dulce/fresco.
+Mg bajo                  Clorosis intervenal                        K alto, pH bajo, lixiviacion                      Confirmar tejido/suelo.
+Zn bajo                  Crecimiento lento, hojas pequeñas          pH alto, suelo calcareo                            Corregir solo con analisis.
+B bajo/alto              Deformacion, problemas de crecimiento      Toxicidad por agua, salinidad                      Margen estrecho; no aplicar ciego.
+Salinidad                Bajo vigor, puntas quemadas, bulbo chico   Sequía, K alto, agua mala                          Revisar CE/agua/drenaje antes de fertilizar.
+Cuello grueso            Mala maduracion, almacenamiento pobre      Exceso N, riego tarde, cosecha temprana, variedad  No aplicar N; revisar cierre de ciclo.
+Bulbo pequeno            Bajo calibre                              Fotoperiodo incorrecto, agua, salinidad, trips     No culpar solo a NPK.
+Bulbos dobles/splits     Dobles o deformes                         Sobre-fertilizacion, riego irregular, frio, genetica Registrar riesgo; ajustar manejo futuro.
+Espigado                 Tallo floral / semilla                     Frio con planta grande, trasplante grande, variedad No fertilizar como si fuera etapa productiva.
+
+======================================================================
+17. FERTIRRIEGO Y SISTEMA DE RIEGO
+======================================================================
+
+Goteo:
+- Permite fraccionar N y K.
+- Reduce hoja mojada frente a aspersion.
+- Exige monitorear CE en zona de bulbo y uniformidad.
+- No aplicar pulsos fuertes si el suelo ya esta salino.
+- En bulbificacion, mantener humedad constante.
+
+Aspersion:
+- Puede favorecer humedad foliar y enfermedades.
+- Puede lixiviar N/K si hay exceso de agua.
+- Permite establecimiento uniforme si se maneja fino.
+- Subir alertas de HR/hoja mojada en futuras guias de sanidad.
+
+Surco:
+- Mayor variabilidad de humedad.
+- Calcular retencion de agua para N/S aportados por agua.
+- Revisar zonas secas y saturadas.
+- Riesgo de sales en hombros/camas si lavado irregular.
+
+Manual/huerto:
+- Riegos profundos y parejos suelen ser mejores que mojar poquito y seguido, salvo germinacion.
+- En maceta o cama elevada, salinidad puede subir rapido.
+- Aplicar menos, mas dividido y observar respuesta.
+
+======================================================================
+18. ESTIERCOL, COMPOSTA Y ORGANICO
+======================================================================
+
+El estiercol/composta puede mejorar estructura y aportar N/P/S/micronutrientes, pero en cebolla debe manejarse con cuidado:
+
+Riesgos:
+- Sales.
+- Liberacion impredecible de N.
+- Exceso de N tardio.
+- Patogenos si no esta compostado.
+- Malezas.
+- Problemas de inocuidad.
+- Crecimiento blando y mala maduracion.
+
+Reglas BIO-G:
+- No usar estiercol fresco cerca de siembra/cosecha.
+- Si hay compost/estiercol previo, reducir N inicial y subir incertidumbre.
+- Si la CE esta alta, no recomendar organicos salinos.
+- En organico, preferir fuentes estables y programas basados en analisis, no "mas composta" por costumbre.
+- Registrar previousOrganicAmendment=true y organicNUncertainty=medium/high.
+
+Mensaje:
+"La composta puede ayudar al suelo, pero en cebolla tambien puede subir sales o liberar nitrogeno tarde. Conviene saber CE y historial antes de recomendar mas."
+
+======================================================================
+19. LOGICA ESPECIAL DE FOTOPERIODO + FERTILIZACION
+======================================================================
+
+Caso: planta grande sin bulbo
+- Revisar fotoperiodo del perfil.
+- Revisar fecha/temporada/ubicacion.
+- Revisar exceso de N y agua.
+- Revisar salinidad.
+- No recomendar fertilizante para "hacer bulbo" si el fotoperiodo no coincide.
+
+Caso: inicio de bulbo con hoja insuficiente
+- Si falta hoja por N bajo y aun hay tiempo, N moderado puede ayudar.
+- Si falta hoja por trips, salinidad, raiz pobre o agua, N no resuelve.
+- Si ya esta entrando a maduracion, no empujar.
+
+Caso: cuello grueso
+- Bajar N.
+- Revisar riego tardio.
+- Revisar cosecha temprana.
+- Revisar variedad/fecha.
+- Priorizar maduracion.
+
+Mensaje:
+"Si la cebolla no esta formando bulbo, primero revisamos si el dia corresponde al tipo. El fertilizante ayuda al cultivo, pero no cambia el reloj de luz."
+
+======================================================================
+20. LOGICA ESPECIAL DE MADURACION, COSECHA Y CURADO
+======================================================================
+
+En cebolla, la fertilizacion tardia puede dañar mas de lo que ayuda.
+
+Disparadores para bloquear N fuerte:
+- Etapa == maduracion del bulbo.
+- cuello blando/cerrando.
+- tops down / follaje cayendo.
+- cosecha estimada a 4-6 semanas.
+- bulbo con tamaño comercial.
+- exceso de humedad o lluvia pre-cosecha.
+- N tissue high.
+- cuello grueso.
+
+Accion BIO-G:
+- No recomendar N.
+- Revisar humedad y clima.
+- Mensaje de cosecha/curado.
+- Registrar en historial: "se bloqueo recomendacion de N por maduracion".
+
+Mensaje:
+"Ya no conviene fertilizar para crecer. Ahora el valor esta en que el cuello cierre bien y el bulbo cure sin pudrirse."
+
+======================================================================
+21. CAMPOS SUGERIDOS PARA MODELO
+======================================================================
+
+Campo                                  Tipo sugerido / valores                                        Uso
+
+profileId                              ON-GEN / ON-01 / ON-02 / ON-03 / ON-04 / ON-05                 Resolver sensibilidad y texto.
+cropKey                                CropKey.onion / crop_onion                                    Conectar cultivo.
+establishmentMode                      directSeed / transplant / unknown                             Dia 0 y sensibilidad a sales/arranque.
+productionSystem                       openField / protectedSoil / unknown                           V1 solo suelo; protegido no hidroponico.
+irrigationMethod                       drip / sprinkler / furrow / manual / unknown                   Riego, fertirriego, sanidad.
+harvestDestination                     freshBulb / dryBulb / storage / sweetFresh / bunching / unknown Ajustar N/S/K y maduracion.
+photoperiodClass                       shortDay / intermediateDay / longDay / unknown                 Bulbificacion.
+photoperiodCompatibility               compatible / watch / mismatch / unknown                       Bloquear "fertilizar para bulbo".
+soilTextureClass                       sandy / loam / clay / heavy / unknown                          Lixiviacion, CE, agua.
+drainageClass                          good / moderate / poor / unknown                              Anoxia/pudricion.
+soilPHClass                            low / optimal / high / unknown                                 P/Ca/Mg/Zn.
+soilBucketP                            low / medium / high / veryHigh / overload / unknown            P2O5.
+soilBucketK                            low / medium / high / veryHigh / overload / unknown            K2O.
+residualNitrogenClass                  low / medium / high / unknown                                  Reducir N.
+previousCropHeavyFertilized            true / false / unknown                                         N residual.
+previousLegumeOrManure                 true / false / unknown                                         N mineralizacion/sales.
+salinityRiskClass                      low / watch / alert / critical / unknown                       Bloqueo de fertilizante.
+waterStabilityClass                    stable / deficit / excess / fluctuating / unknown              Diferencial nutricional.
+bulbInitiationStatus                   notStarted / starting / active / late / unknown                N/K timing.
+nitrogenStopWindow                     none / soon / active / overdue                                 Maduracion/cosecha.
+tissueNStatus                          low / adequate / high / unknown                               Ajuste N.
+tissueKStatus                          low / adequate / high / unknown                               Ajuste K.
+qualityTarget                          mildSweet / storage / largeCaliber / bunching / unknown        S/N/K.
+storageRiskClass                       low / medium / high / unknown                                  N tardio/curado.
+confidence                             high / medium / low                                            Salida.
+
+======================================================================
+22. REGLAS DIRECTAS PARA IMPLEMENTACION EN CODIGO
+======================================================================
+
+1. Crear o extender OnionFertilizationProfile separado del perfil fenologico.
+   - Fenologia dice "cuando pesa".
+   - Fertilizacion dice "que hacer con suelo/agua/NPK".
+
+2. NutrientRecommendationEngine debe recibir:
+   profileId, stage, establishmentMode, photoperiodClass, photoperiodCompatibility, soilBucketP, soilBucketK, residualNitrogenClass, salinityRiskClass, waterStabilityClass, productionSystem, irrigationMethod, harvestDestination, nitrogenStopWindow.
+
+3. No crear recetas NPK separadas por variedad comercial.
+   - ON-01..ON-05 ajustan sensibilidad, timing, mensajes y limites.
+   - Variedad = alias hacia perfil.
+
+4. Si photoperiodCompatibility == mismatch:
+   - No recomendar fertilizante para corregir bulbificacion.
+   - Mostrar alerta: "riesgo de no bulbificar".
+   - Bajar confianza de cualquier proyeccion de rendimiento.
+
+5. Si salinityRiskClass == alert o critical:
+   - Bloquear recomendaciones de aumento N/K salvo caso muy justificado.
+   - Mensaje: revisar CE, agua, drenaje, lavado y fertilizantes.
+
+6. Si waterStabilityClass == deficit o excess:
+   - Corregir agua antes de nutricion.
+   - No diagnosticar N/P/K fuerte desde sintoma visual.
+
+7. Si stage == germination o establishment:
+   - P y humedad pesan mas.
+   - Evitar sales.
+   - N bajo-medio.
+
+8. Si stage == vegetative:
+   - N puede recomendarse si bajo y humedad/CE estan bien.
+   - P/K segun laboratorio.
+   - No sobredosis si follaje ya vigoroso.
+
+9. Si stage == induction:
+   - Vigilar exceso N.
+   - K/agua suben importancia.
+   - Fotoperiodo siempre se evalua.
+
+10. Si stage == bulbification:
+   - K/agua/calidad pesan mas que N.
+   - N solo moderado si realmente bajo y no esta tarde.
+
+11. Si stage == maturation/cosecha/curado:
+   - No recomendar N.
+   - Mensajes de cierre, humedad, cuello, curado.
+
+12. En ON-05:
+   - No aplicar logica de bulbo seco.
+   - N se mantiene mas orientado a hoja/base, con cosecha temprana.
+   - Controlar calor, fibrosidad y pudricion de base.
+
+13. Si soilBucketP o soilBucketK == unknown:
+   - Usar prioridad por etapa, pero pedir analisis antes de dosis.
+   - No inferir P/K por foto.
+
+14. Si residualNitrogenClass == high:
+   - Reducir N base.
+   - Evitar N tardio.
+   - Subir alerta de cuello grueso/maduracion.
+
+15. Si irrigationMethod == drip:
+   - Permitir recomendaciones fraccionadas y mensajes de fertirriego.
+   - Vigilar CE del bulbo.
+   - No activar hidroponia.
+
+16. Si irrigationMethod == sprinkler:
+   - Subir riesgo de hoja mojada/sanidad en integracion con Plant Health.
+   - Vigilar lixiviacion si hay riegos fuertes.
+
+17. Si hay trips/sanidad activa en futuro Plant Health:
+   - No interpretar baja hoja o bulbo chico como solo nutricion.
+   - Cruzar con sanidad.
+
+18. Guardar eventos en History:
+   - N alto cerca de maduracion.
+   - CE alta bloqueando fertilizacion.
+   - Fotoperiodo incompatible.
+   - Deficit en bulbificacion.
+   - Exceso de humedad pre-cosecha.
+   - Correccion P/K recomendada por analisis.
+   - Recomendacion bloqueada por etapa tardia.
+
+======================================================================
+23. MENSAJES BIO-G SUGERIDOS PARA UX
+======================================================================
+
+Situacion                                      Mensaje farmer-friendly
+
+ON-GEN                                         Usaremos una guia conservadora porque todavia no sabemos el tipo de cebolla ni su destino. Puedes afinarlo despues sin perder historial.
+Fotoperiodo incompatible                       El cultivo puede no formar bulbo comercial si el dia no corresponde al tipo de cebolla. El fertilizante no corrige este problema.
+N bajo probable                                La cebolla puede estar corta de nitrogeno, pero primero confirmemos humedad, raiz y salinidad.
+N alto / cuello grueso                         La planta puede estar demasiado empujada. Mas nitrogeno puede retrasar maduracion y dejar cuello grueso.
+P bajo / arranque lento                        El fosforo ayuda al arranque y raiz, especialmente con frio o suelo alcalino. Conviene decidirlo por analisis.
+K bajo / bulbo llenando                        El potasio ayuda al llenado y firmeza del bulbo, pero no conviene subirlo si la CE ya esta alta.
+CE alta                                        La salinidad puede reducir calibre y absorcion de agua. No subas fertilizante sin revisar agua y drenaje.
+Deficit en bulbificacion                       Esta es una etapa critica. La falta de agua puede dejar bulbo chico aunque la planta siga viva.
+Exceso de humedad                              Hay demasiada humedad para una cebolla en etapa sensible. Revise drenaje y riesgo de pudriciones.
+Maduracion cercana                             Ya no conviene empujar crecimiento. La prioridad es cerrar cuello, madurar y curar bien.
+Cambray/rama                                   En cebolla de rama buscamos hoja y base tierna, no bulbo seco. El manejo de N y cosecha cambia.
+Suelo compactado                               Aunque haya fertilizante, la raiz puede no aprovecharlo si el suelo esta apretado.
+Puntas quemadas                                Puede ser salinidad, agua, K alto, calor o sanidad. Revisemos CE y humedad antes de fertilizar.
+Follaje grande sin bulbo                       Primero revisemos fotoperiodo y exceso de N. Mas hoja no siempre significa mas bulbo.
+Cosecha/curado                                 En curado ya no se corrige con fertilizante. La calidad depende de cuello, piel, humedad y manejo.
+
+======================================================================
+24. DECISIONES FINALES DE PRODUCTO
+======================================================================
+
+Decision                                                        Resultado
+
+Motor base                                                       Cebolla usa guia propia de bulbo, no de hoja/fruto.
+Variable reina                                                   Fotoperiodo + etapa de bulbificacion.
+Nutriente mas delicado                                           Nitrogeno: necesario temprano, peligroso tarde.
+Nutriente de calidad de bulbo                                    Potasio, siempre junto con agua y CE.
+Nutriente Allium especial                                         Azufre, pero v1 lo deja como observacion/futuro Pro.
+Error que debe evitar BIO-G                                       Recomendar fertilizante para corregir fotoperiodo equivocado.
+Segundo error que debe evitar                                     Subir N cerca de maduracion.
+Tercer error que debe evitar                                      Subir K/N si la CE esta alta.
+Que hace ON-GEN                                                   Protege, no adivina; usa modo conservador y migrable.
+Que no hace v1                                                    Hidroponia, receta cerrada, Ca/Mg/S avanzado, micronutrientes activos sin laboratorio.
+Que hace la app                                                   Prioriza: etapa + agua + fotoperiodo + suelo + NPK + salinidad + maduracion.
+Salida ideal                                                      Recomendacion prudente, explicable y farmer-friendly.
+
+======================================================================
+25. FUENTES Y TRAZABILIDAD
+======================================================================
+
+S1. University of Georgia Extension / CAES. Vidalia Onion Production Guide, Bulletin 1198, revised 2026.
+Uso dentro de BIO-G: fotoperiodo de cebollas de dia corto/intermedio/largo; pH 6.0-6.5; programa de N, P, K, S; tejido; riego; maduracion; cosecha; curado; efectos de N tardio.
+URL: https://fieldreport.caes.uga.edu/wp-content/uploads/2026/01/B1198-2026-revised.pdf
+
+S2. New Mexico State University. Bulb Onion Culture and Management for Southern New Mexico, Circular 563.
+Uso dentro de BIO-G: suelos alcalinos, respuesta a N/P, P preplant, N fraccionado con riegos, suspender N 4-6 semanas antes de cosecha, sensibilidad a sales, trasplante, bolting, trips, cosecha y curado.
+URL: https://pubs.nmsu.edu/_circulars/CR563.pdf
+
+S3. Pacific Northwest Extension Publication PNW 546. Nutrient Management for Onions in the Pacific Northwest. Oregon State University, Washington State University, University of Idaho.
+Uso dentro de BIO-G: crecimiento y desarrollo; absorcion de nutrientes; N disponible de suelo/agua/mineralizacion; N por rendimiento; P/K por analisis; K, S, salinidad, agua, micronutrientes y limites.
+URL: https://rvpadmin.cce.cornell.edu/uploads/doc_646.pdf
+
+S4. Oregon State University Horticulture. Onions -- Pearl, Sets, and Boilers.
+Uso dentro de BIO-G: N 80-100 lb/A en cebollas pequeñas/perla/sets, cuidado con azufre si se busca sabor suave, sidedress/fertirriego, no usar amoniaco en aspersion, riesgos de fertilizante concentrado.
+URL: https://horticulture.oregonstate.edu/oregon-vegetables/onions-pearl-sets-and-boilers-0
+
+S5. Oregon State University Horticulture. Onions, Green Bunching.
+Uso dentro de BIO-G: diferenciacion de ON-05 cambray/rama; N orientado a hoja verde, P2O5/K2O referencias para bunching onion, N adicional si el objetivo es mantener tops verdes.
+URL: https://horticulture.oregonstate.edu/oregon-vegetables/onions-green-bunching
+
+S6. University of Georgia / HortTechnology 2024. Impact of Nitrogen Fertilizer Rate and Timing on Short-day Onion.
+Uso dentro de BIO-G: ensayo reciente de N en cebolla de dia corto; confirma que tasa y timing de N afectan rendimiento comercial y calidad, pero no reemplaza analisis local.
+URL: https://journals.ashs.org/view/journals/horttech/34/1/article-p13.xml
+
+S7. Tilahun et al. 2021. Effects of Different Nitrogen and Sulfur Fertilizer Rates on Growth, Yield, Quality and Nutrient Uptake of Onion.
+Uso dentro de BIO-G: evidencia experimental de interaccion N-S en rendimiento/calidad; se usa como soporte de que S importa, no como receta universal para Mexico.
+URL: https://www.sciencedirect.com/org/science/article/pii/S1874070721000081
+
+S8. Barrales-Heredia et al. 2023. Effects of Different Irrigation Regimes and Nitrogen Fertilization on Onion Bulb Characteristics.
+Uso dentro de BIO-G: relacion agua-N y calidad fisicoquimica; soporte para cruzar riego y N en el motor.
+URL: https://www.mdpi.com/2311-7524/9/3/344
+
+S9. University of Wisconsin Extension. Growing onions, garlic, leeks, and other alliums in Wisconsin.
+Uso dentro de BIO-G: referencia de alliums, riego y suspender N antes de cosecha en contexto de almacenamiento; se usa como apoyo, no como base principal para Mexico.
+URL: https://hort.extension.wisc.edu/files/2023/10/A3785-Growing-Onions-Garlic-Leeks-and-Other-Alliums-in-Wisconsin-KA-Delahaut-and-AC-Newenhouse.pdf
+
+S10. BIO-G. Perfil Universal Bio-G - Cebolla y Perfil Generico ON-GEN.
+Uso dentro de BIO-G: arquitectura del cultivo, perfiles ON-01 a ON-05, regla de fotoperiodo, SKIP migrable y lenguaje de producto.
+
+======================================================================
+26. CIERRE DE PRODUCTO
+======================================================================
+
+La guia de fertilizacion de cebolla queda lista para BIO-G v1 si se integra como motor de bulbo sensible a fotoperiodo, no como receta NPK simple.
+
+El valor del producto no esta en decir "pon mas nitrogeno". El valor esta en distinguir:
+
+- cuando falta N y conviene apoyar hoja,
+- cuando el N ya sobra y puede arruinar cuello/maduracion,
+- cuando el P debe venir de suelo y raiz,
+- cuando K ayuda a llenar bulbo,
+- cuando la CE impide absorber,
+- cuando el agua debe corregirse antes de fertilizar,
+- cuando el fotoperiodo hace imposible corregir con nutrientes,
+- y cuando la etapa ya cambio de crecimiento a maduracion/curado.
+
+Frase guia:
+La cebolla no se fertiliza para que "quiera" hacer bulbo. Se acompaña para que, cuando su reloj de luz diga que es momento, tenga hoja, raiz, agua y suelo suficientes para llenar un bulbo sano.
+
+Estado del documento:
+GUIA TECNICA DE FERTILIZACION DE CEBOLLA v2 mejorada queda lista para conectarse con Perfil Universal Cebolla, ON-GEN/SKIP, Riesgos/Sanidad y Rendimiento Aproximado.

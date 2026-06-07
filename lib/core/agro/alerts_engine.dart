@@ -566,6 +566,344 @@ class AlertsEngine {
       );
     }
 
+    if (key == 'spinach.bolting_critical') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.critical,
+        title: 'Espigado critico en espinaca',
+        body:
+            'La espinaca esta entrando en espigado durante $stage. Si aparece '
+            'tallo floral, la calidad baja aunque la planta siga creciendo: '
+            'cosecha de inmediato si aun sirve o cierra el ciclo.',
+      );
+    }
+    if (key == 'spinach.bolting_warning') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Riesgo de espigado en espinaca',
+        body:
+            'Calor, edad o estres pueden adelantar el espigado de la espinaca '
+            'en $stage. Revisa el tallo central y estabiliza riego, sombra o '
+            'ventilacion antes de perder calidad.',
+      );
+    }
+    if (key == 'spinach.foliar_disease_risk') {
+      return _AlertTemplate(
+        type: BioGAlertType.highHumidity,
+        severity: BioGAlertSeverity.warning,
+        title: 'Ambiente favorable a mildiu/manchas',
+        body:
+            'La humedad alta y el dosel mojado favorecen mildiu, Botrytis y '
+            'manchas foliares en espinaca. Revisa el enves de las hojas y la '
+            'ventilacion; la hoja es el producto comercial.',
+      );
+    }
+    if (key == 'spinach.salinity_critical') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.critical,
+        title: 'Salinidad critica para calidad de hoja',
+        body:
+            'La CE esta muy alta para espinaca. Puede bajar turgencia y calidad '
+            'visual; no subas fertilizante sin revisar agua, bulbo humedo y '
+            'posible lavado tecnico.',
+      );
+    }
+    if (key == 'spinach.salinity_warning') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Salinidad en observacion',
+        body:
+            'La CE puede empezar a afectar turgencia y calidad de hoja. En '
+            'espinaca, primero revisa agua y salinidad antes de aumentar NPK.',
+      );
+    }
+    if (key == 'spinach.harvest_urgent') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Conviene cosechar espinaca pronto',
+        body:
+            'La espinaca esta en ventana de corte y el calor, manchas o '
+            'espigado pueden acortarla. Revisa turgencia, limpieza de hoja y '
+            'corta en cuanto la calidad sea buena.',
+      );
+    }
+    if (key == 'spinach.harvest_window') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.info,
+        title: 'Espinaca en ventana de cosecha',
+        body:
+            'La hoja parece estar en punto comercial. Revisa turgencia, color, '
+            'minador, mildiu y pulgon antes de retrasar el corte.',
+      );
+    }
+    if (key == 'spinach.harvest_review') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.info,
+        title: 'Revisa el campo: corte cercano',
+        body:
+            'La espinaca se acerca a su ventana comercial. Revisa el lote en '
+            'los proximos dias para no perder calidad por calor o espigado.',
+      );
+    }
+    if (key == 'spinach.harvest_past') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Calidad de espinaca en descenso',
+        body:
+            'La espinaca puede haber pasado su punto. Revisa cosecha, cierre '
+            'del ciclo y registra si hubo calor, HR alta o riego irregular.',
+      );
+    }
+
+    if (key == 'onion.bolting_critical') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.critical,
+        title: 'Espigado en cebolla',
+        body:
+            'La cebolla muestra o esta entrando en espigado durante $stage. El '
+            'tallo floral es perdida de calidad para bulbo: decide cosecha o '
+            'cierre y registra la causa (frio, edad, variedad, estres).',
+      );
+    }
+    if (key == 'onion.bolting_warning') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Riesgo de espigado en cebolla',
+        body:
+            'El frio en planta grande puede adelantar espigado en $stage. '
+            'Revisa el tallo central; si aparece, la prioridad ya no es hacer '
+            'mas hoja sino evaluar cosecha y descarte.',
+      );
+    }
+    if (key == 'onion.foliar_disease_risk') {
+      return _AlertTemplate(
+        type: BioGAlertType.highHumidity,
+        severity: BioGAlertSeverity.warning,
+        title: 'Ambiente favorable a mildiu/manchas',
+        body:
+            'La humedad alta y el dosel mojado favorecen mildiu, Botrytis, '
+            'mancha purpura y Stemphylium en cebolla. Revisa hojas y pliegues; '
+            'la hoja es la fabrica que llena el bulbo.',
+      );
+    }
+    if (key == 'onion.salinity_critical') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.critical,
+        title: 'Salinidad critica para la cebolla',
+        body:
+            'La CE esta muy alta y la cebolla es sensible a sales. Puede bajar '
+            'stand y calibre; no subas fertilizante sin revisar agua, drenaje '
+            'y lavado tecnico.',
+      );
+    }
+    if (key == 'onion.salinity_warning') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Salinidad en observacion',
+        body:
+            'La CE puede empezar a limitar absorcion de agua y calibre del '
+            'bulbo. En cebolla, primero revisa agua y salinidad antes de subir '
+            'NPK.',
+      );
+    }
+    if (key == 'onion.photoperiod_watch') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.info,
+        title: 'El fotoperiodo manda en la bulbificacion',
+        body:
+            'La cebolla esta en induccion: si el tipo no corresponde al dia de '
+            'la zona puede haber mucha hoja y poco bulbo. Mas fertilizante no '
+            'corrige un fotoperiodo equivocado; confirma variedad/perfil.',
+      );
+    }
+    if (key == 'onion.neck_curing_risk') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Cuidado con cuello y curado',
+        body:
+            'En maduracion, la humedad alta o el N/riego tardio pueden dejar '
+            'cuello grueso o humedo y subir pudriciones de cuello. Detener N, '
+            'bajar riego y proteger el secado del cuello.',
+      );
+    }
+    if (key == 'onion.harvest_urgent') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Conviene avanzar la cosecha de cebolla',
+        body:
+            'La cebolla esta madurando y el calor o la humedad pueden danar '
+            'cuello y curado. Revisa avance de cuello, evita riego tardio y '
+            'cosecha por madurez real, no solo por fecha.',
+      );
+    }
+    if (key == 'onion.harvest_window') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.info,
+        title: 'Cebolla en maduracion / cosecha',
+        body:
+            'El bulbo parece estar madurando. Revisa caida y secado de cuello, '
+            'suspende riego cuando corresponda y prepara cosecha y curado sin '
+            'golpes ni sol excesivo.',
+      );
+    }
+    if (key == 'onion.harvest_review') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.info,
+        title: 'Revisa el campo: cosecha cercana',
+        body:
+            'La cebolla se acerca a su ventana de maduracion. Revisa el lote en '
+            'los proximos dias para no cosechar inmadura ni dejar pasar el '
+            'punto del bulbo.',
+      );
+    }
+    if (key == 'onion.harvest_past') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Cebolla espigada / fuera de punto',
+        body:
+            'La cebolla puede haber espigado o pasado su punto comercial. '
+            'Evalua cosecha/cierre y registra si hubo frio, calor, N tardio o '
+              'riego irregular para el siguiente ciclo.',
+      );
+    }
+
+    if (key == 'garlic.vernalization_watch') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.info,
+        title: 'Vigila vernalizacion en ajo',
+        body:
+            'El ajo en $stage depende del frio acumulado para diferenciar '
+            'dientes. Si falto frio, mas NPK no corrige el potencial; revisa '
+            'fecha, perfil, temperatura y uniformidad del lote.',
+      );
+    }
+    if (key == 'garlic.scape_critical') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.critical,
+        title: 'Escapo / canuto en ajo',
+        body:
+            'El ajo muestra un evento compatible con escapo, canuto o '
+            'escobeteado en $stage. Evalua descarte, cosecha o cierre, y '
+            'registra frio, estres, variedad y N tardio.',
+      );
+    }
+    if (key == 'garlic.scape_warning') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Riesgo de escobeteado',
+        body:
+            'Las condiciones pueden favorecer escapo/canutos en ajo durante '
+            '$stage. Revisa tallo central, vigor excesivo, frio irregular, '
+            'agua y N tardio antes de ajustar fertilizacion.',
+      );
+    }
+    if (key == 'garlic.foliar_disease_risk') {
+      return _AlertTemplate(
+        type: BioGAlertType.highHumidity,
+        severity: BioGAlertSeverity.warning,
+        title: 'Ambiente favorable a roya/mildiu',
+        body:
+            'Humedad alta y hoja mojada favorecen roya, mildiu, Botrytis, '
+            'mancha purpura y Stemphylium en ajo. Revisa hojas, cuello y '
+            'ventilacion; no recomienda ingredientes activos.',
+      );
+    }
+    if (key == 'garlic.salinity_critical') {
+      return _AlertTemplate(
+        type: BioGAlertType.ecOutOfRange,
+        severity: BioGAlertSeverity.critical,
+        title: 'Salinidad critica para ajo',
+        body:
+            'La CE esta muy alta para ajo. Puede bajar raiz, absorcion, '
+            'calibre, curado y rendimiento comercial; no subas fertilizante '
+            'sin revisar agua, drenaje y acumulacion de sales.',
+      );
+    }
+    if (key == 'garlic.salinity_warning') {
+      return _AlertTemplate(
+        type: BioGAlertType.ecOutOfRange,
+        severity: BioGAlertSeverity.warning,
+        title: 'Salinidad en observacion',
+        body:
+            'La CE puede empezar a limitar absorcion de agua, calibre y '
+            'curado del ajo. Primero revisa agua y salinidad antes de subir NPK.',
+      );
+    }
+    if (key == 'garlic.curing_risk') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Cuidado con maduracion y curado',
+        body:
+            'En ajo, humedad alta, riego o N tardio pueden dejar cuello/bulbo '
+            'mal curado y subir pudriciones o brotacion en almacenamiento. '
+            'Revisa secado, ventilacion y descarte.',
+      );
+    }
+    if (key == 'garlic.harvest_urgent') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Conviene revisar cosecha de ajo',
+        body:
+            'El ajo esta entrando a ventana de cosecha y el calor, humedad o '
+            'sanidad pueden acortarla. Revisa madurez real, cuello, bulbo, '
+            'descarte y curado antes de retrasar.',
+      );
+    }
+    if (key == 'garlic.harvest_window') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.info,
+        title: 'Ajo en maduracion / cosecha',
+        body:
+            'El ajo parece estar en ventana de maduracion. Revisa piel, '
+            'dientes, cuello, sanidad de bulbo y prepara curado sin golpes ni '
+            'sol excesivo.',
+      );
+    }
+    if (key == 'garlic.harvest_review') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.info,
+        title: 'Revisa el campo: cosecha cercana',
+        body:
+            'El ajo se acerca a su ventana comercial. Revisa el lote en los '
+            'proximos dias para no cosechar inmaduro ni pasar el punto de curado.',
+      );
+    }
+    if (key == 'garlic.harvest_past') {
+      return _AlertTemplate(
+        type: BioGAlertType.stageEvent,
+        severity: BioGAlertSeverity.warning,
+        title: 'Ajo fuera de punto',
+        body:
+            'El ajo puede haber pasado su punto comercial o de curado. Evalua '
+            'cosecha/cierre y registra frio, calor, N tardio, riego, salinidad '
+            'o sanidad para el siguiente ciclo.',
+      );
+    }
+
     return null;
   }
 
@@ -595,10 +933,43 @@ class AlertsEngine {
         cropLc.contains('corn') ||
         cropLc.contains('maize');
     final isLettuce = _isLettuceCrop(crop);
+    final isSpinach = _isSpinachCrop(crop);
+    final isOnion = _isOnionCrop(crop);
+    final isGarlic = _isGarlicCrop(crop);
     final stageLc = stage.toLowerCase();
 
     if (isLettuce) {
       return _lettuceNutrientPriorityAlert(
+        nutrientCode: nutrientCode,
+        stateCode: stateCode,
+        nutrientName: nutrientName,
+        shortName: shortName,
+        crop: crop,
+        stage: stage,
+      );
+    }
+    if (isOnion) {
+      return _onionNutrientPriorityAlert(
+        nutrientCode: nutrientCode,
+        stateCode: stateCode,
+        nutrientName: nutrientName,
+        shortName: shortName,
+        crop: crop,
+        stage: stage,
+      );
+    }
+    if (isGarlic) {
+      return _garlicNutrientPriorityAlert(
+        nutrientCode: nutrientCode,
+        stateCode: stateCode,
+        nutrientName: nutrientName,
+        shortName: shortName,
+        crop: crop,
+        stage: stage,
+      );
+    }
+    if (isSpinach) {
+      return _spinachNutrientPriorityAlert(
         nutrientCode: nutrientCode,
         stateCode: stateCode,
         nutrientName: nutrientName,
@@ -758,6 +1129,114 @@ class AlertsEngine {
               'Se detectó un evento NPK en lechuga para $stage. BIO-G lo '
               'interpreta como señal de balance, no como receta de dosis.',
         );
+    }
+  }
+
+  static _AlertTemplate _spinachNutrientPriorityAlert({
+    required String nutrientCode,
+    required String stateCode,
+    required String nutrientName,
+    required String shortName,
+    required String crop,
+    required String stage,
+  }) {
+    final role = _spinachNutrientRole(nutrientCode, stage);
+
+    switch (stateCode) {
+      case 'action':
+      case 'high_priority':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Revisa $shortName en espinaca',
+          body:
+              'La lectura sugiere posible deficit de $shortName en $crop '
+              'durante $stage. $role BIO-G v1 lo maneja como riesgo de '
+              'desequilibrio: confirma agua, pH, CE y etapa antes de ajustar.',
+        );
+      case 'review':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Revision de $nutrientName',
+          body:
+              'Algo no cuadra con $shortName en espinaca durante $stage. $role '
+              'Antes de subir fertilizante, revisa si la humedad es estable.',
+        );
+      case 'medium_priority':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: '$shortName en observacion',
+          body:
+              'El $shortName empieza a alejarse del rango esperado para '
+              'espinaca en $stage. $role Vigila tendencia y confirma en campo.',
+        );
+      case 'possible_excess':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Posible exceso de $shortName',
+          body:
+              'El $shortName aparece por encima de lo conveniente para '
+              'espinaca. $role Pausa aportes de ese nutriente y revisa CE, '
+              'agua y proximidad de cosecha.',
+        );
+      case 'review_accumulation':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: 'Acumulacion de $shortName',
+          body:
+              'BIO-G detecta acumulacion de $shortName en espinaca. $role Usa '
+              'la lectura para evitar hoja blanda, nitratos o golpes salinos.',
+        );
+      default:
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: 'Evento nutricional en espinaca',
+          body:
+              'Se detecto un evento NPK en espinaca para $stage. BIO-G lo '
+              'interpreta como balance de riesgo, no como receta de dosis.',
+        );
+    }
+  }
+
+  static String _spinachNutrientRole(String nutrientCode, String stage) {
+    final stageLc = stage.toLowerCase();
+    final nearHarvest = stageLc.contains('madurez') ||
+        stageLc.contains('cosecha') ||
+        stageLc.contains('perdida') ||
+        stageLc.contains('espig') ||
+        stageLc.contains('senesc');
+    final early = stageLc.contains('germin') ||
+        stageLc.contains('establec') ||
+        stageLc.contains('emerg');
+
+    switch (nutrientCode) {
+      case 'n':
+        if (nearHarvest) {
+          return 'En espinaca, el N tardio puede ablandar hoja, subir nitratos '
+              'y reducir vida de anaquel.';
+        }
+        return 'El N sostiene expansion foliar, pero con agua irregular o CE '
+            'alta puede parecer solucion y empeorar calidad.';
+      case 'p':
+        if (early) {
+          return 'El P pesa mas al establecimiento porque apoya raiz temprana '
+              'en un cultivo de ciclo corto.';
+        }
+        return 'El P pasa a soporte; no desplaza la prioridad de agua, CE y '
+            'temperatura.';
+      case 'k':
+        if (nearHarvest) {
+          return 'El K apoya turgencia y calidad de hoja, siempre que la CE no '
+              'se vuelva limitante.';
+        }
+        return 'El K ayuda a turgencia y balance hidrico en expansion foliar.';
+      default:
+        return 'Este nutriente se interpreta por etapa y contexto del lote.';
     }
   }
 
@@ -943,6 +1422,268 @@ class AlertsEngine {
     return value.contains('lechuga') ||
         value.contains('lettuce') ||
         value.contains('crop_lettuce');
+  }
+
+  static bool _isSpinachCrop(String crop) {
+    final value = crop.toLowerCase();
+    return value.contains('espinaca') ||
+        value.contains('spinach') ||
+        value.contains('crop_spinach');
+  }
+
+  static bool _isOnionCrop(String crop) {
+    final value = crop.toLowerCase();
+    return value.contains('cebolla') ||
+        value.contains('onion') ||
+        value.contains('crop_onion');
+  }
+
+  static bool _isGarlicCrop(String crop) {
+    final value = crop.toLowerCase();
+    return value.contains('ajo') ||
+        value.contains('garlic') ||
+        value.contains('crop_garlic');
+  }
+
+  static _AlertTemplate _onionNutrientPriorityAlert({
+    required String nutrientCode,
+    required String stateCode,
+    required String nutrientName,
+    required String shortName,
+    required String crop,
+    required String stage,
+  }) {
+    final role = _onionNutrientRole(nutrientCode, stage);
+
+    switch (stateCode) {
+      case 'action':
+      case 'high_priority':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Revisa $shortName en cebolla',
+          body:
+              'La lectura sugiere posible deficit de $shortName en $crop '
+              'durante $stage. $role BIO-G v1 lo maneja como riesgo de '
+              'desequilibrio: confirma agua, pH, CE, etapa y fotoperiodo antes '
+              'de ajustar.',
+        );
+      case 'review':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Revision de $nutrientName',
+          body:
+              'Algo no cuadra con $shortName en cebolla durante $stage. $role '
+              'Antes de subir fertilizante, revisa si la humedad es estable y '
+              'la CE esta en rango.',
+        );
+      case 'medium_priority':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: '$shortName en observacion',
+          body:
+              'El $shortName empieza a alejarse del rango esperado para '
+              'cebolla en $stage. $role Vigila tendencia y confirma en campo.',
+        );
+      case 'possible_excess':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Posible exceso de $shortName',
+          body:
+              'El $shortName aparece por encima de lo conveniente para '
+              'cebolla. $role Pausa aportes de ese nutriente y revisa CE, agua '
+              'y proximidad de maduracion.',
+        );
+      case 'review_accumulation':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: 'Acumulacion de $shortName',
+          body:
+              'BIO-G detecta acumulacion de $shortName en cebolla. $role Usa '
+              'la lectura para evitar cuello grueso, golpes salinos o mala '
+              'conservacion.',
+        );
+      default:
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: 'Evento nutricional en cebolla',
+          body:
+              'Se detecto un evento NPK en cebolla para $stage. BIO-G lo '
+              'interpreta como balance de riesgo, no como receta de dosis.',
+        );
+    }
+  }
+
+  static String _onionNutrientRole(String nutrientCode, String stage) {
+    final stageLc = stage.toLowerCase();
+    final nearHarvest = stageLc.contains('madur') ||
+        stageLc.contains('cosecha') ||
+        stageLc.contains('cuello') ||
+        stageLc.contains('espig') ||
+        stageLc.contains('senesc');
+    final bulb = stageLc.contains('llenado') ||
+        stageLc.contains('bulbo') ||
+        stageLc.contains('induccion');
+    final early = stageLc.contains('germin') ||
+        stageLc.contains('establec') ||
+        stageLc.contains('emerg');
+
+    switch (nutrientCode) {
+      case 'n':
+        if (nearHarvest || bulb) {
+          return 'En cebolla, el N tarde engruesa cuello, retrasa madurez y '
+              'empeora la conservacion del bulbo.';
+        }
+        return 'El N construye hoja (la fabrica del bulbo), pero el exceso o '
+            'el N tardio penalizan calidad y maduracion.';
+      case 'p':
+        if (early) {
+          return 'El P pesa al establecimiento porque apoya la raiz '
+              'superficial, sobre todo en suelo frio o alcalino.';
+        }
+        return 'El P pasa a soporte; no desplaza la prioridad de agua, CE, '
+            'fotoperiodo y temperatura.';
+      case 'k':
+        if (bulb || nearHarvest) {
+          return 'El K es el nutriente del bulbo: sostiene agua, turgencia, '
+              'calibre y firmeza, siempre que la CE no se vuelva limitante.';
+        }
+        return 'El K prepara turgencia y reservas para el llenado del bulbo.';
+      default:
+        return 'Este nutriente se interpreta por etapa, fotoperiodo y contexto '
+            'del lote.';
+    }
+  }
+
+  static _AlertTemplate _garlicNutrientPriorityAlert({
+    required String nutrientCode,
+    required String stateCode,
+    required String nutrientName,
+    required String shortName,
+    required String crop,
+    required String stage,
+  }) {
+    final role = _garlicNutrientRole(nutrientCode, stage);
+
+    switch (stateCode) {
+      case 'action':
+      case 'high_priority':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Revisa $shortName en ajo',
+          body:
+              'La lectura sugiere posible deficit de $shortName en $crop '
+              'durante $stage. $role BIO-G v1 lo maneja como riesgo de '
+              'desequilibrio: confirma agua, pH, CE, etapa, vernalizacion y '
+              'diente-semilla antes de ajustar.',
+        );
+      case 'review':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Revision de $nutrientName',
+          body:
+              'Algo no cuadra con $shortName en ajo durante $stage. $role '
+              'Antes de subir fertilizante, revisa si hay salinidad, anoxia, '
+              'frio insuficiente o sanidad de bulbo.',
+        );
+      case 'medium_priority':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: '$shortName en observacion',
+          body:
+              'El $shortName empieza a alejarse del rango esperado para ajo '
+              'en $stage. $role Vigila tendencia y confirma en campo.',
+        );
+      case 'possible_excess':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Posible exceso de $shortName',
+          body:
+              'El $shortName aparece por encima de lo conveniente para ajo. '
+              '$role Pausa aportes de ese nutriente y revisa CE, agua, etapa, '
+              'maduracion y curado.',
+        );
+      case 'review_accumulation':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: 'Acumulacion de $shortName',
+          body:
+              'BIO-G detecta acumulacion de $shortName en ajo. $role Usa la '
+              'lectura para evitar golpes salinos, vigor tardio, mala '
+              'maduracion o curado deficiente.',
+        );
+      default:
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.info,
+          title: 'Evento nutricional en ajo',
+          body:
+              'Se detecto un evento NPK en ajo para $stage. BIO-G lo '
+              'interpreta como balance de riesgo, no como receta de dosis.',
+        );
+    }
+  }
+
+  static String _garlicNutrientRole(String nutrientCode, String stage) {
+    final stageLc = stage.toLowerCase();
+    final nearHarvest = stageLc.contains('madur') ||
+        stageLc.contains('cosecha') ||
+        stageLc.contains('harvest') ||
+        stageLc.contains('curado') ||
+        stageLc.contains('curing') ||
+        stageLc.contains('escapo') ||
+        stageLc.contains('canuto') ||
+        stageLc.contains('escobete') ||
+        stageLc.contains('senesc');
+    final vernalization = stageLc.contains('vernal') ||
+        stageLc.contains('frio') ||
+        stageLc.contains('cold');
+    final bulb = stageLc.contains('diferenci') ||
+        stageLc.contains('llenado') ||
+        stageLc.contains('bulbo') ||
+        stageLc.contains('bulb');
+    final early = stageLc.contains('plant') ||
+        stageLc.contains('diente') ||
+        stageLc.contains('establec') ||
+        stageLc.contains('emerg');
+
+    switch (nutrientCode) {
+      case 'n':
+        if (nearHarvest || bulb || vernalization) {
+          return 'En ajo, el N tardio o durante frio/bulbo puede favorecer '
+              'vigor excesivo, escobeteado/canutos, mala maduracion, '
+              'pudriciones y mal curado; no corrige vernalizacion.';
+        }
+        return 'El N temprano sostiene hoja, pero debe bajar antes de bulbo y '
+            'curado para proteger calidad comercial.';
+      case 'p':
+        if (early) {
+          return 'El P pesa al establecimiento porque apoya raiz del '
+              'diente-semilla; debe validarse con analisis de suelo y pH.';
+        }
+        return 'El P pasa a soporte; no desplaza la prioridad de agua, CE, '
+            'frio acumulado y sanidad de raiz/bulbo.';
+      case 'k':
+        if (bulb || vernalization || nearHarvest) {
+          return 'El K apoya diferenciacion, llenado, firmeza y calidad de '
+              'bulbo, siempre que la CE y el agua no sean limitantes.';
+        }
+        return 'El K prepara reservas para bulbo; no compensa salinidad, anoxia '
+            'ni diente-semilla de mala calidad.';
+      default:
+        return 'Este nutriente se interpreta por etapa, frio, agua, CE y '
+            'contexto del lote.';
+    }
   }
 }
 

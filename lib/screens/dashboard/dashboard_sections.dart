@@ -232,7 +232,7 @@ class DashboardHeaderSection extends StatelessWidget {
 }
 
 class DashboardSoilHealthSection extends StatelessWidget {
-  final double percent;
+  final double? percent;
   final String label;
 
   const DashboardSoilHealthSection({

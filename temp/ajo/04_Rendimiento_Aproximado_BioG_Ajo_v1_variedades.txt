@@ -1,0 +1,837 @@
+BIO-G / AJO - TEXTO PARA CODIGO
+Archivo TXT: 04_Rendimiento_Aproximado_BioG_Ajo_v1_variedades.txt
+Documento: RENDIMIENTO APROXIMADO DE AJO
+Version: v1 investigada para BIO-G v1
+Cultivo madre: crop_garlic / CropKey.garlic
+Perfiles BIO-G: AG-GEN, AG-01, AG-02, AG-03, AG-04, AG-05
+Estado: Base tecnica investigada para calculadora de rendimiento, perfiles, aliases, probabilidad productiva y mensajes farmer-friendly.
+Nota: documento tecnico interno. Los rangos son operativos y prudentes; no son promesa de produccion ni sustituyen historial local, analisis de suelo/agua/tejido, validacion varietal, sanidad de semilla ni asesoria agronomica regional.
+
+====================================================================
+BIO-G
+RENDIMIENTO APROXIMADO DE AJO
+Bulbo fresco/seco, ajo blanco/perla, jaspeado/calera, morado, criollo/regional y chino/coreano
+Base tecnica para calculadora de rendimiento - BIO-G v1
+====================================================================
+
+Objetivo
+--------------------------------------------------------------------
+Definir rangos prudentes de rendimiento por hectarea, reglas por perfil BIO-G, aliases varietales, densidad, semilla/diente, vernalizacion, fecha, riego, sanidad, nutricion, calidad comercial y curado, para que BIO-G pueda estimar produccion aproximada de ajo a partir de superficie, stand, tipo UX/perfil, sistema, Crop Care / Agro Score y condicion de calidad.
+
+Este documento NO intenta predecir el rendimiento exacto de una variedad por nombre comercial. En ajo, el rendimiento depende de la interaccion entre material vegetativo, sanidad del diente, tamano del diente, frio fisiologico, fecha, densidad, riego, nutricion, suelo, salinidad, enfermedades de raiz/bulbo y curado. La variedad ayuda a resolver el rango base, pero no sustituye el estado real del lote.
+
+Alcance
+--------------------------------------------------------------------
+Incluye:
+- AG-GEN / No se / Otro ajo.
+- AG-01 Ajo blanco / Perla.
+- AG-02 Ajo jaspeado / Calera / rayado.
+- AG-03 Ajo morado.
+- AG-04 Ajo criollo / regional.
+- AG-05 Ajo chino / coreano.
+- Alias principales: Orion, San Marqueno, Diamante, Perla regional, CEZAC 06, Barretero, Inifap 94, Tacatzcuaro, Tinguindin, Chino Calera, Coreano, Chino CEDEL, Criollo Regional, Morado regional.
+- Campo abierto en suelo, con riego por gravedad o goteo.
+- Bulbo fresco/seco, mercado nacional, exportacion, semilla propia y proceso cuando el usuario lo declare.
+
+No incluye en v1:
+- Hidroponia, NFT, sustrato inerte o soluciones recirculantes.
+- Promesa de rendimiento.
+- Precio de mercado.
+- Contrato industrial.
+- Diagnostico fitosanitario cerrado.
+- Garantia de calibre.
+- Modelar cada semilla comercial como cultivo separado.
+- Elefante como ajo comun. Si aparece "ajo elefante", debe tratarse como caso especial futuro o fuera del modelo Allium sativum v1.
+
+Decision de producto
+--------------------------------------------------------------------
+Ajo queda como cultivo madre crop_garlic. Los tipos UX viven dentro del cultivo y ajustan ciclo, requerimiento de frio, potencial de calibre, destino, sensibilidad a calidad y probabilidad de rendimiento.
+
+La calculadora debe distinguir:
+
+1) Produccion biologica / field-run:
+   Peso total de bulbos levantados antes de clasificacion, curado completo y descarte.
+
+2) Rendimiento comercial / marketable yield:
+   Bulbo vendible despues de descartar bulbos chicos, deformes, abiertos, escobeteados, con dientes expuestos, podridos, brotados, con dano solar, mal curados, con mala tunica o fuera de calibre.
+
+BIO-G v1 debe mostrar principalmente rendimiento comercial aproximado. Field-run puede guardarse como valor interno si el usuario declara proceso/industria o manejo tecnico.
+
+Tesis BIO-G:
+En ajo, el rendimiento no es solo "toneladas por hectarea". Es bulbo sano, bien diferenciado, con dientes definidos, calibre util, tunica completa, cuello seco, baja pudricion y curado correcto. Un ajo pesado pero abierto, enfermo o mal curado no debe contarse como alto rendimiento comercial.
+
+====================================================================
+1. CONCLUSION EJECUTIVA
+====================================================================
+
+La literatura y las fuentes tecnicas no sostienen un solo rendimiento universal para ajo. Hay tres verdades practicas:
+
+1. El promedio general puede ser moderado.
+   En registros historicos mexicanos se observan promedios nacionales alrededor de 6-8 t/ha, y datos mas recientes reportan promedios nacionales cercanos a 13-14 t/ha. Esto indica mejora tecnica y concentracion productiva, pero no significa que todo lote de ajo deba estimarse arriba de 14 t/ha.
+
+2. Los materiales mejorados/localmente adaptados pueden duplicar o triplicar el rendimiento de sistemas bajos.
+   Ejemplos mexicanos: CEZAC 06, Barretero, San Marqueno y Orion muestran ventajas claras cuando se siembran en regiones compatibles, con semilla sana, fecha correcta, riego y nutricion.
+
+3. El techo alto solo debe activarse con evidencia de manejo.
+   Rangos de 20-30 t/ha existen en fuentes y ensayos, pero NO deben ser el default de BIO-G. Deben activarse solo con perfil/alias validado, riego estable, semilla sana, densidad coherente, baja salinidad, sanidad controlada, buen Crop Care y curado correcto.
+
+Regla madre:
+BIO-G no debe prometer rendimiento por variedad. Debe estimar rendimiento por perfil + alias + ambiente + manejo + sanidad + calidad comercial.
+
+Frase de producto:
+"En ajo, sembrar un diente no garantiza una cabeza comercial. BIO-G estima bulbo vendible: semilla sana, frio suficiente, fecha correcta, agua estable, nutricion balanceada, sanidad y buen curado."
+
+====================================================================
+2. FUENTES Y EVIDENCIA USADA PARA CALIBRAR RANGOS
+====================================================================
+
+Se priorizaron fuentes universitarias, INIFAP, articulos tecnicos, extension agricola y documentos del usuario. Fuentes comerciales y blogs se usaron solo como senales de lenguaje, manejo o estadistica secundaria cuando citan datos oficiales.
+
+2.1 Evidencia base de rendimiento
+
+Fuente / referencia                                      Dato reportado                         Lectura BIO-G
+
+Universidad de Sonora DAG/HORT-014, 2016                 Sonora promedio 2.7 t/ha; maximos       Sirve como piso regional historico/semiarido. No usar 2.7 como expectativa moderna si hay manejo comercial.
+                                                         7.5 t/ha; Mexico promedio 6 t/ha;
+                                                         Aguascalientes 12 t/ha; Sierra
+                                                         Sonora 10 t/ha; California 12-14 t/ha.
+
+SIAP/DGSIAP via estadistica agricola 2024                Mexico 2024 aprox. 13.7 t/ha            Sirve como promedio nacional reciente. Usar como centro de referencia moderno, no como promesa.
+                                                         promedio nacional; Zacatecas
+                                                         aprox. 17.2 t/ha.
+
+Oregon State University - Garlic                         5,000-17,000 lb/acre                    Equivale aprox. a 5.6-19.1 t/ha. Buen rango general comercial por tipo, poblacion y calidad de semilla.
+                                                         segun tipo, fecha, poblacion,
+                                                         tamano y calidad de semilla.
+
+Rutgers NJAES - Garlic small commercial growers          6,000-12,000 lb/acre tipico;             Equivale aprox. a 6.7-13.4 t/ha tipico; hasta 22.4 t/ha en procesadores grandes.
+                                                         procesadores grandes hasta
+                                                         20,000 lb/acre.
+
+INIFAP / Revista Mexicana - CEZAC 06                     Mejora 9-17% y hasta 30 t/ha            Techo alto real pero condicionado a region norte-centro, densidad alta, goteo/manejo y material adaptado.
+                                                         en parcelas comerciales.
+
+INIFAP - Barretero                                       Potencial cercano a 24-26.7 t/ha         Techo alto para ajo jaspeado en Zacatecas/altiplano con manejo adecuado. No usar como default.
+                                                         segun fuentes de INIFAP.
+
+INIFAP - San Marqueno                                    Promedio experimental 17 t/ha;           Alias fuerte para AG-01 Perla. Rango comercial alto 14-18 t/ha si zona/manejo coinciden.
+                                                         >15 t/ha en productores;
+                                                         cercano a 18 t/ha con buen manejo.
+
+INIFAP - Orion                                           13.331 y 14.747 t/ha en dos              Alias AG-01 Perla. Base real de 13-15 t/ha en validacion comercial; mejora 31-32% sobre testigos.
+                                                         localidades; mejora 31-32%.
+
+INIFAP Delicias, Chihuahua - 16 cultivares               Chino Calera 14.323 t/ha,               Alias AG-05. Rango base 11-16 t/ha en condiciones similares; Coreano destaca mas por calibres grandes.
+                                                         Coreano 13.197, Chino CEDEL
+                                                         13.097; maximos por ciclo 15.2,
+                                                         14.49 y 15.63 t/ha.
+
+Biotecnia / Sonora - variedades evaluadas                Inifap 94 14.7, Tacatzcuaro              Alias AG-02/Jaspeado-regional. Base 11-16 t/ha si ambiente coincide.
+                                                         14.2, Tinguindin 13.6 t/ha
+                                                         en evaluacion.
+
+Lectura:
+- AG-GEN debe ser prudente: 6-13 t/ha si faltan datos; 8-15 si hay riego y fecha razonable.
+- Perla/blanco mejorado puede moverse 12-18 t/ha.
+- Jaspeado mejorado puede moverse 14-24 t/ha, con techo excepcional 26-30 solo si el sistema sostiene ese potencial.
+- Chino/Coreano probado puede moverse 11-16 t/ha.
+- Criollo/regional sin ficha debe ser 5-13 t/ha.
+- Morado debe ser conservador si no hay ficha: 7-14 t/ha, con valor por calidad, no necesariamente por toneladas.
+
+====================================================================
+3. COMO DEBE CALCULAR RENDIMIENTO BIO-G
+====================================================================
+
+Formula conceptual:
+
+rendimiento_comercial_estimado =
+  rendimiento_base_t_ha
+  x factor_semilla_diente
+  x factor_poblacion
+  x factor_vernalizacion
+  x factor_fecha_y_ciclo
+  x factor_manejo_crop_care
+  x factor_sanidad
+  x factor_calidad_curado
+
+produccion_total_kg =
+  rendimiento_comercial_estimado x hectareas x 1000
+
+produccion_comercial =
+  produccion_total_kg - descarte_estimado
+
+Variables clave:
+- rendimiento_base_t_ha: sale de YieldReference por profileId / alias / sistema.
+- factor_semilla_diente: tamano, sanidad, vigor y origen del diente.
+- factor_poblacion: stand logrado vs rango esperado.
+- factor_vernalizacion: frio fisiologico adecuado vs insuficiente.
+- factor_fecha_y_ciclo: fecha correcta para zona/perfil.
+- factor_manejo_crop_care: agua, nutricion, temperatura, suelo, salinidad.
+- factor_sanidad: white rot, Fusarium, nematodos, acaros, Botrytis, roya, trips, virus, etc.
+- factor_calidad_curado: tunica, cuello, humedad, brotacion, curado, dano solar, escobeteado.
+
+Principio de seguridad:
+Si falta profileId, fecha, sistema, semilla o sanidad, BIO-G debe bajar confianza y usar AG-GEN conservador.
+
+Regla de bloqueo:
+Ningun factor positivo debe compensar por completo una vernalizacion fallida, una fecha muy incorrecta, semilla enferma o pudricion blanca activa.
+
+====================================================================
+4. ENTRADAS QUE DEBE PEDIR O RECIBIR EL MOTOR
+====================================================================
+
+Entrada                                  Uso en el motor
+
+area                                     Convertir m2 a hectareas. ha = m2 / 10,000.
+
+profileId                                AG-GEN / AG-01 / AG-02 / AG-03 / AG-04 / AG-05.
+
+varietyAlias                             Orion, San Marqueno, CEZAC 06, Barretero, Chino Calera, Coreano, etc.
+
+garlicType                               blancoPerla / jaspeadoCalera / morado / criollo / chinoCoreano / unknown.
+
+establishmentMode                        clovePlanting / seedStock / unknown. En ajo v1 casi siempre diente.
+
+plantingDate                             Fecha de plantacion. Controla frio, calendario y etapa.
+
+harvestIntent                            freshBulb / dryBulb / seedStock / processing / unknown.
+
+productionSystem                         openFieldIrrigated / drip / furrow / lowInput / homeGarden / unknown.
+
+irrigationSystem                         drip / furrow / sprinkler / manual / unknown.
+
+seedCloveSizeClass                       large / medium / mixed / small / unknown.
+
+seedHealthStatus                         certifiedClean / selectedHealthy / ownSeedMixed / diseasedRisk / unknown.
+
+cloveWeightOrSeedRate                    kg/ha de semilla, peso de diente o clase de semilla.
+
+populationAchieved                       plantas/ha o stand estimado.
+
+densityMode                              plantsPerHa / spacing / seedKgHa / unknown.
+
+vernalizationStatus                      adequate / probablyAdequate / unknown / low / failed.
+
+bulbStage                                vegetative / differentiation / bulbing / filling / maturity / curing / unknown.
+
+cropCareScore                            0-100.
+
+salinityRisk                             low / watch / alert / critical.
+
+waterStressClass                         stable / deficit / excess / alternating / unknown.
+
+diseaseRisk                              low / medium / high / critical.
+
+whiteRotHistory                          none / unknown / present / active.
+
+nematodeRisk                             low / medium / high / unknown.
+
+scapeStatus                              none / removed / present / unknown. Importante en hardneck/jaspeado/morado.
+
+qualityDiscardRisk                       low / medium / high / critical.
+
+curingRisk                               low / medium / high / critical.
+
+storageIntent                            none / short / medium / long / seed / unknown.
+
+confidence                               high / medium / low.
+
+====================================================================
+5. TABLA MAESTRA RECOMENDADA PARA BIO-G
+====================================================================
+
+Rangos para rendimiento comercial aproximado en t/ha. No son techo biologico ni promesa. El rango superior solo se muestra si hay condiciones coherentes.
+
+ID sugerido                       Perfil / alias                     Producto/sistema                  t/ha base       Conf.       Lectura BIO-G
+
+garlic_generic                    AG-GEN                             Bulbo fresco/seco generico        6-13            modeled     Entrada segura. Si hay riego y manejo razonable puede mostrar 8-15 con confianza media.
+
+garlic_low_input                  Bajo insumo / humedad incierta      Campo abierto bajo manejo          3-8             modeled     Para temporal, riego incierto, semilla propia degradada, alta salinidad o sanidad dudosa.
+
+garlic_field_irrigated_generic    AG-GEN + riego declarado            Campo abierto irrigado             8-15            calibrated  Rango generico moderno si hay riego y fecha razonable, sin alias validado.
+
+garlic_white_perla_generic        AG-01 blanco/perla                  Mercado nacional/exportacion       10-17           calibrated  Base para Perla regional, San Marqueno, Diamante, Orion si no se conoce manejo fino.
+
+garlic_orion_perla                AG-01 Orion                         Blanco Perla Aguascalientes        12-16           calibrated  Validacion comercial 13.3-14.7; alto si buen manejo.
+
+garlic_san_marqueno               AG-01 San Marqueno                  Blanco Perla                       14-18           calibrated  Promedio experimental 17; >15 y cercano a 18 con manejo adecuado.
+
+garlic_diamante_perla             AG-01 Diamante                      Blanco Perla                       11-17           modeled     Alias cercano a San Marqueno/Perla si no hay ficha propia completa en BIO-G.
+
+garlic_jaspeado_generic           AG-02 jaspeado/calera               Fresco/seco calidad comercial      11-20           calibrated  Rango fuerte para norte-centro; requiere frio, densidad y manejo.
+
+garlic_cezac06                    AG-02 CEZAC 06                      Jaspeado mejorado                  16-26           calibrated  Puede llegar hasta 30 t/ha. BIO-G solo muestra >26 con sistema intensivo y alta confianza.
+
+garlic_barretero                  AG-02 Barretero                     Jaspeado Zacatecas                 16-24           calibrated  Potencial cercano a 24-26.7; ciclo ~220 dias. No usar techo si fuera de altiplano compatible.
+
+garlic_inifap94                   AG-02 Inifap 94                     Jaspeado/regional                  12-16           calibrated  Evaluacion Sonora/Delicias cercana a 14.7.
+
+garlic_tacatzcuaro_tinguindin     AG-02 Tacatzcuaro/Tinguindin        Regional evaluado                  11-16           calibrated  Evaluaciones alrededor de 13.6-14.2.
+
+garlic_morado_generic             AG-03 morado                        Mercado regional/premium           7-14            modeled     No inflar por precio. Si no hay ficha local, usar rendimiento conservador y calidad alta.
+
+garlic_morado_adapted             AG-03 morado adaptado               Templado/frio con buen manejo      10-17           modeled     Solo si hay historial local positivo o rendimiento previo.
+
+garlic_criollo_regional           AG-04 criollo/regional              Semilla propia/local               5-13            modeled     Puede ser bueno si esta adaptado, pero alta variabilidad por sanidad y semilla.
+
+garlic_criollo_selected           AG-04 criollo seleccionado          Regional con seleccion de semilla  8-15            modeled     Para productores que seleccionan diente sano y lote adaptado.
+
+garlic_chino_coreano_generic      AG-05 chino/coreano                 Comercial                          10-16           calibrated  Basado en evaluaciones de Chino Calera/Coreano/Chino CEDEL.
+
+garlic_chino_calera               AG-05 Chino Calera                  Comercial                          12-16           calibrated  Promedio evaluado 14.323; maximos por ciclo ~15+.
+
+garlic_coreano                    AG-05 Coreano                       Comercial/calibre grande           11-16           calibrated  Promedio 13.197; mayor porcentaje de bulbos grandes en Delicias.
+
+garlic_chino_cedel                AG-05 Chino CEDEL                   Comercial                          11-16           calibrated  Promedio 13.097 en evaluacion Delicias.
+
+garlic_processing_intensive       Proceso / gran escala               Procesamiento / field-run          12-22           calibrated  Basado en OSU/Rutgers. Puede ser mas field-run que comercial curado.
+
+garlic_seed_stock                 Produccion de semilla               Diente/semilla sana                6-14            modeled     Calidad sanitaria pesa mas que tonelaje. No maximizar toneladas si se busca semilla.
+
+garlic_exceptional_intensive      Intensivo alta confianza            Goteo, semilla mejorada, sanidad   20-30           conditional Solo CEZAC/Barretero u otro alias con evidencia + manejo intensivo + baja sanidad/salinidad.
+
+Regla:
+El sistema puede guardar valores maximos tecnicos, pero la UX debe mostrar rangos prudentes. Para no decepcionar al agricultor, el default debe estar cerca del rendimiento comercial probable, no del record experimental.
+
+====================================================================
+6. RESOLUCION OBLIGATORIA POR TIPO UX, PERFIL Y ALIAS
+====================================================================
+
+Tipo UX visible                 Perfil BIO-G       Alias representativos                                  YieldReference base                 Regla
+
+No se / Otro ajo                AG-GEN             generico, no se, otra variedad                          garlic_generic                      Conservador, migrable y baja-media confianza.
+
+Ajo blanco / Perla              AG-01              Orion, San Marqueno, Diamante, Perla, Blanco de Egipto  garlic_white_perla_generic          Resolver alias si existe. No confundir Perla local con Orion si usuario no lo dice.
+
+Orion                           AG-01              Orion INIFAP tipo Perla                                garlic_orion_perla                  Rango 12-16. Si cropCare alto y region Aguascalientes compatible, puede subir ligeramente.
+
+San Marqueno                    AG-01              San Marqueno / San Marqueño                            garlic_san_marqueno                 Rango 14-18 si zona/manejo coinciden.
+
+Diamante                        AG-01              Diamante                                                garlic_diamante_perla               Rango modelado 11-17 si no hay ficha propia completa.
+
+Ajo jaspeado / Calera           AG-02              CEZAC 06, Barretero, Jaspeado Calera, Inifap 94         garlic_jaspeado_generic             Alto potencial, pero muy dependiente de region, densidad, frio y sanidad.
+
+CEZAC 06                        AG-02              CEZAC 06                                                garlic_cezac06                      Techo alto. Mostrar >26 solo con alta confianza.
+
+Barretero                       AG-02              Barretero                                               garlic_barretero                    Techo alto para Zacatecas/altiplano compatible.
+
+Inifap 94                       AG-02              INIFAP 94 / Inifap 94                                  garlic_inifap94                     Evaluado alrededor de 14.7 t/ha.
+
+Tacatzcuaro / Tinguindin        AG-02              Tacatzcuaro, Tinguindin                                garlic_tacatzcuaro_tinguindin       Evaluados cerca de 13.6-14.2.
+
+Ajo morado                      AG-03              morado, morado regional, morado gigante                 garlic_morado_generic               Si no hay ficha, no inflar rendimiento; usar calidad visual/premium.
+
+Ajo criollo / regional          AG-04              criollo regional, semilla propia, material local        garlic_criollo_regional             Alta variabilidad. Puede migrar a selected si usuario selecciona semilla.
+
+Criollo seleccionado            AG-04              criollo seleccionado / semilla sana                     garlic_criollo_selected             Usar solo si usuario declara seleccion y lote sano.
+
+Ajo chino / coreano             AG-05              Chino Calera, Chino CEDEL, Coreano                      garlic_chino_coreano_generic        Resolver alias.
+
+Chino Calera                    AG-05              Chino Calera                                            garlic_chino_calera                 Rango 12-16.
+
+Coreano                         AG-05              Coreano                                                 garlic_coreano                      Rango 11-16; calidad/calibre puede pesar mas que tonelaje.
+
+Chino CEDEL                     AG-05              Chino CEDEL                                             garlic_chino_cedel                  Rango 11-16.
+
+Proceso / industria             Cualquier perfil   proceso, deshidratado, industrial                       garlic_processing_intensive         Puede usar field-run, pero mostrar neto si hay descarte.
+
+Semilla propia                  AG-04/seed         semilla, diente para plantar                            garlic_seed_stock                   Calidad sanitaria > toneladas.
+
+====================================================================
+7. PROBABILIDAD PRODUCTIVA POR RANGOS
+====================================================================
+
+BIO-G no debe decir "vas a producir X toneladas". Debe decir "con los datos actuales, el rango probable es...". La probabilidad puede ser cualitativa.
+
+7.1 Bandas de rendimiento comercial
+
+Banda BIO-G                         Rango t/ha          Interpretacion
+
+Falla / muy bajo                    <3                  Perdida severa, stand malo, semilla enferma, pudricion, vernalizacion fallida o cosecha no comercial.
+
+Bajo                                3-6                 Bajo insumo, temporal, mala fecha, semilla chica/mal seleccionada, salinidad, enfermedad o manejo incompleto.
+
+Conservador                         6-10                Lote generico con riego limitado o manejo basico; tambien AG-GEN con poca informacion.
+
+Comercial normal                    10-15               Rango muy comun para campo irrigado con manejo razonable y semilla aceptable.
+
+Comercial alto                      15-20               Variedad adaptada, buen manejo, riego estable, sanidad y curado aceptable.
+
+Alto intensivo                      20-26               Material mejorado/validado, densidad, fertirriego, sanidad y region compatible.
+
+Excepcional                         26-30               Solo casos como CEZAC 06/Barretero/alto manejo. No default. Requiere alta confianza.
+
+No mostrar sin evidencia            >30                 No recomendado para BIO-G v1 salvo ficha local validada y rendimiento historico del usuario.
+
+7.2 Probabilidad por nivel de informacion
+
+Informacion disponible                                      Probabilidad/resolucion
+
+Solo cultivo "ajo"                                          AG-GEN 6-13 t/ha, baja-media confianza.
+
+Ajo + riego + fecha                                         garlic_field_irrigated_generic 8-15 t/ha, media confianza.
+
+Ajo + perfil especifico, sin alias                          Usar tabla de perfil, confianza media.
+
+Ajo + alias validado + region compatible                    Usar alias, confianza media-alta.
+
+Ajo + alias validado + historial del productor              Usar alias + rendimiento historico como ancla, confianza alta.
+
+Ajo + semilla propia sin seleccion sanitaria                Bajar 15-40% el rango y subir riesgo sanitario.
+
+Ajo + white rot / nematodos / Fusarium activo               Capar rendimiento fuerte; posible banda baja aunque el cultivo se vea vigoroso.
+
+Ajo + vernalizacion insuficiente o plantacion muy tardia    Reducir factor 0.25-0.70; no permitir rendimiento alto.
+
+Ajo + curado deficiente / lluvia tardia                     Reducir rendimiento comercial aunque field-run sea alto.
+
+====================================================================
+8. FACTORES NUMERICOS SUGERIDOS PARA MOTOR
+====================================================================
+
+8.1 Factor por semilla / diente
+
+Condicion                                          Factor sugerido     Regla
+
+Diente grande, sano, seleccionado                   0.95-1.10           Base fuerte. Puede mejorar calibre.
+Diente mediano, sano                                0.85-1.00           Aceptable.
+Mezcla de tamanos                                   0.75-0.95           Menos uniformidad.
+Diente chico predominante                           0.55-0.85           Baja calibre y stand.
+Semilla propia sin seleccion                         0.60-0.90           Alta incertidumbre.
+Semilla con sintomas / acaros / pudricion            0.20-0.65           Riesgo fuerte; no prometer.
+Semilla certificada o sanitaria confiable            1.00-1.10           Sube confianza, no garantiza techo.
+
+8.2 Factor por poblacion / stand
+
+Referencia:
+DAG/HORT-014 reporta 250,000 a 500,000 plantas/ha y 800-1000 kg de semilla tratada/ha para ajo en sistemas de Sonora. Otros sistemas intensivos pueden usar poblaciones mayores, pero BIO-G v1 debe ser prudente si no hay ficha local.
+
+Condicion                                    Factor sugerido
+
+Stand dentro del rango objetivo              0.95-1.05
+10-25% bajo el minimo                         0.75-0.95
+>25% bajo el minimo                           0.45-0.75
+Densidad alta coherente con proceso/intensivo 0.95-1.10
+Densidad alta sin agua/nutricion/sanidad      0.75-0.95 y bajar calibre
+Densidad muy baja                             0.40-0.75 aunque el bulbo individual sea grande
+
+Regla:
+En ajo, cada planta produce una cabeza. La compensacion por tamaño individual existe, pero no elimina la perdida de stand.
+
+8.3 Factor por vernalizacion / frio fisiologico
+
+Condicion                              Factor sugerido       Regla
+
+Adecuada / confirmada                  0.95-1.05             Permite rango normal.
+Probablemente adecuada                 0.85-1.00             Confidence media.
+Desconocida                            0.70-0.95             No mostrar techo alto.
+Baja                                   0.45-0.80             Bulbo chico o mala division.
+Fallida / incompatible                 0.15-0.50             No prometer rendimiento comercial alto.
+
+Regla:
+El frio fisiologico no se corrige con fertilizacion tardia. Si el perfil no recibio frio suficiente, el motor debe limitar el potencial aunque NPK y riego sean buenos.
+
+8.4 Factor por fecha de plantacion
+
+Condicion                                   Factor sugerido
+
+Fecha optima regional                        0.95-1.05
+Fecha aceptable                              0.85-1.00
+Fecha tardia moderada                        0.65-0.90
+Fecha muy tardia                             0.35-0.75
+Fecha temprana con exceso de vigor/escobeteado 0.70-0.95
+Fecha desconocida                            0.75-0.95 y confidence baja
+
+Nota:
+En estudios de Delicias se observo que retrasos de fecha pueden bajar rendimiento por dia en cultivares como Cristal y Perla. Por eso la fecha debe entrar como factor real, no solo como texto.
+
+8.5 Factor por Crop Care Score
+
+score 90-100     factor 1.00-1.12     Solo si no hay vernalizacion fallida ni enfermedad fuerte.
+score 75-89      factor 0.88-1.00     Buen cultivo.
+score 60-74      factor 0.70-0.88     Observacion.
+score 45-59      factor 0.50-0.70     Alerta.
+score <45        factor 0.20-0.50     Critico.
+
+8.6 Factor por sanidad
+
+Riesgo sanitario bajo                       0.90-1.00
+Riesgo medio                                0.70-0.90
+Riesgo alto                                 0.40-0.70
+Riesgo critico                              0.10-0.40
+White rot activo                            0.05-0.35 y alerta fuerte
+Nematodo de tallo/bulbo alto                0.20-0.60
+Acaro de bulbo / semilla infestada           0.30-0.70
+Fusarium basal / pudricion basal             0.25-0.70
+Roya/mancha foliar severa antes de llenado   0.50-0.85
+
+8.7 Factor por agua / salinidad
+
+Humedad estable en diferenciacion/llenado     0.95-1.05
+Deficit moderado                              0.70-0.90
+Deficit severo en llenado                     0.40-0.75
+Exceso humedad / anoxia                       0.45-0.80
+Alternancia seco-saturado                     0.55-0.85
+Salinidad baja                                0.95-1.00
+Salinidad observacion                         0.80-0.95
+Salinidad alerta                              0.60-0.85
+Salinidad critica                             0.25-0.60
+
+8.8 Factor por escapo floral / canutos / escobeteado
+
+Condicion                                   Factor sugerido
+
+Hardneck con escapo retirado a tiempo         0.95-1.05
+Hardneck con escapo presente no retirado      0.80-0.95
+Escobeteado/canutos activos                   0.45-0.80
+Exceso N + baja densidad + siembra temprana   subir riesgo escobeteado y bajar calidad
+
+Nota:
+En tipos que producen escapo, retirar el escapo puede mejorar el peso de bulbo. BIO-G debe usarlo como evento de manejo, especialmente en jaspeados/morados/cuello duro.
+
+8.9 Factor por curado / calidad comercial
+
+Curado bueno, tunica sana, cuello seco         0.95-1.05
+Curado irregular                               0.80-0.95
+Lluvia/riego tardio cerca de cosecha           0.60-0.85
+Bulbos abiertos, tunica mala, dientes expuestos 0.40-0.75
+Pudricion / moho / humedad excesiva             0.15-0.60
+Dano solar / quemadura                          0.50-0.85
+Brotacion en almacenamiento                     descontar como descarte comercial
+
+====================================================================
+9. CALIBRE, CALIDAD Y RENDIMIENTO UTIL
+====================================================================
+
+El rendimiento comercial de ajo no se debe medir solo por peso. El mercado paga forma, calibre, tunica, sanidad, color y curado.
+
+Criterios de calidad:
+- Bulbo bien formado.
+- Dientes definidos.
+- Tunicas completas.
+- Sin dientes descubiertos.
+- Sin escobeteado/canutos.
+- Sin pudriciones.
+- Sin moho.
+- Sin germinacion.
+- Sin malos olores.
+- Sin humedad excesiva.
+- Sin dano solar.
+- Cuello y raices bien manejados.
+- Calibre segun mercado.
+
+Calibres de referencia exportacion segun DAG/HORT-014:
+- Flor: 1 7/8 pulgadas.
+- Gigante: 2 pulgadas.
+- Jumbo: 2 1/4 pulgadas.
+- X-Jumbo: 2 1/2 pulgadas.
+- S-Jumbo: 2 3/4 pulgadas.
+- Colosal: 3 pulgadas.
+- S-Colosal: >3 pulgadas.
+
+Uso BIO-G:
+- Si el usuario captura calibre, ajustar qualityFactor.
+- Si el usuario declara exportacion, subir exigencia de curado/calidad y descontar mas por defectos.
+- Si declara mercado local, tolerancia comercial puede ser mayor, pero no eliminar sanidad.
+
+====================================================================
+10. REGLAS POR PERFIL BIO-G
+====================================================================
+
+AG-GEN
+--------------------------------------------------------------------
+Rango base: 6-13 t/ha.
+Con riego y fecha razonable: 8-15 t/ha.
+No asume color, cuello duro/blando, variedad, calibre premium ni sistema intensivo.
+Mensaje:
+"Usaremos una estimacion prudente porque todavia no sabemos tipo, semilla, fecha, riego ni sanidad. En ajo, esos datos cambian mucho el rendimiento."
+
+AG-01 Ajo blanco / Perla
+--------------------------------------------------------------------
+Rango base: 10-17 t/ha.
+Alias fuertes:
+- Orion: 12-16 t/ha.
+- San Marqueno: 14-18 t/ha.
+- Diamante: 11-17 t/ha modelado.
+- Perla regional: 8-15 t/ha si no hay ficha.
+Factores:
+- Muy sensible a semilla sana, fecha, riego y manejo de N.
+- Buen candidato para mercado/exportacion si calibre/tunica/curado son buenos.
+Mensaje:
+"El ajo blanco/perla puede dar buen rendimiento comercial, pero depende mucho de semilla sana, fecha correcta y curado limpio."
+
+AG-02 Ajo jaspeado / Calera / rayado
+--------------------------------------------------------------------
+Rango base: 11-20 t/ha.
+Alias fuertes:
+- CEZAC 06: 16-26 t/ha; techo 30 t/ha solo condicional.
+- Barretero: 16-24 t/ha; potencial cercano a 24-26.7 t/ha.
+- Inifap 94: 12-16 t/ha.
+- Tacatzcuaro/Tinguindin: 11-16 t/ha.
+Factores:
+- Mejor potencial en norte-centro/altiplano compatible.
+- Puede tener escapo floral; manejar/remover si aplica.
+- Deficit hidrico y compactacion bajan calibre.
+Mensaje:
+"El jaspeado puede tener alto potencial, pero solo si la zona, el frio, la densidad y el riego lo sostienen."
+
+AG-03 Ajo morado
+--------------------------------------------------------------------
+Rango base: 7-14 t/ha.
+Morado adaptado con historial: 10-17 t/ha.
+Factores:
+- Usar conservador si no hay ficha local.
+- Puede valer por calidad/sabor/nicho, no necesariamente por toneladas.
+- Sensible a calor temprano y lluvias tardias.
+Mensaje:
+"El ajo morado puede ser premium por calidad, pero BIO-G no debe inflar toneladas si no hay ficha local o historial del lote."
+
+AG-04 Ajo criollo / regional
+--------------------------------------------------------------------
+Rango base: 5-13 t/ha.
+Criollo seleccionado/sano: 8-15 t/ha.
+Factores:
+- Puede estar muy adaptado localmente.
+- Puede estar degradado por semilla propia, virus, acaros, nematodos o pudriciones.
+- El historial del productor es clave.
+Mensaje:
+"El criollo puede funcionar muy bien si la semilla esta sana y adaptada, pero es el perfil con mas incertidumbre."
+
+AG-05 Ajo chino / coreano
+--------------------------------------------------------------------
+Rango base: 10-16 t/ha.
+Alias:
+- Chino Calera: 12-16 t/ha.
+- Coreano: 11-16 t/ha, con posible ventaja en calibres grandes.
+- Chino CEDEL: 11-16 t/ha.
+Factores:
+- En Delicias, estos materiales estuvieron entre los mas rendidores.
+- Requieren adaptacion y sanidad.
+Mensaje:
+"Los materiales chino/coreano pueden rendir bien, pero la estimacion debe depender de fecha, region, agua y sanidad real."
+
+====================================================================
+11. REGLAS DE RESOLUCION PARA YieldProjectionSetupScreen
+====================================================================
+
+Condicion                                                                 YieldReference recomendado
+
+crop == garlic, profileId desconocido                                      garlic_generic
+AG-GEN sin datos de riego/fecha                                             garlic_generic
+AG-GEN + riego + fecha razonable                                            garlic_field_irrigated_generic
+AG-GEN + bajo insumo / temporal / humedad incierta                          garlic_low_input
+AG-01 blanco/perla sin alias                                                garlic_white_perla_generic
+AG-01 + Orion                                                               garlic_orion_perla
+AG-01 + San Marqueno                                                        garlic_san_marqueno
+AG-01 + Diamante                                                            garlic_diamante_perla
+AG-02 jaspeado/calera sin alias                                             garlic_jaspeado_generic
+AG-02 + CEZAC 06                                                            garlic_cezac06
+AG-02 + Barretero                                                           garlic_barretero
+AG-02 + Inifap 94                                                           garlic_inifap94
+AG-02 + Tacatzcuaro/Tinguindin                                              garlic_tacatzcuaro_tinguindin
+AG-03 morado sin ficha                                                      garlic_morado_generic
+AG-03 morado + historial local positivo                                     garlic_morado_adapted
+AG-04 criollo/regional                                                      garlic_criollo_regional
+AG-04 criollo + semilla seleccionada sana                                   garlic_criollo_selected
+AG-05 chino/coreano sin alias                                               garlic_chino_coreano_generic
+AG-05 + Chino Calera                                                        garlic_chino_calera
+AG-05 + Coreano                                                             garlic_coreano
+AG-05 + Chino CEDEL                                                         garlic_chino_cedel
+Cualquier perfil + proceso/deshidratado/industria                           garlic_processing_intensive
+Cualquier perfil + semilla para plantar                                     garlic_seed_stock
+Alias mejorado + manejo intensivo + alta confianza + historial alto         garlic_exceptional_intensive
+
+Regla:
+Si el alias no esta en la lista, resolver por tipo UX. Si tampoco hay tipo, usar AG-GEN. No inventar rendimiento varietal.
+
+====================================================================
+12. RECOMENDACION DIRECTA PARA CODIGO
+====================================================================
+
+Crear o extender familias de rendimiento:
+
+YieldFamily.garlicBulbFresh
+YieldFamily.garlicPremiumCured
+YieldFamily.garlicProcessing
+YieldFamily.garlicSeedStock
+YieldFamily.garlicLowInput
+
+Parametros sugeridos:
+
+YieldFamily.garlicBulbFresh:
+- managementGamma: 1.35
+- managementFloor: 0.20
+- seedQualityRequired: high
+- vernalizationSensitive: true
+- curingRequired: medium
+
+YieldFamily.garlicPremiumCured:
+- managementGamma: 1.45
+- managementFloor: 0.18
+- qualityRequired: veryHigh
+- curingRequired: true
+- discardSensitivity: high
+
+YieldFamily.garlicProcessing:
+- managementGamma: 1.20
+- managementFloor: 0.25
+- fieldRunAllowed: true
+- qualityRequired: medium
+- curingRequired: medium
+
+YieldFamily.garlicSeedStock:
+- managementGamma: 1.30
+- managementFloor: 0.20
+- healthRequired: veryHigh
+- yieldNotMainObjective: true
+- storageRequired: true
+
+YieldFamily.garlicLowInput:
+- managementGamma: 1.10
+- managementFloor: 0.18
+- qualityRequired: medium
+- confidenceDefault: low
+
+Campos sugeridos para modelo:
+
+Campo                                  Tipo sugerido                                      Uso
+
+profileId                              AG-GEN / AG-01 / AG-02 / AG-03 / AG-04 / AG-05      Resolver rango.
+varietyAlias                           String?                                             Resolver alias.
+yieldReferenceId                       String                                             Referencia base.
+garlicType                             enum                                                Tipo UX.
+seedHealthStatus                       enum                                                Factor semilla.
+seedCloveSizeClass                     enum                                                Factor calibre inicial.
+populationAchieved                     double?                                             Stand.
+vernalizationStatus                    enum                                                Limitante fuerte.
+plantingDateQuality                    enum                                                Fecha compatible.
+waterStressClass                       enum                                                Factor agua.
+salinityRisk                           enum                                                Factor CE.
+diseaseRisk                            enum                                                Factor sanidad.
+scapeStatus                            enum                                                Factor escapo/canutos.
+curingRisk                             enum                                                Descarte.
+qualityDiscardRisk                     enum                                                Comercial neto.
+marketUse                              enum                                                Fresco/seco/proceso/semilla.
+confidence                             enum                                                Salida transparente.
+
+====================================================================
+13. MENSAJES BIO-G SUGERIDOS PARA UX
+====================================================================
+
+Situacion                              Mensaje farmer-friendly
+
+AG-GEN                                 Usaremos una estimacion prudente porque todavia no sabemos tipo, semilla, fecha ni sistema. Puedes afinarla despues sin perder historial.
+
+Alias validado                          La variedad ayuda a ubicar el potencial, pero el rendimiento real dependera de semilla sana, frio, agua, sanidad y curado.
+
+Orion                                   Orion tiene buen soporte regional como ajo blanco tipo Perla. Usaremos un rango comercial realista y lo ajustaremos con manejo y sanidad.
+
+San Marqueno                            San Marqueno puede tener buen potencial, pero requiere zona compatible y semilla sana para sostener calibres comerciales.
+
+CEZAC 06                                CEZAC 06 puede alcanzar rendimientos altos bajo manejo fuerte. No mostraremos techo alto si falta riego, densidad, sanidad o fecha correcta.
+
+Barretero                               Barretero es un jaspeado de alto potencial en ambiente compatible. Si falta frio o hay compactacion, el techo baja.
+
+Ajo morado                              El ajo morado puede tener valor por calidad, pero no siempre por toneladas. BIO-G usara un rango prudente hasta tener historial local.
+
+Criollo                                 El criollo puede estar muy adaptado, pero tambien puede traer incertidumbre sanitaria. La seleccion de semilla cambia mucho el rango.
+
+Chino/Coreano                            Este grupo puede rendir bien, pero se ajusta por fecha, region y calibre logrado. No se asume alto rendimiento solo por el nombre.
+
+Semilla chica                            El diente pequeno reduce vigor, uniformidad y calibre. El rango probable baja aunque el manejo sea bueno.
+
+Semilla enferma                          La sanidad del diente limita el rendimiento desde el inicio. Conviene revisar origen, pudriciones, acaros y nematodos.
+
+Frio insuficiente                        Si no se cumple el frio fisiologico, el ajo puede no diferenciar bien la cabeza. Fertilizar mas no corrige esa falla.
+
+Riego irregular                          La humedad irregular durante llenado puede reducir calibre y calidad. El rendimiento comercial baja aunque haya muchas plantas.
+
+Curado malo                              El peso en campo no siempre llega a venta. Si el curado falla, aumenta descarte por moho, brotacion, humedad o tunica mala.
+
+Rendimiento alto                         El rango alto solo se activa cuando coinciden variedad adaptada, semilla sana, riego estable, sanidad, nutricion, fecha y curado.
+
+====================================================================
+14. REGLAS DE NO SOBRE-PROMETER
+====================================================================
+
+- No usar el techo de CEZAC 06 o Barretero para todo ajo jaspeado.
+- No usar rendimiento de San Marqueno para todo ajo blanco/perla.
+- No asumir que "chino" siempre rinde mas.
+- No asumir que ajo morado rinde mas por ser premium.
+- No comparar field-run con rendimiento comercial curado.
+- No contar bulbo enfermo, abierto o mal curado como rendimiento vendible.
+- No subir rendimiento solo porque Crop Care es alto si vernalizacion fue baja.
+- No subir rendimiento solo por NPK bueno si la semilla esta enferma.
+- No dar rango alto si no hay fecha de plantacion.
+- No dar rango alto si no hay sanidad de semilla.
+- No dar rango alto con CE alta o anoxia.
+- No prometer almacenamiento largo con curado deficiente.
+- No borrar historial cuando AG-GEN migra a AG-01..AG-05.
+- No usar hidroponia/sustrato en v1.
+- No resolver cada variedad desconocida como motor independiente.
+
+====================================================================
+15. FUENTES Y TRAZABILIDAD
+====================================================================
+
+S1. Universidad de Sonora. Zamora, E. 2016. El cultivo del ajo. Serie guias - produccion de hortalizas DAG/HORT-014.
+Uso BIO-G: rendimiento Mexico/Sonora/Aguascalientes/Sierra Sonora/California; densidad 250k-500k plantas/ha; semilla 800-1000 kg/ha; riego; cosecha; calibres; sanidad y escobeteado.
+Documento PDF aportado por el usuario: AJO-DAG-HORT-014.pdf
+
+S2. Oregon State University. Garlic. College of Agricultural Sciences / Oregon Vegetables.
+Uso BIO-G: rango comercial 5,000-17,000 lb/acre; dependencia de fecha, poblacion, tamano/calidad de semilla; manejo de riego; curado; scape removal.
+URL: https://horticulture.oregonstate.edu/oregon-vegetables/garlic-1
+
+S3. Rutgers NJAES. Ultra-Niche Crops Series: Garlic for Small Commercial Growers.
+Uso BIO-G: rango tipico 6,000-12,000 lb/acre; procesadores grandes hasta 20,000 lb/acre; cosecha; curado; enfermedades y stock sano.
+URL: https://njaes.rutgers.edu/fs1289/
+
+S4. INIFAP / Revista Mexicana de Ciencias Agricolas. CEZAC 06: nueva variedad de ajo tipo Jaspeado para la region norte centro de Mexico.
+Uso BIO-G: alias CEZAC 06; mejora 9-17%; hasta 30 t/ha en parcelas comerciales.
+URL: https://cienciasagricolas.inifap.gob.mx/index.php/agricolas/article/view/1647
+
+S5. INIFAP / Gobierno de Mexico. Barretero, variedad de ajo jaspeado para Zacatecas.
+Uso BIO-G: alias Barretero; ciclo 220 dias; potencial alto cercano a 24-26.7 t/ha segun fuentes INIFAP.
+URL: https://www.gob.mx/inifap/prensa/barreteo-variedad-de-ajo-jaspeado-para-zacatecas
+URL alternativa PDF: https://www.scielo.org.mx/pdf/remexca/v8n6/2007-0934-remexca-8-06-1455.pdf
+
+S6. INIFAP Norte Centro. Orion, variedad de ajo tipo Perla.
+Uso BIO-G: alias Orion; ajo blanco Perla; 210 dias; 12.9 dientes/bulbo; rendimientos 13.331 y 14.747 kg/ha en validacion; mejora 31-32%.
+URL: https://www.inifap-nortecentro.gob.mx/nodos/tecnologias_adoptadas/2018/%E2%80%9CORI%C3%93N%E2%80%9D%20VARIEDAD%20DE%20AJO%20TIPO%20PERLA.pdf
+
+S7. Hortalizas / INIFAP. Ajo desarrollado por INIFAP en Aguascalientes - San Marqueno.
+Uso BIO-G: alias San Marqueno; tipo Perla; 210 dias; 14 dientes; >15 t/ha, cercano a 18 t/ha con manejo, promedio experimental 17 t/ha.
+URL: https://www.hortalizas.com/semillas/ajo-desarrollado-por-inifap-en-aguascalientes/
+
+S8. Acosta-Rodriguez et al. 2008. Crecimiento y rendimiento de cultivares de ajo en Delicias, Chihuahua, Mexico. Agricultura Tecnica en Mexico / SciELO.
+Uso BIO-G: Chino Calera 14.323 t/ha, Coreano 13.197, Chino CEDEL 13.097; maximos por ciclo; efecto de fecha; calidad/calibre.
+URL: https://www.scielo.org.mx/scielo.php?pid=S0568-25172008000200005&script=sci_arttext
+
+S9. Macias-Duarte et al. 2010. Productividad y calidad de variedades de ajo. Biotecnia / Universidad de Sonora.
+Uso BIO-G: Inifap 94 14.7, Tacatzcuaro 14.2, Tinguindin 13.6 t/ha; variabilidad por variedad.
+URL: https://biotecnia.unison.mx/index.php/biotecnia/article/download/65/60/132
+
+S10. Blog Agricultura con datos SADER-DGSIAP. Estadisticas de produccion de ajo en Mexico.
+Uso BIO-G: referencia estadistica reciente 2024: produccion, superficie, rendimiento promedio nacional y Zacatecas. Usar como referencia secundaria; verificar con SIAP al implementar.
+URL: https://blogagricultura.com/estadisticas-ajo-mexico/
+
+S11. BIO-G. Perfil Universal Ajo v2 mejorado, Perfil Generico AG-GEN/SKIP v2 mejorado, Guia de Fertilizacion Ajo v1.1 reforzada.
+Uso BIO-G: arquitectura crop_garlic, perfiles AG-GEN/AG-01..AG-05, vernalizacion, etapa, NPK, agua, sanidad y reglas de no sobre-modelar.
+
+====================================================================
+16. CIERRE DE PRODUCTO
+====================================================================
+
+La calculadora de rendimiento de ajo queda lista conceptualmente para BIO-G v1 si se integra con referencias por perfil/alias, semilla, poblacion, vernalizacion, fecha, agua, sanidad y curado.
+
+La prioridad para codigo es:
+1. Resolver AG-GEN/AG-01..AG-05.
+2. Resolver alias conocidos a YieldReference.
+3. Separar field-run de rendimiento comercial.
+4. Usar vernalizacion y semilla sana como limitantes fuertes.
+5. No mostrar techos de 20-30 t/ha sin alta confianza.
+6. Descontar descarte por curado, pudricion, bulbo abierto, escobeteado y calibre.
+7. Guardar historial y recalcular futuro sin reiniciar cultivo.
+
+Frase final:
+"En ajo, el rendimiento empieza en el diente, se decide con el frio, se construye con hoja y agua, se llena con bulbo sano y se gana de verdad en el curado."

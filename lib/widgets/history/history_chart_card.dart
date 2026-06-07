@@ -35,10 +35,10 @@ class HistoryChartCard extends StatelessWidget {
   });
 
   final String? title;
-  final List<double> values;
+  final List<double?> values;
   final List<String> days;
 
-  final double currentValue;
+  final double? currentValue;
 
   final String Function(double)? valueFormatter;
   final bool isPercentScale;
@@ -73,16 +73,22 @@ class HistoryChartCard extends StatelessWidget {
             builder: (context, c) {
               final size = Size(c.maxWidth, 210);
 
-              final double effectiveCurrent = currentValue.toDouble();
+              final double? effectiveCurrent = currentValue;
 
-              final List<double> drawValues = _valuesWithLastAsCurrent(
+              final List<double?> drawValues = _valuesWithLastAsCurrent(
                 values,
                 effectiveCurrent,
               );
+              final List<double> existingValues = drawValues
+                  .whereType<double>()
+                  .toList();
+              final double zoomCenter =
+                  effectiveCurrent ??
+                  (existingValues.isNotEmpty ? existingValues.last : 0.0);
 
               final yRange = _resolveZoomRange(
                 values: drawValues,
-                current: effectiveCurrent,
+                current: zoomCenter,
                 radius: zoomRadius,
                 minSpan: minSpan,
                 fullIfSpanOver: forceFullRangeIfSpanOver,
@@ -108,7 +114,9 @@ class HistoryChartCard extends StatelessWidget {
                   .clamp(8.0, size.height - 60)
                   .toDouble();
 
-              final bubbleText = fmt(effectiveCurrent);
+              final bubbleText = effectiveCurrent == null
+                  ? null
+                  : fmt(effectiveCurrent);
 
               return Stack(
                 children: [
@@ -128,7 +136,7 @@ class HistoryChartCard extends StatelessWidget {
                       child: const SizedBox.expand(),
                     ),
                   ),
-                  if (geom.basePoints.isNotEmpty)
+                  if (bubbleText != null && geom.basePoints.isNotEmpty)
                     Positioned(
                       left: bubbleLeft,
                       top: bubbleTop,
@@ -151,7 +159,7 @@ class HistoryChartCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            fmt(currentValue.toDouble()),
+            currentValue == null ? '--' : fmt(currentValue!),
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
@@ -163,18 +171,18 @@ class HistoryChartCard extends StatelessWidget {
     );
   }
 
-  static List<double> _valuesWithLastAsCurrent(
-    List<double> src,
-    double current,
+  static List<double?> _valuesWithLastAsCurrent(
+    List<double?> src,
+    double? current,
   ) {
-    if (src.length < 2) return src;
-    final out = List<double>.from(src);
+    if (src.isEmpty || current == null) return src;
+    final out = List<double?>.from(src);
     out[out.length - 1] = current;
     return out;
   }
 
   RangeValues _resolveZoomRange({
-    required List<double> values,
+    required List<double?> values,
     required double current,
     required double radius,
     required double minSpan,
@@ -194,9 +202,10 @@ class HistoryChartCard extends StatelessWidget {
     double lo = current - half;
     double hi = current + half;
 
-    if (values.isNotEmpty) {
-      final minV = values.reduce((a, b) => a < b ? a : b);
-      final maxV = values.reduce((a, b) => a > b ? a : b);
+    final List<double> existingValues = values.whereType<double>().toList();
+    if (existingValues.isNotEmpty) {
+      final minV = existingValues.reduce((a, b) => a < b ? a : b);
+      final maxV = existingValues.reduce((a, b) => a > b ? a : b);
       final span = (maxV - minV).abs();
 
       if (isPercentScale && span >= fullIfSpanOver) {
@@ -388,27 +397,27 @@ class _ChevronPainter extends CustomPainter {
 
 class _ChartGeometry {
   final Size size;
-  final Rect plot;
-  final List<Offset> basePoints;
-  final List<Offset> smoothPoints;
+  late final Rect plot;
+  late final List<Offset> basePoints;
+  late final List<Offset> smoothPoints;
   final double yMin;
   final double yMax;
 
   _ChartGeometry({
     required this.size,
-    required List<double> values,
+    required List<double?> values,
     required this.yMin,
     required this.yMax,
-  }) : plot = _plotRect(size),
-       basePoints = values.length >= 2
-           ? _toPoints(_plotRect(size), values, yMin, yMax)
-           : const <Offset>[],
-       smoothPoints = values.length >= 2
-           ? _sampleSmooth(
-               _toPoints(_plotRect(size), values, yMin, yMax),
-               samplesPerSegment: 40,
-             )
-           : const <Offset>[];
+  }) {
+    plot = _plotRect(size);
+    basePoints = _toValidPoints(
+      plot,
+      values,
+      yMin,
+      yMax,
+    );
+    smoothPoints = _sampleSmooth(basePoints, samplesPerSegment: 40);
+  }
 
   static Rect _plotRect(Size size) {
     const leftPad = 42.0;
@@ -423,22 +432,28 @@ class _ChartGeometry {
     );
   }
 
-  static List<Offset> _toPoints(
+  static List<Offset> _toValidPoints(
     Rect plot,
-    List<double> values,
+    List<double?> values,
     double yMin,
     double yMax,
   ) {
-    final dx = plot.width / (values.length - 1);
-    final span = (yMax - yMin).abs().clamp(0.0001, 99999999.0);
+    if (values.isEmpty) return const <Offset>[];
 
-    return List.generate(values.length, (i) {
+    final dx = values.length == 1 ? 0.0 : plot.width / (values.length - 1);
+    final span = (yMax - yMin).abs().clamp(0.0001, 99999999.0);
+    final List<Offset> points = <Offset>[];
+
+    for (int i = 0; i < values.length; i++) {
       final v = values[i];
+      if (v == null) continue;
       final t = ((v - yMin) / span).clamp(0.0, 1.0);
       final y = plot.bottom - (t * plot.height);
-      final x = plot.left + dx * i;
-      return Offset(x, y);
-    });
+      final x = values.length == 1 ? plot.center.dx : plot.left + dx * i;
+      points.add(Offset(x, y));
+    }
+
+    return points;
   }
 
   static List<Offset> _sampleSmooth(
@@ -499,6 +514,20 @@ class _ChartGeometry {
 
 class _HistoryChartPainter extends CustomPainter {
   static const _greenLine = Color(0xFF3E9F86);
+  static const Set<String> _monthLabels = <String>{
+    'Ene',
+    'Feb',
+    'Mar',
+    'Abr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dic',
+  };
 
   final List<String> labels;
   final _ChartGeometry geom;
@@ -540,9 +569,8 @@ class _HistoryChartPainter extends CustomPainter {
     _drawBands(canvas, geom.plot);
     _drawGrid(canvas, geom.plot);
 
-    if (geom.smoothPoints.isNotEmpty) {
+    if (geom.smoothPoints.length >= 2) {
       final smoothPts = geom.smoothPoints;
-
       final shadowPaint = Paint()
         ..color = Colors.black.withValues(alpha:0.06)
         ..strokeWidth = 4
@@ -557,6 +585,7 @@ class _HistoryChartPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round
         ..style = PaintingStyle.stroke;
 
+      final micro = Paint()..color = _greenLine.withValues(alpha:0.16);
       final path = Path()..moveTo(smoothPts.first.dx, smoothPts.first.dy);
       for (final p in smoothPts.skip(1)) {
         path.lineTo(p.dx, p.dy);
@@ -569,9 +598,8 @@ class _HistoryChartPainter extends CustomPainter {
 
       canvas.drawPath(path, linePaint);
 
-      final micro = Paint()..color = _greenLine.withValues(alpha:0.16);
-      for (int i = 0; i < smoothPts.length; i++) {
-        canvas.drawCircle(smoothPts[i], 1.8, micro);
+      for (final p in smoothPts) {
+        canvas.drawCircle(p, 1.8, micro);
       }
     }
 
@@ -795,12 +823,17 @@ class _HistoryChartPainter extends CustomPainter {
       color: Colors.black.withValues(alpha:0.35),
     );
 
-    if (labels.length < 2) return;
+    if (labels.isEmpty) return;
 
     final n = labels.length;
-    final bool isMonths = (n == 12 && labels.first == 'E');
-    final int maxVisible = isMonths ? 12 : 7;
+    if (n == 1) {
+      final tp = _tp(labels.first, style);
+      tp.paint(canvas, Offset(plot.center.dx - (tp.width / 2), plot.bottom + 14));
+      return;
+    }
 
+    final bool isMonths = labels.every(_monthLabels.contains);
+    final int maxVisible = isMonths ? 6 : 7;
     final step = (n <= maxVisible) ? 1 : ((n - 1) / (maxVisible - 1)).ceil();
 
     final dx = plot.width / (n - 1);

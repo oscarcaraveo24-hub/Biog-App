@@ -241,6 +241,18 @@ class _YieldProjectionSetupScreenState
       final lettuceReference = _resolveLettuceYieldReference(ctx!);
       if (lettuceReference != null) return lettuceReference;
     }
+    if (cropId == CropCatalog.spinachCropId) {
+      final spinachReference = _resolveSpinachYieldReference(ctx!);
+      if (spinachReference != null) return spinachReference;
+    }
+    if (cropId == CropCatalog.onionCropId) {
+      final onionReference = _resolveOnionYieldReference(ctx!);
+      if (onionReference != null) return onionReference;
+    }
+    if (cropId == CropCatalog.garlicCropId) {
+      final garlicReference = _resolveGarlicYieldReference(ctx!);
+      if (garlicReference != null) return garlicReference;
+    }
 
     final varietyId = ctx?.varietyId?.trim();
     if (varietyId != null && varietyId.isNotEmpty) {
@@ -782,6 +794,486 @@ class _YieldProjectionSetupScreenState
         : YieldReferenceCatalog.genericFresh(ctx.cropId);
   }
 
+  YieldReference? _resolveSpinachYieldReference(DeviceCropContext ctx) {
+    final profile = ctx.profileId.toLowerCase();
+    final alias = (ctx.varietyAlias ?? '').toLowerCase();
+    final variety = (ctx.varietyId ?? '').toLowerCase();
+    final calendar = (ctx.calendarTypeId ?? '').toLowerCase();
+    final scale = (ctx.cultivationScaleId ?? '').toLowerCase();
+    final joined = '$profile $alias $variety $calendar $scale';
+
+    final isProtected = _containsAny(joined, const [
+      'protegido',
+      'invernadero',
+      'casa malla',
+      'casa sombra',
+      'malla',
+      'malla sombra',
+      'macro tunel',
+      'protected',
+      'spinach_protegido',
+      'suelo protegido',
+    ]);
+
+    final isMultiCut = _containsAny(joined, const [
+      'multicorte',
+      'multi corte',
+      'recorte',
+      'cortes',
+      'cut and come again',
+      'multiple cut',
+    ]);
+
+    final isGeneric = _containsAny(joined, const [
+      'sp-gen',
+      'sp_gen',
+      'spgen',
+      'spinach_generic',
+      'generico',
+      'generica',
+      'otra espinaca',
+      'no se',
+    ]);
+    if (isGeneric) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['spinach_protected_soil'] ??
+              YieldReferenceCatalog.byId['spinach_generic']
+          : YieldReferenceCatalog.byId['spinach_generic'];
+    }
+
+    if (_containsAny(joined, const [
+      'sp-01',
+      'sp_01',
+      'sp01',
+      'spinach_savoy_summer',
+      'saboya verano',
+      'semi-saboya verano',
+      'semi saboya verano',
+      'calor',
+      'summer',
+      'heat',
+    ])) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['spinach_protected_soil'] ??
+              YieldReferenceCatalog.byId['spinach_savoy_summer']
+          : YieldReferenceCatalog.byId['spinach_savoy_summer'];
+    }
+
+    if (_containsAny(joined, const [
+      'sp-02',
+      'sp_02',
+      'sp02',
+      'spinach_savoy_winter',
+      'saboya invierno',
+      'semi-saboya invierno',
+      'semi saboya invierno',
+      'dias cortos',
+      'winter',
+      'short day',
+    ])) {
+      return isProtected
+          ? YieldReferenceCatalog.byId['spinach_protected_soil'] ??
+              YieldReferenceCatalog.byId['spinach_winter_field']
+          : YieldReferenceCatalog.byId['spinach_winter_field'];
+    }
+
+    if (_containsAny(joined, const [
+      'sp-03',
+      'sp_03',
+      'sp03',
+      'spinach_smooth_baby',
+      'lisa',
+      'smooth',
+      'baby',
+      'baby leaf',
+      'premium',
+    ])) {
+      if (isMultiCut) {
+        return YieldReferenceCatalog.byId['spinach_multi_cut_soil'] ??
+            YieldReferenceCatalog.byId['spinach_smooth_baby'];
+      }
+      if (_containsAny(joined, const ['madura', 'maduro', 'adult', 'mature'])) {
+        return YieldReferenceCatalog.byId['spinach_smooth_mature'] ??
+            YieldReferenceCatalog.byId['spinach_smooth_baby'];
+      }
+      return YieldReferenceCatalog.byId['spinach_smooth_baby'];
+    }
+
+    if (_containsAny(joined, const [
+      'sp-04',
+      'sp_04',
+      'sp04',
+      'spinach_oriental_bunching',
+      'oriental',
+      'manojo',
+      'bunch',
+      'erecta',
+    ])) {
+      return YieldReferenceCatalog.byId['spinach_oriental_bunch'];
+    }
+
+    if (_containsAny(joined, const [
+      'sp-05',
+      'sp_05',
+      'sp05',
+      'spinach_processing',
+      'proceso',
+      'industria',
+      'industrial',
+      'processing',
+    ])) {
+      return YieldReferenceCatalog.byId['spinach_process_field'];
+    }
+
+    final direct = YieldReferenceCatalog.byId[variety];
+    if (direct != null) return direct;
+    return isProtected
+        ? YieldReferenceCatalog.genericFreshProtected(
+              CropCatalog.spinachCropId,
+            ) ??
+            YieldReferenceCatalog.genericFresh(
+              CropCatalog.spinachCropId,
+            )
+        : YieldReferenceCatalog.genericFresh(CropCatalog.spinachCropId);
+  }
+
+  YieldReference? _resolveOnionYieldReference(DeviceCropContext ctx) {
+    final profile = ctx.profileId.toLowerCase();
+    final alias = (ctx.varietyAlias ?? '').toLowerCase();
+    final variety = (ctx.varietyId ?? '').toLowerCase();
+    final calendar = (ctx.calendarTypeId ?? '').toLowerCase();
+    final scale = (ctx.cultivationScaleId ?? '').toLowerCase();
+    final joined = '$profile $alias $variety $calendar $scale';
+
+    // El destino/sistema pesa mas que el color en el rendimiento.
+    final isProcessing = _containsAny(joined, const [
+      'proceso',
+      'industria',
+      'deshidrat',
+      'processing',
+    ]);
+    final isStorage = _containsAny(joined, const [
+      'almacen',
+      'almacenamiento',
+      'bodega',
+      'storage',
+      'bulbo seco',
+    ]);
+    final isSweet = _containsAny(joined, const [
+      'dulce',
+      'sweet',
+      'vidalia',
+      'granex',
+    ]);
+    final isLowInput = _containsAny(joined, const [
+      'bajo insumo',
+      'temporal',
+      'sin riego',
+      'low input',
+      'semiarido',
+      'secano',
+    ]);
+    final isProtected = _containsAny(joined, const [
+      'protegido',
+      'invernadero',
+      'malla',
+      'casa sombra',
+      'macro tunel',
+      'protected',
+      'onion_protegido',
+      'suelo protegido',
+    ]);
+
+    // Cambray/rama: cosecha joven, no comparar contra bulbo seco.
+    final isCambray = _containsAny(joined, const [
+      'on-05',
+      'on_05',
+      'on05',
+      'onion_cambray',
+      'cambray',
+      'rama',
+      'cebollin',
+      'manojo',
+      'bunch',
+      'green onion',
+      'scallion',
+    ]);
+    if (isCambray) {
+      return YieldReferenceCatalog.byId['onion_cambray_bunch'];
+    }
+
+    if (isProcessing) {
+      return YieldReferenceCatalog.byId['onion_processing_field_run'];
+    }
+
+    final isGeneric = _containsAny(joined, const [
+      'on-gen',
+      'on_gen',
+      'ongen',
+      'onion_generic',
+      'generico',
+      'generica',
+      'otra cebolla',
+      'no se',
+    ]);
+    if (isGeneric) {
+      if (isLowInput) {
+        return YieldReferenceCatalog.byId['onion_low_input_or_semiarid'];
+      }
+      return isProtected
+          ? YieldReferenceCatalog.byId['onion_protected_soil'] ??
+              YieldReferenceCatalog.byId['onion_generic']
+          : YieldReferenceCatalog.byId['onion_generic'];
+    }
+
+    // ON-01 blanca dia corto grano/bola
+    if (_containsAny(joined, const [
+      'on-01',
+      'on_01',
+      'on01',
+      'onion_white',
+      'blanca',
+      'grano',
+      'bola',
+      'white',
+    ])) {
+      return YieldReferenceCatalog.byId['onion_white_short_day_grano'];
+    }
+
+    // ON-02 amarilla/dorada dia corto
+    if (_containsAny(joined, const [
+      'on-02',
+      'on_02',
+      'on02',
+      'onion_yellow',
+      'amarilla',
+      'dorada',
+      'yellow',
+    ])) {
+      if (isSweet) {
+        return YieldReferenceCatalog.byId['onion_transplanted_sweet'];
+      }
+      return YieldReferenceCatalog.byId['onion_yellow_short_day_fresh'];
+    }
+
+    // ON-03 morada dia corto
+    if (_containsAny(joined, const [
+      'on-03',
+      'on_03',
+      'on03',
+      'onion_purple',
+      'onion_red',
+      'morada',
+      'roja',
+      'red',
+      'purple',
+    ])) {
+      return YieldReferenceCatalog.byId['onion_red_short_day_fresh'];
+    }
+
+    // ON-04 transicion / dia intermedio
+    if (_containsAny(joined, const [
+      'on-04',
+      'on_04',
+      'on04',
+      'onion_transition',
+      'onion_intermediate',
+      'transicion',
+      'intermedio',
+      'altiplano',
+      'intermediate',
+    ])) {
+      if (isStorage) {
+        return YieldReferenceCatalog.byId['onion_storage_intensive'];
+      }
+      return YieldReferenceCatalog.byId['onion_intermediate_transition'];
+    }
+
+    if (isStorage) {
+      return YieldReferenceCatalog.byId['onion_storage_intensive'];
+    }
+    if (isSweet) {
+      return YieldReferenceCatalog.byId['onion_transplanted_sweet'];
+    }
+    if (isLowInput) {
+      return YieldReferenceCatalog.byId['onion_low_input_or_semiarid'];
+    }
+
+    final direct = YieldReferenceCatalog.byId[variety];
+    if (direct != null) return direct;
+    return isProtected
+        ? YieldReferenceCatalog.genericFreshProtected(
+              CropCatalog.onionCropId,
+            ) ??
+            YieldReferenceCatalog.genericFresh(
+              CropCatalog.onionCropId,
+            )
+        : YieldReferenceCatalog.genericFresh(CropCatalog.onionCropId);
+  }
+
+  YieldReference? _resolveGarlicYieldReference(DeviceCropContext ctx) {
+    final profile = ctx.profileId.toLowerCase();
+    final alias = (ctx.varietyAlias ?? '').toLowerCase();
+    final variety = (ctx.varietyId ?? '').toLowerCase();
+    final calendar = (ctx.calendarTypeId ?? '').toLowerCase();
+    final scale = (ctx.cultivationScaleId ?? '').toLowerCase();
+    final joined = '$profile $alias $variety $calendar $scale';
+
+    final direct = YieldReferenceCatalog.byId[variety];
+    if (direct != null && direct.cropId == CropCatalog.garlicCropId) {
+      return direct;
+    }
+
+    final isLowInput = _containsAny(joined, const [
+      'bajo insumo',
+      'temporal',
+      'sin riego',
+      'secano',
+      'low input',
+      'garlic_bajo_insumo',
+      'garlic_temporal',
+      'semilla mala',
+      'diente malo',
+    ]);
+    if (isLowInput) return YieldReferenceCatalog.byId['garlic_low_input'];
+
+    final isIntensive = _containsAny(joined, const [
+      'intensivo',
+      'goteo',
+      'drip',
+      'fertirriego',
+      'riego',
+      'alta tecnologia',
+      'garlic_intensive_drip',
+    ]);
+    if (isIntensive) {
+      return YieldReferenceCatalog.byId['garlic_intensive_drip'];
+    }
+
+    final isStorage = _containsAny(joined, const [
+      'almacen',
+      'almacenamiento',
+      'storage',
+      'curado',
+      'curing',
+      'semilla',
+      'seed',
+      'garlic_storage_quality',
+    ]);
+    if (isStorage) {
+      return YieldReferenceCatalog.byId['garlic_storage_quality'];
+    }
+
+    if (_containsAny(joined, const [
+      'orion',
+      'garlic_orion',
+    ])) {
+      return YieldReferenceCatalog.byId['garlic_orion'];
+    }
+
+    if (_containsAny(joined, const [
+      'san marqueno',
+      'san marque',
+      'garlic_san_marqueno',
+    ])) {
+      return YieldReferenceCatalog.byId['garlic_san_marqueno'];
+    }
+
+    if (_containsAny(joined, const [
+      'cezac',
+      'cezac 06',
+      'cezac06',
+      'garlic_cezac_06',
+    ])) {
+      return YieldReferenceCatalog.byId['garlic_cezac_06'];
+    }
+
+    if (_containsAny(joined, const [
+      'barretero',
+      'garlic_barretero',
+    ])) {
+      return YieldReferenceCatalog.byId['garlic_barretero'];
+    }
+
+    if (_containsAny(joined, const [
+      'ag-02',
+      'ag_02',
+      'ag02',
+      'jaspeado',
+      'calera',
+      'rayado',
+      'inifap',
+      'tacatzcuaro',
+      'tinguindin',
+      'garlic_jaspeado_calera',
+    ])) {
+      return YieldReferenceCatalog.byId['garlic_jaspeado_calera'];
+    }
+
+    if (_containsAny(joined, const [
+      'ag-03',
+      'ag_03',
+      'ag03',
+      'morado',
+      'purple',
+      'garlic_purple',
+    ])) {
+      return YieldReferenceCatalog.byId['garlic_purple'];
+    }
+
+    if (_containsAny(joined, const [
+      'ag-04',
+      'ag_04',
+      'ag04',
+      'criollo',
+      'regional',
+      'garlic_criollo_regional',
+    ])) {
+      return YieldReferenceCatalog.byId['garlic_criollo_regional'];
+    }
+
+    if (_containsAny(joined, const [
+      'ag-05',
+      'ag_05',
+      'ag05',
+      'chino',
+      'coreano',
+      'cedel',
+      'garlic_chinese_korean',
+    ])) {
+      return YieldReferenceCatalog.byId['garlic_chinese_korean'];
+    }
+
+    if (_containsAny(joined, const [
+      'ag-01',
+      'ag_01',
+      'ag01',
+      'blanco',
+      'perla',
+      'diamante',
+      'egipto',
+      'garlic_white_pearl',
+    ])) {
+      return YieldReferenceCatalog.byId['garlic_white_pearl'];
+    }
+
+    if (_containsAny(joined, const [
+      'ag-gen',
+      'ag_gen',
+      'aggen',
+      'garlic_generic',
+      'generico',
+      'generica',
+      'otro ajo',
+      'otra variedad',
+      'no se',
+    ])) {
+      return YieldReferenceCatalog.byId['garlic_generic'];
+    }
+
+    return YieldReferenceCatalog.genericFresh(CropCatalog.garlicCropId);
+  }
+
   bool _containsAny(String source, List<String> needles) {
     for (final needle in needles) {
       if (source.contains(needle)) return true;
@@ -821,6 +1313,9 @@ class _YieldProjectionSetupScreenState
 
       case 'oat':
         return YieldReferenceCatalog.byId['oat_generic'];
+
+      case 'garlic':
+        return YieldReferenceCatalog.byId['garlic_generic'];
 
       case 'tomato':
         // v1: suelo. Protegido vs campo abierto se discrimina por el perfil
@@ -2058,6 +2553,8 @@ class _YieldProjectionSetupScreenState
         return 'Chile';
       case 'squash':
         return 'Calabaza';
+      case 'garlic':
+        return 'Ajo';
       default:
         return _prettyId(cropId) ?? 'Cultivo';
     }
@@ -2126,6 +2623,9 @@ class _YieldProjectionSetupScreenState
     }
     if (reference == null) {
       return null;
+    }
+    if (reference.cropId == CropCatalog.garlicCropId) {
+      return 'Ajo se proyecta como rendimiento comercial aproximado: descuenta calibre, curado, pudricion, diente-semilla malo, mala vernalizacion, salinidad, escobeteado y sanidad. No es promesa de toneladas.';
     }
     if (reference.useType == 'seed') {
       return 'CA-07 se proyecta como semilla seca / pepita. No compares este rango con toneladas de fruto fresco.';

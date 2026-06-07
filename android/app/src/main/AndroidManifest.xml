@@ -1,6 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.bio_g">
 
+    <!-- Requerida para TODAS las llamadas de red (Supabase, mapas, etc.).
+         Sin esto, los builds release/profile fallan con
+         "SocketException: Failed host lookup" en la primera llamada de red
+         (el login). El manifest de debug ya la incluye, por eso el error
+         solo aparece fuera de debug. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
