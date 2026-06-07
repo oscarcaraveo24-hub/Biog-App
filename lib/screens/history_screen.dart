@@ -171,73 +171,76 @@ class _HistoryScreenState extends State<HistoryScreen>
       _invalidateEvents();
     }
 
-    _historySubscription = store.watchHistory(window).listen(
-      (telemetry) {
-        if (!mounted ||
-            requestVersion != _historyRequestVersion ||
-            requestedRangeIndex != _rangeIndex ||
-            requestedDeviceId != _store?.activeDevice?.id) {
-          return;
-        }
+    _historySubscription = store
+        .watchHistory(window)
+        .listen(
+          (telemetry) {
+            if (!mounted ||
+                requestVersion != _historyRequestVersion ||
+                requestedRangeIndex != _rangeIndex ||
+                requestedDeviceId != _store?.activeDevice?.id) {
+              return;
+            }
 
-        final List<BioGTelemetry> stable = List<BioGTelemetry>.unmodifiable(
-          telemetry,
-        );
-        final DateTime seriesNow = DateTime.now();
-        final HistorySeriesBundle prepared = _seriesBuilder.buildSeriesBundle(
-          range: requestedRange,
-          telemetry: stable,
-          now: seriesNow,
-        );
-        _logHistory(
-          'response version=$requestVersion range=${requestedRange.name} '
-          'window=${_windowLabel(window)} ui_device_id=$requestedDeviceId '
-          'telemetry_device_id=${store.activeDevice?.telemetryDeviceId}',
-        );
-        for (final line in _seriesBuilder.debugSummaryLines(
-          range: requestedRange,
-          telemetry: stable,
-          bundle: prepared,
-          now: seriesNow,
-        )) {
-          _logHistory(line);
-        }
-
-        setState(() {
-          _stableTelemetry = stable;
-          _preparedSeries = prepared;
-          _renderedRangeIndex = requestedRangeIndex;
-          _historyLoading = false;
-          _invalidateEvents();
-        });
-      },
-      onError: (Object error, StackTrace _) {
-        if (!mounted ||
-            requestVersion != _historyRequestVersion ||
-            requestedRangeIndex != _rangeIndex ||
-            requestedDeviceId != _store?.activeDevice?.id) {
-          return;
-        }
-
-        _logHistory(
-          'error version=$requestVersion range=${requestedRange.name} '
-          'window=${_windowLabel(window)} ui_device_id=$requestedDeviceId '
-          'error=$error',
-        );
-        setState(() {
-          _historyLoading = false;
-          if (clearStable) {
-            _stableTelemetry = const <BioGTelemetry>[];
-            _preparedSeries = _seriesBuilder.buildSeriesBundle(
-              range: requestedRange,
-              telemetry: _stableTelemetry,
+            final List<BioGTelemetry> stable = List<BioGTelemetry>.unmodifiable(
+              telemetry,
             );
-            _renderedRangeIndex = requestedRangeIndex;
-            _invalidateEvents();
-          }
-        });
-      },
-    );
+            final DateTime seriesNow = DateTime.now();
+            final HistorySeriesBundle prepared = _seriesBuilder
+                .buildSeriesBundle(
+                  range: requestedRange,
+                  telemetry: stable,
+                  now: seriesNow,
+                );
+            _logHistory(
+              'response version=$requestVersion range=${requestedRange.name} '
+              'window=${_windowLabel(window)} ui_device_id=$requestedDeviceId '
+              'telemetry_device_id=${store.activeDevice?.telemetryDeviceId}',
+            );
+            for (final line in _seriesBuilder.debugSummaryLines(
+              range: requestedRange,
+              telemetry: stable,
+              bundle: prepared,
+              now: seriesNow,
+            )) {
+              _logHistory(line);
+            }
+
+            setState(() {
+              _stableTelemetry = stable;
+              _preparedSeries = prepared;
+              _renderedRangeIndex = requestedRangeIndex;
+              _historyLoading = false;
+              _invalidateEvents();
+            });
+          },
+          onError: (Object error, StackTrace _) {
+            if (!mounted ||
+                requestVersion != _historyRequestVersion ||
+                requestedRangeIndex != _rangeIndex ||
+                requestedDeviceId != _store?.activeDevice?.id) {
+              return;
+            }
+
+            _logHistory(
+              'error version=$requestVersion range=${requestedRange.name} '
+              'window=${_windowLabel(window)} ui_device_id=$requestedDeviceId '
+              'error=$error',
+            );
+            setState(() {
+              _historyLoading = false;
+              if (clearStable) {
+                _stableTelemetry = const <BioGTelemetry>[];
+                _preparedSeries = _seriesBuilder.buildSeriesBundle(
+                  range: requestedRange,
+                  telemetry: _stableTelemetry,
+                );
+                _renderedRangeIndex = requestedRangeIndex;
+                _invalidateEvents();
+              }
+            });
+          },
+        );
 
     if (notify && mounted) {
       setState(() {});
@@ -346,130 +349,125 @@ class _HistoryScreenState extends State<HistoryScreen>
                 top: true,
                 bottom: false,
                 child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(18, 14, 18, bottomPad),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          HistoryReveal(
-                            controller: _entranceController,
-                            intervalStart: 0.00,
-                            intervalEnd: 0.22,
-                            yOffset: 6,
-                            shadowOpacityBegin: 0.00,
-                            shadowOpacityEnd: 0.02,
-                            child: HistoryTopBarSection(
-                              subtitle: headerData.subtitle,
-                              modeLabel: headerData.modeLabel,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          HistoryReveal(
-                            controller: _entranceController,
-                            intervalStart: 0.10,
-                            intervalEnd: 0.62,
-                            yOffset: 12,
-                            shadowOpacityBegin: 0.00,
-                            shadowOpacityEnd: 0.06,
-                            child: HistoryRangeSelector(
-                              selectedIndex: _rangeIndex,
-                              onChanged: _selectRange,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          HistoryReveal(
-                            controller: _entranceController,
-                            intervalStart: 0.10,
-                            intervalEnd: 0.62,
-                            yOffset: 12,
-                            shadowOpacityBegin: 0.00,
-                            shadowOpacityEnd: 0.06,
-                            child: HistoryMetricTabs(
-                              selectedIndex: _metricIndex,
-                              onChanged: (i) =>
-                                  setState(() => _metricIndex = i),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          HistoryReveal(
-                            controller: _entranceController,
-                            intervalStart: 0.10,
-                            intervalEnd: 0.62,
-                            yOffset: 16,
-                            shadowOpacityBegin: 0.00,
-                            shadowOpacityEnd: 0.08,
-                            child: Stack(
-                              children: <Widget>[
-                                if (!_isNpk)
-                                  HistoryChartCard(
-                                    title: metricChartData.title,
-                                    values: series.values,
-                                    days: series.labels,
-                                    currentValue: metricChartData.currentValue,
-                                    valueFormatter:
-                                        metricChartData.valueFormatter,
-                                    isPercentScale:
-                                        metricChartData.isPercentScale,
-                                    minSpan: metricChartData.minSpan,
-                                    zoomRadius: metricChartData.zoomRadius,
-                                    bandStops: metricChartData.bandStops,
-                                    bandColors: metricChartData.bandColors,
-                                  )
-                                else
-                                  HistoryNpkChartCard(
-                                    title: npkChartData.title,
-                                    labels: npkSeries.labels,
-                                    nValues: npkSeries.nValues,
-                                    pValues: npkSeries.pValues,
-                                    kValues: npkSeries.kValues,
-                                    liveN: live?.hasNitrogenData == true
-                                        ? live?.n.toDouble()
-                                        : null,
-                                    liveP: live?.hasPhosphorusData == true
-                                        ? live?.p.toDouble()
-                                        : null,
-                                    liveK: live?.hasPotassiumData == true
-                                        ? live?.k.toDouble()
-                                        : null,
-                                  ),
-                                if (_historyLoading)
-                                  const Positioned(
-                                    top: 12,
-                                    right: 12,
-                                    child: _HistoryLoadingChip(),
-                                  ),
-                                if (!_historyLoading &&
-                                    _stableTelemetry.isEmpty)
-                                  const Positioned(
-                                    top: 12,
-                                    right: 12,
-                                    child: _HistoryEmptyChip(),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          HistoryReveal(
-                            controller: _entranceController,
-                            intervalStart: 0.10,
-                            intervalEnd: 0.62,
-                            yOffset: 16,
-                            shadowOpacityBegin: 0.00,
-                            shadowOpacityEnd: 0.08,
-                            child: HistoryEventsList(
-                              events: events,
-                              onViewAll: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => NotificationsScreen(
-                                      events: events,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+                  padding: EdgeInsets.fromLTRB(18, 14, 18, bottomPad),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      HistoryReveal(
+                        controller: _entranceController,
+                        intervalStart: 0.00,
+                        intervalEnd: 0.22,
+                        yOffset: 6,
+                        shadowOpacityBegin: 0.00,
+                        shadowOpacityEnd: 0.02,
+                        child: HistoryTopBarSection(
+                          subtitle: headerData.subtitle,
+                          modeLabel: headerData.modeLabel,
+                        ),
                       ),
+                      const SizedBox(height: 12),
+                      HistoryReveal(
+                        controller: _entranceController,
+                        intervalStart: 0.10,
+                        intervalEnd: 0.62,
+                        yOffset: 12,
+                        shadowOpacityBegin: 0.00,
+                        shadowOpacityEnd: 0.06,
+                        child: HistoryRangeSelector(
+                          selectedIndex: _rangeIndex,
+                          onChanged: _selectRange,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      HistoryReveal(
+                        controller: _entranceController,
+                        intervalStart: 0.10,
+                        intervalEnd: 0.62,
+                        yOffset: 12,
+                        shadowOpacityBegin: 0.00,
+                        shadowOpacityEnd: 0.06,
+                        child: HistoryMetricTabs(
+                          selectedIndex: _metricIndex,
+                          onChanged: (i) => setState(() => _metricIndex = i),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      HistoryReveal(
+                        controller: _entranceController,
+                        intervalStart: 0.10,
+                        intervalEnd: 0.62,
+                        yOffset: 16,
+                        shadowOpacityBegin: 0.00,
+                        shadowOpacityEnd: 0.08,
+                        child: Stack(
+                          children: <Widget>[
+                            if (!_isNpk)
+                              HistoryChartCard(
+                                title: metricChartData.title,
+                                values: series.values,
+                                days: series.labels,
+                                currentValue: metricChartData.currentValue,
+                                valueFormatter: metricChartData.valueFormatter,
+                                isPercentScale: metricChartData.isPercentScale,
+                                minSpan: metricChartData.minSpan,
+                                zoomRadius: metricChartData.zoomRadius,
+                                bandStops: metricChartData.bandStops,
+                                bandColors: metricChartData.bandColors,
+                              )
+                            else
+                              HistoryNpkChartCard(
+                                title: npkChartData.title,
+                                labels: npkSeries.labels,
+                                nValues: npkSeries.nValues,
+                                pValues: npkSeries.pValues,
+                                kValues: npkSeries.kValues,
+                                liveN: live?.hasNitrogenData == true
+                                    ? live?.n.toDouble()
+                                    : null,
+                                liveP: live?.hasPhosphorusData == true
+                                    ? live?.p.toDouble()
+                                    : null,
+                                liveK: live?.hasPotassiumData == true
+                                    ? live?.k.toDouble()
+                                    : null,
+                              ),
+                            if (_historyLoading)
+                              const Positioned(
+                                top: 12,
+                                right: 12,
+                                child: _HistoryLoadingChip(),
+                              ),
+                            if (!_historyLoading && _stableTelemetry.isEmpty)
+                              const Positioned(
+                                top: 12,
+                                right: 12,
+                                child: _HistoryEmptyChip(),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      HistoryReveal(
+                        controller: _entranceController,
+                        intervalStart: 0.10,
+                        intervalEnd: 0.62,
+                        yOffset: 16,
+                        shadowOpacityBegin: 0.00,
+                        shadowOpacityEnd: 0.08,
+                        child: HistoryEventsList(
+                          events: events,
+                          onViewAll: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) =>
+                                    NotificationsScreen(events: events),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -535,10 +533,7 @@ class _HistoryStatusChip extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
             ),
           ],
         ),

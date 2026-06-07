@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ✅ Pantallas
+import 'package:bio_g/core/profile/profile_repository.dart';
 import 'package:bio_g/widgets/account/location_screen.dart';
 import 'package:bio_g/widgets/account/telephone_screen.dart';
 import 'package:bio_g/widgets/shared/bio_g_page_route.dart';
@@ -33,6 +34,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   static const String _kPrefPhone = 'profile_phone';
   static const String _kPrefSync = 'profile_sync_active';
   static const String _kPrefAvatarPath = 'profile_avatar_path';
+
+  final ProfileRepository _profileRepo = ProfileRepository(
+    Supabase.instance.client,
+  );
 
   // ===========================
   // ✅ Datos reales desde Supabase auth
@@ -314,6 +319,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _saving = true);
 
     try {
+      // 1) Offline-first: local cache is written first and unconditionally,
+      //    so the change survives even with no connectivity.
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kPrefLocation, _location.trim());
       await prefs.setString(_kPrefPhone, _phone.trim());
@@ -324,6 +331,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       } else {
         await prefs.remove(_kPrefAvatarPath);
       }
+
+      // 2) Best-effort durable mirror to Supabase. Wrapped so a network
+      //    failure never blocks saving locally — the next successful save
+      //    (or sync) reconciles it.
+      await _syncProfileToSupabase();
 
       if (!mounted) return;
       setState(() {
@@ -346,6 +358,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No se pudieron guardar los cambios')),
       );
+    }
+  }
+
+  /// Mirror the editable profile fields to Supabase. Best-effort, but the
+  /// avatar upload and the text-field update are kept INDEPENDENT: a failed
+  /// photo upload must never block phone/location from syncing (an earlier
+  /// version coupled them, so any upload error left all three fields null).
+  Future<void> _syncProfileToSupabase() async {
+    if (Supabase.instance.client.auth.currentUser == null) return;
+
+    // (a) Text fields — always attempt, independent of the avatar.
+    try {
+      await _profileRepo.updateProfile(
+        phone: _phone.trim(),
+        location: _location.trim(),
+      );
+    } catch (e) {
+      debugPrint('[BioG/ProfileSync] updateProfile failed: $e');
+    }
+
+    // (b) Avatar — upload whenever a local file exists. The upload is
+    //     idempotent (always {userId}/avatar.jpg), so this also BACK-FILLS
+    //     a photo that was set before cloud sync existed. On failure we
+    //     surface the reason instead of swallowing it, so the photo isn't
+    //     silently left out of the cloud.
+    final avatar = _avatarFile;
+    if (avatar == null || avatar.path.isEmpty) return;
+
+    try {
+      final bytes = await avatar.readAsBytes();
+      final storagePath = await _profileRepo.uploadAvatar(bytes);
+      if (storagePath != null) {
+        await _profileRepo.updateProfile(avatarStoragePath: storagePath);
+      }
+    } catch (e) {
+      debugPrint('[BioG/ProfileSync] avatar upload failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Foto guardada en el equipo, pero no se pudo subir a la nube.',
+            ),
+          ),
+        );
+      }
     }
   }
 

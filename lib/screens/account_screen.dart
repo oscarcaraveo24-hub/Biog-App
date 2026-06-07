@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:bio_g/core/profile/profile_repository.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/screens/account/account_screen_presenter.dart';
 import 'package:bio_g/screens/account/account_screen_sections.dart';
@@ -46,6 +51,9 @@ class _AccountScreenState extends State<AccountScreen>
   static const String kLeafDeviceIcon = 'assets/icons/metrics/nav_power.png';
 
   final ProfileLocalService _profileLocalService = const ProfileLocalService();
+  final ProfileRepository _profileRepo = ProfileRepository(
+    Supabase.instance.client,
+  );
   final AccountScreenPresenter _presenter = AccountScreenPresenter();
 
   String _name = '';
@@ -70,7 +78,7 @@ class _AccountScreenState extends State<AccountScreen>
       value: _hasAnimatedThisSession ? 1.0 : 0.0,
     );
 
-    _loadLocalProfile();
+    _loadLocalProfile().then((_) => _hydrateProfileFromSupabase());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -129,6 +137,111 @@ class _AccountScreenState extends State<AccountScreen>
       _notifications = snapshot.notifications;
       _useCelsius = snapshot.useCelsius;
     });
+  }
+
+  /// Durable restore from Supabase. Runs after the instant local load so
+  /// the screen never blanks while waiting on the network. Overlays only
+  /// non-empty remote values, so a sparse/empty profile row can never wipe
+  /// valid local cache (avoids the "remote empty overwrites local" race).
+  /// Also re-materialises the avatar into the local cache after a reinstall.
+  Future<void> _hydrateProfileFromSupabase() async {
+    if (Supabase.instance.client.auth.currentUser == null) return;
+
+    try {
+      final profile = await _profileRepo.getMyProfile();
+      if (!mounted || profile == null) return;
+
+      final String? remotePhone = _nonEmpty(profile.phone);
+      final String? remoteLocation = _nonEmpty(profile.location);
+
+      // Cache non-empty remote values locally so they survive offline and
+      // future cold starts.
+      if (remotePhone != null) {
+        await _profileLocalService.savePhone(remotePhone);
+      }
+      if (remoteLocation != null) {
+        await _profileLocalService.saveLocation(remoteLocation);
+      }
+
+      // Reconcile the avatar in both directions:
+      //   - remote has one, local missing/stale (e.g. after reinstall)
+      //     → download it into the local cache.
+      //   - local has one, remote has none (photo set before cloud sync
+      //     existed) → back-fill it up to Storage so it survives a future
+      //     reinstall.
+      String? restoredAvatarPath;
+      final bool localAvatarValid =
+          _avatarPath != null && File(_avatarPath!).existsSync();
+      final bool remoteHasAvatar = _nonEmpty(profile.avatarUrl) != null;
+
+      if (!localAvatarValid && remoteHasAvatar) {
+        restoredAvatarPath = await _restoreAvatarFromSupabase();
+      } else if (localAvatarValid && !remoteHasAvatar) {
+        await _backfillAvatarToSupabase(_avatarPath!);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        if (remotePhone != null) _phone = remotePhone;
+        if (remoteLocation != null) _location = remoteLocation;
+        if (restoredAvatarPath != null) _avatarPath = restoredAvatarPath;
+      });
+    } catch (_) {
+      // Offline / transient — keep showing the local cache.
+    }
+  }
+
+  /// Upload an existing local avatar to Storage and record its path in
+  /// `profiles.avatar_url`. Used to back-fill photos that were set before
+  /// cloud sync existed, so they survive a reinstall. Best-effort.
+  Future<void> _backfillAvatarToSupabase(String localPath) async {
+    try {
+      final file = File(localPath);
+      if (!file.existsSync()) return;
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty) return;
+
+      final storagePath = await _profileRepo.uploadAvatar(bytes);
+      if (storagePath != null) {
+        await _profileRepo.updateProfile(avatarStoragePath: storagePath);
+      }
+    } catch (_) {
+      // Best-effort; will retry on the next account-screen load.
+    }
+  }
+
+  /// Download the avatar bytes from Storage and persist them to the local
+  /// profile cache directory, returning the new file path (or null).
+  Future<String?> _restoreAvatarFromSupabase() async {
+    try {
+      final bytes = await _profileRepo.downloadAvatar();
+      if (bytes == null || bytes.isEmpty) return null;
+
+      final dir = await getApplicationDocumentsDirectory();
+      final avatarDir = Directory(p.join(dir.path, 'profile'));
+      if (!await avatarDir.exists()) {
+        await avatarDir.create(recursive: true);
+      }
+
+      final targetPath = p.join(
+        avatarDir.path,
+        'avatar_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+      final file = File(targetPath);
+      await file.writeAsBytes(bytes, flush: true);
+      imageCache.evict(FileImage(file));
+
+      await _profileLocalService.saveAvatarPath(targetPath);
+      return targetPath;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? _nonEmpty(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
   }
 
   Future<void> _openBioGStatus(BioGDevice device, int index) async {

@@ -595,6 +595,14 @@ class BioGStore extends ChangeNotifier {
   }
 
   void _cleanupMissingDeviceSeeds(List<BioGDevice> currentDevices) {
+    // Guard against the cold-start race: the devices stream often emits an
+    // empty list before the hybrid repo finishes hydrating real devices from
+    // Supabase. Running cleanup then would delete still-valid crop contexts
+    // from BOTH local cache and Supabase. An empty device list is treated as
+    // "not loaded yet", never as "user owns no devices", so we skip cleanup.
+    // Orphans (if any) are reconciled on the next non-empty emission.
+    if (currentDevices.isEmpty) return;
+
     final validIds = currentDevices.map((d) => d.id).toSet();
     final toRemove = <String>{
       ..._cropByDevice.keys.where((id) => !validIds.contains(id)),

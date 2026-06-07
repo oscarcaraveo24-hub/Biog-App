@@ -1010,10 +1010,7 @@ class _DeviceRowState extends State<_DeviceRow> {
                       switchInCurve: Curves.easeOut,
                       switchOutCurve: Curves.easeIn,
                       transitionBuilder: (child, animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: child,
-                        );
+                        return FadeTransition(opacity: animation, child: child);
                       },
                       child: TweenAnimationBuilder<Color?>(
                         key: ValueKey<String>(widget.trailingText),
