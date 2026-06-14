@@ -1,0 +1,727 @@
+BIO-G
+02_PERFIL SKIP / GENERAL
+MANZANO AP-SKIP
+
+Archivo: 02_Perfil_SKIP_BioG_Manzano_AP_SKIP_v1.txt
+Cultivo BIO-G: Manzano
+cropId: crop_apple_tree
+profileId: ap_skip
+Label técnico: AP-SKIP · Manzano general
+Label UX: No sé / Manzano general
+Versión: v1.0 texto cableable
+Estado: listo para pasar a Codex/Claude
+Formato: TXT interno para código. No es recomendación agronómica local.
+
+================================================================================
+0. DECISION EJECUTIVA
+================================================================================
+
+AP-SKIP es obligatorio.
+No es un perfil incompleto.
+No significa descanso.
+No significa suelo sin cultivo.
+No significa árbol apagado.
+
+AP-SKIP es la entrada segura cuando el usuario:
+- solo sabe que tiene un manzano,
+- no sabe variedad,
+- no sabe grupo comercial,
+- no quiere elegir perfiles,
+- está registrando rápido,
+- o todavía está aprendiendo qué árbol tiene.
+
+BIO-G debe permitir avanzar sin bloquear, con comportamiento conservador y migrable.
+
+Regla:
+El estado real del árbol y la etapa visible corrigen el comportamiento.
+Ejemplo:
+- Si usuario elige AP-SKIP pero estado = newly_planted, BIO-G NO proyecta producción.
+- Si usuario elige AP-SKIP y etapa = flowering, BIO-G activa sensibilidad crítica de floración.
+- Si después aprende que es Golden, puede migrar a ap_01_golden sin borrar historial.
+
+================================================================================
+1. IDENTIDAD DEL PERFIL SKIP
+================================================================================
+
+profileId:
+- ap_skip
+
+profileCode visible técnico:
+- AP-SKIP
+
+label técnico:
+- AP-SKIP · Manzano general
+
+label UX:
+- No sé / Manzano general
+
+cropId:
+- crop_apple_tree
+
+Cultivo:
+- Manzano
+
+Nombre científico asumido:
+- Malus domestica Borkh.
+
+Familia:
+- Rosaceae
+
+Tipo:
+- Árbol frutal caducifolio
+- Perenne
+- C3
+- Frutal de clima templado a templado-adaptado
+
+Órgano objetivo:
+- FRUTO
+
+isGeneric:
+- true
+
+isMigrable:
+- true
+
+defaultConfidence:
+- baja si solo hay cultivo
+- media si hay estado del árbol
+- media-alta si hay etapa visible + sensor estable
+- nunca alta si no hay variedad/perfil confirmado
+
+migrationTargets:
+- ap_01_golden
+- ap_02_red
+- ap_03_criolla_rayada
+- ap_04_gala
+- ap_05_low_chill
+
+================================================================================
+2. SUPUESTO BASE CONSERVADOR
+================================================================================
+
+BIO-G asume para AP-SKIP:
+
+- Manzano promedio.
+- Variedad desconocida.
+- Portainjerto desconocido.
+- Requerimiento de frío desconocido.
+- Sensibilidad media-conservadora.
+- Huerto a cielo abierto.
+- Manejo estándar.
+- Sin información de densidad.
+- Sin rendimiento fino.
+- Sin polinizador confirmado.
+- Sin historial varietal.
+
+El perfil NO asume:
+- Golden.
+- Red.
+- Gala.
+- Bajo frío.
+- Árbol adulto por defecto.
+- Producción plena por defecto.
+- Edad exacta.
+- Portainjerto enano o vigoroso.
+- Carga de fruta.
+- Dosis de fertilización.
+
+Regla:
+El estado visible manda más que el supuesto.
+Si el usuario dice "recién plantado", el árbol es no productivo aunque AP-SKIP sea general.
+Si el usuario dice "en flor", se activa etapa crítica aunque no se conozca variedad.
+
+================================================================================
+3. CASOS QUE DEBE CUBRIR
+================================================================================
+
+Caso 1:
+Usuario dice "tengo manzano" y no sabe variedad.
+- profileId: ap_skip
+- state: unknown o el que elija
+- confidence: baja/media
+
+Caso 2:
+Usuario elige árbol recién plantado.
+- state: newly_planted
+- stage: planting_transplant o root_establishment
+- yield: bloqueado/no productivo
+- targets: raíz/agua/suelo
+
+Caso 3:
+Usuario dice que aún no produce.
+- state: juvenile_non_productive
+- stage: juvenile_vegetative o unknown
+- yield: no productivo
+- targets: crecimiento estructural
+
+Caso 4:
+Usuario dice que ya produce y está en flor.
+- state: productive_season
+- stage: flowering
+- alerts: helada, déficit hídrico, calor seco, exceso de humedad, polinización
+
+Caso 5:
+Usuario dice que tiene fruto verde.
+- state: productive_season
+- stage: fruit_fill
+- targets: agua estable, EC, K relativo, calor/golpe de sol
+
+Caso 6:
+Usuario cosechó.
+- stage: post_harvest
+- no cerrar cultivo
+- activar memoria y recuperación de reservas
+
+Caso 7:
+Luego el usuario aprende la variedad.
+- migration: ap_skip -> perfil específico
+- conservar historial y memoria
+
+================================================================================
+4. ESTRUCTURA FENOLOGICA ACTIVA EN AP-SKIP
+================================================================================
+
+AP-SKIP usa el esqueleto completo del manzano universal:
+
+Pre-productivas:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+
+Productivas anuales:
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+
+Fallback:
+- unknown
+
+Regla:
+AP-SKIP no elimina etapas. Solo usa rangos y sensibilidad más amplios/conservadores.
+
+================================================================================
+5. CALENDARIO FISIOLOGICO PROMEDIO AP-SKIP
+================================================================================
+
+Usar solo para visualización, mensajes y alertas generales.
+
+- Brotación -> floración: 25-45 días orientativos.
+- Floración -> cuajado visible: 5-20 días.
+- Fruit set típico en guías de etapa: 7-14 días después de petal fall.
+- Llenado/crescimiento de fruto: 60-100 días.
+- Plena floración -> inicio de cosecha: 125-165 días.
+- Postcosecha: desde cosecha hasta senescencia/caída de hoja o reposo.
+
+Notas:
+- No es promesa.
+- No sustituye perfil AP específico.
+- No sustituye datos locales.
+- No debe disparar alertas agresivas si el usuario no confirmó etapa.
+- Si hay etapa visible, la etapa pesa más que el calendario.
+
+================================================================================
+6. RANGOS CONSERVADORES AP-SKIP PARA SENSORES
+================================================================================
+
+Formato:
+metric | rango operativo | observación | alerta
+
+soilMoisture:
+- operativo general: 55-80% AW
+- etapa crítica floración/cuajado/llenado: 60-85% AW estable
+- observación baja: 45-55% AW
+- alerta baja: <45% AW
+- observación exceso: 85-90% AW
+- alerta exceso: >90% AW o saturación persistente
+
+soilTemp:
+- operativo general: 8-26 °C
+- favorable raíz: 12-22 °C
+- baja actividad: <7-8 °C
+- observación calor: >26-28 °C en suelo + baja humedad
+- alerta contextual: extremo + estrés hídrico
+
+pH:
+- óptimo conservador: 6.0-7.0
+- aceptable amplio: 5.5-7.5
+- observación: 5.0-5.5 o 7.5-8.0
+- alerta: <5.0 o >8.0
+
+ec:
+- seguro/normal: <1.0 dS/m
+- observación: 1.0-2.0 dS/m
+- alerta inicial: >2.0 dS/m
+- alerta fuerte: >3.0 dS/m o tendencia ascendente con estrés
+
+resistance:
+- favorable: <1.0 MPa
+- observación: 1.0-2.0 MPa
+- alerta: >2.0 MPa
+- crítico: >3.0 MPa
+
+n:
+- AP-SKIP no interpreta dosis.
+- bajo/moderado aceptable según etapa.
+- alerta de exceso solo si la lógica general detecta desbalance + etapa sensible.
+
+p:
+- importante en establecimiento, brotación, floración.
+- interpretar con pH y confianza baja si no hay análisis.
+
+k:
+- importante en llenado y calidad.
+- interpretar con agua/EC/carga.
+
+================================================================================
+7. STAGETARGETS AP-SKIP
+================================================================================
+
+AP-SKIP usa bandas amplias para evitar falsa precisión.
+
+planting_transplant:
+- soilMoisture 60-80
+- soilTemp 10-24
+- pH 6.0-7.0
+- EC alerta >2.0
+- resistance alerta >2.0
+- N bajo-moderado
+- P medio-alto
+- K medio
+
+root_establishment:
+- soilMoisture 65-85
+- soilTemp 10-24
+- pH 6.0-7.0
+- EC alerta >2.0
+- resistance alerta >2.0
+- N bajo-moderado
+- P alto relativo
+- K medio
+
+juvenile_vegetative:
+- soilMoisture 60-85
+- soilTemp 10-26
+- pH 6.0-7.0
+- EC alerta >2.2
+- resistance alerta >2.0
+- N medio
+- P medio
+- K medio
+
+dormancy:
+- soilMoisture 45-70
+- soilTemp estacional
+- pH 6.0-7.5
+- EC alerta >2.5
+- resistance baja ponderación si suelo seco/frío
+- N bajo
+- P bajo
+- K bajo
+
+budbreak:
+- soilMoisture 55-80
+- soilTemp 8-22
+- pH 6.0-7.0
+- EC alerta >2.0
+- resistance alerta >2.0
+- N medio
+- P medio
+- K medio
+
+vegetative_growth:
+- soilMoisture 55-80
+- soilTemp 10-26
+- pH 6.0-7.0
+- EC alerta >2.2
+- resistance alerta >2.0
+- N medio
+- P medio
+- K medio
+
+flowering:
+- soilMoisture 60-80 estable
+- soilTemp 10-24
+- pH 6.0-7.0
+- EC alerta >2.0
+- resistance alerta >2.0
+- N bajo-medio
+- P medio
+- K medio
+- prioridad externa: helada/calor/polinización
+
+fruit_set:
+- soilMoisture 65-85 estable
+- soilTemp 12-26
+- pH 6.0-7.0
+- EC alerta >2.0
+- resistance alerta >2.0
+- N bajo-medio
+- P medio
+- K medio-alto
+
+fruit_fill:
+- soilMoisture 65-85
+- soilTemp 12-28
+- pH 6.0-7.0
+- EC alerta >2.2
+- resistance alerta >2.0
+- N medio-bajo
+- P medio
+- K alto relativo
+
+harvest_maturity:
+- soilMoisture 55-75
+- soilTemp 10-28
+- pH 6.0-7.0
+- EC alerta >2.2
+- resistance alerta >2.0
+- N bajo
+- P bajo-medio
+- K medio
+
+post_harvest:
+- soilMoisture 55-75
+- soilTemp 8-25
+- pH 6.0-7.0
+- EC alerta >2.2
+- resistance alerta >2.0
+- N medio-bajo
+- P medio
+- K medio
+
+unknown:
+- soilMoisture 55-80
+- soilTemp 8-26
+- pH 6.0-7.5
+- EC alerta >2.0
+- resistance alerta >2.0
+- N medio
+- P medio
+- K medio
+
+================================================================================
+8. STAGEWEIGHTS AP-SKIP
+================================================================================
+
+Regla:
+AP-SKIP penaliza menos agresivamente que perfiles específicos si no hay etapa confirmada.
+Si hay etapa confirmada, usa pesos de etapa universal pero con mensajes menos cerrados.
+
+Pesos base cuando etapa unknown:
+- water 0.24
+- soilTemp 0.12
+- pH 0.10
+- EC 0.14
+- resistance 0.12
+- N 0.09
+- P 0.09
+- K 0.10
+
+Ajustes:
+- flowering: subir water/soilTemp/EC y riesgo climático.
+- fruit_set: subir water/EC/soilTemp.
+- fruit_fill: subir water/K/EC.
+- root_establishment: subir water/resistance/EC.
+- dormancy: bajar NPK.
+
+================================================================================
+9. SENSIBILIDAD CRITICA AP-SKIP
+================================================================================
+
+Sensibilidad promedio:
+- Heladas tardías en floración: alta.
+- Déficit hídrico en cuajado/llenado: alta.
+- Exceso de humedad en suelo: alta en raíz.
+- Estrés térmico prolongado: medio-alto.
+- Salinidad: media-alta.
+- Compactación: alta.
+- Falta de frío: contexto alto si región cálida y etapa irregular.
+- Mala polinización: posible en floración/cuajado, pero no diagnosticar sin preguntar.
+
+Penalización:
+- Moderada si solo hay AP-SKIP.
+- Alta si etapa crítica está confirmada y sensor/clima muestran estrés.
+- Baja si estado/etapa son unknown y no hay datos suficientes.
+
+================================================================================
+10. VENTANAS FISIOLOGICAS AP-SKIP
+================================================================================
+
+Ventana crítica:
+- flowering -> fruit_set
+
+Ventana de agua:
+- root_establishment -> fruit_fill
+
+Ventana de raíz/suelo:
+- planting_transplant -> juvenile_vegetative
+
+Ventana de nutrición relativa:
+- root_establishment
+- budbreak
+- fruit_fill
+- post_harvest
+
+Ventana de memoria:
+- siempre activa
+- especialmente flowering, fruit_set, fruit_fill y post_harvest
+
+================================================================================
+11. ALERTAS AP-SKIP
+================================================================================
+
+alertId sugerido:
+- apple_skip_frost_risk
+Mensaje:
+- "Hay riesgo de frío/helada para un manzano. Si está en flor o con frutito, revisa el huerto."
+
+alertId:
+- apple_skip_water_deficit
+Mensaje:
+- "La humedad parece baja para el manzano. Si está en flor, cuajado o llenado, el riesgo sube."
+
+alertId:
+- apple_skip_water_excess
+Mensaje:
+- "La humedad del suelo parece alta. En manzano, el exceso puede afectar oxígeno de raíz."
+
+alertId:
+- apple_skip_salinity_observation
+Mensaje:
+- "La salinidad va en aumento. Conviene revisar agua/suelo antes de que afecte raíz o fruto."
+
+alertId:
+- apple_skip_compaction_observation
+Mensaje:
+- "La resistencia del suelo sugiere posible compactación. Esto puede limitar raíz y absorción."
+
+alertId:
+- apple_skip_heat_stress
+Mensaje:
+- "Condiciones de calor pueden estresar flor, cuajado o fruto en crecimiento."
+
+alertId:
+- apple_skip_post_harvest_stress
+Mensaje:
+- "Después de cosecha el árbol sigue activo. El estrés en esta etapa puede afectar reservas del siguiente ciclo."
+
+alertId:
+- apple_skip_unknown_stage
+Mensaje:
+- "BIO-G puede seguir en modo general, pero será más preciso si eliges lo que ves en el árbol."
+
+Lenguaje:
+- Humano.
+- Prudente.
+- No decir diagnóstico cerrado.
+- No decir "aplica X químico".
+- Sugerir revisar, confirmar y observar.
+
+================================================================================
+12. UX VISIBLE AL USUARIO
+================================================================================
+
+Texto principal:
+"Este es un perfil general de manzano. Para mayor precisión, puedes elegir el tipo o variedad más adelante."
+
+Texto corto:
+"Manzano general"
+
+Texto de confianza:
+"Precisión media: BIO-G usa rangos seguros porque aún no sabe la variedad."
+
+Texto de migración:
+"Si después sabes si es Golden, Red, Gala, Criolla/Rayada o Bajo frío, puedes cambiarlo sin perder historial."
+
+Texto si estado unknown:
+"Sin etapa confirmada, BIO-G mantendrá alertas conservadoras."
+
+Texto si recién plantado:
+"Como está recién plantado, BIO-G priorizará raíz y suelo, no producción."
+
+Texto si productivo:
+"Como ya produce, BIO-G usará la etapa visible del árbol para ajustar alertas."
+
+================================================================================
+13. MEMORIA DEL CULTIVO EN AP-SKIP
+================================================================================
+
+Guardar siempre:
+- stressType
+- severity
+- duration
+- stageId
+- stateId
+- sensorSnapshot
+- weatherContext si existe
+- confidence
+- likelyFutureImpact
+- notes
+
+Impactos:
+- estrés en flowering -> posible menor cuajado.
+- estrés en fruit_set -> posible aborto/menor carga.
+- estrés en fruit_fill -> posible menor calibre/calidad.
+- estrés en post_harvest -> posible menor reserva y siguiente ciclo más débil.
+- estrés en root_establishment -> posible árbol lento o problemas futuros de raíz.
+
+Regla:
+Aunque el usuario migre de ap_skip a ap_01_golden, la memoria permanece.
+
+================================================================================
+14. MIGRACION DESDE AP-SKIP
+================================================================================
+
+Targets:
+- ap_01_golden
+- ap_02_red
+- ap_03_criolla_rayada
+- ap_04_gala
+- ap_05_low_chill
+
+No borrar:
+- perennialStateId
+- phenologyStageId
+- perennialAnchorDate
+- perennialAnchorTypeId
+- sensor history
+- stress memory
+- yield history si existe
+- plant health history
+
+Actualizar:
+- profileId
+- profile confidence
+- alias matched
+- variety label
+- sensitivity modifiers
+- relative harvest/bloom hints
+
+Conflictos:
+- Si usuario dice "Golden Dorsett" -> ap_05_low_chill.
+- Si usuario dice "amarilla" sin más -> ap_01_golden con confianza media.
+- Si usuario dice "regional" -> ap_03_criolla_rayada con confianza baja-media.
+- Si usuario dice "no sé" -> conservar ap_skip.
+
+================================================================================
+15. MAPEO A CODIGO
+================================================================================
+
+Catalog entry:
+profileId: ap_skip
+label: AP-SKIP · Manzano general
+displayName: Manzano general
+uxLabel: No sé / Manzano general
+isGeneric: true
+isSkip: true
+cropId: crop_apple_tree
+aliases:
+- manzano
+- apple tree
+- manzana
+- no se
+- no sé
+- general
+- manzano general
+- variedad desconocida
+- otro manzano
+- cualquiera
+defaultConfidence: medium_when_stage_known
+migrationTargets:
+- ap_01_golden
+- ap_02_red
+- ap_03_criolla_rayada
+- ap_04_gala
+- ap_05_low_chill
+
+Resolver:
+- input vacío o desconocido -> ap_skip
+- "manzano" solo -> ap_skip
+- "no sé" -> ap_skip
+
+Targets:
+- usar StageTargets AP-SKIP del apartado 7.
+- si stageId no existe -> unknown.
+- si stateId = newly_planted -> bloquear yield.
+- si stateId = juvenile_non_productive -> bloquear yield.
+- si stageId = post_harvest -> no cerrar cultivo.
+
+EvaluateTelemetry:
+- calcular subíndices agua/temp/suelo/nutrición.
+- usar penalización moderada por generic profile.
+- subir severidad solo si etapa crítica confirmada.
+- guardar memoria si estrés severo o persistente.
+
+================================================================================
+16. TESTS MINIMOS
+================================================================================
+
+1. ap_skip existe y es isGeneric=true.
+2. "no sé" resuelve ap_skip.
+3. "manzano general" resuelve ap_skip.
+4. ap_skip + newly_planted no proyecta producción.
+5. ap_skip + juvenile_non_productive no proyecta producción.
+6. ap_skip + productive_season + flowering activa etapa crítica.
+7. ap_skip + fruit_fill pondera agua y K más que N.
+8. ap_skip + dormancy baja interpretación NPK.
+9. ap_skip + post_harvest no cierra cultivo.
+10. migración ap_skip -> ap_01_golden conserva memoria.
+
+================================================================================
+17. FUENTES CONSULTADAS
+================================================================================
+
+Fuentes BIO-G internas:
+1. Estandar_BIOG_Integracion_Arboles_Perennes_v1_3.pdf
+2. PERFIL UNIVERSAL BIO-G - MANZANO.pdf
+3. PERFIL SKIP BIO-G - MANZANO.pdf
+
+Fuentes técnicas externas:
+4. Utah State University Extension. Apple Production and Variety Recommendations for
+   the Utah Home Garden.
+   https://extension.usu.edu/yardandgarden/research/apple-production-and-variety-recommendations-for-the-utah-home-garden
+
+5. Utah State University Extension. Fruit FAQ / Small Acreage.
+   https://extension.usu.edu/productionhort/small-acreage/fruit/faq
+
+6. New England Tree Fruit Management Guide / UMass. Apple Bud Stages.
+   https://netreefruit.org/apples/apple-bud-stages
+
+7. Cornell eCommons. Growth Stages in Fruit Trees - From Dormant to Fruit Set.
+   https://ecommons.cornell.edu/server/api/core/bitstreams/317dc529-3265-4f8c-87a2-473c2e3e790b/content
+
+8. Intermountain Fruit / USU. Tree Fruit Growth Stages - Apple.
+   https://intermountainfruit.org/cold-effects/apple-stages
+
+9. University of Minnesota Extension. Understanding dormancy and chilling hours in
+   perennial fruit crops.
+   https://blog-fruit-vegetable-ipm.extension.umn.edu/2024/11/understanding-dormancy-and-chilling.html
+
+10. University of Minnesota Extension. Drought monitoring and irrigation for apples
+    and grapes.
+    https://extension.umn.edu/commercial-fruit-production/drought-monitoring-and-irrigation-apples-and-grapes
+
+11. South Dakota State University Extension. Soil Penetration Resistance as a Soil
+    Health Indicator.
+    https://extension.sdstate.edu/soil-penetration-resistance-soil-health-indicator
+
+12. UAEMex / Cultivo de Manzana PDF.
+    https://ri.uaemex.mx/bitstream/20.500.11799/68164/1/Cultivo%2Bde%2BManzana.pdf
+
+13. UF/IFAS Ask IFAS. La Manzana (Malus domestica, Rosaceae).
+    https://ask.ifas.ufl.edu/publication/HS292
+
+14. Washington State University Tree Fruit. Pollination - Apple.
+    https://treefruit.wsu.edu/web-article/apple-pollination/
+
+Foros / internet revisados solo para aliases y dudas reales:
+15. Foro InfoJardín. Manzano pocas horas de frío.
+    https://foroinfojardin.com/threads/manzano-pocas-horas-de-fr%C3%ADo.3556/
+
+16. Archivo InfoJardín. Manzanos Golden.
+    https://archivo.infojardin.com/tema/manzanos-golden-busco-ciertos-sabores-que-recuerdo.242635/

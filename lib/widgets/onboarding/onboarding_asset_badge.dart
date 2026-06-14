@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
+
 class OnboardingUiAssets {
   static const String logo = 'assets/images/logo_bio_g.png';
   static const String landscape = 'assets/images/log_in_image.png';
@@ -131,8 +133,10 @@ class OnboardingUiAssets {
       case 'calabacin':
         return vegetable;
       case 'lemon_tree':
-      case 'apple_tree':
         return tree;
+      case 'crop_apple_tree':
+      case 'apple_tree':
+        return AppleTreeAssets.cropIcon;
       case 'rose':
       case 'cactus':
         return ornamental;
@@ -166,12 +170,7 @@ class OnboardingUiAssets {
         return planned;
       case 'newly_planted':
       case 'growing':
-      case 'growing_tree':
         return planted;
-      case 'near_production':
-      case 'productive':
-        return category == 'tree' ? tree : planted;
-      case 'dormant':
       case 'fallow':
       case 'skip':
         return harvested;

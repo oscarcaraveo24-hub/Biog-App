@@ -1,3 +1,4 @@
+import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -438,9 +439,19 @@ class CropPresentationResolver {
         return _resolveOnionIcon(rawVarietyValue);
       case CropCatalog.garlicCropId:
         return _resolveGarlicIcon(rawVarietyValue);
+      case CropCatalog.appleTreeCropId:
+        return _resolveAppleTreeIcon(rawVarietyValue);
       default:
         return _genericPlantIconAsset;
     }
+  }
+
+  /// Ícono del manzano por perfil AP. Sin perfil claro → ícono del cultivo
+  /// (`ic_apple_tree.png`); AP-SKIP/genérico → neutro (`ic_apple_tree_generic`).
+  static String _resolveAppleTreeIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return AppleTreeAssets.cropIcon;
+    return appleTreeProfileIcon(raw);
   }
 
   static String _resolveSpinachIcon(String? rawVarietyValue) {

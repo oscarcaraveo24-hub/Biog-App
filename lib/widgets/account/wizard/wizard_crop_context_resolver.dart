@@ -1,5 +1,6 @@
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/widgets/seeds/barley_profiles.dart';
 import 'package:bio_g/widgets/seeds/bean_profiles.dart';
@@ -37,6 +38,11 @@ class WizardCropContextResolver {
     String? cycleLabel,
     String? sowingModeId,
     String? cultivationScaleId,
+    String? perennialStateId,
+    String? phenologyStageId,
+    DateTime? perennialAnchorDate,
+    String? perennialAnchorTypeId,
+    DateTime? treePlantingDate,
   }) {
     final normalizedCropId = _canonicalCropKey(
       cropId.trim().isEmpty ? CropCatalog.maizeCropId : cropId,
@@ -49,6 +55,11 @@ class WizardCropContextResolver {
         ? (CropCatalog.cropById(normalizedCropId)?.categoryId ??
             CropCatalog.grainCategoryId)
         : cropCategoryId.trim();
+
+    final isTreeContext = isTreeCrop(
+      cropId: normalizedCropId,
+      cropCategoryId: normalizedCropCategoryId,
+    );
 
     final bool isFallow = lifecycleStatus == CropLifecycleStatus.fallow;
     final String? rawVarietySelection =
@@ -66,7 +77,9 @@ class WizardCropContextResolver {
         ? null
         : _resolveExplicitProfileId(
             cropId: normalizedCropId,
-            varietyId: resolvedVarietyId,
+            varietyId: normalizedCropId == CropCatalog.appleTreeCropId
+                ? _normalizeNullable(varietyId)
+                : resolvedVarietyId,
             varietyAlias: rawVarietySelection,
           );
 
@@ -109,6 +122,10 @@ class WizardCropContextResolver {
         ? cultivationScaleId!.trim()
         : previous?.cultivationScaleId;
 
+    // Memoria de plantación (edad) heredada al reconfigurar el mismo árbol.
+    final DateTime? carriedTreeSowingDate =
+        sameCrop ? previous.sowingDate : null;
+
     return DeviceCropContext(
       deviceId: deviceId,
       cropCategoryId: normalizedCropCategoryId,
@@ -119,10 +136,17 @@ class WizardCropContextResolver {
       varietyAlias: resolvedVarietyAlias,
       calendarTypeId: resolvedCalendarTypeId,
       lifecycleStatus: lifecycleStatus,
+      // Para árboles, sowingDate es el eje MEMORIA/EDAD (fecha de plantación),
+      // distinto de perennialAnchorDate (evento de etapa). Si no llega una
+      // fecha de plantación nueva, se conserva la del contexto previo para que
+      // la edad sobreviva a transiciones de etapa/producción (#4, #14).
       sowingDate: lifecycleStatus == CropLifecycleStatus.planted
-          ? selectedDate
+          ? (isTreeContext
+              ? (treePlantingDate ?? carriedTreeSowingDate)
+              : selectedDate)
           : null,
-      plannedSowingDate: lifecycleStatus == CropLifecycleStatus.planned
+      plannedSowingDate:
+          !isTreeContext && lifecycleStatus == CropLifecycleStatus.planned
           ? selectedDate
           : null,
       sowingDateConfidence: dateConfidence,
@@ -131,6 +155,10 @@ class WizardCropContextResolver {
       timezone: resolvedTimezone,
       regionCode: resolvedRegionCode,
       cycleLabel: cycleLabel ?? previous?.cycleLabel,
+      perennialStateId: isTreeContext ? perennialStateId : null,
+      phenologyStageId: isTreeContext ? phenologyStageId : null,
+      perennialAnchorDate: isTreeContext ? perennialAnchorDate : null,
+      perennialAnchorTypeId: isTreeContext ? perennialAnchorTypeId : null,
       catalogVersion: CropCatalog.version,
       source: CropConfigSource.wizard,
       configuredAt: previous?.configuredAt ?? now,
@@ -164,6 +192,13 @@ class WizardCropContextResolver {
       return 'generic';
     }
 
+    if (cropId == CropCatalog.appleTreeCropId) {
+      final profile =
+          CropCatalog.profileByAny(cropId, rawValue) ??
+          CropCatalog.profileByAny(cropId, resolvedProfileId);
+      return profile?.label ?? rawValue;
+    }
+
     if (resolvedVarietyId != null) {
       final variety = CropCatalog.varietyById(cropId, resolvedVarietyId);
       if (variety != null) return variety.isGeneric ? 'generic' : variety.label;
@@ -187,6 +222,13 @@ class WizardCropContextResolver {
     required String? varietyId,
     required String? varietyAlias,
   }) {
+    if (cropId == CropCatalog.appleTreeCropId) {
+      final profile =
+          CropCatalog.profileByAny(cropId, varietyId) ??
+          CropCatalog.profileByAny(cropId, varietyAlias);
+      return profile?.id;
+    }
+
     if (cropId == CropCatalog.maizeCropId) {
       if (varietyId != null && varietyId.isNotEmpty) {
         final profileId = maizeVarietyById(varietyId)?.defaultProfileId;

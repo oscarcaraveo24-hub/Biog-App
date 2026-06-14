@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:bio_g/widgets/onboarding/onboarding_asset_badge.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
+import 'package:bio_g/widgets/shared/bio_g_wheel_date_picker.dart';
 import 'package:bio_g/widgets/onboarding/onboarding_header.dart';
 import 'package:bio_g/widgets/onboarding/onboarding_primary_button.dart';
 import 'package:bio_g/widgets/onboarding/onboarding_shell.dart';
@@ -41,10 +42,7 @@ class CropDateStep extends StatelessWidget {
     final Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        OnboardingHeader(
-          logoAsset: OnboardingUiAssets.logo,
-          title: title,
-        ),
+        OnboardingHeader(logoAsset: OnboardingUiAssets.logo, title: title),
         const SizedBox(height: 24),
         BioGGlassCard(
           radius: 22,
@@ -70,11 +68,10 @@ class CropDateStep extends StatelessWidget {
                     onSurface: const Color(0xFF55646C),
                   ),
                 ),
-                child: CalendarDatePicker(
+                child: BioGWheelDatePicker(
                   initialDate: initialDate,
                   firstDate: DateTime(now.year - 5),
                   lastDate: DateTime(now.year + 5),
-                  currentDate: now,
                   onDateChanged: (DateTime value) {
                     onDateChanged?.call(value);
                     onFlexibleChanged?.call(false);
@@ -178,13 +175,7 @@ class CropDateStep extends StatelessWidget {
     if (stage == 'planned') {
       return '¿Tienes una fecha estimada para sembrar?';
     }
-    if (stage == 'newly_planted' ||
-        stage == 'growing_tree' ||
-        stage == 'near_production' ||
-        stage == 'productive') {
-      return '¿Recuerdas aproximadamente cuándo plantaste?';
-    }
-    if (stage == 'fallow' || stage == 'dormant') {
+    if (stage == 'fallow') {
       return '¿Recuerdas aproximadamente cuándo cosechaste?';
     }
     return '¿Recuerdas aproximadamente cuándo sembraste?';
@@ -201,7 +192,7 @@ class CropDateStep extends StatelessWidget {
     if (stage == 'planned') {
       return 'Indicar una fecha nos ayuda a ajustar mejor las recomendaciones de Bio-G. Puede cambiarse en cualquier momento.';
     }
-    if (stage == 'fallow' || stage == 'dormant') {
+    if (stage == 'fallow') {
       return 'Indicar una fecha nos ayuda a interpretar mejor el cierre del ciclo. Si no la recuerdas bien, puedes dejarla aproximada y cambiarla más adelante.';
     }
     return 'Indicar una fecha nos ayuda a ajustar mejor las recomendaciones de Bio-G. Si no lo recuerdas, coloca una fecha aproximada para darte los mejores resultados.';

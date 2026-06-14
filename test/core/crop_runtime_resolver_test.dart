@@ -531,4 +531,110 @@ void main() {
       expect(snapshot.hasSeed, isTrue);
     });
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Perennial / tree (apple_tree)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  group('CropRuntimeResolver.resolve — apple_tree (perennial)', () {
+    DeviceCropContext treeCtx({
+      String? perennialStateId,
+      String? phenologyStageId,
+    }) {
+      return DeviceCropContext(
+        deviceId: 'tree-device-001',
+        cropCategoryId: 'tree',
+        cropId: 'apple_tree',
+        profileId: 'ap_01_golden',
+        lifecycleStatus: CropLifecycleStatus.planted,
+        sowingDateConfidence: DateConfidence.unknown,
+        catalogVersion: 'v1',
+        source: CropConfigSource.wizard,
+        configuredAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+        perennialStateId: perennialStateId,
+        phenologyStageId: phenologyStageId,
+      );
+    }
+
+    test('resolves the perennial branch without a sowing date', () {
+      final snapshot = CropRuntimeResolver.resolve(
+        device: null,
+        seed: null,
+        cropContext: treeCtx(
+          perennialStateId: 'productive_season',
+          phenologyStageId: 'flowering',
+        ),
+        live: null,
+        alertsState: emptyAlertsState,
+        now: DateTime(2026, 6, 7),
+      );
+
+      expect(snapshot.isPlanted, isTrue);
+      // El cropId legacy `apple_tree` (en treeCtx) se canonicaliza al oficial.
+      expect(snapshot.cropKeyName, 'crop_apple_tree');
+      expect(snapshot.definition, isNotNull);
+      expect(snapshot.stageResult, isNotNull);
+      // Trees do not use sowingDate as the axis.
+      expect(snapshot.stageResult!.daySinceSowing, isNull);
+      expect(snapshot.stageResult!.stageKey, 'flowering');
+    });
+
+    test(
+      'invalid stage for state is corrected (newly_planted + flowering)',
+      () {
+        final snapshot = CropRuntimeResolver.resolve(
+          device: null,
+          seed: null,
+          cropContext: treeCtx(
+            perennialStateId: 'newly_planted',
+            phenologyStageId: 'flowering',
+          ),
+          live: null,
+          alertsState: emptyAlertsState,
+          now: DateTime(2026, 6, 7),
+        );
+
+        expect(snapshot.stageResult, isNotNull);
+        expect(snapshot.stageResult!.stageKey, 'root_establishment');
+      },
+    );
+
+    test('unknown/unknown does not crash and stays active', () {
+      final snapshot = CropRuntimeResolver.resolve(
+        device: null,
+        seed: null,
+        cropContext: treeCtx(
+          perennialStateId: 'unknown',
+          phenologyStageId: 'unknown',
+        ),
+        live: null,
+        alertsState: emptyAlertsState,
+        now: DateTime(2026, 6, 7),
+      );
+
+      expect(snapshot.isPlanted, isTrue);
+      expect(snapshot.stageResult, isNotNull);
+      expect(snapshot.stageResult!.stageKey, 'unknown');
+    });
+
+    test('harvest_maturity does not terminate the crop', () {
+      final snapshot = CropRuntimeResolver.resolve(
+        device: null,
+        seed: null,
+        cropContext: treeCtx(
+          perennialStateId: 'productive_season',
+          phenologyStageId: 'harvest_maturity',
+        ),
+        live: null,
+        alertsState: emptyAlertsState,
+        now: DateTime(2026, 6, 7),
+      );
+
+      // Still planted/active — harvest is not a terminal cycle for trees.
+      expect(snapshot.isPlanted, isTrue);
+      expect(snapshot.stageResult!.stageKey, 'harvest_maturity');
+      expect(snapshot.stageLabel, 'Maduración / cosecha');
+    });
+  });
 }

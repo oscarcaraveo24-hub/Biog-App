@@ -6,6 +6,7 @@ import 'package:bio_g/widgets/dashboard/dashboard_quick_action_card.dart';
 import 'package:bio_g/widgets/insight_card.dart';
 import 'package:bio_g/widgets/metric_card.dart';
 import 'package:bio_g/widgets/npk_insight_card.dart';
+import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 import 'package:bio_g/widgets/shared/bio_g_page_route.dart';
 import 'package:bio_g/widgets/soil_health_ring.dart';
 
@@ -247,6 +248,142 @@ class DashboardSoilHealthSection extends StatelessWidget {
   }
 }
 
+class DashboardTreeStatusSection extends StatelessWidget {
+  final DashboardTreeStatusUiData data;
+
+  const DashboardTreeStatusSection({super.key, required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final criticalLabel = data.criticalLabel;
+    final precisionLabel = data.precisionLabel;
+
+    return BioGGlassCard(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const Icon(
+                Icons.park_rounded,
+                color: Color(0xFF2E7D5A),
+                size: 22,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  data.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _TreeStatusLine(text: data.stateLabel),
+          _TreeStatusLine(text: data.profileLabel),
+          _TreeStatusLine(text: data.stageLabel),
+          _TreeStatusLine(text: data.anchorText),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              if (criticalLabel != null)
+                _TreeStatusChip(
+                  text: criticalLabel,
+                  color: const Color(0xFFE85D4F),
+                ),
+              if (precisionLabel != null)
+                _TreeStatusChip(
+                  text: precisionLabel,
+                  color: const Color(0xFF6F7F79),
+                ),
+            ],
+          ),
+          if (criticalLabel != null || precisionLabel != null)
+            const SizedBox(height: 10),
+          Text(
+            data.priorityText,
+            style: const TextStyle(
+              fontSize: 13,
+              height: 1.28,
+              color: Color(0xFF2E7D5A),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            data.helperText,
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.28,
+              color: Colors.black.withValues(alpha: 0.62),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TreeStatusLine extends StatelessWidget {
+  final String text;
+
+  const _TreeStatusLine({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.black.withValues(alpha: 0.72),
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _TreeStatusChip extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _TreeStatusChip({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          color: color,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
 class DashboardNpkSection extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -375,12 +512,14 @@ class DashboardQuickActionsSection extends StatelessWidget {
   final VoidCallback onExportTap;
   final VoidCallback onCropJourneyTap;
   final VoidCallback onClimateTap;
+  final String cropJourneyTitle;
 
   const DashboardQuickActionsSection({
     super.key,
     required this.onExportTap,
     required this.onCropJourneyTap,
     required this.onClimateTap,
+    this.cropJourneyTitle = 'Rendimiento\nestimado',
   });
 
   @override
@@ -420,7 +559,7 @@ class DashboardQuickActionsSection extends StatelessWidget {
               Expanded(
                 child: DashboardQuickActionCard(
                   assetIconPath: 'assets/icons/metrics/ic_plant_growth.png',
-                  title: 'Rendimiento\nestimado',
+                  title: cropJourneyTitle,
                   assetScale: 4.2,
                   assetWidth: 22,
                   assetHeight: 22,

@@ -1,0 +1,1633 @@
+BIO-G
+01_FICHA_TECNICA_UNIVERSAL + PERFILES/VARIEDADES
+MANZANO / APPLE TREE
+
+Archivo: 01_Ficha_Tecnica_Universal_Perfiles_BioG_Manzano_AP_v1.txt
+Cultivo BIO-G: Manzano
+cropId: crop_apple_tree
+prefix perfiles: AP
+Versión: v1.0 texto cableable
+Estado: listo para pasar a Codex/Claude junto con SKIP, rendimiento, riesgos y fertilización.
+Formato: TXT interno para código. No es recomendación agronómica local.
+
+================================================================================
+0. CORRECCIONES Y DECISIONES DE ESTA VERSION
+================================================================================
+
+0.1 Decisión documental
+La Ficha Técnica Universal y la Ficha de Perfiles/Variedades quedan en ESTE MISMO DOCUMENTO.
+No se crea un documento separado de variedades. Esto sigue el Estándar BIO-G para árboles
+perennes v1.3 y mantiene el patrón usado en berenjena: cultivo madre + perfiles + aliases +
+etapas + rangos base + UX + mapeo técnico.
+
+0.2 Decisión técnica central
+En árboles, BIO-G NO debe usar sowingDate como eje principal.
+El eje correcto es:
+
+estado fisiológico del árbol
++ etapa/evento visible
++ ancla temporal
++ memoria del cultivo
+
+La variedad ajusta sensibilidad, frío, fechas relativas, cosecha relativa, rendimiento relativo
+y textos. La variedad NO cambia la arquitectura fenológica.
+
+0.3 Qué se corrigió respecto al borrador anterior
+- Se cambió la lógica de “perfil universal a medias” por documento madre completo.
+- Se incorporan perfiles AP dentro del Universal.
+- Se aterrizan IDs de código, aliases, estados, etapas, anclas y métricas permitidas.
+- Se separa mejor árbol joven/no productivo vs árbol productivo.
+- Se mantiene la postcosecha como etapa activa, no como cierre.
+- Se agregan rangos medibles base para sensores BIO-G.
+- Se agrega matriz de StageTargets base, StageWeights base y sensibilidad por etapa.
+- Se agrega fuente técnica de universidades/extensión y se marca qué datos son
+  conservadores/modelados para BIO-G v1.
+- Se incluye una nota sobre foros: se revisaron solo como señal de nombres comunes,
+  confusión real del usuario y aliases; NO como fuente para rangos agronómicos.
+
+0.4 Qué NO se sobre-modela en v1
+- No se calcula requerimiento exacto de horas frío por huerto.
+- No se calcula GDD real por variedad.
+- No se fuerza alternancia productiva.
+- No se modela portainjerto como motor principal.
+- No se modela número de frutos por árbol.
+- No se receta fertilización en kg/ha dentro de este documento.
+- No se inventan sensores fuera de los permitidos:
+  soilMoisture, soilTemp, ph, ec, resistance, n, p, k.
+
+================================================================================
+1. PROPOSITO Y ALCANCE
+================================================================================
+
+Este documento define el cultivo madre Manzano para BIO-G y sus perfiles AP oficiales.
+Sirve para que el código pueda crear:
+
+- apple_tree_catalog.dart
+- apple_tree_universal_profile.dart
+- apple_tree_crop_definition.dart
+- altas en CropKey / CropCatalog / crop_registry.dart
+- resolver de perfil
+- StageTargets base por etapa
+- StageWeights base por etapa
+- textos UX del wizard
+- aliases de variedad
+- reglas de migración futura desde AP-SKIP a perfil específico
+
+Alcance v1:
+- Huertos a cielo abierto.
+- Productores con árboles aislados, pequeños huertos o huertos comerciales.
+- Compatible con sensor de suelo BIO-G y contexto climático externo.
+- Compatible con árboles jóvenes, establecidos, productivos y usuario que no sabe estado.
+- Pensado para México, especialmente regiones productoras de manzana, pero no cerrado
+  a un estado; la validación fina queda para región/asesor/análisis.
+
+Limitaciones:
+- No sustituye análisis de suelo, agua o tejido.
+- No sustituye recomendación agronómica local.
+- No diagnostica plagas/enfermedades de forma cerrada.
+- No promete rendimiento.
+- No decide pesticidas ni dosis.
+
+================================================================================
+2. IDENTIDAD UNIVERSAL DEL CULTIVO
+================================================================================
+
+Nombre común:
+- Manzano
+
+Nombre científico:
+- Malus domestica Borkh.
+
+Familia botánica:
+- Rosaceae
+
+Tipo:
+- Árbol frutal caducifolio
+- Perenne
+- C3
+- Cultivo de fruto
+
+Órgano objetivo:
+- FRUTO
+
+cropId BIO-G:
+- crop_apple_tree
+
+CropKey recomendado:
+- CropKey.appleTree
+  Nota: si el proyecto ya usa CropKey.apple_tree, respetar el nombre existente y no
+  renombrar sin migración/test.
+
+Categoría:
+- tree
+
+profilePrefix:
+- AP
+
+Perfil genérico obligatorio:
+- ap_skip
+
+Perfiles específicos oficiales v1:
+- ap_01_golden
+- ap_02_red
+- ap_03_criolla_rayada
+- ap_04_gala
+- ap_05_low_chill
+
+Asset principal sugerido:
+- assets/icons/wizard/ic_apple_tree.png
+- assets/icons/wizard/ic_apple_tree_generic.png
+- assets/seeds/apple_tree/stage_*.png
+
+Nota:
+El cultivo madre NO representa una variedad comercial exacta. El cultivo madre representa
+la biología base del manzano. La variedad/perfil se resuelve después.
+
+================================================================================
+3. CULTIVO ANUAL VS ARBOL PERENNE EN BIO-G
+================================================================================
+
+Tabla conceptual:
+
+Aspecto                         | Cultivo anual                         | Manzano / árbol perenne
+--------------------------------|---------------------------------------|---------------------------------------------
+Eje temporal                    | siembra/trasplante                    | estado visible + ancla temporal + memoria
+Fin del ciclo                   | cosecha o fin de temporada            | la cosecha NO cierra la vida del árbol
+Edad                            | explica muchas etapas                 | ayuda, pero no debe ser input principal
+Variedad                        | puede cambiar calendario completo     | ajusta sensibilidad y fechas relativas
+Postcosecha                     | cierre/transición                     | etapa activa de recuperación y reservas
+Memoria                         | menor o de un ciclo                   | obligatoria; estrés impacta ciclos futuros
+Rendimiento                     | plantas/ha o t/ha por ciclo           | kg/árbol + árboles/ha + estado productivo
+Usuario que no sabe             | perfil genérico                       | AP-SKIP conservador y migrable
+
+Regla BIO-G:
+La UX debe preguntar cosas visibles y prácticas:
+- ¿Es un árbol recién plantado?
+- ¿Aún no produce?
+- ¿Ya produce esta temporada?
+- ¿Qué se ve en el árbol ahorita?
+- ¿Hace cuánto empezó esa etapa?
+
+No debe obligar al productor a contestar:
+- GDD exactos
+- horas frío exactas
+- portainjerto exacto
+- edad exacta si no la sabe
+- número de frutos
+- variedad exacta si no la sabe
+
+================================================================================
+4. ARQUITECTURA BIO-G PARA MANZANO
+================================================================================
+
+Jerarquía:
+
+Cultivo madre:
+- Manzano / crop_apple_tree
+
+Estado perenne UX:
+- newly_planted
+- juvenile_non_productive
+- established
+- productive_season
+- unknown
+
+Perfil/variedad:
+- ap_skip
+- ap_01_golden
+- ap_02_red
+- ap_03_criolla_rayada
+- ap_04_gala
+- ap_05_low_chill
+
+Etapa fenológica visible:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Ancla temporal:
+- planting
+- stage_start
+- budbreak
+- flowering
+- harvest
+- post_harvest
+- manual_stage
+- unknown
+
+Regla de compatibilidad:
+- newly_planted puede usar planting_transplant o root_establishment.
+- juvenile_non_productive puede usar juvenile_vegetative, root_establishment o unknown.
+- established puede usar dormancy, budbreak, vegetative_growth o unknown.
+- productive_season puede usar todas las etapas productivas anuales.
+- unknown debe usar AP-SKIP o perfil elegido con confianza baja/media según señales.
+
+================================================================================
+5. ESTADOS DEL ARBOL Y UX RECOMENDADA
+================================================================================
+
+5.1 Estados perennes permitidos
+
+ID: newly_planted
+Etiqueta UX:
+- Recién plantado
+Descripción:
+- Árbol colocado recientemente en campo, trasplante o reposición.
+Regla:
+- No producir.
+- Priorizar raíz, humedad estable, baja salinidad y baja compactación.
+- Ancla preferida: planting.
+Confianza:
+- Alta si hay fecha de plantación.
+- Media si solo hay etapa visible.
+
+ID: juvenile_non_productive
+Etiqueta UX:
+- Aún no produce
+Descripción:
+- Árbol en crecimiento estructural. Puede tener hojas, ramas y vigor, pero todavía
+  no entra a producción comercial o el usuario confirma que no produce.
+Regla:
+- No forzar floración ni rendimiento.
+- Priorizar agua, suelo, raíz, estructura vegetativa y estrés acumulado.
+- Ancla preferida: stage_start o manual_stage.
+Confianza:
+- Media.
+
+ID: established
+Etiqueta UX:
+- Árbol establecido
+Descripción:
+- Árbol vivo, con estructura formada, pero el usuario no confirma producción esta temporada.
+Regla:
+- Permitir ciclo anual si el usuario selecciona etapa visible.
+- No proyectar rendimiento alto si no hay confirmación de carga.
+Confianza:
+- Media-baja si no hay etapa visible.
+
+ID: productive_season
+Etiqueta UX:
+- En producción esta temporada
+Descripción:
+- Árbol con ciclo productivo anual activo: brotación, floración, cuajado, fruto,
+  cosecha o postcosecha.
+Regla:
+- Usar etapa visible como eje principal.
+- Activar memoria de estrés crítica.
+- Permitir rendimiento aproximado en documento 03.
+Confianza:
+- Media-alta si etapa visible y fecha de inicio existen.
+
+ID: unknown
+Etiqueta UX:
+- No lo sé
+Descripción:
+- Usuario no sabe estado.
+Regla:
+- No bloquear.
+- Usar AP-SKIP y preguntas visuales simples.
+- Alertas conservadoras.
+Confianza:
+- Baja al inicio; sube si hay sensor + etapa visible.
+
+5.2 Pregunta UX recomendada para estado
+
+Pregunta:
+"¿Cómo está tu manzano actualmente?"
+
+Opciones:
+1. Recién plantado
+2. Aún no produce
+3. Ya produce esta temporada
+4. Está establecido, pero no sé si va a producir
+5. No lo sé
+
+Mapeo:
+- Recién plantado -> newly_planted
+- Aún no produce -> juvenile_non_productive
+- Ya produce esta temporada -> productive_season
+- Está establecido... -> established
+- No lo sé -> unknown
+
+5.3 Pregunta UX recomendada si YA PRODUCE
+
+Pregunta:
+"¿Qué se ve en el árbol ahorita?"
+
+Opciones visibles:
+- Pelón / sin hojas -> dormancy
+- Brotando -> budbreak
+- Lleno de hojas -> vegetative_growth
+- En flor -> flowering
+- Tirando flor / frutito recién amarrado -> fruit_set
+- Fruto verde creciendo -> fruit_fill
+- Fruto madurando / listo para cortar -> harvest_maturity
+- Después de cosecha -> post_harvest
+- No lo sé -> unknown
+
+Pregunta dinámica posterior:
+"¿Hace cuánto empezó más o menos esta etapa?"
+
+Anclas:
+- Brotando -> budbreak
+- En flor -> flowering
+- Fruto madurando/listo -> harvest
+- Después de cosecha -> post_harvest
+- Otras -> stage_start / manual_stage
+
+5.4 Pregunta UX recomendada si AUN NO PRODUCE
+
+Pregunta:
+"¿Qué describe mejor tu árbol?"
+
+Opciones:
+- Lo acabo de plantar -> planting_transplant
+- Está echando raíz / agarrando -> root_establishment
+- Está creciendo con hojas y ramas, pero no produce -> juvenile_vegetative
+- No lo sé -> unknown
+
+En esta ruta, evitar preguntar "sin hojas / reposo" como criterio principal si no aporta.
+Un árbol juvenil puede estar sin hojas por temporada, pero eso no define producción.
+
+================================================================================
+6. ETAPAS FENOLOGICAS BIO-G DEL MANZANO
+================================================================================
+
+Tabla de etapas v1:
+
+ID: planting_transplant
+UX:
+- Plantación / trasplante
+Aplica en:
+- newly_planted
+Ancla:
+- planting
+Descripción:
+- El árbol acaba de establecerse en campo.
+Prioridad BIO-G:
+- Evitar estrés por trasplante, saturación, salinidad y compactación.
+No producir:
+- Sí, bloquea producción.
+Sensibilidad:
+- agua alta, suelo alto, EC alta, resistencia alta.
+
+ID: root_establishment
+UX:
+- Establecimiento radicular
+Aplica en:
+- newly_planted, juvenile_non_productive
+Ancla:
+- stage_start o planting
+Descripción:
+- Desarrollo de raíces finas y recuperación de trasplante.
+Duración orientativa:
+- 0-6 meses después de plantación, variable por clima y manejo.
+Prioridad BIO-G:
+- Humedad estable, oxígeno en suelo, baja salinidad.
+No producir:
+- Sí, bloquea producción.
+
+ID: juvenile_vegetative
+UX:
+- Crecimiento juvenil
+Aplica en:
+- juvenile_non_productive
+Ancla:
+- stage_start / manual_stage
+Descripción:
+- Construcción de estructura, ramas, hojas, raíz y reservas.
+Duración orientativa:
+- Año 1-3 en sistemas modernos; puede ser más en árboles grandes o manejo extensivo.
+Prioridad BIO-G:
+- Vigor equilibrado, sanidad, agua, suelo.
+
+ID: dormancy
+UX:
+- Reposo / pelón / sin hojas
+Aplica en:
+- established, productive_season
+Ancla:
+- stage_start / manual_stage
+Descripción:
+- El árbol caducifolio está en reposo invernal. Acumula frío y conserva reservas.
+Prioridad BIO-G:
+- No sobreinterpretar NPK; vigilar frío, heladas extremas, humedad excesiva y raíces.
+Nota:
+- Horas frío son contexto climático v2, no sensor BIO-G v1.
+
+ID: budbreak
+UX:
+- Brotación
+Aplica en:
+- established, productive_season
+Ancla:
+- budbreak
+Descripción:
+- Yemas salen de dormancia; aparecen puntas verdes, hojas y estructuras florales.
+Prioridad BIO-G:
+- Evitar frío tardío, estrés hídrico y exceso de N.
+
+ID: vegetative_growth
+UX:
+- Desarrollo vegetativo / lleno de hojas
+Aplica en:
+- established, productive_season
+Ancla:
+- stage_start
+Descripción:
+- Expansión de hojas, brotes y soporte fotosintético.
+Prioridad BIO-G:
+- Agua y nutrición moderada; no empujar vigor excesivo si hay fruta.
+
+ID: flowering
+UX:
+- Floración
+Aplica en:
+- productive_season
+Ancla:
+- flowering
+Descripción:
+- Etapa crítica: flor abierta, polinización y sensibilidad a helada.
+Prioridad BIO-G:
+- Temperatura estable, agua estable, evitar saturación, estrés y salinidad.
+Riesgo:
+- helada tardía, calor seco, mala polinización.
+
+ID: fruit_set
+UX:
+- Cuajado / amarre / frutito
+Aplica en:
+- productive_season
+Ancla:
+- stage_start o flowering
+Descripción:
+- Después de floración/pétalos, el fruto recién amarrado define carga potencial.
+Prioridad BIO-G:
+- Agua estable, evitar calor, salinidad y estrés.
+Nota:
+- Fruit set suele observarse 7-14 días después de caída de pétalos en guías de etapas.
+
+ID: fruit_fill
+UX:
+- Llenado / fruto verde creciendo
+Aplica en:
+- productive_season
+Ancla:
+- stage_start
+Descripción:
+- Crecimiento de fruto, calibre, calidad y acumulación.
+Prioridad BIO-G:
+- Humedad estable, K/Ca/Mg en doc 05, evitar déficit y EC alta.
+Nota:
+- La fase temprana de crecimiento de manzana incluye división celular aproximadamente
+  35-45 días después de antesis; después domina expansión celular hasta madurez.
+
+ID: harvest_maturity
+UX:
+- Maduración / cosecha / fruto madurando
+Aplica en:
+- productive_season
+Ancla:
+- harvest
+Descripción:
+- Fruto alcanza madurez comercial. Varía por perfil, clima y mercado.
+Prioridad BIO-G:
+- Evitar estrés hídrico fuerte, golpe de sol, exceso de humedad y pérdida de calidad.
+
+ID: post_harvest
+UX:
+- Postcosecha / después de cosecha
+Aplica en:
+- productive_season, established
+Ancla:
+- post_harvest
+Descripción:
+- Etapa activa de recuperación, hoja funcional y reservas para siguiente ciclo.
+Prioridad BIO-G:
+- No apagar alertas; guardar estrés; recuperación hídrica/nutricional.
+Regla:
+- Cosecha/postcosecha NO cierran el cultivo.
+
+ID: unknown
+UX:
+- No lo sé
+Aplica en:
+- todos
+Ancla:
+- unknown
+Descripción:
+- Estado fenológico no confirmado.
+Prioridad BIO-G:
+- Mantener app funcionando con confianza baja/media y alertas conservadoras.
+
+================================================================================
+7. TIEMPOS FISIOLOGICOS ORIENTATIVOS
+================================================================================
+
+Estos tiempos son para visualización, calendario aproximado y mensajes. No son promesas.
+
+7.1 Ventanas universales productivas
+- Brotación -> floración: 20-50 días, según frío acumulado, temperatura y perfil.
+- Floración -> cuajado visible: 5-20 días.
+- Cuajado -> llenado activo: inmediato; el fruto puede tener fase temprana fuerte de
+  división celular durante ~35-45 días después de antesis.
+- Llenado de fruto: 60-110 días, según perfil y carga.
+- Plena floración -> cosecha: 100-180 días, según variedad/perfil, clima y mercado.
+- Postcosecha: desde cosecha hasta senescencia/caída de hoja o inicio de dormancia.
+
+7.2 Entrada a producción
+- Sistemas modernos/intensivos con portainjerto enanizante: puede iniciar en año 2-3.
+- Golden/Red en manejo común: entrada orientativa año 3-4.
+- Criolla/rayada o sistemas menos intensivos: año 3-5 o más.
+- Producción plena: típicamente año 4-6+ según sistema, portainjerto y manejo.
+
+BIO-G v1 no debe pedir edad exacta para resolver etapa.
+La edad puede ayudar en rendimiento, pero no debe mandar el motor fenológico.
+
+================================================================================
+8. RANGOS MEDIBLES BASE PARA BIO-G v1
+================================================================================
+
+IMPORTANTE:
+Los rangos son de monitoreo y score, no recetas. Ajustes finos de NPK van en Documento 05.
+
+8.1 Temperatura ambiente / contexto climático
+- Activación fisiológica orientativa: >7 °C.
+- Desarrollo general favorable: 15-25 °C.
+- Observación por calor: >28-30 °C, especialmente en floración/cuajado/llenado.
+- Riesgo de helada: cerca o bajo 0 °C.
+- En floración, umbrales de daño por helada dependen de estado de yema y duración.
+  Guías de extensión muestran daño progresivo desde estados tempranos hasta plena flor.
+
+Uso en BIO-G:
+- Temperatura ambiente es contexto externo, no lectura del sensor de suelo.
+- soilTemp sí puede influir en raíz/actividad.
+
+8.2 Temperatura de suelo / soilTemp
+- Baja actividad radicular: <7-8 °C.
+- Rango operativo general raíz: 8-25 °C.
+- Favorable aproximado: 12-22 °C.
+- Observación: >26-28 °C en suelo superficial si se combina con baja humedad.
+- Alerta: temperaturas extremas + déficit hídrico.
+
+8.3 Humedad de suelo / soilMoisture
+Interpretación preferida:
+- % de agua disponible o escala normalizada por textura.
+Si el sensor da porcentaje volumétrico, convertir a bandas relativas por suelo.
+
+Rangos base:
+- Bajo crítico: <45% AW
+- Observación baja: 45-55% AW
+- Operativo: 55-85% AW
+- Optimo conservador: 60-80/85% AW según etapa
+- Exceso/saturación: >90% AW o lectura persistentemente alta con mala aireación
+
+Regla:
+- Manzano necesita humedad estable, pero no saturación.
+- En suelos con agua parada por más de 24 h hay riesgo de falta de oxígeno en raíz.
+- Evitar alternancia fuerte seco/saturado.
+
+8.4 pH
+- Optimo BIO-G v1: 6.0-7.0
+- Aceptable amplio: 5.5-7.5
+- Observación: 5.0-5.5 o 7.5-8.0
+- Alerta: <5.0 o >8.0, especialmente si hay síntomas o bloqueo nutricional.
+
+Nota:
+Penn State recomienda pH 6.0-6.5 para manzanos en plantaciones frutales; USU maneja
+6.0-7.5 para la mayoría de frutales. BIO-G usa una banda conservadora para UX.
+
+8.5 Conductividad eléctrica / ec
+Usar como alerta conservadora por sensibilidad a sales, no como diagnóstico único.
+
+- Seguro/normal: <1.0 dS/m
+- Observación: 1.0-2.0 dS/m
+- Alerta inicial: >2.0 dS/m
+- Alerta fuerte: >3.0 dS/m o tendencia ascendente + estrés hídrico
+
+Nota:
+La escala general de salinidad de USU indica que 0-2 dS/m suele ser mayormente
+negligible, 2-4 dS/m puede restringir plantas sensibles. BIO-G usa >2.0 como alerta
+temprana conservadora en manzano.
+
+8.6 Resistencia/compactación / resistance
+- Favorable: <1.0 MPa
+- Observación: 1.0-2.0 MPa
+- Alerta: >2.0 MPa
+- Crítico: >3.0 MPa
+
+Nota:
+2 MPa se usa como umbral general donde muchas raíces ya no crecen bien. En manzano
+el problema se agrava si coincide con baja humedad, baja materia orgánica, suelo pesado
+o mala aireación.
+
+8.7 NPK relativo
+No usar como dosis.
+
+N:
+- Bajo/moderado en dormancia.
+- Moderado en brotación/vegetativo.
+- Evitar exceso en floración/fruto porque puede empujar vigor vegetativo blando.
+
+P:
+- Importante en raíz, establecimiento, brotación y floración.
+- Interpretar con pH y análisis de suelo.
+
+K:
+- Alto peso en llenado, calibre y calidad.
+- Interpretar con Ca/Mg, carga y agua.
+
+================================================================================
+9. STAGETARGETS BASE POR ETAPA
+================================================================================
+
+Formato conceptual:
+stageId | soilMoisture(AW%) | soilTemp(°C) | pH | EC dS/m | resistance MPa | N | P | K
+
+planting_transplant
+- soilMoisture: 60-80
+- soilTemp: 10-24
+- pH: 6.0-7.0
+- EC: <1.5, alerta >2.0
+- resistance: <1.5, alerta >2.0
+- N: bajo-moderado
+- P: medio-alto
+- K: medio
+- Nota: no quemar raíz, no saturar, no plantar en suelo compactado.
+
+root_establishment
+- soilMoisture: 65-85
+- soilTemp: 10-24
+- pH: 6.0-7.0
+- EC: <1.5, alerta >2.0
+- resistance: <1.5, alerta >2.0
+- N: bajo-moderado
+- P: alto relativo
+- K: medio
+- Nota: raíces finas y oxígeno mandan.
+
+juvenile_vegetative
+- soilMoisture: 60-85
+- soilTemp: 10-26
+- pH: 6.0-7.0
+- EC: <1.8, alerta >2.2
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: crecer estructura sin estrés.
+
+dormancy
+- soilMoisture: 45-70
+- soilTemp: 0-12 operativo por temporada
+- pH: 6.0-7.5
+- EC: <2.0
+- resistance: no ponderar si suelo muy seco/frío
+- N: bajo
+- P: bajo
+- K: bajo
+- Nota: no sobreinterpretar NPK.
+
+budbreak
+- soilMoisture: 55-80
+- soilTemp: 8-22
+- pH: 6.0-7.0
+- EC: <1.8, alerta >2.0
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: arranque sin frío tardío ni déficit.
+
+vegetative_growth
+- soilMoisture: 55-80
+- soilTemp: 10-26
+- pH: 6.0-7.0
+- EC: <2.0
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: vigilar exceso de vigor si hay fruta.
+
+flowering
+- soilMoisture: 60-80 estable
+- soilTemp: 10-24
+- pH: 6.0-7.0
+- EC: <1.8, alerta >2.0
+- resistance: <2.0
+- N: bajo-medio
+- P: medio
+- K: medio
+- Nota: etapa crítica; temperatura y agua pesan más.
+
+fruit_set
+- soilMoisture: 65-85 estable
+- soilTemp: 12-26
+- pH: 6.0-7.0
+- EC: <1.8, alerta >2.0
+- resistance: <2.0
+- N: bajo-medio
+- P: medio
+- K: medio-alto
+- Nota: evitar aborto por estrés hídrico/calor/salinidad.
+
+fruit_fill
+- soilMoisture: 65-85
+- soilTemp: 12-28
+- pH: 6.0-7.0
+- EC: <2.0
+- resistance: <2.0
+- N: medio-bajo
+- P: medio
+- K: alto relativo
+- Nota: calibre y calidad dependen de agua estable y carga.
+
+harvest_maturity
+- soilMoisture: 55-75
+- soilTemp: 10-28
+- pH: 6.0-7.0
+- EC: <2.0
+- resistance: <2.0
+- N: bajo
+- P: bajo-medio
+- K: medio
+- Nota: evitar golpe de sol, estrés y exceso vegetativo.
+
+post_harvest
+- soilMoisture: 55-75
+- soilTemp: 8-25
+- pH: 6.0-7.0
+- EC: <2.0
+- resistance: <2.0
+- N: medio-bajo
+- P: medio
+- K: medio
+- Nota: etapa activa de reservas; impacta ciclo siguiente.
+
+unknown
+- soilMoisture: 55-80
+- soilTemp: 8-26
+- pH: 6.0-7.5
+- EC: <2.0
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: conservador; pedir etapa visible.
+
+================================================================================
+10. STAGEWEIGHTS BASE POR ETAPA
+================================================================================
+
+Escala: 0.0 a 1.0
+Componentes:
+- waterWeight
+- soilTempWeight
+- phWeight
+- ecWeight
+- resistanceWeight
+- nWeight
+- pWeight
+- kWeight
+
+planting_transplant:
+- water 0.25
+- soilTemp 0.15
+- pH 0.12
+- EC 0.18
+- resistance 0.20
+- N 0.03
+- P 0.05
+- K 0.02
+
+root_establishment:
+- water 0.30
+- soilTemp 0.12
+- pH 0.10
+- EC 0.18
+- resistance 0.18
+- N 0.03
+- P 0.06
+- K 0.03
+
+juvenile_vegetative:
+- water 0.22
+- soilTemp 0.12
+- pH 0.10
+- EC 0.12
+- resistance 0.15
+- N 0.14
+- P 0.08
+- K 0.07
+
+dormancy:
+- water 0.15
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.05
+- P 0.05
+- K 0.05
+- contextoClimatico/frio: usar fuera de sensor si existe.
+
+budbreak:
+- water 0.22
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.12
+- P 0.08
+- K 0.08
+
+vegetative_growth:
+- water 0.22
+- soilTemp 0.12
+- pH 0.10
+- EC 0.10
+- resistance 0.12
+- N 0.17
+- P 0.08
+- K 0.09
+
+flowering:
+- water 0.26
+- soilTemp 0.20
+- pH 0.08
+- EC 0.14
+- resistance 0.08
+- N 0.05
+- P 0.09
+- K 0.10
+- climaHelada/calor: peso externo muy alto.
+
+fruit_set:
+- water 0.30
+- soilTemp 0.16
+- pH 0.08
+- EC 0.16
+- resistance 0.08
+- N 0.05
+- P 0.07
+- K 0.10
+
+fruit_fill:
+- water 0.28
+- soilTemp 0.12
+- pH 0.08
+- EC 0.13
+- resistance 0.08
+- N 0.07
+- P 0.06
+- K 0.18
+
+harvest_maturity:
+- water 0.22
+- soilTemp 0.14
+- pH 0.08
+- EC 0.12
+- resistance 0.08
+- N 0.05
+- P 0.05
+- K 0.12
+- calidad/sunburn/clima: externo.
+
+post_harvest:
+- water 0.22
+- soilTemp 0.10
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.10
+- P 0.10
+- K 0.12
+
+unknown:
+- water 0.24
+- soilTemp 0.12
+- pH 0.10
+- EC 0.14
+- resistance 0.12
+- N 0.09
+- P 0.09
+- K 0.10
+
+================================================================================
+11. SENSIBILIDAD POR ETAPA
+================================================================================
+
+planting_transplant:
+- Déficit hídrico: muy alta
+- Exceso de humedad: alta
+- Salinidad: alta
+- Compactación: muy alta
+- Helada/calor: media
+- Nutrición: media, pero no empujar N
+
+root_establishment:
+- Déficit hídrico: muy alta
+- Exceso: alta
+- Salinidad: alta
+- Compactación: muy alta
+- Sanidad raíz/cuello: alta
+
+juvenile_vegetative:
+- Déficit: alta
+- N moderado: importante
+- Compactación: alta
+- Estrés acumulado: alto para formación futura
+
+dormancy:
+- Falta de frío: alta como contexto
+- Heladas extremas: media-alta
+- Agua: media
+- NPK: bajo peso
+
+budbreak:
+- Frío tardío: alta
+- Déficit hídrico: media
+- Exceso de N: media
+- Enfermedades tempranas: media
+
+vegetative_growth:
+- Agua: media
+- N: media-alta
+- Calor: media
+- Vigor excesivo: observación
+
+flowering:
+- Helada: muy alta
+- Déficit hídrico: muy alta
+- Calor seco: alta
+- Exceso de humedad: alta
+- Mala polinización: alta
+- Salinidad: media-alta
+
+fruit_set:
+- Déficit hídrico: muy alta
+- Calor: alta
+- Salinidad: alta
+- Estrés nutricional/Ca: media-alta
+- Carga excesiva: contexto rendimiento/sanidad
+
+fruit_fill:
+- Déficit hídrico: alta
+- Calor/golpe de sol: alta
+- K/Ca/Mg: alta
+- EC: alta
+- Granizo: alta como evento externo
+
+harvest_maturity:
+- Golpe de sol: alta
+- Exceso de humedad: media-alta
+- Granizo: alta
+- Estrés hídrico: media-alta
+
+post_harvest:
+- Déficit hídrico: alta
+- Deficiencia nutricional: alta
+- Pérdida temprana de hoja: alta
+- Impacto siguiente ciclo: alto
+
+================================================================================
+12. PERFILES / VARIEDADES OFICIALES BIO-G
+================================================================================
+
+Regla:
+Los perfiles son grupos UX/agronómicos. No son una ficha por cada clon o marca comercial.
+Los aliases ayudan a resolver nombres comunes.
+
+--------------------------------------------------------------------------------
+AP-SKIP / ap_skip
+--------------------------------------------------------------------------------
+
+label:
+- AP-SKIP · Manzano general
+
+Uso:
+- Cuando el usuario no sabe variedad o quiere avanzar rápido.
+
+Tipo:
+- Genérico, conservador, migrable.
+
+No se lista como variedad técnica incompleta.
+El usuario debe ver:
+- "No sé / Manzano general"
+
+Detalle completo en Documento 02.
+
+--------------------------------------------------------------------------------
+AP-01 / ap_01_golden
+--------------------------------------------------------------------------------
+
+label:
+- AP-01 · Golden
+
+Grupo:
+- Golden Delicious y manzanas amarillas tipo Golden.
+
+Aliases:
+- Golden
+- Golden Delicious
+- Manzana amarilla
+- Amarilla
+- Golden Glory
+- Golden Smoothee
+- Golden Reinders
+- Golden B
+- Golden clone
+- Otra Golden
+- Manzana Golden
+
+Tipo de fruto:
+- Amarillo/verde-amarillo, dulce a dulce-ácido, fresco/mesa/proceso.
+
+Uso:
+- Fresco, mercado nacional, industria ligera según calidad.
+
+Requerimiento de frío:
+- Medio-alto / alto.
+- En México se manejan Golden/Red como materiales de alto requerimiento de frío en
+  zonas templadas-altas. En BIO-G v1 usar categoría "alto" salvo alias de bajo frío.
+
+Floración relativa:
+- Media.
+
+Cosecha relativa:
+- Media a media-tardía.
+- Ventana común MX templado: agosto-octubre.
+- Cosecha desde plena floración: 120-160 días orientativos.
+
+Entrada a producción:
+- Año 3-4 orientativo.
+- Plena: año 5+ orientativo.
+
+Densidad orientativa:
+- 800-3000 árboles/ha en sistemas comerciales modernos.
+- No usar para rendimiento sin Documento 03.
+
+Altura orientativa:
+- 2.5-5 m en manejo moderno.
+- Mayor si portainjerto vigoroso o sistema tradicional.
+
+Sensibilidad particular:
+- Helada en floración.
+- Déficit hídrico en cuajado/llenado.
+- Granizo cercano a cosecha.
+- Roña/moteado y enfermedades foliares según clima húmedo.
+- Russeting/daños de piel según condiciones y clon.
+
+Rendimiento relativo:
+- Medio-alto si manejo y polinización son buenos.
+- Medio en SKIP por prudencia.
+
+Ajuste permitido:
+- Fechas relativas, sensibilidad, textos, rendimiento relativo.
+- NO cambia etapas.
+
+--------------------------------------------------------------------------------
+AP-02 / ap_02_red
+--------------------------------------------------------------------------------
+
+label:
+- AP-02 · Red
+
+Grupo:
+- Red Delicious y rojas tipo Red.
+
+Aliases:
+- Red
+- Red Delicious
+- Manzana roja
+- Roja
+- Top Red
+- Starking
+- Starkrimson
+- Starkrimson Delicious
+- Red Chief
+- Oregon Spur
+- Otra Red
+
+Tipo de fruto:
+- Rojo, fresco/mesa, color comercial importante.
+
+Uso:
+- Fresco.
+
+Requerimiento de frío:
+- Alto en zonas templadas productoras.
+- Algunos clones tipo Top Red pueden reportarse con requerimientos menores que
+  Golden/Red clásicos, pero BIO-G v1 los mantiene dentro de grupo Red por UX.
+
+Floración relativa:
+- Media.
+
+Cosecha relativa:
+- Media-tardía a tardía.
+- Ventana común: septiembre-noviembre.
+- Cosecha desde plena floración: 130-175 días orientativos.
+
+Entrada a producción:
+- Año 3-4 orientativo.
+- Plena: año 5+.
+
+Densidad orientativa:
+- 800-3000 árboles/ha.
+
+Altura:
+- 2.5-5 m en manejo moderno.
+
+Sensibilidad particular:
+- Helada en floración.
+- Estrés hídrico en cuajado.
+- Manejo de color en maduración.
+- Golpe de sol/calor.
+- Roña/moteado según clima.
+
+Rendimiento relativo:
+- Medio.
+
+Ajuste permitido:
+- Fecha de cosecha más tardía, sensibilidad a color/calor, textos.
+
+--------------------------------------------------------------------------------
+AP-03 / ap_03_criolla_rayada
+--------------------------------------------------------------------------------
+
+label:
+- AP-03 · Criolla / Rayada
+
+Grupo:
+- Manzana criolla, rayada, regional/local.
+
+Aliases:
+- Criolla
+- Rayada
+- Rosada
+- Regional
+- De la región
+- Manzana criolla
+- Manzana rayada
+- Otra regional
+
+Tipo de fruto:
+- Variable. Puede ser rayada, local, de menor uniformidad comercial, alta identidad
+  regional.
+
+Uso:
+- Fresco local, autoconsumo, mercado regional, proceso.
+
+Requerimiento de frío:
+- Variable.
+- BIO-G v1 usa medio-alto por prudencia en zonas templadas; si usuario indica bajo
+  frío o clima cálido, migrar a AP-05.
+
+Floración relativa:
+- Media, variable.
+
+Cosecha relativa:
+- Media, variable.
+- Ventana: final de verano-otoño.
+- Cosecha desde plena floración: 120-170 días orientativos.
+
+Entrada a producción:
+- Año 3-5.
+- Plena: año 6+ en sistemas menos intensivos.
+
+Densidad orientativa:
+- 400-1500 árboles/ha en sistemas tradicionales/extensivos.
+- Puede variar.
+
+Altura:
+- 3-6 m o más si portainjerto vigoroso.
+
+Sensibilidad particular:
+- Estrés hídrico en llenado.
+- Humedad alta y sanidad.
+- Heladas tardías.
+- Variabilidad genética/comercial.
+
+Rendimiento relativo:
+- Medio-bajo a medio.
+- Confianza más baja por heterogeneidad.
+
+Ajuste permitido:
+- Sensibilidad y rendimiento con mayor incertidumbre.
+
+--------------------------------------------------------------------------------
+AP-04 / ap_04_gala
+--------------------------------------------------------------------------------
+
+label:
+- AP-04 · Gala
+
+Grupo:
+- Gala, Royal Gala y deportes/afines.
+
+Aliases:
+- Gala
+- Royal Gala
+- Gala sport
+- Brookfield Gala
+- Pacific Gala
+- Imperial Gala
+- Otra Gala
+
+Tipo de fruto:
+- Rojo/anaranjado sobre fondo amarillo, fresco premium.
+
+Uso:
+- Fresco.
+
+Requerimiento de frío:
+- Medio.
+- Algunas referencias agronómicas mexicanas citan alrededor de 550 horas frío para
+  Royal Gala; BIO-G v1 lo clasifica como medio.
+
+Floración relativa:
+- Temprana-media a media.
+
+Cosecha relativa:
+- Temprana-intermedia.
+- Ventana: antes que Red en muchas regiones.
+- Cosecha desde plena floración: 115-155 días orientativos.
+
+Entrada a producción:
+- Año 2-3 orientativo en sistemas modernos.
+- Plena: año 4+.
+
+Densidad orientativa:
+- 800-3000 árboles/ha.
+
+Altura:
+- 2.5-5 m en manejo moderno.
+
+Sensibilidad particular:
+- Helada en floración.
+- Estrés hídrico en llenado.
+- Manejo de color.
+- Golpe de sol/calor en zonas cálidas.
+- Alternancia menor que otros perfiles si manejo/carga adecuados, pero no forzar.
+
+Rendimiento relativo:
+- Medio-alto.
+- Confianza media.
+
+Ajuste permitido:
+- Cosecha relativamente temprana, sensibilidad a color y calor.
+
+--------------------------------------------------------------------------------
+AP-05 / ap_05_low_chill
+--------------------------------------------------------------------------------
+
+label:
+- AP-05 · Bajo frío
+
+Grupo:
+- Variedades de bajo requerimiento de frío para inviernos benignos.
+
+Aliases:
+- Bajo frío
+- Low chill
+- Anna
+- Ana
+- Dorsett Golden
+- Golden Dorsett
+- Dorset Golden
+- Ein Shemer
+- Tropic Sweet
+- Princesa
+- Princessa
+- Otra bajo frío
+- Manzano tropical
+- Manzano de clima cálido
+
+Tipo de fruto:
+- Variable. Frecuentemente amarillo/rojo temprano, fresco local/regional.
+
+Uso:
+- Fresco local, autoconsumo, zonas cálidas/templadas con frío limitado.
+
+Requerimiento de frío:
+- Bajo.
+- Anna y Dorsett Golden se reportan comúnmente como bajo frío.
+- Fuentes mexicanas/UAEMex citan Dorsett Golden con 100 h y Anna con 200 h;
+  UF/IFAS maneja para un grupo de bajo frío 300-400 h bajo 45 °F en Florida.
+- BIO-G v1 usa "bajo" sin fijar exacto.
+
+Floración relativa:
+- Temprana.
+
+Cosecha relativa:
+- Temprana.
+- Cosecha desde plena floración: 100-145 días orientativos.
+- Puede cosechar a inicios de verano en algunas regiones.
+
+Entrada a producción:
+- Año 2-3 orientativo.
+- Plena: año 4+.
+
+Densidad orientativa:
+- 600-2000 árboles/ha, variable por sistema.
+
+Altura:
+- 2.5-5 m o según portainjerto.
+
+Sensibilidad particular:
+- Falta de frío si el material no corresponde al clima.
+- Brotación/floración irregular por frío insuficiente.
+- Golpe de calor en cuajado.
+- Estrés hídrico temprano.
+- Desfase con polinizadores.
+
+Rendimiento relativo:
+- Medio en su zona correcta.
+- Bajo si se planta fuera de adaptación.
+
+Ajuste permitido:
+- Fechas tempranas, sensibilidad a calor/frío insuficiente, textos.
+
+================================================================================
+13. RESOLUCION DE ALIASES Y MIGRACION
+================================================================================
+
+Reglas:
+- Exact match o normalizado sin acentos debe mapear a profileId.
+- Si el usuario dice "manzano" solamente -> ap_skip.
+- Si dice "amarilla" o "golden" -> ap_01_golden.
+- Si dice "roja" o "red" -> ap_02_red.
+- Si dice "criolla", "rayada" o "regional" -> ap_03_criolla_rayada.
+- Si dice "gala" -> ap_04_gala.
+- Si dice "anna", "dorsett", "bajo frio", "low chill", "tropical" -> ap_05_low_chill.
+- Si hay conflicto:
+  ejemplo "Golden Dorsett" debe ir a AP-05, no AP-01, porque el rasgo decisivo es bajo frío.
+- Si el usuario estaba en AP-SKIP y luego elige perfil:
+  - conservar historial
+  - conservar perennialStateId
+  - conservar phenologyStageId
+  - conservar anchor date
+  - conservar memoria de estrés
+  - solo actualizar profileId y confianza
+
+Confianza de resolver:
+- exact alias específico: alta
+- color genérico amarillo/rojo: media
+- "otra regional": baja-media
+- "no sé": baja
+
+================================================================================
+14. POLINIZACION Y CARGA: NOTAS PARA BIO-G
+================================================================================
+
+Regla agronómica:
+La mayoría de los manzanos requieren polinización cruzada para producir bien.
+Incluso variedades descritas como parcialmente autofértiles producen mejor con polinizador compatible.
+
+BIO-G v1:
+- No bloquear cultivo si usuario no sabe polinizador.
+- En floración/cuajado, si hay bajo cuajado y no hay estrés ambiental evidente, sugerir:
+  "Revisa si hay otra variedad compatible floreando cerca y actividad de abejas/polinizadores."
+- No crear motor de compatibilidad varietal en v1.
+- Guardar como posible factor de rendimiento/diagnóstico futuro.
+
+================================================================================
+15. ALERTAS UNIVERSALES DE MANZANO
+================================================================================
+
+Mensajes base:
+
+planting_transplant:
+- "El árbol está en una etapa delicada. Mantén humedad estable sin encharcar y revisa
+   que el suelo no esté compactado."
+
+root_establishment:
+- "El manzano está formando raíz. El exceso de agua puede ser tan dañino como la falta."
+
+juvenile_vegetative:
+- "El árbol aún está construyendo estructura. BIO-G no proyectará producción todavía."
+
+dormancy:
+- "El árbol está en reposo. No es etapa para interpretar NPK como demanda alta."
+
+budbreak:
+- "La brotación vuelve sensible al árbol a frío tardío y cambios bruscos."
+
+flowering:
+- "Floración es una etapa crítica. Helada, calor seco o estrés hídrico pueden afectar el amarre."
+
+fruit_set:
+- "El frutito recién amarrado es sensible a déficit hídrico, calor y salinidad."
+
+fruit_fill:
+- "En llenado, la estabilidad del agua pesa mucho para calibre y calidad."
+
+harvest_maturity:
+- "El fruto está cerca de cosecha. Evita estrés fuerte y vigila golpe de sol o exceso de humedad."
+
+post_harvest:
+- "La postcosecha no apaga el cultivo. El árbol recupera reservas para el siguiente ciclo."
+
+unknown:
+- "BIO-G puede seguir con datos generales, pero será más preciso si eliges lo que ves en el árbol."
+
+================================================================================
+16. ASSETS SUGERIDOS
+================================================================================
+
+Wizard / perfil:
+- ic_apple_tree.png
+- ic_apple_tree_generic.png
+- ic_apple_golden.png
+- ic_apple_red.png
+- ic_apple_criolla_rayada.png
+- ic_apple_gala.png
+- ic_apple_low_chill.png
+
+Etapas:
+- apple_stage_planting_transplant.png
+- apple_stage_root_establishment.png
+- apple_stage_juvenile_vegetative.png
+- apple_stage_dormancy.png
+- apple_stage_budbreak.png
+- apple_stage_vegetative_growth.png
+- apple_stage_flowering.png
+- apple_stage_fruit_set.png
+- apple_stage_fruit_fill.png
+- apple_stage_harvest_maturity.png
+- apple_stage_post_harvest.png
+- apple_stage_unknown.png
+
+Regla:
+- Si aún no existen assets, usar placeholders seguros y no romper build.
+- Registrar rutas como opcionales si el sistema lo permite.
+
+================================================================================
+17. MAPEO FUTURO A CODIGO
+================================================================================
+
+Archivos esperados:
+- lib/core/crops/apple_tree/apple_tree_catalog.dart
+- lib/core/crops/apple_tree/apple_tree_universal_profile.dart
+- lib/core/crops/apple_tree/apple_tree_crop_definition.dart
+- lib/core/crops/apple_tree/apple_tree_yield_reference.dart
+- lib/core/crops/apple_tree/apple_tree_syndromes.dart si Plant Health aplica
+- alta en CropKey
+- alta en CropCatalog
+- alta en crop_registry.dart
+- tests/core/apple_tree_catalog_test.dart
+- tests/core/apple_tree_stage_targets_test.dart
+- tests/core/apple_tree_perennial_runtime_test.dart
+
+Campos mínimos por perfil:
+- profileId
+- label
+- aliases
+- fruitType
+- chillRequirementClass
+- bloomRelative
+- harvestRelative
+- regionHint
+- sensitivityModifiers
+- yieldRelative
+- isGeneric
+- defaultConfidence
+- migrationTargets
+
+IDs cerrados:
+- Estados: newly_planted, juvenile_non_productive, established, productive_season, unknown
+- Etapas: planting_transplant, root_establishment, juvenile_vegetative, dormancy,
+  budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, harvest_maturity,
+  post_harvest, unknown
+- Anclas: planting, stage_start, budbreak, flowering, harvest, post_harvest,
+  manual_stage, unknown
+- Métricas: soilMoisture, soilTemp, ph, ec, resistance, n, p, k
+
+Reglas no negociables para Codex/Claude:
+- No usar sowingDate como eje del árbol.
+- No cerrar cultivo en cosecha.
+- No borrar historial al migrar de SKIP a perfil específico.
+- No crear un perfil por cada clon comercial.
+- No inventar sensores.
+- No cambiar lógica anual.
+- No refactorizar global salvo que sea necesario para generalizar árboles y con tests.
+
+================================================================================
+18. TESTS MINIMOS RECOMENDADOS
+================================================================================
+
+Catalog tests:
+- crop_apple_tree existe y es category tree.
+- ap_skip existe, isGeneric=true.
+- ap_01_golden resuelve Golden/Golden Delicious/Manzana amarilla.
+- ap_02_red resuelve Red/Red Delicious/Top Red/Starking/Starkrimson.
+- ap_03_criolla_rayada resuelve Criolla/Rayada/Regional.
+- ap_04_gala resuelve Gala/Royal Gala.
+- ap_05_low_chill resuelve Anna/Dorsett Golden/Low chill/Bajo frío.
+- Golden Dorsett o Dorsett Golden resuelve a ap_05_low_chill, no a ap_01_golden.
+
+Runtime tests:
+- Un árbol newly_planted no produce aunque el perfil sea Golden.
+- productive_season + flowering usa flowering como etapa crítica.
+- post_harvest no cierra cultivo.
+- unknown no bloquea app y usa targets conservadores.
+- Migrar ap_skip -> ap_01_golden conserva historial.
+
+Targets tests:
+- flowering pondera agua/temperatura/EC por encima de N.
+- fruit_fill pondera K y agua.
+- dormancy reduce peso NPK.
+- root_establishment pondera resistencia/EC/agua.
+
+================================================================================
+19. FUENTES CONSULTADAS
+================================================================================
+
+Fuentes BIO-G internas:
+1. Estandar_BIOG_Integracion_Arboles_Perennes_v1_3.pdf
+2. PERFIL UNIVERSAL BIO-G - MANZANO.pdf
+3. PERFIL SKIP BIO-G - MANZANO.pdf
+
+Universidades / extensión / fuentes técnicas:
+4. Utah State University Extension. Apple Production and Variety Recommendations for
+   the Utah Home Garden.
+   https://extension.usu.edu/yardandgarden/research/apple-production-and-variety-recommendations-for-the-utah-home-garden
+   Uso: drenaje, adaptación general, evitar agua parada.
+
+5. Utah State University Extension. Fruit FAQ / Small Acreage.
+   https://extension.usu.edu/productionhort/small-acreage/fruit/faq
+   Uso: suelo bien drenado, materia orgánica, pH 6.0-7.5, análisis de suelo, salinidad.
+
+6. Penn State Extension. Nutritional Requirements of Apples in Home Fruit Plantings.
+   https://extension.psu.edu/nutritional-requirements-of-apples-in-home-fruit-plantings/
+   Uso: pH recomendado 6.0-6.5 para manzano.
+
+7. New England Tree Fruit Management Guide / UMass. Apple Bud Stages.
+   https://netreefruit.org/apples/apple-bud-stages
+   Uso: etapas visibles de yema, bloom, petal fall, fruit set 7-14 días después.
+
+8. Cornell eCommons. Growth Stages in Fruit Trees - From Dormant to Fruit Set.
+   https://ecommons.cornell.edu/server/api/core/bitstreams/317dc529-3265-4f8c-87a2-473c2e3e790b/content
+   Uso: estándar de etapas dormant, silver tip, green tip, half-inch green, tight cluster,
+   pink, bloom, petal fall, fruit set.
+
+9. Intermountain Fruit / USU. Tree Fruit Growth Stages - Apple.
+   https://intermountainfruit.org/cold-effects/apple-stages
+   Uso: sensibilidad de yemas a helada por etapa.
+
+10. University of Minnesota Extension. Understanding dormancy and chilling hours in
+    perennial fruit crops.
+    https://blog-fruit-vegetable-ipm.extension.umn.edu/2024/11/understanding-dormancy-and-chilling.html
+    Uso: dormancia, endodormancia, ecodormancia, definición de horas frío 32-45 °F,
+    variabilidad por variedad.
+
+11. University of Minnesota Extension. Drought monitoring and irrigation for apples
+    and grapes.
+    https://extension.umn.edu/commercial-fruit-production/drought-monitoring-and-irrigation-apples-and-grapes
+    Uso: estrés hídrico reduce tamaño, raíz y puede afectar calcio/bitter pit.
+
+12. South Dakota State University Extension. Soil Penetration Resistance as a Soil
+    Health Indicator.
+    https://extension.sdstate.edu/soil-penetration-resistance-soil-health-indicator
+    Uso: 2 MPa como umbral general crítico para crecimiento de raíces.
+
+13. USU Extension. Salinity and Plant Tolerance.
+    https://extension.usu.edu/irrigation/research/salinity-and-plant-tolerance
+    Uso: escala general ECe 0-2, 2-4, 4-8 dS/m.
+
+14. UAEMex / Cultivo de Manzana PDF.
+    https://ri.uaemex.mx/bitstream/20.500.11799/68164/1/Cultivo%2Bde%2BManzana.pdf
+    Uso: variedades en México, Red/Golden, bajo frío, Dorsett Golden, Anna, Royal Gala,
+    requerimientos de frío reportados y polinización cruzada.
+
+15. UF/IFAS Ask IFAS. La Manzana (Malus domestica, Rosaceae).
+    https://ask.ifas.ufl.edu/publication/HS292
+    Uso: variedades de bajo frío como Anna, Dorsett Golden, Tropic Sweet, Ein Shemer;
+    requerimiento 300-400 h bajo 45°F en Florida.
+
+16. Washington State University Tree Fruit. Pollination - Apple.
+    https://treefruit.wsu.edu/web-article/apple-pollination/
+    Uso: necesidad de polinización cruzada para fruit set.
+
+17. Missouri Extension. Pollinating Fruit Crops.
+    https://extension.missouri.edu/publications/g6001
+    Uso: polinización cruzada y king blossom.
+
+Foros / internet revisados solo para aliases y dudas reales del usuario:
+18. Foro InfoJardín. Manzano pocas horas de frío.
+    https://foroinfojardin.com/threads/manzano-pocas-horas-de-fr%C3%ADo.3556/
+    Uso: señal de conversación real sobre Anna, Dorsett Golden, Top Red y bajo frío.
+
+19. Archivo InfoJardín. Manzanos Golden.
+    https://archivo.infojardin.com/tema/manzanos-golden-busco-ciertos-sabores-que-recuerdo.242635/
+    Uso: señal UX de que “Golden” se usa de forma amplia para muchas amarillas/clones.

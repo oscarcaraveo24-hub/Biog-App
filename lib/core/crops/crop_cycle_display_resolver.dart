@@ -106,21 +106,25 @@ CropCycleDisplayLine resolveCycleDisplayLine({
   if (family == _CropFamily.bulbVeg) {
     final isGarlic = crop == 'garlic' || crop == 'crop_garlic' || crop == 'ajo';
     if (isGarlic) {
-      final isScapeEvent = stage.contains('escapo') ||
+      final isScapeEvent =
+          stage.contains('escapo') ||
           stage.contains('canuto') ||
           stage.contains('escobete') ||
           stage.contains('broom') ||
           stage.contains('scape') ||
           stage.contains('bolting');
-      final isVernalization = stage.contains('vernal') ||
+      final isVernalization =
+          stage.contains('vernal') ||
           stage.contains('frio') ||
           stage.contains('cold');
-      final isMaturity = stage.contains('madur') ||
+      final isMaturity =
+          stage.contains('madur') ||
           stage.contains('cosech') ||
           stage.contains('harvest') ||
           stage.contains('curado') ||
           stage.contains('curing');
-      final isBulbFormation = stage.contains('diferenci') ||
+      final isBulbFormation =
+          stage.contains('diferenci') ||
           stage.contains('diente') ||
           stage.contains('bulb') ||
           stage.contains('bulbo') ||
@@ -166,14 +170,17 @@ CropCycleDisplayLine resolveCycleDisplayLine({
     }
 
     final isBunching = _canonicalOnionProfile(profileId) == kOn05;
-    final isBolting = stage.contains('espig') ||
+    final isBolting =
+        stage.contains('espig') ||
         stage.contains('bolting') ||
         stage.contains('seedstalk');
-    final isMaturity = stage.contains('madur') ||
+    final isMaturity =
+        stage.contains('madur') ||
         stage.contains('cosech') ||
         stage.contains('harvest') ||
         stage.contains('curado');
-    final isBulbFormation = stage.contains('induccion') ||
+    final isBulbFormation =
+        stage.contains('induccion') ||
         stage.contains('bulb') ||
         stage.contains('bulbo') ||
         stage.contains('llenado') ||
@@ -232,7 +239,9 @@ CropCycleDisplayLine resolveCycleDisplayLine({
     if (isHarvestWindow) {
       return CropCycleDisplayLine(
         label: 'Ventana de cosecha:',
-        value: hasDays ? 'Punto óptimo · $daysValue días al cierre' : 'Punto óptimo',
+        value: hasDays
+            ? 'Punto óptimo · $daysValue días al cierre'
+            : 'Punto óptimo',
         helper: 'Buen momento para revisar firmeza, turgencia y cortar.',
       );
     }
@@ -263,10 +272,7 @@ CropCycleDisplayLine resolveCycleDisplayLine({
   }
 
   // Genérico / desconocido.
-  return const CropCycleDisplayLine(
-    label: 'Seguimiento:',
-    value: 'Pendiente',
-  );
+  return const CropCycleDisplayLine(label: 'Seguimiento:', value: 'Pendiente');
 }
 
 CropCycleDisplayLine? _resolveSquashLine({
@@ -376,7 +382,15 @@ bool _isProgressiveHarvest(String stage) {
       stage.contains('cosecha_progres');
 }
 
-enum _CropFamily { grain, fruitVeg, bulbVeg, leafVeg, tree, ornamental, generic }
+enum _CropFamily {
+  grain,
+  fruitVeg,
+  bulbVeg,
+  leafVeg,
+  tree,
+  ornamental,
+  generic,
+}
 
 _CropFamily _resolveFamily(String crop) {
   switch (crop) {
@@ -405,6 +419,13 @@ _CropFamily _resolveFamily(String crop) {
     case 'bean':
     case 'frijol':
       return _CropFamily.grain;
+    case 'crop_apple_tree':
+    case 'apple_tree':
+    case 'appletree':
+    case 'apple':
+    case 'manzano':
+    case 'manzana':
+      return _CropFamily.tree;
     case 'tomato':
     case 'tomate':
     case 'jitomate':

@@ -1,0 +1,1099 @@
+BIO-G
+03_RENDIMIENTO_APROXIMADO
+MANZANO / APPLE TREE
+
+Archivo: 03_Rendimiento_Aproximado_BioG_Manzano_v1.txt
+Cultivo BIO-G: Manzano
+cropId: crop_apple_tree
+prefix perfiles: AP
+Versión: v1.0 texto cableable
+Estado: listo para pasar a Codex/Claude junto con Universal+Perfiles, SKIP, Riesgos y Fertilización.
+Formato: TXT interno para código. No es promesa de rendimiento ni recomendación agronómica local.
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+En manzano, el rendimiento aproximado NO debe calcularse como si fuera un cultivo anual.
+
+BIO-G debe calcularlo por varias rutas:
+
+1) kg por árbol
+2) árboles por hectárea
+3) toneladas por hectárea
+4) estado productivo del árbol
+5) perfil/variedad AP
+6) densidad/sistema de conducción
+7) manejo y sanidad
+8) memoria de estrés del ciclo actual y ciclos anteriores
+9) confianza del dato
+
+Regla central:
+- Si el árbol es newly_planted o juvenile_non_productive, el rendimiento comercial debe ser 0.
+- Si el árbol está established pero el usuario no confirma carga/fruto, no proyectar rendimiento alto.
+- Si el árbol está en productive_season, usar etapa visible + perfil + densidad + manejo.
+- Si solo hay AP-SKIP, usar rangos conservadores.
+- El resultado debe ser aproximado y en rango: bajo / esperado / alto.
+- Nunca decir “vas a producir X”; decir “producción estimada / rango aproximado”.
+
+Este documento está diseñado para alimentar:
+
+- apple_tree_yield_reference.dart
+- YieldReference por perfil
+- YieldProjection setup
+- cálculo kg/tree <-> t/ha
+- factores de ajuste por manejo, densidad, estado, sanidad y memoria
+- textos UX farmer-friendly
+- tests de rendimiento perenne
+
+================================================================================
+1. BASE BIO-G QUE SE RESPETA
+================================================================================
+
+Documento 01 dejó cerrados los perfiles oficiales:
+
+- ap_skip
+- ap_01_golden
+- ap_02_red
+- ap_03_criolla_rayada
+- ap_04_gala
+- ap_05_low_chill
+
+Documento 01 también define que en árboles el rendimiento se entiende como:
+
+kg/árbol + árboles/ha + estado productivo
+
+y que la variedad/perfil ajusta rendimiento relativo, fechas relativas, sensibilidad y textos,
+pero NO cambia la arquitectura fenológica.
+
+Etapas/estados que bloquean rendimiento:
+- newly_planted
+- juvenile_non_productive
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+
+Etapas/estados que permiten rendimiento aproximado:
+- productive_season
+- established con etapa productiva confirmada
+- flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest
+
+Etapa unknown:
+- usar confianza baja y rango conservador.
+
+================================================================================
+2. METODOLOGÍA Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+La investigación se separó por tipo de evidencia.
+
+Alta confianza:
+- universidades/extensión
+- publicaciones científicas
+- documentos oficiales de gobierno/SIAP/SADER
+- documentos BIO-G internos
+
+Media confianza:
+- guías técnicas regionales
+- presupuestos de producción comerciales universitarios
+- estudios de huertos específicos
+
+Baja-media:
+- foros y discusiones de productores
+- viveros / páginas de variedades
+- experiencia anecdótica
+
+Uso de foros:
+Los foros se revisan para entender cómo habla el usuario:
+- “manzano Golden”
+- “manzana roja”
+- “manzana verde”
+- “Anna”
+- “Dorsett”
+- “criolla”
+- “rayada”
+- “no sé qué manzano tengo”
+- árboles que “dan poquita” o “dan un año sí y otro no”
+
+Pero los foros NO definen rangos técnicos, ni umbrales, ni promedios de rendimiento.
+
+================================================================================
+3. UNIDADES Y CONVERSIONES OFICIALES PARA BIO-G
+================================================================================
+
+Unidades internas recomendadas:
+- kg_per_tree
+- trees_per_hectare
+- ton_per_hectare
+- hectare_area
+- tree_count
+- production_state
+- profile_id
+- confidence
+
+Conversión principal:
+t/ha = (kg_por_arbol * arboles_por_ha) / 1000
+
+kg/árbol = (t/ha * 1000) / árboles_por_ha
+
+producción_total_kg = kg_por_arbol * número_de_árboles
+
+producción_total_t = producción_total_kg / 1000
+
+árboles/ha desde marco:
+treesPerHa = 10000 / (distancia_entre_filas_m * distancia_entre_árboles_m)
+
+Conversión de fuentes anglosajonas:
+- 1 acre = 0.404685642 ha
+- 1 lb = 0.45359237 kg
+- 1 bushel de manzana = usualmente 42 lb en fuentes agrícolas de EUA.
+- En presupuestos WSU, 1 bin = 925 lb y 1 bin = 18.5 cajas de 40 lb.
+
+Ejemplos de conversión:
+- 1000 bushels/acre * 42 lb/bushel = 42,000 lb/acre.
+- 42,000 lb/acre = 19,051 kg/acre = 47.1 t/ha.
+- 78.4 bins/acre * 925 lb/bin = 72,520 lb/acre.
+- 72,520 lb/acre = 32,895 kg/acre = 81.3 t/ha.
+
+================================================================================
+4. INVESTIGACIÓN CRUDA: DATOS QUE SÍ IMPORTAN
+================================================================================
+
+S1. Chihuahua / México como contexto real
+- Chihuahua es el principal productor de manzana en México.
+- En 2024 se reportan más de 32,000 ha cosechadas y más de 664,000 t.
+- Conversión simple: 664,000 t / 32,000 ha = 20.75 t/ha aproximadas.
+- Esto NO representa huertos premium; mezcla edades, variedades, temporal/riego, manejo y daños climáticos.
+
+Lectura BIO-G:
+- 18-25 t/ha puede usarse como “contexto regional realista” para huerto comercial promedio.
+- No usarlo como techo productivo.
+- Útil para no inflar AP-SKIP.
+
+S2. Mercado mexicano / SIAP / riego vs temporal
+- En México, 2021: 56 mil ha de manzana cosechadas.
+- 42 mil ha fueron de riego y 14 mil ha de temporal.
+- La producción en riego fue 562 mil t.
+- La producción en temporal fue 69 mil t.
+- Conversión:
+  - riego: 562,000 / 42,000 = 13.38 t/ha
+  - temporal: 69,000 / 14,000 = 4.93 t/ha
+- Más del 90% de producción nacional se concentra de agosto a octubre.
+
+Lectura BIO-G:
+- Si el usuario no declara riego, manejo ni densidad, la confianza baja.
+- El motor debe distinguir riego vs temporal si en v2 se agrega ese input.
+- Para v1, usar factor de manejo/agua.
+
+S3. UACH / Scielo: Golden Delicious/MM111 en Chihuahua
+- Estudio en Huerta “La Semilla”, UACH, árboles Golden Delicious/MM111 plantados en 1990.
+- Marco 3 x 3 m.
+- Densidad aproximada: 1111 árboles/ha.
+- Se evaluó fertirrigación con macronutrientes.
+- El estudio indica que para rendimiento promedio de 64 t/ha con calidad se requieren rangos nutrimentales específicos.
+- También menciona como posibilidad productiva obtener 80-100 t/ha con dosis correctas/moderadas, suministro equilibrado y uso eficiente del agua.
+- En otro resumen UACH se reporta producción estimada de 52 t/ha con 73N-49P-20K-138Ca-18Mg.
+
+Conversión BIO-G:
+- 52 t/ha a 1111 árboles/ha = 46.8 kg/árbol
+- 64 t/ha a 1111 árboles/ha = 57.6 kg/árbol
+- 80 t/ha a 1111 árboles/ha = 72.0 kg/árbol
+- 100 t/ha a 1111 árboles/ha = 90.0 kg/árbol
+
+Lectura BIO-G:
+- Golden bien manejado puede estar en 50-65 t/ha bajo condiciones buenas.
+- 80-100 t/ha debe quedar como “alto/excepcional”, no como default.
+- Para AP-01 Golden, usar medio-alto, pero con confianza dependiente de densidad, agua, sanidad y carga.
+
+S4. Scielo / portainjertos en Chihuahua
+- En México se reportan 630 mil t al año y 61 mil ha en una fuente 2015.
+- Chihuahua produce cerca de 74% de la manzana nacional.
+- Rendimiento promedio de Chihuahua citado: 18.9 t/ha.
+- Cultivares comunes: Golden Delicious 58% y Red Delicious 25%.
+- Los portainjertos más enanizantes mostraron mayor eficiencia productiva que los más vigorosos en el estudio citado.
+
+Lectura BIO-G:
+- Golden y Red deben ser los perfiles comerciales base fuertes para México.
+- El portainjerto afecta muchísimo, pero BIO-G v1 no debe obligar al usuario a saberlo.
+- El motor debe permitir factor de densidad/sistema como proxy.
+
+S5. WSU 2024 / Gala high density
+- WSU Extension presenta presupuesto de Gala en Washington.
+- Sistema Angled V: 1815 árboles/acre.
+- Sistema Vertical spindle: 1452 árboles/acre.
+- En ambos casos usa G.41 y huerto moderno.
+- Asume producción plena en año 6.
+- Net production full:
+  - Angled V: 78.4 bins/acre
+  - Vertical spindle: 63.2 bins/acre
+- Bin: 925 lb.
+- Packout promedio: 80%.
+
+Conversión:
+- 78.4 bins/acre = 81.3 t/ha netas aproximadas.
+- 63.2 bins/acre = 65.5 t/ha netas aproximadas.
+- 1815 árboles/acre = 4485 árboles/ha.
+- 1452 árboles/acre = 3588 árboles/ha.
+- kg/árbol netos:
+  - Angled V: ~18.1 kg/árbol
+  - Vertical spindle: ~18.3 kg/árbol
+
+Lectura BIO-G:
+- En alta densidad, kg/árbol puede parecer bajo, pero t/ha puede ser muy alto.
+- No comparar árboles de 400/ha contra 4000/ha solo por kg/árbol.
+- Para AP-04 Gala, el potencial de t/ha puede ser alto en sistemas modernos.
+- En México v1, usar un rango más conservador salvo que el usuario indique alta densidad.
+
+S6. NC State / High density apple orchard
+- Define high density históricamente como >150-180 árboles/acre.
+- High density moderno debe entrar en producción en 2-3 años usando portainjerto enanizante.
+- La producción temprana está relacionada con número de árboles por acre.
+- Un análisis citado encontró que la rentabilidad sube con densidad hasta ~1000 árboles/acre en Cornell/Geneva; NC estima 450-600 árboles/acre como más rentable para su región.
+- Sus tablas económicas usan 850-1000 bushels/acre en producción plena para ciertos sistemas.
+- 1000 bushels/acre ≈ 47.1 t/ha.
+- 850 bushels/acre ≈ 40.0 t/ha.
+- 1500 bushels/acre ≈ 70.6 t/ha.
+
+Lectura BIO-G:
+- 40-50 t/ha es un objetivo comercial sólido.
+- 70+ t/ha es posible en sistemas intensivos bien manejados.
+- El modelo debe separar rendimiento por árbol de rendimiento por hectárea.
+
+S7. Guía técnica de manzano / Nuevos Horizontes
+- Recomienda marcos 5.25 x 2.25 m a 6 x 3 m para MM106/MM7 y sistema en eje.
+- Eso equivale aproximadamente a:
+  - 5.25 x 2.25 = 846 árboles/ha
+  - 6 x 3 = 556 árboles/ha
+- Recomienda variedades por líneas, no más de 3-4 líneas de la misma variedad, para asegurar polinización.
+- Abonado/riego y buena conducción son fundamentales para evolución productiva.
+
+Lectura BIO-G:
+- Para sistemas semiintensivos típicos, usar densidad 550-850 árboles/ha.
+- Si el usuario solo sabe marco de plantación, calcular treesPerHa.
+- Rendimiento por hectárea depende mucho de polinización y conducción.
+
+S8. Folleto de variedades de manzana en México
+- En México se cultivan Golden Delicious, Red Delicious, Double Red Delicious, Jonathan, Rome Beauty, Winesap, Starkrimson, etc.
+- Red/Golden son familias de alto requerimiento de frío.
+- Top Red Delicious se reporta con rendimiento promedio de 4.5 a 8.1 t/ha dependiendo portainjerto, dato de etapa/condición específica.
+- Red Chief se reporta con 3.8 t/ha a cinco años.
+- Golden Spur se reporta con 2.8 t/ha a tres años.
+- Smoothee Golden se reporta con 10.6 t/ha a ocho años.
+- Nugget Delicious se reporta con 10.4 t/ha a cinco años.
+- Granny Smith se reporta con 12 t/ha a cinco años.
+- Rayada se describe como bajo frío, autoincompatible, maduración tardía, producción irregular y sensible a bitter pit.
+- Anna se describe como muy precoz y con muchos frutos, requiere raleo y podas fuertes.
+- Dorsett Golden es similar a Golden Delicious y de bajo frío, pero puede brotar irregularmente con ciertas condiciones.
+
+Lectura BIO-G:
+- Estos datos crudos son útiles para early production y para no sobreestimar árboles jóvenes.
+- No deben usarse como techo de plena producción moderna.
+- Sirven para AP-03 criolla/rayada y AP-05 bajo frío con confianza baja-media.
+- “Manzana verde / Granny Smith” no queda como AP oficial en v1; puede ser candidato AP-06 futuro.
+
+S9. UF/IFAS low-chill
+- Anna es de las variedades de bajo frío más plantadas en Florida.
+- Dorsett Golden se parece a Golden Delicious.
+- Las variedades de bajo frío tienen adaptación específica.
+- El éxito depende de elegir bien clima + polinizador + manejo.
+
+Lectura BIO-G:
+- AP-05 bajo frío no significa “más rendimiento” por requerir menos frío.
+- Significa mejor ajuste donde falta frío.
+- Si se planta en zona correcta, puede producir temprano.
+- Si se planta fuera de zona, la confianza baja.
+
+S10. Foros/productores
+Temas repetidos encontrados:
+- usuarios confunden Golden Dorsett con Golden Delicious;
+- usuarios llaman “verde” a manzanas que no siempre son Granny Smith;
+- bajo frío genera muchas dudas;
+- árboles viejos con alternancia o poca fruta son reportes comunes;
+- productores pequeños suelen hablar por “cajas”, “costales”, “árbol cargado”, no por t/ha.
+
+Lectura BIO-G:
+- Mantener entrada por cantidad de árboles.
+- Ofrecer conversión simple a kg/árbol o cajas.
+- No forzar variedad exacta.
+- Permitir AP-SKIP.
+
+================================================================================
+5. SISTEMAS DE DENSIDAD PARA BIO-G
+================================================================================
+
+Densidad por marco:
+
+Sistema / etiqueta BIO-G              árboles/ha orientativos
+--------------------------------------------------------------
+aislado / traspatio                   1-50 árboles totales
+tradicional extensivo                 200-500 árboles/ha
+semiintensivo                         500-900 árboles/ha
+moderno medio                         900-1500 árboles/ha
+alta densidad                         1500-3000 árboles/ha
+muy alta densidad / trellis intensivo 3000-4500+ árboles/ha
+
+Regla:
+- Si el usuario da marco, calcular treesPerHa.
+- Si da número de árboles y superficie, calcular treesPerHa.
+- Si da solo superficie, pedir árboles/ha o usar AP-SKIP con confianza baja.
+- Si da solo árboles aislados, calcular kg total, no t/ha.
+- Si treesPerHa > 3500, bajar kg/tree esperado y subir potencial t/ha solo con manejo alto.
+- Si treesPerHa < 500, subir kg/tree posible, pero t/ha puede ser bajo.
+
+Marcos comunes y conversión:
+- 6 x 4 m = 417 árboles/ha
+- 6 x 3 m = 556 árboles/ha
+- 5.25 x 2.25 m = 846 árboles/ha
+- 4 x 2 m = 1250 árboles/ha
+- 3 x 3 m = 1111 árboles/ha
+- 3.5 x 1.5 m = 1905 árboles/ha
+- 3 x 1 m = 3333 árboles/ha
+- 3.65 x 0.91 m ≈ 3007 árboles/ha
+- 3.05 x 0.91 m ≈ 3599 árboles/ha
+
+================================================================================
+6. ESTADOS PRODUCTIVOS Y RANGOS BASE
+================================================================================
+
+Estado BIO-G: no_productivo
+Aplica:
+- newly_planted
+- root_establishment
+- juvenile_non_productive
+- juvenile_vegetative
+Rendimiento:
+- 0 kg/árbol
+- 0 t/ha
+Confianza:
+- alta si usuario confirma que no produce.
+
+Estado BIO-G: primera_produccion
+Descripción:
+- Árbol empieza a dar fruta, pero todavía no debe exigirse rendimiento pleno.
+Rango general:
+- 2-10 kg/árbol en alta densidad temprana
+- 5-20 kg/árbol en árbol semi-vigoroso joven
+- 1-10 t/ha como rango común de entrada, según densidad
+Notas:
+- No empujar rendimiento alto.
+- Puede ser mejor ralear para formar árbol.
+Confianza:
+- media si usuario confirma fruto.
+
+Estado BIO-G: produccion_joven
+Descripción:
+- Árbol ya produce, pero aún no estabiliza plena producción.
+Rango general:
+- 10-30 kg/árbol alta densidad
+- 20-50 kg/árbol sistemas semiintensivos/tradicionales
+- 8-35 t/ha
+Confianza:
+- media.
+
+Estado BIO-G: produccion_plena
+Descripción:
+- Árbol adulto o sistema moderno estabilizado.
+Rango general:
+- 15-25 kg/árbol en muy alta densidad
+- 30-70 kg/árbol en densidad media/semiintensiva
+- 50-120+ kg/árbol en árboles vigorosos aislados/tradicionales
+- 20-65 t/ha común comercial bien manejado
+- 65-85 t/ha alto/intensivo
+- 85-100+ t/ha excepcional, solo si hay fuente/validación y manejo alto
+Confianza:
+- media-alta si hay densidad, etapa, perfil y manejo.
+
+Estado BIO-G: alternancia_o_descanso_productivo
+Descripción:
+- Árbol o huerto produce mucho un año y poco el siguiente.
+Rango:
+- 30-70% del esperado si la memoria indica fuerte carga previa o estrés.
+Confianza:
+- baja-media.
+Regla:
+- No culpar solo fertilización; cruzar raleo, carga previa, helada, sequía, plaga, sanidad foliar y postcosecha.
+
+================================================================================
+7. TABLA BASE POR PERFIL AP
+================================================================================
+
+AP-SKIP / ap_skip
+Uso:
+- Usuario no sabe variedad.
+Rendimiento relativo:
+- medio conservador.
+Rango base plena producción:
+- kg/árbol: 25-60
+- t/ha esperado: 15-45
+- t/ha alto: 45-60 si manejo y densidad buenos.
+Confianza:
+- baja si solo hay cultivo.
+- media si hay árboles/ha y estado productivo.
+Notas:
+- No asumir Golden ni Red.
+- No asumir portainjerto.
+- No asumir alta densidad.
+
+AP-01 Golden / ap_01_golden
+Uso:
+- Golden Delicious, Golden Glory, Smoothee Golden, Golden Reinders, manzana amarilla.
+Rendimiento relativo:
+- medio-alto.
+Rango base plena producción:
+- kg/árbol: 35-75 en densidad media
+- kg/árbol alta densidad: 15-30
+- t/ha esperado: 25-55
+- t/ha alto: 55-70
+- t/ha excepcional: 70-100 con manejo intensivo validado.
+Fuente fuerte:
+- UACH Golden Delicious/MM111: 52-64 t/ha como referencia fuerte de Chihuahua con fertirrigación.
+- Literatura menciona posibilidad 80-100 t/ha con manejo nutricional y agua eficiente.
+Confianza:
+- media-alta si el usuario identifica Golden y hay densidad/estado.
+Ajustes:
+- bajar por alternancia, helada, falta de polinizador, roña, granizo, sequía o mal raleo.
+- subir por riego, malla antigranizo, buena poda, buena carga y sanidad.
+
+AP-02 Red / ap_02_red
+Uso:
+- Red Delicious, Top Red, Starking, Starkrimson, Red Chief, manzana roja.
+Rendimiento relativo:
+- medio.
+Rango base plena producción:
+- kg/árbol: 30-65 en densidad media
+- kg/árbol alta densidad: 14-28
+- t/ha esperado: 20-50
+- t/ha alto: 50-65
+Datos crudos:
+- En fuentes mexicanas se reportan rendimientos bajos en algunos clones jóvenes o condiciones específicas: Top Red 4.5-8.1 t/ha según portainjerto; Red Chief 3.8 t/ha a cinco años.
+- Estos NO son techos; son señales de etapa joven / material / sistema.
+Confianza:
+- media.
+Ajustes:
+- bajar por color deficiente, calor, golpe de sol, alternancia, falta de raleo, falta de polinización.
+- No dar premium si no hay manejo de color/calidad.
+
+AP-03 Criolla / Rayada / regional / ap_03_criolla_rayada
+Uso:
+- Criolla, Rayada, regional, manzano local.
+Rendimiento relativo:
+- bajo-medio a medio.
+Rango base plena producción:
+- kg/árbol: 20-70, muy variable
+- t/ha esperado: 8-30
+- t/ha alto: 30-45 si manejo y material son buenos.
+Datos crudos:
+- Fuentes mexicanas describen Rayada como bajo frío, autoincompatible, maduración irregular y con problemas como bitter pit.
+- Densidad típica en BIO-G: 400-1500 árboles/ha.
+Confianza:
+- baja-media por heterogeneidad.
+Ajustes:
+- bajar si hay árbol viejo sin poda, alternancia, baja densidad, sanidad foliar o falta de polinizador.
+- subir solo con evidencia de carga y manejo local.
+
+AP-04 Gala / ap_04_gala
+Uso:
+- Gala, Royal Gala, Gala sport.
+Rendimiento relativo:
+- medio-alto.
+Rango base plena producción:
+- kg/árbol: 20-60 en densidad media
+- kg/árbol alta/muy alta densidad: 15-25
+- t/ha esperado: 30-60
+- t/ha alto: 60-80
+- t/ha excepcional: 80+ en sistema intensivo validado.
+Fuente fuerte:
+- WSU Gala high-density: 63.2-78.4 bins/acre netos en producción plena, equivalente a ~65.5-81.3 t/ha netas, con 80% packout y densidades de ~3588-4485 árboles/ha.
+Confianza:
+- media-alta en alta densidad con datos claros.
+Ajustes:
+- bajar por mala coloración, calor, carga excesiva, falta de raleo, golpe de sol o presión de plagas.
+- En México, no copiar el potencial WSU si el usuario no tiene alta densidad/trellis/riego.
+
+AP-05 Bajo frío / ap_05_low_chill
+Uso:
+- Anna, Dorsett Golden, Ein Shemer, Tropic Sweet, bajo frío, manzano tropical.
+Rendimiento relativo:
+- medio si está bien adaptado; bajo si está fuera de zona.
+Rango base plena producción:
+- kg/árbol: 15-50
+- t/ha esperado: 8-35
+- t/ha alto: 35-50 con adaptación, riego y manejo.
+Datos crudos:
+- Anna puede ser precoz y cargadora; requiere raleo y poda fuerte.
+- Dorsett Golden se parece a Golden Delicious, pero su adaptación y brotación dependen del frío real.
+- UF/IFAS resalta Anna y Dorsett Golden como bajo frío para Florida, pero no debe asumirse el mismo rendimiento en México.
+Confianza:
+- media si el usuario confirma bajo frío y zona compatible.
+- baja si solo dice “manzano tropical” sin carga visible.
+Ajustes:
+- bajar fuerte si hay floración irregular, desfasamiento de polinizador, calor en cuajado o baja sanidad.
+- subir si hay buena carga, polinizador compatible y cosecha temprana estable.
+
+AP-FUTURO Verde / Granny Smith
+Estado:
+- No está como perfil oficial v1.
+Uso:
+- Si el usuario dice “manzana verde”, BIO-G v1 debe preguntar o mandar a AP-SKIP con alias pendiente.
+Rango preliminar no cablear como perfil:
+- kg/árbol: 25-65
+- t/ha esperado: 20-55
+Dato crudo:
+- Una fuente mexicana reporta Granny Smith con 12 t/ha a cinco años.
+Regla:
+- No crear ap_06_green sin decisión explícita.
+- En v1: alias “verde” debe ser ambiguo.
+
+================================================================================
+8. MODELOS DE CÁLCULO RECOMENDADOS
+================================================================================
+
+MODELO A: cálculo por número de árboles
+Uso:
+- Productor pequeño o huerto sin superficie clara.
+Inputs:
+- profileId
+- productionState
+- treeCount
+- managementLevel
+- stressMemory
+Output:
+- kg totales
+- rango bajo / esperado / alto
+
+Formula:
+kg_total_bajo = kgTreeLow * treeCount * modifiers
+kg_total_esperado = kgTreeExpected * treeCount * modifiers
+kg_total_alto = kgTreeHigh * treeCount * modifiers
+
+Ejemplo:
+- 100 árboles Golden en producción plena.
+- kg/árbol esperado conservador: 45.
+- 100 * 45 = 4500 kg = 4.5 t.
+
+MODELO B: cálculo por árboles/ha
+Uso:
+- Huerto comercial con densidad.
+Inputs:
+- kg/tree por perfil y estado
+- treesPerHa
+Formula:
+tHa = kgTree * treesPerHa / 1000
+
+Ejemplo:
+- 1111 árboles/ha * 57.6 kg/tree = 64 t/ha.
+
+MODELO C: cálculo por t/ha fuente-base
+Uso:
+- Cuando hay perfil y sistema, pero no kg/tree.
+Inputs:
+- profileId
+- densitySystem
+- productionState
+- managementLevel
+Output:
+- t/ha directo + conversión a kg/tree si hay treesPerHa.
+
+Ejemplo:
+- Gala high-density con datos WSU:
+  rango neto 65-81 t/ha.
+- Si treesPerHa = 3600, kg/tree ≈ 18-23.
+
+MODELO D: cálculo por superficie + árboles totales
+Uso:
+- Usuario dice “tengo 2 ha y 1200 árboles”.
+Formula:
+treesPerHa = treeCount / hectares
+Luego aplicar modelo B.
+
+Ejemplo:
+- 2 ha, 1200 árboles = 600 árboles/ha.
+- Red plena, 45 kg/tree esperado = 27 t/ha.
+- producción total = 54 t.
+
+MODELO E: cálculo con memoria de estrés
+Uso:
+- BIO-G guardó helada, sequía, granizo, defoliación, mala postcosecha o alternancia.
+Formula conceptual:
+yield = baseYield * profileModifier * productionStateModifier * densityModifier * managementModifier * stressModifier * confidenceModifier
+
+================================================================================
+9. MODIFICADORES RECOMENDADOS
+================================================================================
+
+productionStateModifier:
+- no_productivo: 0.00
+- primera_produccion: 0.10-0.30
+- produccion_joven: 0.35-0.70
+- produccion_plena: 0.80-1.10
+- alternancia_baja: 0.30-0.70
+- unknown: 0.40-0.80 según evidencia visual
+
+managementModifier:
+- bajo: 0.50-0.70
+- medio: 0.80-1.00
+- bueno: 1.00-1.15
+- alto/intensivo: 1.15-1.35
+- excepcional validado: 1.35-1.55
+
+waterModifier:
+- sin riego / temporal / estrés: 0.40-0.75
+- riego irregular: 0.70-0.90
+- riego estable: 0.95-1.10
+- fertirriego bien manejado: 1.05-1.20
+
+densityModifier:
+- muy baja densidad: baja t/ha aunque kg/tree sea alto.
+- densidad media: balance.
+- alta densidad: baja kg/tree esperado, sube t/ha.
+- muy alta densidad: no subir t/ha si manejo no es alto.
+
+pollinationModifier:
+- polinizador confirmado y actividad de abejas: 1.00-1.10
+- polinizador desconocido: 0.85-1.00
+- baja actividad en floración / variedad autoincompatible: 0.60-0.85
+
+stressModifier:
+- sin estrés relevante: 1.00
+- estrés leve en vegetativo: 0.90-0.98
+- estrés medio en floración/cuajado: 0.65-0.85
+- helada/granizo fuerte: 0.10-0.60 según severidad
+- defoliación fuerte antes/postcosecha: 0.60-0.85 para ciclo actual o siguiente
+- alternancia fuerte registrada: 0.40-0.75
+
+sanityModifier:
+- sanidad buena: 1.00
+- moteado/roña moderada: 0.80-0.95
+- palomilla/daño fruto: baja rendimiento comercial, no necesariamente biomasa total
+- pudrición/cosecha perdida: reducir rendimiento comercial
+- pérdida de hoja temprana: reducir ciclo siguiente
+
+qualityPackoutModifier:
+- fruta total ≠ fruta comercial.
+- BIO-G puede calcular:
+  1) producción biológica aproximada
+  2) producción comercial aproximada
+- Default v1:
+  - packout bajo: 0.50-0.65
+  - packout medio: 0.65-0.80
+  - packout alto: 0.80-0.90
+- Si no hay input, reportar “producción total aproximada” y no “comercial”.
+
+================================================================================
+10. TABLAS CABLEABLES SUGERIDAS
+================================================================================
+
+10.1 YieldReference por perfil
+
+Formato conceptual:
+
+profileId | fullKgTreeLow | fullKgTreeExpected | fullKgTreeHigh | expectedTHaLow | expectedTHaHigh | confidence
+
+ap_skip
+- kg/tree full: 25 / 40 / 60
+- t/ha base: 15-45
+- high: 60
+- confidence: medium_low
+
+ap_01_golden
+- kg/tree full: 35 / 55 / 75
+- t/ha base: 25-55
+- high: 70
+- exceptional: 100
+- confidence: medium_high
+
+ap_02_red
+- kg/tree full: 30 / 48 / 65
+- t/ha base: 20-50
+- high: 65
+- confidence: medium
+
+ap_03_criolla_rayada
+- kg/tree full: 20 / 40 / 70
+- t/ha base: 8-30
+- high: 45
+- confidence: low_medium
+
+ap_04_gala
+- kg/tree full: 25 / 50 / 70 en densidad media
+- kg/tree full high density: 15 / 19 / 25
+- t/ha base: 30-60
+- high: 80
+- exceptional: 90
+- confidence: medium_high
+
+ap_05_low_chill
+- kg/tree full: 15 / 35 / 50
+- t/ha base: 8-35
+- high: 50
+- confidence: medium_low
+
+10.2 Yield by productive state
+
+state | multiplierLow | multiplierExpected | multiplierHigh
+
+newly_planted:
+- 0 / 0 / 0
+
+juvenile_non_productive:
+- 0 / 0 / 0
+
+first_bearing:
+- 0.05 / 0.15 / 0.30
+
+young_bearing:
+- 0.25 / 0.50 / 0.75
+
+full_bearing:
+- 0.75 / 1.00 / 1.20
+
+alternate_low_year:
+- 0.20 / 0.50 / 0.75
+
+unknown:
+- 0.30 / 0.60 / 0.90
+
+10.3 Densidad y kg/tree lógico
+
+Regla:
+Si el sistema es de alta densidad, kg/tree debe limitarse para no inflar t/ha.
+
+densitySystem | treesPerHa | kg/tree cap esperado | nota
+
+traditional_extensive:
+- 200-500
+- cap: 120 kg/tree
+- t/ha puede seguir moderado.
+
+semi_intensive:
+- 500-900
+- cap: 90 kg/tree
+
+medium_modern:
+- 900-1500
+- cap: 75 kg/tree
+
+high_density:
+- 1500-3000
+- cap: 45 kg/tree
+
+very_high_density:
+- 3000-4500+
+- cap: 25 kg/tree default
+- solo subir si hay fuente local/intensiva.
+
+================================================================================
+11. PSEUDOCÓDIGO PARA CODEX / DART
+================================================================================
+
+class AppleTreeYieldReference {
+  final String profileId;
+  final YieldRange fullKgPerTree;
+  final YieldRange expectedTonPerHa;
+  final double relativeYieldFactor;
+  final double confidenceBase;
+  final List<String> notes;
+}
+
+class YieldRange {
+  final double low;
+  final double expected;
+  final double high;
+}
+
+double treesPerHaFromSpacing(double rowM, double treeM) {
+  return 10000 / (rowM * treeM);
+}
+
+double tonHaFromKgTree(double kgTree, double treesPerHa) {
+  return (kgTree * treesPerHa) / 1000;
+}
+
+double kgTreeFromTonHa(double tonHa, double treesPerHa) {
+  return (tonHa * 1000) / treesPerHa;
+}
+
+YieldProjection resolveAppleTreeYield({
+  required String profileId,
+  required String perennialStateId,
+  required String phenologyStageId,
+  double? treesPerHa,
+  double? hectares,
+  int? treeCount,
+  String? managementLevel,
+  String? irrigationLevel,
+  bool? pollinatorKnown,
+  StressMemory? stressMemory,
+}) {
+  // 1. Bloqueo no productivo
+  if (perennialStateId == 'newly_planted' ||
+      perennialStateId == 'juvenile_non_productive' ||
+      phenologyStageId == 'planting_transplant' ||
+      phenologyStageId == 'root_establishment' ||
+      phenologyStageId == 'juvenile_vegetative') {
+    return YieldProjection.zero(confidence: 0.85);
+  }
+
+  // 2. Resolver referencia por perfil
+  final ref = appleYieldReferenceByProfile[profileId] ?? appleYieldReferenceByProfile['ap_skip'];
+
+  // 3. Resolver densidad
+  final density = treesPerHa ??
+      ((treeCount != null && hectares != null && hectares > 0)
+          ? treeCount / hectares
+          : null);
+
+  // 4. Resolver modificadores
+  final productionFactor = resolveProductionStateFactor(perennialStateId, phenologyStageId);
+  final managementFactor = resolveManagementFactor(managementLevel);
+  final irrigationFactor = resolveIrrigationFactor(irrigationLevel);
+  final pollinationFactor = resolvePollinationFactor(pollinatorKnown, phenologyStageId);
+  final stressFactor = resolveStressYieldFactor(stressMemory);
+
+  // 5. Calcular por kg/tree si hay número de árboles
+  // 6. Calcular t/ha si hay densidad
+  // 7. Entregar rango bajo/esperado/alto + confidence + notas.
+}
+
+================================================================================
+12. MENSAJES UX RECOMENDADOS
+================================================================================
+
+Escenario: árbol joven sin producción
+"No proyectamos cosecha todavía porque tu manzano aún está en formación. En esta etapa importa más formar raíz, estructura y reservas."
+
+Escenario: AP-SKIP
+"Este cálculo usa un perfil general de manzano. Puede mejorar si eliges Golden, Red, Gala, criolla/rayada o bajo frío."
+
+Escenario: densidad alta
+"En alta densidad cada árbol puede cargar menos kg, pero la producción por hectárea puede ser mayor."
+
+Escenario: densidad baja/tradicional
+"En árboles más separados puede haber más kg por árbol, pero menos toneladas por hectárea."
+
+Escenario: floración/cuajado con riesgo
+"El rendimiento aún es incierto. Helada, polinización, calor o estrés hídrico durante floración y cuajado pueden mover mucho el resultado."
+
+Escenario: fruto verde / llenado
+"El cálculo ya tiene más confianza porque hay fruto visible, pero calibre, caída, granizo y sanidad todavía pueden cambiar el resultado."
+
+Escenario: postcosecha
+"La cosecha ya pasó, pero la postcosecha afecta el potencial del siguiente ciclo. BIO-G guardará estrés y recuperación del árbol."
+
+Escenario: alternancia
+"Tu árbol puede estar en un año de baja carga. En manzano, un año de mucha fruta o estrés puede reducir el ciclo siguiente."
+
+================================================================================
+13. PRUEBAS MÍNIMAS RECOMENDADAS
+================================================================================
+
+Test 1:
+newly_planted + ap_01_golden + treesPerHa 1111 => yield 0.
+
+Test 2:
+juvenile_non_productive + ap_04_gala => yield 0.
+
+Test 3:
+productive_season + ap_01_golden + treesPerHa 1111 + full_bearing =>
+expected approx 61 t/ha si kg/tree expected=55.
+
+Test 4:
+productive_season + ap_04_gala + very_high_density 4000 trees/ha =>
+kg/tree cap high density debe limitar; no permitir 70 kg/tree * 4000 = 280 t/ha.
+
+Test 5:
+ap_skip sin treesPerHa ni treeCount =>
+debe devolver rango por árbol o pedir datos; confianza baja.
+
+Test 6:
+treeCount=100, ap_02_red, full_bearing =>
+kg total expected = redKgTreeExpected * 100 * modifiers.
+
+Test 7:
+stressMemory contiene helada severa en flowering =>
+yieldExpected debe reducirse fuertemente.
+
+Test 8:
+post_harvest no debe cerrar cultivo ni borrar historial.
+
+Test 9:
+ap_03_criolla_rayada debe tener confidence menor que ap_01_golden.
+
+Test 10:
+alias "manzana verde" no debe crear AP nuevo; debe quedar ambiguous/skip/future green.
+
+================================================================================
+14. FUENTES Y TRAZABILIDAD
+================================================================================
+
+[S1] BIO-G - Estándar BIO-G para integración de árboles perennes v1.3.
+Uso:
+- estructura de 5 documentos
+- rendimiento por kg/árbol + árboles/ha + estado productivo
+- no usar sowingDate
+- memoria multianual
+
+[S2] BIO-G - 01_Ficha_Tecnica_Universal_Perfiles_BioG_Manzano_AP_v1.txt.
+Uso:
+- perfiles AP oficiales
+- aliases
+- estados y etapas
+- densidades orientativas
+- reglas de arquitectura BIO-G
+
+[S3] Gobierno del Estado de Chihuahua / SIAP.
+Título:
+- Es Chihuahua líder productor de manzana con el 85% del total nacional.
+URL:
+https://chihuahua.gob.mx/prensa/es-chihuahua-lider-productor-de-manzana-con-el-85-del-total-nacional
+Uso:
+- Chihuahua 2024: >32 mil ha, >664 mil t, 85.20% nacional.
+- contexto regional real.
+
+[S4] Revista Fitotecnia Mexicana / Colegio de Postgraduados, 2024.
+Título:
+- El mercado de la manzana fresca en México: 2000-2021.
+URL:
+https://www.scielo.org.mx/pdf/rfm/v47n2/0187-7380-rfm-47-02-173.pdf
+Uso:
+- producción México 2000-2021
+- riego vs temporal
+- concentración Chihuahua/Coahuila/Durango/Puebla
+- estacionalidad agosto-octubre
+- variables que afectan oferta: agua, temperatura mínima, fertilizante, inercia perenne.
+
+[S5] Scielo México / UACH.
+Título:
+- Fertirrigación con macronutrientes en manzano ‘Golden Delicious’: Impacto en rendimiento y calidad de fruto.
+URL:
+https://www.scielo.org.mx/scielo.php?pid=S2007-07052016000100162&script=sci_arttext
+Uso:
+- Golden Delicious/MM111
+- marco 3 x 3 m
+- rendimiento 64 t/ha con manejo nutricional
+- posibilidad 80-100 t/ha con manejo correcto
+- relación rendimiento-calidad-postcosecha.
+
+[S6] Revista Mexicana de Ciencias Agrícolas / Scielo.
+Título:
+- Respuesta de portainjertos de manzano a vigor, eficiencia de producción y concentraciones foliar y en fruto de NPK.
+URL:
+https://www.scielo.org.mx/scielo.php?pid=S2007-09342017000400849&script=sci_arttext
+Uso:
+- Chihuahua promedio 18.9 t/ha
+- Golden Delicious 58%, Red Delicious 25%
+- portainjerto afecta eficiencia de producción.
+
+[S7] Washington State University Extension, 2025.
+Título:
+- 2024 Cost and Return Estimates of Establishing, Producing, and Packing Gala Apples in Washington.
+URL:
+https://wpcdn.web.wsu.edu/cahnrs/uploads/sites/5/TB107E_2024-Gala-Enterprise-Budget.pdf
+Uso:
+- Gala high density
+- 1452-1815 árboles/acre
+- producción plena año 6
+- 63.2-78.4 bins/acre netos
+- bin 925 lb, 80% packout
+- conversión a 65.5-81.3 t/ha netas.
+
+[S8] NC State Extension.
+Título:
+- High Density Apple Orchard Management.
+URL:
+https://content.ces.ncsu.edu/high-density-apple-orchard-management
+Uso:
+- definición high density >150-180 árboles/acre
+- high density entra en producción 2-3 años con portainjertos enanizantes
+- rentabilidad por densidad
+- tablas de 850-1000 bushels/acre y 1500 bushels/acre en escenario alto.
+
+[S9] University of Georgia Extension.
+Título:
+- Weights and Processed Yields of Fruits and Vegetables.
+URL:
+https://fieldreport.caes.uga.edu/publications/C780/weights-and-processed-yields-of-fruits-and-vegetables/
+Uso:
+- apples bushel 42-48 lb, conversión práctica.
+
+[S10] USDA/RMA.
+Título:
+- Apple Pilot Quality Option Loss Adjustment Standards Handbook.
+URL:
+https://legacy.rma.usda.gov/handbooks/25000/2001/01_25830.pdf
+Uso:
+- bushel de manzana 42 lb en la mayoría de estados de EUA.
+
+[S11] Nuevos Horizontes / Guía técnica para el cultivo de manzano.
+Archivo aportado por usuario:
+- guiamanzano.pdf
+Uso:
+- marcos 5.25 x 2.25 m a 6 x 3 m
+- distribución de variedades para polinización
+- importancia de conducción, fertilización, riego y sanidad.
+
+[S12] Folleto técnico de variedades de manzana en México.
+Título:
+- Variedades de manzana (Malus pumila Mill.) cultivadas en México.
+URL:
+https://areadeagronomia.mx/wp-content/uploads/2024/11/FOLLETO-TECNICO-MANZANA.pdf
+Uso:
+- datos crudos por variedades mexicanas
+- rendimientos jóvenes por clon
+- bajo frío, Anna, Dorsett Golden, Rayada, Granny Smith
+- no usar como único motor de rendimiento.
+
+[S13] UF/IFAS.
+Título:
+- Low-Chill Apple Cultivars for North Florida.
+URL:
+https://ask.ifas.ufl.edu/publication/MG368
+Uso:
+- Anna, Dorsett Golden, Tropic Sweet, bajo frío
+- descripción y adaptación de bajo frío.
+
+[S14] USU Extension.
+Título:
+- Apple Production and Variety Recommendations for the Utah Home Garden.
+URL:
+https://extension.usu.edu/yardandgarden/research/apple-production-and-variety-recommendations-for-the-utah-home-garden
+Uso:
+- Red Delicious, Golden Delicious, Gala y Fuji con múltiples strains
+- rootstock define tamaño
+- dwarf/semi-dwarf/standard.
+- útil para no crear perfil por cada clon.
+
+[S15] Foros / experiencia de productores.
+Uso:
+- lenguaje real y aliases.
+- No usados para definir rangos.
+
+================================================================================
+15. CIERRE TÉCNICO
+================================================================================
+
+El rendimiento aproximado de manzano debe ser uno de los módulos más prudentes de BIO-G.
+
+La forma correcta no es una sola tabla de t/ha. La forma correcta es:
+
+perfil AP
++ estado productivo
++ árboles/ha o número de árboles
++ densidad/sistema
++ kg/árbol
++ manejo/agua/sanidad
++ memoria de estrés
++ confianza
+
+BIO-G debe poder responder tanto a:
+- “Tengo 1 árbol en el patio”
+como a:
+- “Tengo 2 ha con 1200 árboles”
+como a:
+- “Tengo 3000 árboles/ha en Gala”
+
+sin romper la lógica perenne.
+
+La cosecha no cierra el cultivo.
+La postcosecha alimenta el siguiente ciclo.
+El rendimiento nunca se promete: se estima.

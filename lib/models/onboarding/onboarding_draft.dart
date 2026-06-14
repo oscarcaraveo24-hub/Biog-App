@@ -10,7 +10,9 @@ class OnboardingDraft {
   final String? brandId;
   final String? varietyId;
   final String? varietyAlias;
+  final String? treeProductionStatusId;
   final String? stage;
+  final String? treeAnchorOptionId;
   final DateTime? selectedDate;
   final bool useFlexibleDate;
 
@@ -26,7 +28,9 @@ class OnboardingDraft {
     this.brandId,
     this.varietyId,
     this.varietyAlias,
+    this.treeProductionStatusId,
     this.stage,
+    this.treeAnchorOptionId,
     this.selectedDate,
     this.useFlexibleDate = false,
   });
@@ -43,7 +47,9 @@ class OnboardingDraft {
     Object? brandId = _sentinel,
     Object? varietyId = _sentinel,
     Object? varietyAlias = _sentinel,
+    Object? treeProductionStatusId = _sentinel,
     Object? stage = _sentinel,
+    Object? treeAnchorOptionId = _sentinel,
     Object? selectedDate = _sentinel,
     bool? useFlexibleDate,
   }) {
@@ -75,7 +81,14 @@ class OnboardingDraft {
       varietyAlias: identical(varietyAlias, _sentinel)
           ? this.varietyAlias
           : varietyAlias as String?,
+      treeProductionStatusId:
+          identical(treeProductionStatusId, _sentinel)
+              ? this.treeProductionStatusId
+              : treeProductionStatusId as String?,
       stage: identical(stage, _sentinel) ? this.stage : stage as String?,
+      treeAnchorOptionId: identical(treeAnchorOptionId, _sentinel)
+          ? this.treeAnchorOptionId
+          : treeAnchorOptionId as String?,
       selectedDate: identical(selectedDate, _sentinel)
           ? this.selectedDate
           : selectedDate as DateTime?,
@@ -85,4 +98,3 @@ class OnboardingDraft {
 }
 
 const Object _sentinel = Object();
-

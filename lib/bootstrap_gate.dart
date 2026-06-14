@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/profile/profile_repository.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/onboarding/onboarding_draft.dart';
@@ -19,6 +20,99 @@ import 'package:bio_g/widgets/shared/bio_g_page_route.dart';
 
 const bool _kDebugForceSignInPreview = false;
 const bool _kDebugScreenGallery = false;
+
+@visibleForTesting
+DeviceCropContext resolveOnboardingTreeDraftContext({
+  required String deviceId,
+  required OnboardingDraft draft,
+  required String cropId,
+  required String stage,
+  DeviceCropContext? previous,
+  DateTime? now,
+  WizardCropContextResolver contextResolver = const WizardCropContextResolver(),
+}) {
+  final DateTime effectiveNow = now ?? DateTime.now();
+  final String categoryId =
+      draft.cropCategory ??
+      previous?.cropCategoryId ??
+      CropCatalog.treeCategoryId;
+
+  // "Aún no planto / por plantar": ciclo planeado, sin anclaje perenne todavía.
+  if (stage == 'planned') {
+    return contextResolver.resolve(
+      deviceId: deviceId,
+      cropCategoryId: categoryId,
+      cropId: cropId,
+      lifecycleStatus: CropLifecycleStatus.planned,
+      dateConfidence: draft.useFlexibleDate
+          ? DateConfidence.unknown
+          : DateConfidence.exact,
+      now: effectiveNow,
+      previous: previous,
+      varietyId: draft.varietyId,
+      varietyAlias: draft.varietyAlias,
+      selectedDate: draft.useFlexibleDate ? null : draft.selectedDate,
+      timezone: draft.timezone ?? previous?.timezone,
+      cultivationScaleId: draft.cultivationScale,
+    );
+  }
+
+  // El estado/etapa/anclaje se resuelven con el MISMO modelo canónico que
+  // account/configure (Fase 4). La rama "solo creciendo" deriva el estado de
+  // la fecha de plantación; la primera floración entra a producción.
+  final DateTime? plantingOrAnchorDate = draft.useFlexibleDate
+      ? null
+      : (draft.selectedDate ?? effectiveNow);
+
+  final selection = resolveOnboardingTreeSelection(
+    productionStatusId: draft.treeProductionStatusId,
+    phenologyStageId: stage,
+    plantingDate: plantingOrAnchorDate,
+    now: effectiveNow,
+  );
+
+  final String safeStageId = safeTreeStageForState(
+    perennialStateId: selection.perennialStateId,
+    phenologyStageId: selection.phenologyStageId,
+  );
+
+  final DateTime? anchorDate =
+      selection.perennialAnchorTypeId == TreeAnchorTypeIds.unknown
+      ? null
+      : plantingOrAnchorDate;
+
+  // Eje MEMORIA/EDAD (sowingDate): solo la rama de plantación captura una fecha
+  // de plantación real. En las ramas productivas la fecha es un evento de etapa
+  // (no plantación), así que se deja null y el resolver conserva la memoria
+  // previa. La precisión (#1/#12) reutiliza sowing_date_confidence: exacta si el
+  // usuario recuerda la fecha, unknown si la dejó aproximada.
+  final DateTime? treePlantingDate =
+      selection.perennialAnchorTypeId == TreeAnchorTypeIds.planting
+      ? plantingOrAnchorDate
+      : null;
+
+  return contextResolver.resolve(
+    deviceId: deviceId,
+    cropCategoryId: categoryId,
+    cropId: cropId,
+    lifecycleStatus: CropLifecycleStatus.planted,
+    dateConfidence: draft.useFlexibleDate
+        ? DateConfidence.unknown
+        : DateConfidence.exact,
+    now: effectiveNow,
+    previous: previous,
+    varietyId: draft.varietyId,
+    varietyAlias: draft.varietyAlias,
+    selectedDate: null,
+    timezone: draft.timezone ?? previous?.timezone,
+    cultivationScaleId: draft.cultivationScale,
+    perennialStateId: selection.perennialStateId,
+    phenologyStageId: safeStageId,
+    perennialAnchorDate: anchorDate,
+    perennialAnchorTypeId: selection.perennialAnchorTypeId,
+    treePlantingDate: treePlantingDate,
+  );
+}
 
 class BootstrapGate extends StatefulWidget {
   const BootstrapGate({super.key});
@@ -154,7 +248,21 @@ class _BootstrapGateState extends State<BootstrapGate> {
       return;
     }
 
-    if (stage == 'fallow' || stage == 'dormant') {
+    // Árboles/perennes: usan el modelo perenne (estado + etapa + anclaje) y
+    // NUNCA van a descanso/fallow. Reposo (dormancy) y post-cosecha son etapas
+    // activas del ciclo del árbol, no suelo en descanso.
+    if (isTreeCrop(cropId: cropId, cropCategoryId: draft.cropCategory)) {
+      await _saveOnboardingTreeContext(
+        store: store,
+        deviceId: device.id,
+        draft: draft,
+        cropId: cropId,
+        stage: stage,
+      );
+      return;
+    }
+
+    if (stage == 'fallow') {
       await store.setSeedSkipForDevice(device.id, cropKey: cropId);
       return;
     }
@@ -195,6 +303,35 @@ class _BootstrapGateState extends State<BootstrapGate> {
     );
 
     await store.saveCropContext(resolvedContext);
+  }
+
+  /// Persiste el contexto de un árbol/perenne configurado en el onboarding.
+  ///
+  /// Usa el modelo canónico compartido con account/configure vía
+  /// [resolveOnboardingTreeSelection] (Fase 4): estado de producción visible +
+  /// etapa/señal → (perennialStateId + phenologyStageId + anclaje). La primera
+  /// floración de un árbol no productivo entra a producción de temporada y
+  /// "solo creciendo" deriva el estado de la edad de plantación. El árbol nunca
+  /// se manda a fallow: reposo y post-cosecha siguen siendo etapas activas. La
+  /// variedad de onboarding cae de forma segura al perfil general (AP-SKIP) si
+  /// no coincide con un perfil del catálogo; el usuario puede precisarla después.
+  Future<void> _saveOnboardingTreeContext({
+    required BioGStore store,
+    required String deviceId,
+    required OnboardingDraft draft,
+    required String cropId,
+    required String stage,
+  }) async {
+    final DeviceCropContext? previous = store.cropContextForDevice(deviceId);
+    final resolved = resolveOnboardingTreeDraftContext(
+      deviceId: deviceId,
+      draft: draft,
+      cropId: cropId,
+      stage: stage,
+      previous: previous,
+      contextResolver: _contextResolver,
+    );
+    await store.saveCropContext(resolved);
   }
 
   String? _normalizeCropId(String? value) {

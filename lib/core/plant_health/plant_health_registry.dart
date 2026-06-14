@@ -1,4 +1,5 @@
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/plant_health/catalog/apple_tree_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/barley_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/bean_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/chili_syndromes.dart';
@@ -48,6 +49,8 @@ class PlantHealthRegistry {
         return onionSyndromes;
       case CropCatalog.garlicCropId:
         return garlicSyndromes;
+      case CropCatalog.appleTreeCropId:
+        return appleTreeSyndromes;
       default:
         return const <PlantHealthSyndrome>[];
     }

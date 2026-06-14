@@ -7,6 +7,8 @@ import 'package:bio_g/core/crops/crop_registry.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
+import 'package:bio_g/core/crops/tree_stage_resolver.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
@@ -55,8 +57,14 @@ class CropRuntimeResolver {
       cropContext: normalizedContext,
     );
 
-    final bool isPlanted =
-        sowingStatus == SowingStatus.planted && plantedDate != null;
+    final bool isPerennialRuntime = isPerennialCrop(
+      cropId: cropKeyName,
+      cropCategoryId: normalizedContext?.cropCategoryId,
+      category: definition?.category,
+    );
+
+    final bool isPlanted = sowingStatus == SowingStatus.planted &&
+        (isPerennialRuntime || plantedDate != null);
 
     final bool isPlanned = sowingStatus == SowingStatus.planned;
 
@@ -73,7 +81,33 @@ class CropRuntimeResolver {
     DateTime? engineSowingDate;
     AlertsState nextAlertsState = alertsState;
 
-    if (isPlanted && definition != null && profile != null) {
+    if (isPerennialRuntime &&
+        sowingStatus == SowingStatus.planted &&
+        normalizedContext != null) {
+      stageResult = PerennialStageResolver.resolve(
+        context: normalizedContext,
+        today: today,
+      );
+
+      if (definition != null && profile != null) {
+        targets = definition.resolveTargets(stageResult);
+
+        if (live != null) {
+          final out = definition.evaluateTelemetry(
+            telemetry: live,
+            stage: stageResult,
+            profile: profile,
+            targetsOverride: targets,
+            alertsState: alertsState,
+          );
+          eval = out.eval;
+          nextAlertsState = out.nextAlertsState;
+        }
+      }
+    } else if (!isPerennialRuntime &&
+        isPlanted &&
+        definition != null &&
+        profile != null) {
       final DateTime effectiveSowingDate = _effectiveSowingDateForCalendar(
         cropId: cropKeyName,
         calendarTypeId: normalizedContext?.calendarTypeId,

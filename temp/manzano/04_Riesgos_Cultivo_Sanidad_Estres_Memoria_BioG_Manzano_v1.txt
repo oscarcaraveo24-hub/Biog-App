@@ -1,0 +1,1443 @@
+BIO-G
+
+04_RIESGOS_CULTIVO_SANIDAD_ESTRES_MEMORIA_BIOG_MANZANO_v1
+Cultivo: Manzano / Árbol de manzana
+cropId: crop_apple_tree
+CropKey sugerido: appleTree / apple_tree
+Perfil base: AP-SKIP + AP-01 Golden + AP-02 Red + AP-03 Criolla/Rayada + AP-04 Gala + AP-05 Bajo frío
+
+Documento técnico interno BIO-G.
+No sustituye diagnóstico de campo, laboratorio, asesoría fitosanitaria local, análisis de suelo/agua/tejido ni normatividad vigente.
+BIO-G v1 no debe convertirse en recetario de plaguicidas: alerta, orienta revisión, prioriza riesgo, guarda memoria y recomienda confirmar.
+
+Versión: v1.0
+Fecha: Junio 2026
+Módulo: Riesgos del Cultivo / Plant Health / Memoria perenne
+Enfoque de producto: alertas farmer-friendly, cableables a motor, agrupadas por familia de riesgo, sin dosis ni ingredientes activos.
+
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+El manzano no debe modelarse como una hortaliza larga. Es un árbol perenne con memoria: una helada en floración, tizón de fuego, estrés hídrico en llenado, defoliación severa, daño de raíz o mala postcosecha puede afectar no solo el ciclo actual, sino también brotación, floración, reserva y carga del siguiente ciclo.
+
+Para BIO-G, los riesgos del manzano se concentran en siete frentes:
+
+1. Raíz, cuello, suelo y madera:
+   Phytophthora, complejos de raíz, Armillaria, cancros, compactación, anoxia, replantación y estrés acumulado.
+
+2. Floración, brotes tiernos y bacterias:
+   tizón de fuego, helada tardía, bacteriosis de flor, exceso de vigor, heridas por granizo o poda.
+
+3. Enfermedades foliares y de fruto:
+   moteado/sarna, cenicilla, royas, tizones, manchas, pudriciones de verano, sooty blotch/flyspeck y rots de cosecha/postcosecha.
+
+4. Plagas directas de fruto:
+   palomilla/carpocapsa, gusano de la manzana, enrolladores, chinches, mosca de la manzana donde exista, picaduras y daño comercial.
+
+5. Plagas de hoja, brote, madera y vectores:
+   pulgón lanígero, pulgón verde/ceniciento, chicharritas, ácaros, escamas, barrenadores, minadores y defoliadores.
+
+6. Estrés fisiológico y climático:
+   helada, calor, golpe de sol, sequía, exceso de agua, salinidad, compactación, baja acumulación de frío, mala polinización, alternancia, bitter pit, rajado, russeting, clorosis férrica, deficiencia de zinc, toxicidad/fitotoxicidad.
+
+7. Memoria multianual:
+   el motor debe guardar etapa, severidad, duración, tipo de estrés, órgano afectado y posible impacto futuro. En manzano la memoria no es adorno: es parte del cultivo.
+
+Regla v1:
+BIO-G debe decir “esto lo favorece”, “revise aquí”, “se parece a”, “confirme si avanza”.
+BIO-G NO debe decir “diagnóstico definitivo” ni “aplique X producto”.
+BIO-G debe cruzar etapa fenológica + sensores + clima + historial + clave visual.
+BIO-G debe bajar la confianza si solo hay sensor y no hay observación visual.
+
+
+================================================================================
+1. METODOLOGÍA Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+Se usó como molde editorial el documento BIO-G de calabaza: separar riesgos bióticos y abióticos, priorizar por etapa, traducir a reglas de motor, usar lenguaje farmer-friendly y no convertir el módulo en receta química. Para manzano se agregó la capa obligatoria de árbol perenne: memoria, madera, raíz, postcosecha y ciclo siguiente.
+
+Criterio de fuentes:
+- Alta confianza: universidades, extensión, IPM oficial, artículos científicos y guías técnicas institucionales.
+- Media-alta: documentos técnicos regionales, guías de producción, tesis o artículos con datos locales.
+- Media: guías comerciales si coinciden con fuentes universitarias, usadas solo como apoyo.
+- Baja-media: foros y experiencia de productores, usados solo para lenguaje UX y problemas reportados, nunca para umbrales ni reglas duras.
+
+Fuentes fuertes usadas:
+- UC IPM Apple Pest Management Guidelines.
+- Cornell IPM / Major Pests of Apple.
+- Penn State Extension / Tree Fruit.
+- Washington State University Tree Fruit.
+- Utah State University IPM.
+- UACH Chihuahua / monitoreo y control de palomilla.
+- Revista Mexicana de Ciencias Agrícolas / pulgón lanígero en Chihuahua.
+- Revista Mexicana de Fitopatología / enfermedades de raíz en huertos de manzano de Chihuahua.
+- Guías técnicas de manzano aportadas por el usuario.
+
+Uso de foros:
+Foros como InfoJardín y GrowingFruit sirvieron para detectar cómo habla el usuario real: “algodón en ramas” para pulgón lanígero, “manchas oscuras aterciopeladas” para sarna/moteado, “agujeros o gusanos en la manzana” para carpocapsa/palomilla, “hojas quemadas” para confundir enfermedad, calor, salinidad o fitotoxicidad. No se usaron para definir umbrales.
+
+
+================================================================================
+2. RESUMEN EJECUTIVO PARA PRODUCTO
+================================================================================
+
+El riesgo del manzano cambia mucho según etapa:
+
+- Recién plantado / establecimiento:
+  Pesa raíz, drenaje, Phytophthora, anoxia, replantación, roedores, daño de cuello, salinidad y estrés hídrico.
+
+- Juvenil no productivo:
+  Pesa vigor equilibrado, pulgón lanígero, ácaros, chicharritas, defoliación, enfermedades de hoja, daño de madera, heladas y exceso de N.
+
+- Reposo:
+  Pesa madera, cancros, inóculo, yemas, frío acumulado, poda, heridas, roedores, escamas, huevecillos, historial del ciclo anterior.
+
+- Brotación:
+  Pesa helada tardía, sarna/moteado, cenicilla, pulgones, chicharritas, enrolladores, escamas y vigor inicial.
+
+- Floración:
+  Etapa crítica. Pesa tizón de fuego, helada, lluvia, humedad, polinización, abejas, exceso de N/vigor, granizo y clima cálido-húmedo.
+
+- Cuajado / amarre:
+  Pesa palomilla temprana, enrolladores, chinches, mala polinización, caída de fruto, déficit hídrico, calor, helada tardía, sarna en fruto joven y fire blight en brotes.
+
+- Llenado de fruto:
+  Pesa carpocapsa/palomilla, ácaros, chicharrita, pulgones, defoliación, golpe de sol, bitter pit, estrés hídrico, salinidad, K/Ca funcional, pudriciones y rots.
+
+- Maduración / cosecha:
+  Pesa palomilla, chinches, sooty blotch/flyspeck, bitter rot, black rot, pudriciones, golpe de sol, granizo, rajado, color, caída prematura y vida de anaquel.
+
+- Postcosecha:
+  Pesa recuperación de reservas, sanidad de hoja restante, estrés hídrico, N/K/Ca/Mg como contexto, cancros, pulgón lanígero, caída prematura de hojas y preparación para dormancia.
+
+El motor debe evitar dos errores:
+1. Ver marchitez y sugerir “falta agua” si el suelo está saturado.
+2. Ver fruto con manchas y sugerir “hongo” sin revisar granizo, sol, chinches, bitter pit, salinidad o fitotoxicidad.
+
+
+================================================================================
+3. FAMILIAS UX DEL MÓDULO RIESGOS MANZANO
+================================================================================
+
+Familia UX 1: Raíz, cuello, suelo y madera
+Objetivo: proteger vida del árbol.
+Entradas principales:
+- root_crown_rot_complex
+- phytophthora_root_crown_rot
+- armillaria_root_rot
+- apple_replant_decline
+- canker_wood_decline_complex
+- rodent_girdling_damage
+- soil_anoxia_excess_moisture
+- soil_compaction_root_stress
+
+Familia UX 2: Flor, brote y bacterias
+Objetivo: proteger estructura productiva y evitar daño multianual.
+Entradas principales:
+- fire_blight
+- bacterial_blossom_blast
+- frost_bloom_damage
+- hail_wound_infection_risk
+- excessive_vigor_fire_blight_risk
+
+Familia UX 3: Enfermedades de hoja y fruto
+Objetivo: proteger fotosíntesis, fruto y calidad.
+Entradas principales:
+- apple_scab
+- powdery_mildew
+- cedar_apple_rust_rust_complex
+- alternaria_frogeye_leaf_spot
+- black_rot_frogeye
+- bitter_rot
+- sooty_blotch_flyspeck
+- botrytis_gray_mold
+- fruit_storage_rot_complex
+- apple_mosaic_virus
+
+Familia UX 4: Plagas directas de fruto
+Objetivo: proteger fruta comercial.
+Entradas principales:
+- codling_moth
+- apple_maggot_regional
+- oriental_fruit_moth_regional
+- obliquebanded_leafroller
+- leafroller_fruit_scarring_complex
+- stink_bug_llygus_fruit_damage
+- plum_curculio_regional
+
+Familia UX 5: Plagas de brote, hoja y madera
+Objetivo: proteger vigor, hoja, madera y flujo de savia.
+Entradas principales:
+- woolly_apple_aphid
+- green_apple_aphid
+- rosy_apple_aphid
+- leafhopper_chicharrita
+- spider_mites_complex
+- san_jose_scale
+- borers_wood_complex
+- leafminers
+- caterpillar_defoliators
+
+Familia UX 6: Estrés fisiológico, clima y calidad
+Objetivo: leer problemas que parecen plaga/enfermedad pero nacen de ambiente, agua o balance.
+Entradas principales:
+- drought_stress
+- heat_stress_fruit_fill
+- sunburn_sunscald
+- waterlogging_anoxia
+- salinity_ec_high
+- cold_winter_injury
+- insufficient_chill_irregular_budbreak
+- poor_pollination_low_fruit_set
+- biennial_bearing_alternate_bearing
+- bitter_pit_calcium_functional
+- fruit_cracking_russeting_weather
+- iron_chlorosis_high_ph
+- zinc_deficiency_rosette
+- herbicide_phytotoxicity
+- nutrient_excess_vigor
+
+
+================================================================================
+4. CATÁLOGO MAESTRO DE RIESGOS BIÓTICOS
+================================================================================
+
+Formato:
+Riesgo | Dónde pesa más | Qué lo favorece | Clave visual | Etapa | Prioridad BIO-G
+
+--------------------------------------------------------------------------------
+4.1 RAÍZ, CUELLO, SUELO Y MADERA
+--------------------------------------------------------------------------------
+
+1) phytophthora_root_crown_rot
+Nombre UX: Pudrición de raíz/corona por exceso de humedad
+Dónde pesa más: árboles jóvenes, suelos pesados, zonas bajas, riego excesivo, huertos con drenaje pobre.
+Qué lo favorece: suelo saturado por 24 h o más, agua acumulada junto al cuello, riegos largos, textura pesada, compactación, material infectado, historial del lote.
+Clave visual: árbol decae por parches, hojas marchitas que pueden quedar adheridas, bajo crecimiento, corona/corteza interna café-rojiza, raíces finas muertas.
+Etapa: plantación_transplant, root_establishment, juvenile_vegetative, budbreak, vegetative_growth, post_harvest.
+Prioridad: Muy alta.
+Memoria: alta. Puede reducir vigor varios ciclos o matar árbol.
+Lectura BIO-G: si humedad de suelo alta + drenaje pobre + resistencia/compactación alta + bajo vigor, alertar como riesgo radicular. No recomendar más riego.
+
+2) root_crown_rot_complex
+Nombre UX: Complejo de raíz y cuello
+Dónde pesa más: establecimiento, replantes, árboles con decaimiento irregular.
+Qué lo favorece: raíces heridas, estrés hídrico alternado, exceso de humedad, patógenos de suelo, material de vivero débil, suelo frío y compactado.
+Clave visual: crecimiento disparejo, hojas pequeñas, amarillamiento, muerte progresiva, raíces café/negras.
+Etapa: establecimiento a postcosecha.
+Prioridad: Alta.
+Memoria: alta.
+Lectura BIO-G: riesgo base cuando hay marchitez o bajo vigor sin causa foliar evidente y sensores apuntan a raíz.
+
+3) armillaria_root_rot
+Nombre UX: Pudrición blanca / Armillaria
+Dónde pesa más: suelos con raíces viejas, zonas replantadas, árboles adultos debilitados.
+Qué lo favorece: restos de raíces leñosas, estrés, humedad, suelos con historial forestal o frutal viejo.
+Clave visual: declinación lenta, setas/micelio blanco bajo corteza en base, muerte de ramas, árboles por focos.
+Etapa: cualquier etapa, más visible en brotación y estrés de verano.
+Prioridad: Media-alta regional.
+Memoria: alta.
+Lectura BIO-G: si historial de replantación + árboles por focos + declinación crónica, sugerir revisar cuello/raíces.
+
+4) apple_replant_decline
+Nombre UX: Decaimiento por replantación
+Dónde pesa más: huertos nuevos plantados donde hubo manzano u otros frutales.
+Qué lo favorece: suelo con historial de manzano, nematodos, hongos, microbioma desfavorable, raíces viejas, compactación.
+Clave visual: bajo vigor uniforme o por línea, entrenudos cortos, pobre establecimiento, raíces débiles sin lesión única clara.
+Etapa: plantación_transplant, root_establishment, juvenile_vegetative.
+Prioridad: Alta si hay historial.
+Memoria: media-alta.
+Lectura BIO-G: preguntar: “¿ya había manzano/frutal en este terreno?” antes de asumir falta de fertilizante.
+
+5) canker_wood_decline_complex
+Nombre UX: Cancros y decaimiento de madera
+Dónde pesa más: ramas, brotes, tronco, heridas de poda, granizo, árboles viejos.
+Qué lo favorece: heridas, poda en húmedo, estrés, heladas, tejido debilitado, mala cicatrización.
+Clave visual: zonas hundidas en corteza, goma/exudado, muerte regresiva de rama, corteza agrietada.
+Etapa: dormancy, budbreak, vegetative_growth, post_harvest.
+Prioridad: Alta por memoria.
+Memoria: alta. Puede ser puerta para problemas estructurales.
+Lectura BIO-G: si hubo granizo/poda/helada y aparece muerte regresiva, pedir revisión de madera y no tratar como simple hoja amarilla.
+
+6) rodent_girdling_damage
+Nombre UX: Daño de roedores o anillado de tronco
+Dónde pesa más: árboles jóvenes, invierno, zonas con maleza o cobertura alta junto al tronco.
+Qué lo favorece: pasto/maleza alrededor, invierno, protección deficiente, acolchados mal manejados.
+Clave visual: corteza comida en base, árbol brota débil, marchitez sin lesión foliar.
+Etapa: dormancy, budbreak, root_establishment.
+Prioridad: Media-alta en jóvenes.
+Memoria: alta si anilla tronco.
+Lectura BIO-G: si árbol joven colapsa al brotar y suelo está bien, revisar base del tronco.
+
+7) nematode_root_stress
+Nombre UX: Estrés por nematodos
+Dónde pesa más: suelos arenosos, replantes, huertos con crecimiento por parches.
+Qué lo favorece: historial, falta de rotación, raíces estresadas.
+Clave visual: bajo vigor por parches, raíces con lesiones o agallas según especie, respuesta pobre a agua/fertilización.
+Etapa: establecimiento, juvenil, vegetativo.
+Prioridad: Media.
+Memoria: media-alta.
+Lectura BIO-G: no diagnosticar sin muestra; sugerir análisis si el patrón persiste.
+
+--------------------------------------------------------------------------------
+4.2 FLOR, BROTE Y BACTERIAS
+--------------------------------------------------------------------------------
+
+8) fire_blight
+Nombre UX: Tizón de fuego / fuego bacteriano
+Dónde pesa más: floración, brotes tiernos, árboles jóvenes, Gala/Fuji y portainjertos susceptibles.
+Qué lo favorece: clima cálido y húmedo durante floración, lluvia, granizo, heridas, insectos/polinizadores, aspersión sobre flor, exceso de nitrógeno, poda fuerte, vigor excesivo.
+Clave visual: racimos florales se marchitan y ennegrecen, brotes en “cayado de pastor”, exudado ámbar/pegajoso, ramas con aspecto quemado.
+Etapa: flowering, fruit_set, vegetative_growth.
+Prioridad: Muy alta.
+Memoria: muy alta. Puede matar ramas, árboles jóvenes y quedar en cancros.
+Perfil: sube en AP-04 Gala; sube en AP-05 bajo frío si hay floración temprana con clima inestable; AP-01 Golden medio; AP-02 Red medio.
+Lectura BIO-G: si floración + humedad/lluvia + temperatura templada-cálida + brote tierno, alertar alto. Si además hubo granizo, subir prioridad.
+
+9) bacterial_blossom_blast
+Nombre UX: Bacteriosis de flor / blast bacteriano
+Dónde pesa más: floración fría-húmeda, tejido tierno.
+Qué lo favorece: frío, lluvia, heladas leves, humedad alta, heridas.
+Clave visual: flores quemadas o cafés, daño en racimos, puede confundirse con helada o tizón de fuego.
+Etapa: flowering.
+Prioridad: Media-alta regional.
+Memoria: media.
+Lectura BIO-G: si flor dañada después de frío/lluvia, no asumir de inmediato fire blight; pedir revisar exudado y patrón.
+
+10) hail_wound_infection_risk
+Nombre UX: Riesgo sanitario después de granizo
+Dónde pesa más: cualquier etapa con tejido verde/fruto, especialmente floración a cosecha.
+Qué lo favorece: granizo, viento fuerte, heridas abiertas, humedad posterior.
+Clave visual: hojas rotas, fruta golpeada, brotes lesionados, heridas en madera.
+Etapa: flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest.
+Prioridad: Alta.
+Memoria: media-alta.
+Lectura BIO-G: guardar evento extremo; subir riesgo de fire blight, cancros, pudriciones y fruta no comercial.
+
+--------------------------------------------------------------------------------
+4.3 ENFERMEDADES FOLIARES Y DE FRUTO
+--------------------------------------------------------------------------------
+
+11) apple_scab
+Nombre UX: Sarna / moteado del manzano
+Dónde pesa más: primavera húmeda, variedades susceptibles, hojas/fruto joven.
+Qué lo favorece: lluvia de primavera, mojado foliar prolongado, hojas caídas infectadas, canopia densa, humedad alta.
+Clave visual: manchas oliva a negras, aterciopeladas, en hojas y fruta; fruta con costras y deformación.
+Etapa: budbreak, vegetative_growth, flowering, fruit_set, fruit_fill.
+Prioridad: Muy alta en regiones húmedas; media en zonas secas salvo lluvias.
+Memoria: media. Inóculo en hojas caídas.
+Perfil: AP-03 regional puede variar; AP-SKIP conservador; perfiles comerciales sensibles según cultivar.
+Lectura BIO-G: si etapa verde temprana + lluvia/mojado + HR alta, alertar riesgo antes de síntomas. Si ya hay manchas, sugerir revisión de hojas jóvenes y fruta.
+
+12) powdery_mildew
+Nombre UX: Cenicilla / oídio del manzano
+Dónde pesa más: brotes, hojas nuevas, fruta joven.
+Qué lo favorece: días cálidos, noches frescas/húmedas, yemas infectadas, brotes tiernos, canopia con poco aire.
+Clave visual: polvo blanco/gris en hojas y brotes, deformación, brotes débiles, russeting en fruto.
+Etapa: budbreak, vegetative_growth, flowering, fruit_set.
+Prioridad: Alta.
+Memoria: media. Sobrevive en yemas infectadas.
+Lectura BIO-G: si brote nuevo + noches húmedas + crecimiento activo, revisar puntas y hojas jóvenes.
+
+13) cedar_apple_rust_rust_complex
+Nombre UX: Roya del manzano / complejo de royas
+Dónde pesa más: zonas con juníperos/cedros cercanos, primaveras húmedas.
+Qué lo favorece: hospedero alternante, lluvia, HR alta, cercanía a juníperos.
+Clave visual: manchas amarillo-anaranjadas en hojas, lesiones en fruta, estructuras anaranjadas en envés.
+Etapa: budbreak, vegetative_growth, fruit_set.
+Prioridad: Media-alta por región.
+Memoria: baja-media.
+Lectura BIO-G: preguntar por cedros/juníperos cercanos si manchas naranjas aparecen.
+
+14) alternaria_frogeye_leaf_spot
+Nombre UX: Mancha foliar tipo ojo de rana / Alternaria-complejo
+Dónde pesa más: hojas maduras, árboles estresados, humedad.
+Qué lo favorece: tejido debilitado, humedad, estrés, heridas, restos infectados.
+Clave visual: manchas redondas con centro claro y borde oscuro, defoliación si avanza.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity.
+Prioridad: Media.
+Memoria: media.
+Lectura BIO-G: si manchas foliares + estrés previo + humedad, sugerir revisar patrón y fruta.
+
+15) black_rot_frogeye
+Nombre UX: Pudrición negra / black rot
+Dónde pesa más: fruto, madera, hojas, heridas.
+Qué lo favorece: madera muerta, cancros, fruta herida, humedad, calor.
+Clave visual: manchas ojo de rana en hoja; pudrición firme oscura en fruto, a menudo cerca del cáliz; momias o fruta afectada.
+Etapa: fruit_fill, harvest_maturity, post_harvest.
+Prioridad: Alta en fruto.
+Memoria: media-alta.
+Lectura BIO-G: si hay madera muerta + manchas ojo de rana + fruta con pudrición, alertar como complejo hoja-fruto-madera.
+
+16) bitter_rot
+Nombre UX: Pudrición amarga / bitter rot
+Dónde pesa más: clima cálido-húmedo, fruta madura o próxima a cosecha.
+Qué lo favorece: lluvia, calor, heridas, fruta madura, canopia húmeda.
+Clave visual: lesiones circulares hundidas, anillos concéntricos o pudrición rápida; puede aparecer cerca de cosecha.
+Etapa: fruit_fill, harvest_maturity, post_harvest.
+Prioridad: Alta en años húmedos.
+Memoria: media.
+Lectura BIO-G: subir prioridad con lluvia/calor cerca de madurez.
+
+17) sooty_blotch_flyspeck
+Nombre UX: Mancha de hollín y puntitos negros
+Dónde pesa más: fruta en maduración, canopia densa, humedad alta.
+Qué lo favorece: verano húmedo, rocío, poca ventilación, poda deficiente.
+Clave visual: manchas superficiales oscuras tipo hollín y pequeños puntitos negros en la piel; usualmente daña apariencia más que pulpa.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad: Media para rendimiento, alta para calidad visual.
+Memoria: baja.
+Lectura BIO-G: si HR alta + canopia cerrada + madurez, alertar como riesgo de calidad de piel.
+
+18) botrytis_gray_mold
+Nombre UX: Moho gris / Botrytis
+Dónde pesa más: flores viejas, heridas, cosecha/postcosecha, humedad alta.
+Qué lo favorece: tejido senescente, heridas, alta HR, mala ventilación.
+Clave visual: moho gris en flores o heridas; pudrición blanda.
+Etapa: flowering, harvest_maturity, post_harvest.
+Prioridad: Media-alta en humedad.
+Memoria: baja-media.
+Lectura BIO-G: si flor/fruto herido + humedad alta, sugerir revisar tejido viejo y ventilación.
+
+19) fruit_storage_rot_complex
+Nombre UX: Pudriciones de almacenamiento
+Dónde pesa más: fruta madura, heridas, manejo poscosecha.
+Qué lo favorece: golpes, granizo, cosecha con fruta mojada, alta humedad, heridas, madurez excesiva.
+Clave visual: pudriciones que aparecen después de cosecha o almacenamiento.
+Etapa: harvest_maturity, post_harvest.
+Prioridad: Alta para comercialización.
+Memoria: baja sobre árbol, alta para lote/cosecha.
+Lectura BIO-G: si hubo granizo/lluvia cerca de cosecha, guardar riesgo postcosecha aunque el árbol parezca bien.
+
+20) apple_mosaic_virus
+Nombre UX: Virus del mosaico del manzano
+Dónde pesa más: árboles infectados, material vegetal.
+Qué lo favorece: propagación con material infectado.
+Clave visual: manchas cloróticas/mosaico en hojas, bajo vigor variable.
+Etapa: vegetative_growth.
+Prioridad: Media.
+Memoria: alta porque permanece.
+Lectura BIO-G: no diagnosticar sin confirmación; sugerir asesoría/laboratorio si mosaico persiste.
+
+--------------------------------------------------------------------------------
+4.4 PLAGAS DIRECTAS DE FRUTO
+--------------------------------------------------------------------------------
+
+21) codling_moth
+Nombre UX: Palomilla de la manzana / carpocapsa / gusano de la manzana
+Dónde pesa más: fruta desde cuajado hasta cosecha; principal plaga directa de fruto en muchas regiones.
+Qué lo favorece: historial del huerto, fruta sin monitoreo, clima favorable, generaciones acumuladas, fruta abandonada, manejo regional deficiente.
+Clave visual: perforación en fruto, frass/aserrín, galería hacia semillas, caída prematura, gusano dentro.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad: Muy alta.
+Memoria: alta. Historial del bloque importa cada año.
+Perfil: todos; alta en AP-01, AP-02, AP-04 y SKIP.
+Lectura BIO-G: si fruta joven + historial + fecha de vuelo regional/trampas o daño visual, elevar riesgo. No confundir con simple pudrición.
+
+22) apple_maggot_regional
+Nombre UX: Mosca de la manzana
+Dónde pesa más: regiones donde está presente.
+Qué lo favorece: fruta susceptible, árboles no manejados, presencia regional.
+Clave visual: túneles finos en pulpa, fruta deformada o caída, daño interno sin galería única al corazón como carpocapsa.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad: Alta regional; baja si no está presente.
+Memoria: media.
+Lectura BIO-G: mantener como riesgo regional desactivable por zona.
+
+23) oriental_fruit_moth_regional
+Nombre UX: Polilla oriental del fruto
+Dónde pesa más: brotes y fruta, zonas donde existe.
+Qué lo favorece: hospederos cercanos, clima cálido, generaciones múltiples.
+Clave visual: brotes marchitos con entrada de larva, daño en fruta.
+Etapa: vegetative_growth, fruit_set, fruit_fill.
+Prioridad: Media-alta regional.
+Memoria: media.
+Lectura BIO-G: riesgo regional, más común donde hay durazno/otros frutales.
+
+24) obliquebanded_leafroller
+Nombre UX: Enrollador de bandas oblicuas
+Dónde pesa más: Chihuahua y zonas donde se ha reportado como plaga emergente/relevante; hojas y fruto.
+Qué lo favorece: brotes tiernos, canopia, historial.
+Clave visual: hojas enrolladas, larvas protegidas, daño superficial en fruta.
+Etapa: budbreak, vegetative_growth, fruit_set, fruit_fill.
+Prioridad: Alta regional.
+Memoria: media.
+Lectura BIO-G: incluir en México/Chihuahua por reporte UACH.
+
+25) leafroller_fruit_scarring_complex
+Nombre UX: Enrolladores y gusanos de hoja/fruto
+Dónde pesa más: brotes, racimos, fruto joven.
+Qué lo favorece: brotación, malezas/hospederos, falta de monitoreo temprano.
+Clave visual: hojas pegadas/enrolladas, mordidas, cicatrices en fruto.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad: Media-alta.
+Memoria: baja-media.
+Lectura BIO-G: si hoja enrollada + daño de fruto joven, sugerir revisar larvas, no solo enfermedad.
+
+26) stink_bug_llygus_fruit_damage
+Nombre UX: Chinches / lygus / daño por picadura
+Dónde pesa más: fruto joven a cosecha, bordes con maleza o cultivos vecinos.
+Qué lo favorece: maleza, bordes, calor, movimiento desde lotes vecinos.
+Clave visual: picaduras, deformaciones, manchas hundidas, tejido corchoso bajo piel.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad: Alta regional.
+Memoria: baja-media.
+Lectura BIO-G: si daño localizado en bordes + maleza/cultivos vecinos, subir riesgo.
+
+27) plum_curculio_regional
+Nombre UX: Picudo del ciruelo / curculio regional
+Dónde pesa más: regiones donde existe; fruto pequeño.
+Qué lo favorece: hospederos cercanos, fruta joven, bordes.
+Clave visual: cicatriz en media luna en fruto joven, caída.
+Etapa: fruit_set.
+Prioridad: Alta solo si región compatible.
+Memoria: media.
+Lectura BIO-G: desactivable si no aplica a la región.
+
+--------------------------------------------------------------------------------
+4.5 PLAGAS DE BROTE, HOJA Y MADERA
+--------------------------------------------------------------------------------
+
+28) woolly_apple_aphid
+Nombre UX: Pulgón lanígero del manzano
+Dónde pesa más: tronco, ramas, brotes, heridas, raíces; fuerte en Chihuahua.
+Qué lo favorece: heridas, cortes, raíces/sierpes, calor, menor precipitación, manejo químico que reduce enemigos naturales, portainjertos susceptibles.
+Clave visual: masas blancas algodonosas en ramas/tronco/brotes, agallas, deformaciones, debilitamiento, mielcilla ocasional.
+Etapa: vegetative_growth, fruit_fill, post_harvest; también revisar dormancy en heridas.
+Prioridad: Muy alta regional.
+Memoria: alta. Puede afectar raíz y madera; vuelve cada año.
+Perfil: AP-01 Golden en Chihuahua subir por evidencia regional; SKIP conservador.
+Lectura BIO-G: si usuario dice “algodón”, “moho blanco” o “bolitas blancas” en ramas/tronco, priorizar pulgón lanígero.
+
+29) green_apple_aphid
+Nombre UX: Pulgón verde
+Dónde pesa más: brotes tiernos, árboles jóvenes, exceso de vigor.
+Qué lo favorece: brotación tierna, N alto, clima templado, baja presencia de enemigos naturales.
+Clave visual: colonias verdes, hojas enrolladas o pegajosas, brotes deformados, mielecilla/fumagina.
+Etapa: budbreak, vegetative_growth.
+Prioridad: Media-alta.
+Memoria: baja-media.
+Lectura BIO-G: si hay brote tierno + exceso N + hojas enrolladas, revisar pulgones.
+
+30) rosy_apple_aphid
+Nombre UX: Pulgón ceniciento / rosado
+Dónde pesa más: brotes y fruto joven.
+Qué lo favorece: brotación, crecimiento tierno, colonias tempranas.
+Clave visual: hojas fuertemente rizadas, frutos deformes, colonias grisáceas/rosadas.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad: Alta por daño a fruto.
+Memoria: baja-media.
+Lectura BIO-G: si fruto joven deformado + hojas enroscadas, no asumir solo mala polinización.
+
+31) leafhopper_chicharrita
+Nombre UX: Chicharrita / saltahojas
+Dónde pesa más: hojas, brotes, clima cálido.
+Qué lo favorece: malezas, calor, presencia regional.
+Clave visual: punteado clorótico, hojas pálidas, insectos saltadores pequeños en envés.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad: Alta regional en México/Chihuahua.
+Memoria: baja.
+Lectura BIO-G: incluir como plaga de importancia regional por UACH.
+
+32) spider_mites_complex
+Nombre UX: Ácaros / araña roja
+Dónde pesa más: verano, sequía, polvo, estrés, manejo que elimina depredadores.
+Qué lo favorece: calor, baja HR, polvo, déficit hídrico, insecticidas de amplio espectro, árboles estresados.
+Clave visual: punteado amarillo, bronceado, telaraña fina, hojas secas, defoliación.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad: Alta.
+Memoria: media si causa defoliación y baja reservas.
+Lectura BIO-G: si calor + baja humedad + hoja bronceada + HR baja, subir riesgo de ácaros.
+
+33) san_jose_scale
+Nombre UX: Escama de San José
+Dónde pesa más: madera, ramas, fruto.
+Qué lo favorece: árboles viejos, material infestado, poca revisión de madera, control biológico bajo.
+Clave visual: escamas circulares pequeñas en corteza/fruto, halo rojizo en fruto, ramas debilitadas.
+Etapa: dormancy, budbreak, fruit_fill.
+Prioridad: Media-alta.
+Memoria: media-alta.
+Lectura BIO-G: revisar madera en reposo y fruto cerca de cosecha.
+
+34) borers_wood_complex
+Nombre UX: Barrenadores de madera
+Dónde pesa más: tronco, ramas, árboles débiles o dañados.
+Qué lo favorece: heridas, estrés, madera debilitada.
+Clave visual: frass/aserrín, galerías, gomosis/exudado, ramas que mueren.
+Etapa: vegetative_growth, post_harvest, dormancy.
+Prioridad: Media.
+Memoria: alta si compromete estructura.
+Lectura BIO-G: si frass en tronco + rama decae, no tratar como plaga foliar.
+
+35) leafminers
+Nombre UX: Minadores de hoja
+Dónde pesa más: hojas, brotes, primavera-verano.
+Qué lo favorece: presión regional, pérdida de enemigos naturales.
+Clave visual: galerías o manchas internas en hoja.
+Etapa: vegetative_growth.
+Prioridad: Media.
+Memoria: baja.
+Lectura BIO-G: si daño localizado y hoja con minas, clasificar bajo plaga de hoja.
+
+36) caterpillar_defoliators
+Nombre UX: Orugas defoliadoras
+Dónde pesa más: brotes, hojas, racimos.
+Qué lo favorece: brotación, maleza, historial, falta de monitoreo temprano.
+Clave visual: mordidas, hojas pegadas, excremento, larvas visibles.
+Etapa: budbreak, vegetative_growth, flowering.
+Prioridad: Media-alta.
+Memoria: media si defolia fuerte.
+Lectura BIO-G: en brotación y prefloración, revisar hojas y racimos antes de que dañe flor/fruto.
+
+
+================================================================================
+5. RIESGOS ABIÓTICOS Y FISIOLÓGICOS QUE DEBEN ENTRAR AL MOTOR
+================================================================================
+
+Formato:
+Riesgo | Qué lo dispara | Qué se observa | Momento sensible | Lectura BIO-G v1
+
+1) frost_bloom_damage
+Nombre UX: Daño por helada en floración
+Qué lo dispara: temperaturas bajo cero en botón rosa, flor abierta o fruto recién cuajado; sitios bajos; aire frío acumulado.
+Qué se observa: flores cafés/negras, pistilos dañados, bajo cuajado, fruta deformada o anillos de helada.
+Momento sensible: budbreak, flowering, fruit_set.
+Lectura BIO-G: alerta climática crítica. Guardar memoria porque afecta rendimiento anual, alternancia y reservas.
+Prioridad: Muy alta.
+
+2) insufficient_chill_irregular_budbreak
+Nombre UX: Falta de frío / brotación irregular
+Qué lo dispara: invierno insuficiente para el perfil, zonas cálidas, AP-05 mal ajustado o perfil alto frío en zona baja.
+Qué se observa: brotación irregular, floración extendida, bajo cuajado, cosecha dispareja.
+Momento sensible: dormancy, budbreak, flowering.
+Lectura BIO-G: no usar como “plaga”; cruzar perfil + zona + brotación irregular. En v1 es contexto/modelo, no sensor.
+Prioridad: Alta regional.
+
+3) poor_pollination_low_fruit_set
+Nombre UX: Mala polinización / bajo cuajado
+Qué lo dispara: falta de polinizador compatible, pocas abejas, lluvia/frío/viento durante floración, exceso de calor, helada, floración desfasada.
+Qué se observa: baja carga, caída de frutos pequeños, deformaciones, frutos asimétricos.
+Momento sensible: flowering, fruit_set.
+Lectura BIO-G: preguntar por abejas, variedades polinizadoras y clima durante floración antes de culpar fertilización.
+Prioridad: Muy alta para rendimiento.
+
+4) drought_stress
+Nombre UX: Estrés hídrico
+Qué lo dispara: humedad baja, riego irregular, alta evapotranspiración, viento/calor, raíces limitadas.
+Qué se observa: hojas decaídas, fruto chico, caída, más bitter pit/golpe de sol, menor calibre, menor retorno floral.
+Momento sensible: root_establishment, flowering, fruit_set, fruit_fill, post_harvest.
+Lectura BIO-G: alerta fuerte si humedad baja coincide con floración, cuajado, llenado o postcosecha.
+Prioridad: Muy alta.
+
+5) waterlogging_anoxia
+Nombre UX: Exceso de agua / anoxia
+Qué lo dispara: riego excesivo, lluvia, drenaje pobre, compactación, suelo pesado.
+Qué se observa: marchitez con suelo húmedo, hojas amarillas, raíz oscura, Phytophthora favorecida.
+Momento sensible: establecimiento y cualquier etapa con suelo saturado.
+Lectura BIO-G: “Marchitez con suelo húmedo no es falta de agua.” Revisar drenaje, cuello y raíz.
+Prioridad: Muy alta.
+
+6) salinity_ec_high
+Nombre UX: Salinidad / CE alta
+Qué lo dispara: agua salina, fertilización concentrada, lavado insuficiente, sequía/evaporación, suelo con sales.
+Qué se observa: bordes quemados, bajo vigor, hojas pequeñas, mal cuajado, raíz estresada, fruta chica.
+Momento sensible: establecimiento, cuajado, llenado.
+Lectura BIO-G: usar EC + humedad + etapa. No recomendar más fertilizante si la CE está alta.
+Prioridad: Alta.
+
+7) soil_compaction_root_stress
+Nombre UX: Compactación / raíz sin aire
+Qué lo dispara: maquinaria, suelos arcillosos, baja materia orgánica, riego sobre suelo pesado.
+Qué se observa: bajo vigor, encharcamiento, raíces superficiales, respuesta pobre al riego/fertilización.
+Momento sensible: todo el ciclo, especialmente establecimiento.
+Lectura BIO-G: si resistance alta + humedad irregular + bajo vigor, subir riesgo raíz/suelo.
+Prioridad: Alta.
+
+8) heat_stress_fruit_fill
+Nombre UX: Estrés por calor
+Qué lo dispara: temperaturas altas prolongadas, radiación, baja HR, riego insuficiente.
+Qué se observa: caída, bajo calibre, golpe de sol, menor color rojo, fruta blanda, estrés de hoja.
+Momento sensible: fruit_set, fruit_fill, harvest_maturity.
+Lectura BIO-G: si calor + humedad baja + etapa de fruto, alertar calidad/rendimiento.
+Prioridad: Alta.
+
+9) sunburn_sunscald
+Nombre UX: Golpe de sol / quemadura de fruto
+Qué lo dispara: radiación alta, calor, fruta expuesta por poda/defoliación/granizo/carga que abre ramas, estrés hídrico.
+Qué se observa: manchas claras, cafés o hundidas en lado expuesto; daño mayor en fruta clara o al suroeste del árbol.
+Momento sensible: fruit_fill, harvest_maturity.
+Lectura BIO-G: activar si calor/radiación + defoliación o canopia abierta + humedad baja.
+Prioridad: Alta para calidad.
+
+10) bitter_pit_calcium_functional
+Nombre UX: Bitter pit / mancha amarga / calcio funcional
+Qué lo dispara: bajo Ca funcional en fruto, vigor excesivo, baja carga, exceso de N o K, riego irregular, calor/sequía, variedad sensible.
+Qué se observa: pequeños puntos oscuros y hundidos, tejido café/corchoso bajo piel, a veces más visible en almacenamiento.
+Momento sensible: fruit_fill, harvest_maturity, post_harvest.
+Lectura BIO-G: tratar como problema agua-vigor-Ca funcional, no como receta automática de calcio. Cruzar con guía NPK.
+Prioridad: Alta para calidad.
+
+11) fruit_cracking_russeting_weather
+Nombre UX: Rajado / russeting / daño de piel
+Qué lo dispara: lluvias, humedad, cambios bruscos de humedad, helada, fitotoxicidad, cenicilla, sensibilidad varietal.
+Qué se observa: piel áspera/corchosa, rajaduras, manchas de piel.
+Momento sensible: flowering, fruit_set, fruit_fill.
+Lectura BIO-G: si daño de piel aparece tras lluvia/helada/aplicación, no clasificar de inmediato como hongo.
+Prioridad: Media-alta.
+
+12) iron_chlorosis_high_ph
+Nombre UX: Clorosis férrica
+Qué lo dispara: pH alto/calizo, bicarbonatos, suelo frío/húmedo, raíz débil.
+Qué se observa: hojas nuevas amarillas con nervaduras verdes.
+Momento sensible: vegetative_growth.
+Lectura BIO-G: si pH alto + amarillamiento internerval en hojas nuevas, sugerir revisión de Fe/pH, no N.
+Prioridad: Media-alta.
+
+13) zinc_deficiency_rosette
+Nombre UX: Deficiencia de zinc / roseta
+Qué lo dispara: baja disponibilidad de Zn, pH alto, suelos calcáreos, desbalance.
+Qué se observa: hojas pequeñas, entrenudos cortos, brotes tipo roseta.
+Momento sensible: budbreak, vegetative_growth.
+Lectura BIO-G: si hojas chicas + entrenudos cortos, sugerir análisis/confirmación, no confundir con virus.
+Prioridad: Media.
+
+14) herbicide_phytotoxicity
+Nombre UX: Fitotoxicidad / deriva de herbicida
+Qué lo dispara: deriva, mezcla fuerte, aplicación con calor, residuos, aplicación reciente.
+Qué se observa: daño uniforme por borde/línea, deformaciones, quemado, patrón no biológico.
+Momento sensible: cualquier etapa.
+Lectura BIO-G: preguntar por aplicación reciente antes de asumir enfermedad.
+Prioridad: Alta como descarte.
+
+15) nutrient_excess_vigor
+Nombre UX: Exceso de vigor por N/agua/poda
+Qué lo dispara: exceso de N, riego alto, poda fuerte, baja carga.
+Qué se observa: mucho brote tierno, canopia cerrada, poca luz, mayor riesgo de fire blight, ácaros, bitter pit, mala coloración.
+Momento sensible: vegetative_growth, flowering, fruit_fill.
+Lectura BIO-G: vínculo directo con guía fertilización. No empujar N si hay vigor alto.
+Prioridad: Alta.
+
+16) biennial_bearing_alternate_bearing
+Nombre UX: Alternancia / vecería
+Qué lo dispara: carga excesiva un año, estrés, aclareo tardío o insuficiente, daño de flor, cosecha deficiente, bajo retorno floral.
+Qué se observa: un año mucha fruta chica, siguiente año poca flor/fruta.
+Momento sensible: fruit_set, fruit_fill, post_harvest, dormancy siguiente.
+Lectura BIO-G: guardar memoria de carga/estrés; no tratar como problema de fertilización aislado.
+Prioridad: Alta para proyección.
+
+
+================================================================================
+6. PRIORIZACIÓN POR PERFIL BIO-G
+================================================================================
+
+Regla:
+El catálogo base es el mismo para todos los perfiles de manzano. El perfil solo modifica sensibilidad, ventana relativa y mensajes. No se crea un catálogo totalmente separado por variedad.
+
+AP-SKIP / Manzano general
+- Peso alto conservador: fire_blight, codling_moth, apple_scab, powdery_mildew, woolly_apple_aphid, drought_stress, waterlogging_anoxia, sunburn_sunscald, bitter_pit_calcium_functional.
+- Mensaje: “Como no sabemos la variedad, BIO-G usa alertas conservadoras.”
+
+AP-01 Golden / Golden Delicious
+- Sube: codling_moth, woolly_apple_aphid en Chihuahua, sunburn_sunscald, bitter_pit_calcium_functional, apple_scab si primavera húmeda, fruit_storage_rot_complex.
+- Baja relativa: color rojo no es criterio principal.
+- Nota: Golden en Chihuahua es perfil base fuerte; usar como plantilla regional con cuidado.
+
+AP-02 Red / Red Delicious
+- Sube: color/maduración, sunburn si fruto expuesto, codling_moth, stink_bug_llygus_fruit_damage, bitter_pit medio-bajo relativo.
+- Sensible a: mala coloración si exceso de N, calor o canopia cerrada.
+- Nota: para Red, calidad visual y color pesan mucho.
+
+AP-03 Criolla / Rayada / Regional
+- Sube: variabilidad, apple_scab/foliar si clima húmedo, plagas regionales, canker_wood_decline_complex en árboles viejos, biennial_bearing.
+- Nota: no asumir densidad alta ni manejo intensivo; preguntar sistema y edad aproximada si existe.
+
+AP-04 Gala / Royal Gala
+- Sube fuerte: fire_blight, codling_moth, sunburn, bitter_pit/calcio funcional, mala coloración por calor/exceso de vigor.
+- Nota: etapa floración y brote tierno deben pesar más.
+
+AP-05 Bajo frío / Anna y afines
+- Sube: insufficient_chill_irregular_budbreak si zona no ajustada o inviernos erráticos, floración temprana con helada, heat_stress, sunburn, poor_pollination.
+- Baja relativa: algunos riesgos de alto frío si el ambiente es más cálido/seco, pero se compensa con calor/vigor/agua.
+- Nota: no usar calendario de Chihuahua frío como regla dura para bajo frío.
+
+
+================================================================================
+7. MONITOREO Y DIAGNÓSTICO: PROTOCOLO MÍNIMO CONFIABLE
+================================================================================
+
+Frecuencia recomendada:
+- Reposo: 1 revisión estructural cada 2-4 semanas o después de helada/granizo/poda.
+- Brotación a caída de pétalos: 2 revisiones por semana si hay lluvia, humedad, fire blight o sarna/moteado.
+- Cuajado a llenado: 1-2 revisiones por semana; 2-3 si hay historial de palomilla/carpocapsa.
+- Cosecha: revisar fruta, bordes, golpes, pudriciones y picaduras.
+- Postcosecha: revisar hoja, reservas, estrés hídrico, pulgón lanígero, cancros y defoliación temprana.
+
+Dónde revisar:
+- Orillas del huerto y entradas de plagas.
+- Zonas bajas/húmedas.
+- Zonas secas/calientes.
+- Árboles jóvenes y árboles que “no arrancan”.
+- Envés de hojas, brotes tiernos, hojas viejas, flores, fruto pequeño, fruto expuesto al sol, cuello, tronco, heridas de poda y raíces sospechosas.
+- No revisar solo árboles bonitos: seleccionar sanos, débiles, bordes y parches.
+
+Preguntas mínimas de diagnóstico:
+1. ¿En qué etapa visible está el árbol?
+2. ¿El problema aparece por parches, por línea, por borde o uniforme?
+3. ¿El suelo está seco, húmedo o saturado?
+4. ¿Hubo lluvia, granizo, helada, calor extremo o viento fuerte?
+5. ¿Hubo aplicaciones recientes?
+6. ¿Hay insectos visibles, huevos, excremento/frass, mielcilla o telaraña?
+7. ¿El daño empezó en hoja nueva, hoja vieja, flor, fruto, tronco o raíz?
+8. ¿El lote tiene historial de manzano/frutal?
+9. ¿Se repite cada año?
+10. ¿El árbol perdió hojas temprano el ciclo anterior?
+
+
+================================================================================
+8. REGLAS PARA EL MOTOR BIO-G
+================================================================================
+
+Estas reglas traducen el documento a lógica de producto. No son diagnóstico definitivo; son disparadores de riesgo y mensajes de revisión.
+
+--------------------------------------------------------------------------------
+8.1 Reglas raíz/suelo
+--------------------------------------------------------------------------------
+
+Señal:
+soilMoisture alta + resistance alta + etapa establecimiento/vegetativo + bajo vigor o marchitez
+Aumenta riesgo:
+waterlogging_anoxia, phytophthora_root_crown_rot, root_crown_rot_complex
+Salida:
+“Riesgo de raíz por exceso de humedad o poca aireación. Revise cuello, raíces y drenaje antes de regar más.”
+Confianza:
+media si solo sensor; alta si hay marchitez con suelo húmedo.
+
+Señal:
+soilMoisture baja + temperatura alta + etapa floración/cuajado/llenado/postcosecha
+Aumenta riesgo:
+drought_stress, poor_pollination_low_fruit_set, fruit_size_loss, sunburn_sunscald, bitter_pit_calcium_functional
+Salida:
+“Estrés hídrico en etapa sensible. Puede afectar cuajado, calibre, calidad y reservas del siguiente ciclo.”
+
+Señal:
+EC alta + humedad irregular + bajo vigor
+Aumenta riesgo:
+salinity_ec_high, root_stress, bitter_pit_calcium_functional
+Salida:
+“Condición compatible con estrés salino/osmótico. Evite empujar fertilización sin revisar agua, CE y drenaje.”
+
+--------------------------------------------------------------------------------
+8.2 Reglas floración
+--------------------------------------------------------------------------------
+
+Señal:
+phenologyStageId=flowering + lluvia/HR alta + temperatura templada-cálida + historial o perfil susceptible
+Aumenta riesgo:
+fire_blight
+Salida:
+“Floración con ambiente favorable a tizón de fuego. Revise racimos florales, brotes tiernos y exudado; confirme si el daño avanza.”
+
+Señal:
+flowering + temperatura bajo cero o helada reportada
+Aumenta riesgo:
+frost_bloom_damage, poor_pollination_low_fruit_set
+Salida:
+“Riesgo de daño por helada en floración. Revise pistilos/centro de la flor y frutos recién cuajados.”
+
+Señal:
+flowering + lluvia/frío/viento + baja actividad de abejas
+Aumenta riesgo:
+poor_pollination_low_fruit_set
+Salida:
+“El cuajado puede bajar por clima o polinización, aunque NPK se vea correcto. Revise abejas y variedades polinizadoras.”
+
+--------------------------------------------------------------------------------
+8.3 Reglas hoja/enfermedades
+--------------------------------------------------------------------------------
+
+Señal:
+budbreak/vegetative_growth + lluvia/mojado foliar/HR alta + temperatura fresca-templada
+Aumenta riesgo:
+apple_scab, bacterial_blossom_blast, rust_complex
+Salida:
+“Ambiente favorable a manchas de primavera. Revise hojas jóvenes y fruta pequeña.”
+
+Señal:
+vegetative_growth + brote tierno + días cálidos/noches frescas húmedas
+Aumenta riesgo:
+powdery_mildew
+Salida:
+“Revise brotes nuevos: la cenicilla puede deformar hoja y afectar fruto joven.”
+
+Señal:
+canopia cerrada + HR alta + etapa fruit_fill/harvest_maturity
+Aumenta riesgo:
+sooty_blotch_flyspeck, bitter_rot, black_rot_frogeye
+Salida:
+“Canopia húmeda cerca de cosecha: revise manchas superficiales y pudriciones de fruto.”
+
+--------------------------------------------------------------------------------
+8.4 Reglas plagas
+--------------------------------------------------------------------------------
+
+Señal:
+fruit_set/fruit_fill + daño con perforación/frass en fruto
+Aumenta riesgo:
+codling_moth
+Salida:
+“Daño compatible con palomilla/carpocapsa. Revise perforaciones, frass y galerías hacia semilla.”
+
+Señal:
+ramas/tronco con ‘algodón blanco’ + agallas/heridas
+Aumenta riesgo:
+woolly_apple_aphid
+Salida:
+“Foco compatible con pulgón lanígero. Revise tronco, heridas, ramas y base del árbol.”
+
+Señal:
+calor + baja HR + hojas punteadas/bronceadas
+Aumenta riesgo:
+spider_mites_complex
+Salida:
+“Condición favorable a ácaros. Revise envés de hojas y telaraña fina.”
+
+Señal:
+brote tierno + hojas enrolladas + colonias o mielecilla
+Aumenta riesgo:
+green_apple_aphid, rosy_apple_aphid
+Salida:
+“Revise pulgones en brotes tiernos. Pueden deformar hojas y fruto joven.”
+
+--------------------------------------------------------------------------------
+8.5 Reglas fisiológicas/calidad
+--------------------------------------------------------------------------------
+
+Señal:
+fruit_fill/harvest_maturity + calor/radiación + baja humedad + fruta expuesta o defoliación
+Aumenta riesgo:
+sunburn_sunscald
+Salida:
+“Riesgo de golpe de sol en fruto expuesto. Revise lado soleado y zonas defoliadas.”
+
+Señal:
+fruit_fill/harvest + vigor alto + N alto/contexto + baja carga + riego irregular
+Aumenta riesgo:
+bitter_pit_calcium_functional
+Salida:
+“Riesgo de mancha amarga/calcio funcional. En v1 se lee como balance agua-vigor-carga; no aplicar calcio a ciegas.”
+
+Señal:
+hojas nuevas amarillas con nervadura verde + pH alto
+Aumenta riesgo:
+iron_chlorosis_high_ph
+Salida:
+“Amarillamiento compatible con clorosis por pH alto. Conviene confirmar con análisis antes de corregir.”
+
+Señal:
+patrón por línea/borde + aplicación reciente
+Aumenta riesgo:
+herbicide_phytotoxicity
+Salida:
+“El patrón puede ser fitotoxicidad o deriva. Revise aplicaciones recientes antes de asumir enfermedad.”
+
+
+================================================================================
+9. QUÉ SÍ DEBERÍA QUEDAR DADO DE ALTA EN BIO-G
+================================================================================
+
+Grupo UX: raiz_suelo_madera
+Risk IDs:
+- phytophthora_root_crown_rot
+- root_crown_rot_complex
+- armillaria_root_rot
+- apple_replant_decline
+- canker_wood_decline_complex
+- rodent_girdling_damage
+- nematode_root_stress
+- waterlogging_anoxia
+- soil_compaction_root_stress
+
+Grupo UX: flor_brote_bacterias
+Risk IDs:
+- fire_blight
+- bacterial_blossom_blast
+- frost_bloom_damage
+- hail_wound_infection_risk
+- excessive_vigor_fire_blight_risk
+
+Grupo UX: enfermedades_hoja_fruto
+Risk IDs:
+- apple_scab
+- powdery_mildew
+- cedar_apple_rust_rust_complex
+- alternaria_frogeye_leaf_spot
+- black_rot_frogeye
+- bitter_rot
+- sooty_blotch_flyspeck
+- botrytis_gray_mold
+- fruit_storage_rot_complex
+- apple_mosaic_virus
+
+Grupo UX: plagas_fruto
+Risk IDs:
+- codling_moth
+- apple_maggot_regional
+- oriental_fruit_moth_regional
+- obliquebanded_leafroller
+- leafroller_fruit_scarring_complex
+- stink_bug_llygus_fruit_damage
+- plum_curculio_regional
+
+Grupo UX: plagas_hoja_madera
+Risk IDs:
+- woolly_apple_aphid
+- green_apple_aphid
+- rosy_apple_aphid
+- leafhopper_chicharrita
+- spider_mites_complex
+- san_jose_scale
+- borers_wood_complex
+- leafminers
+- caterpillar_defoliators
+
+Grupo UX: estres_fisiologico_calidad
+Risk IDs:
+- drought_stress
+- heat_stress_fruit_fill
+- sunburn_sunscald
+- salinity_ec_high
+- insufficient_chill_irregular_budbreak
+- poor_pollination_low_fruit_set
+- biennial_bearing_alternate_bearing
+- bitter_pit_calcium_functional
+- fruit_cracking_russeting_weather
+- iron_chlorosis_high_ph
+- zinc_deficiency_rosette
+- herbicide_phytotoxicity
+- nutrient_excess_vigor
+
+
+================================================================================
+10. CAMPOS SUGERIDOS PARA CÓDIGO
+================================================================================
+
+Cada riesgo debería poder traducirse a una estructura tipo PlantHealthSyndrome o equivalente:
+
+{
+  cropKey: apple_tree,
+  riskId: string,
+  riskFamily: string,
+  commonName: string,
+  scientificName: string?,
+  preferredStages: List<TreeStageId>,
+  sensitiveStates: List<PerennialStateId>,
+  sensorTriggers: {
+    soilMoisture: low/optimal/high?,
+    soilTemp: low/optimal/high?,
+    ph: low/optimal/high?,
+    ec: low/optimal/high?,
+    resistance: low/optimal/high?,
+    n: low/optimal/high?,
+    p: low/optimal/high?,
+    k: low/optimal/high?
+  },
+  weatherTriggers: {
+    rain: bool?,
+    highHumidity: bool?,
+    frost: bool?,
+    heat: bool?,
+    hail: bool?,
+    wind: bool?,
+    leafWetness: bool? // modelo/contexto, no sensor v1 obligatorio
+  },
+  visualClues: List<String>,
+  questions: List<String>,
+  profileModifiers: Map<profileId, weight>,
+  memoryImpact: none/low/medium/high/veryHigh,
+  sourceConfidence: low/medium/high,
+  farmerMessage: string,
+  confirmationPrompt: string,
+  noDiagnosisWarning: true
+}
+
+Campos perennes que debe usar:
+- perennialStateId
+- phenologyStageId
+- perennialAnchorDate
+- perennialAnchorTypeId
+
+Campos que NO debe usar como eje:
+- sowingDate en árboles
+
+Métricas sensor permitidas v1:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Contexto/modelo permitido:
+- lluvia
+- helada
+- calor
+- HR
+- horas frío
+- GDD
+- historial de estrés
+- evento extremo
+- etapa visible
+- perfil/variedad
+- observación visual del usuario
+
+
+================================================================================
+11. MATRIZ DE PESOS POR ETAPA
+================================================================================
+
+Escala:
+0.0 = no relevante
+0.3 = bajo
+0.5 = medio
+0.7 = alto
+1.0 = crítico
+
+planting_transplant:
+- phytophthora_root_crown_rot 1.0
+- root_crown_rot_complex 0.9
+- apple_replant_decline 0.9
+- waterlogging_anoxia 1.0
+- salinity_ec_high 0.8
+- soil_compaction_root_stress 0.9
+- rodent_girdling_damage 0.6
+
+root_establishment:
+- phytophthora_root_crown_rot 1.0
+- root_crown_rot_complex 1.0
+- drought_stress 0.9
+- waterlogging_anoxia 1.0
+- salinity_ec_high 0.8
+- soil_compaction_root_stress 0.8
+- woolly_apple_aphid 0.4
+
+juvenile_vegetative:
+- woolly_apple_aphid 0.8
+- aphids 0.7
+- spider_mites_complex 0.7
+- powdery_mildew 0.7
+- apple_scab 0.6
+- nutrient_excess_vigor 0.8
+- canker_wood_decline_complex 0.6
+- drought_stress 0.8
+
+dormancy:
+- canker_wood_decline_complex 0.8
+- san_jose_scale 0.7
+- woolly_apple_aphid 0.6
+- rodent_girdling_damage 0.8
+- insufficient_chill_irregular_budbreak 1.0
+- cold_winter_injury 0.9
+- apple_scab inoculum/memory 0.5
+
+budbreak:
+- apple_scab 1.0
+- powdery_mildew 0.9
+- aphids 0.8
+- leafrollers 0.8
+- frost_bloom_damage 0.8
+- fire_blight 0.5
+- zinc_deficiency_rosette 0.6
+
+vegetative_growth:
+- powdery_mildew 0.9
+- apple_scab 0.8
+- aphids 0.8
+- woolly_apple_aphid 0.9
+- spider_mites_complex 0.8
+- leafhopper_chicharrita 0.8
+- drought_stress 0.8
+- nutrient_excess_vigor 0.8
+- iron_chlorosis_high_ph 0.7
+
+flowering:
+- fire_blight 1.0
+- frost_bloom_damage 1.0
+- poor_pollination_low_fruit_set 1.0
+- apple_scab 0.8
+- powdery_mildew 0.7
+- bacterial_blossom_blast 0.8
+- hail_wound_infection_risk 0.9
+- drought_stress 0.8
+
+fruit_set:
+- codling_moth 1.0
+- fire_blight 0.8
+- apple_scab fruit infection 0.9
+- poor_pollination_low_fruit_set 0.9
+- leafroller_fruit_scarring_complex 0.8
+- stink_bug_llygus_fruit_damage 0.7
+- drought_stress 0.9
+- salinity_ec_high 0.7
+
+fruit_fill:
+- codling_moth 1.0
+- spider_mites_complex 0.9
+- sunburn_sunscald 0.9
+- bitter_pit_calcium_functional 0.9
+- drought_stress 1.0
+- salinity_ec_high 0.8
+- sooty_blotch_flyspeck 0.7
+- bitter_rot 0.8
+- black_rot_frogeye 0.7
+- chinches 0.8
+
+harvest_maturity:
+- codling_moth 1.0
+- bitter_rot 0.9
+- sooty_blotch_flyspeck 0.9
+- fruit_storage_rot_complex 0.9
+- sunburn_sunscald 0.8
+- bitter_pit_calcium_functional 0.9
+- fruit_cracking_russeting_weather 0.7
+- stink_bug_llygus_fruit_damage 0.8
+
+post_harvest:
+- drought_stress 0.8
+- leaf_defoliation_memory 0.9
+- woolly_apple_aphid 0.8
+- canker_wood_decline_complex 0.8
+- fruit_storage_rot_complex 0.6
+- nutrient_excess_or_deficit_memory 0.8
+- spider_mites_complex 0.6
+
+
+================================================================================
+12. LENGUAJE DE SALIDA RECOMENDADO PARA UX
+================================================================================
+
+Situación:
+Floración + lluvia/calor + riesgo de tizón
+No decir:
+“Tiene tizón de fuego.”
+Mejor:
+“Hay ambiente favorable para tizón de fuego. Revise racimos florales, brotes tiernos y presencia de exudado. Si avanza rápido, confirme con un técnico.”
+
+Situación:
+Marchitez con suelo mojado
+No decir:
+“Riegue más.”
+Mejor:
+“Marchitez con suelo húmedo puede indicar raíz con poco oxígeno o pudrición de cuello. Revise drenaje, cuello y raíces antes de aumentar riego.”
+
+Situación:
+Fruta con agujero y aserrín
+No decir:
+“Pudrición.”
+Mejor:
+“El daño se parece a palomilla/carpocapsa. Revise perforaciones, frass y galerías hacia las semillas.”
+
+Situación:
+Algodón blanco en ramas
+No decir:
+“Moho.”
+Mejor:
+“Esto puede ser pulgón lanígero. Revise si hay colonias algodonosas, agallas o heridas en ramas y tronco.”
+
+Situación:
+Hojas con manchas negras/oliva después de lluvias
+No decir:
+“Hongo cualquiera.”
+Mejor:
+“Ambiente compatible con sarna/moteado del manzano. Revise hojas jóvenes y fruto pequeño, especialmente después de periodos húmedos.”
+
+Situación:
+Fruta con manchas hundidas tipo corcho
+No decir:
+“Falta calcio, aplique calcio.”
+Mejor:
+“Puede ser mancha amarga/calcio funcional. En BIO-G se revisa junto con riego, vigor, carga y CE antes de sugerir correcciones.”
+
+Situación:
+Daño uniforme después de aplicación
+No decir:
+“Enfermedad.”
+Mejor:
+“El patrón puede ser fitotoxicidad o deriva. Revise aplicaciones recientes, bordes y dirección del viento.”
+
+Situación:
+Árbol con mucha hoja y poca fruta
+No decir:
+“Falta floración por fertilizante.”
+Mejor:
+“El exceso de vigor, poda fuerte, baja carga previa o frío insuficiente pueden reducir producción. BIO-G guardará este evento para el siguiente ciclo.”
+
+
+================================================================================
+13. MEMORIA MULTIANUAL BIO-G
+================================================================================
+
+Cada evento debe guardarse con:
+- riskId
+- fecha
+- etapa fenológica
+- estado perenne
+- severidad 0..1
+- duración estimada
+- órgano afectado
+- sensorSnapshot
+- weatherContext
+- visualConfirmationLevel
+- impactCurrentCycle
+- impactNextCycle
+- confidence
+
+Impacto por tipo:
+- fire_blight: impacto actual alto, impacto siguiente alto si hay cancro/madera.
+- frost_bloom_damage: impacto actual muy alto, puede inducir baja carga y vigor/exceso vegetativo.
+- drought_stress en flor/cuajado/llenado/postcosecha: impacto actual alto, impacto siguiente medio-alto.
+- defoliación por ácaros/cenicilla/sarna: impacto actual medio-alto, impacto siguiente alto si ocurre antes de postcosecha.
+- phytophthora/root rot: impacto alto y persistente.
+- codling_moth: impacto actual alto, memoria de presión para siguiente año.
+- woolly_apple_aphid: impacto medio-alto persistente, especialmente si hay colonias en madera/raíz.
+- bitter_pit/sunburn: impacto en calidad; memoria para ajustar agua/vigor/carga/sombra.
+- insufficient_chill: impacto anual/regional, útil para perfil AP-05 o elección varietal.
+- alternate_bearing: memoria obligatoria de carga.
+
+Regla:
+Un árbol que sufrió estrés fuerte no debe volver a “óptimo” inmediatamente solo porque hoy los sensores estén bien. Debe conservar una penalización suave o una advertencia de recuperación según etapa.
+
+
+================================================================================
+14. DECISIÓN EDITORIAL PARA PRODUCTO
+================================================================================
+
+El manzano debe tener un catálogo más amplio que una hortaliza porque combina:
+- raíz perenne,
+- madera,
+- floración altamente sensible,
+- plagas de fruta,
+- calidad de almacenamiento,
+- daño de cosecha,
+- reservas postcosecha,
+- memoria multianual.
+
+Pero la UX no debe mostrar 50 problemas al usuario. La app debe agrupar en tarjetas:
+1. Raíz / suelo
+2. Floración / brotes
+3. Hojas / manchas
+4. Fruto / calidad
+5. Plagas
+6. Clima / estrés
+7. Memoria del árbol
+
+Cada tarjeta debe mostrar:
+- “Qué lo favorece”
+- “Qué revisar”
+- “Qué tan urgente es”
+- “Por qué importa para este año”
+- “Si puede afectar el siguiente ciclo”
+
+BIO-G v1 no debe recomendar ingredientes activos. En el futuro, un modo Pro podría mostrar “consulte programa fitosanitario regional” o integrarse a IPM local, pero siempre con normatividad y asesoría.
+
+
+================================================================================
+15. FUENTES BASE Y TRAZABILIDAD
+================================================================================
+
+S1. BIO-G - 04_Riesgos_Cultivo_Calabaza_Sanidad_v1.txt
+Uso: molde editorial, separación biótico/abiótico, familias UX, reglas de motor, tono sin diagnóstico definitivo.
+
+S2. UC IPM - Apple Pest Management Guidelines
+URL: https://ipm.ucanr.edu/agriculture/apple/
+Uso: catálogo base de enfermedades, monitoreo, apple scab, fire blight, Phytophthora, powdery mildew, nematodos.
+
+S3. UC IPM - Apple Scab
+URL: https://ipm.ucanr.edu/agriculture/apple/apple-scab/
+Uso: síntomas, condiciones de humedad/lluvia, importancia de infecciones primarias de primavera.
+
+S4. UC IPM - Fire Blight
+URL: https://ipm.ucanr.edu/agriculture/apple/fire-blight/
+Uso: síntomas, floración, brotes en cayado, exudado, clima cálido-húmedo, susceptibilidad varietal/rootstock, efecto de N/poda/riego.
+
+S5. UC IPM - Phytophthora Root and Crown Rot
+URL: https://ipm.ucanr.edu/agriculture/apple/phytophthora-root-and-crown-rot/
+Uso: marchitez con suelo húmedo, drenaje, saturación, muerte de raíces/corona.
+
+S6. UC IPM - Powdery Mildew
+URL: https://ipm.ucanr.edu/agriculture/apple/powdery-mildew/
+Uso: cenicilla, brotes, yemas, condiciones predisponentes.
+
+S7. UC IPM - Major Monitoring Periods in Apple IPM
+URL: https://ipm.ucanr.edu/agriculture/apple/major-monitoring-periods-in-an-ipm-program/
+Uso: calendario de monitoreo por etapa: prebloom, bloom, postbloom, summer, preharvest.
+
+S8. Cornell IPM - Major Pests of Apple
+URL: https://cals.cornell.edu/integrated-pest-management/outreach-education/fact-sheets/major-pests-of-apple
+Uso: lista de plagas principales, modelos y enfoque IPM.
+
+S9. Washington State University Tree Fruit - Phytophthora Crown, Collar and Root Rot
+URL: https://treefruit.wsu.edu/crop-protection/disease-management/phytophthora/
+Uso: diferenciación collar/crown/root rot y relación con suelos húmedos/irrigación.
+
+S10. Washington State University Tree Fruit - Sunburn in Apple
+URL: https://treefruit.wsu.edu/sunburn-in-apple-and-strategies-to-mitigate-it/
+Uso: daño por sol y desórdenes asociados.
+
+S11. UC Davis Postharvest Center - Apple Sunburn
+URL: https://postharvest.ucdavis.edu/disorders/apple-sunburn
+Uso: calor, cielo despejado, cuadrante suroeste, estrés hídrico y sensibilidad de variedades claras.
+
+S12. UC IPM - Bitter Pit of Apple
+URL: https://ipm.ucanr.edu/home-and-landscape/bitter-pit-of-apple/
+Uso: bitter pit como desorden abiótico ligado a Ca funcional, vigor, carga, clima, riego y N/K.
+
+S13. Utah State University Extension - Apple Insects and Diseases
+URL: https://extension.usu.edu/planthealth/ipm/notes_ag/fruit-list-apple
+Uso: lista de enfermedades/desórdenes: scab, powdery mildew, fire blight, bitter pit, chlorosis, Phytophthora, sunburn.
+
+S14. UACH - Monitoreo y control de palomilla en la manzana
+URL: https://uach.mx/noticias/2022/3/9/trabajan-investigadores-uach-en-el-monitoreo-y-control-de-la-palomilla-en-la-manzana/
+Uso: regional México/Chihuahua; plagas relevantes: palomilla, pulgón lanígero, chicharrita, ácaros, chinches, enrollador de bandas oblicuas.
+
+S15. Scielo / Revista Mexicana de Ciencias Agrícolas - Pulgón lanígero en Chihuahua
+URL: https://www.scielo.org.mx/scielo.php?pid=S2007-09342016000300573&script=sci_arttext
+Uso: relevancia regional de pulgón lanígero en Cuauhtémoc, Chihuahua; relación con temperatura/precipitación e impacto ambiental.
+
+S16. Revista Mexicana de Fitopatología - Enfermedades de raíz en huertos de manzano de Chihuahua
+URL: https://www.smf.org.mx/rmf/historicoRMF/Vol3532017/RMF1704-3.pdf
+Uso: incidencia de daño de raíz en huertos de Chihuahua; Fusarium y Oomicetos.
+
+S17. Perspectivas del sistema de producción de manzano en Chihuahua ante cambio climático
+URL: https://www.scielo.org.mx/scielo.php?pid=S2007-09342011000800008&script=sci_arttext
+Uso: contexto regional; frío invernal, densidad de plagas, riesgo de enfermedades, lluvias, agua y costos.
+
+S18. Penn State / Tree Fruit field guide bilingual
+URL: https://agsci.psu.edu/research/centers-facilities/extension/frec/resources/spanish/bilingual_treefruit_booklet_optimized.pdf
+Uso: lenguaje bilingüe de trastornos, plagas y enfermedades.
+
+S19. Foros - InfoJardín / GrowingFruit
+Uso: lenguaje del usuario y problemas reportados; no se usaron para definir umbrales ni reglas técnicas.
+Ejemplos: “algodón blanco” para pulgón lanígero, manchas y agujeros de fruta para sarna/carpocapsa.
+
+
+================================================================================
+16. CIERRE TÉCNICO
+================================================================================
+
+Este documento deja listo el módulo 04 del Manzano para BIO-G:
+
+- Catálogo robusto de riesgos bióticos.
+- Catálogo de estrés abiótico/fisiológico.
+- Reglas de motor.
+- Priorización por etapa.
+- Modificadores por perfil AP.
+- Memoria perenne.
+- Lenguaje UX seguro.
+- Campos sugeridos para Plant Health.
+- Sin recetas ni ingredientes activos.
+
+El manzano queda preparado para integrarse como primer árbol real de BIO-G sin forzar lógica anual, sin depender de sowingDate y sin tratar cosecha como fin del cultivo.

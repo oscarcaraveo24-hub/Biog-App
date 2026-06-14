@@ -8,6 +8,7 @@ import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_cycle_display_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
@@ -159,6 +160,12 @@ class _SeedsScreenState extends State<SeedsScreen>
     final bool isMaizeRuntime =
         resolvedCropId == CropCatalog.maizeCropId &&
         runtime.profile is MaizeProfile;
+    final bool isTreeRuntime =
+        isTreeContext(cropContext) ||
+        isTreeCrop(
+          cropId: resolvedCropId,
+          cropCategoryId: cropContext?.cropCategoryId,
+        );
 
     final bool isGenericProfile = runtime.isGenericMode || !hasConfiguredCrop;
 
@@ -213,8 +220,30 @@ class _SeedsScreenState extends State<SeedsScreen>
     late final int estHeightCm;
     late final int growthCmPerWeek;
     String? heroAsset;
+    String? dayValueText;
+    bool showGrowthRows = true;
 
-    if (isMaizeRuntime &&
+    if (isTreeRuntime && runtime.isPlanted && cropContext != null) {
+      final String stageId = normalizeTreeStageId(cropContext.phenologyStageId);
+      final String? criticalLabel = treeCriticalWindowLabel(stageId);
+
+      stageTitle = treeStageDisplayName(stageId);
+      statusChip = criticalLabel != null ? 'Ventana activa' : 'Perenne';
+      topSubtitle = activeDevice?.locationName ?? 'Monitoreo continuo';
+      dayPrefix = 'Estado:';
+      dayValue = 0;
+      dayValueText = 'Activo';
+      daySuffix = treeStateDisplayName(cropContext.perennialStateId);
+      harvestLabel = 'Rendimiento aprox.:';
+      harvestText = 'Monitoreo continuo';
+      windowText = criticalLabel ?? treeStagePriorityText(stageId);
+      estHeightCm = 0;
+      growthCmPerWeek = 0;
+      heroAsset = runtime.stageResult?.heroAsset.trim().isNotEmpty == true
+          ? runtime.stageResult!.heroAsset
+          : 'assets/icons/wizard/ic_arbol.png';
+      showGrowthRows = false;
+    } else if (isMaizeRuntime &&
         runtime.isPlanted &&
         runtime.stageResult != null &&
         resolvedSowingDate != null) {
@@ -536,6 +565,7 @@ class _SeedsScreenState extends State<SeedsScreen>
                         careColor: careColor,
                         dayPrefix: dayPrefix,
                         dayValue: dayValue,
+                        dayValueText: dayValueText,
                         daySuffix: daySuffix,
                         harvestLabel: harvestLabel,
                         harvestText: harvestText,
@@ -555,6 +585,7 @@ class _SeedsScreenState extends State<SeedsScreen>
                         barGradient: SeedsScreenLogic.careGradient(careState),
                         estHeightCm: estHeightCm,
                         growthCmPerWeek: growthCmPerWeek,
+                        showGrowthRows: showGrowthRows,
                       ),
                     ),
                   ),
@@ -1965,6 +1996,7 @@ class _CareCardInner extends StatelessWidget {
 
   final String dayPrefix;
   final int dayValue;
+  final String? dayValueText;
   final String daySuffix;
 
   final String harvestLabel;
@@ -1991,6 +2023,7 @@ class _CareCardInner extends StatelessWidget {
 
   final int estHeightCm;
   final int growthCmPerWeek;
+  final bool showGrowthRows;
 
   const _CareCardInner({
     required this.revealController,
@@ -2001,6 +2034,7 @@ class _CareCardInner extends StatelessWidget {
     required this.careColor,
     required this.dayPrefix,
     required this.dayValue,
+    this.dayValueText,
     required this.daySuffix,
     required this.harvestLabel,
     required this.harvestText,
@@ -2019,6 +2053,7 @@ class _CareCardInner extends StatelessWidget {
     required this.barGradient,
     required this.estHeightCm,
     required this.growthCmPerWeek,
+    this.showGrowthRows = true,
   });
 
   @override
@@ -2110,7 +2145,7 @@ class _CareCardInner extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    '$dayValue',
+                    dayValueText ?? '$dayValue',
                     style: TextStyle(
                       fontSize: lineValueSize + dayNumberExtraSize,
                       fontWeight: FontWeight.w900,
@@ -2150,24 +2185,26 @@ class _CareCardInner extends StatelessWidget {
                 valueColor: const Color(0xFF2E7D5A),
                 valueBold: true,
               ),
-              const SizedBox(height: 8),
-              _LineRow(
-                label: 'Altura estimada:',
-                value: heightStr,
-                labelSize: lineLabelSize,
-                valueSize: lineValueSize,
-                valueColor: const Color(0xFF2E7D5A),
-                valueBold: true,
-              ),
-              const SizedBox(height: 8),
-              _LineRow(
-                label: 'Crecimiento:',
-                value: growthStr,
-                labelSize: lineLabelSize,
-                valueSize: lineValueSize,
-                valueColor: const Color(0xFF2E7D5A),
-                valueBold: true,
-              ),
+              if (showGrowthRows) ...[
+                const SizedBox(height: 8),
+                _LineRow(
+                  label: 'Altura estimada:',
+                  value: heightStr,
+                  labelSize: lineLabelSize,
+                  valueSize: lineValueSize,
+                  valueColor: const Color(0xFF2E7D5A),
+                  valueBold: true,
+                ),
+                const SizedBox(height: 8),
+                _LineRow(
+                  label: 'Crecimiento:',
+                  value: growthStr,
+                  labelSize: lineLabelSize,
+                  valueSize: lineValueSize,
+                  valueColor: const Color(0xFF2E7D5A),
+                  valueBold: true,
+                ),
+              ],
             ],
           ),
         ),

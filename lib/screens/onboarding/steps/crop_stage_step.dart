@@ -89,44 +89,10 @@ class CropStageStep extends StatelessWidget {
 
   static List<_StageOption> _optionsForCategory(String? category) {
     if (category == 'tree') {
-      return const <_StageOption>[
-        _StageOption(
-          id: 'planned',
-          title: 'Aún no planto / estoy por plantar',
-          subtitle: 'Preparación del terreno y plantación',
-          assetPath: OnboardingUiAssets.planned,
-        ),
-        _StageOption(
-          id: 'newly_planted',
-          title: 'Recién plantado (0-6 meses)',
-          subtitle: 'Enraizando y adaptándose',
-          assetPath: OnboardingUiAssets.planted,
-        ),
-        _StageOption(
-          id: 'growing_tree',
-          title: 'Creciendo (1-2 años)',
-          subtitle: 'Árbol joven, aún no produce',
-          assetPath: OnboardingUiAssets.tree,
-        ),
-        _StageOption(
-          id: 'near_production',
-          title: 'Por entrar a producción (3-4 años)',
-          subtitle: 'Puede florear poco o empezar a amarrar',
-          assetPath: OnboardingUiAssets.tree,
-        ),
-        _StageOption(
-          id: 'productive',
-          title: 'Ya produce (producción activa)',
-          subtitle: 'Floración, cuajado, llenado o cosecha',
-          assetPath: OnboardingUiAssets.tree,
-        ),
-        _StageOption(
-          id: 'dormant',
-          title: 'En reposo (sin hojas / dormancia)',
-          subtitle: 'Temporada fría o descanso del árbol',
-          assetPath: OnboardingUiAssets.harvested,
-        ),
-      ];
+      // El flujo activo de árboles vive en OnboardingWizardScreen y usa el
+      // modelo canónico de producción + fenología + ancla. Este step legacy se
+      // conserva solo para anuales y no debe volver a emitir IDs viejos.
+      return const <_StageOption>[];
     }
 
     return const <_StageOption>[

@@ -1,3 +1,4 @@
+import 'package:bio_g/core/crops/apple_tree/apple_tree_crop_definition.dart';
 import 'package:bio_g/core/crops/barley/barley_crop_definition.dart';
 import 'package:bio_g/core/crops/bean/bean_crop_definition.dart';
 import 'package:bio_g/core/crops/chili/chili_crop_definition.dart';
@@ -33,6 +34,7 @@ class CropRegistry {
     CropKey.spinach: SpinachCropDefinition(),
     CropKey.onion: OnionCropDefinition(),
     CropKey.garlic: GarlicCropDefinition(),
+    CropKey.appleTree: AppleTreeCropDefinition(),
   };
 
   static CropDefinition? byKey(CropKey key) => _definitions[key];
@@ -46,6 +48,11 @@ class CropRegistry {
       if (key.name.toLowerCase() == normalized) {
         return _definitions[key];
       }
+    }
+
+    // cropId canónico oficial + alias legacy: ambos resuelven a Manzano.
+    if (normalized == 'crop_apple_tree' || normalized == 'apple_tree') {
+      return _definitions[CropKey.appleTree];
     }
 
     return null;

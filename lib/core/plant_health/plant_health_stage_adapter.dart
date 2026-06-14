@@ -41,6 +41,36 @@ class PlantHealthStageAdapter {
         return _fromOnion(stage, daySinceSowing);
       case CropCatalog.garlicCropId:
         return _fromGarlic(stage, daySinceSowing);
+      case CropCatalog.appleTreeCropId:
+        return _fromAppleTree(stage);
+    }
+    return null;
+  }
+
+  /// Manzano / árbol perenne: las etapas fenológicas del árbol no usan
+  /// `daySinceSowing` (sowingDate no es el eje). Se mapean los TreeStageIds a
+  /// los buckets genéricos del motor de sanidad. `unknown` no fuerza bucket.
+  static PlantHealthStageBucket? _fromAppleTree(String stage) {
+    if (_matches(stage, const <String>['planting_transplant', 'root_establish'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['vegetative_growth'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['flowering'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['fruit_set'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>['fruit_fill', 'harvest_maturity'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>['dormancy', 'post_harvest'])) {
+      return PlantHealthStageBucket.lateSeason;
     }
     return null;
   }

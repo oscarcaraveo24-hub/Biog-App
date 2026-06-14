@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/widgets/onboarding/onboarding_asset_badge.dart';
@@ -58,12 +59,19 @@ class CropDetailsStep extends StatelessWidget {
       }
     }
 
-    // Resolve variety-aware icon for bean crops.
-    final String resolvedCropAsset = (selectedCropId == 'bean' &&
-            selectedVarietyId != null)
+    // Resolve variety-aware icons where the wizard has specific assets.
+    final bool isAppleTreeSelection =
+        selectedCropId == 'crop_apple_tree' || selectedCropId == 'apple_tree';
+    final String resolvedCropAsset =
+        isAppleTreeSelection
+        ? AppleTreeAssets.cropIcon
+        : (selectedCropId == 'bean' && selectedVarietyId != null)
         ? OnboardingUiAssets.assetForBeanVariety(selectedVarietyId)
         : (selectedOption?.assetPath ??
-            OnboardingUiAssets.assetForCategory(cropCategory));
+              OnboardingUiAssets.assetForCategory(cropCategory));
+    final String resolvedVarietyAsset = isAppleTreeSelection
+        ? appleTreeProfileIcon(selectedVarietyId)
+        : OnboardingUiAssets.variety;
 
     final Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -93,7 +101,7 @@ class CropDetailsStep extends StatelessWidget {
               _SummaryRow(
                 label: 'Variedad',
                 value: varietySummaryLabel,
-                assetPath: OnboardingUiAssets.variety,
+                assetPath: resolvedVarietyAsset,
               ),
             ],
           ),
@@ -134,6 +142,7 @@ class CropDetailsStep extends StatelessWidget {
                       .map(
                         (_VarietyOption v) => _VarietyChip(
                           label: v.label,
+                          assetPath: v.assetPath,
                           selected: selectedVarietyId == v.id,
                           onTap: () => onVarietyChanged?.call(v.id),
                         ),
@@ -242,29 +251,47 @@ class CropDetailsStep extends StatelessWidget {
 
     switch (category) {
       case 'tree':
-        return const <_DetailOption>[
+        // Solo Manzano: primer árbol real. Limón aún no tiene definición de
+        // catálogo/registry, así que no se ofrece. Las "variedades" son los
+        // perfiles reales de manzano (AP-SKIP/AP-01..05), no ids inventados.
+        return <_DetailOption>[
           _DetailOption(
-            cropId: 'lemon_tree',
-            title: 'Limón',
-            subtitle: 'Árbol frutal para huerto o patio',
-            typeLabel: 'Cítrico',
-            assetPath: OnboardingUiAssets.tree,
-            varieties: <_VarietyOption>[
-              _VarietyOption(id: 'lemon_persa', label: 'Persa'),
-              _VarietyOption(id: 'lemon_mexicano', label: 'Mexicano'),
-              _VarietyOption(id: 'lemon_generic', label: 'Genérico'),
-            ],
-          ),
-          _DetailOption(
-            cropId: 'apple_tree',
+            cropId: 'crop_apple_tree',
             title: 'Manzano',
             subtitle: 'Producción general',
             typeLabel: 'Frutal',
-            assetPath: OnboardingUiAssets.tree,
+            assetPath: AppleTreeAssets.cropIcon,
             varieties: <_VarietyOption>[
-              _VarietyOption(id: 'apple_rojo', label: 'Rojo'),
-              _VarietyOption(id: 'apple_verde', label: 'Verde'),
-              _VarietyOption(id: 'apple_generic', label: 'Genérico'),
+              _VarietyOption(
+                id: 'ap_skip',
+                label: 'No sé / Manzano general',
+                assetPath: AppleTreeAssets.neutralIcon,
+              ),
+              _VarietyOption(
+                id: 'ap_01_golden',
+                label: 'Golden',
+                assetPath: appleTreeProfileIcon('ap_01_golden'),
+              ),
+              _VarietyOption(
+                id: 'ap_02_red',
+                label: 'Red',
+                assetPath: appleTreeProfileIcon('ap_02_red'),
+              ),
+              _VarietyOption(
+                id: 'ap_03_criolla_rayada',
+                label: 'Criolla / Rayada',
+                assetPath: appleTreeProfileIcon('ap_03_criolla_rayada'),
+              ),
+              _VarietyOption(
+                id: 'ap_04_gala',
+                label: 'Gala',
+                assetPath: appleTreeProfileIcon('ap_04_gala'),
+              ),
+              _VarietyOption(
+                id: 'ap_05_low_chill',
+                label: 'Bajo requerimiento de frío',
+                assetPath: appleTreeProfileIcon('ap_05_low_chill'),
+              ),
             ],
           ),
         ];
@@ -331,8 +358,10 @@ class CropDetailsStep extends StatelessWidget {
               _VarietyOption(id: 'generic', label: 'Genérico'),
             ]
           : varieties
-                .map((CropVarietyEntry item) =>
-                    _VarietyOption(id: item.id, label: item.label))
+                .map(
+                  (CropVarietyEntry item) =>
+                      _VarietyOption(id: item.id, label: item.label),
+                )
                 .toList(growable: false),
     );
   }
@@ -352,8 +381,13 @@ class CropDetailsStep extends StatelessWidget {
 class _VarietyOption {
   final String id;
   final String label;
+  final String? assetPath;
 
-  const _VarietyOption({required this.id, required this.label});
+  const _VarietyOption({
+    required this.id,
+    required this.label,
+    this.assetPath,
+  });
 }
 
 class _DetailOption {
@@ -446,11 +480,11 @@ class _CropOptionCard extends StatelessWidget {
       radius: 22,
       padding: const EdgeInsets.fromLTRB(18, 13, 16, 13),
       backgroundColor: selected
-          ? const Color(0xFFF0F7EE).withValues(alpha:0.96)
-          : const Color(0xFFF7F8F8).withValues(alpha:0.94),
+          ? const Color(0xFFF0F7EE).withValues(alpha: 0.96)
+          : const Color(0xFFF7F8F8).withValues(alpha: 0.94),
       borderColor: selected
           ? const Color(0xFF8EB07C)
-          : Colors.white.withValues(alpha:0.94),
+          : Colors.white.withValues(alpha: 0.94),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -483,7 +517,7 @@ class _CropOptionCard extends StatelessWidget {
                       subtitle,
                       style: TextStyle(
                         fontSize: 13.6,
-                        color: Colors.black.withValues(alpha:0.44),
+                        color: Colors.black.withValues(alpha: 0.44),
                       ),
                     ),
                   ],
@@ -509,11 +543,13 @@ class _CropOptionCard extends StatelessWidget {
 
 class _VarietyChip extends StatelessWidget {
   final String label;
+  final String? assetPath;
   final bool selected;
   final VoidCallback? onTap;
 
   const _VarietyChip({
     required this.label,
+    this.assetPath,
     required this.selected,
     required this.onTap,
   });
@@ -528,15 +564,29 @@ class _VarietyChip extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: selected
-                  ? const Color(0xFF6F9652)
-                  : const Color(0xFF68757D),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (assetPath != null) ...[
+                OnboardingAssetBadge(
+                  assetPath: assetPath!,
+                  size: 24,
+                  imageScale: 0.9,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: selected
+                      ? const Color(0xFF6F9652)
+                      : const Color(0xFF68757D),
+                ),
+              ),
+            ],
           ),
         ),
       ),

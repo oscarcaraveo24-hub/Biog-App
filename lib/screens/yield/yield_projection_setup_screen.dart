@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/yield_projection_config.dart';
 import 'package:bio_g/core/yield/yield_projection_engine_proposed.dart';
@@ -127,6 +128,11 @@ class _YieldProjectionSetupScreenState
     );
     return cropId == CropCatalog.squashCropId;
   }
+
+  /// Para árboles/perennes (manzano) la "población" no es semilla sembrada
+  /// sino árboles plantados. Solo cambia el copy visible; el cálculo de
+  /// densidad por hectárea es el mismo.
+  bool get _isTreeCrop => isTreeContext(_readStore().activeCropContext);
 
   double _getActualHealthScore(BioGStore store) {
     const double fallbackScore = 0.68;
@@ -333,13 +339,14 @@ class _YieldProjectionSetupScreenState
       'ancho',
       'mulato',
     ])) {
-      final explicitDry = variety == 'chili_ancho_dry' ||
+      final explicitDry =
+          variety == 'chili_ancho_dry' ||
           wantsDry ||
           alias.contains('ancho seco') ||
           alias.contains('mulato seco');
       return explicitDry
           ? YieldReferenceCatalog.byId['chili_ancho_dry'] ??
-              YieldReferenceCatalog.byId['chili_poblano_ancho']
+                YieldReferenceCatalog.byId['chili_poblano_ancho']
           : YieldReferenceCatalog.byId['chili_poblano_ancho'];
     }
     if (_containsAny(joined, const [
@@ -349,10 +356,14 @@ class _YieldProjectionSetupScreenState
       'chilaca',
       'pasilla',
     ])) {
-      final explicitFresh = variety == 'chili_chilaca_fresh' ||
+      final explicitFresh =
+          variety == 'chili_chilaca_fresh' ||
           alias.contains('chilaca verde') ||
-          (alias.contains('chilaca') && wantsFresh && !alias.contains('pasilla'));
-      final explicitDry = variety == 'chili_chilaca_pasilla' ||
+          (alias.contains('chilaca') &&
+              wantsFresh &&
+              !alias.contains('pasilla'));
+      final explicitDry =
+          variety == 'chili_chilaca_pasilla' ||
           alias.contains('pasilla') ||
           wantsDry;
       if (explicitFresh && !explicitDry) {
@@ -399,7 +410,7 @@ class _YieldProjectionSetupScreenState
     ])) {
       return isProtected
           ? YieldReferenceCatalog.byId['chili_bell_pepper_protected'] ??
-              YieldReferenceCatalog.byId['chili_bell_pepper']
+                YieldReferenceCatalog.byId['chili_bell_pepper']
           : YieldReferenceCatalog.byId['chili_bell_pepper'];
     }
 
@@ -407,7 +418,7 @@ class _YieldProjectionSetupScreenState
     if (direct != null) return direct;
     return isProtected
         ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
-            YieldReferenceCatalog.genericFresh(ctx.cropId)
+              YieldReferenceCatalog.genericFresh(ctx.cropId)
         : YieldReferenceCatalog.genericFresh(ctx.cropId);
   }
 
@@ -459,7 +470,7 @@ class _YieldProjectionSetupScreenState
     ])) {
       return isProtected
           ? YieldReferenceCatalog.byId['eggplant_long_purple_protected'] ??
-              YieldReferenceCatalog.byId['eggplant_long_purple_field']
+                YieldReferenceCatalog.byId['eggplant_long_purple_field']
           : YieldReferenceCatalog.byId['eggplant_long_purple_field'];
     }
     if (_containsAny(joined, const [
@@ -483,7 +494,7 @@ class _YieldProjectionSetupScreenState
     ])) {
       return isProtected
           ? YieldReferenceCatalog.byId['eggplant_oval_round_protected'] ??
-              YieldReferenceCatalog.byId['eggplant_oval_round_field']
+                YieldReferenceCatalog.byId['eggplant_oval_round_field']
           : YieldReferenceCatalog.byId['eggplant_oval_round_field'];
     }
     if (_containsAny(joined, const [
@@ -498,7 +509,7 @@ class _YieldProjectionSetupScreenState
     ])) {
       return isProtected
           ? YieldReferenceCatalog.byId['eggplant_striped_protected'] ??
-              YieldReferenceCatalog.byId['eggplant_striped_field']
+                YieldReferenceCatalog.byId['eggplant_striped_field']
           : YieldReferenceCatalog.byId['eggplant_striped_field'];
     }
     if (_containsAny(joined, const [
@@ -512,7 +523,7 @@ class _YieldProjectionSetupScreenState
     ])) {
       return isProtected
           ? YieldReferenceCatalog.byId['eggplant_white_protected'] ??
-              YieldReferenceCatalog.byId['eggplant_white_field']
+                YieldReferenceCatalog.byId['eggplant_white_field']
           : YieldReferenceCatalog.byId['eggplant_white_field'];
     }
 
@@ -520,7 +531,7 @@ class _YieldProjectionSetupScreenState
     if (direct != null) return direct;
     return isProtected
         ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
-            YieldReferenceCatalog.genericFresh(ctx.cropId)
+              YieldReferenceCatalog.genericFresh(ctx.cropId)
         : YieldReferenceCatalog.genericFresh(ctx.cropId);
   }
 
@@ -576,7 +587,7 @@ class _YieldProjectionSetupScreenState
     if (isGeneric) {
       return isProtected
           ? YieldReferenceCatalog.byId['squash_protected_soil_generic'] ??
-              YieldReferenceCatalog.byId['squash_generic']
+                YieldReferenceCatalog.byId['squash_generic']
           : YieldReferenceCatalog.byId['squash_generic'];
     }
 
@@ -592,7 +603,7 @@ class _YieldProjectionSetupScreenState
     ])) {
       return isProtected
           ? YieldReferenceCatalog.byId['squash_zucchini_protected'] ??
-              YieldReferenceCatalog.byId['squash_zucchini_field']
+                YieldReferenceCatalog.byId['squash_zucchini_field']
           : YieldReferenceCatalog.byId['squash_zucchini_field'];
     }
 
@@ -646,7 +657,7 @@ class _YieldProjectionSetupScreenState
     ])) {
       return isProtected
           ? YieldReferenceCatalog.byId['squash_butternut_intensive'] ??
-              YieldReferenceCatalog.byId['squash_butternut_field']
+                YieldReferenceCatalog.byId['squash_butternut_field']
           : YieldReferenceCatalog.byId['squash_butternut_field'];
     }
 
@@ -683,7 +694,7 @@ class _YieldProjectionSetupScreenState
     if (direct != null) return direct;
     return isProtected
         ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
-            YieldReferenceCatalog.genericFresh(ctx.cropId)
+              YieldReferenceCatalog.genericFresh(ctx.cropId)
         : YieldReferenceCatalog.genericFresh(ctx.cropId);
   }
 
@@ -721,7 +732,7 @@ class _YieldProjectionSetupScreenState
     if (isGeneric) {
       return isProtected
           ? YieldReferenceCatalog.byId['lettuce_protected_soil_generic'] ??
-              YieldReferenceCatalog.byId['lettuce_generic']
+                YieldReferenceCatalog.byId['lettuce_generic']
           : YieldReferenceCatalog.byId['lettuce_generic'];
     }
 
@@ -790,7 +801,7 @@ class _YieldProjectionSetupScreenState
     if (direct != null) return direct;
     return isProtected
         ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
-            YieldReferenceCatalog.genericFresh(ctx.cropId)
+              YieldReferenceCatalog.genericFresh(ctx.cropId)
         : YieldReferenceCatalog.genericFresh(ctx.cropId);
   }
 
@@ -837,7 +848,7 @@ class _YieldProjectionSetupScreenState
     if (isGeneric) {
       return isProtected
           ? YieldReferenceCatalog.byId['spinach_protected_soil'] ??
-              YieldReferenceCatalog.byId['spinach_generic']
+                YieldReferenceCatalog.byId['spinach_generic']
           : YieldReferenceCatalog.byId['spinach_generic'];
     }
 
@@ -855,7 +866,7 @@ class _YieldProjectionSetupScreenState
     ])) {
       return isProtected
           ? YieldReferenceCatalog.byId['spinach_protected_soil'] ??
-              YieldReferenceCatalog.byId['spinach_savoy_summer']
+                YieldReferenceCatalog.byId['spinach_savoy_summer']
           : YieldReferenceCatalog.byId['spinach_savoy_summer'];
     }
 
@@ -873,7 +884,7 @@ class _YieldProjectionSetupScreenState
     ])) {
       return isProtected
           ? YieldReferenceCatalog.byId['spinach_protected_soil'] ??
-              YieldReferenceCatalog.byId['spinach_winter_field']
+                YieldReferenceCatalog.byId['spinach_winter_field']
           : YieldReferenceCatalog.byId['spinach_winter_field'];
     }
 
@@ -929,11 +940,9 @@ class _YieldProjectionSetupScreenState
     if (direct != null) return direct;
     return isProtected
         ? YieldReferenceCatalog.genericFreshProtected(
-              CropCatalog.spinachCropId,
-            ) ??
-            YieldReferenceCatalog.genericFresh(
-              CropCatalog.spinachCropId,
-            )
+                CropCatalog.spinachCropId,
+              ) ??
+              YieldReferenceCatalog.genericFresh(CropCatalog.spinachCropId)
         : YieldReferenceCatalog.genericFresh(CropCatalog.spinachCropId);
   }
 
@@ -1022,7 +1031,7 @@ class _YieldProjectionSetupScreenState
       }
       return isProtected
           ? YieldReferenceCatalog.byId['onion_protected_soil'] ??
-              YieldReferenceCatalog.byId['onion_generic']
+                YieldReferenceCatalog.byId['onion_generic']
           : YieldReferenceCatalog.byId['onion_generic'];
     }
 
@@ -1103,11 +1112,9 @@ class _YieldProjectionSetupScreenState
     if (direct != null) return direct;
     return isProtected
         ? YieldReferenceCatalog.genericFreshProtected(
-              CropCatalog.onionCropId,
-            ) ??
-            YieldReferenceCatalog.genericFresh(
-              CropCatalog.onionCropId,
-            )
+                CropCatalog.onionCropId,
+              ) ??
+              YieldReferenceCatalog.genericFresh(CropCatalog.onionCropId)
         : YieldReferenceCatalog.genericFresh(CropCatalog.onionCropId);
   }
 
@@ -1164,10 +1171,7 @@ class _YieldProjectionSetupScreenState
       return YieldReferenceCatalog.byId['garlic_storage_quality'];
     }
 
-    if (_containsAny(joined, const [
-      'orion',
-      'garlic_orion',
-    ])) {
+    if (_containsAny(joined, const ['orion', 'garlic_orion'])) {
       return YieldReferenceCatalog.byId['garlic_orion'];
     }
 
@@ -1188,10 +1192,7 @@ class _YieldProjectionSetupScreenState
       return YieldReferenceCatalog.byId['garlic_cezac_06'];
     }
 
-    if (_containsAny(joined, const [
-      'barretero',
-      'garlic_barretero',
-    ])) {
+    if (_containsAny(joined, const ['barretero', 'garlic_barretero'])) {
       return YieldReferenceCatalog.byId['garlic_barretero'];
     }
 
@@ -1324,7 +1325,8 @@ class _YieldProjectionSetupScreenState
         final profile = ctx.profileId.toLowerCase();
         final alias = (ctx.varietyAlias ?? '').toLowerCase();
 
-        final isProtected = profile.contains('tm-02') ||
+        final isProtected =
+            profile.contains('tm-02') ||
             profile.contains('tm_02') ||
             profile == 'tm02' ||
             profile.contains('protegido') ||
@@ -1340,14 +1342,15 @@ class _YieldProjectionSetupScreenState
 
         return isProtected
             ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
-                YieldReferenceCatalog.genericFresh(ctx.cropId)
+                  YieldReferenceCatalog.genericFresh(ctx.cropId)
             : YieldReferenceCatalog.genericFresh(ctx.cropId);
 
       case 'cucumber':
         final cucumberProfile = ctx.profileId.toLowerCase();
         final cucumberAlias = (ctx.varietyAlias ?? '').toLowerCase();
 
-        final isGeneric = cucumberProfile.contains('pe-gen') ||
+        final isGeneric =
+            cucumberProfile.contains('pe-gen') ||
             cucumberProfile.contains('pe_gen') ||
             cucumberProfile == 'pegen' ||
             cucumberAlias.contains('generico') ||
@@ -1357,7 +1360,8 @@ class _YieldProjectionSetupScreenState
           return YieldReferenceCatalog.byId['cucumber_generic'];
         }
 
-        final isPickler = cucumberProfile.contains('pe-04') ||
+        final isPickler =
+            cucumberProfile.contains('pe-04') ||
             cucumberProfile.contains('pe_04') ||
             cucumberProfile == 'pe04' ||
             cucumberAlias.contains('pickler') ||
@@ -1368,7 +1372,8 @@ class _YieldProjectionSetupScreenState
           return YieldReferenceCatalog.byId['cucumber_pickler'];
         }
 
-        final cucumberIsProtected = cucumberProfile.contains('pe-02') ||
+        final cucumberIsProtected =
+            cucumberProfile.contains('pe-02') ||
             cucumberProfile.contains('pe_02') ||
             cucumberProfile == 'pe02' ||
             cucumberProfile.contains('pe-03') ||
@@ -1385,7 +1390,8 @@ class _YieldProjectionSetupScreenState
             cucumberAlias.contains('mini') ||
             cucumberAlias.contains('beit');
 
-        final isEuropean = cucumberProfile.contains('pe-02') ||
+        final isEuropean =
+            cucumberProfile.contains('pe-02') ||
             cucumberProfile.contains('pe_02') ||
             cucumberProfile == 'pe02' ||
             cucumberAlias.contains('europeo') ||
@@ -1395,7 +1401,8 @@ class _YieldProjectionSetupScreenState
           return YieldReferenceCatalog.byId['cucumber_european_protected'];
         }
 
-        final isPersian = cucumberProfile.contains('pe-03') ||
+        final isPersian =
+            cucumberProfile.contains('pe-03') ||
             cucumberProfile.contains('pe_03') ||
             cucumberProfile == 'pe03' ||
             cucumberAlias.contains('persa') ||
@@ -1407,15 +1414,16 @@ class _YieldProjectionSetupScreenState
 
         return cucumberIsProtected
             ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
-                YieldReferenceCatalog.genericFresh(ctx.cropId)
+                  YieldReferenceCatalog.genericFresh(ctx.cropId)
             : YieldReferenceCatalog.byId['cucumber_slicer_ca'] ??
-                YieldReferenceCatalog.genericFresh(ctx.cropId);
+                  YieldReferenceCatalog.genericFresh(ctx.cropId);
 
       case 'chili':
         final chiliProfile = ctx.profileId.toLowerCase();
         final chiliAlias = (ctx.varietyAlias ?? '').toLowerCase();
 
-        final isGeneric = chiliProfile.contains('ch-gen') ||
+        final isGeneric =
+            chiliProfile.contains('ch-gen') ||
             chiliProfile.contains('ch_gen') ||
             chiliProfile == 'chgen' ||
             chiliAlias.contains('generico') ||
@@ -1423,14 +1431,15 @@ class _YieldProjectionSetupScreenState
             chiliAlias.contains('no se');
         if (isGeneric) return YieldReferenceCatalog.byId['chili_generic'];
 
-        final isProtected = chiliProfile.contains('protegido') ||
+        final isProtected =
+            chiliProfile.contains('protegido') ||
             chiliAlias.contains('protegido') ||
             chiliAlias.contains('invernadero') ||
             chiliAlias.contains('malla') ||
             chiliAlias.contains('casa malla');
 
-        final wantsDry = chiliAlias.contains('seco') ||
-            chiliAlias.contains('deshidratado');
+        final wantsDry =
+            chiliAlias.contains('seco') || chiliAlias.contains('deshidratado');
 
         if (chiliProfile.contains('ch-01') ||
             chiliProfile.contains('ch_01') ||
@@ -1484,7 +1493,8 @@ class _YieldProjectionSetupScreenState
             chiliProfile == 'ch06' ||
             chiliAlias.contains('arbol') ||
             chiliAlias.contains('puya')) {
-          final wantsFresh = chiliAlias.contains('fresco') ||
+          final wantsFresh =
+              chiliAlias.contains('fresco') ||
               chiliAlias.contains('fresh') ||
               chiliAlias.contains('verde');
           if (wantsFresh && !wantsDry) {
@@ -1517,7 +1527,7 @@ class _YieldProjectionSetupScreenState
 
         return isProtected
             ? YieldReferenceCatalog.genericFreshProtected(ctx.cropId) ??
-                YieldReferenceCatalog.genericFresh(ctx.cropId)
+                  YieldReferenceCatalog.genericFresh(ctx.cropId)
             : YieldReferenceCatalog.genericFresh(ctx.cropId);
 
       case 'eggplant':
@@ -2331,6 +2341,16 @@ class _YieldProjectionSetupScreenState
   }
 
   String _populationCardTitle(YieldAreaUnit unit) {
+    if (_isTreeCrop) {
+      switch (unit) {
+        case YieldAreaUnit.hectare:
+          return 'Árboles por hectárea';
+        case YieldAreaUnit.squareMeter:
+          return 'Árboles por m²';
+        case YieldAreaUnit.pot:
+          return 'Árboles';
+      }
+    }
     if (_populationInputMeansEstablishedPlants) {
       switch (unit) {
         case YieldAreaUnit.hectare:
@@ -2355,6 +2375,16 @@ class _YieldProjectionSetupScreenState
     required double populationInput,
     required YieldAreaUnit areaUnit,
   }) {
+    if (_isTreeCrop) {
+      switch (areaUnit) {
+        case YieldAreaUnit.hectare:
+          return '${formatNumber(populationInput)} árboles/ha';
+        case YieldAreaUnit.squareMeter:
+          return '${formatNumber(populationInput, maxDecimals: 2)} árboles/m²';
+        case YieldAreaUnit.pot:
+          return '${formatNumber(populationInput)} árboles en total';
+      }
+    }
     if (_populationInputMeansEstablishedPlants) {
       switch (areaUnit) {
         case YieldAreaUnit.hectare:
@@ -2381,6 +2411,27 @@ class _YieldProjectionSetupScreenState
     required double? estimatedSeedsPerHa,
     required double? estimatedTotalSeeds,
   }) {
+    if (_isTreeCrop) {
+      if (populationInput == null) {
+        return _areaUnit == YieldAreaUnit.pot
+            ? 'Captura cuántos árboles tienes en total.'
+            : 'Captura la densidad de árboles y BIO-G calculará el total del huerto.';
+      }
+      switch (_areaUnit) {
+        case YieldAreaUnit.hectare:
+          if (areaValue == null || estimatedTotalSeeds == null) {
+            return 'BIO-G multiplicará esta densidad por tu superficie total.';
+          }
+          return '≈ ${formatNumber(estimatedTotalSeeds)} árboles en ${formatNumber(areaValue)} ha';
+        case YieldAreaUnit.squareMeter:
+          if (estimatedSeedsPerHa == null || estimatedTotalSeeds == null) {
+            return 'BIO-G convertirá esta densidad a árboles por hectárea.';
+          }
+          return '≈ ${formatNumber(estimatedTotalSeeds)} árboles totales • ${formatNumber(estimatedSeedsPerHa)} árboles/ha';
+        case YieldAreaUnit.pot:
+          return 'Modo maceta: captura simple sin proyección agronómica por hectárea.';
+      }
+    }
     if (_populationInputMeansEstablishedPlants) {
       if (populationInput == null) {
         return _areaUnit == YieldAreaUnit.pot
@@ -2425,6 +2476,16 @@ class _YieldProjectionSetupScreenState
   }
 
   String _populationEditorTitle(YieldAreaUnit unit) {
+    if (_isTreeCrop) {
+      switch (unit) {
+        case YieldAreaUnit.hectare:
+          return 'Editar árboles por hectárea';
+        case YieldAreaUnit.squareMeter:
+          return 'Editar árboles por m²';
+        case YieldAreaUnit.pot:
+          return 'Editar árboles';
+      }
+    }
     if (_populationInputMeansEstablishedPlants) {
       switch (unit) {
         case YieldAreaUnit.hectare:
@@ -2446,6 +2507,16 @@ class _YieldProjectionSetupScreenState
   }
 
   String _populationEditorHelper(YieldAreaUnit unit) {
+    if (_isTreeCrop) {
+      switch (unit) {
+        case YieldAreaUnit.hectare:
+          return 'Captura cuántos árboles tienes por cada hectárea. BIO-G multiplicará esa densidad por la superficie total del huerto.';
+        case YieldAreaUnit.squareMeter:
+          return 'Captura cuántos árboles tienes por cada metro cuadrado. BIO-G convertirá esta densidad al equivalente por hectárea.';
+        case YieldAreaUnit.pot:
+          return 'En maceta capturamos el total de árboles, sin aplicar todavía una proyección agronómica por superficie.';
+      }
+    }
     if (_populationInputMeansEstablishedPlants) {
       switch (unit) {
         case YieldAreaUnit.hectare:
@@ -2467,6 +2538,16 @@ class _YieldProjectionSetupScreenState
   }
 
   String _populationEditorLabel(YieldAreaUnit unit) {
+    if (_isTreeCrop) {
+      switch (unit) {
+        case YieldAreaUnit.hectare:
+          return 'Árboles por hectárea';
+        case YieldAreaUnit.squareMeter:
+          return 'Árboles por m²';
+        case YieldAreaUnit.pot:
+          return 'Total de árboles';
+      }
+    }
     if (_populationInputMeansEstablishedPlants) {
       switch (unit) {
         case YieldAreaUnit.hectare:
@@ -2488,6 +2569,16 @@ class _YieldProjectionSetupScreenState
   }
 
   String _populationHintForUnit(YieldAreaUnit unit) {
+    if (_isTreeCrop) {
+      switch (unit) {
+        case YieldAreaUnit.hectare:
+          return 'Ej. 800';
+        case YieldAreaUnit.squareMeter:
+          return 'Ej. 0.08';
+        case YieldAreaUnit.pot:
+          return 'Ej. 1';
+      }
+    }
     switch (unit) {
       case YieldAreaUnit.hectare:
         return 'Ej. 80000';

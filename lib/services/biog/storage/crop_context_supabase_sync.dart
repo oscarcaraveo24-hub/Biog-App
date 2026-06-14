@@ -31,10 +31,9 @@ class CropContextSupabaseSync {
     if (userId == null) return;
 
     try {
-      await _client.from(_table).upsert(
-            _toRow(userId, context),
-            onConflict: 'user_id,device_id',
-          );
+      await _client
+          .from(_table)
+          .upsert(_toRow(userId, context), onConflict: 'user_id,device_id');
     } catch (_) {
       // Best-effort — local storage is the primary source.
     }
@@ -48,10 +47,7 @@ class CropContextSupabaseSync {
 
     try {
       final rows = contexts.values.map((c) => _toRow(userId, c)).toList();
-      await _client.from(_table).upsert(
-            rows,
-            onConflict: 'user_id,device_id',
-          );
+      await _client.from(_table).upsert(rows, onConflict: 'user_id,device_id');
     } catch (_) {
       // Best-effort.
     }
@@ -128,6 +124,11 @@ class CropContextSupabaseSync {
       'timezone': c.timezone,
       'region_code': c.regionCode,
       'cycle_label': c.cycleLabel,
+      // Contexto perenne (árboles). NULL para anuales: no altera su semántica.
+      'perennial_state_id': c.perennialStateId,
+      'phenology_stage_id': c.phenologyStageId,
+      'perennial_anchor_date': c.perennialAnchorDate?.toIso8601String(),
+      'perennial_anchor_type_id': c.perennialAnchorTypeId,
       'catalog_version': c.catalogVersion,
       'source': c.source.name,
       'configured_at': c.configuredAt.toIso8601String(),
@@ -147,16 +148,22 @@ class CropContextSupabaseSync {
       lifecycleStatus: _lifecycleFromName(row['lifecycle_status'] as String?),
       sowingDate: _parseDate(row['sowing_date']),
       plannedSowingDate: _parseDate(row['planned_sowing_date']),
-      sowingDateConfidence:
-          _dateConfidenceFromName(row['sowing_date_confidence'] as String?),
+      sowingDateConfidence: _dateConfidenceFromName(
+        row['sowing_date_confidence'] as String?,
+      ),
       sowingModeId: row['sowing_mode_id'] as String?,
       timezone: row['timezone'] as String?,
       regionCode: row['region_code'] as String?,
       cycleLabel: row['cycle_label'] as String?,
+      // Contexto perenne (árboles). Filas antiguas/anuales no traen estas claves
+      // y quedan null de forma segura.
+      perennialStateId: row['perennial_state_id'] as String?,
+      phenologyStageId: row['phenology_stage_id'] as String?,
+      perennialAnchorDate: _parseDate(row['perennial_anchor_date']),
+      perennialAnchorTypeId: row['perennial_anchor_type_id'] as String?,
       catalogVersion: (row['catalog_version'] as String?) ?? 'v1',
       source: _sourceFromName(row['source'] as String?),
-      configuredAt:
-          _parseDate(row['configured_at']) ?? DateTime.now().toUtc(),
+      configuredAt: _parseDate(row['configured_at']) ?? DateTime.now().toUtc(),
       updatedAt: _parseDate(row['updated_at']) ?? DateTime.now().toUtc(),
     );
   }

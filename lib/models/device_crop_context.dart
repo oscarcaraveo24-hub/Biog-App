@@ -40,6 +40,31 @@ class DeviceCropContext {
   /// semilla). Grano tradicional no lo usa.
   final String? establishmentModeId;
 
+  // ── Contexto perenne (árboles/frutales) ─────────────────────────────────────
+  //
+  // Campos nullable usados solo por la categoría Árbol. Los cultivos anuales
+  // (grano/hortaliza) los dejan en null y su semántica no cambia. La condición
+  // "es perenne" NO se persiste: se deriva de cropCategoryId == tree (ver
+  // CropCategory.tree). Estos campos quedan estructurados para la Fase 2 del
+  // runtime perenne; en esta fase no alteran comportamiento.
+
+  /// Estado fisiológico del perenne (p. ej. dormancia, brotación, crecimiento).
+  /// No aplica a anuales.
+  final String? perennialStateId;
+
+  /// Etapa fenológica visible del ciclo productivo anual del árbol.
+  /// No aplica a anuales.
+  final String? phenologyStageId;
+
+  /// Fecha de anclaje del ciclo perenne (no es fecha de siembra). El reloj de un
+  /// árbol no arranca en siembra ni "termina"; el ciclo productivo se reinicia.
+  /// No reutilizar [sowingDate] para árboles.
+  final DateTime? perennialAnchorDate;
+
+  /// Tipo del anclaje perenne (p. ej. brotación, floración, plantación).
+  /// Acompaña a [perennialAnchorDate]. No aplica a anuales.
+  final String? perennialAnchorTypeId;
+
   // trazabilidad
   final String catalogVersion;
   final CropConfigSource source;
@@ -69,6 +94,10 @@ class DeviceCropContext {
     this.regionCode,
     this.cycleLabel,
     this.establishmentModeId,
+    this.perennialStateId,
+    this.phenologyStageId,
+    this.perennialAnchorDate,
+    this.perennialAnchorTypeId,
   });
 
   DeviceCropContext copyWith({
@@ -90,6 +119,10 @@ class DeviceCropContext {
     Object? regionCode = _sentinel,
     Object? cycleLabel = _sentinel,
     Object? establishmentModeId = _sentinel,
+    Object? perennialStateId = _sentinel,
+    Object? phenologyStageId = _sentinel,
+    Object? perennialAnchorDate = _sentinel,
+    Object? perennialAnchorTypeId = _sentinel,
     String? catalogVersion,
     CropConfigSource? source,
     DateTime? configuredAt,
@@ -138,6 +171,18 @@ class DeviceCropContext {
       establishmentModeId: identical(establishmentModeId, _sentinel)
           ? this.establishmentModeId
           : establishmentModeId as String?,
+      perennialStateId: identical(perennialStateId, _sentinel)
+          ? this.perennialStateId
+          : perennialStateId as String?,
+      phenologyStageId: identical(phenologyStageId, _sentinel)
+          ? this.phenologyStageId
+          : phenologyStageId as String?,
+      perennialAnchorDate: identical(perennialAnchorDate, _sentinel)
+          ? this.perennialAnchorDate
+          : perennialAnchorDate as DateTime?,
+      perennialAnchorTypeId: identical(perennialAnchorTypeId, _sentinel)
+          ? this.perennialAnchorTypeId
+          : perennialAnchorTypeId as String?,
       catalogVersion: catalogVersion ?? this.catalogVersion,
       source: source ?? this.source,
       configuredAt: configuredAt ?? this.configuredAt,
@@ -165,6 +210,10 @@ class DeviceCropContext {
       'regionCode': regionCode,
       'cycleLabel': cycleLabel,
       'establishmentModeId': establishmentModeId,
+      'perennialStateId': perennialStateId,
+      'phenologyStageId': phenologyStageId,
+      'perennialAnchorDate': perennialAnchorDate?.toIso8601String(),
+      'perennialAnchorTypeId': perennialAnchorTypeId,
       'catalogVersion': catalogVersion,
       'source': source.name,
       'configuredAt': configuredAt.toIso8601String(),
@@ -200,6 +249,13 @@ class DeviceCropContext {
       regionCode: json['regionCode'] as String?,
       cycleLabel: json['cycleLabel'] as String?,
       establishmentModeId: json['establishmentModeId'] as String?,
+      // Contextos antiguos no traen estas claves: quedan null de forma segura.
+      perennialStateId: json['perennialStateId'] as String?,
+      phenologyStageId: json['phenologyStageId'] as String?,
+      perennialAnchorDate: json['perennialAnchorDate'] == null
+          ? null
+          : DateTime.parse(json['perennialAnchorDate'] as String),
+      perennialAnchorTypeId: json['perennialAnchorTypeId'] as String?,
       catalogVersion: json['catalogVersion'] as String,
       source: CropConfigSource.values.byName(json['source'] as String),
       configuredAt: DateTime.parse(json['configuredAt'] as String),

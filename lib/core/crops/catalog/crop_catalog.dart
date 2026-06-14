@@ -1,6 +1,7 @@
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
+import 'package:bio_g/core/crops/apple_tree/apple_tree_catalog.dart';
 import 'package:bio_g/core/crops/barley/barley_catalog.dart';
 import 'package:bio_g/core/crops/bean/bean_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
@@ -31,6 +32,7 @@ class CropCatalog {
 
   static const String grainCategoryId = 'grain';
   static const String vegetableCategoryId = 'vegetable';
+  static const String treeCategoryId = 'tree';
 
   static const String maizeCropId = 'maize';
   static const String wheatCropId = 'wheat';
@@ -46,6 +48,7 @@ class CropCatalog {
   static const String spinachCropId = kCropSpinach;
   static const String onionCropId = kCropOnion;
   static const String garlicCropId = kCropGarlic;
+  static const String appleTreeCropId = kCropAppleTree;
 
   static const String tomatoDefaultProfileId = 'tm_gen';
   static const String tomatoDefaultCalendarId = 'tomato_default';
@@ -65,6 +68,9 @@ class CropCatalog {
   static const String onionDefaultCalendarId = kOnionDefaultCalendarId;
   static const String garlicDefaultProfileId = kAgGen;
   static const String garlicDefaultCalendarId = kGarlicDefaultCalendarId;
+
+  // Manzano (perenne) — perfil general/seguro AP-SKIP. No es fallow.
+  static const String appleTreeDefaultProfileId = kApSkip;
 
   // ── Maize catalog constants ─────────────────────────────────────────────────
   static const String maizeDemoVarietyId = 'dk_2069';
@@ -91,6 +97,15 @@ class CropCatalog {
       id: vegetableCategoryId,
       label: 'Hortalizas',
       subtitle: 'Cultivos hortícolas en suelo (campo abierto y protegido)',
+      enabled: true,
+    ),
+    // Categoría Árbol (perennes/frutales). Habilitada: el runtime perenne, el
+    // wizard y el onboarding ya soportan árboles. La condición "es perenne" se
+    // deriva de esta categoría (tree), no se persiste.
+    CropCategoryEntry(
+      id: treeCategoryId,
+      label: 'Árboles',
+      subtitle: 'Frutales y perennes',
       enabled: true,
     ),
   ];
@@ -627,7 +642,8 @@ class CropCatalog {
           id: 'garlic_bajo_insumo',
           label: 'Bajo insumo',
           cropId: garlicCropId,
-          subtitle: 'Referencia conservadora por semilla, agua o manejo limitado',
+          subtitle:
+              'Referencia conservadora por semilla, agua o manejo limitado',
           enabled: true,
         ),
         CropCalendarEntry(
@@ -638,6 +654,20 @@ class CropCatalog {
           enabled: true,
         ),
       ],
+    ),
+    // ── Árboles / perennes ────────────────────────────────────────────────────
+    // Manzano habilitado: primer árbol real. Sin calendarios: los árboles no
+    // usan fecha de siembra ni ciclo anual que termina; el anclaje perenne vive
+    // en DeviceCropContext.perennialAnchorDate/perennialAnchorTypeId. El paquete
+    // agronómico (targets/fertilización/sanidad) llega en la siguiente fase.
+    CropCatalogEntry(
+      cropId: appleTreeCropId,
+      categoryId: treeCategoryId,
+      label: 'Manzano',
+      subtitle: 'Malus domestica · árbol frutal perenne',
+      enabled: true,
+      defaultProfileId: appleTreeDefaultProfileId,
+      profiles: appleTreeProfileEntries,
     ),
   ];
 
@@ -652,8 +682,10 @@ class CropCatalog {
   }
 
   static CropCatalogEntry? cropById(String? cropId) {
-    final normalized = _normalize(cropId);
-    if (normalized == null) return null;
+    // Canonicaliza primero: así los ids legacy/alias (p. ej. `apple_tree`,
+    // `manzano`, `corn`) resuelven a su entrada oficial sin duplicar cultivos.
+    final normalized = canonicalCropKey(cropId);
+    if (normalized.isEmpty) return null;
 
     for (final crop in crops) {
       if (_normalize(crop.cropId) == normalized) return crop;
@@ -1002,7 +1034,10 @@ class CropCatalog {
     if (baseRange == null) return null;
     if (deltaIndex.abs() < 0.0001) return baseRange;
 
-    final double cap = NpkCaps.forCropMetric(cropKey: cropId, metricKey: nutrient);
+    final double cap = NpkCaps.forCropMetric(
+      cropKey: cropId,
+      metricKey: nutrient,
+    );
     final double deltaPpm = (deltaIndex / 100.0) * cap;
 
     return _shiftRange(baseRange, deltaPpm, min: 0.0, max: cap * 1.25);
@@ -1376,6 +1411,13 @@ class CropCatalog {
       'chino calera' ||
       'chino cedel' ||
       'coreano' => garlicCropId,
+      'crop_apple_tree' ||
+      'apple_tree' ||
+      'appletree' ||
+      'apple' ||
+      'manzano' ||
+      'manzana' ||
+      'manzanos' => appleTreeCropId,
       _ => value,
     };
   }
@@ -1405,6 +1447,7 @@ class CropCatalog {
       spinachCropId => 'Espinaca',
       onionCropId => 'Cebolla',
       garlicCropId => 'Ajo',
+      appleTreeCropId => 'Manzano',
       _ => 'Cultivo',
     };
   }

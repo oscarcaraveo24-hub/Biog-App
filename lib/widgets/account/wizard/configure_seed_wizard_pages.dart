@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_components.dart';
 import 'package:bio_g/widgets/shared/bio_g_button.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
+import 'package:bio_g/widgets/shared/bio_g_wheel_date_picker.dart';
 
 class CategoryPage extends StatelessWidget {
   const CategoryPage({
@@ -28,7 +31,7 @@ class CategoryPage extends StatelessWidget {
           const StaggerIn(
             delay: 0,
             child: Text(
-              '¿Qué vas a sembrar en tu campo?',
+              '¿Que vas a monitorear?',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
@@ -45,12 +48,12 @@ class CategoryPage extends StatelessWidget {
             child: Builder(
               builder: (context) {
                 return Text(
-                  'Selecciona la planta que tienes o planeas sembrar.',
+                  'Selecciona el cultivo o arbol que tienes en tu campo.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14.4,
                     height: 1.34,
-                    color: Colors.black.withValues(alpha:0.45),
+                    color: Colors.black.withValues(alpha: 0.45),
                   ),
                 );
               },
@@ -85,11 +88,11 @@ class CategoryPage extends StatelessWidget {
             delay: 200,
             child: WizardLongPill(
               iconPath: ConfigureSeedWizardAssets.categoryTree,
-              title: 'Árbol',
-              subtitle: 'Pino, manzano, limón...',
+              title: 'Arbol',
+              subtitle: 'Manzano y otros frutales perennes',
               selected: category == 'tree',
-              enabled: false,
-              onTap: null,
+              enabled: true,
+              onTap: () => onSelect('tree'),
             ),
           ),
           const SizedBox(height: 14),
@@ -135,6 +138,7 @@ class CropVarietyPage extends StatelessWidget {
     required this.cropSelected,
     required this.varietySelected,
     required this.cropEnabled,
+    this.isTreeFlow = false,
     this.cropUsesBrands = false,
     this.cropIconPath,
     this.varietyIconPath,
@@ -149,6 +153,7 @@ class CropVarietyPage extends StatelessWidget {
   final bool cropSelected;
   final bool varietySelected;
   final bool cropEnabled;
+  final bool isTreeFlow;
   final bool cropUsesBrands;
   final String? cropIconPath;
   final String? varietyIconPath;
@@ -157,6 +162,9 @@ class CropVarietyPage extends StatelessWidget {
   final VoidCallback onTapVariety;
 
   String get _subtitleText {
+    if (isTreeFlow) {
+      return 'Selecciona el arbol y el perfil de manzano.';
+    }
     if (_isChiliCrop) {
       return 'Selecciona el cultivo y el tipo de chile.';
     }
@@ -170,6 +178,9 @@ class CropVarietyPage extends StatelessWidget {
   }
 
   String get _varietyPillTitle {
+    if (isTreeFlow) {
+      return 'Tipo de manzano';
+    }
     if (_isChiliCrop) {
       return 'Tipo de chile';
     }
@@ -184,10 +195,12 @@ class CropVarietyPage extends StatelessWidget {
 
   bool get _isChiliCrop => cropLabel.trim().toLowerCase() == 'chile';
 
-  bool get _isEggplantCrop =>
-      cropLabel.trim().toLowerCase() == 'berenjena';
+  bool get _isEggplantCrop => cropLabel.trim().toLowerCase() == 'berenjena';
 
   String get _helperText {
+    if (isTreeFlow) {
+      return 'Si no sabes la variedad, usa No se / Manzano general. Es un perfil general, no descanso del suelo.';
+    }
     if (cropUsesBrands) {
       return 'Si no conoces tu semilla exacta, podras elegir un perfil generico.';
     }
@@ -211,7 +224,7 @@ class CropVarietyPage extends StatelessWidget {
           const StaggerIn(
             delay: 0,
             child: Text(
-              '¿Qué vas a sembrar en tu campo?',
+              '¿Que vas a monitorear?',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
@@ -233,7 +246,7 @@ class CropVarietyPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14.4,
                     height: 1.34,
-                    color: Colors.black.withValues(alpha:0.45),
+                    color: Colors.black.withValues(alpha: 0.45),
                   ),
                 );
               },
@@ -281,7 +294,7 @@ class CropVarietyPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13.6,
                 height: 1.32,
-                color: Colors.black.withValues(alpha:0.48),
+                color: Colors.black.withValues(alpha: 0.48),
               ),
             ),
           ),
@@ -314,6 +327,8 @@ class CropVarietyPage extends StatelessWidget {
         return ConfigureSeedWizardAssets.cropChili;
       case 'Berenjena':
         return ConfigureSeedWizardAssets.cropEggplant;
+      case 'Manzano':
+        return AppleTreeAssets.cropIcon;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }
@@ -325,7 +340,9 @@ class CropVarietyPage extends StatelessWidget {
       case 'Hortalizas':
         return ConfigureSeedWizardAssets.categoryVegetable;
       case 'Árbol':
+      case 'Árboles':
       case 'Arbol':
+      case 'Arboles':
         return ConfigureSeedWizardAssets.categoryTree;
       case 'Planta ornamental':
       case 'Ornamental':
@@ -385,7 +402,7 @@ class BrandPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14.4,
                 height: 1.34,
-                color: Colors.black.withValues(alpha:0.45),
+                color: Colors.black.withValues(alpha: 0.45),
               ),
             ),
           ),
@@ -410,10 +427,7 @@ class BrandPage extends StatelessWidget {
           }),
           if (summary != null) ...[
             const SizedBox(height: 18),
-            StaggerIn(
-              delay: 90 + brands.length * 55 + 40,
-              child: summary!,
-            ),
+            StaggerIn(delay: 90 + brands.length * 55 + 40, child: summary!),
           ],
           const SizedBox(height: 14),
           StaggerIn(
@@ -476,7 +490,7 @@ class VarietyPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14.4,
                 height: 1.34,
-                color: Colors.black.withValues(alpha:0.45),
+                color: Colors.black.withValues(alpha: 0.45),
               ),
             ),
           ),
@@ -663,7 +677,7 @@ class DatePage extends StatelessWidget {
                     onSurface: const Color(0xFF3C4845),
                   ),
                 ),
-                child: CalendarDatePicker(
+                child: BioGWheelDatePicker(
                   initialDate: selectedDate,
                   firstDate: DateTime(2020),
                   lastDate: DateTime(2100),
@@ -692,7 +706,9 @@ class DatePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   WizardAssetIcon(
-                    assetPath: cropIconPath ?? ConfigureSeedWizardAssets.categoryGeneric,
+                    assetPath:
+                        cropIconPath ??
+                        ConfigureSeedWizardAssets.categoryGeneric,
                     slotWidth: 34,
                     slotHeight: 34,
                     imageWidth: 34,
@@ -707,7 +723,7 @@ class DatePage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.45,
-                        color: Colors.black.withValues(alpha:0.58),
+                        color: Colors.black.withValues(alpha: 0.58),
                       ),
                     ),
                   ),
@@ -736,6 +752,747 @@ class DatePage extends StatelessWidget {
   }
 }
 
+class TreeAnchorWizardOptionIds {
+  const TreeAnchorWizardOptionIds._();
+
+  static const String today = 'today';
+  static const String oneWeek = 'one_week';
+  static const String twoThreeWeeks = 'two_three_weeks';
+  static const String oneMonth = 'one_month';
+  static const String thisWeek = 'this_week';
+  static const String lessThanOneMonth = 'less_than_one_month';
+  static const String oneToThreeMonths = 'one_to_three_months';
+  static const String threeToSixMonths = 'three_to_six_months';
+  static const String unknown = 'unknown';
+  static const String custom = 'custom';
+
+  // ── Ancla de inicio de etapa (rama productiva / primera floración, 3B) ──────
+  static const String twoWeeks = 'two_weeks';
+
+  // ── Ancla de plantación (rama "solo creciendo", 3A) ─────────────────────────
+  static const String plantedThisMonth = 'planted_this_month';
+  static const String plantedSixMonths = 'planted_six_months';
+  static const String plantedOneYear = 'planted_one_year';
+  static const String plantedTwoYearsPlus = 'planted_two_years_plus';
+}
+
+/// Señal reproductiva visible para árboles que "todavía no producen" (Pantalla
+/// 2B). Solo dirige el ruteo del wizard; no se persiste en el contexto.
+class TreeReproSignalOptionIds {
+  const TreeReproSignalOptionIds._();
+
+  static const String growingOnly = 'growing_only';
+  static const String hasFlower = 'has_flower';
+  static const String hasFruitSet = 'has_fruit_set';
+  static const String hasFruitFill = 'has_fruit_fill';
+  static const String notSure = 'not_sure';
+}
+
+/// Traduce una señal reproductiva (Pantalla 2B) a la etapa fenológica visible
+/// que debe alimentar a [resolveTreeVisibleStageSelection]. Devuelve `null`
+/// cuando el arbol "solo esta creciendo" o el agricultor no esta seguro. El
+/// caller distingue `notSure` con [treeReproSignalIsUnknown]; solo
+/// `growingOnly` usa la rama de fecha de plantacion.
+String? treeReproSignalVisibleStageId(String? signalId) {
+  return switch (signalId) {
+    TreeReproSignalOptionIds.hasFlower => TreeStageIds.flowering,
+    TreeReproSignalOptionIds.hasFruitSet => TreeStageIds.fruitSet,
+    TreeReproSignalOptionIds.hasFruitFill => TreeStageIds.fruitFill,
+    _ => null,
+  };
+}
+
+bool treeReproSignalIsUnknown(String? signalId) {
+  return signalId == TreeReproSignalOptionIds.notSure;
+}
+
+/// Resuelve la fecha de una opción rápida de anclaje. En la rama de plantación
+/// (3A) las opciones son antigüedades del árbol; en la de inicio de etapa (3B)
+/// son tiempos relativos cortos. Devuelve `null` para opciones sin fecha
+/// directa (`unknown`/`custom`) o no reconocidas. Pura y testeable.
+DateTime? treeAnchorDateForOption(
+  String optionId,
+  DateTime now, {
+  required bool isPlanting,
+}) {
+  if (isPlanting) {
+    return switch (optionId) {
+      TreeAnchorWizardOptionIds.plantedThisMonth => now.subtract(
+        const Duration(days: 15),
+      ),
+      TreeAnchorWizardOptionIds.plantedSixMonths => now.subtract(
+        const Duration(days: 182),
+      ),
+      TreeAnchorWizardOptionIds.plantedOneYear => now.subtract(
+        const Duration(days: 365),
+      ),
+      TreeAnchorWizardOptionIds.plantedTwoYearsPlus => now.subtract(
+        const Duration(days: 800),
+      ),
+      _ => null,
+    };
+  }
+
+  return switch (optionId) {
+    TreeAnchorWizardOptionIds.today => now,
+    TreeAnchorWizardOptionIds.thisWeek => now.subtract(const Duration(days: 5)),
+    TreeAnchorWizardOptionIds.oneWeek => now.subtract(const Duration(days: 7)),
+    TreeAnchorWizardOptionIds.twoWeeks => now.subtract(
+      const Duration(days: 14),
+    ),
+    TreeAnchorWizardOptionIds.twoThreeWeeks => now.subtract(
+      const Duration(days: 18),
+    ),
+    TreeAnchorWizardOptionIds.oneMonth => now.subtract(
+      const Duration(days: 30),
+    ),
+    _ => null,
+  };
+}
+
+class TreeStatePage extends StatelessWidget {
+  const TreeStatePage({
+    super.key,
+    required this.productionStatusId,
+    required this.summary,
+    required this.onSelect,
+  });
+
+  final String? productionStatusId;
+  final Widget? summary;
+  final ValueChanged<String> onSelect;
+
+  static const List<_TreeWizardOptionData> _options = <_TreeWizardOptionData>[
+    _TreeWizardOptionData(
+      id: TreeProductionStatusIds.nonProductive,
+      title: 'Todavía no',
+      subtitle: 'Es un árbol joven.',
+      iconPath: ConfigureSeedWizardAssets.appleTreeYoungNotFruiting,
+    ),
+    _TreeWizardOptionData(
+      id: TreeProductionStatusIds.productiveOrProduced,
+      title: 'Sí, ya produce',
+      subtitle: 'o ya ha dado antes.',
+      iconPath: AppleTreeAssets.cropIcon,
+    ),
+    _TreeWizardOptionData(
+      id: TreeProductionStatusIds.unknown,
+      title: 'No estoy seguro',
+      subtitle:
+          'BIO-G usará un perfil general y ajustará la interpretación con los sensores.',
+      iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return CenteredWizardPage(
+      topPadding: 8,
+      child: Column(
+        children: [
+          const BrandMark(),
+          const SizedBox(height: 22),
+          const StaggerIn(
+            delay: 0,
+            child: Text(
+              '¿Tu manzano ya da fruta?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 22,
+                height: 1.18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
+                color: Color(0xFF293533),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ..._options.asMap().entries.map((entry) {
+            final index = entry.key;
+            final option = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: StaggerIn(
+                delay: 90 + index * 45,
+                child: WizardLongPill(
+                  iconPath: option.iconPath,
+                  title: option.title,
+                  subtitle: option.subtitle,
+                  selected: productionStatusId == option.id,
+                  enabled: true,
+                  onTap: () => onSelect(option.id),
+                ),
+              ),
+            );
+          }),
+          if (summary != null) ...[
+            const SizedBox(height: 4),
+            StaggerIn(delay: 340, child: summary!),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class TreePhenologyStagePage extends StatelessWidget {
+  const TreePhenologyStagePage({
+    super.key,
+    required this.productionStatusId,
+    required this.stageId,
+    required this.summary,
+    required this.onSelect,
+  });
+
+  final String? productionStatusId;
+  final String? stageId;
+  final Widget? summary;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = _optionsForProductionStatus(productionStatusId);
+
+    return CenteredWizardPage(
+      scrollable: true,
+      topPadding: 8,
+      child: Column(
+        children: [
+          const BrandMark(),
+          const SizedBox(height: 22),
+          const StaggerIn(
+            delay: 0,
+            child: Text(
+              '¿Cómo se ve tu árbol hoy?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 22,
+                height: 1.18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
+                color: Color(0xFF293533),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ...options.asMap().entries.map((entry) {
+            final index = entry.key;
+            final option = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: StaggerIn(
+                delay: 90 + (index.clamp(0, 8)) * 35,
+                child: WizardLongPill(
+                  iconPath: option.iconPath,
+                  title: option.title,
+                  subtitle: option.subtitle,
+                  selected: stageId == option.id,
+                  enabled: true,
+                  onTap: () => onSelect(option.id),
+                ),
+              ),
+            );
+          }),
+          if (summary != null) ...[
+            const SizedBox(height: 4),
+            StaggerIn(delay: 390, child: summary!),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static List<_TreeWizardOptionData> _optionsForProductionStatus(
+    String? productionStatusId,
+  ) {
+    switch (normalizeTreeProductionStatusId(productionStatusId)) {
+      case TreeProductionStatusIds.nonProductive:
+        return const <_TreeWizardOptionData>[
+          _TreeWizardOptionData(
+            id: TreeStageIds.plantingTransplant,
+            title: 'Recién plantado o trasplantado',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeYoungNotFruiting,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.rootEstablishment,
+            title: 'Se está estableciendo / agarrando raíz',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeYoungNotFruiting,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.juvenileVegetative,
+            title: 'Está creciendo con hojas nuevas',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeGrowingOnly,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.dormancy,
+            title: 'Está sin hojas / en reposo',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeDormantLeafless,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.unknown,
+            title: 'No lo sé',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+          ),
+        ];
+      case TreeProductionStatusIds.productiveOrProduced:
+        return const <_TreeWizardOptionData>[
+          _TreeWizardOptionData(
+            id: TreeStageIds.dormancy,
+            title: 'En reposo / Sin hojas',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeDormantLeafless,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.budbreak,
+            title: 'Brotando / Sacando hojitas',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeBudding,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.vegetativeGrowth,
+            title: 'Puro follaje / Lleno de hoja',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeFullFoliage,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.flowering,
+            title: 'En floración',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeFlowering,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.fruitSet,
+            title: 'Frutito amarrado / Tirando flor',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeFruitSetFlowerDrop,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.fruitFill,
+            title: 'Fruto verde / Creciendo',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeGreenFruitGrowing,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.harvestMaturity,
+            title: 'Listo para la pisca / Cosecha',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeReadyHarvest,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.postHarvest,
+            title: 'Acabo de cosechar',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeAfterHarvest,
+          ),
+          _TreeWizardOptionData(
+            id: TreeStageIds.unknown,
+            title: 'No lo sé',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+          ),
+        ];
+      case TreeProductionStatusIds.unknown:
+        return const <_TreeWizardOptionData>[
+          _TreeWizardOptionData(
+            id: TreeStageIds.unknown,
+            title: 'No lo sé',
+            subtitle: '',
+            iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+          ),
+        ];
+      default:
+        return const <_TreeWizardOptionData>[];
+    }
+  }
+}
+
+/// Pantalla 2B — Señal reproductiva. Solo se muestra cuando el agricultor dijo
+/// que el árbol "todavía no" produce, para blindar el caso de primera floración
+/// (un árbol que nunca dio fruta pero ya está reproductivo este año).
+///
+/// BLOQUE REMOVIBLE: si se decide shipear estricto a 3 pantallas, elimina esta
+/// página y rutea "Todavía no" directo a la fecha de plantación (3A).
+class TreeReproSignalPage extends StatelessWidget {
+  const TreeReproSignalPage({
+    super.key,
+    required this.selectedOptionId,
+    required this.summary,
+    required this.onSelect,
+  });
+
+  final String? selectedOptionId;
+  final Widget? summary;
+  final ValueChanged<String> onSelect;
+
+  static const List<_TreeWizardOptionData> _options = <_TreeWizardOptionData>[
+    _TreeWizardOptionData(
+      id: TreeReproSignalOptionIds.growingOnly,
+      title: 'No, solo está creciendo',
+      subtitle: '',
+      iconPath: ConfigureSeedWizardAssets.appleTreeGrowingOnly,
+    ),
+    _TreeWizardOptionData(
+      id: TreeReproSignalOptionIds.hasFlower,
+      title: 'Sí, tiene flor',
+      subtitle: '',
+      iconPath: ConfigureSeedWizardAssets.appleTreeHasFlower,
+    ),
+    _TreeWizardOptionData(
+      id: TreeReproSignalOptionIds.hasFruitSet,
+      title: 'Sí, tiene frutito chiquito',
+      subtitle: '',
+      iconPath: ConfigureSeedWizardAssets.appleTreeTinyFruit,
+    ),
+    _TreeWizardOptionData(
+      id: TreeReproSignalOptionIds.hasFruitFill,
+      title: 'Sí, fruto creciendo',
+      subtitle: '',
+      iconPath: ConfigureSeedWizardAssets.appleTreeFruitGrowing,
+    ),
+    _TreeWizardOptionData(
+      id: TreeReproSignalOptionIds.notSure,
+      title: 'No estoy seguro',
+      subtitle: '',
+      iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return CenteredWizardPage(
+      scrollable: true,
+      topPadding: 8,
+      child: Column(
+        children: [
+          const BrandMark(),
+          const SizedBox(height: 22),
+          const StaggerIn(
+            delay: 0,
+            child: Text(
+              '¿Ahorita le ves flor o frutito?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 22,
+                height: 1.18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
+                color: Color(0xFF293533),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ..._options.asMap().entries.map((entry) {
+            final index = entry.key;
+            final option = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: StaggerIn(
+                delay: 90 + index * 40,
+                child: WizardLongPill(
+                  iconPath: option.iconPath,
+                  title: option.title,
+                  subtitle: option.subtitle,
+                  selected: selectedOptionId == option.id,
+                  enabled: true,
+                  onTap: () => onSelect(option.id),
+                ),
+              ),
+            );
+          }),
+          if (summary != null) ...[
+            const SizedBox(height: 4),
+            StaggerIn(delay: 320, child: summary!),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class TreeAnchorPage extends StatelessWidget {
+  const TreeAnchorPage({
+    super.key,
+    required this.stateId,
+    required this.stageId,
+    required this.anchorTypeId,
+    required this.selectedOptionId,
+    required this.selectedDate,
+    required this.summary,
+    required this.saving,
+    required this.onSelectOption,
+    required this.onDateChanged,
+    required this.onSave,
+  });
+
+  final String? stateId;
+  final String? stageId;
+  final String? anchorTypeId;
+  final String? selectedOptionId;
+  final DateTime selectedDate;
+  final Widget? summary;
+  final bool saving;
+  final ValueChanged<String> onSelectOption;
+  final ValueChanged<DateTime> onDateChanged;
+  final VoidCallback? onSave;
+
+  /// Rama 3A: el anclaje es la fecha de plantación (el estado/etapa se derivan
+  /// de la antigüedad). Las demás ramas anclan el inicio de la etapa visible.
+  bool get _isPlantingAnchor =>
+      (anchorTypeId ?? '').trim().toLowerCase() == TreeAnchorTypeIds.planting;
+
+  // El perfil general (sin fecha) solo aplica a la rama de inicio de etapa
+  // cuando la etapa visible es desconocida; nunca en la rama de plantación.
+  bool get _isUnknownStage =>
+      !_isPlantingAnchor &&
+      normalizeTreeStageId(stageId) == TreeStageIds.unknown;
+
+  String get _title {
+    if (_isUnknownStage) return 'Manzano general';
+    if (_isPlantingAnchor) return '¿Cuándo lo plantaste en tierra?';
+    return switch (normalizeTreeStageId(stageId)) {
+      TreeStageIds.flowering => '¿Hace cuánto notaste la flor?',
+      TreeStageIds.dormancy => '¿Hace cuánto tiró la hoja?',
+      TreeStageIds.harvestMaturity => '¿Hace cuánto cosechaste?',
+      TreeStageIds.postHarvest => '¿Hace cuánto cosechaste?',
+      _ => '¿Hace cuánto empezó a verse así?',
+    };
+  }
+
+  String get _subtitle {
+    if (_isUnknownStage) {
+      return 'BIO-G usará un perfil general, sin fecha de etapa.';
+    }
+    if (_isPlantingAnchor) {
+      return 'Con esto BIO-G calcula la edad y la etapa aproximada del árbol.';
+    }
+    return 'Esta fecha se guarda como anclaje de etapa, no como edad del árbol.';
+  }
+
+  List<_TreeWizardOptionData> get _options {
+    if (_isUnknownStage) return const <_TreeWizardOptionData>[];
+    if (_isPlantingAnchor) {
+      return const <_TreeWizardOptionData>[
+        _TreeWizardOptionData(
+          id: TreeAnchorWizardOptionIds.custom,
+          title: 'Elegir fecha exacta',
+          subtitle: '',
+          iconPath: ConfigureSeedWizardAssets.exactDateCalendarClock,
+        ),
+        _TreeWizardOptionData(
+          id: TreeAnchorWizardOptionIds.plantedThisMonth,
+          title: 'Apenas este mes',
+          subtitle: '',
+          iconPath: ConfigureSeedWizardAssets.stagePlanted,
+        ),
+        _TreeWizardOptionData(
+          id: TreeAnchorWizardOptionIds.plantedSixMonths,
+          title: 'Hace unos 6 meses',
+          subtitle: '',
+          iconPath: ConfigureSeedWizardAssets.stagePlanted,
+        ),
+        _TreeWizardOptionData(
+          id: TreeAnchorWizardOptionIds.plantedOneYear,
+          title: 'Hace 1 año',
+          subtitle: '',
+          iconPath: ConfigureSeedWizardAssets.stagePlanted,
+        ),
+        _TreeWizardOptionData(
+          id: TreeAnchorWizardOptionIds.plantedTwoYearsPlus,
+          title: 'Hace 2 años o más',
+          subtitle: '',
+          iconPath: AppleTreeAssets.cropIcon,
+        ),
+        _TreeWizardOptionData(
+          id: TreeAnchorWizardOptionIds.unknown,
+          title: 'No lo recuerdo',
+          subtitle: '',
+          iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+        ),
+      ];
+    }
+    return const <_TreeWizardOptionData>[
+      _TreeWizardOptionData(
+        id: TreeAnchorWizardOptionIds.custom,
+        title: 'Elegir fecha exacta',
+        subtitle: '',
+        iconPath: ConfigureSeedWizardAssets.exactDateCalendarClock,
+      ),
+      _TreeWizardOptionData(
+        id: TreeAnchorWizardOptionIds.thisWeek,
+        title: 'Apenas esta semana',
+        subtitle: '',
+        iconPath: ConfigureSeedWizardAssets.stagePlanted,
+      ),
+      _TreeWizardOptionData(
+        id: TreeAnchorWizardOptionIds.twoWeeks,
+        title: 'Hace unas 2 semanas',
+        subtitle: '',
+        iconPath: ConfigureSeedWizardAssets.stagePlanted,
+      ),
+      _TreeWizardOptionData(
+        id: TreeAnchorWizardOptionIds.oneMonth,
+        title: 'Hace 1 mes',
+        subtitle: '',
+        iconPath: ConfigureSeedWizardAssets.stagePlanted,
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final showCalendar = selectedOptionId == TreeAnchorWizardOptionIds.custom;
+
+    return CenteredWizardPage(
+      scrollable: true,
+      topPadding: 4,
+      child: Column(
+        children: [
+          const BrandMark(),
+          const SizedBox(height: 18),
+          StaggerIn(
+            delay: 0,
+            child: Text(
+              _title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 22,
+                height: 1.18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
+                color: Color(0xFF293533),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          StaggerIn(
+            delay: 40,
+            child: Text(
+              _subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14.4,
+                height: 1.34,
+                color: Colors.black.withValues(alpha: 0.45),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          for (final entry in _options.asMap().entries) ...[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: StaggerIn(
+                delay: 90 + (entry.key.clamp(0, 7)) * 40,
+                child: WizardLongPill(
+                  iconPath: entry.value.iconPath,
+                  title: entry.value.title,
+                  subtitle: entry.value.subtitle,
+                  selected: selectedOptionId == entry.value.id,
+                  enabled: true,
+                  onTap: () => onSelectOption(entry.value.id),
+                ),
+              ),
+            ),
+            // El selector se muestra justo debajo de "Elegir fecha exacta".
+            if (showCalendar &&
+                entry.value.id == TreeAnchorWizardOptionIds.custom) ...[
+              StaggerIn(
+                delay: 130,
+                child: BioGGlassCard(
+                  radius: 24,
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: Theme.of(context).colorScheme.copyWith(
+                        primary: const Color(0xFF86A97D),
+                        onPrimary: Colors.white,
+                        onSurface: const Color(0xFF3C4845),
+                      ),
+                    ),
+                    child: BioGWheelDatePicker(
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2100),
+                      onDateChanged: onDateChanged,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
+          ],
+          const SizedBox(height: 14),
+          StaggerIn(
+            delay: 360,
+            child: BioGGlassCard(
+              radius: 22,
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  WizardAssetIcon(
+                    assetPath: AppleTreeAssets.cropIcon,
+                    slotWidth: 34,
+                    slotHeight: 34,
+                    imageWidth: 34,
+                    imageHeight: 34,
+                    scale: 1.75,
+                    offsetX: -4,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'BIO-G interpretara tus sensores segun el estado y etapa visible del arbol.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.45,
+                        color: Colors.black.withValues(alpha: 0.58),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (summary != null) ...[
+            const SizedBox(height: 16),
+            StaggerIn(delay: 410, child: summary!),
+          ],
+          const SizedBox(height: 18),
+          StaggerIn(
+            delay: 460,
+            child: BioGButton(
+              label: 'Guardar configuracion',
+              height: 54,
+              loading: saving,
+              onTap: onSave,
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _TreeWizardOptionData {
+  const _TreeWizardOptionData({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.iconPath,
+  });
+
+  final String id;
+  final String title;
+  final String subtitle;
+  final String iconPath;
+}
+
 class _TrademarkDisclaimer extends StatelessWidget {
   const _TrademarkDisclaimer();
 
@@ -751,7 +1508,7 @@ class _TrademarkDisclaimer extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           height: 1.38,
-          color: Colors.black.withValues(alpha:0.32),
+          color: Colors.black.withValues(alpha: 0.32),
         ),
       ),
     );

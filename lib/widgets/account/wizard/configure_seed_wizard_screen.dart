@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_components.dart';
@@ -12,7 +14,18 @@ import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_dialogs.dart'
 import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_pages.dart';
 import 'package:bio_g/widgets/account/wizard/wizard_crop_context_resolver.dart';
 
-enum WizardPage { category, cropVariety, brand, variety, stage, date }
+enum WizardPage {
+  category,
+  cropVariety,
+  brand,
+  variety,
+  stage,
+  date,
+  treeState,
+  treeReproSignal,
+  treePhenology,
+  treeAnchor,
+}
 
 class ConfigureSeedWizardScreen extends StatefulWidget {
   final Future<void> Function()? onCompleted;
@@ -38,6 +51,15 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   String? _brandId;
   String? _varietyId;
   String? _stage;
+  String? _treeProductionStatusId;
+  // Selección de la pantalla 2B (señal reproductiva). Solo dirige el ruteo de
+  // UI; no se persiste en DeviceCropContext.
+  String? _treeReproSignalId;
+  String? _perennialStateId;
+  String? _phenologyStageId;
+  String? _treeAnchorOptionId;
+  String? _perennialAnchorTypeId;
+  DateTime? _perennialAnchorDate;
 
   DateTime _selectedDate = DateTime.now();
   bool _useFlexibleDate = false;
@@ -46,6 +68,12 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
 
   /// Whether the current crop uses the brand→variety flow (only maize for now).
   bool get _cropUsesBrands => _crop == CropCatalog.maizeCropId;
+
+  bool get _isTreeWizard =>
+      _category == CropCatalog.treeCategoryId ||
+      _crop == CropCatalog.appleTreeCropId;
+
+  int get _totalSteps => _isTreeWizard ? 5 : (_cropUsesBrands ? 5 : 4);
 
   @override
   void initState() {
@@ -86,6 +114,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         : cropContext.cropCategoryId.trim();
 
     final crop = _normalizeCropId(cropContext.cropId);
+    final isTreeContext = isTreeCrop(cropId: crop, cropCategoryId: category);
 
     String? stage;
     DateTime selectedDate = DateTime.now();
@@ -105,8 +134,12 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         break;
       case CropLifecycleStatus.planted:
         stage = 'planted';
-        selectedDate = cropContext.sowingDate ?? DateTime.now();
-        flexibleDate = cropContext.sowingDateConfidence != DateConfidence.exact;
+        selectedDate = isTreeContext
+            ? (cropContext.perennialAnchorDate ?? DateTime.now())
+            : (cropContext.sowingDate ?? DateTime.now());
+        flexibleDate = isTreeContext
+            ? cropContext.perennialAnchorDate == null
+            : cropContext.sowingDateConfidence != DateConfidence.exact;
         break;
     }
 
@@ -129,6 +162,32 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
       _stage = stage;
       _selectedDate = selectedDate;
       _useFlexibleDate = flexibleDate;
+      _perennialStateId = isTreeContext
+          ? normalizeTreeStateId(cropContext.perennialStateId)
+          : null;
+      _phenologyStageId = isTreeContext
+          ? safeTreeStageForState(
+              perennialStateId: cropContext.perennialStateId,
+              phenologyStageId: cropContext.phenologyStageId,
+            )
+          : null;
+      _treeProductionStatusId = isTreeContext
+          ? inferTreeProductionStatusId(
+              perennialStateId: cropContext.perennialStateId,
+              phenologyStageId: cropContext.phenologyStageId,
+            )
+          : null;
+      _treeAnchorOptionId = isTreeContext
+          ? (cropContext.perennialAnchorDate == null
+                ? TreeAnchorWizardOptionIds.unknown
+                : TreeAnchorWizardOptionIds.custom)
+          : null;
+      _perennialAnchorDate = isTreeContext
+          ? cropContext.perennialAnchorDate
+          : null;
+      _perennialAnchorTypeId = isTreeContext
+          ? (cropContext.perennialAnchorTypeId ?? TreeAnchorTypeIds.unknown)
+          : null;
     });
   }
 
@@ -161,6 +220,14 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return _cropUsesBrands ? 3 : 2;
       case WizardPage.date:
         return _cropUsesBrands ? 4 : 3;
+      case WizardPage.treeState:
+        return 2;
+      case WizardPage.treeReproSignal:
+        return 3;
+      case WizardPage.treePhenology:
+        return 3;
+      case WizardPage.treeAnchor:
+        return 4;
     }
   }
 
@@ -226,7 +293,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
                   WizardTopChrome(
                     showBack: _page != WizardPage.category,
                     currentIndex: _currentStepIndex,
-                    totalSteps: _cropUsesBrands ? 5 : 4,
+                    totalSteps: _totalSteps,
                     onBack: _handleBack,
                     onClose: () {
                       final navigator = Navigator.of(context);
@@ -300,15 +367,22 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           varietySelected: _varietyId != null,
           cropEnabled:
               _category == CropCatalog.grainCategoryId ||
-              _category == CropCatalog.vegetableCategoryId,
+              _category == CropCatalog.vegetableCategoryId ||
+              _category == CropCatalog.treeCategoryId,
+          isTreeFlow: _isTreeWizard,
           cropUsesBrands: _cropUsesBrands,
-          cropIconPath: _resolvedCropIconPath,
-          varietyIconPath: _varietyId != null ? _resolvedCropIconPath : null,
+          cropIconPath: _crop == CropCatalog.appleTreeCropId
+              ? AppleTreeAssets.cropIcon
+              : _resolvedCropIconPath,
+          varietyIconPath: _crop == CropCatalog.appleTreeCropId ||
+                  _varietyId != null
+              ? _resolvedVarietyIconPath
+              : null,
           summary: _buildSelectionSummary(),
           onTapCrop: _openCropSelector,
-          onTapVariety: _cropUsesBrands
-              ? _openBrandSelector
-              : _openVarietySelector,
+          onTapVariety: _isTreeWizard
+              ? _openTreeProfileSelector
+              : (_cropUsesBrands ? _openBrandSelector : _openVarietySelector),
         );
 
       case WizardPage.brand:
@@ -362,6 +436,48 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           },
           onSave: _saving ? null : () => _save(BioGScope.of(context)),
         );
+
+      case WizardPage.treeState:
+        return TreeStatePage(
+          key: const ValueKey('treeState'),
+          productionStatusId: _treeProductionStatusId,
+          summary: _buildSelectionSummary(),
+          onSelect: _onSelectTreeProductionStatus,
+        );
+
+      case WizardPage.treeReproSignal:
+        return TreeReproSignalPage(
+          key: const ValueKey('treeReproSignal'),
+          selectedOptionId: _treeReproSignalId,
+          summary: _buildSelectionSummary(),
+          onSelect: _onSelectTreeReproSignal,
+        );
+
+      case WizardPage.treePhenology:
+        return TreePhenologyStagePage(
+          key: const ValueKey('treePhenology'),
+          productionStatusId: _treeProductionStatusId,
+          stageId: _phenologyStageId,
+          summary: _buildSelectionSummary(),
+          onSelect: _onSelectTreePhenologyStage,
+        );
+
+      case WizardPage.treeAnchor:
+        return TreeAnchorPage(
+          key: const ValueKey('treeAnchor'),
+          stateId: _perennialStateId,
+          stageId: _phenologyStageId,
+          anchorTypeId: _perennialAnchorTypeId,
+          selectedOptionId: _treeAnchorOptionId,
+          selectedDate: _selectedDate,
+          summary: _buildSelectionSummary(),
+          saving: _saving,
+          onSelectOption: _onSelectTreeAnchorOption,
+          onDateChanged: _onTreeAnchorDateChanged,
+          onSave: _saving || _treeAnchorOptionId == null
+              ? null
+              : () => _save(BioGScope.of(context)),
+        );
     }
   }
 
@@ -374,6 +490,32 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     if (_crop != null) {
       chips.add(_cropLabel(_crop));
     }
+
+    if (_isTreeWizard) {
+      if (_varietyId != null) {
+        chips.add(_varietyDisplayLabel());
+      }
+      if (_treeProductionStatusId != null) {
+        chips.add(treeProductionStatusDisplayName(_treeProductionStatusId));
+      }
+      if (_phenologyStageId != null) {
+        chips.add(treeStageDisplayName(_phenologyStageId));
+      }
+      final anchorLabel = _treeAnchorDisplayLabel(_treeAnchorOptionId);
+      if (anchorLabel != null) {
+        chips.add(anchorLabel);
+      }
+
+      if (chips.isEmpty) return null;
+
+      return Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 8,
+        runSpacing: 8,
+        children: chips.map((label) => MiniStateChip(label: label)).toList(),
+      );
+    }
+
     if (_brandId != null) {
       chips.add(_brandLabel(_brandId));
     }
@@ -403,7 +545,8 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
 
   void _onSelectCategory(String value) {
     if (value != CropCatalog.grainCategoryId &&
-        value != CropCatalog.vegetableCategoryId) {
+        value != CropCatalog.vegetableCategoryId &&
+        value != CropCatalog.treeCategoryId) {
       return;
     }
 
@@ -415,6 +558,13 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
       _stage = null;
       _selectedDate = DateTime.now();
       _useFlexibleDate = false;
+      _treeProductionStatusId = null;
+      _treeReproSignalId = null;
+      _perennialStateId = null;
+      _phenologyStageId = null;
+      _treeAnchorOptionId = null;
+      _perennialAnchorDate = null;
+      _perennialAnchorTypeId = null;
     });
 
     _animateToPage(WizardPage.cropVariety);
@@ -422,7 +572,8 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
 
   Future<void> _openCropSelector() async {
     if (_category != CropCatalog.grainCategoryId &&
-        _category != CropCatalog.vegetableCategoryId) {
+        _category != CropCatalog.vegetableCategoryId &&
+        _category != CropCatalog.treeCategoryId) {
       return;
     }
 
@@ -458,6 +609,13 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
       _stage = null;
       _selectedDate = DateTime.now();
       _useFlexibleDate = false;
+      _treeProductionStatusId = null;
+      _treeReproSignalId = null;
+      _perennialStateId = null;
+      _phenologyStageId = null;
+      _treeAnchorOptionId = null;
+      _perennialAnchorDate = null;
+      _perennialAnchorTypeId = null;
     });
   }
 
@@ -487,9 +645,58 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
 
   // ── Variety selector ────────────────────────────────────────────────────────
 
+  Future<void> _openTreeProfileSelector() async {
+    if (_normalizeCropId(_crop) != CropCatalog.appleTreeCropId) return;
+    const cropId = CropCatalog.appleTreeCropId;
+
+    final profiles = CropCatalog.profilesForCrop(cropId, enabledOnly: false);
+    if (profiles.isEmpty) return;
+
+    final result = await showWizardSelectionSheet<String>(
+      context: context,
+      title: '¿Que tipo de manzano tienes?',
+      options: profiles
+          .map(
+            (profile) => WizardSheetOption<String>(
+              value: profile.id,
+              title: _appleTreeProfileOptionTitle(profile.id, profile.label),
+              subtitle: profile.id == CropCatalog.appleTreeDefaultProfileId
+                  ? 'Usaremos un perfil general de manzano. Podras cambiarlo despues.'
+                  : (profile.subtitle ?? 'Perfil de manzano disponible'),
+              iconPath: appleTreeProfileIcon(profile.id),
+              enabled: true,
+            ),
+          )
+          .toList(growable: false),
+    );
+
+    if (result == null) return;
+
+    setState(() {
+      _varietyId = result;
+      _stage = 'planted';
+      _treeProductionStatusId = null;
+      _treeReproSignalId = null;
+      _perennialStateId = null;
+      _phenologyStageId = null;
+      _treeAnchorOptionId = null;
+      _perennialAnchorDate = null;
+      _perennialAnchorTypeId = null;
+      _selectedDate = DateTime.now();
+      _useFlexibleDate = false;
+    });
+
+    _animateToPage(WizardPage.treeState);
+  }
+
   Future<void> _openVarietySelector() async {
     final cropId = _crop;
     if (cropId == null) return;
+
+    if (_isTreeWizard || cropId == CropCatalog.appleTreeCropId) {
+      await _openTreeProfileSelector();
+      return;
+    }
 
     final varieties = CropCatalog.varietiesForCrop(cropId, enabledOnly: false);
     if (varieties.isEmpty) return;
@@ -526,15 +733,15 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
                                   ? 'Recomendado si no sabes el tipo de berenjena'
                                   : cropId == CropCatalog.squashCropId
                                   ? 'Recomendado si no sabes el tipo de calabaza'
-                                   : cropId == CropCatalog.lettuceCropId
-                                   ? 'Recomendado si no sabes el tipo de lechuga'
-                                   : cropId == CropCatalog.spinachCropId
-                                   ? 'Recomendado si no sabes el tipo de espinaca'
-                                   : cropId == CropCatalog.onionCropId
-                                   ? 'Recomendado si no sabes el tipo de cebolla'
-                                   : cropId == CropCatalog.garlicCropId
-                                   ? 'Recomendado si no sabes el tipo de ajo'
-                                   : 'Recomendado si no sabes la variedad')
+                                  : cropId == CropCatalog.lettuceCropId
+                                  ? 'Recomendado si no sabes el tipo de lechuga'
+                                  : cropId == CropCatalog.spinachCropId
+                                  ? 'Recomendado si no sabes el tipo de espinaca'
+                                  : cropId == CropCatalog.onionCropId
+                                  ? 'Recomendado si no sabes el tipo de cebolla'
+                                  : cropId == CropCatalog.garlicCropId
+                                  ? 'Recomendado si no sabes el tipo de ajo'
+                                  : 'Recomendado si no sabes la variedad')
                             : 'Disponible ahora')
                       : 'Próximamente'),
               iconPath: cropId == CropCatalog.maizeCropId
@@ -639,6 +846,211 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     _animateToPage(WizardPage.date);
   }
 
+  void _onSelectTreeProductionStatus(String value) {
+    final statusId = normalizeTreeProductionStatusId(value);
+
+    // "No estoy seguro": perfil general, sin fecha. Se guarda directo.
+    if (statusId == TreeProductionStatusIds.unknown) {
+      setState(() {
+        _treeProductionStatusId = statusId;
+        _treeReproSignalId = null;
+        _perennialStateId = TreeStateIds.unknown;
+        _phenologyStageId = TreeStageIds.unknown;
+        _treeAnchorOptionId = TreeAnchorWizardOptionIds.unknown;
+        _perennialAnchorDate = null;
+        _perennialAnchorTypeId = TreeAnchorTypeIds.unknown;
+        _stage = 'planted';
+        _selectedDate = DateTime.now();
+        _useFlexibleDate = true;
+      });
+
+      unawaited(_save(BioGScope.of(context)));
+      return;
+    }
+
+    setState(() {
+      _treeProductionStatusId = statusId;
+      _treeReproSignalId = null;
+      _perennialStateId = null;
+      _phenologyStageId = null;
+      _treeAnchorOptionId = null;
+      _perennialAnchorDate = null;
+      _perennialAnchorTypeId = null;
+      _stage = 'planted';
+      _selectedDate = DateTime.now();
+      _useFlexibleDate = false;
+    });
+
+    // "Todavía no" pasa por la señal reproductiva (blinda primera floración);
+    // "Sí, ya produce" va directo a la etapa fenológica visible.
+    _animateToPage(
+      statusId == TreeProductionStatusIds.nonProductive
+          ? WizardPage.treeReproSignal
+          : WizardPage.treePhenology,
+    );
+  }
+
+  void _onSelectTreeReproSignal(String value) {
+    // Señal reproductiva → etapa visible de producción (primera floración).
+    final String? reproStageId = treeReproSignalVisibleStageId(value);
+
+    if (reproStageId != null) {
+      final selection = resolveTreeVisibleStageSelection(
+        productionStatusId: TreeProductionStatusIds.nonProductive,
+        visibleStageId: reproStageId,
+      );
+      final stageId = safeTreeStageForState(
+        perennialStateId: selection.perennialStateId,
+        phenologyStageId: selection.phenologyStageId,
+      );
+
+      setState(() {
+        _treeReproSignalId = value;
+        _perennialStateId = selection.perennialStateId;
+        _phenologyStageId = stageId;
+        _treeAnchorOptionId = null;
+        _perennialAnchorDate = null;
+        _perennialAnchorTypeId = selection.perennialAnchorTypeId;
+        _selectedDate = DateTime.now();
+        _useFlexibleDate = false;
+      });
+
+      _animateToPage(WizardPage.treeAnchor);
+      return;
+    }
+
+    if (treeReproSignalIsUnknown(value)) {
+      setState(() {
+        _treeReproSignalId = value;
+        _perennialStateId = TreeStateIds.unknown;
+        _phenologyStageId = TreeStageIds.unknown;
+        _treeAnchorOptionId = TreeAnchorWizardOptionIds.unknown;
+        _perennialAnchorDate = null;
+        _perennialAnchorTypeId = TreeAnchorTypeIds.unknown;
+        _selectedDate = DateTime.now();
+        _useFlexibleDate = true;
+      });
+
+      unawaited(_save(BioGScope.of(context)));
+      return;
+    }
+
+    // "Solo esta creciendo": el estado se deriva de la fecha de plantacion
+    // (rama 3A). El estado/etapa quedan pendientes hasta que el agricultor
+    // capture la fecha.
+    setState(() {
+      _treeReproSignalId = value;
+      _perennialStateId = null;
+      _phenologyStageId = null;
+      _treeAnchorOptionId = null;
+      _perennialAnchorDate = null;
+      _perennialAnchorTypeId = TreeAnchorTypeIds.planting;
+      _selectedDate = DateTime.now();
+      _useFlexibleDate = false;
+    });
+
+    _animateToPage(WizardPage.treeAnchor);
+  }
+
+  void _onSelectTreePhenologyStage(String value) {
+    final selection = resolveTreeVisibleStageSelection(
+      productionStatusId: _treeProductionStatusId,
+      visibleStageId: value,
+    );
+    final stageId = safeTreeStageForState(
+      perennialStateId: selection.perennialStateId,
+      phenologyStageId: selection.phenologyStageId,
+    );
+    final isUnknownStage = stageId == TreeStageIds.unknown;
+
+    setState(() {
+      _perennialStateId = selection.perennialStateId;
+      _phenologyStageId = stageId;
+      _treeAnchorOptionId = isUnknownStage
+          ? TreeAnchorWizardOptionIds.unknown
+          : null;
+      _perennialAnchorDate = null;
+      _perennialAnchorTypeId = isUnknownStage
+          ? TreeAnchorTypeIds.unknown
+          : selection.perennialAnchorTypeId;
+      _selectedDate = DateTime.now();
+      _useFlexibleDate = isUnknownStage;
+    });
+
+    _animateToPage(WizardPage.treeAnchor);
+  }
+
+  void _onSelectTreeAnchorOption(String value) {
+    final now = DateTime.now();
+    final isPlanting = _perennialAnchorTypeId == TreeAnchorTypeIds.planting;
+
+    setState(() {
+      _treeAnchorOptionId = value;
+      _useFlexibleDate = value == TreeAnchorWizardOptionIds.unknown;
+
+      if (value == TreeAnchorWizardOptionIds.unknown) {
+        _perennialAnchorDate = null;
+      } else if (value == TreeAnchorWizardOptionIds.custom) {
+        // El usuario abrirá el calendario; conservamos la fecha actual.
+        _perennialAnchorDate = _selectedDate;
+      } else {
+        final date = treeAnchorDateForOption(
+          value,
+          now,
+          isPlanting: isPlanting,
+        );
+        _perennialAnchorDate = date;
+        if (date != null) _selectedDate = date;
+      }
+
+      // En la rama de plantación (3A) el estado/etapa se derivan de la edad.
+      if (isPlanting) {
+        final effectiveDate = value == TreeAnchorWizardOptionIds.unknown
+            ? null
+            : (_perennialAnchorDate ?? _selectedDate);
+        final selection = resolveTreePlantingAnchorSelection(
+          plantingDate: effectiveDate,
+          now: now,
+        );
+        _perennialStateId = selection.perennialStateId;
+        _phenologyStageId = selection.phenologyStageId;
+        _perennialAnchorTypeId = selection.perennialAnchorTypeId;
+      }
+    });
+  }
+
+  void _onTreeAnchorDateChanged(DateTime value) {
+    final now = DateTime.now();
+    final isPlanting = _perennialAnchorTypeId == TreeAnchorTypeIds.planting;
+
+    setState(() {
+      _selectedDate = value;
+      _perennialAnchorDate = value;
+      _treeAnchorOptionId = TreeAnchorWizardOptionIds.custom;
+      _useFlexibleDate = false;
+
+      if (isPlanting) {
+        final selection = resolveTreePlantingAnchorSelection(
+          plantingDate: value,
+          now: now,
+        );
+        _perennialStateId = selection.perennialStateId;
+        _phenologyStageId = selection.phenologyStageId;
+        _perennialAnchorTypeId = selection.perennialAnchorTypeId;
+      } else {
+        _perennialAnchorTypeId = _treeAnchorTypeForCurrentSelection();
+      }
+    });
+  }
+
+  String _treeAnchorTypeForCurrentSelection() {
+    final selection = resolveTreeVisibleStageSelection(
+      productionStatusId: _treeProductionStatusId,
+      visibleStageId: _phenologyStageId,
+    );
+    return selection.perennialAnchorTypeId;
+  }
+
   void _handleBack() {
     switch (_page) {
       case WizardPage.category:
@@ -678,15 +1090,50 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           _page = WizardPage.stage;
         });
         break;
+      case WizardPage.treeState:
+        setState(() {
+          _page = WizardPage.cropVariety;
+        });
+        break;
+      case WizardPage.treeReproSignal:
+        setState(() {
+          _page = WizardPage.treeState;
+        });
+        break;
+      case WizardPage.treePhenology:
+        setState(() {
+          _page = WizardPage.treeState;
+        });
+        break;
+      case WizardPage.treeAnchor:
+        setState(() {
+          _page = switch (normalizeTreeProductionStatusId(
+            _treeProductionStatusId,
+          )) {
+            TreeProductionStatusIds.nonProductive => WizardPage.treeReproSignal,
+            TreeProductionStatusIds.productiveOrProduced =>
+              WizardPage.treePhenology,
+            _ => WizardPage.treeState,
+          };
+        });
+        break;
     }
   }
 
   Future<void> _save(BioGStore store) async {
     final device = store.activeDevice;
     if (device == null) return;
-    if (_stage == null) return;
-    if (_crop == null && _stage != 'skip') return;
-    if (_stage != 'skip' && _varietyId == null) return;
+
+    final isTreeSave = _isTreeWizard;
+    if (isTreeSave) {
+      if (_crop != CropCatalog.appleTreeCropId) return;
+      if (_perennialStateId == null || _phenologyStageId == null) return;
+      if (_treeAnchorOptionId == null) return;
+    } else {
+      if (_stage == null) return;
+      if (_crop == null && _stage != 'skip') return;
+      if (_stage != 'skip' && _varietyId == null) return;
+    }
 
     setState(() {
       _saving = true;
@@ -703,7 +1150,40 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return;
       }
 
-      if (_stage == 'skip') {
+      if (isTreeSave) {
+        final resolvedProfileId =
+            CropCatalog.profileByAny(resolvedCropId, _varietyId)?.id ??
+            CropCatalog.appleTreeDefaultProfileId;
+
+        final resolvedStateId = normalizeTreeStateId(_perennialStateId);
+        final resolvedStageId = safeTreeStageForState(
+          perennialStateId: resolvedStateId,
+          phenologyStageId: _phenologyStageId,
+        );
+
+        final resolvedAnchorTypeId =
+            _perennialAnchorTypeId ?? _treeAnchorTypeForCurrentSelection();
+
+        final resolvedContext = _contextResolver.resolve(
+          deviceId: device.id,
+          cropCategoryId: CropCatalog.treeCategoryId,
+          cropId: CropCatalog.appleTreeCropId,
+          lifecycleStatus: CropLifecycleStatus.planted,
+          dateConfidence: DateConfidence.unknown,
+          now: now,
+          previous: previous,
+          varietyId: resolvedProfileId,
+          varietyAlias: resolvedProfileId,
+          selectedDate: null,
+          sowingModeId: 'planted',
+          perennialStateId: resolvedStateId,
+          phenologyStageId: resolvedStageId,
+          perennialAnchorDate: _perennialAnchorDate,
+          perennialAnchorTypeId: resolvedAnchorTypeId,
+        );
+
+        await store.saveCropContext(resolvedContext);
+      } else if (_stage == 'skip') {
         await store.setSeedSkipForDevice(device.id, cropKey: resolvedCropId);
       } else {
         final isPlanned = _stage == 'planned';
@@ -768,6 +1248,15 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     DeviceCropContext cropContext,
     String normalizedCropId,
   ) {
+    if (normalizedCropId == CropCatalog.appleTreeCropId) {
+      final profile =
+          CropCatalog.profileByAny(normalizedCropId, cropContext.profileId) ??
+          CropCatalog.profileByAny(normalizedCropId, cropContext.varietyId) ??
+          CropCatalog.profileByAny(normalizedCropId, cropContext.varietyAlias);
+
+      return profile?.id ?? CropCatalog.appleTreeDefaultProfileId;
+    }
+
     if (cropContext.varietyId != null &&
         cropContext.varietyId!.trim().isNotEmpty) {
       final fromVarietyId = CropCatalog.varietyById(
@@ -852,6 +1341,13 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     final varietyId = _varietyId;
     if (cropId == null || varietyId == null) return 'Seleccionar';
 
+    if (cropId == CropCatalog.appleTreeCropId) {
+      final profile = CropCatalog.profileByAny(cropId, varietyId);
+      if (profile != null) {
+        return _appleTreeProfileOptionTitle(profile.id, profile.label);
+      }
+    }
+
     final variety = CropCatalog.varietyById(cropId, varietyId);
     if (variety != null) return variety.label;
 
@@ -859,6 +1355,55 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     if (byAny != null) return byAny.label;
 
     return 'Seleccionar';
+  }
+
+  String _appleTreeProfileOptionTitle(String profileId, String fallbackLabel) {
+    switch (profileId) {
+      case CropCatalog.appleTreeDefaultProfileId:
+        return 'No se / Manzano general';
+      case 'ap_01_golden':
+        return 'Golden';
+      case 'ap_02_red':
+        return 'Red';
+      case 'ap_03_criolla_rayada':
+        return 'Criolla / Rayada';
+      case 'ap_04_gala':
+        return 'Gala';
+      case 'ap_05_low_chill':
+        return 'Bajo requerimiento de frio';
+      default:
+        return fallbackLabel;
+    }
+  }
+
+  String? _treeAnchorDisplayLabel(String? optionId) {
+    switch (optionId) {
+      case TreeAnchorWizardOptionIds.today:
+        return 'Hace pocos días';
+      case TreeAnchorWizardOptionIds.oneWeek:
+        return 'Hace una semana';
+      case TreeAnchorWizardOptionIds.thisWeek:
+        return 'Apenas esta semana';
+      case TreeAnchorWizardOptionIds.twoWeeks:
+      case TreeAnchorWizardOptionIds.twoThreeWeeks:
+        return 'Hace unas 2 semanas';
+      case TreeAnchorWizardOptionIds.oneMonth:
+        return 'Hace 1 mes';
+      case TreeAnchorWizardOptionIds.plantedThisMonth:
+        return 'Plantado este mes';
+      case TreeAnchorWizardOptionIds.plantedSixMonths:
+        return 'Plantado hace ~6 meses';
+      case TreeAnchorWizardOptionIds.plantedOneYear:
+        return 'Plantado hace 1 año';
+      case TreeAnchorWizardOptionIds.plantedTwoYearsPlus:
+        return 'Plantado hace 2+ años';
+      case TreeAnchorWizardOptionIds.unknown:
+        return 'No lo recuerdo';
+      case TreeAnchorWizardOptionIds.custom:
+        return 'Fecha aproximada';
+      default:
+        return null;
+    }
   }
 
   String _stageLabel(String? value) {
@@ -904,9 +1449,19 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return ConfigureSeedWizardAssets.cropOnion;
       case CropCatalog.garlicCropId:
         return ConfigureSeedWizardAssets.cropGarlic;
+      case CropCatalog.appleTreeCropId:
+        return AppleTreeAssets.cropIcon;
       default:
         return _genericCropIconPath;
     }
+  }
+
+  String get _resolvedVarietyIconPath {
+    final cropId = _crop;
+    if (cropId == CropCatalog.appleTreeCropId) {
+      return appleTreeProfileIcon(_varietyId);
+    }
+    return _resolvedCropIconPath;
   }
 
   /// Returns the maize-type icon that matches the currently selected variety,
@@ -914,6 +1469,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   String get _resolvedCropIconPath {
     final cropId = _crop;
     if (cropId == null) return _genericCropIconPath;
+
+    if (cropId == CropCatalog.appleTreeCropId) {
+      return AppleTreeAssets.cropIcon;
+    }
 
     if (_varietyId != null) {
       final variety = CropCatalog.varietyById(cropId, _varietyId);

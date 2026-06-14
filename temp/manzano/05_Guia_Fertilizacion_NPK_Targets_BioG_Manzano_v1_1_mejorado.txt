@@ -1,0 +1,1567 @@
+BIO-G
+05_Guia_Fertilizacion_NPK_Targets_BioG_Manzano_v1_1_mejorado
+Cultivo: Manzano / Apple tree
+cropId: crop_apple_tree
+cropKey esperado: apple_tree
+profilePrefix: AP
+Documento: 05 de 05 — Fertilización NPK y targets por etapa
+Versión: v1.1 mejorada con investigación adicional NMSU + IRTA/Vida Rural + UACH + guías técnicas
+Formato: texto técnico cableable para Flutter/Dart
+Estado: listo para revisión agronómica y traducción a código
+
+======================================================================
+0. CAMBIOS PRINCIPALES v1.1
+======================================================================
+
+Esta versión mejora la v1.0 incorporando investigación adicional entregada por el usuario y PDFs anexos.
+
+Cambios importantes:
+
+1) Se refuerza el concepto de RESERVAS DEL ÁRBOL:
+   - En manzano, la nutrición del arranque de primavera y floración depende en gran parte de reservas acumuladas el ciclo anterior.
+   - La postcosecha no es una etapa pasiva; es una etapa activa de recuperación.
+   - BIO-G debe guardar memoria de estrés postcosecha y usarla para elevar o bajar la confianza del siguiente ciclo.
+
+2) Se corrige y aterriza el patrón de N:
+   - N útil temprano y/o después de floración.
+   - N tardío excesivo puede afectar color, madurez, vigor, madera de invierno y susceptibilidad a frío.
+   - N postcosecha puede ser útil si hay hoja activa, raíz activa, humedad adecuada y temperatura suficiente; no debe aplicarse en suelos arenosos con alto riesgo de lixiviación ni cuando ya cayó la hoja.
+
+3) Se sube el peso de K en fruta y postcosecha:
+   - K pesa más tarde que N.
+   - K influye en llenado, calibre, azúcares y rendimiento.
+   - K no debe interpretarse aislado: exceso de K puede competir con Ca/Mg y elevar riesgo de fisiopatías.
+
+4) Se añade regla de Ca como CONTEXTO crítico:
+   - Ca no forma parte del NPK v1, pero en manzano no puede omitirse en mensajes.
+   - Ca es clave para firmeza, almacenamiento, bitter pit/mancha amarga y calidad.
+   - Como Ca tiene movilidad baja hacia fruto, la app debe tratarlo como “contexto avanzado / historial / análisis”, no como lectura NPK del sensor.
+
+5) Se añaden reglas para Fe/Zn en suelos calcáreos:
+   - pH alto (>7.5) puede bloquear Fe y Zn aunque existan en suelo.
+   - BIO-G debe decir “posible bloqueo/disponibilidad” y no solo “falta de nutriente”.
+
+6) Se añaden referencias de dosis SOLO como modo avanzado, no como receta:
+   - NMSU: tabla por edad y huertos adultos de alta producción.
+   - IRTA/Vida Rural: mejores resultados productivos y de calidad en 40–80 kg N/ha en un ensayo de Golden Smoothee/M9 Pajam bajo fertirrigación.
+   - UACH/Chihuahua: Golden Delicious/MM111 en Namiquipa con respuesta experimental 73N–49P–20K–138Ca–18Mg kg/ha para producción media estimada de 52 t/ha.
+   - Guía técnica España/Galicia: extracciones anuales orientativas 60 UF N, 80 UF P, 125 UF K.
+   Estas referencias NO se programan como recomendación directa al productor.
+
+7) Se separan tres capas:
+   A. Motor BIO-G v1: prioridades relativas N/P/K + sensores de suelo.
+   B. Modo avanzado: análisis de suelo/agua/foliar y dosis de referencia.
+   C. Contexto no sensor v1: Ca, Mg, B, Zn, Fe, materia orgánica, reservas y vigor.
+
+======================================================================
+1. DECISIÓN EJECUTIVA
+======================================================================
+
+Esta guía NO debe convertirse en una receta fija de fertilización por kg/ha.
+
+Para BIO-G v1, la fertilización del manzano debe modelarse como:
+
+1) Prioridades relativas N-P-K por etapa fisiológica.
+2) Targets medibles del sensor:
+   - soilMoisture
+   - soilTemp
+   - ph
+   - ec
+   - resistance
+   - n
+   - p
+   - k
+3) Mensajes UX seguros, humanos y accionables.
+4) Confianza variable según etapa, sensor, perfil, estado del árbol y existencia de análisis.
+5) Memoria multianual: el estrés en floración, cuajado, llenado o postcosecha afecta el siguiente ciclo.
+6) Regla “agua/suelo primero”: no empujar fertilización si humedad, EC, pH, temperatura de suelo o compactación están mal.
+
+Regla base:
+- En manzano, más nitrógeno NO significa más fruta.
+- N temprano y N postfloración pueden sostener brotación, hoja y crecimiento inicial.
+- N postcosecha puede recargar reservas si hay hoja activa y raíz activa.
+- N alto tarde puede retrasar madurez, afectar color rojo, elevar vigor blando, dificultar endurecimiento de madera y aumentar susceptibilidad sanitaria.
+- K sube de importancia desde cuajado, llenado y maduración.
+- P pesa sobre todo en raíz, brotación, floración y división celular temprana del fruto.
+- Ca, Mg, B, Zn y Fe NO son sensores obligatorios v1, pero son lo bastante importantes para aparecer como contexto, warnings y notas UX.
+
+BIO-G debe orientar, no recetar. Cuando falten datos de laboratorio, la app debe decir:
+“Revisar / confirmar con análisis de suelo, agua o foliar antes de ajustar fertilización fuerte.”
+
+======================================================================
+2. ALCANCE DEL DOCUMENTO
+======================================================================
+
+Este documento alimenta:
+- apple_tree_universal_profile.dart
+- apple_tree_crop_definition.dart
+- resolveTargets(...)
+- evaluateTelemetry(...)
+- AgroScore por etapa
+- mensajes del planner/alertas de nutrición
+- futuras reglas NutrientRecommendationEngine
+- futura memoria de reservas nutricionales en árboles perennes
+
+No alimenta directamente:
+- dosis comerciales exactas por fertilizante;
+- marcas de fertilizantes;
+- planes cerrados sin análisis de suelo/agua/foliar;
+- recomendaciones fitosanitarias;
+- recetas universales por variedad.
+
+Compatible con los IDs cerrados del estándar BIO-G de árboles:
+
+Estados perennes permitidos:
+- newly_planted
+- juvenile_non_productive
+- established
+- productive_season
+- unknown
+
+Etapas árbol permitidas:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Métricas sensor permitidas:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+======================================================================
+3. PRINCIPIOS AGRONÓMICOS PARA BIO-G
+======================================================================
+
+3.1 Suelo primero
+
+Antes de interpretar NPK, BIO-G debe revisar:
+- pH;
+- humedad;
+- EC/salinidad;
+- compactación/resistencia;
+- temperatura del suelo;
+- etapa fisiológica;
+- estado del árbol;
+- historial de estrés del ciclo anterior.
+
+Si pH, EC, humedad o compactación están fuera de rango, la lectura NPK puede estar “presente” pero no disponible para el árbol. En ese caso el mensaje debe enfocarse en disponibilidad, no solo en cantidad.
+
+Mensaje tipo:
+“Puede haber nutrientes en el suelo, pero las condiciones de raíz no son buenas para absorberlos. Primero estabiliza suelo, agua y salinidad.”
+
+3.2 Agua siempre
+
+La absorción de nutrientes depende de raíz activa, agua disponible, aireación y salud del suelo. Si el suelo está seco, saturado, frío o compactado, BIO-G debe bajar la confianza de cualquier recomendación nutrimental.
+
+Regla de motor:
+- Si soilMoisture está crítico, penalizar agua antes que NPK.
+- Si soilMoisture está saturado, penalizar aireación/raíz.
+- Si EC alta + humedad baja, elevar alerta por concentración salina.
+
+3.3 Raíz activa y temperatura
+
+Las raíces finas nuevas absorben más nutrientes. El periodo de absorción aumenta con crecimiento radicular y actividad vegetativa. En climas tipo Nuevo México, el periodo de raíz activa puede ir de marzo a octubre, pero se acorta en regiones frías.
+
+Regla BIO-G:
+- Si soilTemp < 8 °C, bajar confianza de absorción NPK.
+- Si soilTemp está entre 8–12 °C, permitir absorción lenta.
+- Si soilTemp está en 12–24 °C con humedad estable, subir confianza.
+- Si soilTemp > 30 °C con humedad baja, penalizar estrés hídrico/salinidad.
+
+3.4 Nitrógeno: útil, pero peligroso si se usa mal
+
+El nitrógeno es uno de los nutrientes más importantes en manzano porque impulsa brotación, hoja, crecimiento de brotes y capacidad fotosintética.
+
+Deficiencia posible de N:
+- hojas pequeñas;
+- color verde pálido;
+- caída prematura de hojas;
+- brotes cortos;
+- fruto pequeño;
+- reducción de fructificación.
+
+Exceso posible de N:
+- vigor excesivo;
+- brotes tardíos/blandos;
+- retraso de madurez;
+- peor color rojo;
+- más sombra interna;
+- más sensibilidad a heladas/daño de invierno;
+- más presión sanitaria;
+- más riesgo de mala calidad de almacenamiento.
+
+Regla BIO-G:
+- N alto temprano puede ser aceptable si árbol joven o deficiente.
+- N alto en llenado/maduración debe generar advertencia.
+- N alto en AP-02 Red y AP-04 Gala cerca de madurez debe penalizar más por color/calidad.
+
+3.5 Reservas: el árbol usa el año anterior
+
+En manzano, una parte importante del arranque de primavera, floración y brotación depende de reservas almacenadas del ciclo anterior. Por eso post_harvest NO puede tratarse como etapa muerta.
+
+Regla BIO-G:
+- Si hubo estrés severo en post_harvest, guardar memoria para budbreak/flowering del siguiente ciclo.
+- Si post_harvest tuvo hoja activa, humedad adecuada y N/K suficientes, aumentar confianza de reservas.
+- Si cosecha fue alta y luego hubo sequía/salinidad/defoliación temprana, marcar “reserva futura en riesgo”.
+
+Campo sugerido futuro:
+- lastPostHarvestReserveRisk: low | medium | high
+- lastCycleLateNitrogenExcessRisk: low | medium | high
+- lastCycleFruitFillKStress: low | medium | high
+- lastCycleCalciumQualityRisk: low | medium | high
+
+3.6 Potasio: sube tarde y pesa en fruto
+
+El potasio aumenta su importancia después de cuajado. Está ligado a llenado, rendimiento, calibre, transporte de azúcares, sólidos solubles y calidad de fruto.
+
+Regla BIO-G:
+- K bajo en fruit_set, fruit_fill y harvest_maturity pesa más que en dormancy.
+- K alto en fruit_fill puede ser útil, pero no debe celebrarse automáticamente si hay historial de bitter pit/mancha amarga, Ca bajo o Mg bajo.
+- K alto + EC alta = riesgo salino/fertilizante acumulado.
+
+3.7 Fósforo: raíz, energía y división celular temprana
+
+El manzano suele requerir menos P que N/K, pero P debe estar disponible durante raíz activa, brotación, floración y división celular temprana del fruto.
+
+Regla BIO-G:
+- P bajo pesa más en planting_transplant, root_establishment, budbreak, flowering y primeras semanas después de floración.
+- En pH alto, el problema puede ser bloqueo/disponibilidad y no falta real de P.
+- No generar alerta fuerte por P bajo en harvest_maturity si el resto está estable.
+
+3.8 Calcio: no es NPK, pero sí es manzano
+
+El Ca no se mueve fácilmente hacia el fruto. Puede haber Ca en suelo, pero el fruto tener poco Ca si hay desbalance de agua, vigor, carga, K/Mg, clima o transporte.
+
+Regla BIO-G:
+- Usar Ca como contexto avanzado: firmeza, bitter pit/mancha amarga, calidad y almacenamiento.
+- Si el usuario reporta bitter pit/mancha amarga o problemas de almacenamiento, activar warning de balance Ca/K/Mg aunque el sensor NPK no mida Ca.
+- En fruit_fill y harvest_maturity, si K relativo alto + historial de bitter pit, elevar warning.
+
+3.9 Boro, zinc, hierro y magnesio
+
+Boro:
+- Importa en floración, polen, cuajado, tejidos jóvenes y raíz.
+- Déficit puede asociarse a mal cuajado o deformaciones.
+- Exceso puede ser tóxico; no recomendar sin análisis.
+
+Zinc:
+- Importa en brotación, entrenudos y crecimiento de hoja.
+- Deficiencia típica: hoja chica, entrenudos cortos, roseta/cola de león.
+- En suelos calcáreos puede haber bloqueo.
+
+Hierro:
+- Deficiencia típica: clorosis con nervaduras verdes, sobre todo en brotes nuevos.
+- pH alto/caliza puede bloquearlo.
+
+Magnesio:
+- Importa en clorofila, hoja, floración y balance con K/Ca.
+- Excesos/desbalances con K/Ca pueden relacionarse con fisiopatías.
+
+3.10 Materia orgánica, cubierta vegetal y estructura
+
+La materia orgánica mejora estructura, retención de agua, infiltración y disponibilidad gradual de nutrientes. Las cubiertas vegetales pueden mejorar suelo, pero deben manejarse para no competir con árboles jóvenes ni aumentar riesgo de heladas de irradiación.
+
+Regla BIO-G:
+- Si resistance alta o humedad inestable, sugerir revisar compactación, materia orgánica y manejo de suelo.
+- En plantaciones jóvenes, priorizar franja limpia/mulch controlado y evitar competencia fuerte.
+
+======================================================================
+4. CAPAS DEL MODELO BIO-G
+======================================================================
+
+4.1 Capa A — Motor BIO-G v1
+
+Datos permitidos:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n/p/k relativos
+- etapa
+- estado perenne
+- perfil AP
+- historial de estrés
+
+Salida:
+- AgroScore
+- subíndices agua/temperatura/suelo/nutrición
+- alerts farmer-friendly
+- confidence
+
+4.2 Capa B — Modo avanzado con análisis
+
+Datos opcionales:
+- análisis de suelo;
+- análisis de agua;
+- análisis foliar;
+- textura;
+- materia orgánica;
+- carbonatos/caliza;
+- sistema de riego;
+- producción esperada;
+- árboles/ha;
+- portainjerto;
+- edad/vigor;
+- crecimiento terminal.
+
+Salida:
+- mayor confianza;
+- sugerencias de consulta técnica;
+- rangos de referencia;
+- comparación plurianual.
+
+4.3 Capa C — Contexto no sensor v1
+
+Variables que BIO-G debe mencionar pero NO medir como obligatorias:
+- Ca
+- Mg
+- B
+- Zn
+- Fe
+- materia orgánica
+- crecimiento terminal
+- carga de fruta
+- poda
+- portainjerto
+- heladas
+- historial de producción alta
+- defoliación temprana
+
+======================================================================
+5. ESCALA INTERNA BIO-G PARA N/P/K RELATIVO
+======================================================================
+
+Muchos sensores NPK económicos entregan lecturas relativas o ppm no siempre calibrados por especie. BIO-G v1 debe normalizar N, P y K a una escala 0.00–1.00.
+
+Escala propuesta:
+
+0.00–0.20 = muy bajo
+0.20–0.35 = bajo
+0.35–0.50 = bajo-moderado
+0.50–0.65 = suficiente moderado
+0.65–0.80 = alto útil según etapa
+0.80–1.00 = alto / posible exceso según etapa
+
+Importante:
+- “Alto” puede ser útil en una etapa y riesgoso en otra.
+- N alto en árbol joven puede ser normal si el crecimiento no es blando/excesivo.
+- N alto en maduración/cosecha puede ser negativo.
+- K alto en llenado puede ser útil, pero con historial de bitter pit debe generar advertencia.
+- P bajo con pH alto puede ser problema de disponibilidad, no de cantidad.
+
+======================================================================
+6. TARGETS BASE UNIVERSALES PARA MANZANO
+======================================================================
+
+Estos targets son conservadores y cableables. No sustituyen calibración regional.
+
+6.1 pH del suelo
+
+Target preferido BIO-G: 6.0–6.8
+Rango técnico ideal frecuente para manzano: 6.0–6.5
+Rango aceptable amplio: 5.5–7.5
+Alerta baja: <5.5
+Alerta alta: >7.5
+Crítico: <5.2 o >8.0
+
+Regla BIO-G:
+- Si pH está fuera de rango, bajar confianza en P, Fe, Zn, Mn, B y disponibilidad nutrimental.
+- En pH alto (>7.5), alertar posible bloqueo de P, Fe y Zn.
+- En pH bajo, alertar menor actividad radicular y riesgo de toxicidad/desbalance.
+
+6.2 EC / salinidad
+
+Target preferido: <1.5 dS/m
+Observación: 1.5–2.0 dS/m
+Alerta: 2.0–2.5 dS/m
+Crítico: >2.5–3.0 dS/m, especialmente en árbol joven, floración, cuajado o calor.
+
+Regla BIO-G:
+- Manzano es sensible a salinidad moderada.
+- Si EC sube y humedad baja, aumentar alerta porque la concentración salina en raíz puede ser mayor.
+- Evitar sugerir fertilización si EC ya está alta.
+- En plantación/establecimiento, usar umbrales más conservadores.
+
+6.3 Humedad del suelo
+
+Usar preferentemente % de Agua Disponible (AW) o índice normalizado.
+
+Target general: 60–85% AW
+Target etapa crítica: 65–90% AW
+Observación por déficit: 50–60% AW
+Alerta déficit: 40–50% AW
+Crítico déficit: <40% AW
+Observación por exceso: 90–95% AW
+Alerta exceso/saturación: >95% AW o lectura alta persistente
+
+Regla BIO-G:
+- Establecimiento, floración, cuajado y llenado temprano son etapas de mayor peso.
+- Exceso de agua no es mejor: baja oxígeno, afecta raíz y sube riesgo de cuello/raíz.
+- Si hay exceso de humedad + suelo frío, bajar mucho la confianza de absorción.
+
+6.4 Temperatura del suelo
+
+Actividad radicular baja: <8 °C
+Rango funcional lento: 8–12 °C
+Target preferido: 12–24 °C
+Observación calor: 25–30 °C
+Alerta calor: >30 °C
+Crítico: >35 °C o estrés combinado calor + baja humedad
+
+Regla BIO-G:
+- Si soilTemp está muy baja, bajar confianza en absorción N/P/K.
+- Si soilTemp está alta con humedad baja, elevar peso de estrés hídrico y EC.
+
+6.5 Resistencia / compactación
+
+Target: <1.5 MPa
+Observación: 1.5–2.0 MPa
+Alerta: >2.0 MPa
+Crítico: >2.5 MPa
+
+Regla BIO-G:
+- Compactación alta reduce raíz fina, oxígeno, agua útil y absorción.
+- En árbol joven o recién plantado pesa más que en árbol adulto establecido.
+- Si hay compactación alta, priorizar suelo antes que NPK.
+
+6.6 Targets foliares avanzados
+
+NO son sensores v1 obligatorios. Usar solo en modo “con análisis foliar”.
+
+Rangos generales orientativos:
+- N hoja: 2.0–2.6% rango general; objetivo conservador BIO-G 2.1–2.4% según vigor/cultivar.
+- P hoja: 0.15–0.30%.
+- K hoja: 1.3–1.8%.
+- Ca hoja: 1.0–2.0% o 1.3–2.0% según fuente/cultivar.
+- Mg hoja: 0.30–0.50%.
+- B hoja: 25–50 ppm.
+- Zn hoja: 20–50 ppm.
+
+Regla BIO-G:
+- Estos rangos solo deben aparecer en modo avanzado.
+- Si no hay análisis, la app no debe fingir precisión.
+- Analizar tendencias plurianuales pesa más que una sola muestra aislada.
+
+6.7 Muestreo recomendado en modo avanzado
+
+Muestreo foliar:
+- 60–100 hojas.
+- Hojas sanas del crecimiento del año.
+- En julio para muchas regiones templadas.
+- Tomar hojas de la parte media del brote de la temporada actual.
+- Altura de hombro, periferia del árbol.
+- Misma variedad y misma zona del huerto cada año.
+- Árboles con problemas deben muestrearse por separado.
+
+Muestreo de suelo:
+- Separar capa superficial y subsuelo.
+- Referencia NMSU: 0–1.5 ft y 1.5–3 ft; en métrico aproximado 0–45 cm y 45–90 cm.
+- Usar análisis de agua si hay riego, sobre todo por sales/nitratos.
+
+======================================================================
+7. VIGOR COMO SENSOR HUMANO / UX AVANZADO
+======================================================================
+
+El sensor BIO-G v1 mide suelo, pero en manzano el vigor visible ayuda mucho.
+
+Árbol joven sin producción:
+- Crecimiento anual deseable de brotes: 60–90 cm/año.
+- Menos de eso puede indicar estrés de agua, raíz, suelo, N bajo, compactación o problema sanitario.
+- Más de eso puede indicar exceso de N/vigor y retrasar entrada a producción.
+
+Árbol adulto productivo:
+- Crecimiento terminal anual deseable: 15–25 cm/año aprox. (6–10 pulgadas).
+- Menos: revisar carga excesiva, estrés hídrico, raíz, N, compactación o sanidad.
+- Más: revisar exceso de N, poda, vigor, sombra y calidad de fruta.
+
+Campo UX opcional futuro:
+- shootGrowthStatus: low | adequate | excessive | unknown
+
+Regla BIO-G:
+- Si N está alto y shootGrowthStatus = excessive, penalizar N.
+- Si N está bajo y shootGrowthStatus = low, subir prioridad de revisión nutricional.
+- Si shootGrowthStatus = unknown, no ajustar fuerte.
+
+======================================================================
+8. PRIORIDAD NPK POR ETAPA
+======================================================================
+
+Escala: 0.00 = sin prioridad; 1.00 = prioridad máxima.
+Esta escala no es dosis; es peso fisiológico para BIO-G.
+
+8.1 Tabla resumida
+
+Etapa: planting_transplant
+N: 0.25 | P: 0.80 | K: 0.40
+Cuidado: raíz, baja salinidad, no quemar árbol recién plantado.
+
+Etapa: root_establishment
+N: 0.35 | P: 0.85 | K: 0.45
+Cuidado: raíz fina, humedad estable, EC baja, compactación baja.
+
+Etapa: juvenile_vegetative
+N: 0.75 | P: 0.55 | K: 0.55
+Cuidado: formar estructura sin provocar vigor blando excesivo.
+
+Etapa: dormancy
+N: 0.10 | P: 0.20 | K: 0.20
+Cuidado: demanda baja; no sobreinterpretar NPK. Revisar pH, salinidad y reservas.
+
+Etapa: budbreak
+N: 0.65 | P: 0.60 | K: 0.55
+Cuidado: arranque vegetativo depende de reservas; no sobrefertilizar si suelo frío.
+
+Etapa: vegetative_growth
+N: 0.70 | P: 0.45 | K: 0.60
+Cuidado: hoja funcional y brotes; controlar exceso de N, especialmente tarde.
+
+Etapa: flowering
+N: 0.35 | P: 0.70 | K: 0.65
+Cuidado: floración usa reservas; no empujar solo N. Agua estable; B/Ca/Zn como contexto.
+
+Etapa: fruit_set
+N: 0.35 | P: 0.55 | K: 0.75
+Cuidado: amarre, aborto de fruto, estrés hídrico, salinidad y balance Ca/Mg.
+
+Etapa: fruit_fill
+N: 0.30 | P: 0.40 | K: 0.88
+Cuidado: calibre, azúcares, firmeza, color; vigilar K alto vs Ca/Mg.
+
+Etapa: harvest_maturity
+N: 0.18 | P: 0.30 | K: 0.70
+Cuidado: evitar exceso de N; calidad, color, madurez y almacenamiento.
+
+Etapa: post_harvest
+N: 0.60 | P: 0.35 | K: 0.65
+Cuidado: recuperación de reservas para el siguiente ciclo; solo si hay hoja activa y raíz activa.
+
+Etapa: unknown
+N: 0.45 | P: 0.45 | K: 0.50
+Cuidado: conservador; pedir etapa visible o análisis.
+
+8.2 Lectura por etapa
+
+Plantación/establecimiento:
+- P y suelo pesan más que N.
+- EC debe ser muy conservadora.
+- Evitar aplicaciones concentradas cerca de raíz joven.
+
+Juvenil:
+- N pesa porque se construye madera, copa y sistema productivo futuro.
+- P y K acompañan, pero no se busca fruta todavía.
+- Si hay vigor excesivo, bajar N.
+
+Dormancia:
+- La demanda NPK es baja.
+- Se revisan pH, EC, compactación, materia orgánica y planeación.
+- No usar lecturas NPK de reposo para alertar agresivamente.
+
+Brotación:
+- El árbol usa reservas.
+- N/P/K suficientes ayudan, pero la absorción real depende de raíz y temperatura.
+
+Floración:
+- No empujar solo N.
+- P, K, B, Zn y Ca contextual son más relevantes que N alto.
+- Agua y temperatura tienen más peso que NPK.
+
+Cuajado:
+- El árbol decide qué fruta sostiene.
+- K sube, pero agua/salinidad/calor pueden tumbar fruta aunque NPK esté bien.
+
+Llenado:
+- K es el nutriente NPK protagonista.
+- N debe mantenerse moderado-bajo.
+- Ca/Mg contexto crítico.
+
+Cosecha/madurez:
+- No buscar crecimiento vegetativo.
+- Evitar N alto.
+- K útil, pero sin desbalancear Ca/Mg.
+
+Postcosecha:
+- Etapa activa.
+- Recargar reservas si todavía hay hoja activa.
+- N y K pueden representar hasta una parte importante del plan anual según sistema, pero no si hay riesgo de lixiviación, suelo arenoso, hoja caída, sequía o salinidad.
+
+======================================================================
+9. STAGE TARGETS PROPUESTOS PARA CÓDIGO
+======================================================================
+
+Formato sugerido para apple_tree_universal_profile.dart.
+Los valores N/P/K son rangos relativos 0.00–1.00 ya normalizados por BIO-G.
+
+stageTargets:
+
+planting_transplant:
+  soilMoistureAwTarget: 65-85
+  soilTempCOptimal: 12-24
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.5
+  ecDsMAlert: 2.0
+  resistanceMpaTargetMax: 1.5
+  resistanceMpaAlert: 2.0
+  nRelativeTarget: 0.20-0.40
+  pRelativeTarget: 0.60-0.80
+  kRelativeTarget: 0.35-0.55
+  confidence: medium
+  notes: "Priorizar raíz; evitar salinidad/quemadura."
+
+root_establishment:
+  soilMoistureAwTarget: 65-90
+  soilTempCOptimal: 12-24
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.5
+  ecDsMAlert: 2.0
+  resistanceMpaTargetMax: 1.5
+  resistanceMpaAlert: 2.0
+  nRelativeTarget: 0.25-0.45
+  pRelativeTarget: 0.60-0.80
+  kRelativeTarget: 0.35-0.60
+  confidence: medium
+  notes: "Raíz fina, humedad estable, baja EC."
+
+juvenile_vegetative:
+  soilMoistureAwTarget: 60-85
+  soilTempCOptimal: 12-26
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.7
+  ecDsMAlert: 2.2
+  resistanceMpaTargetMax: 1.7
+  resistanceMpaAlert: 2.1
+  nRelativeTarget: 0.55-0.75
+  pRelativeTarget: 0.45-0.65
+  kRelativeTarget: 0.45-0.65
+  confidence: medium
+  notes: "Vigor útil, pero evitar crecimiento blando excesivo."
+
+dormancy:
+  soilMoistureAwTarget: 50-75
+  soilTempCOptimal: 4-16
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.8
+  ecDsMAlert: 2.3
+  resistanceMpaTargetMax: 2.0
+  resistanceMpaAlert: 2.5
+  nRelativeTarget: 0.20-0.40
+  pRelativeTarget: 0.30-0.50
+  kRelativeTarget: 0.30-0.50
+  confidence: low_to_medium
+  notes: "Demanda baja; revisar suelo y planeación, no fertilizar por impulso."
+
+budbreak:
+  soilMoistureAwTarget: 60-85
+  soilTempCOptimal: 10-22
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.6
+  ecDsMAlert: 2.0
+  resistanceMpaTargetMax: 1.7
+  resistanceMpaAlert: 2.1
+  nRelativeTarget: 0.50-0.70
+  pRelativeTarget: 0.50-0.70
+  kRelativeTarget: 0.45-0.65
+  confidence: medium
+  notes: "Arranque usa reservas; suelo frío baja absorción."
+
+vegetative_growth:
+  soilMoistureAwTarget: 60-85
+  soilTempCOptimal: 12-26
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.7
+  ecDsMAlert: 2.2
+  resistanceMpaTargetMax: 1.8
+  resistanceMpaAlert: 2.2
+  nRelativeTarget: 0.55-0.75
+  pRelativeTarget: 0.40-0.60
+  kRelativeTarget: 0.50-0.70
+  confidence: medium
+  notes: "N útil en crecimiento, pero exceso genera sombra y vigor."
+
+flowering:
+  soilMoistureAwTarget: 65-90
+  soilTempCOptimal: 12-24
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.5
+  ecDsMAlert: 2.0
+  resistanceMpaTargetMax: 1.6
+  resistanceMpaAlert: 2.0
+  nRelativeTarget: 0.30-0.50
+  pRelativeTarget: 0.55-0.75
+  kRelativeTarget: 0.55-0.75
+  confidence: medium_to_high_if_stage_confirmed
+  notes: "Floración crítica; B/Zn/Ca como contexto, no empujar N."
+
+fruit_set:
+  soilMoistureAwTarget: 65-90
+  soilTempCOptimal: 14-26
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.5
+  ecDsMAlert: 2.0
+  resistanceMpaTargetMax: 1.6
+  resistanceMpaAlert: 2.0
+  nRelativeTarget: 0.30-0.50
+  pRelativeTarget: 0.45-0.65
+  kRelativeTarget: 0.60-0.80
+  confidence: medium_to_high_if_stage_confirmed
+  notes: "Amarre de fruto; agua, EC y K pesan mucho."
+
+fruit_fill:
+  soilMoistureAwTarget: 65-90
+  soilTempCOptimal: 16-28
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.6
+  ecDsMAlert: 2.1
+  resistanceMpaTargetMax: 1.8
+  resistanceMpaAlert: 2.2
+  nRelativeTarget: 0.25-0.45
+  pRelativeTarget: 0.35-0.55
+  kRelativeTarget: 0.70-0.90
+  confidence: medium_to_high_if_stage_confirmed
+  notes: "K protagonista; N bajo-moderado; Ca/Mg contexto."
+
+harvest_maturity:
+  soilMoistureAwTarget: 60-85
+  soilTempCOptimal: 14-28
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.7
+  ecDsMAlert: 2.2
+  resistanceMpaTargetMax: 1.8
+  resistanceMpaAlert: 2.2
+  nRelativeTarget: 0.18-0.40
+  pRelativeTarget: 0.25-0.50
+  kRelativeTarget: 0.60-0.80
+  confidence: medium
+  notes: "Evitar N alto; calidad, color y firmeza."
+
+post_harvest:
+  soilMoistureAwTarget: 55-80
+  soilTempCOptimal: 10-24
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.7
+  ecDsMAlert: 2.2
+  resistanceMpaTargetMax: 1.8
+  resistanceMpaAlert: 2.2
+  nRelativeTarget: 0.40-0.65
+  pRelativeTarget: 0.35-0.55
+  kRelativeTarget: 0.45-0.70
+  confidence: medium
+  notes: "Reservas del siguiente ciclo; solo si hay hoja activa."
+  requireLeafActiveForNutritionBoost: true
+  minAirOrSoilTempForReserveUptakeApproxC: 7
+
+unknown:
+  soilMoistureAwTarget: 60-85
+  soilTempCOptimal: 12-26
+  phTarget: 6.0-6.8
+  ecDsMTargetMax: 1.7
+  ecDsMAlert: 2.2
+  resistanceMpaTargetMax: 1.8
+  resistanceMpaAlert: 2.2
+  nRelativeTarget: 0.40-0.65
+  pRelativeTarget: 0.40-0.65
+  kRelativeTarget: 0.40-0.70
+  confidence: low
+  notes: "Conservador; pedir etapa visible."
+
+======================================================================
+10. STAGE WEIGHTS PROPUESTOS PARA AGROSCORE
+======================================================================
+
+Escala: 0.00–1.00. Se propone suma aproximada de 1 por etapa.
+
+Variables:
+- moistureWeight
+- soilTempWeight
+- phWeight
+- ecWeight
+- resistanceWeight
+- npkWeight
+
+planting_transplant:
+  moistureWeight: 0.25
+  soilTempWeight: 0.15
+  phWeight: 0.15
+  ecWeight: 0.20
+  resistanceWeight: 0.15
+  npkWeight: 0.10
+
+root_establishment:
+  moistureWeight: 0.30
+  soilTempWeight: 0.12
+  phWeight: 0.12
+  ecWeight: 0.18
+  resistanceWeight: 0.18
+  npkWeight: 0.10
+
+juvenile_vegetative:
+  moistureWeight: 0.22
+  soilTempWeight: 0.12
+  phWeight: 0.12
+  ecWeight: 0.12
+  resistanceWeight: 0.15
+  npkWeight: 0.27
+
+dormancy:
+  moistureWeight: 0.20
+  soilTempWeight: 0.20
+  phWeight: 0.20
+  ecWeight: 0.20
+  resistanceWeight: 0.15
+  npkWeight: 0.05
+
+budbreak:
+  moistureWeight: 0.22
+  soilTempWeight: 0.18
+  phWeight: 0.12
+  ecWeight: 0.12
+  resistanceWeight: 0.11
+  npkWeight: 0.25
+
+vegetative_growth:
+  moistureWeight: 0.20
+  soilTempWeight: 0.12
+  phWeight: 0.10
+  ecWeight: 0.12
+  resistanceWeight: 0.11
+  npkWeight: 0.35
+
+flowering:
+  moistureWeight: 0.30
+  soilTempWeight: 0.20
+  phWeight: 0.10
+  ecWeight: 0.15
+  resistanceWeight: 0.10
+  npkWeight: 0.15
+
+fruit_set:
+  moistureWeight: 0.32
+  soilTempWeight: 0.15
+  phWeight: 0.08
+  ecWeight: 0.18
+  resistanceWeight: 0.10
+  npkWeight: 0.17
+
+fruit_fill:
+  moistureWeight: 0.26
+  soilTempWeight: 0.12
+  phWeight: 0.08
+  ecWeight: 0.14
+  resistanceWeight: 0.08
+  npkWeight: 0.32
+
+harvest_maturity:
+  moistureWeight: 0.20
+  soilTempWeight: 0.12
+  phWeight: 0.08
+  ecWeight: 0.12
+  resistanceWeight: 0.08
+  npkWeight: 0.40
+
+post_harvest:
+  moistureWeight: 0.24
+  soilTempWeight: 0.14
+  phWeight: 0.12
+  ecWeight: 0.14
+  resistanceWeight: 0.10
+  npkWeight: 0.26
+
+unknown:
+  moistureWeight: 0.25
+  soilTempWeight: 0.15
+  phWeight: 0.15
+  ecWeight: 0.15
+  resistanceWeight: 0.15
+  npkWeight: 0.15
+
+======================================================================
+11. REGLAS DE INTERPRETACIÓN PARA evaluateTelemetry(...)
+======================================================================
+
+11.1 Reglas maestras
+
+A) Si humedad está crítica, priorizar agua sobre NPK.
+Mensaje:
+“Primero estabiliza humedad; con raíz estresada la nutrición se vuelve menos confiable.”
+
+B) Si EC está en alerta, no sugerir fertilización agresiva.
+Mensaje:
+“La salinidad está elevada; aplicar más fertilizante puede aumentar el estrés radicular.”
+
+C) Si pH está fuera de rango, bajar confianza de P y micronutrientes.
+Mensaje pH alto:
+“Puede haber bloqueo de fósforo, hierro, zinc o boro aunque estén en el suelo.”
+Mensaje pH bajo:
+“Puede bajar actividad radicular y aparecer toxicidad o bloqueo.”
+
+D) Si resistance >2.0 MPa, bajar score de raíz/suelo.
+Mensaje:
+“La compactación puede limitar raíz fina y absorción de agua/nutrientes.”
+
+E) Si soilTemp <8 °C, bajar confianza de NPK.
+Mensaje:
+“Con suelo frío, el árbol puede absorber poco aunque haya nutrientes.”
+
+F) Si etapa = post_harvest y no hay hoja activa, no elevar N/K.
+Mensaje:
+“Sin hoja activa, la recuperación de reservas baja mucho; evita decisiones fuertes sin asesoría.”
+
+G) Si etapa = post_harvest, hoja activa, humedad adecuada y temperatura >7 °C, marcar oportunidad de reserva.
+Mensaje:
+“Después de cosecha el árbol todavía puede recargar reservas para el siguiente ciclo.”
+
+H) Si suelo es arenoso o EC alta, ser más conservador con N postcosecha.
+Mensaje:
+“En suelos ligeros o con sales, el nitrógeno tardío puede perderse o aumentar estrés.”
+
+11.2 Reglas por nutriente
+
+Nitrógeno:
+- Bajo en budbreak/vegetative_growth/juvenile: observación nutrimental.
+- Bajo en flowering puede reflejar reservas bajas del año anterior.
+- Alto en flowering: observación, no alerta fuerte si árbol sano, pero advertir que no conviene empujar solo N.
+- Alto en fruit_fill/harvest_maturity: alerta de exceso relativo; puede afectar color, madurez, calidad y vigor tardío.
+- Alto en post_harvest: no necesariamente malo, pero evaluar hoja activa, EC, suelo, clima y riesgo de lixiviación.
+- Alto en dormancy: no sobreinterpretar; pedir análisis/contexto.
+
+Fósforo:
+- Bajo en planting/root_establishment: observación alta por raíz.
+- Bajo en budbreak/flowering/división celular temprana: observación por energía y tejidos nuevos.
+- Alto: generalmente menos urgente que N/K, pero si pH/EC altos, advertir bloqueo o acumulación no disponible.
+- En pH alto, no asumir que aplicar más P resuelve.
+
+Potasio:
+- Bajo en fruit_set/fruit_fill/harvest_maturity: observación alta por calibre/calidad.
+- Bajo en post_harvest después de alta carga: warning de reservas.
+- Alto en fruit_fill: puede estar bien si Ca/Mg no son problema; si hay historial de bitter pit/mancha amarga, elevar warning de balance.
+- Alto con EC alta: advertir salinidad/fertilizante acumulado.
+
+11.3 Reglas de combinación
+
+N alto + K bajo en fruit_fill:
+- Riesgo: vigor vegetativo a costa de calidad de fruto.
+- Mensaje: “El balance está cargado hacia crecimiento, no hacia llenado/calidad.”
+
+K alto + historial bitter pit/mancha amarga:
+- Riesgo: desbalance Ca/K/Mg.
+- Mensaje: “El potasio ayuda al fruto, pero si se desbalancea con calcio/magnesio puede afectar calidad y almacenamiento.”
+
+pH alto + P bajo:
+- Riesgo: fósforo no disponible.
+- Mensaje: “El problema puede no ser falta de P, sino disponibilidad por pH.”
+
+pH alto + hoja amarilla con nervaduras verdes:
+- Riesgo: clorosis férrica.
+- Mensaje: “Puede haber bloqueo de hierro por pH alto; confirma con análisis o asesoría.”
+
+pH alto + hoja pequeña/entrenudos cortos:
+- Riesgo: zinc bajo/disponibilidad baja.
+- Mensaje: “La brotación irregular y hoja pequeña pueden relacionarse con zinc, especialmente en suelos calcáreos.”
+
+EC alta + déficit hídrico:
+- Riesgo: estrés osmótico fuerte.
+- Mensaje: “El suelo está seco y concentrado; primero estabiliza agua/sales.”
+
+Postcosecha + hoja activa + humedad adecuada + N/K bajo-moderado:
+- Oportunidad: recuperación de reservas.
+- Mensaje: “Postcosecha sigue siendo etapa activa; recuperar reservas ayuda al siguiente ciclo.”
+
+Postcosecha + suelo arenoso + lluvia/riego fuerte esperado:
+- Riesgo: lixiviación de N.
+- Mensaje: “En suelo ligero, el nitrógeno tardío puede perderse; conviene confirmar estrategia local.”
+
+Vegetativo tardío + N alto + historial de helada:
+- Riesgo: daño de invierno.
+- Mensaje: “Mucho vigor tarde puede retrasar endurecimiento de madera y aumentar riesgo de daño por frío.”
+
+======================================================================
+12. GUÍA CORTA POR ETAPA PARA UX
+======================================================================
+
+planting_transplant:
+“Tu manzano está recién colocado. La prioridad no es empujar fertilizante: es raíz, humedad estable, baja salinidad y suelo sin compactación. El fósforo pesa más que el nitrógeno en esta fase.”
+
+root_establishment:
+“El árbol está formando raíz fina. Mantén humedad estable sin saturar. Fósforo y condición de suelo pesan más que nitrógeno alto.”
+
+juvenile_vegetative:
+“El árbol joven necesita crecer y formar estructura. El nitrógeno importa, pero si hay exceso puede producir brotes blandos y atrasar la entrada a producción.”
+
+dormancy:
+“El árbol está en reposo. La demanda NPK es baja. Es mejor revisar pH, salinidad, compactación y preparar el arranque de brotación.”
+
+budbreak:
+“El árbol está arrancando. Parte del arranque viene de reservas del año anterior. N moderado, P suficiente y humedad estable ayudan, pero con suelo frío la absorción puede ser lenta.”
+
+vegetative_growth:
+“Etapa de hoja y brote. Nitrógeno útil, pero controlado. Demasiado N puede generar vigor excesivo, más sombra y menos calidad después.”
+
+flowering:
+“Floración es crítica. No conviene empujar solo nitrógeno. Prioridad: agua estable, temperatura adecuada, P/K suficientes y revisar boro/zinc/calcio si hay historial de mal cuajado.”
+
+fruit_set:
+“En cuajado, el árbol decide qué fruta sostiene. Evita déficit hídrico, salinidad y calor. K empieza a pesar más, pero el balance con Ca/Mg importa.”
+
+fruit_fill:
+“En llenado, K gana prioridad para calibre, azúcar y calidad. El nitrógeno debe mantenerse moderado-bajo; exceso puede afectar color, firmeza y madurez.”
+
+harvest_maturity:
+“Cerca de cosecha, no cierres el cultivo ni empujes N de más. Prioridad: calidad, madurez, color, firmeza y evitar estrés.”
+
+post_harvest:
+“Después de cosecha el árbol sigue trabajando. Si todavía hay hoja activa, humedad adecuada y temperatura suficiente, esta etapa ayuda a recuperar reservas para el siguiente ciclo.”
+
+unknown:
+“Con etapa desconocida, BIO-G usa un perfil conservador. Para mayor precisión, indica si el árbol está brotando, floreando, con fruto verde, madurando o después de cosecha.”
+
+======================================================================
+13. DEFICIENCIAS Y EXCESOS — MENSAJES SEGUROS
+======================================================================
+
+N bajo posible:
+- hojas pálidas;
+- crecimiento débil;
+- brotes cortos;
+- fruto pequeño;
+- caída prematura de hoja.
+
+Mensaje seguro:
+“Puede parecer falta de nitrógeno, pero también puede ser raíz fría, sequía, compactación, pH alto/bajo o carga excesiva. Confirma con análisis o revisa suelo/agua.”
+
+N alto posible:
+- brote excesivo;
+- copa muy vegetativa;
+- retraso de madurez;
+- menor color rojo;
+- más sombra;
+- mayor susceptibilidad a enfermedades;
+- daño por frío si crecimiento sigue tarde.
+
+Mensaje seguro:
+“El nitrógeno está alto para esta etapa. En manzano, mucho N tarde puede bajar calidad y retrasar madurez.”
+
+P bajo posible:
+- raíz débil;
+- arranque lento;
+- brotación floja;
+- menor energía fisiológica;
+- afectación en tejidos nuevos.
+
+Mensaje seguro:
+“Fósforo bajo pesa más en raíz, brotación y floración. Si el pH está alto, primero revisa disponibilidad.”
+
+P alto posible:
+- menos común como alerta directa;
+- puede asociarse a desbalances con micronutrientes.
+
+Mensaje seguro:
+“No conviene corregir P sin análisis; en muchos suelos se inmoviliza y no baja rápido al perfil de raíz.”
+
+K bajo posible:
+- menor calibre;
+- peor llenado;
+- menor azúcar/calidad;
+- más estrés en años de carga alta.
+
+Mensaje seguro:
+“El potasio pesa más en cuajado, llenado y maduración. Revisa también agua y carga de fruta.”
+
+K alto posible:
+- puede competir con Ca/Mg;
+- cuidado con bitter pit/mancha amarga y almacenamiento;
+- puede elevar EC si hay acumulación salina.
+
+Mensaje seguro:
+“El K ayuda al fruto, pero demasiado o mal balanceado puede afectar calcio/magnesio y calidad.”
+
+Ca bajo contextual:
+- bitter pit/mancha amarga;
+- cork spot;
+- menor firmeza;
+- peor vida de anaquel.
+
+Mensaje seguro:
+“BIO-G no mide calcio en v1. Si hay manchas amargas o problemas de almacenamiento, conviene revisar calcio, carga, riego y balance K/Mg.”
+
+B bajo contextual:
+- mala floración;
+- mala polinización/cuaje;
+- brotes débiles;
+- deformaciones.
+
+Mensaje seguro:
+“El boro es importante en floración, pero el exceso puede ser tóxico. Confirmar antes de aplicar.”
+
+Zn bajo contextual:
+- hoja chica;
+- entrenudos cortos;
+- roseta;
+- brotación irregular.
+
+Mensaje seguro:
+“En pH alto puede haber bloqueo de zinc. Revisa análisis o síntomas antes de corregir.”
+
+Fe bajo contextual:
+- clorosis en hojas jóvenes;
+- nervaduras verdes con lámina amarilla.
+
+Mensaje seguro:
+“Puede haber hierro en el suelo, pero no estar disponible por pH alto/caliza.”
+
+Mg bajo contextual:
+- clorosis internerval en hojas viejas;
+- problemas de hoja/fotosíntesis;
+- desbalance con K/Ca.
+
+Mensaje seguro:
+“El magnesio debe revisarse junto con potasio y calcio, no aislado.”
+
+======================================================================
+14. REFERENCIAS DE DOSIS SOLO PARA MODO AVANZADO
+======================================================================
+
+Esta sección NO debe alimentar una recomendación automática v1. Sirve para:
+- documentación técnica;
+- futura calibración;
+- modo agrónomo;
+- validación regional.
+
+14.1 NMSU — referencia por edad y producción
+
+Tabla NMSU orientativa para N en manzano:
+- Año 1: ninguno, salvo manejo muy específico cuando ya hay hojas y crecimiento vigoroso.
+- Año 2: 1/4 lb N/árbol si el crecimiento es deficiente.
+- Año 3–5: 1/4–1/3 lb N/árbol.
+- Año 6–7: 1/2 lb N/árbol.
+- Más de 7 años: 150–200 lb N/acre en huertos maduros de alta producción.
+
+Notas:
+- Esta tabla es de referencia regional y no debe aplicarse universalmente.
+- NMSU usa crecimiento terminal como indicador:
+  - jóvenes: 60–90 cm/año;
+  - maduros productivos: 6–10 pulgadas/año.
+- NMSU sugiere dividir N: parte postcosecha y parte después de floración, con excepción de suelos arenosos por lixiviación.
+- N aplicado tarde tiende a contribuir más al siguiente ciclo que al ciclo actual.
+- Absorción postcosecha requiere hoja activa y temperaturas superiores aprox. a 7 °C.
+
+14.2 IRTA/Vida Rural — referencia de fertirrigación moderada
+
+Ensayo en Golden Smoothee/M9 Pajam, plantación de alta densidad en Lleida:
+- Tratamientos N: 0, 40, 80, 200 kg N/ha.
+- P y K constantes: 22.5 kg P2O5/ha y 98 kg K2O/ha.
+- Mejores resultados productivos/calidad: intervalo 40–80 kg N/ha.
+
+Regla BIO-G:
+- Usar como argumento contra el “más N siempre es mejor”.
+- No usar 40–80 como receta universal; depende de suelo, portainjerto, clima, riego, carga y análisis.
+
+14.3 UACH/Chihuahua — referencia regional México
+
+Estudio en Golden Delicious/MM111, Namiquipa, Chihuahua:
+- Producción media estimada: 52 t/ha.
+- Dosis experimental asociada: 73N–49P–20K–138Ca–18Mg kg/ha.
+- Se evaluaron Fe, Mn, Zn, Cu y Ni.
+- Para ubicar micronutrientes en rango suficiente, el estudio reporta que N, K y Mg tendieron a requerir incremento; P y Ca tendieron a requerir disminución frente a la dosis base de producción.
+
+Regla BIO-G:
+- Es una referencia valiosa por ser Chihuahua/Golden/MM111.
+- No convertir en receta global.
+- Sirve para justificar que Ca/Mg/micronutrientes deben aparecer como contexto aunque BIO-G v1 mida NPK.
+
+14.4 Guía técnica Galicia/España — extracciones orientativas
+
+Referencia de extracciones por cosecha:
+- 60 UF N
+- 80 UF P
+- 125 UF K
+
+Regla BIO-G:
+- Confirma el peso fuerte de K en el cultivo.
+- No usar como receta si no hay análisis.
+
+14.5 Postcosecha — referencia práctica
+
+Guía de postcosecha entregada por el usuario:
+- En plantaciones de alta densidad, postcosecha puede ser crítica para reponer reservas.
+- Momento: entre eliminación de frutos/cosecha y caída de hojas.
+- N y K son importantes en este periodo.
+- Hasta 30% del total anual de N y K puede ubicarse en postcosecha en algunos programas.
+- Mg, Zn y B pueden considerarse, especialmente vía foliar y según deficiencia/análisis.
+
+Regla BIO-G:
+- post_harvest debe tener N/K priority real, no baja simbólica.
+- Condicionar a hoja activa, humedad, EC, temperatura, suelo y riesgo de lixiviación.
+
+14.6 Guías comerciales — no adoptar marcas
+
+Los programas comerciales revisados muestran patrón de etapa:
+- fondo/preplantación con NPK equilibrado;
+- prefloración con más N/P moderado;
+- cuajado con fórmulas balanceadas N/K;
+- engorde/llenado con K alto;
+- calcio desde formación de fruto hasta cosecha;
+- hierro en carencias.
+
+Regla BIO-G:
+- Se adopta el patrón fisiológico, no las marcas ni dosis comerciales.
+- No incluir nombres de productos en código.
+
+======================================================================
+15. NUTRITION MEMORY — MEMORIA NUTRICIONAL DEL ÁRBOL
+======================================================================
+
+En perennes, BIO-G debe recordar estrés y nutrición de una temporada a otra.
+
+15.1 Eventos que deben guardarse
+
+- postHarvestReserveRisk
+- fruitSetWaterStress
+- fruitFillKStress
+- lateNitrogenExcessRisk
+- highEcDuringNutritionWindow
+- phAvailabilityRisk
+- compactionRootRisk
+- suspectedCalciumQualityRisk
+- suspectedBoronFloweringRisk
+- suspectedZincBudbreakRisk
+- defoliationBeforeReserveRecharge
+- highCropLoadWithoutPostHarvestRecovery
+
+15.2 Cómo impacta el siguiente ciclo
+
+Si postHarvestReserveRisk = high:
+- budbreak confidence baja.
+- flowering nutrition confidence baja.
+- mensaje en brotación:
+  “El ciclo anterior pudo dejar reservas bajas; revisa vigor, brotación y análisis antes de empujar fertilización fuerte.”
+
+Si lateNitrogenExcessRisk = high:
+- harvest_maturity del ciclo actual: penalizar calidad.
+- siguiente dormancy/budbreak: alerta de madera/vigor.
+
+Si fruitFillKStress = high:
+- rendimiento/calidad histórico: marcar posible calibre/calidad baja.
+- siguiente ciclo: no extrapolar rendimiento sin revisión.
+
+Si highEcDuringNutritionWindow = high:
+- bajar confianza de NPK.
+- recomendar revisar sales/agua.
+
+15.3 Pseudocampo futuro
+
+AppleTreeNutritionMemory:
+  lastCyclePostHarvestReserveRisk: low | medium | high | unknown
+  lastCycleLateNitrogenExcessRisk: low | medium | high | unknown
+  lastCycleFruitFillKStress: low | medium | high | unknown
+  lastCyclePhAvailabilityRisk: low | medium | high | unknown
+  lastCycleEcNutritionStress: low | medium | high | unknown
+  lastCycleCompactionRootRisk: low | medium | high | unknown
+  lastCycleCalciumQualityRisk: low | medium | high | unknown
+
+======================================================================
+16. MODIFICADORES POR PERFIL AP
+======================================================================
+
+AP-SKIP / Manzano general:
+- Usar targets universales amplios.
+- Confianza media si etapa visible; baja si solo se sabe “manzano”.
+- Mensajes conservadores; no asumir variedad ni portainjerto.
+
+AP-01 Golden:
+- Buena base para Chihuahua/México productivo.
+- Cuidar balance N/K/Ca/Mg en calidad y postcosecha.
+- UACH/Chihuahua Golden/MM111 sirve como referencia regional, no receta.
+- N alto tarde puede afectar madurez/calidad.
+
+AP-02 Red:
+- Sensible a manejo de color.
+- Penalizar más N alto en fruit_fill/harvest_maturity.
+- K útil, pero no a costa de Ca/Mg.
+
+AP-03 Criolla/Rayada:
+- Usar rangos amplios y confianza moderada.
+- Mayor tolerancia de variabilidad; no sobre-alertar por pequeñas desviaciones.
+- Puede haber manejo más extensivo; peso de suelo/materia orgánica mayor.
+
+AP-04 Gala:
+- K importante en llenado, pero balance Ca crítico por calidad.
+- Penalizar exceso de N si hay problema de color/sombra.
+- Marcar Ca/B/Zn contextuales si hay mal cuajado o problemas de almacenamiento.
+
+AP-05 Bajo frío:
+- Mayor sensibilidad a calor y estrés hídrico temprano.
+- En zonas cálidas, subir peso de humedad/EC durante flowering, fruit_set y fruit_fill.
+- Evitar fertilización si EC alta y evaporación fuerte.
+
+======================================================================
+17. PSEUDOCÓDIGO DE MOTOR
+======================================================================
+
+function resolveTargets(profileId, perennialStateId, phenologyStageId, nutritionMemory):
+  base = appleUniversalStageTargets[phenologyStageId ?? unknown]
+  modifier = appleProfileModifiers[profileId ?? ap_skip]
+  statePolicy = treeStatePolicies[perennialStateId ?? unknown]
+
+  targets = applyModifier(base, modifier)
+  targets = applyStatePolicy(targets, statePolicy)
+
+  if perennialStateId == newly_planted:
+    force stage family toward planting/root_establishment unless user explicitly selected visible stage
+    lower N target max
+    increase EC/resistance/moisture weights
+
+  if perennialStateId == juvenile_non_productive:
+    disable fruit-specific alerts unless stage explicitly indicates flowering/fruit
+    use juvenile_vegetative or unknown safe targets
+
+  if phenologyStageId == post_harvest:
+    if leafActive == false:
+      lower nutritionBoostConfidence
+      lower N/K actionability
+    if soilTexture == sandy or ecHigh == true:
+      lower nitrogenPostHarvestActionability
+
+  if nutritionMemory.lastCyclePostHarvestReserveRisk == high and phenologyStageId in [budbreak, flowering]:
+    lowerConfidence()
+    addContextWarning("reservas posiblemente bajas")
+
+  return targets
+
+function evaluateTelemetry(reading, targets, stage, profile, memory):
+  score = 100
+  alerts = []
+  confidence = baseConfidence(stage, reading.sensorCompleteness)
+
+  if reading.soilMoisture below critical:
+    score -= highPenaltyByStage(stage)
+    alerts.add(waterFirstMessage(stage))
+    lowerNpkConfidence()
+
+  if reading.soilMoisture above saturation:
+    score -= saturationPenaltyByStage(stage)
+    alerts.add(oxygenRootMessage(stage))
+    lowerNpkConfidence()
+
+  if reading.ec above alert:
+    score -= ecPenaltyByStage(stage)
+    alerts.add(salinityMessage(stage))
+    blockAggressiveFertilizationHints()
+
+  if reading.ph outside acceptable:
+    score -= phPenalty
+    lowerNpkConfidence()
+    alerts.add(phAvailabilityMessage(reading.ph))
+
+  if reading.resistance above alert:
+    score -= resistancePenaltyByState(perennialStateId)
+    alerts.add(compactionMessage())
+
+  if reading.soilTemp < 8:
+    lowerNpkConfidence()
+    alerts.add(coldSoilAbsorptionMessage())
+
+  evaluateNRelativeByStage(reading.n, stage, profile)
+  evaluatePRelativeByStage(reading.p, stage, profile)
+  evaluateKRelativeByStage(reading.k, stage, profile)
+  evaluateNPKBalanceRules(reading, stage, profile, memory)
+  evaluatePostHarvestReserveRules(reading, stage, memory)
+
+  return AgroScore(score, alerts, confidence)
+
+function evaluatePostHarvestReserveRules(reading, stage, memory):
+  if stage != post_harvest:
+    return
+
+  if leafActive == false:
+    addInfo("Sin hoja activa, la recuperación de reservas baja.")
+    memory.lastCyclePostHarvestReserveRisk = medium_or_high
+    return
+
+  if reading.soilMoisture in target and reading.ec below alert and reading.soilTemp >= 7:
+    if reading.n within postHarvestTarget and reading.k within postHarvestTarget:
+      memory.lastCyclePostHarvestReserveRisk = low
+      addPositiveHint("Condiciones favorables para recuperación postcosecha.")
+    else:
+      memory.lastCyclePostHarvestReserveRisk = medium
+      addHint("Revisar N/K postcosecha con análisis si hubo alta carga.")
+  else:
+    memory.lastCyclePostHarvestReserveRisk = high
+    addWarning("Postcosecha con estrés puede afectar el siguiente ciclo.")
+
+======================================================================
+18. NO HACER EN CÓDIGO
+======================================================================
+
+No usar sowingDate como eje del manzano.
+No cerrar cultivo en cosecha.
+No tratar post_harvest como “sin importancia”.
+No recomendar kg/ha automáticos sin análisis.
+No decir “aplica nitrógeno” si EC alta, suelo seco, suelo saturado o pH fuera de rango.
+No recomendar N postcosecha si ya no hay hoja activa.
+No asumir que N alto siempre es bueno.
+No asumir que K alto siempre es bueno.
+No convertir Ca/B/Zn/Fe/Mg en sensores obligatorios v1.
+No crear etapas nuevas fuera del estándar.
+No bloquear al usuario por no saber variedad.
+No borrar memoria al migrar de AP-SKIP a AP-01/AP-02/etc.
+No copiar marcas comerciales ni productos al código.
+No usar datos de una región como receta universal.
+
+======================================================================
+19. FUENTES CONSULTADAS Y CRITERIO DE USO
+======================================================================
+
+A) Fuentes entregadas por el usuario / integradas en v1.1
+
+1) New Mexico State University — Esteban A. Herrera, “Programas de fertilización para huertos de manzanos”, Guía H-319.
+Uso BIO-G:
+- N, K, P, Fe y Zn como nutrientes de alta relevancia.
+- pH/equilibrio nutrimental determinan disponibilidad.
+- N: deficiencia y exceso, timing postcosecha + postfloración, reservas y crecimiento terminal.
+- K: más necesario en suelos arenosos; preferir fuentes sin cloro cuando haya riesgo.
+- P: baja movilidad en suelos calcáreos; MAP puede ayudar en casos específicos.
+- Fe/Zn: bloqueo en pH >7.5; síntomas de clorosis/roseta.
+- Muestreo de suelo y foliar.
+Nivel de uso: fuente técnica principal para timing, reservas y diagnóstico.
+
+2) Documento postcosecha entregado por el usuario — Joshua Golovaty, “Fertilización postcosecha y de otoño en el manzano”.
+Uso BIO-G:
+- Postcosecha como etapa activa.
+- Hasta 30% del total anual de N y K puede ubicarse después de cosecha en algunos programas.
+- N/K usados en floración vienen de reservas del año anterior.
+- B, Zn y Mg como contexto postcosecha.
+Nivel de uso: fuerte para memoria y stageTargets post_harvest.
+
+3) ICL — “Guía nutricional para manzano”.
+Uso BIO-G:
+- pH 6.0–6.5, drenaje y aireación.
+- K como nutriente fuerte, con absorción más tardía que N.
+- N temprano y exceso de N tardío como riesgo de calidad.
+- P en tejidos nuevos, raíz, flores y división celular.
+- Mg/Ca como contexto de floración, hoja, almacenamiento y calidad.
+Nivel de uso: apoyo técnico/comercial; NO se adoptan marcas.
+
+4) Manzano Convencional — guía comercial de fertilización.
+Uso BIO-G:
+- Patrón fisiológico por etapa: prefloración, cuajado, engorde/llenado, calcio de formación de fruto a cosecha, hierro en carencias.
+- NO se usan marcas ni dosis comerciales en código.
+Nivel de uso: patrón de etapa, no receta.
+
+5) Guía técnica para el cultivo de manzano — Nuevos Horizontes / Xunta de Galicia / LaboraTe.
+Uso BIO-G:
+- Suelos profundos >60 cm, francos, fértiles, buen drenaje.
+- Análisis de fertilidad de suelo/subsuelo antes de plantar.
+- Abono fosfopotásico y enmiendas según análisis.
+- Cubierta vegetal mejora materia orgánica, infiltración, compactación y erosión, pero debe manejarse para evitar competencia/helada.
+- Extracciones orientativas 60 UF N, 80 UF P, 125 UF K.
+Nivel de uso: suelo, establecimiento y contexto de K.
+
+6) Vida Rural / IRTA — Josep Rufat, “Estrategias de fertilización racional en el cultivo del manzano”.
+Uso BIO-G:
+- Fertirrigación mejora eficiencia; foliar es complemento, no sustituto.
+- Necesidad de análisis de agua, suelo y hoja.
+- Balance plurianual, materia orgánica y reservas.
+- En ensayo Golden Smoothee/M9 Pajam, 40–80 kg N/ha tuvo mejores resultados que 0 o 200 kg N/ha.
+- Foliar justificado en nutrientes inmovilizados, respuesta rápida o actividad radicular limitada.
+- Ca foliar para calidad/mancha amarga por baja movilidad.
+Nivel de uso: fuente fuerte para reglas anti-exceso de N y foliar complementario.
+
+7) UACH / CIAD / Revista Científica Biológico Agropecuaria Tuxpan — Torres Gutiérrez et al. 2014, “Fertilización con macronutrientes en manzano: producción y contenido foliar de micronutrientes”.
+Uso BIO-G:
+- Referencia regional México/Chihuahua.
+- Golden Delicious/MM111 en Namiquipa.
+- Producción media estimada 52 t/ha con 73N–49P–20K–138Ca–18Mg.
+- N, P, K, Ca, Mg se relacionan con micronutrientes Fe, Mn, Zn, Cu, Ni.
+- No usar como receta universal.
+Nivel de uso: validación regional y contexto de Ca/Mg/micronutrientes.
+
+B) Fuentes universitarias / extensión ya consideradas en v1.0
+
+8) Cornell Cooperative Extension — Nutrient Management of Apple Orchards.
+Uso BIO-G:
+- patrón estacional de N, importancia de análisis de suelo/foliar, pH recomendado, enfoque demanda-suministro.
+
+9) Cornell / NYSHS — When and How Much Nitrogen Should Be Applied in Apple Orchards.
+Uso BIO-G:
+- N moderado, fertirrigación eficiente y ajuste por análisis/vigor.
+
+10) Wisconsin Extension — Fertilization Guidelines for Mature Apple Trees.
+Uso BIO-G:
+- rangos foliares N, P, K, Ca; N antes de petal fall; K en desarrollo de fruto si hay deficiencia; Ca foliar.
+
+11) Washington State University Tree Fruit — Tree Fruit Soil Fertility and Plant Nutrition.
+Uso BIO-G:
+- drenaje, lixiviación de N/B, fertilidad regional y reservas.
+
+12) Washington State University Tree Fruit — Soil Health in Orchards.
+Uso BIO-G:
+- pH, materia orgánica, mulch, agua y nutrientes.
+
+13) University of Maine Cooperative Extension — Fertilization, Growing Fruit Trees.
+Uso BIO-G:
+- cuidado con exceso de N, crecimiento exuberante y endurecimiento de madera.
+
+14) Montana State University — Orchard Nutrition.
+Uso BIO-G:
+- Ca, bitter pit/cork spot, calidad y almacenamiento.
+
+C) Foros / experiencia de usuario
+
+Foros y experiencia real se usan solo para entender confusiones:
+- “poner más nitrógeno” como solución universal;
+- “composta/estiércol sin medir”;
+- “árbol viejo improductivo”;
+- “mulch/gallinas/cubiertas”;
+- “hojas amarillas = falta de fertilizante” aunque puede ser pH/raíz/sales.
+
+No se usan foros como base agronómica principal.
+
+======================================================================
+20. RESUMEN CERRADO PARA CODEX/CLAUDE
+======================================================================
+
+Implementar el manzano con NPK relativo por etapa, no con dosis cerradas.
+
+Prioridades clave:
+- Plantación/establecimiento: P + raíz + humedad + baja EC.
+- Juvenil/vegetativo: N moderado-alto controlado.
+- Brotación: arranque desde reservas + N/P/K balanceados si raíz activa.
+- Floración: agua/temperatura/pH/EC pesan más que N; P/K suficientes; B/Zn/Ca contexto.
+- Cuajado: agua estable, K sube, evitar salinidad/calor.
+- Llenado: K alto relativo, N moderado-bajo, Ca/Mg contexto.
+- Cosecha: no empujar N; calidad/madurez/color/firmeza.
+- Postcosecha: reservas del siguiente ciclo; N/K relevantes solo con hoja activa, humedad, temperatura y baja EC.
+- Unknown/SKIP: rangos conservadores y pedir etapa visible.
+
+Reglas de oro:
+1) Agua/suelo primero.
+2) N no es más fruta.
+3) K no es solo “bueno”: revisar Ca/Mg/EC.
+4) P depende de disponibilidad/pH.
+5) Postcosecha es etapa viva.
+6) No dosis automáticas sin análisis.
+7) No marcas comerciales en código.
+
+Entregable técnico esperado:
+- AppleTreeStageTargets
+- AppleTreeStageWeights
+- AppleNpkPriority
+- AppleTreeNutritionMemory opcional/futuro
+- apple_tree_universal_profile.dart
+- apple_tree_crop_definition.dart
+
+FIN DEL DOCUMENTO

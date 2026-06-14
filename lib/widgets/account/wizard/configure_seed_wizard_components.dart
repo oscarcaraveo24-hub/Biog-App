@@ -17,6 +17,37 @@ class ConfigureSeedWizardAssets {
   static const String categoryGeneric =
       'assets/icons/wizard/ic_planta_generica.png';
 
+  static const String appleTreeYoungNotFruiting =
+      'assets/icons/wizard/ic_apple_tree_young_not_fruiting.png';
+  static const String appleTreeUnknownState =
+      'assets/icons/wizard/ic_apple_tree_unknown_state.png';
+  static const String appleTreeGrowingOnly =
+      'assets/icons/wizard/ic_apple_tree_growing_only.png';
+  static const String appleTreeHasFlower =
+      'assets/icons/wizard/ic_apple_tree_has_flower.png';
+  static const String appleTreeTinyFruit =
+      'assets/icons/wizard/ic_apple_tree_tiny_fruit.png';
+  static const String appleTreeFruitGrowing =
+      'assets/icons/wizard/ic_apple_tree_fruit_growing.png';
+  static const String exactDateCalendarClock =
+      'assets/icons/wizard/ic_exact_date_calendar_clock.png';
+  static const String appleTreeDormantLeafless =
+      'assets/icons/wizard/ic_apple_tree_dormant_leafless.png';
+  static const String appleTreeBudding =
+      'assets/icons/wizard/ic_apple_tree_budding.png';
+  static const String appleTreeFullFoliage =
+      'assets/icons/wizard/ic_apple_tree_full_foliage.png';
+  static const String appleTreeFlowering =
+      'assets/icons/wizard/ic_apple_tree_flowering.png';
+  static const String appleTreeFruitSetFlowerDrop =
+      'assets/icons/wizard/ic_apple_tree_fruit_set_flower_drop.png';
+  static const String appleTreeGreenFruitGrowing =
+      'assets/icons/wizard/ic_apple_tree_green_fruit_growing.png';
+  static const String appleTreeReadyHarvest =
+      'assets/icons/wizard/ic_apple_tree_ready_harvest.png';
+  static const String appleTreeAfterHarvest =
+      'assets/icons/wizard/ic_apple_tree_after_harvest.png';
+
   static const String cropMaize = 'assets/icons/wizard/ic_maiz.png';
   static const String cropWheat = 'assets/icons/wizard/ic_trigo.png';
   static const String cropBarley = 'assets/icons/wizard/ic_cebada.png';

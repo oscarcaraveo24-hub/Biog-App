@@ -279,6 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                             onExportTap: _handleExportTap,
                             onCropJourneyTap: _handleYieldProjectionTap,
                             onClimateTap: _handlePlantHealthTap,
+                            cropJourneyTitle: viewData.cropJourneyTitle,
                           ),
                         ),
                         SizedBox(

@@ -11,7 +11,9 @@ import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
+import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 
 class DashboardMetricUiData {
@@ -44,6 +46,30 @@ class DashboardInsightUiData {
   });
 }
 
+class DashboardTreeStatusUiData {
+  final String title;
+  final String stateLabel;
+  final String profileLabel;
+  final String stageLabel;
+  final String anchorText;
+  final String priorityText;
+  final String helperText;
+  final String? criticalLabel;
+  final String? precisionLabel;
+
+  const DashboardTreeStatusUiData({
+    required this.title,
+    required this.stateLabel,
+    required this.profileLabel,
+    required this.stageLabel,
+    required this.anchorText,
+    required this.priorityText,
+    required this.helperText,
+    this.criticalLabel,
+    this.precisionLabel,
+  });
+}
+
 class DashboardViewData {
   final String fieldLabel;
   final String cropLabel;
@@ -60,6 +86,8 @@ class DashboardViewData {
   final DashboardMetricUiData ph;
   final DashboardMetricUiData resistance;
   final DashboardInsightUiData irrigation;
+  final DashboardTreeStatusUiData? treeStatus;
+  final String cropJourneyTitle;
   final List<AgronomicEvent> events;
 
   const DashboardViewData({
@@ -75,6 +103,8 @@ class DashboardViewData {
     required this.ph,
     required this.resistance,
     required this.irrigation,
+    this.treeStatus,
+    this.cropJourneyTitle = 'Rendimiento\nestimado',
     this.events = const <AgronomicEvent>[],
   });
 }
@@ -106,9 +136,11 @@ class DashboardScreenPresenter {
     final bool isPlanted = runtime.isPlanted;
     final bool isPlanned = runtime.isPlanned;
     final bool isGenericMode = runtime.isGenericMode;
+    final bool isTree = isTreeContext(runtime.cropContext);
+    final treeContext = runtime.cropContext;
 
     final AgroEvalResult? effectiveEval = isPlanted
-        ? (runtime.eval ?? store.lastAgroEval)
+        ? (isTree ? runtime.eval : (runtime.eval ?? store.lastAgroEval))
         : null;
     final bool hasCropAwareEval = effectiveEval != null;
 
@@ -136,6 +168,10 @@ class DashboardScreenPresenter {
     final AgronomicEvent? primaryDashboardEvent = _pickPrimaryDashboardEvent(
       dashboardEvents,
     );
+
+    final DashboardTreeStatusUiData? treeStatus = isTree && treeContext != null
+        ? _buildTreeStatus(treeContext)
+        : null;
 
     // No telemetry → no soil-health reading. Returning null (instead of 0.0)
     // keeps the ring from rendering a misleading "0%" that reads like a real
@@ -232,7 +268,7 @@ class DashboardScreenPresenter {
     String npkTitle = 'Nutrición (NPK)';
     String npkSubtitle = 'Sin evaluación actual';
 
-    if (isPlanted && telemetry != null) {
+    if (isPlanted && telemetry != null && !isTree) {
       final scaleId = runtime.cropContext?.cultivationScaleId;
       final cropContext = runtime.cropContext;
 
@@ -297,11 +333,39 @@ class DashboardScreenPresenter {
 
     // ==========================================
 
+    if (isTree && treeContext != null) {
+      // Fuente \u00daNICA = motor del \u00e1rbol (apple_tree_crop_definition). Mostramos
+      // el estado real N\u00b7P\u00b7K (igual que granos) leyendo el mismo `effectiveEval`
+      // que alimenta el ring de salud, para que dashboard y detalle NUNCA se
+      // contradigan. No usamos NutrientRecommendationEngine (motor de granos)
+      // porque no tiene perfil de \u00e1rbol y produce verdictos falsos.
+      if (effectiveEval != null) {
+        final String nL =
+            effectiveEval.metrics[AgroMetricKey.n]?.labelEs ?? '\u2014';
+        final String pL =
+            effectiveEval.metrics[AgroMetricKey.p]?.labelEs ?? '\u2014';
+        final String kL =
+            effectiveEval.metrics[AgroMetricKey.k]?.labelEs ?? '\u2014';
+        npkTitle = 'N: $nL \u00b7 P: $pL \u00b7 K: $kL';
+        npkSubtitle = _treeNpkStatusSubtitle(effectiveEval, treeContext);
+      } else {
+        npkTitle = 'Niveles NPK del \u00e1rbol';
+        npkSubtitle = _treeNpkSubtitle(treeContext);
+      }
+    }
+
     late final String irrigationTitle;
     late final String irrigationSubtitle;
     late final String irrigationTag;
 
-    if (isPlanted) {
+    if (isTree && treeContext != null) {
+      irrigationTitle = _treeIrrigationTitle(treeContext, effectiveEval);
+      irrigationSubtitle = treeStagePriorityText(treeContext.phenologyStageId);
+      irrigationTag =
+          treeCriticalWindowLabel(treeContext.phenologyStageId) != null
+          ? 'Cr\u00edtica'
+          : '\u00c1rbol';
+    } else if (isPlanted) {
       irrigationTitle = hasCropAwareEval
           ? _irrigationTitleFromEval(effectiveEval!)
           : ((telemetry != null && targets != null)
@@ -344,10 +408,14 @@ class DashboardScreenPresenter {
 
     return DashboardViewData(
       fieldLabel: _buildFieldLabel(runtime.device),
-      cropLabel: runtime.cropLabel,
+      cropLabel: isTree && treeContext != null
+          ? treeCropDisplayTitle(treeContext)
+          : runtime.cropLabel,
       cropIconAsset: runtime.cropIconAsset,
       soilHealth: soilHealth,
-      soilHealthLabel: telemetry == null
+      soilHealthLabel: isTree
+          ? 'Monitoreo continuo del \u00e1rbol'
+          : telemetry == null
           ? 'Sin datos del sensor'
           : isPlanted
           ? 'Índice de salud del suelo'
@@ -387,8 +455,107 @@ class DashboardScreenPresenter {
         subtitle: irrigationSubtitle,
         tag: irrigationTag,
       ),
+      treeStatus: treeStatus,
+      cropJourneyTitle: isTree
+          ? 'Rendimiento aproximado\ndel \u00e1rbol'
+          : 'Rendimiento\nestimado',
       events: dashboardEvents,
     );
+  }
+
+  DashboardTreeStatusUiData _buildTreeStatus(DeviceCropContext context) {
+    final String stateId = normalizeTreeStateId(context.perennialStateId);
+    final String stageId = normalizeTreeStageId(context.phenologyStageId);
+    final String profileLabel = treeProfileDisplayName(context.profileId);
+    final bool hasGeneralProfile = profileLabel == 'Perfil general';
+    final bool hasUnknownState = stateId == TreeStateIds.unknown;
+    final bool hasUnknownStage = stageId == TreeStageIds.unknown;
+
+    return DashboardTreeStatusUiData(
+      title: treeCropDisplayTitle(context),
+      stateLabel: 'Estado: ${treeStateDisplayName(stateId)}',
+      profileLabel: 'Perfil: $profileLabel',
+      stageLabel: 'Etapa: ${treeStageDisplayName(stageId)}',
+      anchorText: treeAnchorDisplayText(
+        context.perennialAnchorDate,
+        context.perennialAnchorTypeId,
+      ),
+      priorityText: treeStagePriorityText(stageId),
+      criticalLabel: treeCriticalWindowLabel(stageId),
+      precisionLabel: hasGeneralProfile || hasUnknownState || hasUnknownStage
+          ? 'Precisi\u00f3n media'
+          : null,
+      helperText: hasGeneralProfile || hasUnknownState || hasUnknownStage
+          ? 'Puedes ajustar variedad, estado o etapa despu\u00e9s.'
+          : 'BIO-G interpreta tus sensores seg\u00fan la etapa visible del \u00e1rbol.',
+    );
+  }
+
+  String _treeNpkSubtitle(DeviceCropContext context) {
+    final String stageId = normalizeTreeStageId(context.phenologyStageId);
+    if (stageId == TreeStageIds.unknown ||
+        normalizeTreeStateId(context.perennialStateId) ==
+            TreeStateIds.unknown) {
+      return 'Perfil general: puedes ajustar variedad, estado o etapa despu\u00e9s.';
+    }
+    if (treeCriticalWindowLabel(stageId) != null) {
+      return 'La etapa visible aumenta la importancia de agua, suelo y nutrici\u00f3n.';
+    }
+    return treeStagePriorityText(stageId);
+  }
+
+  /// Subtítulo de la card NPK del árbol basado en el peor nutriente del propio
+  /// eval del árbol (misma fuente que el ring y el detalle). Si todos están
+  /// óptimos o sin dato, cae al texto de etapa.
+  String _treeNpkStatusSubtitle(
+    AgroEvalResult eval,
+    DeviceCropContext context,
+  ) {
+    final List<AgroMetricEval> nutrients =
+        <AgroMetricEval?>[
+          eval.metrics[AgroMetricKey.n],
+          eval.metrics[AgroMetricKey.p],
+          eval.metrics[AgroMetricKey.k],
+        ].whereType<AgroMetricEval>().toList();
+
+    if (nutrients.isEmpty) return _treeNpkSubtitle(context);
+
+    nutrients.sort((a, b) => a.score01.compareTo(b.score01));
+    final AgroMetricEval worst = nutrients.first;
+
+    if (worst.band == AgroBand.optimal || worst.band == AgroBand.unknown) {
+      return _treeNpkSubtitle(context);
+    }
+
+    final String? rec = worst.shortRecommendationEs;
+    if (rec != null && rec.trim().isNotEmpty) return rec;
+    return _treeNpkSubtitle(context);
+  }
+
+  String _treeIrrigationTitle(DeviceCropContext context, AgroEvalResult? eval) {
+    final String stageId = normalizeTreeStageId(context.phenologyStageId);
+    final AgroBand? moistureBand =
+        eval?.metrics[AgroMetricKey.soilMoisture]?.band;
+    if (moistureBand == AgroBand.low || moistureBand == AgroBand.critical) {
+      return switch (stageId) {
+        TreeStageIds.flowering => 'Protege humedad en floraci\u00f3n',
+        TreeStageIds.fruitSet => 'Evita d\u00e9ficit en cuajado',
+        TreeStageIds.fruitFill => 'Sost\u00e9n llenado de fruto',
+        TreeStageIds.postHarvest => 'Cuida recuperaci\u00f3n post-cosecha',
+        TreeStageIds.rootEstablishment => 'Mant\u00e9n humedad estable',
+        _ => 'Revisa humedad del \u00e1rbol',
+      };
+    }
+
+    return switch (stageId) {
+      TreeStageIds.rootEstablishment => 'Mant\u00e9n humedad estable',
+      TreeStageIds.flowering => 'Ventana cr\u00edtica activa',
+      TreeStageIds.fruitSet => 'Evita estr\u00e9s en cuajado',
+      TreeStageIds.fruitFill => 'Sost\u00e9n llenado de fruto',
+      TreeStageIds.postHarvest => 'Cuida post-cosecha',
+      TreeStageIds.dormancy => 'Monitoreo pasivo',
+      _ => 'Monitoreo del \u00e1rbol',
+    };
   }
 
   DashboardSyncPlan buildSyncPlan({
@@ -415,6 +582,15 @@ class DashboardScreenPresenter {
     required bool isGenericMode,
     required DateTime now,
   }) {
+    if (isTreeContext(runtime.cropContext) && runtime.cropContext != null) {
+      return _buildTreeDashboardEvents(
+        runtime: runtime,
+        effectiveEval: effectiveEval,
+        stageResult: stageResult,
+        now: now,
+      );
+    }
+
     final input = AgroEventInputFactory.build(
       timestamp: now,
       deviceId: runtime.device?.id ?? store.activeDevice?.id,
@@ -432,11 +608,272 @@ class DashboardScreenPresenter {
     return EventEngine.build(input);
   }
 
+  List<AgronomicEvent> _buildTreeDashboardEvents({
+    required CropRuntimeSnapshot runtime,
+    required AgroEvalResult? effectiveEval,
+    required CropStageResult? stageResult,
+    required DateTime now,
+  }) {
+    final context = runtime.cropContext;
+    if (context == null) return const <AgronomicEvent>[];
+
+    final telemetry = runtime.live;
+    final String stageId = normalizeTreeStageId(context.phenologyStageId);
+    final String stageLabel =
+        stageResult?.stageLabelEs ?? treeStageDisplayName(stageId);
+    final String cropTitle = treeCropDisplayTitle(context);
+    final events = <AgronomicEvent>[
+      AgronomicEvent(
+        type: AgronomicEventType.cropActivated,
+        severity: AgronomicEventSeverity.info,
+        title: cropTitle,
+        message:
+            'BIO-G interpreta tus sensores seg\u00fan el estado y etapa visible del \u00e1rbol.',
+        timestamp: now,
+        deviceId: runtime.device?.id,
+        seedProfileId: context.profileId,
+        seedAlias: treeProfileDisplayName(context.profileId),
+        stageKey: stageId,
+        stageLabel: stageLabel,
+        isInformative: true,
+        metadata: const <String, Object?>{
+          'source': 'dashboard_tree',
+          'group': 'context',
+        },
+      ),
+    ];
+
+    final metrics =
+        effectiveEval?.metrics ?? const <AgroMetricKey, AgroMetricEval>{};
+    final moisture = metrics[AgroMetricKey.soilMoisture]?.band;
+    final soilTemp = metrics[AgroMetricKey.soilTemp]?.band;
+    final resistance = metrics[AgroMetricKey.resistance]?.band;
+    final ec = metrics[AgroMetricKey.ec]?.band;
+    final nutrientLow =
+        <AgroMetricKey>[AgroMetricKey.n, AgroMetricKey.p, AgroMetricKey.k].any((
+          key,
+        ) {
+          final band = metrics[key]?.band;
+          return band == AgroBand.low || band == AgroBand.critical;
+        });
+
+    bool lowish(AgroBand? band) =>
+        band == AgroBand.low || band == AgroBand.critical;
+    bool highish(AgroBand? band) =>
+        band == AgroBand.high || band == AgroBand.critical;
+    AgronomicEventSeverity severityFor(AgroBand? band) =>
+        band == AgroBand.critical
+        ? AgronomicEventSeverity.critical
+        : AgronomicEventSeverity.warning;
+
+    void push({
+      required AgronomicEventType type,
+      required AgronomicEventSeverity severity,
+      required String title,
+      required String message,
+      String? metricKey,
+      bool isCritical = false,
+    }) {
+      events.add(
+        AgronomicEvent(
+          type: type,
+          severity: severity,
+          title: title,
+          message: message,
+          timestamp: now,
+          deviceId: runtime.device?.id,
+          metricKey: metricKey,
+          seedProfileId: context.profileId,
+          seedAlias: treeProfileDisplayName(context.profileId),
+          stageKey: stageId,
+          stageLabel: stageLabel,
+          isCritical: isCritical || severity == AgronomicEventSeverity.critical,
+          metadata: const <String, Object?>{
+            'source': 'dashboard_tree',
+            'group': 'tree_alert',
+          },
+        ),
+      );
+    }
+
+    switch (stageId) {
+      case TreeStageIds.rootEstablishment:
+        if (lowish(moisture)) {
+          push(
+            type: AgronomicEventType.lowMoisture,
+            severity: severityFor(moisture),
+            title: 'Humedad baja en establecimiento',
+            message:
+                'El \u00e1rbol est\u00e1 en establecimiento. Mant\u00e9n humedad estable y evita saturaci\u00f3n del suelo.',
+            metricKey: EventMetricKeys.soilMoisture,
+          );
+        } else if (highish(moisture)) {
+          push(
+            type: AgronomicEventType.highMoisture,
+            severity: severityFor(moisture),
+            title: 'Exceso de humedad en establecimiento',
+            message:
+                'Exceso de humedad en establecimiento. Revisa drenaje y evita saturaci\u00f3n.',
+            metricKey: EventMetricKeys.soilMoisture,
+          );
+        }
+        if (highish(resistance)) {
+          push(
+            type: AgronomicEventType.soilCompaction,
+            severity: severityFor(resistance),
+            title: 'Suelo resistente para ra\u00edz',
+            message:
+                'El \u00e1rbol est\u00e1 formando ra\u00edz. Revisa compactaci\u00f3n sin hacer labores agresivas junto al tronco.',
+            metricKey: EventMetricKeys.resistance,
+          );
+        }
+        break;
+      case TreeStageIds.flowering:
+        if ((telemetry?.airTempC ?? 99) <= 4) {
+          push(
+            type: AgronomicEventType.frostWarning,
+            severity: (telemetry?.airTempC ?? 99) <= 0
+                ? AgronomicEventSeverity.critical
+                : AgronomicEventSeverity.warning,
+            title: 'Riesgo de estr\u00e9s durante floraci\u00f3n',
+            message:
+                'Floraci\u00f3n activa: peque\u00f1as desviaciones pueden afectar la producci\u00f3n de la temporada.',
+            metricKey: EventMetricKeys.soilTemp,
+          );
+        }
+        if (lowish(moisture)) {
+          push(
+            type: AgronomicEventType.lowMoisture,
+            severity: severityFor(moisture),
+            title: 'D\u00e9ficit h\u00eddrico en floraci\u00f3n',
+            message:
+                'Floraci\u00f3n activa: peque\u00f1as desviaciones pueden afectar la producci\u00f3n de la temporada.',
+            metricKey: EventMetricKeys.soilMoisture,
+          );
+        }
+        if ((telemetry?.airHumidityPct ?? 0) >= 85) {
+          push(
+            type: AgronomicEventType.highAirHumidity,
+            severity: AgronomicEventSeverity.warning,
+            title: 'Humedad alta durante floraci\u00f3n',
+            message:
+                'Humedad ambiental elevada durante floraci\u00f3n. Revisa el \u00e1rbol y mant\u00e9n monitoreo.',
+          );
+        }
+        break;
+      case TreeStageIds.fruitSet:
+        if (lowish(moisture)) {
+          push(
+            type: AgronomicEventType.lowMoisture,
+            severity: severityFor(moisture),
+            title: 'D\u00e9ficit h\u00eddrico en cuajado',
+            message:
+                'Cuajado activo: evita estr\u00e9s h\u00eddrico o t\u00e9rmico. Esta etapa tiene poca tolerancia al estr\u00e9s.',
+            metricKey: EventMetricKeys.soilMoisture,
+          );
+        }
+        if ((telemetry?.airTempC ?? 0) >= 35 || highish(soilTemp)) {
+          push(
+            type: AgronomicEventType.heatStress,
+            severity: severityFor(soilTemp),
+            title: 'Calor durante cuajado',
+            message:
+                'Cuajado activo: evita estr\u00e9s h\u00eddrico o t\u00e9rmico.',
+            metricKey: EventMetricKeys.soilTemp,
+          );
+        }
+        if (highish(ec)) {
+          push(
+            type: AgronomicEventType.nutrientImbalance,
+            severity: severityFor(ec),
+            title: 'CE alta en cuajado',
+            message:
+                'Cuajado activo: revisa salinidad si la lectura se mantiene alta.',
+          );
+        }
+        break;
+      case TreeStageIds.fruitFill:
+        if (lowish(moisture) ||
+            (telemetry?.airTempC ?? 0) >= 35 ||
+            highish(soilTemp)) {
+          push(
+            type: lowish(moisture)
+                ? AgronomicEventType.lowMoisture
+                : AgronomicEventType.heatStress,
+            severity: lowish(moisture)
+                ? severityFor(moisture)
+                : severityFor(soilTemp),
+            title: 'Estr\u00e9s en llenado de fruto',
+            message:
+                'Llenado de fruto: el \u00e1rbol necesita estabilidad para sostener calidad y tama\u00f1o.',
+            metricKey: lowish(moisture)
+                ? EventMetricKeys.soilMoisture
+                : EventMetricKeys.soilTemp,
+          );
+        }
+        if (nutrientLow) {
+          push(
+            type: AgronomicEventType.nutrientImbalance,
+            severity: AgronomicEventSeverity.caution,
+            title: 'Nutrici\u00f3n a revisar',
+            message:
+                'Llenado de fruto: revisa la lectura nutrimental junto con humedad, pH y CE.',
+            metricKey: EventMetricKeys.npk,
+          );
+        }
+        break;
+      case TreeStageIds.postHarvest:
+        if (lowish(moisture) || nutrientLow) {
+          push(
+            type: lowish(moisture)
+                ? AgronomicEventType.lowMoisture
+                : AgronomicEventType.nutrientImbalance,
+            severity: lowish(moisture)
+                ? severityFor(moisture)
+                : AgronomicEventSeverity.caution,
+            title: 'Post-cosecha con estr\u00e9s',
+            message:
+                'Post-cosecha: el \u00e1rbol recupera reservas para el siguiente ciclo.',
+            metricKey: lowish(moisture)
+                ? EventMetricKeys.soilMoisture
+                : EventMetricKeys.npk,
+          );
+        }
+        break;
+      case TreeStageIds.dormancy:
+        if (moisture == AgroBand.critical || soilTemp == AgroBand.critical) {
+          push(
+            type: AgronomicEventType.recovery,
+            severity: AgronomicEventSeverity.warning,
+            title: 'Extremo durante reposo',
+            message:
+                'Reposo: monitoreo pasivo del \u00e1rbol. Solo conviene actuar si las lecturas extremas se mantienen.',
+          );
+        }
+        break;
+      default:
+        if (lowish(moisture)) {
+          push(
+            type: AgronomicEventType.lowMoisture,
+            severity: severityFor(moisture),
+            title: 'Humedad baja en el \u00e1rbol',
+            message:
+                'Revisa esta lectura dentro del estado visible del \u00e1rbol.',
+            metricKey: EventMetricKeys.soilMoisture,
+          );
+        }
+        break;
+    }
+
+    return events;
+  }
+
   CropStageResult? _previousDashboardStage(
     CropRuntimeSnapshot runtime,
     DateTime now,
   ) {
     if (!runtime.isPlanted) return null;
+    if (isTreeContext(runtime.cropContext)) return null;
     final definition = runtime.definition;
     final profile = runtime.profile;
     final sowingDate =

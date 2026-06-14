@@ -90,6 +90,18 @@ class PlantHealthIds {
   static const String symptomStorageSprouting = 'storage_sprouting';
   static const String symptomSunscaldOuterScales = 'sunscald_outer_scales';
   static const String symptomBulbMiteScars = 'bulb_mite_scars';
+  // Manzano / árbol perenne
+  static const String symptomBlightedBlossomsShoots =
+      'blighted_blossoms_shoots';
+  static const String symptomVelvetyOliveSpots = 'velvety_olive_spots';
+  static const String symptomFruitTunnelFrass = 'fruit_tunnel_frass';
+  static const String symptomWoollyWhiteColonies = 'woolly_white_colonies';
+  static const String symptomFruitSunkenPits = 'fruit_sunken_pits';
+  static const String symptomFruitSunburnPatch = 'fruit_sunburn_patch';
+  static const String symptomInternervalChlorosisNewLeaves =
+      'internerval_chlorosis_new_leaves';
+  static const String symptomShootDecayCanker = 'shoot_decay_canker';
+  static const String symptomMummifiedFruitRot = 'mummified_fruit_rot';
 
   // Signals
   static const String signalPustulesOnStem = 'pustules_on_stem';
@@ -197,6 +209,15 @@ class PlantHealthIds {
   static const String signalSunscaldOuterScales = 'sunscald_outer_scales';
   static const String signalUniformLeafBurn = 'uniform_leaf_burn';
   static const String signalWeedCompetition = 'weed_competition';
+  // Manzano / árbol perenne
+  static const String signalAmberBacterialOoze = 'amber_bacterial_ooze';
+  static const String signalShepherdsCrookShoot = 'shepherds_crook_shoot';
+  static const String signalFrostEvent = 'frost_event';
+  static const String signalHailEvent = 'hail_event';
+  static const String signalGallsOnWoodRoots = 'galls_on_wood_roots';
+  static const String signalHighPhCalcareous = 'high_ph_calcareous';
+  static const String signalExposedFruitSouthwest = 'exposed_fruit_southwest';
+  static const String signalSpringWetFoliage = 'spring_wet_foliage';
 
   static const Map<String, String> organLabelsEs = <String, String>{
     organWhorl: 'Cogollo',
@@ -282,6 +303,17 @@ class PlantHealthIds {
     symptomStorageSprouting: 'Brotacion en almacenamiento',
     symptomSunscaldOuterScales: 'Escamas asoleadas o quemadas',
     symptomBulbMiteScars: 'Cicatrices o dano de acaro en bulbo',
+    symptomBlightedBlossomsShoots:
+        'Racimos florales o brotes quemados / ennegrecidos',
+    symptomVelvetyOliveSpots: 'Manchas oliva-negras aterciopeladas en hoja/fruto',
+    symptomFruitTunnelFrass: 'Perforacion en fruto con galeria o aserrin',
+    symptomWoollyWhiteColonies: 'Masas blancas algodonosas en ramas o tronco',
+    symptomFruitSunkenPits: 'Puntos oscuros hundidos en el fruto',
+    symptomFruitSunburnPatch: 'Mancha clara o quemada en el lado soleado',
+    symptomInternervalChlorosisNewLeaves:
+        'Hojas nuevas amarillas con nervaduras verdes',
+    symptomShootDecayCanker: 'Muerte regresiva de rama o cancro en madera',
+    symptomMummifiedFruitRot: 'Pudricion firme o fruto momificado',
   };
 
   static const Map<String, String> signalLabelsEs = <String, String>{
@@ -383,6 +415,14 @@ class PlantHealthIds {
     signalSunscaldOuterScales: 'Escamas externas con asoleado o quemadura',
     signalUniformLeafBurn: 'Quemadura uniforme sin patron de plaga',
     signalWeedCompetition: 'Hay maleza compitiendo o Allium voluntario',
+    signalAmberBacterialOoze: 'Hay exudado ambar o pegajoso en brote/rama',
+    signalShepherdsCrookShoot: 'El brote se dobla en gancho (cayado de pastor)',
+    signalFrostEvent: 'Hubo helada o temperatura bajo cero',
+    signalHailEvent: 'Hubo granizo o heridas por golpe',
+    signalGallsOnWoodRoots: 'Hay agallas o deformaciones en madera/raiz',
+    signalHighPhCalcareous: 'El suelo es de pH alto o calcareo',
+    signalExposedFruitSouthwest: 'El fruto esta expuesto al sol (lado suroeste)',
+    signalSpringWetFoliage: 'Primavera humeda con mojado foliar prolongado',
   };
 
   static String organLabel(String organId) => organLabelsEs[organId] ?? organId;
