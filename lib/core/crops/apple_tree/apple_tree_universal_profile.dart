@@ -824,6 +824,37 @@ _AppleStageProfile _profileForStage(String? stageId) {
   return _appleStageProfiles[id] ?? _appleStageProfiles[TreeStageIds.unknown]!;
 }
 
+/// Convierte el rango ÓPTIMO de suficiencia (mg/kg) del doc 05 en un
+/// [AgroRange] comparable con BANDAS SUAVES para que el motor compartido
+/// (`NutrientTargetRangeResolver` + `NutrientRecommendationEngine`) detecte
+/// bajo / óptimo / alto-útil / exceso sin saltos bruscos óptimo→crítico.
+///
+/// Bandas resultantes (regla del manzano, decisión del usuario):
+/// - `< lowMax`               → crítico / "Urge aplicar" (déficit fuerte).
+/// - `lowMax .. optimalMin`   → "Bajo" (déficit suave, prioridad gradual).
+/// - `optimalMin .. optimalMax` → "Óptimo".
+/// - `optimalMax .. highMin`  → "Alto útil": zona amplia y tolerante por
+///   encima del óptimo. En manzano estar alto NO es malo; el motor del árbol
+///   la trata casi como óptimo (sin penalización ni alerta).
+/// - `>= highMin`             → "Exceso" real (claramente desproporcionado):
+///   esto sí baja el score y genera advertencia.
+///
+/// Los multiplicadores (0.65 abajo, 1.5 arriba) son una elección de ingeniería
+/// documentada: el doc 05 sólo fija el óptimo relativo por etapa, no las colas.
+/// 1.5× sobre el óptimo deja, p. ej., N de fruto (25–45) con exceso a partir de
+/// ~67 mg/kg, de modo que N≈71 cae en exceso (≈1.6× el tope óptimo) mientras
+/// que un N moderadamente alto (≈50) queda en "alto útil" tolerante.
+AgroRange _appleSoilPpmRange(AgroRange optimal) {
+  final double optMin = optimal.optimalMin;
+  final double optMax = optimal.optimalMax;
+  return AgroRange(
+    lowMax: optMin * 0.65,
+    optimalMin: optMin,
+    optimalMax: optMax,
+    highMin: optMax * 1.5,
+  );
+}
+
 /// Targets de sensor por etapa para `resolveTargets` del manzano (doc 05 §9).
 ///
 /// Incluye los rangos de suelo (humedad/temp/pH/EC/resistencia) y la semántica
@@ -841,6 +872,12 @@ StageTargets resolveAppleTreeTargets(String? stageId) {
     nIndex: p.nTargetRange,
     pIndex: p.pTargetRange,
     kIndex: p.kTargetRange,
+    // Rangos comparables REALES de suelo (mg/kg). Con esto el resolver usa los
+    // ppm directamente (sin escalar por cap), así el detalle NPK muestra el
+    // objetivo correcto (p. ej. N 20–40) y no el escalado legacy (22–48).
+    nSoilPpmRange: _appleSoilPpmRange(p.nTargetRange),
+    pSoilPpmRange: _appleSoilPpmRange(p.pTargetRange),
+    kSoilPpmRange: _appleSoilPpmRange(p.kTargetRange),
     nPriority: p.nPriority,
     pPriority: p.pPriority,
     kPriority: p.kPriority,

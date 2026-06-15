@@ -440,7 +440,15 @@ class CropPresentationResolver {
       case CropCatalog.garlicCropId:
         return _resolveGarlicIcon(rawVarietyValue);
       case CropCatalog.appleTreeCropId:
-        return _resolveAppleTreeIcon(rawVarietyValue);
+        // El manzano guarda la variedad/perfil en `profileId` (AP-01..AP-05),
+        // no en varietyId. Tras normalizar, `varietyAlias` puede traer una
+        // etiqueta legible (p. ej. "AP-01 - Golden") que NO mapea a icono y
+        // tapaba al profileId en la cadena `varietyId ?? varietyAlias ??
+        // profileId`, cayendo al icono neutro. Por eso aquí priorizamos
+        // profileId para el icono de variedad.
+        return _resolveAppleTreeIcon(
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
       default:
         return _genericPlantIconAsset;
     }

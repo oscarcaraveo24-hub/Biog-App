@@ -10,7 +10,6 @@ import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
-import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
@@ -90,22 +89,6 @@ class NpkScreen extends StatelessWidget {
       case NutrientPriorityLabel.lowPriority:
       case NutrientPriorityLabel.noPriority:
       case NutrientPriorityLabel.unknown:
-      case null:
-        return InsightTone.ok;
-    }
-  }
-
-  /// Tono para árboles: deriva del band del propio motor del árbol (fuente
-  /// única), sin pasar por el motor de granos.
-  InsightTone _toneFromAgroBand(AgroBand? band) {
-    switch (band) {
-      case AgroBand.critical:
-        return InsightTone.bad;
-      case AgroBand.low:
-      case AgroBand.high:
-        return InsightTone.warn;
-      case AgroBand.optimal:
-      case AgroBand.unknown:
       case null:
         return InsightTone.ok;
     }
@@ -339,15 +322,8 @@ class NpkScreen extends StatelessWidget {
 
                           final isPlanted = runtime.isPlanted;
                           final isPlanned = runtime.isPlanned;
-                          final isTree = isTreeContext(cropContext);
                           final targets = runtime.targets;
                           final eval = runtime.eval;
-                          // Fuente ÚNICA para árboles: su propio eval. NO usar el
-                          // motor de granos (NutrientRecommendationEngine) porque
-                          // no tiene perfil de árbol y contradice al ring.
-                          final treeEvalN = eval?.metrics[AgroMetricKey.n];
-                          final treeEvalP = eval?.metrics[AgroMetricKey.p];
-                          final treeEvalK = eval?.metrics[AgroMetricKey.k];
                           final stageKey = runtime.stageResult?.stageKey;
                           final weights = _resolveRuntimeWeights(runtime);
                           final cultivationScaleId = _resolveCultivationScaleId(
@@ -385,7 +361,7 @@ class NpkScreen extends StatelessWidget {
                           );
 
                           final nInterpretation =
-                              isPlanted && live != null && !isTree
+                              isPlanted && live != null
                               ? NutrientRecommendationEngine.interpret(
                                   nutrient: AgroMetricKey.n,
                                   rawPpm: live.n.toDouble(),
@@ -406,7 +382,7 @@ class NpkScreen extends StatelessWidget {
                               : null;
 
                           final pInterpretation =
-                              isPlanted && live != null && !isTree
+                              isPlanted && live != null
                               ? NutrientRecommendationEngine.interpret(
                                   nutrient: AgroMetricKey.p,
                                   rawPpm: live.p.toDouble(),
@@ -427,7 +403,7 @@ class NpkScreen extends StatelessWidget {
                               : null;
 
                           final kInterpretation =
-                              isPlanted && live != null && !isTree
+                              isPlanted && live != null
                               ? NutrientRecommendationEngine.interpret(
                                   nutrient: AgroMetricKey.k,
                                   rawPpm: live.k.toDouble(),
@@ -487,82 +463,58 @@ class NpkScreen extends StatelessWidget {
                               : 'Modo genérico';
 
                           final insightN = isPlanted
-                              ? (isTree
-                                    ? (treeEvalN?.shortRecommendationEs ??
-                                          'Lectura de N del árbol según la etapa visible.')
-                                    : (nInterpretation?.shortRecommendation ??
-                                          'Lectura real de N disponible.'))
+                              ? (nInterpretation?.shortRecommendation ??
+                                    'Lectura real de N disponible.')
                               : isPlanned
                               ? 'Lectura real de N en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final insightP = isPlanted
-                              ? (isTree
-                                    ? (treeEvalP?.shortRecommendationEs ??
-                                          'Lectura de P del árbol según la etapa visible.')
-                                    : (pInterpretation?.shortRecommendation ??
-                                          'Lectura real de P disponible.'))
+                              ? (pInterpretation?.shortRecommendation ??
+                                    'Lectura real de P disponible.')
                               : isPlanned
                               ? 'Lectura real de P en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final insightK = isPlanted
-                              ? (isTree
-                                    ? (treeEvalK?.shortRecommendationEs ??
-                                          'Lectura de K del árbol según la etapa visible.')
-                                    : (kInterpretation?.shortRecommendation ??
-                                          'Lectura real de K disponible.'))
+                              ? (kInterpretation?.shortRecommendation ??
+                                    'Lectura real de K disponible.')
                               : isPlanned
                               ? 'Lectura real de K en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final descN = isPlanted
-                              ? (isTree
-                                    ? 'Lectura de nitrógeno del árbol interpretada según la etapa visible.'
-                                    : (nInterpretation?.justification ??
-                                          'Lectura actual de nitrógeno del suelo.'))
+                              ? (nInterpretation?.justification ??
+                                    'Lectura actual de nitrógeno del suelo.')
                               : 'Lectura real de nitrógeno del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
 
                           final descP = isPlanted
-                              ? (isTree
-                                    ? 'Lectura de fósforo del árbol interpretada según la etapa visible.'
-                                    : (pInterpretation?.justification ??
-                                          'Lectura actual de fósforo del suelo.'))
+                              ? (pInterpretation?.justification ??
+                                    'Lectura actual de fósforo del suelo.')
                               : 'Lectura real de fósforo del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
 
                           final descK = isPlanted
-                              ? (isTree
-                                    ? 'Lectura de potasio del árbol interpretada según la etapa visible.'
-                                    : (kInterpretation?.justification ??
-                                          'Lectura actual de potasio del suelo.'))
+                              ? (kInterpretation?.justification ??
+                                    'Lectura actual de potasio del suelo.')
                               : 'Lectura real de potasio del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
 
                           final actionNRaw = isPlanted
-                              ? (isTree
-                                    ? (treeEvalN?.shortRecommendationEs ??
-                                          'Acompaña el manejo del árbol según su etapa.')
-                                    : (nInterpretation?.practicalRecommendation ??
-                                          'Revisa el plan nutricional del lote.'))
+                              ? (nInterpretation?.practicalRecommendation ??
+                                    'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'
                               : 'Configura un cultivo para ver prioridad nutricional.';
 
                           final actionPRaw = isPlanted
-                              ? (isTree
-                                    ? (treeEvalP?.shortRecommendationEs ??
-                                          'Acompaña el manejo del árbol según su etapa.')
-                                    : (pInterpretation?.practicalRecommendation ??
-                                          'Revisa el plan nutricional del lote.'))
+                              ? (pInterpretation?.practicalRecommendation ??
+                                    'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'
                               : 'Configura un cultivo para ver prioridad nutricional.';
 
                           final actionKRaw = isPlanted
-                              ? (isTree
-                                    ? (treeEvalK?.shortRecommendationEs ??
-                                          'Acompaña el manejo del árbol según su etapa.')
-                                    : (kInterpretation?.practicalRecommendation ??
-                                          'Revisa el plan nutricional del lote.'))
+                              ? (kInterpretation?.practicalRecommendation ??
+                                    'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'
                               : 'Configura un cultivo para ver prioridad nutricional.';
@@ -581,31 +533,22 @@ class NpkScreen extends StatelessWidget {
                           );
 
                           final windowN = isPlanted
-                              ? (isTree
-                                    ? (treeEvalN?.demandWindowLabelEs ??
-                                          'Etapa del árbol')
-                                    : (nInterpretation?.demandWindowLabel ??
-                                          'Ventana activa'))
+                              ? (nInterpretation?.demandWindowLabel ??
+                                    'Ventana activa')
                               : isPlanned
                               ? 'Pre-siembra'
                               : 'Sin cultivo';
 
                           final windowP = isPlanted
-                              ? (isTree
-                                    ? (treeEvalP?.demandWindowLabelEs ??
-                                          'Etapa del árbol')
-                                    : (pInterpretation?.demandWindowLabel ??
-                                          'Ventana activa'))
+                              ? (pInterpretation?.demandWindowLabel ??
+                                    'Ventana activa')
                               : isPlanned
                               ? 'Pre-siembra'
                               : 'Sin cultivo';
 
                           final windowK = isPlanted
-                              ? (isTree
-                                    ? (treeEvalK?.demandWindowLabelEs ??
-                                          'Etapa del árbol')
-                                    : (kInterpretation?.demandWindowLabel ??
-                                          'Ventana activa'))
+                              ? (kInterpretation?.demandWindowLabel ??
+                                    'Ventana activa')
                               : isPlanned
                               ? 'Pre-siembra'
                               : 'Sin cultivo';
@@ -631,9 +574,7 @@ class NpkScreen extends StatelessWidget {
                                   description: descN,
                                   stageLabel: stageLabel,
                                   insight: insightN,
-                                  tone: isTree
-                                      ? _toneFromAgroBand(treeEvalN?.band)
-                                      : _toneForInterpretation(nInterpretation),
+                                  tone: _toneForInterpretation(nInterpretation),
                                   windowLabel: windowN,
                                   actionText: actionN,
                                   doseGuideText: nInterpretation?.doseGuideEs,
@@ -659,9 +600,7 @@ class NpkScreen extends StatelessWidget {
                                   description: descP,
                                   stageLabel: stageLabel,
                                   insight: insightP,
-                                  tone: isTree
-                                      ? _toneFromAgroBand(treeEvalP?.band)
-                                      : _toneForInterpretation(pInterpretation),
+                                  tone: _toneForInterpretation(pInterpretation),
                                   windowLabel: windowP,
                                   actionText: actionP,
                                   doseGuideText: pInterpretation?.doseGuideEs,
@@ -687,9 +626,7 @@ class NpkScreen extends StatelessWidget {
                                   description: descK,
                                   stageLabel: stageLabel,
                                   insight: insightK,
-                                  tone: isTree
-                                      ? _toneFromAgroBand(treeEvalK?.band)
-                                      : _toneForInterpretation(kInterpretation),
+                                  tone: _toneForInterpretation(kInterpretation),
                                   windowLabel: windowK,
                                   actionText: actionK,
                                   doseGuideText: kInterpretation?.doseGuideEs,

@@ -67,6 +67,14 @@ class NpkCaps {
           case 'crop_garlic':
           case 'ajo':
             return 130.0;
+          // Manzano (perenne). El N de suficiencia de suelo del doc 05 ronda
+          // 18-45 mg/kg en etapas de fruto y hasta 55-75 en juvenil/vegetativo.
+          // Cap 90 deja el optimo de fruto en ~0.3-0.5 del gauge y deja
+          // cabecera para visualizar "alto util" y "exceso" por encima.
+          case 'apple_tree':
+          case 'crop_apple_tree':
+          case 'manzano':
+            return 90.0;
           default:
             return 120.0;
         }
@@ -111,6 +119,13 @@ class NpkCaps {
           case 'crop_garlic':
           case 'ajo':
             return 90.0;
+          // Manzano: P de suelo del doc 05 pesa fuerte en establecimiento/raiz
+          // (optimo 60-80 mg/kg) y baja a 35-55 en fruto. Cap 110 centra el
+          // rango de raiz (~0.6) y mantiene el de fruto (~0.4) en el gauge.
+          case 'apple_tree':
+          case 'crop_apple_tree':
+          case 'manzano':
+            return 110.0;
           default:
             return 80.0;
         }
@@ -162,6 +177,13 @@ class NpkCaps {
           case 'crop_garlic':
           case 'ajo':
             return 210.0;
+          // Manzano: K sube tarde (cuajado/llenado/cosecha). El optimo de suelo
+          // del doc 05 llega a 70-90 mg/kg en llenado. Cap 140 deja ese pico en
+          // ~0.5-0.65 del gauge con cabecera para "alto util"/"exceso" arriba.
+          case 'apple_tree':
+          case 'crop_apple_tree':
+          case 'manzano':
+            return 140.0;
           default:
             return 140.0;
         }

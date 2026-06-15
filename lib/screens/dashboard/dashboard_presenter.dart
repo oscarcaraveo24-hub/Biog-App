@@ -268,7 +268,7 @@ class DashboardScreenPresenter {
     String npkTitle = 'Nutrición (NPK)';
     String npkSubtitle = 'Sin evaluación actual';
 
-    if (isPlanted && telemetry != null && !isTree) {
+    if (isPlanted && telemetry != null) {
       final scaleId = runtime.cropContext?.cultivationScaleId;
       final cropContext = runtime.cropContext;
 
@@ -329,29 +329,6 @@ class DashboardScreenPresenter {
       npkSubtitle = 'Disponible tras la siembra';
     } else {
       npkSubtitle = 'Modo genérico activo';
-    }
-
-    // ==========================================
-
-    if (isTree && treeContext != null) {
-      // Fuente \u00daNICA = motor del \u00e1rbol (apple_tree_crop_definition). Mostramos
-      // el estado real N\u00b7P\u00b7K (igual que granos) leyendo el mismo `effectiveEval`
-      // que alimenta el ring de salud, para que dashboard y detalle NUNCA se
-      // contradigan. No usamos NutrientRecommendationEngine (motor de granos)
-      // porque no tiene perfil de \u00e1rbol y produce verdictos falsos.
-      if (effectiveEval != null) {
-        final String nL =
-            effectiveEval.metrics[AgroMetricKey.n]?.labelEs ?? '\u2014';
-        final String pL =
-            effectiveEval.metrics[AgroMetricKey.p]?.labelEs ?? '\u2014';
-        final String kL =
-            effectiveEval.metrics[AgroMetricKey.k]?.labelEs ?? '\u2014';
-        npkTitle = 'N: $nL \u00b7 P: $pL \u00b7 K: $kL';
-        npkSubtitle = _treeNpkStatusSubtitle(effectiveEval, treeContext);
-      } else {
-        npkTitle = 'Niveles NPK del \u00e1rbol';
-        npkSubtitle = _treeNpkSubtitle(treeContext);
-      }
     }
 
     late final String irrigationTitle;
@@ -489,47 +466,6 @@ class DashboardScreenPresenter {
           ? 'Puedes ajustar variedad, estado o etapa despu\u00e9s.'
           : 'BIO-G interpreta tus sensores seg\u00fan la etapa visible del \u00e1rbol.',
     );
-  }
-
-  String _treeNpkSubtitle(DeviceCropContext context) {
-    final String stageId = normalizeTreeStageId(context.phenologyStageId);
-    if (stageId == TreeStageIds.unknown ||
-        normalizeTreeStateId(context.perennialStateId) ==
-            TreeStateIds.unknown) {
-      return 'Perfil general: puedes ajustar variedad, estado o etapa despu\u00e9s.';
-    }
-    if (treeCriticalWindowLabel(stageId) != null) {
-      return 'La etapa visible aumenta la importancia de agua, suelo y nutrici\u00f3n.';
-    }
-    return treeStagePriorityText(stageId);
-  }
-
-  /// Subtítulo de la card NPK del árbol basado en el peor nutriente del propio
-  /// eval del árbol (misma fuente que el ring y el detalle). Si todos están
-  /// óptimos o sin dato, cae al texto de etapa.
-  String _treeNpkStatusSubtitle(
-    AgroEvalResult eval,
-    DeviceCropContext context,
-  ) {
-    final List<AgroMetricEval> nutrients =
-        <AgroMetricEval?>[
-          eval.metrics[AgroMetricKey.n],
-          eval.metrics[AgroMetricKey.p],
-          eval.metrics[AgroMetricKey.k],
-        ].whereType<AgroMetricEval>().toList();
-
-    if (nutrients.isEmpty) return _treeNpkSubtitle(context);
-
-    nutrients.sort((a, b) => a.score01.compareTo(b.score01));
-    final AgroMetricEval worst = nutrients.first;
-
-    if (worst.band == AgroBand.optimal || worst.band == AgroBand.unknown) {
-      return _treeNpkSubtitle(context);
-    }
-
-    final String? rec = worst.shortRecommendationEs;
-    if (rec != null && rec.trim().isNotEmpty) return rec;
-    return _treeNpkSubtitle(context);
   }
 
   String _treeIrrigationTitle(DeviceCropContext context, AgroEvalResult? eval) {

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/apple_tree_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/chili_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/eggplant_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/fertilization_planner.dart';
@@ -159,6 +160,15 @@ class NutrientRecommendationEngine {
             calendarId: calendarId ?? cultivationScaleId,
           )
         : null;
+    final isAppleTreeCrop = _isAppleTreeCrop(cropKey);
+    final appleTreeModifier = isAppleTreeCrop
+        ? resolveAppleTreeNutritionModifier(
+            profileId: profileId,
+            varietyId: varietyId,
+            alias: varietyAlias,
+            calendarId: calendarId ?? cultivationScaleId,
+          )
+        : null;
 
     final combinedStagePressure01 = _combineStagePressure01(
       baseStagePressure01: baseStagePressure01,
@@ -196,6 +206,11 @@ class NutrientRecommendationEngine {
           stageKey: stageKey,
         ) ??
         garlicModifier?.adjustStagePressure(
+          combinedStagePressure01,
+          nutrient: nutrient,
+          stageKey: stageKey,
+        ) ??
+        appleTreeModifier?.adjustStagePressure(
           combinedStagePressure01,
           nutrient: nutrient,
           stageKey: stageKey,
@@ -257,6 +272,7 @@ class NutrientRecommendationEngine {
       spinachModifier: spinachModifier,
       onionModifier: onionModifier,
       garlicModifier: garlicModifier,
+      appleTreeModifier: appleTreeModifier,
     );
 
     final practicalRecommendation = _mergePracticalAndDose(
@@ -691,6 +707,7 @@ class NutrientRecommendationEngine {
     SpinachNutritionModifier? spinachModifier,
     OnionNutritionModifier? onionModifier,
     GarlicNutritionModifier? garlicModifier,
+    AppleTreeNutritionModifier? appleTreeModifier,
   }) {
     final stage = (stageKey ?? '').toLowerCase();
     final crop = (cropKey ?? '').toLowerCase();
@@ -834,6 +851,14 @@ class NutrientRecommendationEngine {
         stagePressure01,
         targets,
         garlicModifier,
+      );
+    }
+    if (_isAppleTreeCrop(crop)) {
+      return _appleTreePracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        appleTreeModifier,
       );
     }
 
@@ -3883,6 +3908,102 @@ class NutrientRecommendationEngine {
   static bool _isGarlicCrop(String? cropKey) {
     final crop = (cropKey ?? '').toLowerCase();
     return crop == 'garlic' || crop == 'ajo' || crop == 'crop_garlic';
+  }
+
+  static bool _isAppleTreeCrop(String? cropKey) {
+    final crop = (cropKey ?? '').toLowerCase();
+    return crop == 'apple_tree' ||
+        crop == 'crop_apple_tree' ||
+        crop == 'manzano';
+  }
+
+  // ── MANZANO ────────────────────────────────────────────────────────────────
+  // Recomendaciones prácticas del manzano (doc 05 §11–§13). Reglas clave:
+  // - N: "más N no es más fruta"; el riesgo es el N tardío (llenado/madurez).
+  // - K: sube tras cuajado (calibre, azúcares, firmeza); cuidar K vs Ca/Mg.
+  // - P: pesa en raíz/brotación/floración; en pH alto puede ser disponibilidad.
+  static String _appleTreePracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    AppleTreeNutritionModifier? modifier,
+  ) {
+    final isEstablishment =
+        stage.contains('planting') || stage.contains('root_establish');
+    final isEarlyP =
+        isEstablishment ||
+        stage.contains('budbreak') ||
+        stage.contains('flower');
+    final isFruit =
+        stage.contains('fruit_set') ||
+        stage.contains('fruit_fill') ||
+        stage.contains('harvest');
+    final isLate =
+        stage.contains('fruit_fill') || stage.contains('harvest');
+    final isExcess =
+        label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation;
+    final caution = modifier?.practicalCaution(nutrient, stage);
+    final cautionSuffix = caution == null ? '' : ' $caution';
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (isExcess) {
+          if (isLate) {
+            return 'Frena el nitrógeno. Cerca de cosecha, el N alto retrasa la '
+                'madurez, apaga el color y ablanda el fruto.$cautionSuffix';
+          }
+          return 'Hay nitrógeno de sobra. En manzano más N no es más fruta: '
+              'demasiado vigor da sombra y baja calidad.$cautionSuffix';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'El nitrógeno está en su punto para esta etapa del árbol. No '
+              'hace falta empujar más.';
+        }
+        if (isLate) {
+          return 'El N va bajo, pero cerca de cosecha no conviene empujarlo: '
+              'prioriza calidad y guarda la corrección para postcosecha.';
+        }
+        return 'El árbol pide nitrógeno para sostener hoja y brote. Conviene '
+            'apoyar, sobre todo si el suelo no está frío ni salino.';
+
+      case AgroMetricKey.p:
+        if (isExcess) {
+          return 'Fósforo de sobra. No conviene corregir P sin análisis; en '
+              'suelo suele inmovilizarse y no baja rápido a la raíz.';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'El fósforo acompaña bien la etapa del árbol.';
+        }
+        if (isEarlyP) {
+          return 'El fósforo pesa en raíz, brotación y floración. Revisa '
+              'disponibilidad: con pH alto el problema puede ser bloqueo, no '
+              'falta real de P.';
+        }
+        return 'Fósforo bajo. Fuera de raíz/floración la corrección rinde '
+            'menos; úsala también para preparar el siguiente ciclo.';
+
+      case AgroMetricKey.k:
+        if (isExcess) {
+          return 'Potasio alto. Ayuda al fruto, pero vigílalo: desbalancea Ca/Mg '
+              '(riesgo de bitter pit) y con CE alta suma estrés salino.$cautionSuffix';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'El potasio está listo para cuando el fruto lo pida.';
+        }
+        if (isFruit) {
+          return 'Falta potasio justo cuando el fruto define calibre, azúcar y '
+              'firmeza. Conviene corregir cuidando el balance con Ca/Mg.$cautionSuffix';
+        }
+        return 'El potasio va bajo. Prepárate para cuajado y llenado, que es '
+            'cuando más pesa en el manzano.';
+
+      default:
+        return 'Revisa el manejo nutricional del árbol según su etapa.';
+    }
   }
 
   // Hortalizas de fruto SIN recomendación dedicada (cae al genérico).
