@@ -102,6 +102,20 @@ class PlantHealthIds {
       'internerval_chlorosis_new_leaves';
   static const String symptomShootDecayCanker = 'shoot_decay_canker';
   static const String symptomMummifiedFruitRot = 'mummified_fruit_rot';
+  // Pera
+  static const String symptomHoneydewSootyShoots = 'honeydew_sooty_shoots';
+
+  // Durazno (frutal de hueso/carozo) — síntomas propios (doc 04 §8.2).
+  static const String symptomLeafCurlReddened = 'leaf_curl_reddened';
+  static const String symptomShotHoleLeafSpots = 'shot_hole_leaf_spots';
+  static const String symptomTrunkBaseGumFrass = 'trunk_base_gum_frass';
+
+  // Nogal pecanero (frutal de nuez) — síntomas propios (doc 04 §10).
+  static const String symptomNutShuckTunnels = 'nut_shuck_tunnels';
+  static const String symptomKernelDarkSpots = 'kernel_dark_spots';
+  static const String symptomRosetteLittleLeaf = 'rosette_little_leaf';
+  static const String symptomShuckDiebackBlackening = 'shuck_dieback_blackening';
+  static const String symptomPrematureNutDrop = 'premature_nut_drop';
 
   // Signals
   static const String signalPustulesOnStem = 'pustules_on_stem';
@@ -218,6 +232,19 @@ class PlantHealthIds {
   static const String signalHighPhCalcareous = 'high_ph_calcareous';
   static const String signalExposedFruitSouthwest = 'exposed_fruit_southwest';
   static const String signalSpringWetFoliage = 'spring_wet_foliage';
+  // Pera
+  static const String signalPsyllaNymphsShoots = 'psylla_nymphs_shoots';
+  static const String signalNoPollinatorNearby = 'no_pollinator_nearby';
+
+  // Durazno (frutal de hueso/carozo) — señales propias (doc 04 §8.2).
+  static const String signalShootTipWilt = 'shoot_tip_wilt';
+  static const String signalInsufficientChill = 'insufficient_chill';
+
+  // Nogal pecanero (frutal de nuez) — señales propias (doc 04 §10).
+  static const String signalShuckStuck = 'shuck_stuck';
+  static const String signalRoundBbExitHole = 'round_bb_exit_hole';
+  static const String signalYellowAphids = 'yellow_aphids';
+  static const String signalBlackPecanAphids = 'black_pecan_aphids';
 
   static const Map<String, String> organLabelsEs = <String, String>{
     organWhorl: 'Cogollo',
@@ -314,6 +341,22 @@ class PlantHealthIds {
         'Hojas nuevas amarillas con nervaduras verdes',
     symptomShootDecayCanker: 'Muerte regresiva de rama o cancro en madera',
     symptomMummifiedFruitRot: 'Pudricion firme o fruto momificado',
+    symptomHoneydewSootyShoots:
+        'Melaza pegajosa y negrilla en brotes/hojas (chupadores)',
+    symptomLeafCurlReddened:
+        'Hojas engrosadas, rizadas y rojizas (torque/lepra del duraznero)',
+    symptomShotHoleLeafSpots:
+        'Manchas que caen y dejan agujeritos en la hoja (tiro de munición)',
+    symptomTrunkBaseGumFrass: 'Goma con aserrín en la base del tronco',
+    symptomNutShuckTunnels:
+        'Nuez/ruezno con galerías, túneles negros o ruezno pegado',
+    symptomKernelDarkSpots:
+        'Almendra con puntos negros, manchada o de mal sabor',
+    symptomRosetteLittleLeaf:
+        'Hoja chica, entrenudos cortos o brotes en roseta (posible zinc)',
+    symptomShuckDiebackBlackening:
+        'Ruezno que se ennegrece o muere desde la punta',
+    symptomPrematureNutDrop: 'Caída de nuez recién amarrada o nuez chica',
   };
 
   static const Map<String, String> signalLabelsEs = <String, String>{
@@ -423,6 +466,16 @@ class PlantHealthIds {
     signalHighPhCalcareous: 'El suelo es de pH alto o calcareo',
     signalExposedFruitSouthwest: 'El fruto esta expuesto al sol (lado suroeste)',
     signalSpringWetFoliage: 'Primavera humeda con mojado foliar prolongado',
+    signalPsyllaNymphsShoots: 'Hay ninfas/insectos pequenos en brotes y enves',
+    signalNoPollinatorNearby:
+        'No hay otra variedad compatible floreando cerca / pocas abejas',
+    signalShootTipWilt: 'Puntas de brote marchitas o quemadas',
+    signalInsufficientChill: 'Brotación/floración irregular o dispareja',
+    signalShuckStuck: 'El ruezno no abre o se queda pegado a la cáscara',
+    signalRoundBbExitHole: 'Agujero redondo tipo munición (BB) en la cáscara',
+    signalYellowAphids: 'Pulgones amarillos y mielecilla en el envés',
+    signalBlackPecanAphids:
+        'Puntos amarillos que se vuelven cafés y defoliación (pulgón negro)',
   };
 
   static String organLabel(String organId) => organLabelsEs[organId] ?? organId;

@@ -75,6 +75,41 @@ class NpkCaps {
           case 'crop_apple_tree':
           case 'manzano':
             return 90.0;
+          // Pera (perenne, pepita). Doc 05 expresa N/P/K en escala RELATIVA
+          // 0..1; el cap convierte ese rango a mg/kg comparable. N suficiencia
+          // de fruto ronda 18-45 mg/kg y hasta 55-75 en juvenil; cap 90 deja el
+          // óptimo de fruto en ~0.3-0.5 del gauge con cabecera para alto/exceso.
+          case 'pear_tree':
+          case 'crop_pear_tree':
+          case 'pera':
+          case 'peral':
+            return 90.0;
+          // Durazno (perenne, hueso/carozo). Doc 05 §5/§17 fija cap N=110: el
+          // durazno demanda más N vegetativo que pepita, pero el exceso es
+          // peligroso. El cap más alto evita marcar como "exceso" una lectura de
+          // N que en durazno aún es funcional para hoja/madera.
+          case 'peach_tree':
+          case 'crop_peach_tree':
+          case 'peach':
+          case 'peachtree':
+          case 'durazno':
+          case 'duraznero':
+          case 'melocoton':
+          case 'melocotón':
+          case 'melocotonero':
+            return 110.0;
+          // Nogal pecanero (perenne, nuez). Doc 05 §0.2/§5 fija cap N=120: el N
+          // es protagonista del nogal (hoja, area foliar, reservas, llenado de
+          // almendra), pero el exceso es peligroso (vigor, sombra, sales,
+          // desbalance con Zn). Cap NO es dosis; solo normaliza la lectura cruda.
+          case 'walnut_tree':
+          case 'crop_walnut_tree':
+          case 'walnut':
+          case 'walnuttree':
+          case 'nogal':
+          case 'pecan':
+          case 'nuez':
+            return 120.0;
           default:
             return 120.0;
         }
@@ -126,6 +161,36 @@ class NpkCaps {
           case 'crop_apple_tree':
           case 'manzano':
             return 110.0;
+          // Pera: P pesa fuerte en establecimiento/raíz (óptimo relativo alto) y
+          // baja en fruto adulto. Cap 110 centra el rango de raíz en el gauge.
+          case 'pear_tree':
+          case 'crop_pear_tree':
+          case 'pera':
+          case 'peral':
+            return 110.0;
+          // Durazno: P pesa en raíz/establecimiento/floración pero rara vez es
+          // protagonista en árbol adulto. Doc 05 §5/§17 fija cap P=95.
+          case 'peach_tree':
+          case 'crop_peach_tree':
+          case 'peach':
+          case 'peachtree':
+          case 'durazno':
+          case 'duraznero':
+          case 'melocoton':
+          case 'melocotón':
+          case 'melocotonero':
+            return 95.0;
+          // Nogal: P pesa en raíz/establecimiento/floración pero rara vez domina
+          // en árbol adulto; en suelo calizo el problema suele ser disponibilidad
+          // por pH, no falta total. Doc 05 §0.2/§5 fija cap P=95.
+          case 'walnut_tree':
+          case 'crop_walnut_tree':
+          case 'walnut':
+          case 'walnuttree':
+          case 'nogal':
+          case 'pecan':
+          case 'nuez':
+            return 95.0;
           default:
             return 80.0;
         }
@@ -184,6 +249,38 @@ class NpkCaps {
           case 'crop_apple_tree':
           case 'manzano':
             return 140.0;
+          // Pera: K es protagonista de fruto (calibre/llenado). Doc 05 fija el
+          // óptimo relativo de K en llenado en 0.70-0.90; cap 140 lo deja en
+          // ~98-126 mg/kg con cabecera para alto útil/exceso por encima.
+          case 'pear_tree':
+          case 'crop_pear_tree':
+          case 'pera':
+          case 'peral':
+            return 140.0;
+          // Durazno: K es el protagonista del fruto de hueso (calibre, turgencia,
+          // firmeza, azúcares, calidad). Alta sensibilidad a deficiencia de K.
+          // Doc 05 §5/§17 fija cap K=180 (más alto que pepita).
+          case 'peach_tree':
+          case 'crop_peach_tree':
+          case 'peach':
+          case 'peachtree':
+          case 'durazno':
+          case 'duraznero':
+          case 'melocoton':
+          case 'melocotón':
+          case 'melocotonero':
+            return 180.0;
+          // Nogal: K es protagonista del crecimiento de nuez y el llenado de
+          // almendra (calibre, % almendra, calidad, tolerancia a estrés). Doc 05
+          // §0.2/§5 fija cap K=180 (alto, como durazno).
+          case 'walnut_tree':
+          case 'crop_walnut_tree':
+          case 'walnut':
+          case 'walnuttree':
+          case 'nogal':
+          case 'pecan':
+          case 'nuez':
+            return 180.0;
           default:
             return 140.0;
         }

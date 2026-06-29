@@ -1,0 +1,1121 @@
+BIO-G
+03_RENDIMIENTO_APROXIMADO
+DURAZNO / DURAZNERO / MELOCOTON / PEACH TREE
+
+Archivo: 03_Rendimiento_Aproximado_BioG_Durazno_DZ_v1.txt
+Cultivo BIO-G: Durazno / Duraznero
+cropId: crop_peach_tree
+prefix perfiles: DZ
+Version: v1.0 texto cableable
+Estado: listo para pasar a Codex/Claude junto con Universal+Perfiles, SKIP, Riesgos y Fertilizacion.
+Formato: TXT interno para codigo. No es promesa de rendimiento ni recomendacion agronomica local.
+
+================================================================================
+0. DECISION EJECUTIVA
+================================================================================
+
+En durazno, el rendimiento aproximado NO debe calcularse como cultivo anual.
+
+BIO-G debe estimarlo como arbol perenne de hueso/carozo usando:
+
+1) kg por arbol
+2) arboles por hectarea
+3) toneladas por hectarea
+4) estado productivo del arbol
+5) perfil/variedad DZ
+6) densidad/sistema de conduccion
+7) manejo, riego, poda y raleo
+8) carga visible de fruto
+9) frio invernal, heladas, floracion, cuajado y memoria de estres
+10) confianza del dato
+
+Regla central:
+- Si el arbol es newly_planted o juvenile_non_productive, el rendimiento comercial debe ser 0.
+- Si el arbol esta established pero el usuario no confirma carga/fruto, no proyectar rendimiento alto.
+- Si el arbol esta en productive_season, usar etapa visible + perfil + densidad + manejo + memoria.
+- Si solo hay DZ-SKIP, usar rangos conservadores.
+- En durazno, floracion y cuajado pesan mas que casi cualquier lectura NPK para estimar rendimiento.
+- La mayoria de duraznos son autofertiles o no dependen tanto de polinizador como pera, pero la carga puede caer por helada, frio insuficiente, lluvia, calor, mala reserva, mala poda, falta de raleo, sequia o sanidad.
+- El raleo/carga define calibre: mas frutos no siempre significa mayor valor comercial.
+- El resultado debe ser aproximado y en rango: bajo / esperado / alto.
+- Nunca decir “vas a producir X”; decir “produccion estimada / rango aproximado”.
+
+Este documento alimenta:
+
+- peach_tree_yield_reference.dart
+- YieldReference por perfil DZ
+- YieldProjection setup
+- calculo kg/tree <-> t/ha
+- factores por estado, densidad, manejo, agua, frio, helada, raleo, sanidad y memoria
+- textos UX farmer-friendly
+- tests de rendimiento perenne
+
+================================================================================
+0.1 LECTURA DEL CODIGO ACTUAL / MOTOR DE RENDIMIENTO EN EL ZIP
+================================================================================
+
+Se reviso la libreria enviada en lib.zip.
+
+Hallazgos importantes:
+
+1. Hay dos capas de rendimiento para arboles.
+
+A) Capa minima actual:
+- Archivo: lib/core/yield/tree_yield_reference_catalog.dart
+- Clase: TreeYieldReferenceCatalog
+- Modelo: kg/arbol bajo-alto x numero de arboles.
+- Usa TreeProductiveTier: young, firstProduction, full.
+- En la base revisada esta amarrado principalmente a manzano, porque importa apple_tree_catalog.dart y sus referencias usan cropId kCropAppleTree + profileId kApSkip.
+- Para durazno debe generalizarse o agregarse soporte por cropId/profileId sin caer a manzano.
+
+B) Capa completa por arbol:
+- Archivo: lib/core/crops/apple_tree/apple_tree_yield_reference.dart
+- Modelo: mucho mas util.
+- Trae:
+  - YieldRange bajo/esperado/alto
+  - referencia por perfil
+  - ProductionState
+  - ManagementLevel
+  - IrrigationLevel
+  - StressMemory
+  - DensitySystem
+  - resolveAppleTreeYield(...)
+  - conversion treesPerHaFromSpacing
+  - conversion kg/tree <-> t/ha
+  - bloqueo de rendimiento en estados no productivos
+  - cap de kg/arbol por densidad
+  - notas UX y confianza
+
+Decision para durazno:
+- Seguir la logica completa de apple_tree_yield_reference.dart, pero con semantica propia de durazno.
+- Archivo esperado:
+  lib/core/crops/peach_tree/peach_tree_yield_reference.dart
+- No permitir que durazno caiga a fallback de manzano o pera.
+- Si se toca TreeYieldReferenceCatalog, hacerlo de forma aditiva y testeada:
+  agregar referencias crop_peach_tree + dz_skip, o generalizar fallback por cropId.
+- No refactorizar cultivos anuales.
+- No reemplazar el motor anual de t/ha.
+
+Constantes esperadas:
+- kCropPeachTree
+- kDzSkip
+- kDz01CriolloRegional
+- kDz02TempranoBajoFrio
+- kDz03AmarilloComercial
+- kDz04BlancoDulce
+- kDz05TardioIndustria
+
+================================================================================
+1. BASE BIO-G QUE SE RESPETA
+================================================================================
+
+Documento 01 dejo cerrados los perfiles oficiales:
+
+- dz_skip
+- dz_01_criollo_regional
+- dz_02_temprano_bajo_frio
+- dz_03_amarillo_comercial
+- dz_04_blanco_dulce
+- dz_05_tardio_industria
+
+Documento 01 tambien define que durazno es:
+- arbol frutal caducifolio;
+- perenne;
+- Rosaceae;
+- Prunus persica;
+- frutal de hueso/carozo;
+- cultivo de ciclo productivo anual rapido, pero arbol vivo multianual.
+
+La variedad/perfil ajusta:
+- requerimiento relativo de frio;
+- floracion relativa;
+- cosecha relativa;
+- sensibilidad a helada/calor/sanidad;
+- destino fresco/industria;
+- potencial de rendimiento;
+- textos y confianza.
+
+La variedad/perfil NO cambia la arquitectura fenologica.
+
+Estados/etapas que bloquean rendimiento comercial:
+- newly_planted
+- juvenile_non_productive
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+
+Estados/etapas que permiten rendimiento aproximado:
+- productive_season
+- established con etapa productiva confirmada
+- flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest
+
+Etapa unknown:
+- usar confianza baja y rango conservador.
+
+Regla especial de durazno:
+- flowering y fruit_set no significan rendimiento asegurado.
+- Mucha flor puede terminar en poca fruta por helada, frio, lluvia, calor, flor debil, falta de reserva, mala poda o sanidad.
+- Si hay fruta visible en fruit_fill, la confianza sube.
+- Si ya esta en harvest_maturity, la confianza sube mas, pero calidad/calibre/comercializacion todavia puede variar.
+- post_harvest NO cierra el cultivo; afecta yemas florales y reservas del ciclo siguiente.
+
+================================================================================
+2. METODOLOGIA Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+La investigacion se separo por tipo de evidencia.
+
+Alta confianza:
+- USDA/FAS GAIN Mexico Stone Fruit Annual, con datos SIAP.
+- Universidades y extension: UC ANR / UC Davis, University of Georgia, Penn State, Michigan State University, University of Florida IFAS, Kentucky Center for Crop Diversification, USU Extension.
+- Estudios de costos universitarios con rendimientos explicitos.
+- Documentos BIO-G internos.
+
+Media confianza:
+- Guias tecnicas regionales.
+- Articulos tecnicos con fuente identificable.
+- Estudios academicos regionales de Mexico.
+
+Baja-media:
+- Foros de productores y jardineria.
+- Sitios comerciales.
+- Videos o discusiones sin fuente tecnica.
+
+Uso de foros:
+Los foros se revisan para lenguaje UX y problemas reales:
+- “mi durazno florece pero no da fruto”
+- “helada en floracion”
+- “se cae la flor”
+- “tiene muchos frutos pero no crecen”
+- “durazno cargado, fruta chica”
+- “lepra / hojas rojas / cocla”
+- “no madura bien”
+- “un ano da y otro no”
+
+Pero los foros NO definen rangos tecnicos, umbrales ni promedios de rendimiento.
+
+================================================================================
+3. UNIDADES Y CONVERSIONES OFICIALES PARA BIO-G
+================================================================================
+
+Unidades internas recomendadas:
+- kg_per_tree
+- trees_per_hectare
+- ton_per_hectare
+- hectare_area
+- tree_count
+- production_state
+- profile_id
+- confidence
+
+Conversion principal:
+t/ha = (kg_por_arbol * arboles_por_ha) / 1000
+
+kg/arbol = (t/ha * 1000) / arboles_por_ha
+
+produccion_total_kg = kg_por_arbol * numero_de_arboles
+
+produccion_total_t = produccion_total_kg / 1000
+
+arboles/ha desde marco:
+treesPerHa = 10000 / (distancia_entre_filas_m * distancia_entre_arboles_m)
+
+Conversion de fuentes anglosajonas:
+- 1 acre = 0.404685642 ha
+- 1 lb = 0.45359237 kg
+- 1 short ton = 2000 lb = 907.18474 kg
+- 1 bushel de durazno en presupuestos de EE.UU. suele usarse como 50 lb
+
+Conversiones clave usadas:
+- 15 tons/acre = 33.6 t/ha
+- 17 tons/acre = 38.1 t/ha
+- 20 tons/acre = 44.8 t/ha
+- 22 tons/acre = 49.3 t/ha
+- 30 tons/acre = 67.3 t/ha
+- 300 bushels/acre = 16.8 t/ha
+- 400 bushels/acre = 22.4 t/ha
+- 600 bushels/acre = 33.6 t/ha
+- 800 bushels/acre = 44.8 t/ha
+- 1000 bushels/acre = 56.0 t/ha
+- 141 trees/acre = 348 arboles/ha
+- 145 trees/acre = 358 arboles/ha
+- 270 trees/acre = 667 arboles/ha
+- 1000 trees/acre = 2471 arboles/ha
+- 1500 trees/acre = 3707 arboles/ha
+
+================================================================================
+4. INVESTIGACION CRUDA: DATOS QUE SI IMPORTAN
+================================================================================
+
+S1. Mexico / SIAP / USDA-FAS como contexto real
+
+USDA/FAS Mexico Stone Fruit Annual 2024 reporta para durazno fresco:
+- 2022: 34,607 ha plantadas; 32,945 ha cosechadas; 239,134 MT.
+- 2023: 34,279 ha plantadas; 32,253 ha cosechadas; 257,774 MT.
+- 2024 forecast: 34,183 ha plantadas; 32,620 ha cosechadas; 266,400 MT.
+- Los cuatro estados principales concentran cerca de 71% de la produccion: Zacatecas casi 40%, Michoacan 12%, Chihuahua 12% y Puebla 8%.
+- La produccion nacional se concentra en verano y principios de otono: julio, agosto y septiembre son meses fuertes, y junio-septiembre suma mas de 70% del total.
+- Michoacan puede cosechar de finales de febrero a mayo; Chihuahua de junio a septiembre/octubre; Zacatecas de finales de julio a octubre.
+
+Calculo BIO-G:
+- 2022: 239,134 / 32,945 = 7.26 t/ha.
+- 2023: 257,774 / 32,253 = 7.99 t/ha.
+- 2024 forecast: 266,400 / 32,620 = 8.17 t/ha.
+
+Lectura BIO-G:
+- El promedio nacional reciente ronda 7-8 t/ha.
+- Este valor es el contexto real Mexico: mezcla temporal/riego, huertos tradicionales, variedades diversas, tecnologia variable y regiones con riesgo de helada/sequia/calor.
+- Para DZ-SKIP en Mexico, este dato debe pesar fuerte para no inflar el rendimiento.
+- Un huerto tecnificado puede estar muy por arriba, pero solo con mayor confianza si el usuario declara riego, densidad, manejo, poda/raleo y carga visible.
+
+S2. Mexico regional / Estado de Mexico / Coatepec de Harinas
+
+Un estudio de INIFAP/Colegio de Postgraduados/IPN sobre durazno en Estado de Mexico reporta:
+- Promedio nacional historico citado: 4.6 t/ha.
+- Coatepec de Harinas: 1,988 ha y rendimiento promedio 14.8 t/ha en riego.
+- En temporal dentro del mismo DDR, 236 ha y rendimiento promedio 10 t/ha.
+- En el estudio, los rendimientos observados variaron ampliamente, alrededor de 2.5 a 25 t/ha.
+- Problemas tecnicos reportados: manejo agronomico, calidad del fruto, tamano de huerta, comercializacion, plagas, enfermedades, fertilizacion, poda y asistencia tecnica.
+- Se mencionan variedades/materiales regionales como Diamante, Amapre, Dorado, Oro y Criollo.
+
+Lectura BIO-G:
+- En Mexico hay un rango muy amplio: desde bajo rendimiento por manejo/temporal hasta 15-25 t/ha en zonas/productores con mejor manejo.
+- Coatepec muestra que un rendimiento de 10-15 t/ha no es excepcional para Mexico; es un buen rango regional.
+- 25 t/ha puede ser alto en contextos mexicanos tradicionales, no debe ser default SKIP.
+
+S3. Chihuahua / sierra / riego
+
+USDA-FAS indica que Chihuahua aporta cerca de 12% de la produccion nacional de durazno y que, a diferencia de estados mas dependientes de temporal, Chihuahua usa riego para manejar disponibilidad de agua en zonas secas.
+
+Lectura BIO-G:
+- Para Chihuahua/sierra, el rendimiento potencial puede ser mayor que el promedio nacional si hay riego, heladas controladas y buen manejo.
+- El cuello de botella no es solo agua: floracion temprana + heladas tardias + granizo + calor/sequia durante llenado pueden cambiar todo el resultado.
+- BIO-G no debe prometer rendimiento alto solo por estar en una zona productora.
+
+S4. California / UC ANR / cling peach / industria
+
+UC ANR/UCCE reporta para durazno cling/industria:
+- Los sistemas de alta densidad pueden producir mas temprano.
+- Alta densidad: 2-3 tons/acre en segunda temporada.
+- En sistemas convencionales bien manejados, primera cosecha a menudo en tercer ano; cerca de 6 tons/acre.
+- Potencial posterior: 12 tons/ac cuarto ano, 15 quinto, 18 sexto, 20 tons/ac de ahi en adelante.
+- Los huertos cling se replantean normalmente cada 15-18 anos.
+
+Conversion BIO-G:
+- 2-3 tons/ac = 4.5-6.7 t/ha.
+- 6 tons/ac = 13.5 t/ha.
+- 12 tons/ac = 26.9 t/ha.
+- 15 tons/ac = 33.6 t/ha.
+- 18 tons/ac = 40.4 t/ha.
+- 20 tons/ac = 44.8 t/ha.
+
+Lectura BIO-G:
+- Un huerto moderno de durazno industria puede llegar a 35-45 t/ha en plena produccion.
+- Esto NO es default Mexico; sirve como techo alto tecnificado.
+- El ano productivo importa muchisimo: durazno puede entrar rapido, pero no debe pedirse plena carga demasiado pronto.
+
+S5. UC Davis / cost studies / processing peaches
+
+UC Davis cost studies para durazno de proceso usan rendimientos maduros promedio de:
+- 17 tons/acre en un estudio 2017.
+- 20 tons/acre en otros estudios/cultivares tardios.
+
+Conversion BIO-G:
+- 17 tons/ac = 38.1 t/ha.
+- 20 tons/ac = 44.8 t/ha.
+
+Lectura BIO-G:
+- DZ-05 Tardio/Industria puede tener techo alto si se parece a sistema California/proceso con riego, sanidad, poda, raleo y manejo comercial.
+- No confundir “industria” con bajo rendimiento; en procesamiento puede haber altos volu­menes si el sistema esta optimizado.
+
+S6. California general / Peach and Nectarine Production
+
+Guia de UC/CDFA para fertilizacion de durazno/nectarina reporta que el rendimiento moderno de durazno en California subio desde 3-4 tons/ac historicos hasta 15-20 tons/ac para durazno moderno; tambien indica que cling peaches tienen mayor rendimiento que freestone o nectarina.
+
+Conversion BIO-G:
+- 15-20 tons/ac = 33.6-44.8 t/ha.
+
+Lectura BIO-G:
+- 33-45 t/ha es rango alto/tecnificado plausible.
+- En BIO-G solo se activa con manejo alto, riego, densidad clara y estado productivo pleno.
+
+S7. Kentucky / Center for Crop Diversification
+
+Guia de Kentucky para peach indica que, para arboles en produccion, rendimientos de 300-400 bushels/acre son usados como referencia economica.
+
+Conversion BIO-G:
+- 300 bu/ac = 16.8 t/ha.
+- 400 bu/ac = 22.4 t/ha.
+
+Lectura BIO-G:
+- 17-22 t/ha es buen rango comercial medio para durazno fresco en muchas regiones, distinto al techo California.
+- Encaja bien para DZ-03 Amarillo Comercial o DZ-SKIP con manejo medio-bueno y riego.
+
+S8. Michigan State University / crop load y fruto por arbol
+
+MSU Extension propone una formula de rendimiento para durazno fresco:
+Yield (bu/ac) = (fruit per tree) x (trees per acre) / peaches per bushel
+Bajo supuestos de 270 trees/acre y 110 peaches por bushel de 50 lb:
+- Menos de 40 frutos/arbol: casi falla de cosecha.
+- 40-110 frutos/arbol: cosecha ligera/parcial.
+- Mas de 110 frutos/arbol: nivel comercial.
+
+Lectura BIO-G:
+- Durazno necesita un eje de carga/fruitVisible/cropLoad opcional.
+- Si el usuario dice “hay pocos frutos” o se confirma fruit count bajo, reducir proyeccion aunque el arbol sea adulto.
+- Si el usuario dice “esta cargadisimo”, no subir infinito: hay que considerar raleo y calibre.
+- BIO-G v1 no calcula numero de frutos de forma obligatoria, pero puede usarlo como input avanzado.
+
+S9. Florida / bajo frio / cosecha temprana
+
+University of Florida/IFAS presupuesto de durazno subtropical usa escenarios de rendimiento de 5.6, 6.5 y 7.3 mil lb/acre en anos productivos, con lb/planta alrededor de 43, 50 y 56 lb en plena etapa.
+
+Conversion BIO-G:
+- 6,525 lb/ac = 7.3 t/ha.
+- 6,652 lb/ac = 7.5 t/ha.
+- 7,826 lb/ac = 8.8 t/ha.
+- 8,700 lb/ac = 9.8 t/ha.
+- 43-56 lb/planta = 19.5-25.4 kg/arbol.
+
+Lectura BIO-G:
+- Bajo frio/temprano no siempre significa alto t/ha; a veces su valor es ventana temprana/precio, no volumen.
+- DZ-02 Temprano/Bajo frio debe tener rendimiento esperado moderado, no techo California por default.
+
+S10. Alta densidad / arboles enanos / California Agriculture
+
+Ensayos antiguos de durazno enano reportan densidades de 1000-1500 arboles/acre y rendimientos de 15-22 tons/acre en tercer ano; con 1500 arboles/acre se estimaba potencial de 22-30 tons/acre en anos siguientes.
+
+Conversion BIO-G:
+- 1000-1500 arboles/acre = 2471-3707 arboles/ha.
+- 15-22 tons/ac = 33.6-49.3 t/ha.
+- 30 tons/ac = 67.3 t/ha.
+
+Lectura BIO-G:
+- Alta densidad puede subir t/ha temprano, pero reduce kg/arbol.
+- No permitir 70 kg/arbol con 3000 arboles/ha porque generaria 210 t/ha absurdo.
+- Si treesPerHa > 2500, cap kg/arbol fuertemente.
+- 50-65+ t/ha debe ser excepcional, alta densidad/sistema especial, no default.
+
+S11. Espaciamiento comun / Penn State, UGA, Florida
+
+Penn State menciona como espaciamiento comun 14 x 22 ft (~141 arboles/ac = 348 arboles/ha).
+Florida reporta espaciamientos tradicionales 20 x 20 ft (109 arboles/ac), 15 x 20 ft (145 arboles/ac) y 10 x 20 ft (218 arboles/ac).
+UGA usa ejemplos con 16 x 20 ft (~136 arboles/ac = 336 arboles/ha) para calcular consumo de agua.
+
+Lectura BIO-G:
+- Durazno tradicional de centro abierto suele tener densidad mas baja que manzano moderno.
+- Rangos 250-600 arboles/ha son muy normales en sistemas tradicionales/abiertos.
+- Sistemas modernos/Tatura/V/alta densidad pueden subir a 800-2000+ arboles/ha.
+- El documento universal del usuario ya propone 400-2000 arboles/ha segun perfil; este doc conserva esa logica.
+
+S12. Foros / lenguaje real del usuario
+
+Foros y discusiones muestran problemas recurrentes:
+- arbol con flor pero sin fruta;
+- helada tardia o frio raro;
+- hojas con abultamientos rojos/cocla;
+- fruta pequena por exceso de carga;
+- duda de si falta riego/fertilizante;
+- arbol joven que tarda en producir;
+- durazno cargado pero enfermo;
+- falta de maduracion uniforme.
+
+Uso BIO-G:
+- Sirve para lenguaje y preguntas UX.
+- No define rangos tecnicos.
+- Refuerza que rendimiento no debe depender solo de NPK: floracion, helada, raleo y sanidad pesan mucho.
+
+================================================================================
+5. SISTEMAS DE DENSIDAD PARA BIO-G
+================================================================================
+
+Densidad por marco:
+
+Sistema / etiqueta BIO-G              arboles/ha orientativos
+--------------------------------------------------------------
+aislado / traspatio                   1-50 arboles totales
+tradicional extensivo                 100-300 arboles/ha
+tradicional comercial                 300-600 arboles/ha
+semiintensivo                         600-1000 arboles/ha
+moderno medio / Tatura / V            1000-1800 arboles/ha
+alta densidad                         1800-3000 arboles/ha
+muy alta densidad / enano especial    3000-4500+ arboles/ha
+
+Regla:
+- Si el usuario da marco, calcular treesPerHa.
+- Si da numero de arboles y superficie, calcular treesPerHa.
+- Si da solo superficie, pedir arboles/ha o usar DZ-SKIP con confianza baja.
+- Si da solo arboles aislados, calcular kg total, no t/ha.
+- Si treesPerHa > 2500, bajar kg/tree esperado y subir potencial t/ha solo con manejo alto.
+- Si treesPerHa < 500, kg/tree puede ser mayor, pero t/ha puede ser bajo.
+
+Marcos comunes y conversion:
+- 8 x 6 m = 208 arboles/ha
+- 7 x 5 m = 286 arboles/ha
+- 6 x 5 m = 333 arboles/ha
+- 6 x 4 m = 417 arboles/ha
+- 5 x 5 m = 400 arboles/ha
+- 5 x 4 m = 500 arboles/ha
+- 5 x 3 m = 667 arboles/ha
+- 4 x 4 m = 625 arboles/ha
+- 4 x 3 m = 833 arboles/ha
+- 4 x 2.5 m = 1000 arboles/ha
+- 4 x 2 m = 1250 arboles/ha
+- 3.5 x 2 m = 1429 arboles/ha
+- 3.5 x 1.5 m = 1905 arboles/ha
+- 3 x 1.5 m = 2222 arboles/ha
+- 3 x 1.0 m = 3333 arboles/ha
+
+================================================================================
+6. ESTADOS PRODUCTIVOS Y RANGOS BASE
+================================================================================
+
+Estado BIO-G: no_productivo
+Aplica:
+- newly_planted
+- root_establishment
+- juvenile_non_productive
+- juvenile_vegetative
+Rendimiento:
+- 0 kg/arbol
+- 0 t/ha
+Confianza:
+- alta si usuario confirma que no produce.
+
+Estado BIO-G: primera_produccion
+Descripcion:
+- Arbol empieza a dar fruta, pero todavia no debe exigirse rendimiento pleno.
+Rango general:
+- 1-6 kg/arbol en entrada temprana.
+- 3-12 kg/arbol si hay buena formacion y carga moderada.
+- 1-8 t/ha segun densidad.
+Notas:
+- En durazno puede haber fruta ano 2-3, pero no conviene sobrecargar arbol joven.
+- Si el arbol joven esta muy cargado, BIO-G debe advertir sobre calibre y estructura.
+Confianza:
+- media si usuario confirma fruto.
+
+Estado BIO-G: produccion_joven
+Descripcion:
+- Arbol produce, pero aun no estabiliza plena produccion.
+Rango general:
+- 6-20 kg/arbol en densidad alta/moderna.
+- 12-35 kg/arbol en densidad media/tradicional.
+- 5-25 t/ha.
+Confianza:
+- media.
+
+Estado BIO-G: produccion_plena
+Descripcion:
+- Arbol adulto o sistema moderno estabilizado.
+Rango general:
+- 10-25 kg/arbol en alta/muy alta densidad.
+- 25-70 kg/arbol en densidad media/semiintensiva.
+- 60-120 kg/arbol en arboles grandes aislados/tradicionales bien cargados, pero no traducir directamente a t/ha sin densidad.
+- 6-10 t/ha contexto Mexico conservador/nacional reciente.
+- 10-18 t/ha comercial regional/tradicional bueno.
+- 18-28 t/ha comercial medio/tecnificado.
+- 28-40 t/ha alto/tecnificado.
+- 40-50 t/ha muy alto, validado por manejo, riego, variedad y densidad.
+- >50 t/ha excepcional; solo con sistema intensivo, alta densidad, fuente/manejo claro y buen calibre.
+Confianza:
+- media-alta si hay densidad, etapa, perfil y manejo.
+
+Estado BIO-G: carga_baja_por_helada_o_cuajado
+Descripcion:
+- Arbol adulto con poca fruta por helada, lluvia/frio, calor, baja viabilidad floral, frio insuficiente o mala reserva.
+Rango:
+- 0-40% del esperado si la etapa/carga visible lo confirma.
+Confianza:
+- media si hubo evento claro.
+Regla:
+- No culpar fertilizacion automaticamente.
+
+Estado BIO-G: sobrecarga_con_fruta_chica
+Descripcion:
+- Arbol con muchos frutos, pero sin raleo/carga equilibrada.
+Rango:
+- kg total puede ser medio/alto, pero calidad/calibre comercial baja.
+- Si no hay raleo, no subir valor comercial aunque haya mucha fruta.
+Confianza:
+- media.
+Regla:
+- Separar produccion biologica de produccion comercial.
+
+Estado BIO-G: postcosecha_memoria
+Descripcion:
+- Estres despues de cosecha reduce reservas/yemas del siguiente ciclo.
+Rango:
+- no cambia cosecha ya cortada, pero puede bajar estimacion del siguiente ciclo 10-35% segun severidad.
+
+================================================================================
+7. TABLA BASE POR PERFIL DZ
+================================================================================
+
+DZ-SKIP / dz_skip
+Uso:
+- Usuario no sabe variedad.
+- Usuario solo sabe que tiene durazno/duraznero.
+Rendimiento relativo:
+- medio conservador.
+Rango base plena produccion:
+- kg/arbol: 18-45
+- t/ha esperado Mexico conservador: 5-16
+- t/ha alto: 16-25 si manejo/densidad/riego/carga son buenos.
+- t/ha excepcional: no usar sin perfil/sistema claro.
+Confianza:
+- baja si solo hay cultivo.
+- media-baja si hay arboles/ha y estado productivo.
+Notas:
+- No asumir bajo frio, criollo, amarillo comercial ni industria.
+- No asumir riego.
+- No asumir raleo correcto.
+- Este perfil debe estar mas cerca del promedio nacional reciente (~8 t/ha) que de California si no hay datos de manejo.
+
+DZ-01 / dz_01_criollo_regional
+Uso:
+- Criollo, regional, tradicional, San Gabriel/Irene/Lucero si se usa localmente, selecciones locales.
+Rendimiento relativo:
+- medio, muy variable.
+Rango base plena produccion:
+- kg/arbol: 20-60
+- kg/arbol alta densidad: 10-25
+- t/ha esperado: 6-18
+- t/ha alto: 18-28
+- t/ha excepcional: 28-35 solo con riego/manejo/densidad clara.
+Fuentes/lectura:
+- Mexico historico y Coatepec muestran rangos muy variables; criollo/regional puede ser bueno pero heterogeneo.
+- Calidad, calibre y mercado pueden limitar valor aunque haya fruta.
+Confianza:
+- baja-media.
+Ajustes:
+- subir si hay riego, poda/raleo, sanidad y carga visible.
+- bajar por temporal, helada, baja sanidad, fruta chica, poca asistencia tecnica o huerto viejo descuidado.
+
+DZ-02 / dz_02_temprano_bajo_frio
+Uso:
+- Bajo frio, temprano, Flordaprince, variedades tempranas/subtropicales, cosecha temprana.
+Rendimiento relativo:
+- bajo-medio a medio; valor puede venir por epoca/precio, no por t/ha.
+Rango base plena produccion:
+- kg/arbol: 12-40
+- kg/arbol alta densidad: 8-22
+- t/ha esperado: 5-15
+- t/ha alto: 15-25
+- t/ha excepcional: 25-32 con sistema validado.
+Fuentes/lectura:
+- Florida bajo frio/subtropical usa escenarios marketable alrededor de 7-10 t/ha en anos productivos.
+- El perfil temprano es muy sensible a helada tardia y golpe de calor en cuajado.
+Confianza:
+- media si el usuario confirma bajo frio/temprano y zona.
+Ajustes:
+- bajar por frio insuficiente, floracion irregular, helada tardia, calor en cuajado, baja carga visible.
+- subir si hay cosecha temprana confirmada, riego estable y sanidad/carga buenas.
+
+DZ-03 / dz_03_amarillo_comercial
+Uso:
+- Amarillo, comercial, Redhaven, Suncrest, Dorado/Oro si el uso es mercado fresco comercial.
+Rendimiento relativo:
+- medio-alto.
+Rango base plena produccion:
+- kg/arbol: 25-70
+- kg/arbol alta densidad: 12-28
+- t/ha esperado: 10-28
+- t/ha alto: 28-40
+- t/ha excepcional: 40-50 con sistema tecnificado validado.
+Fuentes/lectura:
+- Kentucky 300-400 bu/ac = 16.8-22.4 t/ha como rango comercial medio.
+- California moderno 15-20 tons/ac = 33.6-44.8 t/ha como alto tecnificado.
+Confianza:
+- media-alta si hay identificacion de variedad/tipo + densidad/riego.
+Ajustes:
+- bajar por helada, mal cuajado, raleo ausente, deficit en llenado, sanidad, granizo o fruta chica.
+- subir por riego estable, poda/raleo correcto, buena carga y sistema tecnificado.
+
+DZ-04 / dz_04_blanco_dulce
+Uso:
+- Blanco, dulce, Saturn, donut, melocoton blanco, nicho/premium.
+Rendimiento relativo:
+- bajo-medio a medio; premium no significa mas t/ha.
+Rango base plena produccion:
+- kg/arbol: 15-50
+- kg/arbol alta densidad: 8-24
+- t/ha esperado: 6-20
+- t/ha alto: 20-30
+- t/ha excepcional: 30-38 con manejo y mercado claros.
+Fuentes/lectura:
+- El valor del perfil se orienta a calidad, sabor, nicho y fruta delicada.
+- Mayor sensibilidad a manejo de cosecha, pudriciones y calidad visual.
+Confianza:
+- baja-media.
+Ajustes:
+- bajar por pudriciones, rajado, golpe, sobremadurez, mala cosecha o fruta chica.
+- subir solo si hay carga/calibre/sanidad y sistema claro.
+
+DZ-05 / dz_05_tardio_industria
+Uso:
+- Tardio, industria, proceso, cling/pegado al hueso, late processing, mercado tardio.
+Rendimiento relativo:
+- medio-alto si hay sistema comercial; variable en Mexico.
+Rango base plena produccion:
+- kg/arbol: 25-75
+- kg/arbol alta densidad: 12-30
+- t/ha esperado: 12-30
+- t/ha alto: 30-45
+- t/ha excepcional: 45-55 con sistema tipo California/proceso validado.
+Fuentes/lectura:
+- UC processing/cling peaches: 17-20 tons/ac = 38-45 t/ha como referencia fuerte en huerto maduro.
+- UC ANR muestra avance anual hasta 20 tons/ac en plena etapa.
+Confianza:
+- media si se confirma industria/tardio + manejo.
+Ajustes:
+- bajar por estres hidrico prolongado, calor en maduracion, granizo, baja sanidad o calidad no procesable.
+- subir por riego, densidad, poda/raleo y contrato/sistema claro.
+
+DZ-FUTURO / Nectarina / Pelon / Pavia
+Estado:
+- No es perfil oficial v1.
+Uso:
+- Si usuario dice “nectarina”, “pelon”, “pavia”, “peach without fuzz”, BIO-G v1 debe preguntar o mandar a dz_skip con futureProfile=nectarine/pavia.
+Regla:
+- No crear dz_06 sin documento oficial.
+- No mezclar rendimiento de nectarina con durazno fresco/industria sin investigacion dedicada.
+
+================================================================================
+8. MODELOS DE CALCULO RECOMENDADOS
+================================================================================
+
+MODELO A: calculo por numero de arboles
+Uso:
+- Productor pequeno o huerto sin superficie clara.
+Inputs:
+- profileId
+- productionState
+- treeCount
+- managementLevel
+- irrigationLevel
+- cropLoadStatus
+- stressMemory
+Output:
+- kg totales
+- rango bajo / esperado / alto
+
+Formula:
+kg_total_bajo = kgTreeLow * treeCount * modifiers
+kg_total_esperado = kgTreeExpected * treeCount * modifiers
+kg_total_alto = kgTreeHigh * treeCount * modifiers
+
+Ejemplo:
+- 100 arboles DZ-03 en produccion plena.
+- kg/arbol esperado conservador: 45.
+- 100 * 45 = 4500 kg = 4.5 t.
+
+MODELO B: calculo por arboles/ha
+Uso:
+- Huerto comercial con densidad.
+Inputs:
+- kg/tree por perfil y estado
+- treesPerHa
+Formula:
+tHa = kgTree * treesPerHa / 1000
+
+Ejemplo:
+- 500 arboles/ha * 40 kg/tree = 20 t/ha.
+
+MODELO C: calculo por t/ha fuente-base
+Uso:
+- Cuando hay perfil/sistema, pero no kg/tree.
+Inputs:
+- profileId
+- densitySystem
+- productionState
+- managementLevel
+Output:
+- t/ha directo + conversion a kg/tree si hay treesPerHa.
+
+Ejemplo:
+- California processing: 38-45 t/ha.
+- Si treesPerHa = 600, kg/tree equivalente = 63-75 kg/tree.
+- Si treesPerHa = 1500, kg/tree equivalente = 25-30 kg/tree.
+
+MODELO D: calculo por superficie + arboles totales
+Uso:
+- Usuario dice “tengo 2 ha y 1000 arboles”.
+Formula:
+treesPerHa = treeCount / hectares
+Luego aplicar modelo B.
+
+Ejemplo:
+- 2 ha, 1000 arboles = 500 arboles/ha.
+- DZ-03 plena, 40 kg/tree esperado = 20 t/ha.
+- produccion total = 40 t.
+
+MODELO E: calculo con carga/frutos visibles
+Uso:
+- Usuario reporta frutos por arbol o carga visual.
+Formula conceptual:
+Yield (bu/ac) = fruitPerTree * treesPerAcre / fruitPerBushel
+
+BIO-G v1 puede usar categorias:
+- noFruitVisible: factor fuerte a la baja si ya deberia haber cuajado.
+- lightCrop: 0.30-0.65.
+- normalCrop: 0.85-1.05.
+- heavyCrop: 1.00-1.15 biologico, pero penalizar calidad/calibre si no hay raleo.
+
+MODELO F: calculo con memoria de estres
+Formula conceptual:
+yield = baseYield * profileModifier * productionStateModifier * densityModifier * managementModifier * irrigationModifier * chillModifier * frostModifier * cropLoadModifier * thinningModifier * healthModifier * stressModifier * confidenceModifier
+
+================================================================================
+9. MODIFICADORES RECOMENDADOS
+================================================================================
+
+productionStateModifier:
+- no_productivo: 0.00
+- primera_produccion: 0.05-0.30
+- produccion_joven: 0.30-0.70
+- produccion_plena: 0.80-1.15
+- carga_baja_por_helada_o_cuajado: 0.00-0.45
+- sobrecarga_con_fruta_chica: kg biologico 0.85-1.10; comercial 0.55-0.85
+- unknown: 0.30-0.80 segun evidencia visual
+
+managementModifier:
+- bajo: 0.45-0.70
+- medio: 0.75-1.00
+- bueno: 1.00-1.15
+- alto/intensivo: 1.15-1.35
+- excepcional validado: 1.35-1.50
+
+irrigationModifier:
+- temporal / rainfed / estres: 0.45-0.75
+- riego irregular: 0.70-0.90
+- riego estable: 0.95-1.10
+- fertirriego bien manejado: 1.05-1.18
+
+chillModifier:
+- frio suficiente / brotacion uniforme: 1.00
+- frio dudoso: 0.80-0.95
+- falta de frio con brotacion/floracion irregular: 0.45-0.80
+
+frostBloomModifier:
+- sin helada: 1.00
+- helada leve o daño parcial: 0.65-0.90
+- helada moderada en flor/cuajado: 0.25-0.65
+- helada severa / pistilos muertos / sin cuajado: 0.00-0.30
+
+cropLoadModifier:
+- no visible en etapa donde deberia haber fruto: 0.10-0.50
+- carga ligera: 0.35-0.70
+- carga normal: 0.85-1.05
+- carga alta con raleo adecuado: 1.00-1.15
+- carga alta sin raleo: rendimiento biologico 1.00; rendimiento comercial 0.65-0.90
+
+thinningModifier:
+- raleo confirmado y carga equilibrada: 1.00-1.12
+- no sabe: 0.90-1.00
+- sin raleo + carga alta: comercial 0.70-0.90
+- raleo excesivo / poca fruta: 0.35-0.80
+
+waterModifier:
+- humedad estable: 1.00
+- deficit leve fuera de etapa critica: 0.90-0.98
+- deficit en fruit_set/fruit_fill: 0.60-0.90
+- deficit severo prolongado: 0.30-0.70
+- exceso/saturacion persistente: 0.50-0.85 segun raiz/sanidad
+
+heatModifier:
+- sin calor fuerte: 1.00
+- calor leve durante llenado: 0.90-0.98
+- calor fuerte en cuajado/llenado/maduracion: 0.65-0.90
+- golpe de calor + baja humedad: 0.40-0.75
+
+hailModifier:
+- sin granizo: 1.00
+- leve: 0.85-0.95
+- moderado: 0.55-0.80
+- severo: 0.10-0.50
+
+healthModifier:
+- sano: 1.00
+- presion sanitaria leve: 0.90-0.98
+- leaf curl/monilia/plaga moderada: 0.65-0.90
+- defoliacion, pudricion fuerte o plaga severa: 0.30-0.70
+
+postHarvestReserveModifier:
+- buena hoja activa y recuperacion: 1.00
+- estres leve postcosecha: 0.90-0.98 siguiente ciclo
+- defoliacion/sequia postcosecha: 0.65-0.90 siguiente ciclo
+- postcosecha severa: 0.45-0.75 siguiente ciclo
+
+================================================================================
+10. REFERENCIAS BASE PARA CODIGO
+================================================================================
+
+10.1 Rango base por perfil para peach_tree_yield_reference.dart
+
+Sugerencia de estructura:
+
+class PeachTreeYieldReference {
+  const PeachTreeYieldReference({
+    required this.profileId,
+    required this.fullKgPerTree,
+    required this.expectedTonPerHa,
+    required this.confidenceBase,
+    this.notesEs = const <String>[],
+  });
+}
+
+Tabla propuesta:
+
+profileId: dz_skip
+fullKgPerTree: YieldRange(18, 32, 45)
+expectedTonPerHa: YieldRange(5, 12, 25)
+confidenceBase: 0.42
+notes:
+- Perfil general: no asume bajo frio, criollo, amarillo, blanco, industria, riego ni raleo.
+- Default Mexico debe ser conservador (~8 t/ha promedio nacional reciente) si no hay datos.
+
+profileId: dz_01_criollo_regional
+fullKgPerTree: YieldRange(20, 38, 60)
+expectedTonPerHa: YieldRange(6, 14, 28)
+confidenceBase: 0.45
+notes:
+- Criollo/regional es heterogeneo; puede ser muy bueno localmente, pero no asumir tecnificacion.
+
+profileId: dz_02_temprano_bajo_frio
+fullKgPerTree: YieldRange(12, 25, 40)
+expectedTonPerHa: YieldRange(5, 11, 25)
+confidenceBase: 0.50
+notes:
+- Bajo frio/temprano puede valer por ventana de mercado mas que por toneladas.
+- Muy sensible a frio insuficiente, helada tardia y calor en cuajado.
+
+profileId: dz_03_amarillo_comercial
+fullKgPerTree: YieldRange(25, 45, 70)
+expectedTonPerHa: YieldRange(10, 22, 40)
+confidenceBase: 0.65
+notes:
+- Perfil comercial fresco con potencial medio-alto si hay riego, poda, raleo y sanidad.
+
+profileId: dz_04_blanco_dulce
+fullKgPerTree: YieldRange(15, 30, 50)
+expectedTonPerHa: YieldRange(6, 15, 30)
+confidenceBase: 0.50
+notes:
+- Perfil premium/nicho; calidad y manejo de cosecha pesan mas que volumen.
+
+profileId: dz_05_tardio_industria
+fullKgPerTree: YieldRange(25, 50, 75)
+expectedTonPerHa: YieldRange(12, 28, 45)
+confidenceBase: 0.62
+notes:
+- Industria/tardio puede tener alto volumen en sistema comercial; no asumirlo en SKIP.
+
+10.2 Estados productivos sugeridos
+
+enum PeachProductionState {
+  nonProductive,
+  firstBearing,
+  youngBearing,
+  fullBearing,
+  frostOrPoorSetLowCrop,
+  overloadedSmallFruit,
+  unknown,
+}
+
+10.3 Niveles de manejo
+
+enum PeachManagementLevel {
+  low,
+  medium,
+  good,
+  high,
+  exceptional,
+}
+
+10.4 Niveles de riego
+
+enum PeachIrrigationLevel {
+  rainfed,
+  irregular,
+  stable,
+  fertigation,
+}
+
+10.5 Memoria de estres
+
+enum PeachStressSeverity { none, mild, moderate, severe }
+
+class PeachTreeStressMemory {
+  const PeachTreeStressMemory({
+    this.insufficientChill = PeachStressSeverity.none,
+    this.floweringFrost = PeachStressSeverity.none,
+    this.poorFruitSet = PeachStressSeverity.none,
+    this.fruitFillWaterStress = PeachStressSeverity.none,
+    this.heatStress = PeachStressSeverity.none,
+    this.hailDamage = PeachStressSeverity.none,
+    this.leafDiseaseOrDefoliation = PeachStressSeverity.none,
+    this.postHarvestReserveRisk = PeachStressSeverity.none,
+  });
+}
+
+10.6 DensitySystem y caps de kg/arbol
+
+class PeachDensitySystem {
+  const PeachDensitySystem(this.id, this.kgPerTreeCap);
+
+  final String id;
+  final double kgPerTreeCap;
+
+  static const traditionalExtensive = PeachDensitySystem('traditional_extensive', 120);
+  static const traditionalCommercial = PeachDensitySystem('traditional_commercial', 90);
+  static const semiIntensive = PeachDensitySystem('semi_intensive', 70);
+  static const mediumModern = PeachDensitySystem('medium_modern', 45);
+  static const highDensity = PeachDensitySystem('high_density', 30);
+  static const veryHighDensity = PeachDensitySystem('very_high_density', 18);
+}
+
+Regla de cap:
+- <300 trees/ha: cap 120 kg/tree
+- 300-600: cap 90 kg/tree
+- 600-1000: cap 70 kg/tree
+- 1000-1800: cap 45 kg/tree
+- 1800-3000: cap 30 kg/tree
+- >3000: cap 18 kg/tree salvo sistema enano documentado
+
+================================================================================
+11. INFERENCIA DESDE ESTADO / ETAPA
+================================================================================
+
+Funcion conceptual:
+
+PeachProductionState inferPeachProductionState({
+  required String perennialStateId,
+  required String phenologyStageId,
+  PeachProductionState? explicit,
+})
+
+Reglas:
+- newly_planted -> nonProductive
+- juvenile_non_productive -> nonProductive
+- planting_transplant -> nonProductive
+- root_establishment -> nonProductive
+- juvenile_vegetative -> nonProductive
+- established + unknown -> unknown
+- productive_season + flowering -> unknown o frost/potential stage, no fullBearing automatico si no hay fruta visible
+- productive_season + fruit_set -> young/full segun explicit; confianza media
+- productive_season + fruit_fill -> fullBearing si arbol adulto/carga confirmada; confianza media-alta
+- productive_season + harvest_maturity -> fullBearing si fruta visible; confianza alta para cosecha biologica
+- post_harvest -> no cierra; puede guardar resultado/memoria
+
+Regla diferente de manzano/pera:
+En durazno, productive_season + flowering NO debe inferir plena produccion por default. Debe esperar cuajado/fruto visible o usar confianza baja-media.
+
+================================================================================
+12. MENSAJES UX RECOMENDADOS
+================================================================================
+
+Mensaje si no productivo:
+“Todavia no proyectamos cosecha. En esta etapa importa mas formar raiz, estructura y reservas del duraznero.”
+
+Mensaje si DZ-SKIP:
+“Este calculo usa Durazno general. Puede mejorar si eliges si es criollo/regional, bajo frio, amarillo comercial, blanco/dulce o tardio/industria.”
+
+Mensaje si flowering:
+“El duraznero puede tener mucha flor y aun asi producir poco si hubo helada, frio, lluvia o estres. La estimacion sube cuando confirmas frutito o fruto visible.”
+
+Mensaje si fruit_set:
+“El cuajado define gran parte de la cosecha. Si hubo helada, calor o caida de frutitos, BIO-G baja el rango.”
+
+Mensaje si fruit_fill:
+“En llenado, el agua estable y la carga equilibrada pesan mucho para calibre. Mucha fruta sin raleo puede bajar tamano comercial.”
+
+Mensaje si harvest_maturity:
+“En madurez/cosecha, BIO-G estima cosecha aproximada, pero calidad, golpes, pudriciones y calibre pueden cambiar lo comercializable.”
+
+Mensaje si post_harvest:
+“La cosecha no cierra el arbol. El estres postcosecha puede afectar reservas y yemas del siguiente ciclo.”
+
+Mensaje si falta densidad:
+“Sin arboles/ha, marco de plantacion o numero de arboles, BIO-G no estima t/ha con buena confianza.”
+
+================================================================================
+13. TESTS MINIMOS RECOMENDADOS
+================================================================================
+
+Archivo sugerido:
+test/core/peach_tree/peach_tree_yield_reference_test.dart
+
+Casos:
+
+1. newly_planted + dz_skip => rendimiento 0.
+2. juvenile_non_productive + dz_03 => rendimiento 0.
+3. planting_transplant/root_establishment/juvenile_vegetative bloquean rendimiento.
+4. dz_skip no cae a manzano ni pera.
+5. dz_03 amarillo comercial produce mas t/ha esperado que dz_skip con mismas condiciones.
+6. dz_02 temprano/bajo frio no supera dz_03 por default.
+7. dz_05 industria permite techo alto si manejo/riego/densidad son altos.
+8. treesPerHaFromSpacing(5,4) = 500.
+9. kgTree 40 * 500 trees/ha = 20 t/ha.
+10. 20 t/ha con 500 trees/ha = 40 kg/tree.
+11. density cap evita kg/tree absurdo en >3000 trees/ha.
+12. flowering sin fruitVisible mantiene confianza baja-media.
+13. fruit_fill con fruitVisible sube confianza.
+14. floweringFrost severe baja rendimiento fuerte.
+15. poorFruitSet moderate baja rendimiento.
+16. overloadedSmallFruit puede mantener kg biologico pero baja comercialQualityFactor.
+17. post_harvest no cierra el cultivo.
+18. unknown stage usa DZ-SKIP conservador.
+19. cropLoadStatus lightCrop baja rango.
+20. cropLoadStatus heavyCrop sin raleo no debe elevar calidad comercial.
+21. memoria postHarvestReserveRisk baja siguiente ciclo, no la cosecha ya terminada.
+22. no usar sowingDate en inferencia.
+
+================================================================================
+14. FUENTES TECNICAS USADAS
+================================================================================
+
+Fuentes internas BIO-G:
+- Estandar BIO-G para Integracion de Arboles Perennes v1.5.
+- 01_Ficha_Tecnica_Universal_Perfiles_BioG_Durazno_DZ_v1_fortalecido.txt.
+- 02_Perfil_SKIP_BioG_Durazno_DZ_SKIP_v1_fortalecido.txt.
+- 03_Rendimiento_Aproximado_BioG_Pera_v1.txt como plantilla editorial.
+- apple_tree_yield_reference.dart y tree_yield_reference_catalog.dart como lectura del motor actual.
+
+Fuentes externas principales:
+- USDA/FAS Mexico, Stone Fruit Annual 2024, datos de produccion y area SIAP.
+- UC ANR / UC Davis, Growing Cling Peaches in California: An Overview.
+- UC Davis Cost Studies, Processing Peaches, Sacramento/San Joaquin Valley.
+- CDFA/FREP/UC, Peach and Nectarine Production in California.
+- Michigan State University Extension, Best Practices for Peach Orchards with Reduced Crop Load.
+- University of Florida IFAS, Establishment and Production Costs for Peach Orchards in Florida.
+- University of Kentucky Center for Crop Diversification, Peaches.
+- Penn State Extension, Peach Production.
+- University of Georgia Extension, Cultural Management of the Bearing Peach Orchard.
+- SciELO / INIFAP-Colegio de Postgraduados-IPN, Aspectos tecnicos y caracterizacion del productor de durazno en el Estado de Mexico.
+- Foros GrowingFruit, InfoJardin, Houzz, Dave's Garden: usados solo para lenguaje UX y patrones de dudas, no para rangos tecnicos.
+
+================================================================================
+15. CIERRE
+================================================================================
+
+Durazno valida que BIO-G puede pasar de frutales de pepita a frutales de hueso/carozo.
+
+La regla de rendimiento es:
+
+produccion aproximada = kg/arbol + arboles/ha + estado productivo + perfil + densidad + manejo + riego + frio/floracion/cuajado + carga/raleo + sanidad + memoria
+
+No usar rendimiento anual simple.
+No prometer cosecha.
+No asumir plena produccion por estar en flor.
+No asumir que mas fruta es mejor si no hay raleo/calibre.
+No copiar manzano ni pera.
+
+En durazno, la cosecha se gana temprano:
+- frio invernal correcto,
+- floracion viva,
+- cuajado real,
+- carga equilibrada,
+- agua estable en llenado,
+- buena sanidad,
+- postcosecha que recargue el siguiente ciclo.

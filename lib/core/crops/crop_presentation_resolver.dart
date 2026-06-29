@@ -1,6 +1,10 @@
 import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
+import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
+import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
+import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
+import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/widgets/seeds/chili_profiles.dart';
@@ -239,6 +243,22 @@ class CropPresentationResolver {
       );
     }
 
+    // Árboles: la "variedad" es el perfil perenne (AP-/PR-), guardado en
+    // `profileId`, y el catálogo de árbol no define `varieties`. Sin esta rama
+    // la UI mostraría el id crudo del perfil (p. ej. "pr_03_bosc") o el texto
+    // "Perfil genérico". Aquí se resuelve a lenguaje humano compartido.
+    if (cropId == CropCatalog.appleTreeCropId ||
+        cropId == CropCatalog.pearTreeCropId ||
+        cropId == CropCatalog.peachTreeCropId ||
+        cropId == CropCatalog.walnutTreeCropId) {
+      return _resolveTree(
+        cropId: cropId,
+        cropContext: cropContext,
+        seed: seed,
+        definition: definition,
+      );
+    }
+
     final cropDisplayName =
         CropCatalog.cropById(cropId)?.label ??
         definition?.displayName ??
@@ -299,6 +319,62 @@ class CropPresentationResolver {
       cropDisplayName: cropDisplayName,
       varietyLabel: varietyLabel,
       headlineLabel: displayHeadlineLabel,
+      runtimeLabel: runtimeLabel,
+      iconAsset: _resolveIconAsset(
+        cropId: cropId,
+        cropContext: cropContext,
+        seed: seed,
+      ),
+    );
+  }
+
+  /// Presentación de un árbol perenne (Manzano/Pera). La "variedad" visible es
+  /// el perfil PR/AP en lenguaje humano; el general/SKIP se muestra sin detalle
+  /// técnico. El ícono reutiliza el resolver por perfil de árbol.
+  static CropPresentationData _resolveTree({
+    required String cropId,
+    required DeviceCropContext? cropContext,
+    required SeedInstall? seed,
+    CropDefinition? definition,
+  }) {
+    final cropDisplayName =
+        CropCatalog.cropById(cropId)?.label ??
+        definition?.displayName ??
+        CropCatalog.cropDisplayName(cropId);
+
+    final profileId =
+        cropContext?.profileId ??
+        seed?.profileId ??
+        cropContext?.varietyId ??
+        cropContext?.varietyAlias ??
+        seed?.varietyAlias;
+
+    final normalizedProfile = (profileId ?? '').trim().toLowerCase();
+    final defaultProfileId = (CropCatalog.cropById(cropId)?.defaultProfileId ?? '')
+        .toLowerCase();
+    final isGeneric = normalizedProfile.isEmpty ||
+        normalizedProfile == defaultProfileId ||
+        normalizedProfile.endsWith('_skip');
+
+    final varietyLabel = isGeneric
+        ? null
+        : TreeProfilePresentation.displayLabel(cropId, profileId);
+
+    final headlineLabel = varietyLabel == null
+        ? cropDisplayName
+        : '$cropDisplayName · $varietyLabel';
+    final runtimeLabel = varietyLabel == null
+        ? cropDisplayName
+        : '$cropDisplayName ($varietyLabel)';
+
+    return CropPresentationData(
+      hasConfiguredCrop: true,
+      isFallowMode: false,
+      isGenericSelection: isGeneric,
+      cropId: cropId,
+      cropDisplayName: cropDisplayName,
+      varietyLabel: varietyLabel,
+      headlineLabel: headlineLabel,
       runtimeLabel: runtimeLabel,
       iconAsset: _resolveIconAsset(
         cropId: cropId,
@@ -449,9 +525,51 @@ class CropPresentationResolver {
         return _resolveAppleTreeIcon(
           cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
         );
+      case CropCatalog.pearTreeCropId:
+        // La pera guarda el perfil PR en `profileId`; priorizarlo para el icono
+        // (igual que el manzano: el varietyAlias legible no mapea a icono).
+        return _resolvePearTreeIcon(
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.peachTreeCropId:
+        // El durazno guarda el perfil DZ en `profileId`; priorizarlo para el
+        // icono (igual que manzano/pera).
+        return _resolvePeachTreeIcon(
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.walnutTreeCropId:
+        // El nogal guarda el perfil NG en `profileId`; priorizarlo para el
+        // icono (igual que manzano/pera/durazno).
+        return _resolveWalnutTreeIcon(
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
       default:
         return _genericPlantIconAsset;
     }
+  }
+
+  /// Ícono de la pera por perfil PR. Sin perfil claro → ícono del cultivo
+  /// (`ic_pear_tree.png`); PR-SKIP/genérico → neutro (`ic_pear_tree_generic`).
+  static String _resolvePearTreeIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return PearTreeAssets.cropIcon;
+    return pearTreeProfileIcon(raw);
+  }
+
+  /// Ícono del durazno por perfil DZ. Usa los PNG definitivos `ic_peach_*`;
+  /// perfiles desconocidos caen al genérico seguro de durazno.
+  static String _resolvePeachTreeIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return PeachTreeAssets.cropIcon;
+    return peachTreeProfileIcon(raw);
+  }
+
+  /// Ícono del nogal por perfil NG. Usa los PNG definitivos `ic_walnut_*`;
+  /// perfiles desconocidos caen al genérico seguro de nogal.
+  static String _resolveWalnutTreeIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return WalnutTreeAssets.cropIcon;
+    return walnutTreeProfileIcon(raw);
   }
 
   /// Ícono del manzano por perfil AP. Sin perfil claro → ícono del cultivo

@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
+import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
+import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
+import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
+import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/widgets/onboarding/onboarding_asset_badge.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 import 'package:bio_g/widgets/onboarding/onboarding_header.dart';
@@ -60,17 +64,39 @@ class CropDetailsStep extends StatelessWidget {
     }
 
     // Resolve variety-aware icons where the wizard has specific assets.
+    final String normalizedSelectedCropId = CropCatalog.canonicalCropKey(
+      selectedCropId,
+    );
     final bool isAppleTreeSelection =
-        selectedCropId == 'crop_apple_tree' || selectedCropId == 'apple_tree';
+        normalizedSelectedCropId == CropCatalog.appleTreeCropId;
+    final bool isPearTreeSelection =
+        normalizedSelectedCropId == CropCatalog.pearTreeCropId;
+    final bool isPeachTreeSelection =
+        normalizedSelectedCropId == CropCatalog.peachTreeCropId;
+    final bool isWalnutTreeSelection =
+        normalizedSelectedCropId == CropCatalog.walnutTreeCropId;
+    final bool isTreeSelection =
+        isAppleTreeSelection ||
+        isPearTreeSelection ||
+        isPeachTreeSelection ||
+        isWalnutTreeSelection ||
+        CropCatalog.cropById(normalizedSelectedCropId)?.categoryId ==
+            CropCatalog.treeCategoryId;
     final String resolvedCropAsset =
         isAppleTreeSelection
         ? AppleTreeAssets.cropIcon
+        : isPearTreeSelection
+        ? PearTreeAssets.cropIcon
+        : isPeachTreeSelection
+        ? PeachTreeAssets.cropIcon
+        : isWalnutTreeSelection
+        ? WalnutTreeAssets.cropIcon
         : (selectedCropId == 'bean' && selectedVarietyId != null)
         ? OnboardingUiAssets.assetForBeanVariety(selectedVarietyId)
         : (selectedOption?.assetPath ??
               OnboardingUiAssets.assetForCategory(cropCategory));
-    final String resolvedVarietyAsset = isAppleTreeSelection
-        ? appleTreeProfileIcon(selectedVarietyId)
+    final String resolvedVarietyAsset = isTreeSelection
+        ? _profileIconForCrop(normalizedSelectedCropId, selectedVarietyId)
         : OnboardingUiAssets.variety;
 
     final Widget content = Column(
@@ -251,50 +277,10 @@ class CropDetailsStep extends StatelessWidget {
 
     switch (category) {
       case 'tree':
-        // Solo Manzano: primer árbol real. Limón aún no tiene definición de
-        // catálogo/registry, así que no se ofrece. Las "variedades" son los
-        // perfiles reales de manzano (AP-SKIP/AP-01..05), no ids inventados.
-        return <_DetailOption>[
-          _DetailOption(
-            cropId: 'crop_apple_tree',
-            title: 'Manzano',
-            subtitle: 'Producción general',
-            typeLabel: 'Frutal',
-            assetPath: AppleTreeAssets.cropIcon,
-            varieties: <_VarietyOption>[
-              _VarietyOption(
-                id: 'ap_skip',
-                label: 'No sé / Manzano general',
-                assetPath: AppleTreeAssets.neutralIcon,
-              ),
-              _VarietyOption(
-                id: 'ap_01_golden',
-                label: 'Golden',
-                assetPath: appleTreeProfileIcon('ap_01_golden'),
-              ),
-              _VarietyOption(
-                id: 'ap_02_red',
-                label: 'Red',
-                assetPath: appleTreeProfileIcon('ap_02_red'),
-              ),
-              _VarietyOption(
-                id: 'ap_03_criolla_rayada',
-                label: 'Criolla / Rayada',
-                assetPath: appleTreeProfileIcon('ap_03_criolla_rayada'),
-              ),
-              _VarietyOption(
-                id: 'ap_04_gala',
-                label: 'Gala',
-                assetPath: appleTreeProfileIcon('ap_04_gala'),
-              ),
-              _VarietyOption(
-                id: 'ap_05_low_chill',
-                label: 'Bajo requerimiento de frío',
-                assetPath: appleTreeProfileIcon('ap_05_low_chill'),
-              ),
-            ],
-          ),
-        ];
+        return CropCatalog.cropsByCategory(
+          CropCatalog.treeCategoryId,
+          enabledOnly: false,
+        ).map(_fromCatalogTreeCrop).toList(growable: false);
       case 'ornamental':
         return const <_DetailOption>[
           _DetailOption(
@@ -366,12 +352,68 @@ class CropDetailsStep extends StatelessWidget {
     );
   }
 
+  static _DetailOption _fromCatalogTreeCrop(CropCatalogEntry crop) {
+    // El perfil general/SKIP va al final y las etiquetas son humanas (sin
+    // códigos PR-/AP-), igual que en el wizard y el onboarding.
+    final profiles = TreeProfilePresentation.genericLast(
+      CropCatalog.profilesForCrop(crop.cropId, enabledOnly: false),
+      crop.cropId,
+    );
+
+    return _DetailOption(
+      cropId: crop.cropId,
+      title: crop.label,
+      subtitle: crop.subtitle ?? 'Frutal perenne disponible',
+      typeLabel: 'Frutal',
+      assetPath: OnboardingUiAssets.assetForCrop(
+        crop.cropId,
+        category: crop.categoryId,
+      ),
+      varieties: profiles.isEmpty
+          ? const <_VarietyOption>[
+              _VarietyOption(id: 'generic', label: 'General'),
+            ]
+          : profiles
+                .map(
+                  (profile) => _VarietyOption(
+                    id: profile.id,
+                    label: TreeProfilePresentation.displayLabel(
+                      crop.cropId,
+                      profile.id,
+                      fallbackLabel: profile.label,
+                    ),
+                    assetPath: _profileIconForCrop(crop.cropId, profile.id),
+                  ),
+                )
+                .toList(growable: false),
+    );
+  }
+
+  static String _profileIconForCrop(String? cropId, String? profileId) {
+    final canonicalCropId = CropCatalog.canonicalCropKey(cropId);
+    if (canonicalCropId == CropCatalog.appleTreeCropId) {
+      return appleTreeProfileIcon(profileId);
+    }
+    if (canonicalCropId == CropCatalog.pearTreeCropId) {
+      return pearTreeProfileIcon(profileId);
+    }
+    if (canonicalCropId == CropCatalog.peachTreeCropId) {
+      return peachTreeProfileIcon(profileId);
+    }
+    if (canonicalCropId == CropCatalog.walnutTreeCropId) {
+      return walnutTreeProfileIcon(profileId);
+    }
+    return OnboardingUiAssets.variety;
+  }
+
   static String _typeLabelForCategory(String categoryId) {
     switch (categoryId) {
       case CropCatalog.grainCategoryId:
         return 'Grano';
       case CropCatalog.vegetableCategoryId:
         return 'Hortaliza';
+      case CropCatalog.treeCategoryId:
+        return 'Frutal';
       default:
         return 'Cultivo';
     }

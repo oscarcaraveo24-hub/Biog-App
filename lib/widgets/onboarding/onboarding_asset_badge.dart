@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
+import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
+import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
+import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
 
 class OnboardingUiAssets {
   static const String logo = 'assets/images/logo_bio_g.png';
   static const String landscape = 'assets/images/log_in_image.png';
   static const String grain = 'assets/icons/wizard/ic_grano.png';
   static const String vegetable = 'assets/icons/wizard/ic_hortaliza.png';
-  static const String tree = 'assets/icons/wizard/ic_arbol.png';
+  static const String tree = 'assets/icons/wizard/ic_tree.png';
   static const String ornamental =
       'assets/icons/wizard/ic_planta_hornamental.png';
   static const String genericPlant =
@@ -137,6 +140,29 @@ class OnboardingUiAssets {
       case 'crop_apple_tree':
       case 'apple_tree':
         return AppleTreeAssets.cropIcon;
+      case 'crop_pear_tree':
+      case 'pear_tree':
+      case 'pera':
+      case 'peral':
+        return PearTreeAssets.cropIcon;
+      case 'crop_peach_tree':
+      case 'peach_tree':
+      case 'peach':
+      case 'peachtree':
+      case 'durazno':
+      case 'duraznero':
+      case 'melocoton':
+      case 'melocotón':
+      case 'melocotonero':
+        return PeachTreeAssets.cropIcon;
+      case 'crop_walnut_tree':
+      case 'walnut_tree':
+      case 'walnut':
+      case 'walnuttree':
+      case 'nogal':
+      case 'pecan':
+      case 'nuez':
+        return WalnutTreeAssets.cropIcon;
       case 'rose':
       case 'cactus':
         return ornamental;

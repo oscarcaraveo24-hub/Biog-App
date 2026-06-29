@@ -1,0 +1,757 @@
+01_Ficha_Tecnica_Universal_BioG_Nogal_NG_v1_Reforzada
+=====================================================
+
+[ENCABEZADO]
+BIO-G | Nogal pecanero | Documentacion tecnica v1
+[/ENCABEZADO]
+
+BIO-G
+01. Ficha Tecnica Universal BIO-G - Nogal
+Universal + Perfiles/Variedades | Cultivo: Nogal pecanero / nuez pecana | Prefix: NG
+
+[TABLA]
+Columnas: Uso interno: Documento reforzado con fuentes de extension universitaria, literatura tecnica de nogal pecanero y el contrato BIO-G v1.5 para arboles perennes. No sustituye analisis de suelo, agua, tejido ni asesoria agronomica local.
+[/TABLA]
+
+
+0. Correcciones y decisiones de esta version
+--------------------------------------------
+Se corrige la identidad tecnica para la app: cropId recomendado = crop_walnut_tree; alias legacy opcional = walnut_tree; el nombre agronomico visible es Nogal pecanero / Nuez pecana.
+El enfoque v1 se limita a Carya illinoinensis, no a nogal de Castilla ni a nueces no pecaneras.
+La ficha universal SI incluye perfiles y variedades, conforme al estandar BIO-G. No se crea documento separado de perfiles.
+La variedad ajusta sensibilidad, tipo floral, ventana relativa, rendimiento y textos; no manda la arquitectura fenologica.
+El usuario no esta obligado a saber polinizador, portainjerto ni tipo floral. BIO-G registra el riesgo y conserva migracion desde SKIP.
+Se reemplaza lenguaje generico de fruta por lenguaje nogalero: nuez, amarre de nuez, llenado de almendra/grano, ruezno, shuck split, cosecha y reservas.
+No se modela numero de nueces ni alternancia como verdad forzada. Se registra memoria de estres y se pondera sobre amarre, llenado y ciclo siguiente.
+Se respeta el contrato v1.5: fruit_fill no debe generar copy de cosecha/madurez; harvest_maturity si puede hablar de ruezno abierto, cosecha y calidad final.
+Los rangos medibles de este documento son base universal. Los StageTargets finos por etapa van en el Documento 05.
+
+1. Proposito y alcance
+----------------------
+Esta ficha define el cultivo madre Nogal para BIO-G. Su objetivo es entregar identidad, arquitectura perenne, etapas visibles, perfiles regionales, aliases, ventanas fisiologicas, sensibilidad y mapeo tecnico para que Codex/Claude puedan implementar el arbol sin convertirlo en un cultivo anual largo.
+
+[TABLA]
+Columnas: Regla fuerte: Nogal entra como arbol perenne caducifolio de alta memoria fisiologica. La cosecha no cierra el cultivo. Postcosecha sigue activa porque define reservas, brotacion y amarre del siguiente ciclo.
+[/TABLA]
+
+
+2. Identidad universal del cultivo
+----------------------------------
+
+[TABLA]
+Columnas: Campo | Valor
+Fila 1:
+- Campo: Nombre BIO-G visible
+- Valor: Nogal / Nogal pecanero
+Fila 2:
+- Campo: Producto visible
+- Valor: Nuez pecana
+Fila 3:
+- Campo: Nombre cientifico
+- Valor: Carya illinoinensis (Wangenh.) K. Koch
+Fila 4:
+- Campo: Familia botanica
+- Valor: Juglandaceae
+Fila 5:
+- Campo: Tipo de cultivo
+- Valor: Arbol frutal perenne caducifolio
+Fila 6:
+- Campo: Metabolismo
+- Valor: C3
+Fila 7:
+- Campo: Organo objetivo v1
+- Valor: Nuez con cascara y almendra/grano como producto comercial
+Fila 8:
+- Campo: Sistema v1 cubierto
+- Valor: Huerto a cielo abierto, norte de Mexico y regiones aridas/semiaridas comparables
+Fila 9:
+- Campo: cropId canonico propuesto
+- Valor: crop_walnut_tree
+Fila 10:
+- Campo: alias legacy opcional
+- Valor: walnut_tree
+Fila 11:
+- Campo: prefix de perfiles
+- Valor: ng
+Fila 12:
+- Campo: perfil generico obligatorio
+- Valor: ng_skip
+[/TABLA]
+
+
+3. Cultivo anual vs arbol perenne en Nogal
+------------------------------------------
+
+[TABLA]
+Columnas: Aspecto | Anual | Nogal BIO-G
+Fila 1:
+- Aspecto: Eje temporal
+- Anual: Fecha de siembra/trasplante.
+- Nogal BIO-G: Estado fisiologico + etapa visible + ancla temporal + memoria. No usar sowingDate.
+Fila 2:
+- Aspecto: Ciclo
+- Anual: Lineal: nace, produce y termina.
+- Nogal BIO-G: Recurrente: cada ano hay dormancia, brotacion, floracion, amarre, llenado, cosecha y postcosecha.
+Fila 3:
+- Aspecto: Edad
+- Anual: Explica casi todo el ciclo.
+- Nogal BIO-G: Solo orienta estado productivo. El motor pregunta realidad visible.
+Fila 4:
+- Aspecto: Variedad
+- Anual: Puede cambiar calendario de cosecha.
+- Nogal BIO-G: Ajusta tipo floral, zinc, alternancia, ventanas relativas y copy; no cambia etapas base.
+Fila 5:
+- Aspecto: Rendimiento
+- Anual: t/ha por ciclo.
+- Nogal BIO-G: kg/arbol + arboles/ha + t/ha + estado productivo + alternancia.
+Fila 6:
+- Aspecto: Postcosecha
+- Anual: Cierre del ciclo.
+- Nogal BIO-G: Etapa activa de reservas. No apagar alertas.
+Fila 7:
+- Aspecto: Memoria
+- Anual: Menor o de un ciclo.
+- Nogal BIO-G: Muy fuerte: frio, helada, estres hidrico, Zn, carga y defoliacion afectan siguiente ciclo.
+[/TABLA]
+
+
+4. Arquitectura BIO-G para Nogal
+--------------------------------
+La arquitectura tecnica no se crea desde cero. Nogal debe enchufarse al runtime perenne existente y alimentar catalogo, universal_profile, crop_definition, yield_reference y plant health.
+
+[TABLA]
+Columnas: Grupo | Valor permitido | Regla
+Fila 1:
+- Grupo: Cultivo madre
+- Valor permitido: crop_walnut_tree
+- Regla: Entrada principal del catalogo.
+Fila 2:
+- Grupo: Categoria
+- Valor permitido: tree
+- Regla: Debe entrar por rama de arboles/perennes.
+Fila 3:
+- Grupo: Estados perennes
+- Valor permitido: newly_planted, juvenile_non_productive, established, productive_season, unknown
+- Regla: No inventar estados.
+Fila 4:
+- Grupo: Etapas cerradas
+- Valor permitido: planting_transplant, root_establishment, juvenile_vegetative, dormancy, budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest, unknown
+- Regla: Usar labels nogalero sin crear IDs nuevos.
+Fila 5:
+- Grupo: Anclas
+- Valor permitido: planting, stage_start, budbreak, flowering, harvest, post_harvest, manual_stage, unknown
+- Regla: Separar plantacion de evento actual.
+Fila 6:
+- Grupo: Sensores v1
+- Valor permitido: soilMoisture, soilTemp, ph, ec, resistance, n, p, k
+- Regla: Horas frio, HR, viento y VPD son contexto/modelo; no sensores NPK v1.
+[/TABLA]
+
+
+5. Estados de arbol y politicas por estado
+------------------------------------------
+
+[TABLA]
+Columnas: StateId | Label UX | Lectura | Politica BIO-G
+Fila 1:
+- StateId: newly_planted
+- Label UX: Recien plantado
+- Lectura: Plantacion o trasplante reciente; raiz en recuperacion.
+- Politica BIO-G: No exigir produccion; prioridad raiz, humedad estable, baja salinidad.
+Fila 2:
+- StateId: juvenile_non_productive
+- Label UX: Nogal joven que aun no produce
+- Lectura: Arbol en formacion, sin cosecha comercial.
+- Politica BIO-G: No inferir fracaso por falta de nuez; vigilar crecimiento, raiz y vigor.
+Fila 3:
+- StateId: established
+- Label UX: Nogal establecido
+- Lectura: Arbol adulto o casi adulto; puede estar fuera de etapa productiva visible.
+- Politica BIO-G: Permite dormancia, brotacion, vegetativo y transicion.
+Fila 4:
+- StateId: productive_season
+- Label UX: Nogal en produccion
+- Lectura: Tiene o tuvo ciclo productivo anual activo.
+- Politica BIO-G: Habilita floracion, amarre, llenado, madurez, cosecha y postcosecha.
+Fila 5:
+- StateId: unknown
+- Label UX: No lo se
+- Lectura: Usuario no identifica edad/estado.
+- Politica BIO-G: No bloquear; usar SKIP/estado conservador y pedir etapa visible.
+[/TABLA]
+
+
+6. Fases y etapas fenologicas universales
+-----------------------------------------
+
+[TABLA]
+Columnas: StageId | Label nogalero | Senal visible | Ventana | Cuidado principal
+Fila 1:
+- StageId: planting_transplant
+- Label nogalero: Plantacion / trasplante
+- Senal visible: Arbol recien puesto en suelo definitivo.
+- Ventana: Dia 0 si es arbol nuevo.
+- Cuidado principal: Raiz, humedad, salinidad, compactacion.
+Fila 2:
+- StageId: root_establishment
+- Label nogalero: Establecimiento de raiz
+- Senal visible: Raiz explorando, arbol sensible a estres.
+- Ventana: 0-12 meses orientativo.
+- Cuidado principal: No quemar raiz; evitar saturacion y suelo duro.
+Fila 3:
+- StageId: juvenile_vegetative
+- Label nogalero: Crecimiento juvenil
+- Senal visible: Formacion de estructura, sin produccion comercial.
+- Ventana: Anos 1-5/7 segun perfil y manejo.
+- Cuidado principal: Vigor sano, estructura, raiz profunda.
+Fila 4:
+- StageId: dormancy
+- Label nogalero: Dormancia invernal
+- Senal visible: Hoja caida/reduccion de actividad; acumulacion de frio.
+- Ventana: Invierno.
+- Cuidado principal: No leer como cultivo muerto; frio efectivo y raiz.
+Fila 5:
+- StageId: budbreak
+- Label nogalero: Brotacion
+- Senal visible: Yemas abren; hojas nuevas.
+- Ventana: Primavera temprana.
+- Cuidado principal: Frio + calor; evitar alertas falsas por N bajo si aun arranca.
+Fila 6:
+- StageId: vegetative_growth
+- Label nogalero: Desarrollo vegetativo
+- Senal visible: Hoja activa, brotes y estructura.
+- Ventana: Primavera-verano.
+- Cuidado principal: N moderado, Zn, agua, evitar vigor desbalanceado.
+Fila 7:
+- StageId: flowering
+- Label nogalero: Floracion masculina/femenina
+- Senal visible: Amentos y flores femeninas; posible desfase.
+- Ventana: Abril-mayo norte, variable.
+- Cuidado principal: Heladas, viento, humedad, sincronía floral.
+Fila 8:
+- StageId: fruit_set
+- Label nogalero: Polinizacion / amarre de nuez
+- Senal visible: Nuez recien amarrada; caidas naturales posibles.
+- Ventana: 7-14 dias + caidas tempranas.
+- Cuidado principal: Agua estable, salinidad baja, sin diagnostico cerrado.
+Fila 9:
+- StageId: fruit_fill
+- Label nogalero: Crecimiento y llenado de nuez / almendra
+- Senal visible: Tamaño de nuez, water stage, gel, dough y llenado de grano.
+- Ventana: Mayo-septiembre; subfases internas.
+- Cuidado principal: Alta demanda de agua, K, Zn, hoja sana. NO copy de cosecha.
+Fila 10:
+- StageId: harvest_maturity
+- Label nogalero: Madurez / ruezno abriendo / cosecha
+- Senal visible: Shuck split, nuez madura, secado y recoleccion.
+- Ventana: Septiembre-diciembre segun perfil/zona.
+- Cuidado principal: Calidad final, sticktights, pre-germinacion, N tardio.
+Fila 11:
+- StageId: post_harvest
+- Label nogalero: Postcosecha / reservas
+- Senal visible: Arbol aun con hoja activa o cerrando ciclo.
+- Ventana: Despues de cosecha hasta caida de hoja.
+- Cuidado principal: Reservas del siguiente ano; no apagar alertas.
+Fila 12:
+- StageId: unknown
+- Label nogalero: No lo se
+- Senal visible: Usuario no identifica etapa.
+- Ventana: Cualquier momento.
+- Cuidado principal: Usar fallback conservador; pedir realidad visible.
+[/TABLA]
+
+
+7. Subfases de nuez sin crear IDs nuevos
+----------------------------------------
+BIO-G no debe crear nuevos StageIds para water stage, gel, dough o shuck split en v1. Se usan como sublabels/insights dentro de fruit_fill o harvest_maturity.
+
+[TABLA]
+Columnas: Subfase nogalera | StageId BIO-G | Lectura | Regla UX
+Fila 1:
+- Subfase nogalera: Water stage
+- StageId BIO-G: fruit_fill
+- Lectura: Interior de nuez con liquido; tamaño de nuez y riego son criticos.
+- Regla UX: Deficit hidrico puede intensificar caida de nuez.
+Fila 2:
+- Subfase nogalera: Shell hardening
+- StageId BIO-G: fruit_fill
+- Lectura: Endurecimiento de cascara; transicion a llenado de grano.
+- Regla UX: Vigilar agua, K, Zn y hoja sana.
+Fila 3:
+- Subfase nogalera: Gel stage
+- StageId BIO-G: fruit_fill
+- Lectura: El liquido interno se espesa y arranca desarrollo fuerte de kernel.
+- Regla UX: No usar copy de cosecha; hablar de llenado.
+Fila 4:
+- Subfase nogalera: Dough stage
+- StageId BIO-G: fruit_fill
+- Lectura: Kernel se solidifica; calidad de almendra se define.
+- Regla UX: Vigilar estres hidrico/calor y K.
+Fila 5:
+- Subfase nogalera: Shuck split / apertura de ruezno
+- StageId BIO-G: harvest_maturity
+- Lectura: Ruezno abre y expone cascara; cosecha se acerca o inicia.
+- Regla UX: Ahora si se permite copy de madurez/cosecha.
+[/TABLA]
+
+
+8. Calendario fisiologico orientativo - norte de Mexico
+-------------------------------------------------------
+
+[TABLA]
+Columnas: Cuidado: Estas ventanas orientan UX y validacion de coherencia. No sustituyen fenologia observada, clima local ni perfil especifico. Chihuahua/Durango/Coahuila/Sonora pueden moverse por altitud, frio, calor y agua.
+[/TABLA]
+
+
+[TABLA]
+Columnas: Etapa visible | StageId | Ventana orientativa | Lectura BIO-G
+Fila 1:
+- Etapa visible: Dormancia
+- StageId: dormancy
+- Ventana orientativa: Diciembre-febrero
+- Lectura BIO-G: Frio acumulado, raiz, humedad sin saturacion.
+Fila 2:
+- Etapa visible: Brotacion
+- StageId: budbreak
+- Ventana orientativa: Marzo-abril
+- Lectura BIO-G: Frio cumplido + calor; hoja nueva.
+Fila 3:
+- Etapa visible: Floracion
+- StageId: flowering
+- Ventana orientativa: Abril-mayo
+- Lectura BIO-G: Tipo I/II, viento, helada, sincronía.
+Fila 4:
+- Etapa visible: Amarre
+- StageId: fruit_set
+- Ventana orientativa: Abril-mayo
+- Lectura BIO-G: Polinizacion, aborto inicial, clima.
+Fila 5:
+- Etapa visible: Crecimiento de nuez
+- StageId: fruit_fill
+- Ventana orientativa: Mayo-agosto
+- Lectura BIO-G: Tamaño de nuez, agua, hojas, K/Zn.
+Fila 6:
+- Etapa visible: Llenado de almendra
+- StageId: fruit_fill
+- Ventana orientativa: Agosto-septiembre
+- Lectura BIO-G: Water/gel/dough, alta demanda hidrica.
+Fila 7:
+- Etapa visible: Madurez y cosecha
+- StageId: harvest_maturity
+- Ventana orientativa: Septiembre-diciembre
+- Lectura BIO-G: Shuck split, secado, vareo/recoleccion.
+Fila 8:
+- Etapa visible: Postcosecha
+- StageId: post_harvest
+- Ventana orientativa: Octubre-diciembre
+- Lectura BIO-G: Reservas antes de caida de hoja.
+[/TABLA]
+
+
+9. Rangos medibles base - no son StageTargets finales
+-----------------------------------------------------
+Los siguientes rangos son base universal para documentacion y validacion. En el Documento 05 se convertiran a StageTargets por etapa usando el contrato AgroRange: lowMax = frontera critica baja, optimalMin/optimalMax = optimo documental, highMin = frontera critica alta.
+
+[TABLA]
+Columnas: Metrica | Rango/lectura base | Regla BIO-G
+Fila 1:
+- Metrica: soilMoisture (% agua disponible)
+- Rango/lectura base: <40-45 critico bajo; 45-55 bajo/observacion; 55-80/85 optimo; 85-90 alto/observacion; >90 saturacion
+- Regla BIO-G: En llenado de nuez se vuelve muy sensible. La lectura depende de textura y profundidad de raiz.
+Fila 2:
+- Metrica: soilTemp
+- Rango/lectura base: Dormancia: baja temperatura no penaliza igual. Etapas activas: actividad razonable sobre 10 C; mejor absorcion con suelo templado.
+- Regla BIO-G: No tratar dormancia como cultivo enfermo por suelo frio.
+Fila 3:
+- Metrica: pH
+- Rango/lectura base: Preferente 6.0-7.5; aceptable vigilado 5.8-8.0; alcalino alto limita Zn/Fe/Mn.
+- Regla BIO-G: En norte de Mexico, suelos alcalinos son comunes; Zn debe ser bandera de manejo.
+Fila 4:
+- Metrica: EC / salinidad
+- Rango/lectura base: <2.0 dS/m preferente; 2.0-3.0 observacion; >3.0 alerta por posible impacto en llenado/vigor
+- Regla BIO-G: BIO-G no debe modelar EC baja como deficiencia; es metrica de exceso/salinidad.
+Fila 5:
+- Metrica: resistance / compactacion
+- Rango/lectura base: <2.0 MPa favorable; 2.0-2.5 vigilancia; >2.5 MPa alto/critico
+- Regla BIO-G: Nogal requiere raiz profunda; compactacion reduce agua y longevidad.
+Fila 6:
+- Metrica: N relativo
+- Rango/lectura base: Bajo en dormancia; moderado en brotacion/vegetativo; moderado durante llenado; bajo-cuidado en madurez/postcosecha
+- Regla BIO-G: N no es mas nuez; exceso puede empujar vigor y complicar balance/carga.
+Fila 7:
+- Metrica: P relativo
+- Rango/lectura base: Mayor peso en establecimiento, floracion y raiz; no diagnosticar sin suelo/tejido
+- Regla BIO-G: P alto puede interferir con micronutrientes en algunos contextos.
+Fila 8:
+- Metrica: K relativo
+- Rango/lectura base: Alto peso en llenado de nuez/almendra y calidad
+- Regla BIO-G: K es protagonista de calidad, pero no se receta sin analisis.
+Fila 9:
+- Metrica: Zn contexto avanzado
+- Rango/lectura base: Usar como bandera avanzada, no sensor NPK v1. Deficiencia asociada a suelos alcalinos y brotes en roseta.
+- Regla BIO-G: Clave en Nogal, especialmente Wichita/Pawnee y suelos calcareos.
+[/TABLA]
+
+
+10. Sensibilidad por etapa
+--------------------------
+
+[TABLA]
+Columnas: Etapa | Riesgos principales | Peso | Regla UX
+Fila 1:
+- Etapa: Establecimiento
+- Riesgos principales: Compactacion, salinidad, exceso de humedad, deficit de agua
+- Peso: Alta
+- Regla UX: No castigar por no producir; hablar de raiz.
+Fila 2:
+- Etapa: Dormancia
+- Riesgos principales: Frio insuficiente, raiz seca/saturada, heladas extremas
+- Peso: Alta
+- Regla UX: Frio es contexto, no lectura NPK.
+Fila 3:
+- Etapa: Brotacion
+- Riesgos principales: Frio insuficiente, brotacion dispareja, Zn, N temprano
+- Peso: Media-alta
+- Regla UX: Vigilar arranque y hoja nueva.
+Fila 4:
+- Etapa: Floracion
+- Riesgos principales: Helada tardia, viento bajo/lluvia, desincronia floral
+- Peso: Muy alta
+- Regla UX: No diagnosticar polinizador sin datos; marcar riesgo.
+Fila 5:
+- Etapa: Amarre
+- Riesgos principales: Abortos tempranos, calor, salinidad, agua irregular
+- Peso: Muy alta
+- Regla UX: Registro de memoria fuerte.
+Fila 6:
+- Etapa: Llenado de nuez/almendra
+- Riesgos principales: Deficit hidrico, calor, K bajo, Zn, plagas foliares
+- Peso: Muy alta
+- Regla UX: Copy de llenado, no de cosecha.
+Fila 7:
+- Etapa: Madurez/cosecha
+- Riesgos principales: Sticktights, pre-germinacion, calor, humedad alta, N tardio
+- Peso: Alta
+- Regla UX: Ahora si hablar de madurez/cosecha.
+Fila 8:
+- Etapa: Postcosecha
+- Riesgos principales: Defoliacion temprana, falta de reservas, sequia
+- Peso: Alta
+- Regla UX: Impacta siguiente ciclo.
+[/TABLA]
+
+
+11. Perfiles oficiales BIO-G para Nogal
+---------------------------------------
+
+[TABLA]
+Columnas: Decision: Estos perfiles cubren el onboarding v1. No son recetas por variedad ni por vivero. En produccion real, el perfil de huerto puede tener varias variedades; BIO-G usa el perfil para ajustar sensibilidad y copy sin romper la estructura.
+[/TABLA]
+
+
+[TABLA]
+Columnas: profileId | Label | Aliases | Tipo/lectura | Zn | Alternancia | Cosecha relativa | Notas
+Fila 1:
+- profileId: ng_skip
+- Label: NG-SKIP - Nogal general
+- Aliases: No se / Nogal general
+- Tipo/lectura: No asume variedad ni tipo floral.
+- Zn: Media conservadora
+- Alternancia: Media
+- Cosecha relativa: Media
+- Notas: Base segura y migrable.
+Fila 2:
+- profileId: ng_01_western
+- Label: NG-01 - Western / Western Schley
+- Aliases: Western, Western Schley, Western Chihuahua, Occidental
+- Tipo/lectura: Tipo I/protandrous; backbone del oeste
+- Zn: Menor que Wichita
+- Alternancia: Media-alta
+- Cosecha relativa: Tardia/intermedia
+- Notas: Vigoroso, confiable, puede sobrecargar; sensible a frio/calor segun zona.
+Fila 3:
+- profileId: ng_02_wichita
+- Label: NG-02 - Wichita
+- Aliases: Wichita, Grande, Exportacion
+- Tipo/lectura: Tipo II/protogynous; polinizador comun de Western
+- Zn: Alta
+- Alternancia: Alta
+- Cosecha relativa: Intermedia
+- Notas: Precocidad y calibre; riesgo de ramas debiles, zinc, overbearing, sticktights.
+Fila 4:
+- profileId: ng_03_western_wichita
+- Label: NG-03 - Bloque Western/Wichita
+- Aliases: Western/Wichita, Paquete Chihuahua, Bloque norte
+- Tipo/lectura: Huerto mixto comercial
+- Zn: Media-alta
+- Alternancia: Media-alta
+- Cosecha relativa: Oct-nov
+- Notas: Perfil de huerto; buen balance de polinizacion si proporcion y distancia son adecuadas.
+Fila 5:
+- profileId: ng_04_criollo_regional
+- Label: NG-04 - Criollo / Nativo / Huerto viejo
+- Aliases: Criollo, Nativo, Regional, Huerto viejo
+- Tipo/lectura: Genetica variable
+- Zn: Variable
+- Alternancia: Muy variable
+- Cosecha relativa: Oct-dic variable
+- Notas: Alternancia fuerte, uniformidad menor, entrada a produccion mas lenta.
+Fila 6:
+- profileId: ng_05_temprano
+- Label: NG-05 - Temprano / Nuevas
+- Aliases: Pawnee, Kanza, Cheyenne, Temprano
+- Tipo/lectura: Grupo temprano; tipo floral depende del cultivar
+- Zn: Media-alta en Pawnee; variable
+- Alternancia: Media
+- Cosecha relativa: Sep-oct
+- Notas: Adelanta cosecha; revisar polinizador y riesgo de helada si brota/florea temprano.
+[/TABLA]
+
+
+12. Detalle por perfil
+----------------------
+
+NG-01 - Western / Western Schley
+--------------------------------
+Uso: perfil dominante para huertos comerciales del norte y zonas aridas del oeste.
+Tipo floral: generalmente protandro/Tipo I; puede tener cierto traslape, pero no se debe confiar en autopolinización como verdad universal.
+Entrada a produccion orientativa: ano 6-7; plena produccion: ano 10+ segun manejo.
+Sensibilidad: deficit de frio, heladas tardias, agua en llenado, sobrecarga y alternancia.
+Copy UX: hablar de “nuez Western”, “llenado de almendra”, “ruezno”, “carga” y “reservas”.
+
+NG-02 - Wichita
+---------------
+Uso: variedad productiva y polinizadora frecuente de Western; tambien puede ser principal en algunos huertos.
+Tipo floral: protogino/Tipo II.
+Entrada a produccion orientativa: ano 5-6; tendencia a producir mucho y sobrecargar.
+Sensibilidad: zinc alto, ramas debiles/viento, water stage fruit split, sticktights, kernel amber y pre-germinacion con calor tardio.
+Copy UX: si N alto en fruit_fill, hablar de competencia vigor-grano; no decir “cerca de cosecha”.
+
+NG-03 - Bloque Western/Wichita
+------------------------------
+Uso: perfil de huerto comercial con Western + Wichita como paquete de polinizacion, muy util para Chihuahua y zonas comparables.
+No representa una variedad; representa mezcla de huerto. Se permite como perfil porque muchos usuarios piensan su huerta como bloque.
+Sensibilidad: buena polinizacion si el polinizador esta en proporciones/distancias razonables; riesgo si el bloque esta mal distribuido.
+BIO-G no pide seleccionar arbol por arbol; modela riesgo de desincronia y conserva historial por parcela.
+
+NG-04 - Criollo / Nativo / Huerto viejo
+---------------------------------------
+Uso: huertos viejos, arboles nativos/regionales o mezcla genetica desconocida.
+Entrada a produccion orientativa: mas lenta; plena produccion variable.
+Sensibilidad: alternancia, uniformidad, sombra/competencia, manejo irregular y arboles muy altos.
+BIO-G debe ser conservador: no prometer calibre ni calidad; enfocarse en agua, raiz, carga, sanidad y reservas.
+
+NG-05 - Temprano / Pawnee-Kanza-Cheyenne
+----------------------------------------
+Uso: variedades tempranas o nuevas para adelantar ventana y reducir riesgo de heladas tempranas de otoño.
+Pawnee: protandro/Tipo I, nuez grande, precoz, popular; mayor sensibilidad a Zn que Western.
+Kanza: protogino/Tipo II, mas pequeno pero buen llenado bajo estres moderado; puede polinizar Pawnee.
+Riesgo: no agruparlas como si tuvieran mismo tipo floral; el perfil solo ajusta ventana temprana y sensibilidad general.
+
+13. UX y opciones visibles
+--------------------------
+
+[TABLA]
+Columnas: Bloque UX | Pregunta | Opciones
+Fila 1:
+- Bloque UX: Pregunta cultivo
+- Pregunta: Que arbol tienes?
+- Opciones: Nogal
+Fila 2:
+- Bloque UX: Pregunta perfil
+- Pregunta: Que tipo de nogal es?
+- Opciones: No se / Nogal general; Western; Wichita; Western/Wichita; Criollo/Regional; Temprano/Pawnee-Kanza
+Fila 3:
+- Bloque UX: Estado arbol
+- Pregunta: Como esta tu nogal?
+- Opciones: Recien plantado; joven sin producir; establecido; produciendo; no lo se
+Fila 4:
+- Bloque UX: Etapa visible
+- Pregunta: Que ves ahorita?
+- Opciones: Pelon/dormido; brotando; lleno de hoja; con flor/amentos; nuez recien amarrada; nuez creciendo; llenando almendra; ruezno abriendo/cosecha; postcosecha; no lo se
+Fila 5:
+- Bloque UX: Ancla temporal
+- Pregunta: Desde cuando lo ves asi?
+- Opciones: Fecha de etapa o manual_stage; no usar sowingDate salvo plantacion real.
+Fila 6:
+- Bloque UX: Advertencia perfil
+- Pregunta: Perfil general
+- Opciones: Si esta en SKIP: “Este es un perfil general. Luego puedes cambiar a Western, Wichita u otro sin perder historial.”
+[/TABLA]
+
+
+14. Assets y nombres sugeridos
+------------------------------
+
+[TABLA]
+Columnas: Ruta sugerida | Uso
+Fila 1:
+- Ruta sugerida: assets/icons/wizard/ic_walnut_tree.png
+- Uso: Icono general de nogal.
+Fila 2:
+- Ruta sugerida: assets/icons/wizard/ic_walnut_western.png
+- Uso: Perfil Western/Western Schley.
+Fila 3:
+- Ruta sugerida: assets/icons/wizard/ic_walnut_wichita.png
+- Uso: Perfil Wichita.
+Fila 4:
+- Ruta sugerida: assets/icons/wizard/ic_walnut_western_wichita.png
+- Uso: Bloque Western/Wichita.
+Fila 5:
+- Ruta sugerida: assets/icons/wizard/ic_walnut_criollo_regional.png
+- Uso: Criollo/regional/huerto viejo.
+Fila 6:
+- Ruta sugerida: assets/icons/wizard/ic_walnut_temprano.png
+- Uso: Pawnee/Kanza/Cheyenne/tempranas.
+Fila 7:
+- Ruta sugerida: assets/seeds/walnut/dormancy.png
+- Uso: Arbol pelon/dormido.
+Fila 8:
+- Ruta sugerida: assets/seeds/walnut/budbreak.png
+- Uso: Brotacion.
+Fila 9:
+- Ruta sugerida: assets/seeds/walnut/flowering.png
+- Uso: Amentos y flor femenina.
+Fila 10:
+- Ruta sugerida: assets/seeds/walnut/fruit_set.png
+- Uso: Nuez recien amarrada.
+Fila 11:
+- Ruta sugerida: assets/seeds/walnut/fruit_fill.png
+- Uso: Nuez creciendo/llenando almendra.
+Fila 12:
+- Ruta sugerida: assets/seeds/walnut/harvest_maturity.png
+- Uso: Ruezno abriendo/nuez madura.
+Fila 13:
+- Ruta sugerida: assets/seeds/walnut/post_harvest.png
+- Uso: Postcosecha/reservas.
+Fila 14:
+- Ruta sugerida: assets/seeds/walnut/unknown.png
+- Uso: No estoy seguro.
+[/TABLA]
+
+
+15. Traduccion futura a codigo
+------------------------------
+Archivos esperados:
+lib/core/agro/walnut_tree_agro_score_engine.dart
+lib/core/agro/walnut_tree_nutrition_modifier.dart
+lib/core/crops/walnut_tree/walnut_tree_assets.dart
+lib/core/crops/walnut_tree/walnut_tree_catalog.dart
+lib/core/crops/walnut_tree/walnut_tree_crop_definition.dart
+lib/core/crops/walnut_tree/walnut_tree_universal_profile.dart
+lib/core/crops/walnut_tree/walnut_tree_yield_reference.dart
+lib/core/plant_health/catalog/walnut_tree_syndromes.dart
+
+[TABLA]
+Columnas: Pieza | Valor | Regla
+Fila 1:
+- Pieza: CropKey
+- Valor: walnutTree / cropWalnutTree segun patron existente
+- Regla: Agregar sin romper apple/pear/peach.
+Fila 2:
+- Pieza: Catalog entry
+- Valor: crop_walnut_tree
+- Regla: Nombre visible: Nogal.
+Fila 3:
+- Pieza: SKIP
+- Valor: ng_skip
+- Regla: isGeneric=true, migrable.
+Fila 4:
+- Pieza: profiles
+- Valor: ng_01_western, ng_02_wichita, ng_03_western_wichita, ng_04_criollo_regional, ng_05_temprano
+- Regla: Aliases en catalogo.
+Fila 5:
+- Pieza: Stage labels
+- Valor: Usar IDs cerrados; labels nogalero
+- Regla: No crear fruit_fill_kernel como stageId.
+Fila 6:
+- Pieza: Tests
+- Valor: fruit_fill vs harvest_maturity, SKIP migration, aliases
+- Regla: Regresion v1.5.
+[/TABLA]
+
+
+16. Reglas de copy NPK y UI por contrato v1.5
+---------------------------------------------
+
+[TABLA]
+Columnas: StageId | Copy permitido | Copy prohibido
+Fila 1:
+- StageId: fruit_set
+- Copy permitido: Amarre de nuez, aborto, agua estable, salinidad, polinizacion.
+- Copy prohibido: Llenado avanzado, cosecha, madurez.
+Fila 2:
+- StageId: fruit_fill
+- Copy permitido: Llenado de nuez, llenado de almendra/grano, calibre, K, balance N-K-Zn, water/gel/dough.
+- Copy prohibido: Cerca de cosecha, madurez, ruezno abierto, cosecha.
+Fila 3:
+- StageId: harvest_maturity
+- Copy permitido: Madurez de nuez, ruezno abriendo, cosecha, calidad final, secado, sticktights.
+- Copy prohibido: Copy generico de llenado si ya esta cosecha.
+Fila 4:
+- StageId: post_harvest
+- Copy permitido: Reservas, hoja activa, raiz, preparacion del siguiente ciclo.
+- Copy prohibido: Cultivo cerrado o dormancia pasiva.
+[/TABLA]
+
+
+17. Casos minimos de regresion para Nogal
+-----------------------------------------
+fruit_fill + N alto/exceso: puede marcar exceso si la lectura lo amerita, pero no debe decir cosecha, cerca de cosecha, madurez ni ruezno abriendo.
+harvest_maturity + N alto/exceso: si puede hablar de madurez, cosecha, calidad final, secado, ruezno y sticktights.
+post_harvest: conserva identidad de reservas; no se apaga el cultivo.
+SKIP + etapa unknown: no bloquear; mostrar diagnostico conservador y pedir etapa visible.
+ng_02_wichita + zinc bajo/contexto alcalino: subir sensibilidad a Zn sin inventar sensor Zn si no existe.
+ng_03_western_wichita: no tratarlo como cultivar unico; es perfil de bloque/huerto.
+AgroRange: ningun rango de suelo/ambiente debe dejar lowMax == optimalMin ni optimalMax == highMin sin justificacion y test.
+
+Referencias consultadas y nivel de confianza
+--------------------------------------------
+
+[TABLA]
+Columnas: Fuente | Confianza | Uso dentro de BIO-G
+Fila 1:
+- Fuente: New Mexico State University - H-659, Pecan Cultivars for New Mexico
+- Confianza: Muy alta
+- Uso dentro de BIO-G: Cultivares, Western, Wichita, Pawnee, Kanza, tipo floral y sensibilidad a zinc.
+Fila 2:
+- Fuente: New Mexico State University - H-602, Pecan Orchard Fertilization
+- Confianza: Alta
+- Uso dentro de BIO-G: Reglas generales de N, crecimiento terminal y enfoque de fertilizacion.
+Fila 3:
+- Fuente: New Mexico State University - H-636, Estimating Water Needs for Pecan Trees
+- Confianza: Alta
+- Uso dentro de BIO-G: Agua disponible, almacenamiento en zona radical y demanda maxima de agua.
+Fila 4:
+- Fuente: New Mexico State University - H-650, Influence of Nut Development on Pecan Nut Casebearer Damage
+- Confianza: Alta
+- Uso dentro de BIO-G: Fases de desarrollo de la nuez: Phase I, water stage, shell hardening, gel, dough, madurez.
+Fila 5:
+- Fuente: University of Georgia Extension - Cultural Management of Commercial Pecan Orchards
+- Confianza: Alta
+- Uso dentro de BIO-G: Nutricion, analisis foliar, N/K/Mg y micronutrientes Zn/B/Fe.
+Fila 6:
+- Fuente: University of Georgia Pecan Extension - Pecans and Chilling
+- Confianza: Media-alta
+- Uso dentro de BIO-G: Horas frio variables por cultivar y efecto de frio insuficiente en brotacion/polinizacion.
+Fila 7:
+- Fuente: Oklahoma State University Extension - A Calendar for Pecan Growers
+- Confianza: Alta
+- Uso dentro de BIO-G: Manejo anual: espaciamiento, humedad, fertilidad, plagas y carga.
+Fila 8:
+- Fuente: University of Arizona Cooperative Extension - Zinc Management in Arid Region Pecan Orchards
+- Confianza: Alta
+- Uso dentro de BIO-G: Zinc en regiones aridas, interpretacion foliar y riesgo de deficiencia.
+Fila 9:
+- Fuente: Gobierno del Estado de Chihuahua / SIAP 2025
+- Confianza: Alta para contexto regional
+- Uso dentro de BIO-G: Importancia productiva de Chihuahua en nuez pecana y rendimiento regional.
+Fila 10:
+- Fuente: COMENUEZ / Manejo del nogal pecanero con base en su fenologia
+- Confianza: Media-alta
+- Uso dentro de BIO-G: Fenologia regional, Western/Wichita, polinizadores y manejo de amarre.
+Fila 11:
+- Fuente: Terra Latinoamericana 2024 - Alternancia en nogal pecanero y Zn en Chihuahua
+- Confianza: Alta
+- Uso dentro de BIO-G: Western Schley en Chihuahua, suelos alcalinos, Zn, rendimiento, porcentaje de almendra y alternancia.
+[/TABLA]

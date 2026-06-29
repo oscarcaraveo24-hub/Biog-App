@@ -199,6 +199,20 @@ class FertilizationPlanner {
           fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
         );
       }
+      if (_isPeachTreeCrop(crop)) {
+        return _peachTreeConservativeGuide(
+          nutrient: nutrient,
+          label: label,
+          stageKey: stageKey,
+        );
+      }
+      if (_isWalnutTreeCrop(crop)) {
+        return _walnutTreeConservativeGuide(
+          nutrient: nutrient,
+          label: label,
+          stageKey: stageKey,
+        );
+      }
       if ((crop == 'barley' || crop == 'cebada') &&
           nutrient == AgroMetricKey.n &&
           _isBarleyMalt(profileId)) {
@@ -215,6 +229,22 @@ class FertilizationPlanner {
 
     final deficitPpm = _calculateDeficitPpm(nutrient, rawPpm, cropKey, targets);
     if (deficitPpm == null || deficitPpm < 2.0) return null;
+
+    if (_isPeachTreeCrop(crop)) {
+      return _peachTreeConservativeGuide(
+        nutrient: nutrient,
+        label: label,
+        stageKey: stageKey,
+      );
+    }
+
+    if (_isWalnutTreeCrop(crop)) {
+      return _walnutTreeConservativeGuide(
+        nutrient: nutrient,
+        label: label,
+        stageKey: stageKey,
+      );
+    }
 
     if (crop == 'maize' || crop == 'maiz' || crop == 'corn') {
       return _maizeGuide(nutrient, stageKey, deficitPpm, cultivationScaleId);
@@ -336,6 +366,175 @@ class FertilizationPlanner {
     }
 
     return _genericGuide(nutrient, deficitPpm, cultivationScaleId);
+  }
+
+  static bool _isPeachTreeCrop(String crop) {
+    return crop == 'peach_tree' ||
+        crop == 'crop_peach_tree' ||
+        crop == 'peach' ||
+        crop == 'peachtree' ||
+        crop == 'durazno' ||
+        crop == 'duraznero' ||
+        crop == 'melocoton' ||
+        crop == 'melocotón' ||
+        crop == 'melocotonero';
+  }
+
+  static NutrientDoseGuide _peachTreeConservativeGuide({
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required String? stageKey,
+  }) {
+    final bool isHigh =
+        label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation;
+    final nutrientName = switch (nutrient) {
+      AgroMetricKey.n => 'nitrógeno',
+      AgroMetricKey.p => 'fósforo',
+      AgroMetricKey.k => 'potasio',
+      _ => 'nutriente',
+    };
+    final opening = isHigh
+        ? '$nutrientName alto en duraznero. BioG detecta más $nutrientName del necesario para esta etapa.'
+        : '$nutrientName bajo en duraznero. BioG detecta menos $nutrientName del que pide esta etapa.';
+
+    return NutrientDoseGuide(
+      doseGuideEs:
+          '$opening ${_peachTreeNutrientGuide(nutrient, isHigh: isHigh)} ${_peachTreeStageGuide(stageKey)}',
+      fertilizerEquivalentEs:
+          'Actúa con cuidado: evita fertilizar fuerte si el suelo está muy seco, encharcado, frío o con sales altas. Si la lectura se repite varios días, valida con análisis.',
+      requiresConfirmation: true,
+    );
+  }
+
+  static String _peachTreeNutrientGuide(
+    AgroMetricKey nutrient, {
+    required bool isHigh,
+  }) {
+    if (isHigh) {
+      return switch (nutrient) {
+        AgroMetricKey.n =>
+          'No apliques más nitrógeno por ahora: puede empujar follaje de más, retrasar madurez y bajar firmeza.',
+        AgroMetricKey.p =>
+          'Pausa fósforo extra: más P no mejora el fruto y puede bloquear otros nutrientes.',
+        AgroMetricKey.k =>
+          'No subas más potasio por ahora: demasiado K puede subir sales y bajar firmeza.',
+        _ => 'Pausa este nutriente y sigue la tendencia de BioG.',
+      };
+    }
+    return switch (nutrient) {
+      AgroMetricKey.n =>
+        'Corrige N de forma ligera si el árbol se ve débil; evita pasarte cerca de cosecha.',
+      AgroMetricKey.p =>
+        'Corrige P con mesura, sobre todo en raíz, brotación o floración.',
+      AgroMetricKey.k =>
+        'Refuerza K de forma gradual: ayuda a tamaño, firmeza, dulzor y llenado del fruto.',
+      _ => 'Ajusta este nutriente de forma gradual y revisa la respuesta del árbol.',
+    };
+  }
+
+  static String _peachTreeStageGuide(String? stageKey) {
+    final stage = (stageKey ?? '').trim().toLowerCase();
+    if (stage.contains('post_harvest')) {
+      return 'En postcosecha, solo corrige si el árbol sigue con hoja y riego parejo; no metas N si ya va a reposo.';
+    }
+    if (stage.contains('fruit_fill') ||
+        stage.contains('fruit_set') ||
+        stage.contains('harvest_maturity')) {
+      return 'En cuajado, llenado o madurez, mantén riego parejo y evita N tardío que ablande fruta.';
+    }
+    if (stage.contains('root') ||
+        stage.contains('planting') ||
+        stage.contains('budbreak') ||
+        stage.contains('flower')) {
+      return 'En raíz, brotación y floración, corrige poco a poco y cuida que el suelo no esté frío, seco o encharcado.';
+    }
+    return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
+  }
+
+  static bool _isWalnutTreeCrop(String crop) {
+    return crop == 'walnut_tree' ||
+        crop == 'crop_walnut_tree' ||
+        crop == 'walnut' ||
+        crop == 'walnuttree' ||
+        crop == 'nogal' ||
+        crop == 'nogal pecanero' ||
+        crop == 'pecan' ||
+        crop == 'nuez' ||
+        crop == 'nuez pecana';
+  }
+
+  static NutrientDoseGuide _walnutTreeConservativeGuide({
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required String? stageKey,
+  }) {
+    final bool isHigh =
+        label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation;
+    final nutrientName = switch (nutrient) {
+      AgroMetricKey.n => 'nitrógeno',
+      AgroMetricKey.p => 'fósforo',
+      AgroMetricKey.k => 'potasio',
+      _ => 'nutriente',
+    };
+    final opening = isHigh
+        ? '$nutrientName alto en nogal. BioG detecta más $nutrientName del necesario para esta etapa.'
+        : '$nutrientName bajo en nogal. BioG detecta menos $nutrientName del que pide esta etapa.';
+
+    return NutrientDoseGuide(
+      doseGuideEs:
+          '$opening ${_walnutTreeNutrientGuide(nutrient, isHigh: isHigh)} ${_walnutTreeStageGuide(stageKey)}',
+      fertilizerEquivalentEs:
+          'Actúa con cuidado: en nogal manda primero agua, raíz, salinidad (EC) y pH. Evita fertilizar fuerte si el suelo está seco, encharcado, frío o con sales altas. El zinc es contexto clave pero no lo mide este sensor. Si la lectura se repite, valida con análisis de suelo/foliar.',
+      requiresConfirmation: true,
+    );
+  }
+
+  static String _walnutTreeNutrientGuide(
+    AgroMetricKey nutrient, {
+    required bool isHigh,
+  }) {
+    if (isHigh) {
+      return switch (nutrient) {
+        AgroMetricKey.n =>
+          'No apliques más nitrógeno por ahora: en nogal más N no es más nuez, puede empujar follaje, sombra y sales.',
+        AgroMetricKey.p =>
+          'Pausa fósforo extra: más P no mejora la nuez y en suelo calizo puede bloquear zinc/hierro.',
+        AgroMetricKey.k =>
+          'No subas más potasio por ahora: demasiado K puede subir sales y desbalancear magnesio/calcio.',
+        _ => 'Pausa este nutriente y sigue la tendencia de BioG.',
+      };
+    }
+    return switch (nutrient) {
+      AgroMetricKey.n =>
+        'Corrige N de forma ligera si la hoja se ve débil; evita pasarte y no metas N tardío cerca de cosecha.',
+      AgroMetricKey.p =>
+        'Corrige P con mesura y análisis, sobre todo en raíz, brotación o floración.',
+      AgroMetricKey.k =>
+        'Refuerza K de forma gradual: ayuda al crecimiento de nuez y al llenado de almendra; cuida el riego parejo.',
+      _ => 'Ajusta este nutriente de forma gradual y revisa la respuesta del árbol.',
+    };
+  }
+
+  static String _walnutTreeStageGuide(String? stageKey) {
+    final stage = (stageKey ?? '').trim().toLowerCase();
+    if (stage.contains('post_harvest')) {
+      return 'En postcosecha, solo corrige si el nogal sigue con hoja activa y riego parejo: la hoja carga reservas para el siguiente ciclo. No metas N si ya va a reposo.';
+    }
+    if (stage.contains('fruit_fill')) {
+      return 'En llenado de nuez/almendra, el potasio y el agua mandan; no empujes N que se vaya a follaje. (Esto es llenado, todavía no cosecha.)';
+    }
+    if (stage.contains('fruit_set') || stage.contains('harvest_maturity')) {
+      return 'En amarre y madurez/ruezno, mantén riego parejo y evita N tardío que retrase madurez o ablande el árbol.';
+    }
+    if (stage.contains('root') ||
+        stage.contains('planting') ||
+        stage.contains('budbreak') ||
+        stage.contains('flower')) {
+      return 'En raíz, brotación y floración, corrige poco a poco; cuida zinc contextual y que el suelo no esté frío, seco o con sales.';
+    }
+    return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
   }
 
   // ==========================================

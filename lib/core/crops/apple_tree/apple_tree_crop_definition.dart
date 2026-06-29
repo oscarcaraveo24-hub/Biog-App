@@ -136,7 +136,7 @@ class AppleTreeCropEngineAdapter implements CropEngine {
       stageLabelEs: treeStageDisplayName(TreeStageIds.unknown),
       expectedDaysToEnd: 0,
       windowsNow: const <dynamic>[],
-      heroAsset: 'assets/icons/wizard/ic_arbol.png',
+      heroAsset: 'assets/icons/wizard/ic_tree.png',
       helperCaption: 'Resolver perenne requerido',
       daySinceSowing: null,
       stageProgressPct: null,

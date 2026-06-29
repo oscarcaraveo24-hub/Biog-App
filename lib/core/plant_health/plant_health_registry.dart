@@ -10,6 +10,9 @@ import 'package:bio_g/core/plant_health/catalog/garlic_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/lettuce_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/oat_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/onion_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/peach_tree_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/pear_tree_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/walnut_tree_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/spinach_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/squash_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/tomato_syndromes.dart';
@@ -51,6 +54,12 @@ class PlantHealthRegistry {
         return garlicSyndromes;
       case CropCatalog.appleTreeCropId:
         return appleTreeSyndromes;
+      case CropCatalog.pearTreeCropId:
+        return pearTreeSyndromes;
+      case CropCatalog.peachTreeCropId:
+        return peachTreeSyndromes;
+      case CropCatalog.walnutTreeCropId:
+        return walnutTreeSyndromes;
       default:
         return const <PlantHealthSyndrome>[];
     }

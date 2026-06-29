@@ -1,0 +1,1489 @@
+BIO-G
+
+04_RIESGOS_CULTIVO_SANIDAD_ESTRES_MEMORIA_BIOG_DURAZNO_DZ_v1
+Cultivo: Durazno / Duraznero / Melocotonero / Peach tree
+cropId: crop_peach_tree
+CropKey sugerido: peachTree / peach_tree
+Perfil base: DZ-SKIP + DZ-01 Criollo/Regional + DZ-02 Temprano/Bajo frío + DZ-03 Amarillo comercial + DZ-04 Blanco/Dulce + DZ-05 Tardío/Industria
+
+Documento técnico interno BIO-G.
+No sustituye diagnóstico de campo, laboratorio, asesoría fitosanitaria local, análisis de suelo/agua/tejido ni normatividad vigente.
+BIO-G v1 no debe convertirse en recetario de plaguicidas: alerta, orienta revisión, prioriza riesgo, guarda memoria y recomienda confirmar.
+
+Versión: v1.0
+Fecha: Junio 2026
+Módulo: Riesgos del Cultivo / Plant Health / Estrés / Memoria perenne
+Enfoque de producto: alertas farmer-friendly, cableables a motor, agrupadas por familia de riesgo, sin dosis ni ingredientes activos.
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+El duraznero no debe modelarse como una hortaliza larga ni como un manzano/peral con fruto distinto.
+Es un árbol frutal caducifolio de hueso/carozo, con dormancia verdadera, floración temprana, ventana crítica muy corta, alto riesgo de heladas tardías, necesidad de raleo/carga equilibrada y una sanidad marcada por enfermedades de flor/fruto, hoja y madera.
+
+En BIO-G, los riesgos del durazno se concentran en ocho frentes:
+
+1. Raíz, cuello, suelo, replantación y longevidad:
+   Phytophthora, Armillaria, pudriciones de raíz/corona, nematodos, agalla de corona, enfermedad de replantación, anoxia por exceso de agua, compactación, salinidad y estrés de trasplante.
+
+2. Dormancia, frío, helada y floración:
+   falta de frío, brotación irregular, floración adelantada, helada tardía, lluvia/frío en flor, aborto de flor, bajo cuajado y carga potencial baja.
+
+3. Enfermedades de hoja, brote, flor y fruto:
+   torque/rizo/lepra del duraznero por Taphrina deformans, pudrición café/morena por Monilinia, tiro de munición, mancha bacteriana, cenicilla, roña/scab, roya, bacteriosis/cancro bacteriano, cancros de madera y pudriciones de cosecha/postcosecha.
+
+4. Plagas directas de fruto y brotes:
+   palomilla oriental del fruto, barrenador de ramas/brotes del duraznero, curculio de la ciruela, trips, chinches/lygus, enrolladores, moscas de fruta regionales, aves/roedores y daño por insectos que abre puerta a pudriciones.
+
+5. Barrenadores, escamas y plagas de madera:
+   barrenador del duraznero, barrenador menor, barrenadores de ramas/tronco, escama de San José, escama blanca del duraznero y complejos que generan gomosis, aserrín/frass, debilitamiento y muerte de ramas.
+
+6. Chupadores, ácaros y defoliadores:
+   pulgón verde del duraznero, pulgón negro, ácaros/araña roja, trips, defoliadores y plagas que reducen hoja funcional y reservas.
+
+7. Estrés fisiológico, clima, carga y calidad:
+   déficit hídrico, exceso de agua, calor, golpe de sol, fruta pequeña, rajado, split pit/hueso partido, caída de fruto, sobrecarga por falta de raleo, baja carga por helada, daño por granizo, salinidad, pH alto/clorosis y fitotoxicidad.
+
+8. Memoria multianual:
+   en durazno, la memoria suele impactar principalmente 1 ciclo, pero puede ser fuerte. Una helada en floración puede anular producción del año; defoliación severa, sequía postcosecha, barrenadores o cancros pueden debilitar madera productiva y retorno floral del ciclo siguiente.
+
+Regla v1:
+BIO-G debe decir: “esto lo favorece”, “revise aquí”, “se parece a”, “confirme si avanza”.
+BIO-G NO debe decir: “diagnóstico definitivo” ni “aplique X producto”.
+BIO-G debe cruzar etapa fenológica + sensores + clima + historial + clave visual.
+BIO-G debe bajar la confianza si solo hay sensor y no hay observación visual.
+
+================================================================================
+0.1 DECISIONES ESPECIALES PARA DURAZNO
+================================================================================
+
+1. El durazno es el primer frutal de hueso/carozo de BIO-G.
+   No se debe cablear como pepita. Comparte arquitectura perenne con Manzano/Pera, pero su jerarquía de riesgo cambia.
+
+2. Endurecimiento de hueso/carozo NO se crea como stageId nuevo en v1.
+   Se modela como subventana interna de fruit_fill. Puede afectar agua, K, carga, tamaño, caída y split pit, pero no rompe el estándar cerrado de etapas.
+
+3. Floración y cuajado pesan más que casi cualquier otra etapa.
+   En durazno, una helada tardía o lluvia/frío en floración puede bajar drásticamente el rendimiento aunque NPK y suelo estén bien.
+
+4. El raleo/carga es clave.
+   Si hay demasiada fruta, el árbol puede producir fruta chica, agotar reservas o quebrar ramas. Si hubo helada y casi no hay carga, el árbol puede irse a exceso de vigor.
+
+5. Postcosecha no cierra el cultivo.
+   En durazno, postcosecha alimenta reservas, yemas florales, hoja funcional y madera para el siguiente ciclo.
+
+6. No convertir todos los problemas con goma en “gomosis” diagnóstica.
+   La goma puede aparecer por barrenadores, heridas, cancro, frío, exceso/sequía, estrés, bacteriosis, pudriciones o daño mecánico. BIO-G debe tratarla como señal, no como diagnóstico.
+
+================================================================================
+1. METODOLOGÍA Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+Este documento toma como plantilla editorial el documento 04 de Pera, pero no copia su catálogo.
+Durazno comparte familia Rosaceae con manzano/peral, pero entra como Prunus, frutal de hueso, con presiones sanitarias diferentes.
+
+Criterio de fuentes:
+- Alta confianza: universidades, extensión, IPM oficial, manuales fitosanitarios institucionales y guías regionales de manejo integrado.
+- Media-alta: documentos técnicos regionales, INIFAP/SAGARPA/SIAP/USDA, boletines de frutales y publicaciones académicas.
+- Media: guías comerciales o divulgativas si coinciden con fuentes universitarias.
+- Baja-media: foros y discusiones de productores, usados solo para lenguaje UX y problemas reportados, nunca para umbrales ni reglas duras.
+
+Fuentes fuertes usadas:
+- UC IPM Pest Management Guidelines: Peach.
+- UC IPM Peach Leaf Curl, Shot Hole, Treatment Timing y Postharvest.
+- University of Georgia / CAES: Home Garden Peaches y Southeastern Peach, Nectarine and Plum Pest Management and Culture Guide.
+- Clemson HGIC: Peach Diseases.
+- Michigan State University Extension/IPM: bacterial spot, stone fruit IPM, peach pests.
+- Penn State Extension: plum curculio, peachtree borer, lesser peachtree borer y recomendaciones de frutales de hueso.
+- Utah State University Extension: peaches in the garden y plagas frutales durazno/nectarina.
+- INIFAP Zacatecas: prácticas culturales para producir durazno.
+- Colegio de Postgraduados / Agricultura, Sociedad y Desarrollo: pudrición café por Monilinia fructicola en Sierra Nevada, Puebla.
+- UAEMex / documentos técnicos de cultivo de durazno.
+- Manuales de manejo integrado de plagas/enfermedades de duraznero en frutales de hueso.
+
+Uso de foros:
+Los foros sirvieron para detectar cómo habla el usuario real:
+- “hojas arrugadas rojas”
+- “se enchinó la hoja”
+- “lepra del durazno”
+- “rulo / torque”
+- “gomosis”
+- “sale goma del tronco”
+- “no cuaja”
+- “se cayó toda la flor”
+- “fruto con gusano”
+- “fruta se pudre antes de madurar”
+- “duraznos chicos”
+- “se abre el hueso”
+- “árbol viejo se seca por ramas”
+
+No se usaron para definir umbrales técnicos ni decisiones agronómicas duras.
+
+================================================================================
+2. RESUMEN EJECUTIVO PARA PRODUCTO
+================================================================================
+
+El riesgo del duraznero cambia mucho según etapa:
+
+- Recién plantado / establecimiento:
+  Pesa raíz, drenaje, Phytophthora, agalla de corona, nematodos, replantación, anoxia, compactación, salinidad, daño de raíces y estrés por trasplante.
+
+- Juvenil no productivo:
+  Pesa estructura, brotes, sanidad foliar, pulgones, ácaros, barrenadores, cancro, exceso de N/vigor, riego y formación de madera productiva.
+
+- Dormancia:
+  Pesa frío acumulado, yemas, madera, cancros, escamas, barrenadores, leaf curl/torque como riesgo preventivo, poda, heridas y memoria del ciclo anterior.
+
+- Brotación:
+  Pesa torque/leaf curl, tiro de munición, cenicilla, pulgones, ácaros, helada, frío tardío, brotes tiernos y vigor inicial.
+
+- Floración:
+  Etapa crítica. Pesa helada tardía, pudrición café/blossom blight, lluvia, frío, baja actividad de polinizadores, aborto de flor, cancro bacteriano y clima.
+
+- Cuajado / amarre:
+  Pesa baja carga por helada/floración fallida, caída fisiológica, curculio, trips, palomilla oriental temprana, déficit hídrico, salinidad, calor y raleo inicial.
+
+- Llenado / crecimiento de fruto:
+  Pesa agua estable, K relativo, carga/raleo, endurecimiento de hueso como subventana, palomilla oriental, barrenador de brote, curculio, mancha bacteriana, roña, tiro de munición, ácaros, golpe de sol y fruta chica.
+
+- Madurez / cosecha:
+  Pesa pudrición café/morena, fruta blanda, golpes, aves, mosca de fruta regional, palomillas, chinches, rajado, exceso de humedad y manejo de cosecha.
+
+- Postcosecha:
+  No apaga el cultivo. Pesa hoja activa, reservas, riego, defoliación, ácaros, leaf spot/roya/shot hole, barrenadores, cancro, sequía y preparación de yemas del siguiente ciclo.
+
+Errores que el motor debe evitar:
+1. Ver “hoja arrugada roja” y tratarlo como simple estrés hídrico: en durazno puede ser torque/leaf curl.
+2. Ver goma y diagnosticar “gomosis” sin revisar barrenador, heridas, cancro, frío, exceso de agua o sequía.
+3. Ver baja producción y culpar NPK si hubo helada/floración fría o mala cuaja.
+4. Ver fruta chica y recomendar fertilizante si el problema fue sobrecarga/falta de raleo o déficit de agua.
+5. Ver pudrición en cosecha y tratarla como problema postcosecha solamente: puede venir de floración, heridas, insectos o mummies.
+6. Tratar postcosecha como fin del cultivo.
+
+================================================================================
+3. FAMILIAS UX DEL MÓDULO RIESGOS DURAZNO
+================================================================================
+
+Familia UX 1: Raíz, cuello, suelo y replantación
+Objetivo: proteger supervivencia, arranque, raíz fina y longevidad.
+Entradas principales:
+- phytophthora_root_crown_rot
+- root_crown_rot_complex
+- armillaria_root_rot
+- peach_replant_decline
+- crown_gall
+- nematode_root_stress
+- soil_anoxia_excess_moisture
+- soil_compaction_root_stress
+- salinity_ec_high
+
+Familia UX 2: Dormancia, frío, helada y floración
+Objetivo: proteger el ciclo anual temprano y carga potencial.
+Entradas principales:
+- insufficient_chill_irregular_budbreak
+- winter_cold_injury
+- frost_bloom_damage
+- bloom_weather_low_set
+- poor_pollination_low_fruit_set
+- hail_wound_infection_risk
+
+Familia UX 3: Enfermedades de hoja, flor y fruto
+Objetivo: proteger hoja funcional, flor, fruta y calidad.
+Entradas principales:
+- peach_leaf_curl_taphrina
+- brown_rot_monilinia
+- shot_hole_coryneum
+- bacterial_spot_xanthomonas
+- peach_scab
+- powdery_mildew_peach
+- rust_peach
+- storage_rot_complex
+
+Familia UX 4: Madera, cancros, goma y decaimiento
+Objetivo: proteger estructura productiva, ramas, tronco y madera de un año.
+Entradas principales:
+- bacterial_canker_pseudomonas
+- cytospora_leucostoma_canker
+- fungal_gummosis_context
+- canker_wood_decline_complex
+- wound_stress_gummosis_context
+
+Familia UX 5: Plagas de fruto y brote
+Objetivo: proteger fruta comercial, brotes y rendimiento vendible.
+Entradas principales:
+- oriental_fruit_moth
+- peach_twig_borer
+- plum_curculio
+- stink_bug_lygus_fruit_damage
+- thrips_flower_fruit_scarring
+- leafroller_fruit_scarring_complex
+- fruit_fly_regional
+- birds_rodents_fruit_damage
+
+Familia UX 6: Barrenadores, escamas y plagas de madera
+Objetivo: proteger tronco, ramas, unión de injerto y flujo de savia.
+Entradas principales:
+- peachtree_borer
+- lesser_peachtree_borer
+- branch_trunk_borer_complex
+- san_jose_scale
+- white_peach_scale_context
+
+Familia UX 7: Chupadores, ácaros y defoliadores
+Objetivo: proteger hoja, brote, fotosíntesis y reservas.
+Entradas principales:
+- green_peach_aphid
+- black_peach_aphid_context
+- spider_mites_complex
+- leafhoppers_context
+- japanese_beetle_regional
+- caterpillar_defoliators
+
+Familia UX 8: Estrés fisiológico, clima, carga y calidad
+Objetivo: leer problemas que parecen plaga/enfermedad pero nacen de ambiente, agua, carga o manejo.
+Entradas principales:
+- drought_stress
+- waterlogging_anoxia
+- heat_stress_fruit_fill
+- sunburn_sunscald
+- overcrop_small_fruit_thinning_need
+- fruit_drop_physiological
+- split_pit_stone_hardening_disorder
+- fruit_cracking_weather
+- iron_chlorosis_high_ph
+- herbicide_phytotoxicity
+- nutrient_excess_vigor
+- post_harvest_reserve_loss
+
+================================================================================
+4. CATÁLOGO MAESTRO DE RIESGOS BIÓTICOS
+================================================================================
+
+Formato:
+Riesgo | Dónde pesa más | Qué lo favorece | Clave visual | Etapa | Prioridad BIO-G | Memoria | Lectura BIO-G
+
+--------------------------------------------------------------------------------
+4.1 RAÍZ, CUELLO, SUELO Y REPLANTACIÓN
+--------------------------------------------------------------------------------
+
+1) phytophthora_root_crown_rot
+Nombre UX: Pudrición de raíz/corona por exceso de humedad
+Dónde pesa más: árboles jóvenes, replantes, suelos pesados, zonas bajas, riego excesivo, drenaje pobre.
+Qué lo favorece: suelo saturado, compactación, cuello húmedo, heridas de raíces, textura pesada, riegos largos, lluvias fuertes.
+Clave visual: árbol decae por parches, hojas marchitas con suelo húmedo, poco crecimiento, raíces finas oscuras/muertas, cuello café/rojizo.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative, vegetative_growth, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta; puede matar árbol o dejarlo débil varios ciclos.
+Lectura BIO-G: si soilMoisture alta + resistance alta + marchitez/bajo vigor, alertar raíz/anoxia. No recomendar más riego.
+
+2) root_crown_rot_complex
+Nombre UX: Complejo de raíz y cuello
+Dónde pesa más: establecimiento, árboles que no arrancan, huertos con drenaje irregular.
+Qué lo favorece: estrés hídrico alternado, raíces heridas, suelo frío y húmedo, material débil de vivero.
+Clave visual: crecimiento pobre, hojas pequeñas, amarillamiento, muerte progresiva, falla por zonas.
+Etapa: establecimiento a postcosecha.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: riesgo base cuando hay decaimiento sin patrón foliar claro y sensores apuntan a raíz.
+
+3) armillaria_root_rot
+Nombre UX: Pudrición blanca / Armillaria
+Dónde pesa más: suelos con raíces viejas, huertos replantados, zonas con historial forestal/frutal viejo.
+Qué lo favorece: restos de raíces leñosas, estrés, humedad, árboles debilitados.
+Clave visual: declinación lenta, muerte por focos, micelio blanco bajo corteza en base, setas en temporada, muerte regresiva.
+Etapa: cualquier etapa; visible en verano, brotación débil o postcosecha.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Alta.
+Lectura BIO-G: si historial de replantación + árboles por focos + declinación crónica, sugerir revisión de cuello/raíces.
+
+4) peach_replant_decline
+Nombre UX: Decaimiento por replantación en durazno
+Dónde pesa más: huertos nuevos donde ya hubo Prunus, durazno, ciruelo, almendro, chabacano u otros frutales.
+Qué lo favorece: suelo con historial frutal, nematodos, complejos de suelo, raíces viejas, compactación, microbioma desfavorable.
+Clave visual: bajo vigor uniforme o por líneas, entrenudos cortos, mala brotación, raíces débiles sin lesión única clara.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative.
+Prioridad BIO-G: Alta si hay historial.
+Memoria: Media-alta.
+Lectura BIO-G: antes de asumir falta de fertilizante, preguntar si ya había frutal en ese sitio.
+
+5) crown_gall
+Nombre UX: Agalla de corona
+Dónde pesa más: cuello, raíces, vivero, heridas, injerto, replantes.
+Qué lo favorece: heridas de plantación, material infectado, suelo contaminado, daño mecánico.
+Clave visual: tumores/agallas en cuello o raíces, crecimiento pobre, árboles jóvenes débiles.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta si compromete raíz/cuello.
+Lectura BIO-G: si hay bultos en raíz/cuello y bajo vigor, sugerir revisar material de vivero y cuello.
+
+6) nematode_root_stress
+Nombre UX: Estrés por nematodos en raíz
+Dónde pesa más: suelos arenosos, replantes, huertos con historial, raíces finas.
+Qué lo favorece: presencia de nematodos, raíces débiles, estrés hídrico, suelos ligeros.
+Clave visual: bajo vigor, respuesta pobre a riego/fertilización, raíces con lesiones o agallas según especie, patrón por zonas.
+Etapa: root_establishment, juvenile_vegetative, productive_season.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Alta.
+Lectura BIO-G: no diagnosticar sin análisis; sugerir revisión si el árbol no responde y suelo/agua/NPK parecen adecuados.
+
+7) soil_anoxia_excess_moisture
+Nombre UX: Exceso de agua / anoxia de raíz
+Dónde pesa más: establecimiento, suelos pesados, lluvias, riegos largos.
+Qué lo favorece: saturación, drenaje pobre, compactación, textura arcillosa, exceso de riego.
+Clave visual: marchitez con suelo húmedo, amarillamiento, olor anaeróbico, bajo vigor, caída de hoja.
+Etapa: todas; más grave en plantación y raíz activa.
+Prioridad BIO-G: Muy alta.
+Memoria: Media-alta si daña raíz.
+Lectura BIO-G: “Marchitez con suelo húmedo no es falta de agua.” Revisar drenaje antes de recomendar riego.
+
+8) soil_compaction_root_stress
+Nombre UX: Compactación / raíz sin aire
+Dónde pesa más: todo el ciclo, especialmente establecimiento.
+Qué lo favorece: maquinaria, suelos arcillosos, baja materia orgánica, riego en suelo pesado.
+Clave visual: bajo vigor, encharcamiento, raíces superficiales, mala respuesta a riego/fertilización.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative, vegetative_growth, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: si resistance alta + humedad irregular + bajo vigor, subir riesgo raíz/suelo.
+
+--------------------------------------------------------------------------------
+4.2 DORMANCIA, FRÍO, HELADA Y FLORACIÓN
+--------------------------------------------------------------------------------
+
+9) insufficient_chill_irregular_budbreak
+Nombre UX: Falta de frío / brotación irregular
+Dónde pesa más: perfiles de frío medio/alto en zonas cálidas o inviernos erráticos.
+Qué lo favorece: invierno cálido, variedad mal adaptada, baja acumulación de frío, calor temprano.
+Clave visual: brotación irregular, floración extendida/desuniforme, pocas flores viables, cosecha dispareja.
+Etapa: dormancy, budbreak, flowering.
+Prioridad BIO-G: Muy alta en perfiles sensibles.
+Memoria: Media.
+Lectura BIO-G: contexto/modelo, no sensor v1. Cruzar perfil DZ + zona + brotación irregular.
+
+10) winter_cold_injury
+Nombre UX: Daño por frío invernal en madera/yemas
+Dónde pesa más: inviernos extremos, madera joven, árboles débiles, postcosecha mala.
+Qué lo favorece: frío extremo, brotes tiernos por N tardío, sequía postcosecha, árbol débil.
+Clave visual: yemas muertas, brotación débil, ramas secas, madera oscura, floración pobre.
+Etapa: dormancy, budbreak.
+Prioridad BIO-G: Alta regional.
+Memoria: Alta si mata madera productiva.
+Lectura BIO-G: si hubo frío extremo + baja brotación, no culpar NPK primero.
+
+11) frost_bloom_damage
+Nombre UX: Daño por helada en floración/cuajado
+Dónde pesa más: botón rosado, flor abierta, fruto recién cuajado, zonas bajas.
+Qué lo favorece: temperaturas bajo cero, inversión térmica, aire frío acumulado, floración temprana.
+Clave visual: centro de flor/pistilo café-negro, flor colapsada, bajo cuajado, frutitos deformes o caídos.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad BIO-G: Extrema.
+Memoria: Alta para rendimiento del año; media para ciclo siguiente.
+Lectura BIO-G: si hubo helada y baja carga, no culpar fertilización ni agua.
+
+12) bloom_weather_low_set
+Nombre UX: Floración con clima desfavorable
+Dónde pesa más: flowering.
+Qué lo favorece: lluvia, frío, viento, calor seco, baja actividad de abejas, alta humedad.
+Clave visual: flores presentes pero baja fruta, caída de flor/frutito, floración extendida.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Media.
+Lectura BIO-G: en durazno, flor bonita no garantiza cosecha. Cruza clima de floración y cuajado.
+
+13) poor_pollination_low_fruit_set
+Nombre UX: Bajo cuajado / amarre débil
+Dónde pesa más: flowering, fruit_set.
+Qué lo favorece: clima malo, helada, falta de polinizadores, flor débil, estrés, incompatibilidad menor según variedad.
+Clave visual: floración normal pero poco fruto, caída temprana de frutitos, carga desuniforme.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Alta.
+Memoria: Media.
+Lectura BIO-G: preguntar por clima, abejas y helada antes de sugerir NPK.
+
+14) hail_wound_infection_risk
+Nombre UX: Riesgo sanitario después de granizo
+Dónde pesa más: floración a cosecha; brotes, fruto y madera joven.
+Qué lo favorece: granizo, viento fuerte, heridas abiertas, humedad posterior.
+Clave visual: hojas rotas, fruta golpeada, heridas en brotes, ramas lesionadas, goma en heridas.
+Etapa: flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: guardar evento extremo; subir riesgo de brown rot, bacterial spot/canker, cancros y fruta no comercial.
+
+--------------------------------------------------------------------------------
+4.3 ENFERMEDADES DE HOJA, FLOR Y FRUTO
+--------------------------------------------------------------------------------
+
+15) peach_leaf_curl_taphrina
+Nombre UX: Torque / rizo / lepra del duraznero
+Dónde pesa más: brotación y primeras hojas; infección asociada a condiciones frescas-húmedas antes/durante brotación.
+Qué lo favorece: humedad y frío en dormancia/brotación, inóculo en yemas/ramillas, primaveras húmedas.
+Clave visual: hojas engrosadas, arrugadas, rizadas, rojizas/amarillas, caída temprana; brotes débiles; defoliación repetida.
+Etapa: dormancy, budbreak, vegetative_growth temprana.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta si defolia; repetición debilita árbol y baja producción.
+Lectura BIO-G: si usuario dice “hojas arrugadas rojas” en primavera, priorizar Taphrina sobre falta de agua.
+
+16) brown_rot_monilinia
+Nombre UX: Pudrición café / pudrición morena / Monilinia
+Dónde pesa más: floración, fruto maduro, pre-cosecha, fruta herida y postcosecha.
+Qué lo favorece: humedad, lluvia, flores/frutos mojados, fruta madura, heridas por insectos/granizo, mummies en árbol/suelo.
+Clave visual: flores cafés/marchitas, brotes con cancros/goma, fruta con pudrición café y masas de esporas grisáceas/tan, momias.
+Etapa: flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Extrema para calidad/rendimiento.
+Memoria: Alta por inóculo en momias/cancros.
+Lectura BIO-G: si fruta se pudre cerca de cosecha + humedad/heridas, priorizar brown rot. Si hubo blossom blight, guardar memoria.
+
+17) shot_hole_coryneum
+Nombre UX: Tiro de munición / cribado
+Dónde pesa más: hojas, brotes, ramillas, fruto joven; dormancia/brotación a primavera.
+Qué lo favorece: lluvias, humedad, inóculo en yemas/ramas, condiciones frescas-húmedas.
+Clave visual: manchas pequeñas púrpuras/cafés en hoja que se caen y dejan agujeros; lesiones en fruto/ramillas.
+Etapa: dormancy, budbreak, vegetative_growth, fruit_set, fruit_fill.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta si defolia o afecta fruto.
+Lectura BIO-G: si hay “agujeritos” en hojas y manchas en fruto joven, no confundir con insecto masticador sin revisar patrón.
+
+18) bacterial_spot_xanthomonas
+Nombre UX: Mancha bacteriana del durazno
+Dónde pesa más: hojas, fruto, ramillas; regiones húmedas/ventosas o variedades susceptibles.
+Qué lo favorece: lluvia, viento, heridas, humedad, brotes tiernos, susceptibilidad varietal.
+Clave visual: manchas angulares en hoja, amarillamiento/defoliación, manchas en fruto con grietas/superficie áspera, cancros pequeños en ramillas.
+Etapa: budbreak, vegetative_growth, fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta si defolia o deprecia fruta.
+Lectura BIO-G: si manchas de hoja/fruto tras lluvia-viento, no asumir hongo de inmediato; considerar bacteriosis.
+
+19) peach_scab
+Nombre UX: Roña / pecas del durazno
+Dónde pesa más: fruto en crecimiento, brotes, regiones húmedas; cerca de shuck split a fruit_fill.
+Qué lo favorece: humedad, canopia cerrada, lluvia, mala ventilación, inóculo en ramillas.
+Clave visual: manchas oscuras pequeñas en fruto, a veces agrupadas, pueden cuartear piel; lesiones en ramillas.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta para calidad.
+Memoria: Media.
+Lectura BIO-G: fruta con pecas oscuras superficiales + humedad/canopia densa = roña probable; separar de bacterial spot y daño de insecto.
+
+20) powdery_mildew_peach
+Nombre UX: Cenicilla / oídio
+Dónde pesa más: hojas nuevas, brotes, fruto joven.
+Qué lo favorece: brotes tiernos, días cálidos, noches frescas/húmedas, sombra/canopia cerrada.
+Clave visual: polvo blanco/gris, hojas deformadas, manchas en fruto joven, crecimiento débil.
+Etapa: budbreak, vegetative_growth, fruit_set, fruit_fill.
+Prioridad BIO-G: Media-alta.
+Memoria: Media si afecta hoja/fruto.
+Lectura BIO-G: si brote nuevo + polvo blanco, revisar cenicilla antes de interpretar deficiencia.
+
+21) rust_peach
+Nombre UX: Roya del duraznero
+Dónde pesa más: hojas, final de primavera-verano, postcosecha en regiones favorables.
+Qué lo favorece: humedad, temperaturas templadas, inóculo, defoliación previa.
+Clave visual: manchas amarillas en haz, pústulas café/rojizas en envés, caída de hoja si severo.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Alta si defolia antes de reservas.
+Lectura BIO-G: si aparece tarde y defolia, guardar memoria de reserva para siguiente ciclo.
+
+22) storage_rot_complex
+Nombre UX: Pudriciones de cosecha/postcosecha
+Dónde pesa más: fruta madura, cosecha, transporte, almacenamiento.
+Qué lo favorece: golpes, heridas, sobremadurez, humedad, fruta mojada, mala ventilación, inóculo de campo.
+Clave visual: pudriciones blandas o firmes que aparecen cerca/después de cosecha.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad comercial.
+Memoria: Baja sobre árbol, alta para lote/cosecha.
+Lectura BIO-G: distinguir producción biológica de producción vendible.
+
+--------------------------------------------------------------------------------
+4.4 MADERA, CANCROS, GOMA Y DECAIMIENTO
+--------------------------------------------------------------------------------
+
+23) bacterial_canker_pseudomonas
+Nombre UX: Cancro bacteriano / muerte de yemas y ramas
+Dónde pesa más: madera, yemas, brotes, zonas con frío/humedad/heridas.
+Qué lo favorece: heladas, heridas de poda, lluvia, árboles jóvenes/débiles, estrés, suelos mal drenados.
+Clave visual: yemas muertas, ramas secas, cancros hundidos, goma, muerte regresiva, floración/brotación pobre.
+Etapa: dormancy, budbreak, flowering, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Alta; afecta madera productiva.
+Lectura BIO-G: si goma + ramas secas + frío/heridas, considerar cancro bacteriano, no solo barrenador.
+
+24) cytospora_leucostoma_canker
+Nombre UX: Cancro de Cytospora/Leucostoma
+Dónde pesa más: tronco, ramas, heridas de poda, árboles estresados.
+Qué lo favorece: heridas, helada, sequía, estrés, poda, mala cicatrización.
+Clave visual: cancros hundidos, goma ámbar, muerte de ramas, corteza deprimida.
+Etapa: dormancy, vegetative_growth, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: si goma en rama con cancro/hundimiento y muerte progresiva, activar madera/cancro.
+
+25) fungal_gummosis_context
+Nombre UX: Gomosis fúngica como contexto
+Dónde pesa más: madera, tronco, ramas, heridas.
+Qué lo favorece: humedad, heridas, patógenos de madera, estrés, mal drenaje.
+Clave visual: exudado gomoso, tejido oscuro, cancros, muerte local.
+Etapa: todo el ciclo; más visible en crecimiento/postcosecha.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta si compromete ramas.
+Lectura BIO-G: usar como contexto, no diagnóstico cerrado. Distinguir de goma por barrenador, herida o estrés.
+
+26) wound_stress_gummosis_context
+Nombre UX: Goma por herida o estrés
+Dónde pesa más: tronco/ramas/fruto tras daño mecánico, granizo, poda, sol, frío, sequía o exceso de agua.
+Qué lo favorece: heridas, cambios bruscos, estrés hídrico, daño de insecto, golpe.
+Clave visual: goma transparente/ámbar sin patrón claro de patógeno, cerca de heridas.
+Etapa: todas.
+Prioridad BIO-G: Media.
+Memoria: Baja-media, alta si hay daño recurrente.
+Lectura BIO-G: si hay goma, BIO-G debe preguntar “¿hay aserrín/frass?, ¿herida?, ¿cancro?, ¿base del tronco?, ¿rama seca?”
+
+--------------------------------------------------------------------------------
+4.5 PLAGAS DIRECTAS DE FRUTO Y BROTE
+--------------------------------------------------------------------------------
+
+27) oriental_fruit_moth
+Nombre UX: Palomilla oriental del fruto
+Dónde pesa más: brotes jóvenes y fruto; varias generaciones por temporada.
+Qué lo favorece: historial, brotes tiernos, clima favorable, falta de monitoreo, huertos cercanos infestados.
+Clave visual: puntas de brotes marchitas (“shoot strikes”), larva en brote/fruto, entrada por extremo del fruto, goma/frass.
+Etapa: budbreak, vegetative_growth, fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta por presión recurrente.
+Lectura BIO-G: si brotes terminales mueren y hay perforación, distinguir de peach twig borer y cancro.
+
+28) peach_twig_borer
+Nombre UX: Barrenador de brotes/ramillas del duraznero
+Dónde pesa más: brotes, ramillas, fruto joven; árboles jóvenes pueden sufrir más por daño de brotes.
+Qué lo favorece: historial, brotes tiernos, clima cálido, generaciones acumuladas.
+Clave visual: brotes secos/marchitos, larvas en brote, daño en fruto, frass.
+Etapa: budbreak, vegetative_growth, fruit_set, fruit_fill.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: si “punta quemada” en brote, no asumir bacteria sin revisar perforación/larva.
+
+29) plum_curculio
+Nombre UX: Curculio / picudo de ciruela-durazno
+Dónde pesa más: fruto recién cuajado en regiones donde exista presión.
+Qué lo favorece: bordes con monte/frutales silvestres, primavera, fruta joven, historial.
+Clave visual: cicatriz de oviposición en forma de media luna, fruta deformada/caída, larvas en fruto.
+Etapa: fruit_set, fruit_fill temprano.
+Prioridad BIO-G: Alta regional.
+Memoria: Media.
+Lectura BIO-G: si fruta joven cae con cicatriz, considerar curculio antes de solo aborto fisiológico.
+
+30) stink_bug_lygus_fruit_damage
+Nombre UX: Chinches / Lygus / daño por picadura
+Dónde pesa más: fruto joven a cosecha, bordes con maleza o cultivos vecinos.
+Qué lo favorece: maleza, calor, movimiento desde lotes vecinos, bordes de huerto.
+Clave visual: picaduras, deformaciones, manchas hundidas, tejido corchoso bajo piel.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta regional.
+Memoria: Baja-media.
+Lectura BIO-G: si daño localizado en bordes + maleza/cultivos vecinos, subir riesgo.
+
+31) thrips_flower_fruit_scarring
+Nombre UX: Trips en flor/fruto
+Dónde pesa más: floración y fruto joven.
+Qué lo favorece: flores, brotes tiernos, clima seco/cálido, presión regional.
+Clave visual: raspado, cicatrices/russeting en fruta joven, daño en flor.
+Etapa: flowering, fruit_set, fruit_fill temprano.
+Prioridad BIO-G: Media-alta.
+Memoria: Baja-media.
+Lectura BIO-G: si cicatriz superficial temprana y flores afectadas, separar de roña/bacteriosis.
+
+32) leafroller_fruit_scarring_complex
+Nombre UX: Enrolladores / daño superficial de fruto
+Dónde pesa más: brotes, flores, fruto joven.
+Qué lo favorece: canopia densa, brotación, historial, malezas/hospederos.
+Clave visual: hojas enrolladas/pegadas, larvas protegidas, mordidas, cicatrices superficiales en fruto.
+Etapa: budbreak, flowering, fruit_set, fruit_fill.
+Prioridad BIO-G: Media-alta.
+Memoria: Baja-media.
+Lectura BIO-G: si hoja enrollada + cicatriz de fruto, revisar larvas, no solo enfermedad.
+
+33) fruit_fly_regional
+Nombre UX: Mosca de la fruta / riesgo regional
+Dónde pesa más: fruta madura, regiones con presencia/regulación.
+Qué lo favorece: fruta madura, fruta caída, huertos descuidados, presión regional.
+Clave visual: oviposición, larvas en pulpa, fruta caída/blanda.
+Etapa: harvest_maturity.
+Prioridad BIO-G: Alta si zona/regulación lo amerita; baja si no aplica.
+Memoria: Media.
+Lectura BIO-G: riesgo regional; no activar global sin contexto.
+
+34) birds_rodents_fruit_damage
+Nombre UX: Daño por aves/roedores
+Dónde pesa más: fruta madura, huertos pequeños, bordes.
+Qué lo favorece: fruta dulce/madura, falta de protección, cercanía a refugios.
+Clave visual: mordidas, picoteos, fruta tirada, daño irregular.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media.
+Memoria: Baja.
+Lectura BIO-G: distinguir daño mecánico de pudrición primaria.
+
+--------------------------------------------------------------------------------
+4.6 BARRENADORES, ESCAMAS Y PLAGAS DE MADERA
+--------------------------------------------------------------------------------
+
+35) peachtree_borer
+Nombre UX: Barrenador del duraznero / barrenador de corona
+Dónde pesa más: base del tronco, cuello, árboles jóvenes y debilitados.
+Qué lo favorece: grietas, heridas, base del tronco, estrés, maleza, historial.
+Clave visual: goma mezclada con aserrín/frass en base del tronco, orificios, debilitamiento, marchitez, muerte si severo.
+Etapa: vegetative_growth, fruit_fill, post_harvest, dormancy como revisión.
+Prioridad BIO-G: Muy alta.
+Memoria: Muy alta; puede matar árbol.
+Lectura BIO-G: goma + aserrín/frass en base = priorizar barrenador/corona.
+
+36) lesser_peachtree_borer
+Nombre UX: Barrenador menor del duraznero
+Dónde pesa más: ramas, heridas/cancros, zonas altas del tronco.
+Qué lo favorece: heridas, cancros, poda, ramas dañadas, estrés.
+Clave visual: goma con aserrín/frass en cancros o ramas, pupas/pieles, muerte de ramas.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: si goma está en rama/cancro y trae aserrín, diferenciar de cancro simple.
+
+37) branch_trunk_borer_complex
+Nombre UX: Complejo de barrenadores de rama/tronco
+Dónde pesa más: madera débil, tronco, ramas, árboles viejos o estresados.
+Qué lo favorece: heridas, estrés hídrico, madera debilitada, cancros.
+Clave visual: frass/aserrín, galerías, exudado, ramas que mueren.
+Etapa: vegetative_growth, post_harvest, dormancy.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta.
+Lectura BIO-G: si frass + rama decae, no tratar como plaga foliar.
+
+38) san_jose_scale
+Nombre UX: Escama de San José
+Dónde pesa más: madera, ramas, fruto.
+Qué lo favorece: árboles viejos, material infestado, poca revisión de madera, alta densidad/canopia cerrada.
+Clave visual: escamas pequeñas circulares en corteza/fruto, halo rojizo en fruto, ramas debilitadas.
+Etapa: dormancy, budbreak, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta.
+Memoria: Media-alta.
+Lectura BIO-G: revisar madera en reposo y fruta cerca de cosecha.
+
+39) white_peach_scale_context
+Nombre UX: Escama blanca del duraznero como contexto regional
+Dónde pesa más: ramas/tronco, regiones donde esté presente.
+Qué lo favorece: material infestado, árboles débiles, poca revisión.
+Clave visual: costras blancas/escamas en madera, debilitamiento, muerte de ramas.
+Etapa: dormancy, vegetative_growth, post_harvest.
+Prioridad BIO-G: Media regional.
+Memoria: Media.
+Lectura BIO-G: activar si hay escamas blancas en madera y bajo vigor.
+
+--------------------------------------------------------------------------------
+4.7 CHUPADORES, ÁCAROS Y DEFOLIADORES
+--------------------------------------------------------------------------------
+
+40) green_peach_aphid
+Nombre UX: Pulgón verde del duraznero
+Dónde pesa más: brotes tiernos, hojas nuevas, árboles jóvenes, exceso de N.
+Qué lo favorece: brotes tiernos, N alto, baja presencia de enemigos naturales, clima templado.
+Clave visual: colonias en brotes/envés, hojas enrolladas, melaza, hormigas, brotes deformados.
+Etapa: budbreak, vegetative_growth, fruit_set.
+Prioridad BIO-G: Media-alta.
+Memoria: Baja-media; alta si transmite virus en contextos específicos.
+Lectura BIO-G: brote enrollado + melaza no siempre es hongo; revisar pulgón.
+
+41) black_peach_aphid_context
+Nombre UX: Pulgón negro / pulgones en durazno
+Dónde pesa más: brotes, hojas, raíces en algunos complejos.
+Qué lo favorece: brote tierno, estrés, árboles jóvenes.
+Clave visual: colonias oscuras, deformación, melaza, hormigas.
+Etapa: budbreak, vegetative_growth.
+Prioridad BIO-G: Media.
+Memoria: Baja-media.
+Lectura BIO-G: usar como grupo de pulgones si el usuario reporta colonias oscuras.
+
+42) spider_mites_complex
+Nombre UX: Ácaros / araña roja
+Dónde pesa más: verano, calor, sequía, polvo, hojas.
+Qué lo favorece: calor, baja HR, polvo, déficit hídrico, ruptura de enemigos naturales.
+Clave visual: punteado amarillo/bronceado, telaraña fina, hojas secas, defoliación.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta si defolia antes de reservas.
+Lectura BIO-G: calor + humedad baja + hoja bronceada = revisar envés y telaraña.
+
+43) leafhoppers_context
+Nombre UX: Chicharritas / saltahojas como contexto
+Dónde pesa más: hojas, brotes, maleza, bordes.
+Qué lo favorece: maleza, clima cálido, presión regional.
+Clave visual: insectos pequeños saltadores, punteado, amarillamiento, honeydew ocasional.
+Etapa: vegetative_growth, fruit_fill.
+Prioridad BIO-G: Media regional.
+Memoria: Baja-media.
+Lectura BIO-G: no sobreactivar; usar si hay observación visual/regional.
+
+44) japanese_beetle_regional
+Nombre UX: Escarabajo japonés / defoliador regional
+Dónde pesa más: hojas y fruto en regiones donde exista.
+Qué lo favorece: presencia regional, verano, bordes.
+Clave visual: hojas esqueletizadas, escarabajos metálicos, mordidas.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media regional.
+Memoria: Baja-media.
+Lectura BIO-G: regional; no activar global en México sin evidencia.
+
+45) caterpillar_defoliators
+Nombre UX: Orugas defoliadoras
+Dónde pesa más: brotes, hojas, racimos.
+Qué lo favorece: brotación, malezas/hospederos, historial.
+Clave visual: mordidas, hojas pegadas, excremento, larvas visibles.
+Etapa: budbreak, vegetative_growth, flowering.
+Prioridad BIO-G: Media-alta.
+Memoria: Media si defolia.
+Lectura BIO-G: revisar hojas y brotes antes de que afecte flor/fruto.
+
+================================================================================
+5. RIESGOS ABIÓTICOS Y FISIOLÓGICOS QUE DEBEN ENTRAR AL MOTOR
+================================================================================
+
+Formato:
+Riesgo | Qué lo dispara | Qué se observa | Momento sensible | Lectura BIO-G v1 | Prioridad
+
+1) drought_stress
+Nombre UX: Estrés hídrico
+Qué lo dispara: humedad baja, riego irregular, alta evapotranspiración, calor/viento, raíces limitadas.
+Qué se observa: hojas decaídas, menor calibre, caída de fruto, maduración dispareja, más sunburn, menor retorno floral.
+Momento sensible: root_establishment, flowering, fruit_set, fruit_fill, post_harvest.
+Lectura BIO-G: alerta fuerte si humedad baja coincide con floración, cuajado, llenado o postcosecha.
+Prioridad: Muy alta.
+
+2) waterlogging_anoxia
+Nombre UX: Exceso de agua / anoxia
+Qué lo dispara: riego excesivo, lluvia, drenaje pobre, compactación, suelo pesado.
+Qué se observa: marchitez con suelo húmedo, hojas amarillas, raíz oscura, Phytophthora favorecida.
+Momento sensible: establecimiento y cualquier etapa con suelo saturado.
+Lectura BIO-G: “Marchitez con suelo húmedo no es falta de agua.” Revisar drenaje/cuello/raíces antes de regar más.
+Prioridad: Muy alta.
+
+3) salinity_ec_high
+Nombre UX: Salinidad / CE alta
+Qué lo dispara: agua salina, fertilización concentrada, lavado insuficiente, sequía/evaporación.
+Qué se observa: bordes quemados, bajo vigor, hoja chica, mal cuajado, fruta chica, raíz estresada.
+Momento sensible: establecimiento, cuajado, llenado.
+Lectura BIO-G: usar EC + humedad + etapa. No recomendar más fertilizante si CE está alta.
+Prioridad: Alta.
+
+4) soil_compaction_root_stress
+Nombre UX: Compactación / raíz sin aire
+Qué lo dispara: maquinaria, suelos arcillosos, baja materia orgánica, riego sobre suelo pesado.
+Qué se observa: bajo vigor, encharcamiento, raíces superficiales, respuesta pobre a riego/fertilización.
+Momento sensible: todo el ciclo, especialmente establecimiento.
+Lectura BIO-G: si resistance alta + humedad irregular + bajo vigor, subir riesgo raíz/suelo.
+Prioridad: Alta.
+
+5) heat_stress_fruit_fill
+Nombre UX: Estrés por calor
+Qué lo dispara: temperaturas altas prolongadas, radiación, baja HR, riego insuficiente.
+Qué se observa: caída, bajo calibre, sunburn, fruta menos firme, maduración acelerada, estrés de hoja.
+Momento sensible: fruit_set, fruit_fill, harvest_maturity.
+Lectura BIO-G: si calor + humedad baja + etapa de fruto, alertar calidad/rendimiento.
+Prioridad: Alta.
+
+6) sunburn_sunscald
+Nombre UX: Golpe de sol / quemadura de fruto
+Qué lo dispara: radiación alta, calor, fruta expuesta por poda/defoliación/granizo/canopia abierta, estrés hídrico.
+Qué se observa: manchas claras, cafés o hundidas en lado expuesto; daño mayor en fruto expuesto.
+Momento sensible: fruit_fill, harvest_maturity.
+Lectura BIO-G: activar si calor/radiación + defoliación/canopia abierta + humedad baja.
+Prioridad: Alta para calidad.
+
+7) overcrop_small_fruit_thinning_need
+Nombre UX: Sobrecarga / falta de raleo / fruta pequeña
+Qué lo dispara: exceso de frutos, raleo insuficiente, poda débil, alta floración sin ajuste.
+Qué se observa: fruta pequeña, ramas cargadas, quiebre de ramas, maduración dispareja, árbol agotado.
+Momento sensible: fruit_set, fruit_fill.
+Lectura BIO-G: si hay muchos frutos y calibre bajo, no culpar solo K/N; revisar carga y raleo.
+Prioridad: Muy alta para calidad/rendimiento.
+
+8) fruit_drop_physiological
+Nombre UX: Caída fisiológica de fruto
+Qué lo dispara: mala polinización, helada, estrés hídrico, calor, salinidad, carga excesiva, aborto natural.
+Qué se observa: frutitos caídos, baja carga final, frutos deformes o amarillentos antes de caer.
+Momento sensible: fruit_set.
+Lectura BIO-G: cruzar clima de floración, helada, humedad y carga antes de diagnosticar.
+Prioridad: Alta.
+
+9) split_pit_stone_hardening_disorder
+Nombre UX: Hueso partido / split pit / desorden de endurecimiento de carozo
+Qué lo dispara: crecimiento rápido, variedades tempranas, exceso de vigor, riego irregular, sobre-raleo, clima, carga baja/alta según contexto.
+Qué se observa: fruto con hendidura interna, deformación, fruta más vulnerable a pudriciones, calidad baja.
+Momento sensible: subventana de endurecimiento de hueso dentro de fruit_fill.
+Lectura BIO-G: no crear stageId nuevo; usar fruit_fill + nota de carozo/hueso si el perfil/ventana lo amerita.
+Prioridad: Media-alta para calidad.
+
+10) fruit_cracking_weather
+Nombre UX: Rajado de fruto
+Qué lo dispara: lluvias, cambios bruscos de humedad, riego irregular, piel sensible, fruta próxima a cosecha.
+Qué se observa: grietas, entrada de pudriciones, fruta no comercial.
+Momento sensible: fruit_fill, harvest_maturity.
+Lectura BIO-G: si rajado tras lluvia/riego irregular, clasificar como estrés de piel/agua antes que hongo primario.
+Prioridad: Media-alta.
+
+11) iron_chlorosis_high_ph
+Nombre UX: Clorosis férrica / pH alto
+Qué lo dispara: pH alto/calizo, bicarbonatos, suelo frío/húmedo, raíz débil.
+Qué se observa: hojas nuevas amarillas con nervaduras verdes.
+Momento sensible: vegetative_growth.
+Lectura BIO-G: pH alto + amarillamiento internerval en hojas nuevas = posible Fe/pH, no necesariamente N.
+Prioridad: Media-alta.
+
+12) herbicide_phytotoxicity
+Nombre UX: Fitotoxicidad / deriva de herbicida
+Qué lo dispara: deriva, mezcla fuerte, aplicación con calor, residuos, aplicación reciente.
+Qué se observa: daño uniforme por borde/línea, deformaciones, quemado, patrón no biológico.
+Momento sensible: cualquier etapa.
+Lectura BIO-G: preguntar por aplicación reciente antes de asumir enfermedad.
+Prioridad: Alta como descarte.
+
+13) nutrient_excess_vigor
+Nombre UX: Exceso de vigor por N/agua/poda
+Qué lo dispara: exceso de N, riego alto, poda fuerte, baja carga por helada o poco fruto.
+Qué se observa: brotes largos y tiernos, canopia cerrada, más sombra, más riesgo de plagas/enfermedades, menor calidad.
+Momento sensible: vegetative_growth, flowering, fruit_fill.
+Lectura BIO-G: si hubo helada y poca fruta, el árbol puede irse a vigor; no empujar N automáticamente.
+Prioridad: Alta.
+
+14) post_harvest_reserve_loss
+Nombre UX: Pérdida de reservas postcosecha
+Qué lo dispara: sequía, defoliación, ácaros, leaf spot/roya/shot hole, cosecha alta, estrés, falta de hoja activa.
+Qué se observa: brotación débil el siguiente ciclo, poca flor, bajo vigor, madera débil.
+Momento sensible: post_harvest hasta dormancy.
+Lectura BIO-G: postcosecha no es cierre; guardar memoria si hoja se perdió temprano.
+Prioridad: Muy alta para siguiente ciclo.
+
+15) low_light_canopy_density
+Nombre UX: Sombra interna / canopia cerrada
+Qué lo dispara: exceso de vigor, poda insuficiente, alta densidad sin manejo, N alto.
+Qué se observa: poca luz interna, fruta chica o mal coloreada, humedad interna, más enfermedades.
+Momento sensible: vegetative_growth, fruit_fill, harvest_maturity.
+Lectura BIO-G: si N alto + canopia densa + humedad, subir riesgo de sanidad/calidad.
+Prioridad: Media-alta.
+
+================================================================================
+6. PRIORIZACIÓN POR PERFIL BIO-G
+================================================================================
+
+Regla:
+El catálogo base es el mismo para todos los perfiles de durazno. El perfil solo modifica sensibilidad, ventana relativa, confianza y mensajes. No se crea un catálogo totalmente separado por variedad.
+
+DZ-SKIP / Durazno general
+- Peso alto conservador: peach_leaf_curl_taphrina, brown_rot_monilinia, frost_bloom_damage, drought_stress, overcrop_small_fruit_thinning_need, oriental_fruit_moth, peachtree_borer, bacterial_spot_xanthomonas, shot_hole_coryneum.
+- Mensaje: “Como no sabemos el tipo de durazno, BIO-G usa alertas conservadoras.”
+
+DZ-01 Criollo / Regional
+- Sube: rusticidad variable, presión regional de plagas, brown rot si humedad, leaf curl si primavera húmeda, barrenadores si huerto tradicional, fruit_drop/overcrop por raleo irregular.
+- Baja: precisión de calendario; usar confianza media-baja si no hay región.
+- Nota: no asumir bajo frío ni tecnificado.
+
+DZ-02 Temprano / Bajo frío
+- Sube: insufficient_chill_irregular_budbreak si invierno errático, frost_bloom_damage por floración temprana, heat_stress en cuajado, split_pit en fruta temprana, brown rot si cosecha húmeda.
+- Mensaje: “Las variedades tempranas pueden adelantar floración; una helada tardía pesa mucho.”
+
+DZ-03 Amarillo comercial
+- Sube: manejo de carga, calibre, K/agua, brown rot, bacterial spot, oriental fruit moth, peach twig borer, calidad de cosecha.
+- Confianza: media-alta si hay huerto comercial y etapa visible.
+
+DZ-04 Blanco / Dulce
+- Sube: brown rot, pudriciones, daño por golpes, sensibilidad de calidad, fruta blanda/delicada, sunburn, split/cracking si manejo hídrico irregular.
+- Mensaje: “En durazno blanco/dulce, la calidad y manejo de cosecha pesan mucho.”
+
+DZ-05 Tardío / Industria
+- Sube: estrés hídrico prolongado, heat_stress_fruit_fill, mites, brown rot preharvest si hay lluvias, sunburn, carga alta y fruta para proceso.
+- Nota: no asumir mayor calidad por ser tardío; puede ser volumen/proceso.
+
+================================================================================
+7. PRIORIZACIÓN POR ETAPA FENOLÓGICA
+================================================================================
+
+planting_transplant:
+- Muy alta: phytophthora_root_crown_rot, soil_anoxia_excess_moisture, soil_compaction_root_stress, salinity_ec_high, crown_gall.
+- Alta: peach_replant_decline, nematode_root_stress.
+- Baja: plagas de fruto.
+
+root_establishment:
+- Muy alta: raíz, humedad, compactación, salinidad, replantación.
+- Alta: crown_gall, nematodes, Phytophthora.
+
+juvenile_vegetative:
+- Alta: pulgones, ácaros, leaf curl, shot hole, powdery mildew, bacterial canker, vigor excesivo, barrenadores.
+- No activar rendimiento.
+
+unknown:
+- Conservador. No asumir etapa productiva. Activar familia raíz/suelo + riesgo general de hoja/fruto con baja confianza.
+
+dormancy:
+- Alta: insufficient_chill_irregular_budbreak, winter_cold_injury, peach_leaf_curl_taphrina como riesgo preventivo, bacterial canker, cytospora/leucostoma canker, scales, borers.
+- NPK bajo peso.
+
+budbreak:
+- Muy alta: frost_bloom_damage, peach_leaf_curl_taphrina.
+- Alta: shot_hole, powdery_mildew, aphids, oriental_fruit_moth/shoot strikes, bacterial canker.
+
+vegetative_growth:
+- Alta: aphids, mites, bacterial spot, shot hole, powdery mildew, leafhoppers/defoliators, vigor excesivo, drought, heat.
+- Si hay fruta, no confundir vegetativo con etapa de llenado.
+
+flowering:
+- Extrema: frost_bloom_damage, brown_rot_monilinia blossom blight, bloom_weather_low_set.
+- Alta: bacterial canker, rain/cold, hail, poor_pollination_low_fruit_set.
+- No culpar NPK primero.
+
+fruit_set:
+- Muy alta: frost residual, fruit_drop, plum_curculio, oriental_fruit_moth, peach_twig_borer, drought_stress, salinity_ec_high, heat stress.
+- Alta: trips, bacterial spot, shot hole, raleo/carga.
+
+fruit_fill:
+- Muy alta: drought_stress, overcrop_small_fruit_thinning_need, K/water balance, brown_rot if nearing maturity/wounds, oriental_fruit_moth, peach_twig_borer.
+- Alta: bacterial_spot, peach_scab, shot_hole, mites, sunburn, split_pit.
+- Subventana: endurecimiento de hueso/carozo dentro de fruit_fill.
+
+harvest_maturity:
+- Extrema: brown_rot_monilinia, storage_rot_complex, fruit_fly_regional if applies, handling damage.
+- Alta: sunburn, cracking, birds/rodents, stink bug damage, fruit softening.
+- Copy permitido: cosecha/madurez/calidad final.
+
+post_harvest:
+- Muy alta: post_harvest_reserve_loss, drought_stress, mites, rust/leaf spot, shot hole/defoliation, borers, cankers.
+- No apagar cultivo.
+- Guardar memoria para siguiente ciclo.
+
+================================================================================
+8. REGLAS DE MOTOR / PLANT HEALTH
+================================================================================
+
+8.1 Señales de entrada recomendadas
+
+Sensores v1:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Contexto no sensor:
+- etapa fenológica
+- estado perenne
+- perfil DZ
+- lluvia reciente
+- humedad relativa
+- temperatura ambiente
+- helada
+- granizo
+- viento
+- calor extremo
+- historial de la parcela
+- observación visual
+- memoria BIO-G
+
+8.2 Flags visuales sugeridos
+
+visualFlags:
+- leaves_curled_red
+- leaves_shot_hole
+- leaves_yellow_new_green_veins
+- leaves_powdery_white
+- leaves_bronzed_mites
+- blossom_brown_blight
+- flower_center_black
+- fruit_soft_brown_rot
+- fruit_mummies
+- fruit_worm_hole_frass
+- fruit_crescent_scar
+- fruit_black_spots
+- fruit_cracked
+- fruit_small_many
+- trunk_gum_base
+- branch_gum_canker
+- sawdust_frass
+- branch_dieback
+- low_fruit_set
+- fruit_drop
+- recent_hail
+- recent_herbicide
+
+8.3 Reglas anti-error
+
+Regla A: hoja arrugada roja en primavera
+Si stage in [budbreak, vegetative_growth] + visual leaves_curled_red:
+- priorizar peach_leaf_curl_taphrina.
+- no diagnosticar déficit hídrico como causa principal.
+
+Regla B: goma en árbol
+Si visual trunk_gum_base + sawdust_frass:
+- priorizar peachtree_borer.
+Si branch_gum_canker + branch_dieback:
+- priorizar canker/cytospora/bacterial canker.
+Si gum después de granizo/herida:
+- activar wound_stress_gummosis_context.
+
+Regla C: baja carga
+Si flowering/fruit_set + helada/frío/lluvia:
+- priorizar frost_bloom_damage o bloom_weather_low_set.
+- no culpar NPK primero.
+
+Regla D: fruta chica
+Si fruit_fill + muchos frutos + agua moderada:
+- priorizar overcrop_small_fruit_thinning_need.
+Si fruit_fill + humedad baja/calor:
+- priorizar drought_stress/heat_stress.
+Si K bajo + agua estable:
+- permitir observación NPK.
+
+Regla E: pudrición en cosecha
+Si harvest_maturity + soft brown rot + humedad/heridas:
+- priorizar brown_rot_monilinia.
+- revisar historial de blossom blight, mummies, heridas, insectos.
+
+Regla F: postcosecha
+Si stage = post_harvest:
+- no cerrar cultivo.
+- seguir evaluando agua, hoja, ácaros, defoliación, cancros, barrenadores y reservas.
+
+================================================================================
+9. MEMORIA MULTIANUAL / CICLO SIGUIENTE
+================================================================================
+
+Eventos que se deben guardar:
+
+1. Helada en floración/cuajado
+Campos:
+- fecha
+- etapa
+- severidad
+- temperatura mínima si existe
+- porcentaje visual de flor/fruto dañado si el usuario lo reporta
+Impacto:
+- rendimiento año actual bajo
+- vigor vegetativo puede subir por baja carga
+- ajustar N/vigor
+
+2. Brown rot severo / pudrición café
+Campos:
+- etapa
+- presencia de flor marchita, fruta podrida, momias, humedad, heridas
+Impacto:
+- inoculo para siguiente ciclo
+- calidad comercial baja
+- prioridad de sanidad/cosecha futura
+
+3. Leaf curl / torque severo
+Campos:
+- defoliación aproximada
+- repetición anual
+- etapa
+Impacto:
+- reserva baja
+- brotación y rendimiento futuros menores si repetido
+
+4. Defoliación postcosecha
+Campos:
+- causa probable
+- porcentaje de hoja perdida
+- duración hasta caída
+Impacto:
+- menor reserva
+- menor floración/vigor siguiente ciclo
+
+5. Sequía o riego deficiente en fruit_fill/post_harvest
+Campos:
+- severidad
+- días
+- etapa
+Impacto:
+- fruta chica/calidad baja
+- menor retorno floral/reserva
+
+6. Barrenadores/cancros
+Campos:
+- ubicación: base/tronco/rama
+- frass/goma
+- ramas afectadas
+Impacto:
+- longevidad, flujo de savia, riesgo de muerte de rama/árbol
+
+7. Sobrecarga / falta de raleo
+Campos:
+- fruta chica
+- ramas quebradas
+- calibre bajo
+- carga visual alta
+Impacto:
+- reserva baja
+- posible alternancia ligera
+- ajustar rendimiento siguiente ciclo
+
+8. Granizo
+Campos:
+- fecha
+- etapa
+- daño en fruta/hoja/madera
+Impacto:
+- heridas, brown rot, canker, fruta no comercial
+
+================================================================================
+10. MENSAJES UX RECOMENDADOS
+================================================================================
+
+Reglas de tono:
+- No diagnosticar cerrado.
+- No decir “aplica producto”.
+- Hablar como apoyo de campo.
+- Pedir confirmación visual.
+- Separar causa probable de condición favorecedora.
+
+Ejemplos:
+
+peach_leaf_curl_taphrina:
+“Las hojas arrugadas o rojizas en brotación se parecen a torque/rizo del duraznero. Revisa si el daño apareció en hojas nuevas después de clima fresco y húmedo.”
+
+brown_rot_monilinia:
+“En durazno, fruta que se pudre cerca de cosecha puede estar relacionada con pudrición café, sobre todo si hubo humedad, heridas o fruta momificada.”
+
+frost_bloom_damage:
+“Si hubo frío o helada durante floración, la baja carga puede venir de daño en flor, no necesariamente de fertilización.”
+
+peachtree_borer:
+“Goma con aserrín en la base del tronco puede indicar barrenador. Revisa cuello y tronco antes de asumir solo gomosis.”
+
+overcrop_small_fruit_thinning_need:
+“Si hay demasiados frutos, el árbol puede quedarse con fruta chica. En durazno, la carga y el raleo pesan mucho en calibre.”
+
+post_harvest_reserve_loss:
+“Después de cosecha el duraznero sigue trabajando. Si pierde hoja o pasa sequía en esta etapa, puede afectar el siguiente ciclo.”
+
+================================================================================
+11. SÍNDROMES SUGERIDOS PARA CÓDIGO
+================================================================================
+
+Archivo esperado:
+lib/core/plant_health/catalog/peach_tree_syndromes.dart
+
+IDs sugeridos principales:
+
+Raíz/suelo:
+- peach_phytophthora_root_crown_rot
+- peach_root_crown_rot_complex
+- peach_armillaria_root_rot
+- peach_replant_decline
+- peach_crown_gall
+- peach_nematode_root_stress
+- peach_waterlogging_anoxia
+- peach_compaction_root_stress
+- peach_salinity_ec_high
+
+Frío/flor/carga:
+- peach_insufficient_chill_irregular_budbreak
+- peach_winter_cold_injury
+- peach_frost_bloom_damage
+- peach_bloom_weather_low_set
+- peach_poor_fruit_set
+- peach_hail_wound_risk
+
+Enfermedades:
+- peach_leaf_curl_taphrina
+- peach_brown_rot_monilinia
+- peach_shot_hole_coryneum
+- peach_bacterial_spot
+- peach_scab
+- peach_powdery_mildew
+- peach_rust
+- peach_bacterial_canker
+- peach_cytospora_leucostoma_canker
+- peach_storage_rot_complex
+
+Insectos/fruto/brote:
+- peach_oriental_fruit_moth
+- peach_twig_borer
+- peach_plum_curculio
+- peach_stink_bug_lygus_damage
+- peach_thrips_flower_fruit_scarring
+- peach_leafroller_fruit_scarring
+- peach_fruit_fly_regional
+- peach_birds_rodents_fruit_damage
+
+Madera/barrenadores/escamas:
+- peach_peachtree_borer
+- peach_lesser_peachtree_borer
+- peach_branch_trunk_borer_complex
+- peach_san_jose_scale
+- peach_white_peach_scale_context
+
+Chupadores/ácaros:
+- peach_green_peach_aphid
+- peach_black_aphid_context
+- peach_spider_mites_complex
+- peach_leafhoppers_context
+- peach_japanese_beetle_regional
+- peach_caterpillar_defoliators
+
+Fisiológicos/calidad:
+- peach_drought_stress
+- peach_heat_stress_fruit_fill
+- peach_sunburn_sunscald
+- peach_overcrop_small_fruit
+- peach_fruit_drop_physiological
+- peach_split_pit_stone_hardening_disorder
+- peach_fruit_cracking_weather
+- peach_iron_chlorosis_high_ph
+- peach_herbicide_phytotoxicity
+- peach_nutrient_excess_vigor
+- peach_post_harvest_reserve_loss
+- peach_gummosis_context
+
+================================================================================
+12. MAPEOS PARA plant_health_stage_adapter.dart
+================================================================================
+
+Función esperada:
+_fromPeachTree(stageId, profileId, context)
+
+Mapa sugerido:
+
+planting_transplant:
+- peach_phytophthora_root_crown_rot
+- peach_root_crown_rot_complex
+- peach_crown_gall
+- peach_replant_decline
+- peach_waterlogging_anoxia
+- peach_compaction_root_stress
+- peach_salinity_ec_high
+
+root_establishment:
+- peach_phytophthora_root_crown_rot
+- peach_root_crown_rot_complex
+- peach_replant_decline
+- peach_nematode_root_stress
+- peach_waterlogging_anoxia
+- peach_compaction_root_stress
+- peach_salinity_ec_high
+
+juvenile_vegetative:
+- peach_leaf_curl_taphrina
+- peach_powdery_mildew
+- peach_shot_hole_coryneum
+- peach_bacterial_spot
+- peach_green_peach_aphid
+- peach_spider_mites_complex
+- peach_peachtree_borer
+- peach_bacterial_canker
+- peach_nutrient_excess_vigor
+
+unknown:
+- conservativeRootSoil
+- peach_leaf_curl_taphrina
+- peach_brown_rot_monilinia
+- peach_peachtree_borer
+- peach_drought_stress
+- peach_waterlogging_anoxia
+- confidence: baja
+
+dormancy:
+- peach_insufficient_chill_irregular_budbreak
+- peach_winter_cold_injury
+- peach_leaf_curl_taphrina
+- peach_bacterial_canker
+- peach_cytospora_leucostoma_canker
+- peach_san_jose_scale
+- peach_peachtree_borer
+- peach_lesser_peachtree_borer
+
+budbreak:
+- peach_leaf_curl_taphrina
+- peach_frost_bloom_damage
+- peach_shot_hole_coryneum
+- peach_powdery_mildew
+- peach_green_peach_aphid
+- peach_oriental_fruit_moth
+- peach_twig_borer
+- peach_bacterial_canker
+
+vegetative_growth:
+- peach_bacterial_spot
+- peach_powdery_mildew
+- peach_shot_hole_coryneum
+- peach_green_peach_aphid
+- peach_spider_mites_complex
+- peach_oriental_fruit_moth
+- peach_twig_borer
+- peach_nutrient_excess_vigor
+- peach_drought_stress
+
+flowering:
+- peach_frost_bloom_damage
+- peach_bloom_weather_low_set
+- peach_brown_rot_monilinia
+- peach_bacterial_canker
+- peach_poor_fruit_set
+- peach_hail_wound_risk
+
+fruit_set:
+- peach_fruit_drop_physiological
+- peach_plum_curculio
+- peach_oriental_fruit_moth
+- peach_twig_borer
+- peach_thrips_flower_fruit_scarring
+- peach_bacterial_spot
+- peach_drought_stress
+- peach_salinity_ec_high
+- peach_overcrop_small_fruit
+
+fruit_fill:
+- peach_drought_stress
+- peach_overcrop_small_fruit
+- peach_split_pit_stone_hardening_disorder
+- peach_oriental_fruit_moth
+- peach_twig_borer
+- peach_bacterial_spot
+- peach_scab
+- peach_shot_hole_coryneum
+- peach_spider_mites_complex
+- peach_sunburn_sunscald
+- peach_brown_rot_monilinia if near harvest/wounds/humidity
+
+harvest_maturity:
+- peach_brown_rot_monilinia
+- peach_storage_rot_complex
+- peach_fruit_fly_regional
+- peach_birds_rodents_fruit_damage
+- peach_sunburn_sunscald
+- peach_fruit_cracking_weather
+- peach_stink_bug_lygus_damage
+
+post_harvest:
+- peach_post_harvest_reserve_loss
+- peach_drought_stress
+- peach_spider_mites_complex
+- peach_rust
+- peach_shot_hole_coryneum
+- peach_bacterial_canker
+- peach_cytospora_leucostoma_canker
+- peach_peachtree_borer
+- peach_lesser_peachtree_borer
+
+Regla:
+post_harvest NO es etapa apagada.
+
+================================================================================
+13. TESTS MÍNIMOS RECOMENDADOS
+================================================================================
+
+Archivo sugerido:
+test/core/peach_tree/peach_tree_plant_health_test.dart
+
+Casos:
+
+1. flowering prioriza helada y brown rot blossom blight
+Input: crop_peach_tree + flowering + humedad alta/lluvia + temp baja o helada.
+Expected: incluye peach_frost_bloom_damage y/o peach_brown_rot_monilinia.
+
+2. fruit_set no culpa NPK por baja carga si hubo helada
+Input: fruit_set + frostMemory.
+Expected: poor fruit set/frost risk más alto que nutrient deficiency.
+
+3. fruit_fill prioriza carga/agua/fruto, no cosecha
+Input: fruit_fill + muchos frutos + baja humedad.
+Expected: overcrop_small_fruit + drought_stress; copy no debe decir “cosecha” como identidad.
+
+4. harvest_maturity prioriza brown rot si hay fruta podrida/humedad
+Input: harvest_maturity + visual fruit_soft_brown_rot + humidity.
+Expected: peach_brown_rot_monilinia alta.
+
+5. post_harvest no se apaga
+Input: post_harvest + defoliation/mite/drought.
+Expected: post_harvest_reserve_loss y mites/drought activos.
+
+6. goma en base con aserrín
+Input: trunk_gum_base + sawdust_frass.
+Expected: peachtree_borer prioritario.
+
+7. hojas arrugadas rojas en brotación
+Input: budbreak + leaves_curled_red.
+Expected: peach_leaf_curl_taphrina.
+
+8. unknown conservador
+Input: crop_peach_tree + unknown.
+Expected: riesgos generales con baja confianza; no diagnóstico cerrado.
+
+9. DZ-02 bajo frío sube sensibilidad a floración temprana
+Input: profile dz_02_temprano_bajo_frio + flowering.
+Expected: frost/chill/bloom risks aumentan.
+
+10. DZ-05 tardío sube riesgos de heat/drought/brown rot tardío
+Input: profile dz_05_tardio_industria + fruit_fill/harvest.
+Expected: heat/drought/brown rot quality risks ponderados.
+
+================================================================================
+14. FUENTES BASE Y TRAZABILIDAD
+================================================================================
+
+Fuentes técnicas principales:
+
+- UC IPM. Agriculture: Peach Pest Management Guidelines.
+- UC IPM. Peach Leaf Curl.
+- UC IPM. Shot Hole Disease in Peach.
+- UC IPM. Peach Treatment Timing for Key Diseases.
+- UC IPM. Peach Postharvest.
+- University of Georgia CAES. Home Garden Peaches.
+- University of Georgia CAES. Southeastern Peach, Nectarine and Plum Pest Management and Culture Guide.
+- University of Georgia Peach Research: Diseases.
+- Clemson Cooperative Extension HGIC. Peach Diseases.
+- Michigan State University Extension/IPM. Bacterial Spot of Peach and Plum.
+- Michigan State University Extension/IPM. Stone Fruit IPM for Beginners.
+- Penn State Extension. Plum Curculio.
+- Penn State Extension. Peachtree Borer.
+- Penn State Extension. Lesser Peachtree Borer.
+- Utah State University Extension. Peaches in the Garden.
+- Utah State University Extension Plant Health. Plagas frutales: Durazno y Nectarina.
+- INIFAP Zacatecas. Prácticas culturales para producir durazno de temporal en Zacatecas.
+- Colegio de Postgraduados / Agricultura, Sociedad y Desarrollo. Manejo de la pudrición café (Monilinia fructicola) de durazno por productores de la Sierra Nevada en Puebla.
+- UAEMex. Cultivo de durazno.
+- INIA Uruguay. Manual del duraznero: manejo integrado de plagas y enfermedades.
+
+Fuentes de lenguaje UX / productor:
+- InfoJardín: hojas arrugadas, rizo/lepra, gomosis, melocotonero no da fruto.
+- Foros de jardinería/productores: fruta que se pudre, goma en tronco, hojas enchinadas, fruta chica, caída de fruto.
+
+Regla de trazabilidad:
+- Universidades/extensión definen jerarquía técnica.
+- Foros solo ayudan a traducir cómo pregunta el productor.
+- BIO-G no receta productos ni dosis; orienta revisión y memoria.
+
+================================================================================
+15. CIERRE PARA CODEX / CLAUDE
+================================================================================
+
+Este documento debe alimentar:
+
+- lib/core/plant_health/catalog/peach_tree_syndromes.dart
+- plant_health_stage_adapter.dart con rama crop_peach_tree
+- alertas farmer-friendly por etapa
+- memoria de estrés para rendimiento y siguiente ciclo
+- copy de dashboard / plant health / quick reports
+- tests de Plant Health por etapa
+
+Reglas no negociables:
+- Durazno es árbol perenne real.
+- No usar sowingDate como eje.
+- Cosecha y postcosecha NO cierran el cultivo.
+- Endurecimiento de hueso/carozo es subventana de fruit_fill, no stageId nuevo en v1.
+- Floración y cuajado son etapas críticas de alto peso.
+- No diagnosticar cerrado.
+- No recomendar productos químicos ni dosis.
+- No mezclar fruit_fill con harvest_maturity en copy.
+- Post_harvest sigue activo para reservas del siguiente ciclo.
+- La memoria debe guardar helada, sequía, brown rot, defoliación, barrenadores, cancro, granizo, sobrecarga y postcosecha débil.
+
+Estado del documento:
+Listo para revisión agronómica, auditoría técnica y traducción a código.

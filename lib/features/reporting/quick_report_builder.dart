@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
+import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
+import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/screens/history/history_series_builder.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
@@ -159,7 +161,10 @@ class QuickReportBuilder {
       historyN: _normalizeDoubleList(historySeries.nValues),
       historyP: _normalizeDoubleList(historySeries.pValues),
       historyK: _normalizeDoubleList(historySeries.kValues),
-      recommendationTitle: _buildRecommendationTitle(top),
+      recommendationTitle: _buildRecommendationTitle(
+        top,
+        cropKey: runtime.cropKeyName,
+      ),
       recommendationBody: _buildRecommendationBody(top: top, runtime: runtime),
       climateBannerTitle: climateBanner?.key,
       climateBannerBody: climateBanner?.value,
@@ -194,6 +199,38 @@ class QuickReportBuilder {
   }
 
   String _resolveProfileLabel(CropRuntimeSnapshot runtime) {
+    final String canonicalCrop = CropCatalog.canonicalCropKey(
+      runtime.cropKeyName,
+    );
+    if (_isFruitTreeCrop(canonicalCrop)) {
+      final String? profileToken =
+          runtime.profile?.id ??
+          runtime.cropContext?.profileId ??
+          runtime.cropContext?.varietyId ??
+          runtime.cropContext?.varietyAlias ??
+          runtime.seed?.profileId ??
+          runtime.seed?.varietyAlias;
+      final profile = CropCatalog.profileByAny(canonicalCrop, profileToken);
+      final String? resolvedProfileId = profile?.id ?? profileToken;
+      final String? defaultProfileId =
+          CropCatalog.cropById(canonicalCrop)?.defaultProfileId;
+
+      if (resolvedProfileId == null || resolvedProfileId.trim().isEmpty) {
+        return _fruitTreeGenericProfileLabel(canonicalCrop);
+      }
+
+      final normalized = resolvedProfileId.trim().toLowerCase();
+      if (normalized == defaultProfileId || normalized.endsWith('_skip')) {
+        return _fruitTreeGenericProfileLabel(canonicalCrop);
+      }
+
+      return TreeProfilePresentation.displayLabel(
+        canonicalCrop,
+        resolvedProfileId,
+        fallbackLabel: profile?.label,
+      );
+    }
+
     final String varietyAlias =
         (runtime.cropContext?.varietyAlias ?? runtime.seed?.varietyAlias ?? '')
             .trim();
@@ -330,7 +367,48 @@ class QuickReportBuilder {
     return (value / cap).clamp(0.0, 1.0);
   }
 
-  String _buildRecommendationTitle(NutrientInterpretationResult top) {
+  bool _isFruitTreeCrop(String? cropKey) {
+    final crop = CropCatalog.canonicalCropKey(cropKey).trim().toLowerCase();
+    // Arboles frutales perennes (pepita + hueso/carozo + nuez).
+    return crop == 'apple_tree' ||
+        crop == 'crop_apple_tree' ||
+        crop == 'manzano' ||
+        crop == 'pear_tree' ||
+        crop == 'crop_pear_tree' ||
+        crop == 'pera' ||
+        crop == 'peral' ||
+        crop == 'peach_tree' ||
+        crop == 'crop_peach_tree' ||
+        crop == 'peach' ||
+        crop == 'peachtree' ||
+        crop == 'durazno' ||
+        crop == 'duraznero' ||
+        crop == 'melocoton' ||
+        crop == 'melocotón' ||
+        crop == 'melocotonero' ||
+        crop == 'walnut_tree' ||
+        crop == 'crop_walnut_tree' ||
+        crop == 'walnut' ||
+        crop == 'walnuttree' ||
+        crop == 'nogal' ||
+        crop == 'pecan' ||
+        crop == 'nuez';
+  }
+
+  String _fruitTreeGenericProfileLabel(String cropKey) {
+    return switch (CropCatalog.canonicalCropKey(cropKey)) {
+      CropCatalog.appleTreeCropId => 'Manzano general',
+      CropCatalog.pearTreeCropId => 'Pera general',
+      CropCatalog.peachTreeCropId => 'Durazno general',
+      CropCatalog.walnutTreeCropId => 'Nogal general',
+      _ => 'Perfil general',
+    };
+  }
+
+  String _buildRecommendationTitle(
+    NutrientInterpretationResult top, {
+    required String? cropKey,
+  }) {
     final String nutrientName = top.nutrient.labelEs;
 
     switch (top.label) {
@@ -347,6 +425,9 @@ class QuickReportBuilder {
       case NutrientPriorityLabel.actionRecommended:
         return 'Urge aplicar $nutrientName';
       case NutrientPriorityLabel.possibleExcess:
+        if (_isFruitTreeCrop(cropKey)) {
+          return '$nutrientName alto útil';
+        }
         return 'Pausar $nutrientName';
       case NutrientPriorityLabel.reviewAccumulation:
         return 'Revisar exceso de $nutrientName';

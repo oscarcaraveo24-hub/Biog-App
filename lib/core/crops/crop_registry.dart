@@ -11,6 +11,9 @@ import 'package:bio_g/core/crops/lettuce/lettuce_crop_definition.dart';
 import 'package:bio_g/core/crops/maize/maize_crop_definition.dart';
 import 'package:bio_g/core/crops/oat/oat_crop_definition.dart';
 import 'package:bio_g/core/crops/onion/onion_crop_definition.dart';
+import 'package:bio_g/core/crops/peach_tree/peach_tree_crop_definition.dart';
+import 'package:bio_g/core/crops/pear_tree/pear_tree_crop_definition.dart';
+import 'package:bio_g/core/crops/walnut_tree/walnut_tree_crop_definition.dart';
 import 'package:bio_g/core/crops/spinach/spinach_crop_definition.dart';
 import 'package:bio_g/core/crops/squash/squash_crop_definition.dart';
 import 'package:bio_g/core/crops/tomato/tomato_crop_definition.dart';
@@ -35,6 +38,9 @@ class CropRegistry {
     CropKey.onion: OnionCropDefinition(),
     CropKey.garlic: GarlicCropDefinition(),
     CropKey.appleTree: AppleTreeCropDefinition(),
+    CropKey.pearTree: PearTreeCropDefinition(),
+    CropKey.peachTree: PeachTreeCropDefinition(),
+    CropKey.walnutTree: WalnutTreeCropDefinition(),
   };
 
   static CropDefinition? byKey(CropKey key) => _definitions[key];
@@ -50,9 +56,53 @@ class CropRegistry {
       }
     }
 
-    // cropId canónico oficial + alias legacy: ambos resuelven a Manzano.
-    if (normalized == 'crop_apple_tree' || normalized == 'apple_tree') {
+    // cropId canónico oficial + alias legacy + aliases humanos: todos resuelven
+    // a Manzano. Reconoce los mismos nombres comunes que CropCatalog para que un
+    // caller con acceso directo al registro no se quede sin árbol.
+    if (normalized == 'crop_apple_tree' ||
+        normalized == 'apple_tree' ||
+        normalized == 'apple' ||
+        normalized == 'manzano' ||
+        normalized == 'manzana') {
       return _definitions[CropKey.appleTree];
+    }
+
+    // Pera: cropId canónico oficial + alias legacy + aliases humanos
+    // (`pera`/`peral`) resuelven a Pera, alineado con CropCatalog.canonicalCropKey.
+    if (normalized == 'crop_pear_tree' ||
+        normalized == 'pear_tree' ||
+        normalized == 'pear' ||
+        normalized == 'pera' ||
+        normalized == 'peral') {
+      return _definitions[CropKey.pearTree];
+    }
+
+    // Durazno: cropId canónico + alias legacy + aliases humanos resuelven a
+    // Durazno, alineado con CropCatalog.canonicalCropKey.
+    if (normalized == 'crop_peach_tree' ||
+        normalized == 'peach_tree' ||
+        normalized == 'peachtree' ||
+        normalized == 'peach' ||
+        normalized == 'durazno' ||
+        normalized == 'duraznero' ||
+        normalized == 'melocoton' ||
+        normalized == 'melocotón' ||
+        normalized == 'melocotonero') {
+      return _definitions[CropKey.peachTree];
+    }
+
+    // Nogal pecanero: cropId canónico + alias legacy + aliases humanos resuelven
+    // a Nogal, alineado con CropCatalog.canonicalCropKey.
+    if (normalized == 'crop_walnut_tree' ||
+        normalized == 'walnut_tree' ||
+        normalized == 'walnuttree' ||
+        normalized == 'walnut' ||
+        normalized == 'nogal' ||
+        normalized == 'nogal pecanero' ||
+        normalized == 'pecan' ||
+        normalized == 'nuez' ||
+        normalized == 'nuez pecana') {
+      return _definitions[CropKey.walnutTree];
     }
 
     return null;

@@ -6,7 +6,11 @@ import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
+import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
+import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
+import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
+import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_components.dart';
@@ -70,8 +74,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   bool get _cropUsesBrands => _crop == CropCatalog.maizeCropId;
 
   bool get _isTreeWizard =>
-      _category == CropCatalog.treeCategoryId ||
-      _crop == CropCatalog.appleTreeCropId;
+      isTreeCrop(cropId: _crop, cropCategoryId: _category);
 
   int get _totalSteps => _isTreeWizard ? 5 : (_cropUsesBrands ? 5 : 4);
 
@@ -371,11 +374,8 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
               _category == CropCatalog.treeCategoryId,
           isTreeFlow: _isTreeWizard,
           cropUsesBrands: _cropUsesBrands,
-          cropIconPath: _crop == CropCatalog.appleTreeCropId
-              ? AppleTreeAssets.cropIcon
-              : _resolvedCropIconPath,
-          varietyIconPath: _crop == CropCatalog.appleTreeCropId ||
-                  _varietyId != null
+          cropIconPath: _resolvedCropIconPath,
+          varietyIconPath: _isTreeWizard || _varietyId != null
               ? _resolvedVarietyIconPath
               : null,
           summary: _buildSelectionSummary(),
@@ -441,6 +441,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return TreeStatePage(
           key: const ValueKey('treeState'),
           productionStatusId: _treeProductionStatusId,
+          iconForStatus: _treeProductionStatusIcon,
           summary: _buildSelectionSummary(),
           onSelect: _onSelectTreeProductionStatus,
         );
@@ -449,6 +450,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return TreeReproSignalPage(
           key: const ValueKey('treeReproSignal'),
           selectedOptionId: _treeReproSignalId,
+          iconForSignal: _treeReproSignalIcon,
           summary: _buildSelectionSummary(),
           onSelect: _onSelectTreeReproSignal,
         );
@@ -458,6 +460,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           key: const ValueKey('treePhenology'),
           productionStatusId: _treeProductionStatusId,
           stageId: _phenologyStageId,
+          iconForStage: _treeStageIcon,
           summary: _buildSelectionSummary(),
           onSelect: _onSelectTreePhenologyStage,
         );
@@ -470,6 +473,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           anchorTypeId: _perennialAnchorTypeId,
           selectedOptionId: _treeAnchorOptionId,
           selectedDate: _selectedDate,
+          cropIconPath: _resolvedCropIconPath,
           summary: _buildSelectionSummary(),
           saving: _saving,
           onSelectOption: _onSelectTreeAnchorOption,
@@ -499,7 +503,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         chips.add(treeProductionStatusDisplayName(_treeProductionStatusId));
       }
       if (_phenologyStageId != null) {
-        chips.add(treeStageDisplayName(_phenologyStageId));
+        chips.add(treeStageDisplayNameForCrop(_crop, _phenologyStageId));
       }
       final anchorLabel = _treeAnchorDisplayLabel(_treeAnchorOptionId);
       if (anchorLabel != null) {
@@ -646,24 +650,35 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   // ── Variety selector ────────────────────────────────────────────────────────
 
   Future<void> _openTreeProfileSelector() async {
-    if (_normalizeCropId(_crop) != CropCatalog.appleTreeCropId) return;
-    const cropId = CropCatalog.appleTreeCropId;
+    final cropId = _normalizeCropId(_crop);
+    if (cropId == null ||
+        !isTreeCrop(cropId: cropId, cropCategoryId: _category)) {
+      return;
+    }
 
     final profiles = CropCatalog.profilesForCrop(cropId, enabledOnly: false);
     if (profiles.isEmpty) return;
+    final defaultProfileId = CropCatalog.resolveProfileId(cropId: cropId);
+
+    // El perfil general/SKIP va al final y la pregunta habla de "variedad".
+    final orderedProfiles = TreeProfilePresentation.genericLast(profiles, cropId);
 
     final result = await showWizardSelectionSheet<String>(
       context: context,
-      title: '¿Que tipo de manzano tienes?',
-      options: profiles
+      title: TreeProfilePresentation.varietyQuestion(cropId),
+      options: orderedProfiles
           .map(
             (profile) => WizardSheetOption<String>(
               value: profile.id,
-              title: _appleTreeProfileOptionTitle(profile.id, profile.label),
-              subtitle: profile.id == CropCatalog.appleTreeDefaultProfileId
-                  ? 'Usaremos un perfil general de manzano. Podras cambiarlo despues.'
-                  : (profile.subtitle ?? 'Perfil de manzano disponible'),
-              iconPath: appleTreeProfileIcon(profile.id),
+              title: _treeProfileOptionTitle(
+                cropId,
+                profile.id,
+                profile.label,
+              ),
+              subtitle: profile.id == defaultProfileId
+                  ? TreeProfilePresentation.genericOptionSubtitle
+                  : (profile.subtitle ?? 'Disponible'),
+              iconPath: _treeProfileIcon(cropId, profile.id),
               enabled: true,
             ),
           )
@@ -693,7 +708,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     final cropId = _crop;
     if (cropId == null) return;
 
-    if (_isTreeWizard || cropId == CropCatalog.appleTreeCropId) {
+    if (_isTreeWizard || isTreeCrop(cropId: cropId, cropCategoryId: _category)) {
       await _openTreeProfileSelector();
       return;
     }
@@ -1126,7 +1141,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
 
     final isTreeSave = _isTreeWizard;
     if (isTreeSave) {
-      if (_crop != CropCatalog.appleTreeCropId) return;
+      if (_crop == null) return;
       if (_perennialStateId == null || _phenologyStageId == null) return;
       if (_treeAnchorOptionId == null) return;
     } else {
@@ -1153,7 +1168,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
       if (isTreeSave) {
         final resolvedProfileId =
             CropCatalog.profileByAny(resolvedCropId, _varietyId)?.id ??
-            CropCatalog.appleTreeDefaultProfileId;
+            CropCatalog.resolveProfileId(cropId: resolvedCropId);
 
         final resolvedStateId = normalizeTreeStateId(_perennialStateId);
         final resolvedStageId = safeTreeStageForState(
@@ -1167,7 +1182,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         final resolvedContext = _contextResolver.resolve(
           deviceId: device.id,
           cropCategoryId: CropCatalog.treeCategoryId,
-          cropId: CropCatalog.appleTreeCropId,
+          cropId: resolvedCropId,
           lifecycleStatus: CropLifecycleStatus.planted,
           dateConfidence: DateConfidence.unknown,
           now: now,
@@ -1248,13 +1263,14 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     DeviceCropContext cropContext,
     String normalizedCropId,
   ) {
-    if (normalizedCropId == CropCatalog.appleTreeCropId) {
+    if (isTreeCrop(cropId: normalizedCropId)) {
       final profile =
           CropCatalog.profileByAny(normalizedCropId, cropContext.profileId) ??
           CropCatalog.profileByAny(normalizedCropId, cropContext.varietyId) ??
           CropCatalog.profileByAny(normalizedCropId, cropContext.varietyAlias);
 
-      return profile?.id ?? CropCatalog.appleTreeDefaultProfileId;
+      return profile?.id ??
+          CropCatalog.resolveProfileId(cropId: normalizedCropId);
     }
 
     if (cropContext.varietyId != null &&
@@ -1341,10 +1357,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     final varietyId = _varietyId;
     if (cropId == null || varietyId == null) return 'Seleccionar';
 
-    if (cropId == CropCatalog.appleTreeCropId) {
+    if (isTreeCrop(cropId: cropId, cropCategoryId: _category)) {
       final profile = CropCatalog.profileByAny(cropId, varietyId);
       if (profile != null) {
-        return _appleTreeProfileOptionTitle(profile.id, profile.label);
+        return _treeProfileOptionTitle(cropId, profile.id, profile.label);
       }
     }
 
@@ -1357,23 +1373,18 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     return 'Seleccionar';
   }
 
-  String _appleTreeProfileOptionTitle(String profileId, String fallbackLabel) {
-    switch (profileId) {
-      case CropCatalog.appleTreeDefaultProfileId:
-        return 'No se / Manzano general';
-      case 'ap_01_golden':
-        return 'Golden';
-      case 'ap_02_red':
-        return 'Red';
-      case 'ap_03_criolla_rayada':
-        return 'Criolla / Rayada';
-      case 'ap_04_gala':
-        return 'Gala';
-      case 'ap_05_low_chill':
-        return 'Bajo requerimiento de frio';
-      default:
-        return fallbackLabel;
-    }
+  String _treeProfileOptionTitle(
+    String cropId,
+    String profileId,
+    String fallbackLabel,
+  ) {
+    // Lenguaje humano compartido por Manzano, Pera y futuros árboles: nunca
+    // muestra códigos PR-/AP-/SKIP al productor.
+    return TreeProfilePresentation.displayLabel(
+      cropId,
+      profileId,
+      fallbackLabel: fallbackLabel,
+    );
   }
 
   String? _treeAnchorDisplayLabel(String? optionId) {
@@ -1451,15 +1462,63 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return ConfigureSeedWizardAssets.cropGarlic;
       case CropCatalog.appleTreeCropId:
         return AppleTreeAssets.cropIcon;
+      case CropCatalog.pearTreeCropId:
+        return PearTreeAssets.cropIcon;
+      case CropCatalog.peachTreeCropId:
+        return PeachTreeAssets.cropIcon;
+      case CropCatalog.walnutTreeCropId:
+        return WalnutTreeAssets.cropIcon;
       default:
         return _genericCropIconPath;
     }
   }
 
+  String _treeCropIcon(String cropId) {
+    switch (CropCatalog.canonicalCropKey(cropId)) {
+      case CropCatalog.appleTreeCropId:
+        return AppleTreeAssets.cropIcon;
+      case CropCatalog.pearTreeCropId:
+        return PearTreeAssets.cropIcon;
+      case CropCatalog.peachTreeCropId:
+        return PeachTreeAssets.cropIcon;
+      case CropCatalog.walnutTreeCropId:
+        return WalnutTreeAssets.cropIcon;
+      default:
+        return ConfigureSeedWizardAssets.categoryTree;
+    }
+  }
+
+  String _treeProfileIcon(String cropId, String? profileId) {
+    switch (CropCatalog.canonicalCropKey(cropId)) {
+      case CropCatalog.appleTreeCropId:
+        return appleTreeProfileIcon(profileId);
+      case CropCatalog.pearTreeCropId:
+        return pearTreeProfileIcon(profileId);
+      case CropCatalog.peachTreeCropId:
+        return peachTreeProfileIcon(profileId);
+      case CropCatalog.walnutTreeCropId:
+        return walnutTreeProfileIcon(profileId);
+      default:
+        return _treeCropIcon(cropId);
+    }
+  }
+
+  String _treeStageIcon(String? stageId) {
+    return ConfigureSeedWizardAssets.treeStageIconFor(stageId);
+  }
+
+  String _treeProductionStatusIcon(String statusId) {
+    return ConfigureSeedWizardAssets.treeProductionStatusIconFor(statusId);
+  }
+
+  String _treeReproSignalIcon(String signalId) {
+    return treeReproSignalIconPath(signalId);
+  }
+
   String get _resolvedVarietyIconPath {
     final cropId = _crop;
-    if (cropId == CropCatalog.appleTreeCropId) {
-      return appleTreeProfileIcon(_varietyId);
+    if (cropId != null && isTreeCrop(cropId: cropId, cropCategoryId: _category)) {
+      return _treeProfileIcon(cropId, _varietyId);
     }
     return _resolvedCropIconPath;
   }
@@ -1470,8 +1529,8 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     final cropId = _crop;
     if (cropId == null) return _genericCropIconPath;
 
-    if (cropId == CropCatalog.appleTreeCropId) {
-      return AppleTreeAssets.cropIcon;
+    if (isTreeCrop(cropId: cropId, cropCategoryId: _category)) {
+      return _treeCropIcon(cropId);
     }
 
     if (_varietyId != null) {

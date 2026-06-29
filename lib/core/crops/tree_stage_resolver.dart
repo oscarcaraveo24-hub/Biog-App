@@ -1,6 +1,9 @@
 import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
+import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
+import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
+import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 
@@ -33,7 +36,7 @@ class PerennialStageResolver {
 
     return CropStageResult(
       stageKey: stageId,
-      stageLabelEs: treeStageDisplayName(stageId),
+      stageLabelEs: treeStageDisplayNameForCrop(context.cropId, stageId),
       // Trees do not have a terminal crop-cycle day. Harvest maturity,
       // post-harvest and dormancy remain active biological stages.
       expectedDaysToEnd: 0,
@@ -60,10 +63,20 @@ class PerennialStageResolver {
   /// etapa es `unknown` (o el cultivo no tiene imágenes de etapa propias) cae a
   /// un ícono neutro — nunca se inventa un `*_stage_unknown.png`.
   static String _heroAssetForStage(String? cropId, String stageId) {
-    if (CropCatalog.canonicalCropKey(cropId) == CropCatalog.appleTreeCropId) {
+    final canonicalCropId = CropCatalog.canonicalCropKey(cropId);
+    if (canonicalCropId == CropCatalog.appleTreeCropId) {
       return appleTreeStageImageOrNeutral(stageId);
     }
-    return 'assets/icons/wizard/ic_arbol.png';
+    if (canonicalCropId == CropCatalog.pearTreeCropId) {
+      return pearTreeStageImageOrNeutral(stageId);
+    }
+    if (canonicalCropId == CropCatalog.peachTreeCropId) {
+      return peachTreeStageImageOrNeutral(stageId);
+    }
+    if (canonicalCropId == CropCatalog.walnutTreeCropId) {
+      return walnutTreeStageImageOrNeutral(stageId);
+    }
+    return 'assets/icons/wizard/ic_tree.png';
   }
 
   static String _helperCaption({

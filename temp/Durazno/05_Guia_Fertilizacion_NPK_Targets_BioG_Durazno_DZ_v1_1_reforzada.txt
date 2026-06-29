@@ -1,0 +1,2437 @@
+BIO-G
+05_GUIA_FERTILIZACION_NPK_TARGETS_BIOG_DURAZNO_DZ_v1_1_REFORZADA
+Cultivo: Durazno / Duraznero / Melocotón / Peach tree
+cropId: crop_peach_tree
+cropKey esperado: peach_tree
+profilePrefix: DZ
+Documento: 05 de 05 — Fertilización NPK y targets por etapa
+Versión: v1.1 reforzada con PDFs anexos mexicanos + fuentes universitarias/IPM
+Formato: TXT técnico para Flutter/Dart
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+IMPORTANTE:
+Este documento NO es una receta agronómica local.
+No sustituye análisis de suelo, agua, tejido/foliar, asesoría regional ni normatividad.
+BIO-G v1 debe orientar, ponderar riesgo, mejorar lectura de sensores y pedir confirmación.
+No debe prometer rendimiento ni indicar dosis comerciales cerradas.
+
+================================================================================
+0. CAMBIOS PRINCIPALES v1.1 REFORZADA
+================================================================================
+
+Esta versión refuerza la guía NPK de Durazno con cuatro PDFs anexos entregados por el usuario:
+
+1) El-Cultivo-de-DURAZNO.pdf
+   West Analítica / Laboratorios A-L México.
+   Aporta: deficiencias de nutrientes, análisis foliar, rangos de suficiencia, extracción de nutrientes,
+   pH, raíz superficial, baja capacidad de absorción y zona de aplicación del fertilizante.
+
+2) PracticasDurazno2005.pdf
+   INIFAP / Campo Experimental Zacatecas.
+   Aporta: prácticas culturales para producir durazno criollo en Zacatecas, fertilización por potencial
+   de rendimiento, cálculos por árboles/ha, pH, materia orgánica, NPK por temporal/riego, riego por etapa,
+   caída de fruto, raleo, memoria y relación agua-nutrición.
+
+3) Mayahua_Quiahua_I_DC_RGP_Fruticultura_2021.pdf
+   Tesis doctoral, Colegio de Postgraduados.
+   Aporta: evaluación de fertilización convencional, orgánica y combinada en durazno 'Diamante',
+   dosis por rendimiento esperado, raíz, brote, floración, amarre, rendimiento, reservas de N/almidón,
+   microbiología del suelo, calidad organoléptica/nutracéutica y manejo sustentable.
+
+4) Producción y manejo de durazno.pdf
+   Fundación Produce Sinaloa / SAGARPA / Gobierno de Sinaloa.
+   Aporta: nutrición por edad/año del árbol, estrategias por árbol, materia orgánica, momentos de aplicación,
+   poda, sanidad, relación de N con cenicilla/pudrición y enfoque práctico para productores.
+
+Cambios importantes:
+
+1) Se fortalece la decisión central: DURAZNO NO ES MANZANO/PERA.
+   - Es frutal de hueso/carozo, caducifolio, de ciclo productivo anual rápido.
+   - Tiene raíz más superficial y menor capacidad competitiva de absorción que manzano.
+   - La demanda de K del fruto es muy fuerte.
+   - El déficit de N aparece con facilidad en suelos ligeros, arenosos, pobres, con maleza o sequía.
+   - El exceso de N causa vigor blando, copa densa, peor calidad y más presión sanitaria.
+
+2) Se corrige la lectura de pH.
+   - El rango amplio donde puede haber huertos buenos puede ser 5.0–7.5.
+   - El mejor desarrollo se reporta más claramente en rango ligeramente ácido: 6.0–6.5.
+   - BIO-G conserva como óptimo operativo 6.0–7.0 para no sobreajustar, pero debe favorecer 6.0–6.5
+     cuando el contexto sea suelo mexicano/calizo o análisis de laboratorio.
+
+3) Se agrega extracción de nutrientes por producción.
+   Según el PDF técnico de West Analítica/Laboratorios A-L, una producción de 32 t de durazno extrae:
+   - 106 kg N
+   - 45 kg P2O5
+   - 134 kg K2O
+   - 100 kg Ca
+   - 27 kg Mg
+   - 23 kg S
+
+   Equivalente aproximado por tonelada de fruto:
+   - N: 3.31 kg/t
+   - P2O5: 1.41 kg/t
+   - K2O: 4.19 kg/t
+   - Ca: 3.13 kg/t
+   - Mg: 0.84 kg/t
+   - S: 0.72 kg/t
+
+   Decisión BIO-G:
+   - Estos datos NO se convierten en receta automática.
+   - Sí sirven para calibrar modo avanzado, rendimiento esperado y memoria nutricional.
+   - Confirman que K y Ca son muy importantes en fruto, aunque BIO-G v1 mida solo N/P/K.
+
+4) Se integra la dinámica de absorción por nutriente.
+   - N y K aumentan progresivamente hasta maduración; se absorben de forma sostenida durante el ciclo activo.
+   - P y Mg aumentan principalmente en el primer periodo de desarrollo del fruto y luego tienden a estabilizarse.
+   - Ca se absorbe principalmente en el primer tercio del desarrollo del fruto.
+
+   Decisión BIO-G:
+   - K alto pesa mucho en fruit_set y fruit_fill.
+   - Ca debe aparecer como contexto temprano de fruto, especialmente fruit_set / inicio de fruit_fill.
+   - P no debe tener peso alto al final de cosecha si no hay deficiencia real.
+   - N debe ser suficiente para hoja y madera, pero no alto cerca de madurez/cosecha.
+
+5) Se agregan referencias mexicanas de dosis por potencial de rendimiento.
+   INIFAP Zacatecas propone dosis N-P-K por hectárea según potencial/régimen:
+   - Temporal menor de 5 t/ha: 30-30-30
+   - Riego 10 t/ha: 40-40-40
+   - Bueno 20 t/ha: 55-55-55
+   - Excelente 35 t/ha: 65-65-65
+
+   También indica:
+   - En huertos en desarrollo durante primeros cuatro años: 25-25-25 kg/ha en época de lluvias o primer riego.
+   - En producción bajo riego: fórmula máxima 65-65-65 kg/ha; cantidades mayores no incrementan rendimiento/calidad
+     y pueden disminuir calidad de fruto.
+   - N después de cosecha; P y K en marzo con riego o al iniciar lluvias en temporal.
+
+   Decisión BIO-G:
+   - Estos rangos se guardan como referencia regional/modo agrónomo, no como receta universal.
+   - BIO-G debe detectar si el sistema es temporal/riego antes de hablar de dosis.
+   - En temporal, el agua manda; no tiene sentido empujar NPK si no hay humedad.
+
+6) Se agregan referencias por árbol/edad del PDF de Fundación Produce Sinaloa.
+   Como guía orientativa por árbol:
+   - Año 1: fertilización de fondo con P2O5/K2O; N fraccionado después del establecimiento.
+   - Año 2: N/P2O5/K2O bajos, repartidos en varias aplicaciones durante crecimiento.
+   - Año 3: 100 g N + 46 g P2O5 + 50 g K2O + 15 kg materia orgánica.
+   - Año 4: 150 g N + 69 g P2O5 + aprox. 69 g K2O, distribuyendo P/K y parte de N antes de flor, otra parte a caída de pétalos y resto postcosecha.
+   - Año 5: 175 g N + 69 g P2O5 + 150 g K2O + 25 kg materia orgánica.
+   - Año 6+: 200 g N + 69 g P2O5 + 200 g K2O + 25 kg materia orgánica.
+
+   Decisión BIO-G:
+   - Esto se usa como modo avanzado por árbol cuando el productor conoce edad y árboles.
+   - No debe aparecer como recomendación automática sin análisis, vigor, carga, agua y etapa.
+
+7) Se integra evidencia de Colegio de Postgraduados en durazno 'Diamante'.
+   La tesis evaluó fertilización convencional, orgánica y combinada:
+   - 2018: 110 kg N, 12 kg P y 90 kg K/ha para rendimiento esperado de 10 t/ha.
+   - 2019: dosis ajustadas por análisis de suelo y rendimiento esperado de 30 t/ha.
+   - En 2018, la fertilización combinada promovió mayor crecimiento de brote, mayor cantidad de raíces y rendimiento superior.
+   - Los manejos orgánico/combinado mejoraron actividad microbiológica y fertilidad del suelo.
+
+   Decisión BIO-G:
+   - La materia orgánica no es solo “extra”; mejora suelo, raíz, microbiología y eficiencia.
+   - La dosis debe depender de rendimiento esperado, análisis y vigor, no de una tabla fija.
+   - El motor debe priorizar suelo vivo y raíz antes de empujar lectura NPK.
+
+8) Se refuerzan rangos foliares avanzados.
+   Rango foliar West Analítica / Laboratorios A-L, 25 hojas de tercio medio de rama:
+   - N: 3.00–3.50%
+   - P: 0.14–0.50%
+   - K: 2.00–3.50%
+   - Ca: 1.50–2.70%
+   - Mg: 0.30–0.80%
+   - S: 0.14–0.50%
+   - Fe: 60–250 ppm
+   - Mn: 40–200 ppm
+   - B: 20–75 ppm
+   - Cu: 6–100 ppm
+   - Zn: OCR ambiguo en PDF; tratar como rango de laboratorio, no como target único.
+
+   Rangos complementarios UGA/Extension para hoja de durazno, usados como banda comparativa:
+   - N: 2.5–3.0%
+   - P: 0.14–0.30%
+   - K: 1.00–2.50%
+   - S: 0.20–0.35%
+   - Ca: 0.70–1.75%
+   - Mg: 0.30–0.60%
+   - B: 15–50 ppm
+   - Cu: 6–30 ppm
+   - Fe: 50–300 ppm
+   - Mn: 100–2000 ppm
+   - Zn: 50–150 ppm
+
+   Decisión BIO-G:
+   - No usar un único rango foliar global.
+   - Guardar rango por fuente/región/laboratorio.
+   - Si no hay análisis foliar, no simular Ca/Mg/B/Zn/Fe desde sensor NPK.
+
+9) Se refuerza análisis foliar y suelo.
+   - Análisis foliar recomendado en verano/mitad de temporada o 5–8 semanas después de plena floración según protocolo.
+   - West recomienda muestrear 10–15 árboles similares y 4–8 hojas por árbol de ramas del crecimiento actual.
+   - UC IPM recomienda en julio 60–80 hojas de brotes fructíferos moderadamente vigorosos.
+   - El análisis foliar muestra lo que el árbol absorbió, mientras el suelo muestra oferta/disponibilidad.
+
+   Decisión BIO-G:
+   - Sensor NPK = lectura rápida relativa.
+   - Suelo = oferta potencial.
+   - Foliar = estado integrado del árbol.
+   - Vigor/carga = sensor humano obligatorio para interpretar N.
+
+10) Se refuerza la regla de balance con agua.
+    INIFAP Zacatecas y la tesis de Colegio de Postgraduados muestran que la falta de humedad en floración, brotación y crecimiento
+    de fruto puede afectar amarre y rendimiento, aunque exista fertilización.
+
+    Decisión BIO-G:
+    - Si soilMoisture está baja en flowering, fruit_set o fruit_fill, no decir “falta fertilizante” primero.
+    - Si hay sequía, el N se absorbe mal y puede concentrarse/salinizar.
+    - Si hay saturación, la raíz pierde oxígeno y el NPK se vuelve poco confiable.
+
+11) Se ajustan caps sugeridos BIO-G.
+    La versión v1.0 sugirió:
+    - N 110
+    - P 95
+    - K 180
+
+    v1.1 mantiene estos caps como punto de partida, pero agrega opción de calibración regional:
+    - Sistemas bajos/temporal/criollo: N 65–90 | P 65–90 | K 90–130
+    - Sistemas riego/comercial medio: N 90–120 | P 80–100 | K 140–180
+    - Sistemas intensivos/alta carga: N 110–140 | P 90–120 | K 180–220
+
+    Para código v1, se recomienda mantener caps únicos conservadores:
+    - N cap: 110
+    - P cap: 95
+    - K cap: 180
+
+    Y permitir posterior override por perfil/sistema si el modelo lo soporta.
+
+================================================================================
+1. DECISIÓN EJECUTIVA REFORZADA
+================================================================================
+
+La fertilización del durazno en BIO-G debe apoyarse en cinco verdades agronómicas:
+
+1) El duraznero crece rápido y exige más nutrición relativa que otros frutales de pepita,
+   pero no tolera bien el exceso de vigor.
+
+2) El potasio es protagonista del fruto.
+   K pesa fuerte en:
+   - fruit_set
+   - fruit_fill
+   - calibre
+   - turgencia
+   - firmeza
+   - azúcares
+   - calidad y vida postcosecha.
+
+3) El nitrógeno es necesario, pero peligroso si se interpreta mal.
+   N bajo reduce hoja, brote, madera productiva futura y rendimiento.
+   N alto provoca:
+   - brotes suculentos,
+   - copa cerrada,
+   - sombreo,
+   - menor color,
+   - peor firmeza,
+   - mayor presión de plagas/enfermedades,
+   - madera que no endurece bien antes del frío.
+
+4) El fósforo es importante en raíz/floración/arranque, pero no debe dominar el motor todo el ciclo.
+   P bajo se debe interpretar con pH y análisis.
+   P alto no necesariamente significa más fruta.
+
+5) Agua + raíz + pH + EC + compactación mandan antes que NPK.
+   Si el suelo está seco, saturado, salino, frío o compactado, la lectura NPK pierde confianza.
+
+Regla de oro:
+BIO-G no debe decir “fertiliza” como primera respuesta si primero ve:
+- soilMoisture baja,
+- soilMoisture saturada,
+- EC alta,
+- pH fuera de rango,
+- resistance alta,
+- soilTemp muy baja,
+- vigor excesivo,
+- poca carga por helada/bajo cuajado,
+- árbol sin hoja activa.
+
+================================================================================
+2. MODELO DE EXTRACCIÓN Y RENDIMIENTO ESPERADO
+================================================================================
+
+2.1 Fórmula base para modo avanzado
+
+Si el usuario conoce rendimiento esperado:
+
+extracción_N_kg_ha = rendimiento_t_ha * 3.31
+extracción_P2O5_kg_ha = rendimiento_t_ha * 1.41
+extracción_K2O_kg_ha = rendimiento_t_ha * 4.19
+extracción_Ca_kg_ha = rendimiento_t_ha * 3.13
+extracción_Mg_kg_ha = rendimiento_t_ha * 0.84
+extracción_S_kg_ha = rendimiento_t_ha * 0.72
+
+Estas fórmulas son SOLO referencia de extracción, no dosis directa.
+La dosis real depende de:
+- análisis de suelo;
+- eficiencia de fertilizante;
+- materia orgánica;
+- textura;
+- riego;
+- historial;
+- carga;
+- vigor;
+- análisis foliar;
+- pérdidas por lixiviación;
+- poda/raleo;
+- estado del árbol.
+
+2.2 Relación con árboles/ha
+
+BIO-G puede convertir entre kg/árbol y kg/ha:
+
+árboles_ha = 10000 / (distancia_filas_m * distancia_arboles_m)
+kg_por_árbol = kg_ha / árboles_ha
+kg_ha = kg_por_árbol * árboles_ha
+
+Ejemplos:
+- 5 x 5 m = 400 árboles/ha
+- 4.5 x 4.5 m = 494 árboles/ha
+- 4 x 4 m = 625 árboles/ha
+- 4 x 3 m = 833 árboles/ha
+- 4 x 1.5 m = 1666 árboles/ha
+
+Regla:
+Los rangos por árbol cambian brutalmente con densidad.
+No comparar gramos/árbol sin saber árboles/ha.
+
+2.3 Tabla de calibración por potencial
+
+Temporal bajo (<5 t/ha):
+- referencia regional: 30-30-30 kg/ha N-P-K
+- lectura BIO-G: baja carga, agua manda, evitar empujar N si no hay lluvia.
+
+Riego bajo/medio (10 t/ha):
+- referencia Zacatecas: 40-40-40 kg/ha N-P-K
+- referencia tesis 'Diamante': 110 N / 12 P / 90 K kg/ha en un ensayo para 10 t/ha.
+- lectura BIO-G: las referencias difieren por densidad, análisis, variedad y fuente; usar análisis.
+
+Riego bueno (20 t/ha):
+- referencia Zacatecas: 55-55-55 kg/ha N-P-K
+- lectura BIO-G: K debe vigilarse por carga/fruto; no igualar N=P=K automáticamente.
+
+Riego excelente (35 t/ha):
+- referencia Zacatecas: 65-65-65 kg/ha N-P-K como fórmula máxima regional.
+- lectura BIO-G: no superar por defecto; si intensivo/alta densidad, usar modo agrónomo con análisis.
+
+Sistemas intensivos / investigación (30 t/ha o más):
+- referencia Colegio de Postgraduados: dosis calculadas por análisis y rendimiento esperado.
+- lectura BIO-G: alta precisión solo con análisis y contexto.
+
+================================================================================
+3. MOMENTOS DE APLICACIÓN — NO CALENDARIO UNIVERSAL
+================================================================================
+
+BIO-G debe manejar momentos como ventanas fisiológicas, no como meses fijos.
+
+3.1 Ventanas fuertes
+
+Fondo / preplantación / dormancia:
+- corregir pH, materia orgánica, P/K de fondo y suelo si hay análisis.
+- no empujar N si no hay raíz/hoja activa.
+
+Brotación / inicio de actividad radical:
+- ventana importante de N moderado, P/K balanceados y suelo templado.
+- si soilTemp es baja, bajar confianza de absorción.
+
+Prefloración / floración:
+- no usar N alto para resolver cuajado.
+- P, B, Zn y reservas importan como contexto, pero no reemplazan clima/polinización.
+
+Caída de pétalos / cuajado:
+- iniciar enfoque fuerte de K y agua estable.
+- vigilar EC y estrés salino.
+
+Fruit fill / crecimiento de fruto:
+- K alto relativo.
+- N controlado.
+- agua estable.
+- Ca/Mg como contexto.
+- endurecimiento de hueso/carozo dentro de fruit_fill.
+
+Postcosecha:
+- etapa viva.
+- N puede recuperar reservas si hay hoja verde activa.
+- P/K pueden apoyar recuperación según análisis.
+- no aplicar si hoja ya cayó, hay frío, sequía o EC alta.
+
+3.2 Conflictos regionales resueltos por BIO-G
+
+Algunas fuentes mexicanas recomiendan:
+- N después de cosecha;
+- P/K en marzo o inicio de lluvias;
+- otros sistemas fraccionan N en primavera, caída de pétalos y postcosecha.
+
+UC IPM recomienda aplicar cuando coincida con alta demanda, y dividir aplicaciones para mejorar eficiencia y reducir lixiviación.
+
+Decisión BIO-G:
+No hardcodear “N siempre postcosecha” ni “N siempre en primavera”.
+Usar:
+- etapa,
+- hoja activa,
+- humedad,
+- EC,
+- soilTemp,
+- carga,
+- vigor,
+- sistema riego/temporal,
+- perfil DZ.
+
+================================================================================
+4. REGLAS NPK REFORZADAS POR NUTRIENTE
+================================================================================
+
+4.1 Nitrógeno
+
+Peso fisiológico:
+- hoja;
+- brote;
+- madera fructífera del siguiente ciclo;
+- reservas;
+- vigor;
+- capacidad fotosintética.
+
+Deficiencia probable:
+- hojas viejas amarillentas;
+- brotes cortos y duros;
+- ramillas delgadas;
+- crecimiento débil;
+- menor madera productiva;
+- reducción de rendimiento si se retrasa la corrección.
+
+Factores que provocan falso N bajo:
+- suelo seco;
+- competencia con maleza/cubierta;
+- suelo arenoso/lavado;
+- materia orgánica baja;
+- raíz dañada;
+- pH ácido extremo;
+- compactación;
+- frío.
+
+Exceso probable:
+- crecimiento vegetativo excesivo;
+- copa densa;
+- sombreo;
+- madera suculenta;
+- peor color/calidad;
+- mayor sensibilidad a cenicilla/pudriciones/plagas;
+- retraso de endurecimiento de madera antes de frío.
+
+Reglas de motor:
+- N bajo + humedad/pH/EC/resistance correctos + vigor bajo = observación nutricional real.
+- N bajo + soilMoisture baja = priorizar agua/absorción.
+- N alto + fruit_fill = advertir vigor/calidad, no celebrar.
+- N alto + harvest_maturity = alerta de calidad/madurez/firmeza.
+- N alto + baja carga por helada = alto riesgo de vigor excesivo.
+- N alto + post_harvest tardío/frío = riesgo de brote tierno o baja eficiencia.
+
+4.2 Fósforo
+
+Peso fisiológico:
+- raíz;
+- energía;
+- floración;
+- división celular temprana;
+- establecimiento;
+- brotación.
+
+Deficiencia probable:
+- bajo crecimiento;
+- hojas más oscuras;
+- tonos púrpura/bronceados;
+- problemas en jóvenes/replantes;
+- mayor daño si entra a invierno debilitado.
+
+Factores que limitan P:
+- pH muy ácido;
+- pH alto/calizo;
+- suelos volcánicos o fijadores;
+- baja materia orgánica;
+- suelo frío;
+- raíz débil.
+
+Reglas de motor:
+- P alto en planting/root_establishment/flowering pesa más.
+- P bajo en harvest_maturity no debe tumbar score fuerte si no hay síntomas.
+- P bajo + pH fuera de rango = mensaje de disponibilidad, no “aplica P”.
+- P alto + micronutrientes bajos = advertir posibles antagonismos, especialmente Zn/Fe.
+
+4.3 Potasio
+
+Peso fisiológico:
+- fruto;
+- calibre;
+- turgencia;
+- transporte de azúcares;
+- firmeza;
+- respuesta hídrica;
+- calidad.
+
+Deficiencia probable:
+- hojas onduladas/rizadas;
+- enrollamiento con sequía;
+- necrosis marginal;
+- frutos más pequeños;
+- mala calidad;
+- respuesta rápida en durazno frente a manzano.
+
+Factores que limitan K:
+- suelos arenosos;
+- suelos calcáreos;
+- suelos ácidos;
+- baja materia orgánica;
+- suelos fijadores de K;
+- alta carga;
+- sequía;
+- competencia con Mg/Ca.
+
+Reglas de motor:
+- K bajo + fruit_fill + agua correcta = alerta de llenado/calibre.
+- K bajo + fruit_set = observación fuerte de fruto.
+- K alto + EC alta = riesgo salino/fertilizante.
+- K alto + Mg bajo/contexto = advertir antagonismo Mg.
+- K alto + Ca bajo/contexto = advertir calidad/firmeza/almacenamiento.
+- K suficiente no compensa falta de riego.
+
+4.4 Calcio como contexto obligatorio
+
+Ca no es sensor BIO-G v1, pero debe aparecer como contexto porque:
+- raíz lo necesita;
+- partes vegetativas lo acumulan mucho;
+- fruto extrae Ca relevante;
+- su absorción fuerte ocurre en el primer tercio del desarrollo del fruto;
+- problemas de Ca pueden aparecer como raíz dañada, necrosis, baja firmeza o problemas fisiológicos.
+
+Reglas de motor:
+- En fruit_set/inicio fruit_fill, mencionar Ca como contexto si hay riego irregular, calor, N alto o K alto.
+- No recomendar Ca automáticamente.
+- Pedir análisis foliar/suelo/agua y revisar balance K/Ca/Mg.
+
+4.5 Magnesio
+
+Mg pesa en:
+- clorofila;
+- fotosíntesis;
+- hoja;
+- balance con K/Ca;
+- suelos arenosos/ácidos/sobreencalados;
+- después de lluvias fuertes.
+
+Regla:
+K alto + síntomas de Mg + suelo arenoso/ácido = advertir balance Mg/K.
+
+4.6 Boro
+
+B pesa en:
+- floración;
+- cuajado;
+- tejido joven;
+- deformaciones;
+- brotes jóvenes;
+- sequía como detonante.
+
+Precaución:
+El exceso de B es tóxico. No recetar bórax ni foliar B en modo simple.
+Usar solo como contexto y análisis.
+
+4.7 Zinc y Hierro
+
+Zn:
+- little leaf / roseta;
+- hojas pequeñas;
+- clorosis;
+- pérdida de rendimiento.
+
+Fe:
+- clorosis férrica en suelos calcáreos/sobreencalados;
+- nervaduras verdes con lámina amarilla;
+- corregir según tipo de suelo y asesoría.
+
+Regla:
+pH alto + clorosis internerval en hojas jóvenes = posible Fe/Zn, no N automático.
+
+================================================================================
+5. RANGOS FOLIARES AVANZADOS — MULTIFUENTE
+================================================================================
+
+Estos rangos son para modo avanzado, no para sensor NPK v1.
+
+5.1 Fuente West Analítica / A-L México
+
+Muestra:
+- 25 hojas de tercio medio de rama.
+- Interpretación en análisis foliar.
+
+Rangos reportados:
+- N: 3.00–3.50%
+- P: 0.14–0.50%
+- K: 2.00–3.50%
+- Ca: 1.50–2.70%
+- Mg: 0.30–0.80%
+- S: 0.14–0.50%
+- Fe: 60–250 ppm
+- Mn: 40–200 ppm
+- B: 20–75 ppm
+- Cu: 6–100 ppm
+- Zn: revisar contra laboratorio por posible OCR/rango amplio.
+
+5.2 Fuente UGA / Extension, rango comparativo
+
+- N: 2.5–3.0%
+- P: 0.14–0.30%
+- K: 1.00–2.50%
+- S: 0.20–0.35%
+- Ca: 0.70–1.75%
+- Mg: 0.30–0.60%
+- B: 15–50 ppm
+- Cu: 6–30 ppm
+- Fe: 50–300 ppm
+- Mn: 100–2000 ppm
+- Zn: 50–150 ppm
+
+5.3 Decisión BIO-G
+
+BIO-G no debe promediar ciegamente estos rangos.
+Debe almacenar:
+- fuente;
+- región;
+- tipo de muestra;
+- fecha;
+- cultivar/perfil;
+- carga;
+- sistema riego/temporal;
+- edad;
+- resultado;
+- tendencia.
+
+Interpretación recomendada:
+- Foliar bajo + sensor bajo + síntomas + suelo correcto = alta confianza.
+- Foliar bajo + alto rendimiento/calidad buena = posible dilución por carga; no sobrealertar.
+- Foliar alto + aplicación foliar reciente = posible residuo en hoja; bajar confianza.
+- Foliar normal + sensor suelo bajo = el árbol quizá todavía absorbe bien; revisar tendencia.
+
+================================================================================
+6. TABLA DE REFERENCIAS DE DOSIS — SOLO MODO AGRÓNOMO
+================================================================================
+
+6.1 Por hectárea, INIFAP Zacatecas
+
+Temporal <5 t/ha:
+N 30 kg/ha | P 30 kg/ha | K 30 kg/ha
+
+Riego 10 t/ha:
+N 40 kg/ha | P 40 kg/ha | K 40 kg/ha
+
+Bueno 20 t/ha:
+N 55 kg/ha | P 55 kg/ha | K 55 kg/ha
+
+Excelente 35 t/ha:
+N 65 kg/ha | P 65 kg/ha | K 65 kg/ha
+
+Advertencia:
+La tabla usa N-P-K simplificado regional.
+No confundir P y K elementales con P2O5/K2O si el código usa óxidos.
+Antes de codificar, definir unidad interna:
+- N elemental
+- P relativo sensor
+- K relativo sensor
+- modo agrónomo: P2O5/K2O explícitos.
+
+6.2 Por árbol/edad, Fundación Produce Sinaloa
+
+Año 1:
+- fondo: 129 g P2O5 + 75 g K2O por árbol.
+- N: 50 g por aplicación fraccionada después del establecimiento según guía.
+
+Año 2:
+- 75 g N
+- 23 g P2O5
+- 25 g K2O
+- dividido en varias aplicaciones bimestrales.
+
+Año 3:
+- 100 g N
+- 46 g P2O5
+- 50 g K2O
+- 15 kg materia orgánica.
+
+Año 4:
+- 150 g N
+- 69 g P2O5
+- K2O bajo/moderado según interpretación de la guía.
+- distribución: antes de flor, caída de pétalos, postcosecha.
+
+Año 5:
+- 175 g N
+- 69 g P2O5
+- 150 g K2O
+- 25 kg materia orgánica.
+
+Año 6+:
+- 200 g N
+- 69 g P2O5
+- 200 g K2O
+- 25 kg materia orgánica.
+
+Decisión BIO-G:
+Mostrar estos datos solo si:
+- usuario activa modo avanzado/agronómico;
+- hay edad aproximada o estado productivo;
+- hay árboles/ha o número de árboles;
+- hay análisis o al menos sistema riego/temporal;
+- no hay EC alta ni suelo seco/saturado.
+
+6.3 Por rendimiento esperado, Colegio de Postgraduados
+
+Ensayo 2018:
+- 110 kg N/ha
+- 12 kg P/ha
+- 90 kg K/ha
+- rendimiento esperado: 10 t/ha
+
+Ensayo 2019:
+- dosis ajustadas por análisis de suelo y rendimiento esperado: 30 t/ha.
+- convencional por árbol: urea 434 g, superfosfato triple 347 g, KCl 415 g.
+- dividido entre inicio de actividad radical y postcosecha.
+
+Decisión BIO-G:
+La tesis confirma que rendimiento esperado + análisis de suelo + fuente + edad/densidad cambian totalmente el programa.
+No usar estas dosis como default en pequeños productores.
+
+================================================================================
+7. REGLAS PARA EL MOTOR BIO-G v1.1
+================================================================================
+
+7.1 Orden de prioridad antes de sugerir fertilización
+
+1. Confirmar etapa.
+2. Confirmar estado perenne.
+3. Revisar humedad.
+4. Revisar EC.
+5. Revisar pH.
+6. Revisar resistencia/compactación.
+7. Revisar soilTemp.
+8. Revisar N/P/K relativo.
+9. Revisar vigor/carga si existe.
+10. Revisar historial de rendimiento, helada, caída, raleo, postcosecha.
+11. Solo entonces hablar de nutrición.
+
+7.2 Bloqueos duros
+
+Bloquear recomendación agresiva de NPK si:
+- EC >= highMin.
+- soilMoisture está en criticalLow.
+- soilMoisture está en criticalHigh/saturación.
+- resistance está crítica.
+- soilTemp < 8°C en etapa activa.
+- árbol está en dormancia sin hoja activa.
+- post_harvest sin hoja verde.
+- N alto + baja carga + vegetative_growth/fruit_fill.
+
+7.3 Mensajes preferidos
+
+En vez de:
+“Falta nitrógeno.”
+
+Decir:
+“La lectura de N se ve baja, pero primero conviene revisar humedad, pH, salinidad y competencia de maleza. En durazno la absorción de N cae mucho con sequía o raíz limitada.”
+
+En vez de:
+“El potasio está alto, está perfecto.”
+
+Decir:
+“El K es importante para el fruto, pero si la salinidad sube o falta Mg/Ca, puede convertirse en desbalance.”
+
+En vez de:
+“Fertiliza en otoño.”
+
+Decir:
+“Después de cosecha el árbol puede recuperar reservas solo si todavía tiene hoja verde activa, humedad estable, baja salinidad y raíz funcional.”
+
+================================================================================
+8. AJUSTES RECOMENDADOS A TARGETS v1.0
+================================================================================
+
+Los StageTargets v1.0 se mantienen casi igual. v1.1 solo agrega criterios interpretativos:
+
+- pH: favorecer 6.0–6.5 en mensajes cuando haya suelo mexicano/calizo o análisis; mantener 6.0–7.0 como óptimo general de código.
+- EC: mantener thresholds conservadores; si EC sube, bloquear empuje NPK.
+- soilMoisture: subir prioridad interpretativa en flowering, fruit_set, fruit_fill y post_harvest.
+- N: no subir cap por defecto; mantener N cap 110 para evitar recetas agresivas.
+- P: mantener P cap 95; no sobreponderar P en harvest_maturity.
+- K: mantener K cap 180; permitir override alto solo en sistemas intensivos con análisis.
+- Ca/Mg/B/Zn/Fe: contexto avanzado obligatorio, no sensores v1.
+
+================================================================================
+9. TESTS NUEVOS RECOMENDADOS
+================================================================================
+
+1) peach_npk_water_first_test
+Caso:
+stage fruit_fill, K bajo, soilMoisture criticalLow.
+Esperado:
+mensaje prioriza agua/absorción antes que fertilización potásica.
+
+2) peach_npk_high_ec_blocks_fertilizer_test
+Caso:
+stage fruit_fill, N/P/K bajos, EC criticalHigh.
+Esperado:
+no sugerir fertilizar; advertir salinidad/acumulación.
+
+3) peach_npk_high_n_low_crop_test
+Caso:
+vegetative_growth o fruit_fill, N alto, baja carga por helada.
+Esperado:
+advertir vigor excesivo, no decir óptimo.
+
+4) peach_post_harvest_leaf_active_test
+Caso:
+post_harvest, hoja activa, humedad estable, EC baja.
+Esperado:
+permitir mensaje de reservas/recuperación.
+
+5) peach_post_harvest_no_leaf_test
+Caso:
+post_harvest tardío sin hoja activa.
+Esperado:
+no recomendar N; transición a dormancia.
+
+6) peach_foliar_ranges_multisource_test
+Caso:
+se cargan rangos West/UGA.
+Esperado:
+no mezclarlos; se guardan como fuentes separadas.
+
+7) peach_potassium_dominant_fruit_fill_test
+Caso:
+fruit_fill, K bajo, agua/EC/pH correctos.
+Esperado:
+alerta de llenado/calibre/firmeza.
+
+8) peach_ph_high_clorosis_not_n_test
+Caso:
+pH alto + clorosis hojas jóvenes + N normal.
+Esperado:
+contexto Fe/Zn, no deficiencia de N.
+
+9) peach_density_conversion_test
+Caso:
+5x5, 4x4, 4x3.
+Esperado:
+400, 625, 833 árboles/ha.
+
+10) peach_dose_reference_not_user_visible_test
+Caso:
+modo normal productor.
+Esperado:
+no mostrar 65-65-65, 200g N, 25kg MO como receta.
+
+================================================================================
+10. SECCIONES v1.0 QUE SIGUEN VIGENTES
+================================================================================
+
+El cuerpo base v1.0 se conserva abajo.
+Todas las reglas de v1.1 anteriores tienen prioridad si hubiera una contradicción de interpretación.
+No cambiar la arquitectura BIO-G:
+- crop_peach_tree
+- DZ-SKIP migrable
+- fruit_fill separado de harvest_maturity
+- pit hardening como subventana de fruit_fill
+- post_harvest activo
+- StageTargets con contrato AgroRange correcto
+- NPK relativo 0.00–1.00 para sensor v1
+
+================================================================================
+CUERPO BASE v1.0 — CONSERVADO
+================================================================================
+
+BIO-G
+
+05_GUIA_FERTILIZACION_NPK_TARGETS_BIOG_DURAZNO_DZ_v1
+Cultivo: Durazno / Duraznero / Melocotón / Peach tree
+cropId: crop_peach_tree
+cropKey esperado: peach_tree
+profilePrefix: DZ
+Documento: 05 de 05 — Fertilización NPK y targets por etapa
+Versión: v1.0 fortalecida con investigación universitaria, PDFs, fuentes técnicas y código BIO-G
+Formato: TXT técnico para Flutter/Dart
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+IMPORTANTE:
+Este documento NO es una receta agronómica local.
+No sustituye análisis de suelo, agua, tejido/foliar, asesoría regional ni normatividad.
+BIO-G v1 debe orientar, ponderar riesgo, mejorar lectura de sensores y pedir confirmación.
+No debe prometer rendimiento, no debe indicar dosis comerciales cerradas y no debe sustituir
+un plan de fertirriego construido con laboratorio.
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+La fertilización del duraznero en BIO-G debe ser tratada como una de las piezas más delicadas
+del motor, porque el durazno es un frutal de hueso de ciclo rápido: si BIO-G interpreta mal NPK,
+puede mandar mensajes peligrosos durante floración, cuajado, llenado o madurez.
+
+El durazno NO debe copiarse de Manzano ni de Pera.
+Comparte con ellos que es caducifolio y perenne, pero cambia el centro fisiológico:
+
+- floración muy temprana y muy sensible a heladas;
+- cuajado rápido y vulnerable a estrés;
+- crecimiento del fruto veloz;
+- subventana de endurecimiento de hueso/carozo dentro de fruit_fill;
+- necesidad fuerte de raleo/carga para calibre;
+- K protagonista en llenado y calidad;
+- N necesario para hoja, brote y reservas, pero peligroso si genera vigor excesivo;
+- postcosecha muy importante para hoja activa y formación de yemas del siguiente ciclo;
+- vida útil más corta del huerto que otros árboles y memoria de estrés de corto-medio plazo.
+
+Regla BIO-G para Durazno:
+AGUA + RAÍZ + CARGA + ETAPA + pH/EC mandan antes que NPK.
+
+Un duraznero con fruta chica no necesariamente necesita más fertilizante.
+Puede necesitar:
+- mejor raleo;
+- agua más estable;
+- menor carga;
+- menos sombra por exceso de N;
+- K suficiente durante llenado;
+- control de plagas/enfermedades;
+- corregir salinidad, compactación o pH;
+- mejor postcosecha previa.
+
+La guía funciona como:
+1) Prioridades relativas N-P-K por etapa.
+2) StageTargets medibles para soilMoisture, soilTemp, pH, EC, resistance, N, P, K.
+3) StageWeights para AgroScore.
+4) Mensajes UX humanos y seguros.
+5) Modo avanzado con análisis foliar/suelo/agua.
+6) Reglas de no sobrefertilizar cuando el problema real es agua, raíz, salinidad, compactación,
+   exceso de carga, helada, raleo o sanidad.
+
+================================================================================
+0.1 CAMBIOS IMPORTANTES RESPECTO A DOCUMENTOS 01-04
+================================================================================
+
+1) Se confirma que Durazno usa prefijo DZ:
+   - dz_skip
+   - dz_01_criollo_regional
+   - dz_02_temprano_bajo_frio
+   - dz_03_amarillo_comercial
+   - dz_04_blanco_dulce
+   - dz_05_tardio_industria
+
+2) Se confirma que endurecimiento de hueso/carozo NO crea stageId nuevo.
+   Queda como subventana fisiológica dentro de fruit_fill.
+
+3) Se refuerza que fruit_fill no es harvest_maturity.
+   En fruit_fill el copy debe hablar de:
+   - llenado;
+   - calibre;
+   - fruto verde o fruto creciendo;
+   - hueso/carozo si aplica;
+   - firmeza;
+   - calidad;
+   - balance N-K-Ca/Mg.
+
+   No debe hablar como si ya fuera cosecha.
+
+4) Se refuerza que post_harvest no apaga el cultivo.
+   En durazno, la postcosecha puede ser corta o larga según perfil:
+   - DZ-02 temprano/bajo frío puede tener larga ventana de hoja activa después de cosecha.
+   - DZ-05 tardío/industria puede tener postcosecha más estrecha antes de dormancia.
+
+5) Se propone cap NPK operativo para el motor:
+   - N cap: 110 mg/kg relativo
+   - P cap: 95 mg/kg relativo
+   - K cap: 180 mg/kg relativo
+
+   Justificación:
+   - Durazno demanda más N vegetativo que manzano/peral, pero no debe permitir N alto sin alerta.
+   - P es importante en raíz/floración, pero rara vez es protagonista en árbol adulto si suelo está bien.
+   - K es más protagonista por tamaño/calibre/calidad del fruto de hueso.
+
+================================================================================
+1. ALCANCE DEL DOCUMENTO
+================================================================================
+
+Este documento alimenta:
+
+- peach_tree_universal_profile.dart
+- peach_tree_crop_definition.dart
+- peach_tree_nutrition_modifier.dart
+- tree_agro_score_engine.dart si ya existe motor genérico de árboles
+- resolveTargets(...)
+- evaluateTelemetry(...)
+- AgroScore por etapa
+- AgroMetricEval para N/P/K
+- dashboard y NPK screen
+- NutrientRecommendationEngine
+- NpkCaps
+- planner nutricional v1/v2
+- memoria nutricional de durazno futura
+
+No alimenta directamente:
+- recetas cerradas por fertilizante;
+- marcas comerciales;
+- programas regionales obligatorios;
+- aplicaciones sin análisis;
+- corrección automática de Ca/Mg/B/Zn/Fe como si fueran sensores;
+- promesa de rendimiento;
+- recomendación de pesticidas.
+
+Compatible con estándar BIO-G de árboles perennes:
+
+Estados perennes:
+- newly_planted
+- juvenile_non_productive
+- established
+- productive_season
+- unknown
+
+Etapas árbol:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Métricas sensor v1:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Contexto avanzado NO sensor v1:
+- Ca
+- Mg
+- B
+- Zn
+- Fe
+- Mn
+- Cu
+- materia orgánica
+- textura
+- drenaje
+- salinidad del agua
+- bicarbonatos/caliza
+- vigor visible
+- crecimiento de brote
+- carga de fruta
+- raleo
+- helada
+- torque/lepra
+- Monilinia
+- mancha bacteriana
+- barrenadores
+- análisis foliar/suelo/agua
+
+================================================================================
+2. FUENTES Y CRITERIO DE CONFIANZA
+================================================================================
+
+Alta confianza:
+- universidades y extensión: UC ANR/UC IPM/CDFA-FREP, UC Davis, UF/IFAS, UGA, Penn State,
+  MSU, UMN, USU, Oklahoma State;
+- guías de fertilización y análisis foliar;
+- documentos BIO-G internos ya consolidados;
+- PDFs y fuentes técnicas institucionales.
+
+Media-alta:
+- estudios mexicanos y SciELO cuando el contexto coincide;
+- guías técnicas regionales;
+- manuales de manejo de durazno cuando no contradicen extensión universitaria.
+
+Media:
+- fuentes comerciales o de industria usadas solo para contrastar dosis y lenguaje, no para targets.
+
+Baja-media:
+- foros de productores y jardinería usados para entender lenguaje UX y confusiones reales, nunca para umbrales.
+
+Lectura de foros usada solo para UX:
+- “mi durazno tiene hojas amarillas”;
+- “qué abono le pongo”;
+- “mucha hoja y poca fruta”;
+- “se cae el fruto chiquito”;
+- “fruta chica”;
+- “tiene goma”;
+- “se secan ramas”;
+- “lo regué mucho”;
+- “le puse fertilizante y se quemó”.
+
+================================================================================
+3. PRINCIPIOS AGRONÓMICOS PARA BIO-G EN DURAZNO
+================================================================================
+
+3.1 Suelo primero
+
+Antes de interpretar NPK, BIO-G debe revisar:
+- humedad;
+- salinidad/EC;
+- pH;
+- compactación/resistance;
+- temperatura del suelo;
+- etapa fenológica;
+- estado perenne;
+- perfil DZ;
+- memoria de helada, sequía, defoliación, plaga, pudrición o mala postcosecha.
+
+Si NPK aparece bajo o alto, pero hay problema de raíz/suelo, el mensaje debe cambiar de
+“falta fertilizante” a “baja disponibilidad / baja absorción / raíz limitada”.
+
+Mensaje base:
+“Puede haber nutrientes, pero el árbol quizá no los está aprovechando bien. Revisa primero agua,
+pH, salinidad, compactación y raíz.”
+
+3.2 Agua siempre
+
+En durazno, agua estable es crítica para:
+- absorción de N/P/K;
+- brotación uniforme;
+- cuajado;
+- crecimiento celular temprano;
+- calibre;
+- K funcional en llenado;
+- evitar caída de fruto;
+- reducir estrés que favorece barrenadores/gomosis;
+- sostener hoja activa postcosecha.
+
+Regla:
+- Si soilMoisture está baja en flowering, fruit_set o fruit_fill, penalizar agua antes que NPK.
+- Si soilMoisture está alta/saturada, no recomendar más riego ni más fertilizante.
+- Si EC alta + suelo seco, subir alerta de salinidad osmótica.
+- Si EC alta + N/K altos, advertir acumulación de sales/fertilizante.
+- Si fruit_fill tiene K bajo pero humedad baja, priorizar agua antes de sugerir K.
+
+3.3 Durazno no tolera mal drenaje
+
+El duraznero es más delicado frente a saturación y falta de oxígeno que un peral en algunos portainjertos.
+En BIO-G, saturación persistente debe pesar fuerte:
+- planting_transplant;
+- root_establishment;
+- juvenile_vegetative;
+- fruit_set;
+- post_harvest.
+
+Mensaje:
+“En durazno, la raíz necesita aire. Si el suelo está saturado, fertilizar puede empeorar el estrés.”
+
+3.4 Nitrógeno: necesario, pero el exceso roba fruta
+
+N es necesario para:
+- hoja;
+- brote;
+- madera fructífera;
+- reservas;
+- tamaño indirecto del fruto;
+- recuperación postcosecha.
+
+Pero exceso de N puede provocar:
+- brotes demasiado vigorosos;
+- sombra interna;
+- menos color;
+- retraso de madurez;
+- menor firmeza;
+- más pudriciones o problemas de calidad;
+- mayor susceptibilidad a plagas/enfermedades por tejido tierno;
+- menor formación de yemas si sombrea madera de fruto;
+- daño invernal si se empuja crecimiento tarde.
+
+Regla BIO-G:
+- N alto en vegetative_growth puede ser útil solo si vigor era bajo y agua/pH/EC están correctos.
+- N alto en fruit_fill debe verse con sospecha: posible vigor compitiendo con fruta.
+- N alto en harvest_maturity debe activar advertencia de calidad/madurez/color/firmeza.
+- N alto en post_harvest solo es accionable si hay hoja activa y tiempo antes de dormancia.
+- Si hubo helada o baja carga, reducir presión de N porque el árbol con poca fruta tiende a irse a hoja.
+
+3.5 Fósforo: raíz y energía, pero rara vez es el héroe del árbol adulto
+
+P pesa más en:
+- preplantación;
+- plantación;
+- establecimiento radicular;
+- brotación;
+- floración;
+- crecimiento inicial de fruto;
+- postcosecha como reserva y raíz.
+
+En durazno adulto, la respuesta a P suele ser menos frecuente que N o K si el suelo ya está corregido.
+El pH manda mucho sobre disponibilidad.
+
+Regla BIO-G:
+- P bajo en planting/root_establishment sí pesa.
+- P bajo en flowering/fruit_set genera observación, no diagnóstico cerrado.
+- P bajo en harvest_maturity no debe tumbar score si agua/K/calidad están bien.
+- P alto puede agravar Zn/Fe; no celebrarlo automáticamente.
+
+3.6 Potasio: protagonista del fruto
+
+K es clave para:
+- turgencia;
+- regulación hídrica;
+- tamaño/calibre;
+- llenado;
+- azúcares;
+- color/calidad;
+- firmeza;
+- vida postcosecha.
+
+Regla BIO-G:
+- K sube desde fruit_set.
+- K tiene máximo peso en fruit_fill.
+- K bajo en fruit_fill es más grave que K bajo en dormancy.
+- K alto puede ser útil si hay carga alta y EC está bien.
+- K alto + EC alta = riesgo salino.
+- K alto + Ca/Mg bajos o historial de fruta blanda/pudrición = advertencia de balance.
+
+3.7 Calcio, magnesio, boro, zinc e hierro como contexto
+
+Ca:
+- firmeza;
+- pared celular;
+- calidad postcosecha;
+- menor pudrición y mejor apariencia;
+- relevante temprano en desarrollo de fruto.
+
+Mg:
+- clorofila;
+- fotosíntesis;
+- balance con K/Ca;
+- puede aparecer con K alto o suelos arenosos/ácidos.
+
+B:
+- polen;
+- floración;
+- cuajado;
+- tejido joven;
+- puede afectar fruto/carozo.
+
+Zn:
+- brotación;
+- hojas pequeñas;
+- entrenudos cortos;
+- roseta/little leaf;
+- común en suelos calizos/pH alto.
+
+Fe:
+- clorosis férrica;
+- hojas nuevas amarillas con nervaduras verdes;
+- suelos calizos o pH alto.
+
+Regla BIO-G:
+- No convertir Ca/Mg/B/Zn/Fe en sensores v1.
+- Mencionarlos solo como contexto o recomendación de análisis.
+- pH alto + hoja amarilla nueva = posible Fe/Zn, no necesariamente N.
+- hoja chica/roseta = posible Zn.
+- hoja vieja con clorosis internerval + K alto = posible Mg.
+
+3.8 Carga y raleo como “sensor humano”
+
+Durazno necesita balance de carga.
+Si hay demasiada fruta:
+- calibre baja;
+- K/agua se diluyen;
+- brotes se debilitan;
+- yemas del siguiente ciclo pueden sufrir;
+- el usuario puede pensar “falta fertilizante” cuando falta raleo.
+
+Si hay poca fruta por helada o baja floración:
+- el árbol puede irse a vegetativo;
+- N debe reducirse;
+- no tiene sentido empujar K como si hubiera carga alta.
+
+BIO-G debe permitir contexto:
+fruitLoadStatus:
+- low
+- balanced
+- excessive
+- unknown
+
+Reglas:
+- fruitLoadStatus=excessive + fruit_fill => subir presión de agua/K y warning de raleo/carga.
+- fruitLoadStatus=low + N alto => advertir vigor excesivo.
+- fruitLoadStatus=unknown => no inferir dosis.
+
+3.9 Postcosecha y reservas
+
+El duraznero no termina en cosecha.
+Después de cosecha, si todavía hay hoja activa, el árbol puede:
+- sostener fotosíntesis;
+- recuperar N;
+- sostener yemas florales para siguiente ciclo;
+- guardar reservas;
+- recuperarse de carga alta;
+- compensar estrés si aún hay humedad, raíz activa y baja salinidad.
+
+Regla:
+- post_harvest es etapa viva.
+- No empujar N si la hoja ya cayó o si está por entrar a dormancia.
+- No empujar N si hay salinidad, sequía o raíz dañada.
+- En DZ-02 temprano/bajo frío, postcosecha puede ser más relevante porque hay más tiempo de hoja activa.
+- En DZ-05 tardío, postcosecha puede ser más corta y el riesgo de N tardío sube.
+
+================================================================================
+4. CAPAS DEL MODELO BIO-G
+================================================================================
+
+Capa A — Motor BIO-G v1:
+- sensor de suelo;
+- etapa;
+- estado;
+- perfil DZ;
+- memoria;
+- targets;
+- weights;
+- N/P/K relativo;
+- AgroMetricEval por métrica.
+
+Capa B — Modo avanzado:
+- análisis de suelo;
+- análisis de agua;
+- análisis foliar;
+- textura;
+- pH laboratorio;
+- materia orgánica;
+- salinidad del agua;
+- Ca/Mg/B/Zn/Fe/Mn/Cu;
+- producción esperada;
+- árboles/ha;
+- vigor;
+- portainjerto;
+- riego/fertirriego;
+- historial de raleo/carga.
+
+Capa C — Contexto UX:
+- helada;
+- carga de fruta;
+- raleo;
+- torque/lepra;
+- monilia;
+- barrenadores;
+- gomosis;
+- defoliación;
+- postcosecha anterior;
+- foros/experiencia como lenguaje, no como targets.
+
+================================================================================
+5. ESCALA INTERNA BIO-G PARA N/P/K RELATIVO
+================================================================================
+
+Los sensores NPK económicos varían mucho. BIO-G v1 debe normalizar N/P/K a escala 0.00–1.00.
+
+Escala interna:
+0.00–0.20 = muy bajo
+0.20–0.35 = bajo
+0.35–0.50 = bajo-moderado
+0.50–0.65 = suficiente moderado
+0.65–0.80 = alto útil según etapa
+0.80–1.00 = alto / posible exceso según etapa
+>1.00 = fuera de escala/cap; revisar acumulación o calibración
+
+Caps sugeridos para NpkCaps:
+- crop_peach_tree / peach_tree / durazno / duraznero:
+  N: 110.0
+  P: 95.0
+  K: 180.0
+
+Nota:
+- Cap no es dosis.
+- Cap solo traduce ppm crudo del sensor a ratio 0..1.
+- La etapa decide si una lectura alta es útil, neutra o peligrosa.
+- El motor debe usar primero AgroMetricEval en dashboard/NPK screen.
+
+================================================================================
+6. TARGETS BASE UNIVERSALES DE SUELO Y AMBIENTE
+================================================================================
+
+6.1 pH
+
+Target BIO-G:
+- óptimo práctico: 6.0–7.0
+- aceptable amplio: 5.5–7.5
+- alerta baja: <5.5
+- alerta alta: >7.5
+- crítico: <5.2 o >8.0
+
+Regla:
+- pH alto baja disponibilidad de Fe, Zn y P.
+- pH bajo puede aumentar toxicidad/desbalance y reducir raíz.
+- pH se corrige con análisis, no por intuición de NPK.
+
+6.2 EC / salinidad
+
+Target general:
+- seguro/preferido: <1.5 dS/m
+- observación: 1.5–2.0 dS/m
+- alerta: 2.0–2.5 dS/m
+- crítico: >2.5–3.0 dS/m o tendencia ascendente con estrés
+
+Regla:
+- Durazno es sensible a saturación/salinidad en raíz.
+- En plantación y root_establishment usar umbrales más conservadores.
+- Si EC alta, bloquear sugerencias de fertilización agresiva.
+- Si EC alta + humedad baja, alertar estrés osmótico.
+
+6.3 Humedad del suelo
+
+Interpretación preferida:
+- % de agua disponible (AW) o escala normalizada por textura.
+
+Targets generales:
+- operativo: 55–85% AW
+- etapas críticas: 60–88% AW
+- observación baja: 45–60% AW
+- crítico bajo: <40–45% AW
+- observación alta: 85–90% AW
+- crítico alto/saturación: >90–93% AW o lectura alta persistente
+
+Regla:
+- Déficit afecta cuajado, calibre y absorción.
+- Exceso reduce oxígeno y favorece raíz/cuello.
+- El durazno no debe manejarse como tolerante a encharcamiento.
+
+6.4 Temperatura de suelo
+
+- raíz muy lenta: <7–8 °C
+- funcional lenta: 8–12 °C
+- target activo: 12–26/28 °C
+- calor observación: 28–32 °C
+- alerta: >32 °C
+- crítico: >35 °C o calor + baja humedad
+
+6.5 Resistance / compactación
+
+- target: <1.5 MPa
+- observación: 1.5–2.0 MPa
+- alerta: >2.0 MPa
+- crítico: >2.5–3.0 MPa
+
+Regla:
+Compactación baja agua útil, aireación y absorción. Si resistance alta, bajar confianza NPK.
+
+================================================================================
+7. RANGOS FOLIARES AVANZADOS PARA DURAZNO
+================================================================================
+
+Usar SOLO en modo avanzado con análisis foliar.
+No mezclar estos valores con el sensor NPK de suelo.
+Foliar = estado integrado del árbol.
+Suelo = oferta/disponibilidad potencial.
+Sensor NPK = lectura rápida relativa de apoyo.
+
+Rangos foliares generales de referencia:
+- N: 2.60–3.50% en fuentes de bajo frío; California sugiere 2.6–3.0% como rango de calidad.
+- P: 0.14–0.40%
+- K: 2.00–3.00% en fuente IFAS; UC considera >1.2% adecuado y >1.5% como promedio deseable para reducir riesgo de fruta chica.
+- Ca: 1.50–3.00%
+- Mg: 0.30–0.80%
+- Zn: 20–50 ppm
+- B: 30–70 ppm
+- Fe: 80–250 ppm
+- Mn: 40–200 ppm
+- Cu: 5–16 ppm
+
+Interpretación BIO-G:
+- Si fuentes difieren, usar bandas conservadoras y confidence gradual.
+- No alarmar por un solo análisis si producción, color, firmeza y crecimiento están bien.
+- Comparar por bloque, variedad, edad, portainjerto y manejo.
+- No mezclar hojas de árboles enfermos, dañados o con estrés no representativo.
+- En huerto comercial, la tendencia multianual vale más que una lectura aislada.
+
+Muestreo foliar recomendado como patrón:
+- dividir por bloques uniformes;
+- no mezclar variedades/perfiles;
+- tomar hojas de brotes de la temporada, moderadamente vigorosos;
+- 60–100 hojas por muestra como referencia UC;
+- 100 hojas por muestra como referencia OSU para durazno/manzano;
+- hacerlo en verano/julio o cuando la guía regional indique estabilidad de nutrientes;
+- no muestrear poco después de aplicación foliar del nutriente que se quiere interpretar.
+
+================================================================================
+8. PRIORIDAD NPK POR ETAPA
+================================================================================
+
+Escala 0.00–1.00.
+No es dosis. Es prioridad fisiológica para BIO-G.
+
+planting_transplant:
+N 0.18 | P 0.82 | K 0.45
+Cuidado: raíz joven, baja salinidad, humedad estable, no quemar raíces.
+
+root_establishment:
+N 0.28 | P 0.82 | K 0.50
+Cuidado: raíz fina, oxígeno, P de arranque y suelo sin compactación.
+
+juvenile_vegetative:
+N 0.74 | P 0.52 | K 0.58
+Cuidado: estructura, copa, madera fructífera futura, vigor sin exceso.
+
+dormancy:
+N 0.08 | P 0.18 | K 0.18
+Cuidado: baja demanda NPK; frío, salinidad, suelo y reservas como contexto.
+
+budbreak:
+N 0.62 | P 0.58 | K 0.55
+Cuidado: arranque desde reservas, suelo templado, N moderado y P/K balanceados.
+
+vegetative_growth:
+N 0.68 | P 0.42 | K 0.62
+Cuidado: hoja funcional, madera de fruto, evitar sombreo por exceso de N.
+
+flowering:
+N 0.26 | P 0.66 | K 0.62
+Cuidado: helada, clima, B/Zn/Ca como contexto, no empujar N.
+
+fruit_set:
+N 0.32 | P 0.48 | K 0.78
+Cuidado: agua estable, salinidad baja, K subiendo, aborto de fruto.
+
+fruit_fill:
+N 0.30 | P 0.32 | K 0.92
+Cuidado: calibre, firmeza, K protagonista, pit hardening como subventana.
+
+harvest_maturity:
+N 0.14 | P 0.22 | K 0.68
+Cuidado: calidad final, color, firmeza, azúcares, evitar N tardío.
+
+post_harvest:
+N 0.52 | P 0.34 | K 0.58
+Cuidado: hoja activa, reservas, yemas del siguiente ciclo, no cerrar cultivo.
+
+unknown:
+N 0.42 | P 0.42 | K 0.50
+Cuidado: conservador, pedir etapa visible, no inventar calendario.
+
+
+================================================================================
+9. LECTURA AGRONÓMICA POR ETAPA
+================================================================================
+
+planting_transplant — Plantación / trasplante
+Prioridad relativa: N 0.18 | P 0.82 | K 0.45
+Lectura: no es etapa para empujar producción. P y suelo pesan más que N.
+N: bajo; si se usa, pequeñas cantidades y lejos del tronco/raíz directa.
+P: alto relativo si el suelo/análisis lo pide; idealmente corregido antes de plantar.
+K: apoyo; no justificar K alto si EC o salinidad ya están elevadas.
+Bloqueo BIO-G: si EC alta, resistencia alta o humedad saturada, primero corregir suelo/agua.
+
+root_establishment — Establecimiento radicular
+Prioridad relativa: N 0.28 | P 0.82 | K 0.50
+Lectura: raíz fina y oxígeno mandan. El sensor NPK pierde valor si hay compactación o anoxia.
+N: moderado-bajo; exceso quema raíces jóvenes o empuja brote sin raíz.
+P: ventana fuerte de raíz; no aplicar a ciegas sin pH/suelo.
+K: sostén hídrico y turgencia; secundario frente a agua/raíz.
+
+juvenile_vegetative — Crecimiento juvenil
+Prioridad relativa: N 0.74 | P 0.52 | K 0.58
+Lectura: formar copa, ramas y madera fructífera futura.
+N: importante, pero exceso da crecimiento blando y sombreo.
+P: apoyo de raíz/energía; no suele ser principal si suelo está bien.
+K: base de vigor equilibrado y resistencia a estrés; subir si hay crecimiento débil con agua/pH correctos.
+
+dormancy — Dormancia invernal
+Prioridad relativa: N 0.08 | P 0.18 | K 0.18
+Lectura: demanda NPK baja. Dormancia no es una ventana para interpretar NPK como hambre activa.
+N: no empujar; el árbol está sin hoja activa.
+P/K: planificar con análisis de suelo si se harán correcciones de fondo.
+Contexto: frío invernal, salinidad, humedad excesiva y daño de raíz importan más.
+
+budbreak — Brotación
+Prioridad relativa: N 0.62 | P 0.58 | K 0.55
+Lectura: arranque desde reservas + raíz que empieza a activarse.
+N: moderado; el exceso temprano puede aumentar tejido tierno susceptible.
+P: apoyo energético y raíz; su disponibilidad depende mucho de pH.
+K: apoyo de brote y prefloración.
+
+vegetative_growth — Desarrollo vegetativo
+Prioridad relativa: N 0.68 | P 0.42 | K 0.62
+Lectura: hoja y madera de fruto futura, pero el exceso de vigor compite con fruta y sombreo.
+N: mayor peso, con control de vigor. No celebrar N alto si hay copa densa.
+P: peso medio-bajo, salvo deficiencia/análisis.
+K: sostiene turgencia y preparación para carga.
+
+flowering — Floración
+Prioridad relativa: N 0.26 | P 0.66 | K 0.62
+Lectura: etapa crítica, pero NPK no resuelve helada, lluvia, baja polinización ni falta de frío.
+N: bajo-moderado; no empujar N para 'mejorar floración'.
+P: relevante por energía/flor, pero con reservas y pH como contexto.
+K: suficiente, no protagonista absoluto todavía.
+Contexto avanzado: B/Zn/Ca, helada, actividad de polinizadores y humedad ambiental.
+
+fruit_set — Cuajado / amarre
+Prioridad relativa: N 0.32 | P 0.48 | K 0.78
+Lectura: cuajado/amarre. Agua estable y baja salinidad pesan más que una lectura aislada NPK.
+N: moderado-bajo; exceso puede empujar brote sobre fruto joven.
+P: medio, por energía y división celular temprana.
+K: sube fuerte; comienza la demanda de fruto.
+
+fruit_fill — Llenado de fruto
+Prioridad relativa: N 0.30 | P 0.32 | K 0.92
+Lectura: llenado de fruto. En durazno incluye crecimiento rápido y subventana de endurecimiento de hueso/carozo.
+N: controlado; déficit severo reduce hoja y calibre, pero exceso baja color/calidad y aumenta sombra.
+P: bajo-medio; no tumbar score si agua/K están bien y no hay deficiencia real.
+K: protagonista para calibre, turgencia, azúcares, firmeza y vida postcosecha.
+Copy prohibido: cosecha, cerca de cosecha, madurez como identidad si la etapa sigue siendo fruit_fill.
+
+harvest_maturity — Maduración / cosecha
+Prioridad relativa: N 0.14 | P 0.22 | K 0.68
+Lectura: madurez/cosecha. Calidad final y vida de anaquel mandan.
+N: bajo. N alto aquí debe activar alerta de calidad, color, firmeza y madurez tardía.
+P: bajo-medio; poca respuesta en esta etapa.
+K: medio-alto, pero si EC está alta o Ca/Mg bajos, advertir desbalance.
+
+post_harvest — Postcosecha / recuperación
+Prioridad relativa: N 0.52 | P 0.34 | K 0.58
+Lectura: etapa viva. El árbol puede reponer reservas y formar/fortalecer yemas del siguiente ciclo.
+N: relevante solo si hay hoja verde activa, raíz activa, humedad estable y baja EC.
+P: puede participar en reservas y raíz; no fuerte sin análisis.
+K: apoyo de recuperación y balance, especialmente tras carga alta.
+No activar 'boost' nutricional si ya cayó hoja, hay sequía, salinidad o frío de dormancia.
+
+unknown — No lo sé
+Prioridad relativa: N 0.42 | P 0.42 | K 0.50
+Lectura: conservadora. Sin etapa visible, no inferir demanda fina.
+N/P/K: rangos medios; pedir al usuario qué ve en el árbol.
+No prometer rendimiento ni calidad con stage unknown.
+
+================================================================================
+10. STAGETARGETS CABLEABLES — AGRO RANGE
+================================================================================
+
+Contrato obligatorio:
+AgroRange(lowMax, optimalMin, optimalMax, highMin)
+
+Interpretación:
+- lowMax = frontera crítica baja.
+- optimalMin = inicio del óptimo.
+- optimalMax = fin del óptimo.
+- highMin = frontera crítica alta.
+- No usar lowMax == optimalMin.
+- No usar optimalMax == highMin.
+- En EC y resistance, la métrica es principalmente de exceso. Se usa lowMax seguro/documentado
+  solo para cumplir estructura; no debe penalizar por “EC baja” o “resistance baja”.
+
+planting_transplant — Plantación / trasplante
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 62, optimalMax: 82, highMin: 90)
+- soilTemp: AgroRange(lowMax: 7, optimalMin: 12, optimalMax: 24, highMin: 30)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 7.8)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.2, highMin: 1.8)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.4, highMin: 2.0)
+- n: AgroRange(lowMax: 0.05, optimalMin: 0.18, optimalMax: 0.35, highMin: 0.7)
+- p: AgroRange(lowMax: 0.2, optimalMin: 0.55, optimalMax: 0.75, highMin: 0.92)
+- k: AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.55, highMin: 0.85)
+- prioridad NPK: N 0.18 | P 0.82 | K 0.45
+- lectura BIO-G: raíz joven, baja salinidad, humedad estable, no quemar raíces.
+
+root_establishment — Establecimiento radicular
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 62, optimalMax: 82, highMin: 90)
+- soilTemp: AgroRange(lowMax: 7, optimalMin: 12, optimalMax: 24, highMin: 30)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 7.8)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.2, highMin: 1.8)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.4, highMin: 2.0)
+- n: AgroRange(lowMax: 0.1, optimalMin: 0.25, optimalMax: 0.45, highMin: 0.75)
+- p: AgroRange(lowMax: 0.2, optimalMin: 0.55, optimalMax: 0.75, highMin: 0.92)
+- k: AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.6, highMin: 0.85)
+- prioridad NPK: N 0.28 | P 0.82 | K 0.50
+- lectura BIO-G: raíz fina, oxígeno, P de arranque y suelo sin compactación.
+
+juvenile_vegetative — Crecimiento juvenil
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 58, optimalMax: 82, highMin: 90)
+- soilTemp: AgroRange(lowMax: 8, optimalMin: 12, optimalMax: 26, highMin: 32)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 7.8)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.2)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.2)
+- n: AgroRange(lowMax: 0.25, optimalMin: 0.5, optimalMax: 0.7, highMin: 0.88)
+- p: AgroRange(lowMax: 0.18, optimalMin: 0.4, optimalMax: 0.6, highMin: 0.85)
+- k: AgroRange(lowMax: 0.2, optimalMin: 0.4, optimalMax: 0.6, highMin: 0.85)
+- prioridad NPK: N 0.74 | P 0.52 | K 0.58
+- lectura BIO-G: estructura, copa, madera fructífera futura, vigor sin exceso.
+
+dormancy — Dormancia invernal
+- soilMoisture: AgroRange(lowMax: 35, optimalMin: 45, optimalMax: 68, highMin: 86)
+- soilTemp: AgroRange(lowMax: -5, optimalMin: 0, optimalMax: 12, highMin: 20)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.2, highMin: 8.0)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.5)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 2.0, highMin: 2.6)
+- n: AgroRange(lowMax: 0.0, optimalMin: 0.15, optimalMax: 0.35, highMin: 0.8)
+- p: AgroRange(lowMax: 0.0, optimalMin: 0.2, optimalMax: 0.4, highMin: 0.85)
+- k: AgroRange(lowMax: 0.0, optimalMin: 0.2, optimalMax: 0.4, highMin: 0.85)
+- prioridad NPK: N 0.08 | P 0.18 | K 0.18
+- lectura BIO-G: baja demanda NPK; frío, salinidad, suelo y reservas como contexto.
+
+budbreak — Brotación
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 80, highMin: 90)
+- soilTemp: AgroRange(lowMax: 6, optimalMin: 10, optimalMax: 22, highMin: 28)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 7.8)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.0)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.2)
+- n: AgroRange(lowMax: 0.25, optimalMin: 0.45, optimalMax: 0.65, highMin: 0.85)
+- p: AgroRange(lowMax: 0.2, optimalMin: 0.45, optimalMax: 0.65, highMin: 0.85)
+- k: AgroRange(lowMax: 0.2, optimalMin: 0.4, optimalMax: 0.6, highMin: 0.85)
+- prioridad NPK: N 0.62 | P 0.58 | K 0.55
+- lectura BIO-G: arranque desde reservas, suelo templado, N moderado y P/K balanceados.
+
+vegetative_growth — Desarrollo vegetativo
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 80, highMin: 90)
+- soilTemp: AgroRange(lowMax: 8, optimalMin: 12, optimalMax: 27, highMin: 33)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 7.8)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.6, highMin: 2.2)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.3)
+- n: AgroRange(lowMax: 0.3, optimalMin: 0.5, optimalMax: 0.7, highMin: 0.88)
+- p: AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.6, highMin: 0.85)
+- k: AgroRange(lowMax: 0.25, optimalMin: 0.45, optimalMax: 0.65, highMin: 0.88)
+- prioridad NPK: N 0.68 | P 0.42 | K 0.62
+- lectura BIO-G: hoja funcional, madera de fruto, evitar sombreo por exceso de N.
+
+flowering — Floración
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 60, optimalMax: 82, highMin: 90)
+- soilTemp: AgroRange(lowMax: 8, optimalMin: 12, optimalMax: 24, highMin: 28)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 7.8)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.0)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.2)
+- n: AgroRange(lowMax: 0.15, optimalMin: 0.28, optimalMax: 0.48, highMin: 0.75)
+- p: AgroRange(lowMax: 0.25, optimalMin: 0.5, optimalMax: 0.7, highMin: 0.88)
+- k: AgroRange(lowMax: 0.25, optimalMin: 0.45, optimalMax: 0.65, highMin: 0.85)
+- prioridad NPK: N 0.26 | P 0.66 | K 0.62
+- lectura BIO-G: helada, clima, B/Zn/Ca como contexto, no empujar N.
+
+fruit_set — Cuajado / amarre
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 65, optimalMax: 85, highMin: 92)
+- soilTemp: AgroRange(lowMax: 10, optimalMin: 14, optimalMax: 26, highMin: 31)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 7.8)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.0)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.2)
+- n: AgroRange(lowMax: 0.18, optimalMin: 0.35, optimalMax: 0.55, highMin: 0.78)
+- p: AgroRange(lowMax: 0.15, optimalMin: 0.4, optimalMax: 0.6, highMin: 0.85)
+- k: AgroRange(lowMax: 0.3, optimalMin: 0.6, optimalMax: 0.8, highMin: 0.92)
+- prioridad NPK: N 0.32 | P 0.48 | K 0.78
+- lectura BIO-G: agua estable, salinidad baja, K subiendo, aborto de fruto.
+
+fruit_fill — Llenado de fruto
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 65, optimalMax: 88, highMin: 93)
+- soilTemp: AgroRange(lowMax: 10, optimalMin: 16, optimalMax: 30, highMin: 35)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 7.8)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.6, highMin: 2.2)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.3)
+- n: AgroRange(lowMax: 0.15, optimalMin: 0.3, optimalMax: 0.5, highMin: 0.75)
+- p: AgroRange(lowMax: 0.1, optimalMin: 0.25, optimalMax: 0.45, highMin: 0.75)
+- k: AgroRange(lowMax: 0.35, optimalMin: 0.7, optimalMax: 0.9, highMin: 0.96)
+- prioridad NPK: N 0.30 | P 0.32 | K 0.92
+- lectura BIO-G: calibre, firmeza, K protagonista, pit hardening como subventana.
+
+harvest_maturity — Maduración / cosecha
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 80, highMin: 90)
+- soilTemp: AgroRange(lowMax: 8, optimalMin: 14, optimalMax: 30, highMin: 35)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 7.8)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.3)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.3)
+- n: AgroRange(lowMax: 0.05, optimalMin: 0.18, optimalMax: 0.35, highMin: 0.6)
+- p: AgroRange(lowMax: 0.05, optimalMin: 0.2, optimalMax: 0.4, highMin: 0.75)
+- k: AgroRange(lowMax: 0.25, optimalMin: 0.55, optimalMax: 0.78, highMin: 0.92)
+- prioridad NPK: N 0.14 | P 0.22 | K 0.68
+- lectura BIO-G: calidad final, color, firmeza, azúcares, evitar N tardío.
+
+post_harvest — Postcosecha / recuperación
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 80, highMin: 90)
+- soilTemp: AgroRange(lowMax: 7, optimalMin: 10, optimalMax: 25, highMin: 30)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 7.8)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.3)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.3)
+- n: AgroRange(lowMax: 0.2, optimalMin: 0.4, optimalMax: 0.65, highMin: 0.82)
+- p: AgroRange(lowMax: 0.1, optimalMin: 0.3, optimalMax: 0.55, highMin: 0.85)
+- k: AgroRange(lowMax: 0.2, optimalMin: 0.4, optimalMax: 0.65, highMin: 0.88)
+- prioridad NPK: N 0.52 | P 0.34 | K 0.58
+- lectura BIO-G: hoja activa, reservas, yemas del siguiente ciclo, no cerrar cultivo.
+
+unknown — No lo sé
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 58, optimalMax: 82, highMin: 90)
+- soilTemp: AgroRange(lowMax: 7, optimalMin: 12, optimalMax: 26, highMin: 32)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.2, highMin: 8.0)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.6, highMin: 2.2)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.3)
+- n: AgroRange(lowMax: 0.15, optimalMin: 0.38, optimalMax: 0.62, highMin: 0.85)
+- p: AgroRange(lowMax: 0.1, optimalMin: 0.38, optimalMax: 0.62, highMin: 0.85)
+- k: AgroRange(lowMax: 0.15, optimalMin: 0.4, optimalMax: 0.65, highMin: 0.88)
+- prioridad NPK: N 0.42 | P 0.42 | K 0.50
+- lectura BIO-G: conservador, pedir etapa visible, no inventar calendario.
+
+================================================================================
+11. STAGEWEIGHTS BASE POR ETAPA
+================================================================================
+
+Escala 0.0 a 1.0.
+Componentes:
+- waterWeight
+- soilTempWeight
+- phWeight
+- ecWeight
+- resistanceWeight
+- nWeight
+- pWeight
+- kWeight
+
+Nota:
+Los pesos no tienen que sumar perfecto si el motor normaliza. Si el modelo existente exige suma 1.0,
+normalizar sin cambiar jerarquía.
+
+planting_transplant — Plantación / trasplante
+- water 0.25
+- soilTemp 0.15
+- pH 0.12
+- EC 0.18
+- resistance 0.20
+- N 0.03
+- P 0.05
+- K 0.02
+
+root_establishment — Establecimiento radicular
+- water 0.30
+- soilTemp 0.12
+- pH 0.10
+- EC 0.18
+- resistance 0.18
+- N 0.03
+- P 0.06
+- K 0.03
+
+juvenile_vegetative — Crecimiento juvenil
+- water 0.22
+- soilTemp 0.12
+- pH 0.10
+- EC 0.12
+- resistance 0.15
+- N 0.16
+- P 0.08
+- K 0.08
+
+dormancy — Dormancia invernal
+- water 0.14
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.04
+- P 0.04
+- K 0.04
+
+budbreak — Brotación
+- water 0.22
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.13
+- P 0.08
+- K 0.07
+
+vegetative_growth — Desarrollo vegetativo
+- water 0.20
+- soilTemp 0.12
+- pH 0.09
+- EC 0.10
+- resistance 0.11
+- N 0.18
+- P 0.08
+- K 0.12
+
+flowering — Floración
+- water 0.26
+- soilTemp 0.20
+- pH 0.08
+- EC 0.14
+- resistance 0.08
+- N 0.05
+- P 0.10
+- K 0.09
+
+fruit_set — Cuajado / amarre
+- water 0.30
+- soilTemp 0.16
+- pH 0.08
+- EC 0.15
+- resistance 0.08
+- N 0.05
+- P 0.07
+- K 0.11
+
+fruit_fill — Llenado de fruto
+- water 0.30
+- soilTemp 0.12
+- pH 0.08
+- EC 0.13
+- resistance 0.08
+- N 0.07
+- P 0.05
+- K 0.20
+
+harvest_maturity — Maduración / cosecha
+- water 0.22
+- soilTemp 0.14
+- pH 0.08
+- EC 0.12
+- resistance 0.08
+- N 0.04
+- P 0.04
+- K 0.14
+
+post_harvest — Postcosecha / recuperación
+- water 0.22
+- soilTemp 0.10
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.12
+- P 0.08
+- K 0.12
+
+unknown — No lo sé
+- water 0.24
+- soilTemp 0.12
+- pH 0.10
+- EC 0.14
+- resistance 0.12
+- N 0.09
+- P 0.09
+- K 0.10
+
+================================================================================
+12. REGLAS DE NITRÓGENO PARA EL MOTOR
+================================================================================
+
+12.1 N bajo
+
+N bajo es importante cuando:
+- juvenile_vegetative + vigor bajo;
+- budbreak + brotación débil;
+- vegetative_growth + hoja pálida y brotes cortos;
+- post_harvest + hoja activa + carga alta previa + suelo estable.
+
+N bajo pierde prioridad cuando:
+- dormancy;
+- harvest_maturity;
+- fruit_fill si K/agua son más limitantes;
+- hay EC alta;
+- hay saturación;
+- hay compactación;
+- hay pH extremo;
+- hay daño de raíz, barrenador, gomosis o defoliación por sanidad.
+
+12.2 N alto
+
+N alto puede ser “alto útil” solo si:
+- etapa vegetativa o juvenil;
+- vigor bajo o medio;
+- agua, EC, pH y resistance están correctos;
+- no hay baja carga por helada;
+- no hay sombra excesiva.
+
+N alto debe ser advertencia si:
+- fruit_fill;
+- harvest_maturity;
+- poca fruta / baja carga;
+- vegetative_growth con copa densa;
+- historial de pudrición, Monilinia o fruta blanda;
+- riesgo de helada/entrada a dormancia próxima.
+
+12.3 N postcosecha
+
+Postcosecha puede aceptar N si:
+- hay hoja verde activa;
+- el árbol no está entrando a dormancia;
+- humedad estable;
+- EC baja;
+- raíz activa;
+- hubo carga alta o estrés;
+- aún hay tiempo fisiológico antes de caída de hoja.
+
+Postcosecha NO debe aceptar N agresivo si:
+- hoja cayó;
+- soilTemp baja;
+- suelo seco/saturado;
+- EC alta;
+- profile = DZ-05 y ya se aproxima dormancia;
+- el riesgo de brote tardío/helada es alto.
+
+================================================================================
+13. REGLAS DE FÓSFORO PARA EL MOTOR
+================================================================================
+
+P debe pesar en:
+- preplantación/plantación;
+- root_establishment;
+- brotación;
+- floración;
+- fruit_set como energía temprana;
+- post_harvest como reservas si hoja activa.
+
+P no debe tumbar score en:
+- dormancy;
+- harvest_maturity;
+- fruit_fill si no hay evidencia de deficiencia y agua/K están bien.
+
+P alto debe advertir:
+- posible bloqueo/desbalance Zn/Fe;
+- no celebrar P alto si pH es alto y hoja nueva se ve clorótica;
+- evitar acumulación por aplicaciones repetidas sin análisis.
+
+================================================================================
+14. REGLAS DE POTASIO PARA EL MOTOR
+================================================================================
+
+K es protagonista en:
+- fruit_set;
+- fruit_fill;
+- harvest_maturity;
+- carga alta;
+- perfil comercial amarillo;
+- perfil blanco/dulce por calidad;
+- tardío/industria por llenado largo.
+
+K bajo en fruit_fill debe generar alerta si:
+- humedad está correcta;
+- EC no está alta;
+- pH no bloquea;
+- hay carga visible;
+- no hay otra causa primaria de fruta chica.
+
+K alto puede ser útil si:
+- hay carga alta;
+- fruit_fill activo;
+- EC baja;
+- agua estable;
+- no hay historial de Mg/Ca bajo.
+
+K alto debe advertir si:
+- EC alta;
+- Ca/Mg bajos o unknown;
+- hoja vieja con clorosis internerval;
+- fruto blando/pudrición/historial postcosecha;
+- aplicaciones repetidas sin análisis.
+
+================================================================================
+15. MODIFICADORES POR PERFIL DZ
+================================================================================
+
+DZ-SKIP / dz_skip
+label tecnico: DZ-SKIP · Durazno general
+label UX: No sé / Durazno general
+criterio nutricional: Conservador, no asume temprano/tardío, ni blanco/amarillo, ni industria; el estado visible manda.
+Ajustes permitidos:
+- ajustar presión fenológica y mensajes, no cambiar la estructura de etapas.
+- no inventar sensores Ca/Mg/B/Zn como métricas v1; solo contexto avanzado.
+- si está en fruit_fill, hablar de llenado, calibre, firmeza, calidad y hueso/carozo; no hablar como cosecha.
+- si está en harvest_maturity, sí puede hablar de madurez, color, firmeza final, cosecha y vida de anaquel.
+- post_harvest sigue vivo: reservas, hoja activa y yemas del siguiente ciclo.
+
+DZ-01 / dz_01_criollo_regional
+label tecnico: DZ-01 · Criollo / regional
+label UX: Criollo / regional
+criterio nutricional: Huertos tradicionales o regionales; priorizar suelo, agua, sanidad y no inflar NPK por falta de dato varietal.
+Ajustes permitidos:
+- ajustar presión fenológica y mensajes, no cambiar la estructura de etapas.
+- no inventar sensores Ca/Mg/B/Zn como métricas v1; solo contexto avanzado.
+- si está en fruit_fill, hablar de llenado, calibre, firmeza, calidad y hueso/carozo; no hablar como cosecha.
+- si está en harvest_maturity, sí puede hablar de madurez, color, firmeza final, cosecha y vida de anaquel.
+- post_harvest sigue vivo: reservas, hoja activa y yemas del siguiente ciclo.
+
+DZ-02 / dz_02_temprano_bajo_frio
+label tecnico: DZ-02 · Temprano / bajo frío
+label UX: Temprano / bajo frío
+criterio nutricional: Ciclo adelantado; cosecha temprana; ventana postcosecha larga; riesgo de helada y falta de frío.
+Ajustes permitidos:
+- ajustar presión fenológica y mensajes, no cambiar la estructura de etapas.
+- no inventar sensores Ca/Mg/B/Zn como métricas v1; solo contexto avanzado.
+- si está en fruit_fill, hablar de llenado, calibre, firmeza, calidad y hueso/carozo; no hablar como cosecha.
+- si está en harvest_maturity, sí puede hablar de madurez, color, firmeza final, cosecha y vida de anaquel.
+- post_harvest sigue vivo: reservas, hoja activa y yemas del siguiente ciclo.
+
+DZ-03 / dz_03_amarillo_comercial
+label tecnico: DZ-03 · Amarillo comercial
+label UX: Amarillo comercial
+criterio nutricional: Perfil comercial fresco; K y agua sostienen calibre; N excesivo afecta color y sombra.
+Ajustes permitidos:
+- ajustar presión fenológica y mensajes, no cambiar la estructura de etapas.
+- no inventar sensores Ca/Mg/B/Zn como métricas v1; solo contexto avanzado.
+- si está en fruit_fill, hablar de llenado, calibre, firmeza, calidad y hueso/carozo; no hablar como cosecha.
+- si está en harvest_maturity, sí puede hablar de madurez, color, firmeza final, cosecha y vida de anaquel.
+- post_harvest sigue vivo: reservas, hoja activa y yemas del siguiente ciclo.
+
+DZ-04 / dz_04_blanco_dulce
+label tecnico: DZ-04 · Blanco / dulce
+label UX: Blanco / dulce
+criterio nutricional: Calidad sensorial, firmeza y pudriciones pesan más; evitar N alto y exceso de humedad cerca de madurez.
+Ajustes permitidos:
+- ajustar presión fenológica y mensajes, no cambiar la estructura de etapas.
+- no inventar sensores Ca/Mg/B/Zn como métricas v1; solo contexto avanzado.
+- si está en fruit_fill, hablar de llenado, calibre, firmeza, calidad y hueso/carozo; no hablar como cosecha.
+- si está en harvest_maturity, sí puede hablar de madurez, color, firmeza final, cosecha y vida de anaquel.
+- post_harvest sigue vivo: reservas, hoja activa y yemas del siguiente ciclo.
+
+DZ-05 / dz_05_tardio_industria
+label tecnico: DZ-05 · Tardío / industria
+label UX: Tardío / industria
+criterio nutricional: Ciclo largo; K/agua sostenidos; cuidado con N tardío y maduración bajo calor.
+Ajustes permitidos:
+- ajustar presión fenológica y mensajes, no cambiar la estructura de etapas.
+- no inventar sensores Ca/Mg/B/Zn como métricas v1; solo contexto avanzado.
+- si está en fruit_fill, hablar de llenado, calibre, firmeza, calidad y hueso/carozo; no hablar como cosecha.
+- si está en harvest_maturity, sí puede hablar de madurez, color, firmeza final, cosecha y vida de anaquel.
+- post_harvest sigue vivo: reservas, hoja activa y yemas del siguiente ciclo.
+
+Reglas específicas adicionales:
+
+DZ-01 Criollo/regional:
+- Si manejo es bajo o unknown, no interpretar NPK con alta confianza.
+- Priorizar agua, suelo, sanidad y carga.
+- Si hay suelo pobre + baja materia orgánica, N puede parecer limitante, pero pH/EC/raíz mandan.
+
+DZ-02 Temprano/bajo frío:
+- Adelanta ventanas de N temprano y K en fruto.
+- La cosecha temprana deja postcosecha larga: reservas pueden ser importantes.
+- No aplicar copy tardío de dormancia si aún hay hoja activa.
+- En zonas cálidas, evitar N que genere brote tierno fuera de ventana.
+
+DZ-03 Amarillo comercial:
+- K alto relativo pesa más en fruit_fill y harvest_maturity.
+- N alto en cosecha afecta color, madurez y firmeza.
+- Pesa calidad visual y calibre.
+
+DZ-04 Blanco/dulce:
+- Evitar N alto en fruit_fill/harvest_maturity porque calidad, dulzor, firmeza y pudriciones pesan mucho.
+- K/Ca/Mg como contexto fuerte.
+- Más sensibilidad UX a fruta blanda, golpes y pudriciones.
+
+DZ-05 Tardío/industria:
+- Llenado largo: sostener K/agua sin elevar EC.
+- Cosecha tardía: cuidado con N postcosecha si se acerca dormancia.
+- Fruta de proceso puede tolerar estética, pero no pudrición, tamaño extremo o estrés severo.
+
+================================================================================
+16. MENSAJES UX NPK RECOMENDADOS
+================================================================================
+
+N bajo / etapa juvenil:
+“El duraznero puede necesitar más impulso vegetativo, pero revisa primero humedad, pH, salinidad y raíz.”
+
+N alto / fruit_fill:
+“El nitrógeno está alto para llenado. En durazno, demasiado vigor puede competir con el fruto y bajar color, firmeza o calibre.”
+
+N alto / harvest_maturity:
+“El nitrógeno alto cerca de cosecha puede retrasar madurez, bajar color y afectar firmeza. Revisa vigor antes de fertilizar.”
+
+P bajo / root_establishment:
+“El fósforo pesa en raíz y arranque. Confirma pH y análisis antes de corregir.”
+
+P bajo / harvest_maturity:
+“El fósforo no es la prioridad principal en cosecha. Revisa agua, K, carga y calidad antes de actuar.”
+
+K bajo / fruit_fill:
+“El potasio está bajo para llenado. Si el suelo tiene buena humedad y baja salinidad, puede limitar calibre y calidad.”
+
+K alto + EC alta:
+“El potasio alto junto con salinidad puede estresar la raíz. Conviene revisar agua, drenaje y acumulación de sales.”
+
+K alto + posible Mg/Ca bajo:
+“El potasio alto debe leerse con calcio y magnesio. Revisa análisis si hay fruta blanda, clorosis o problemas de calidad.”
+
+Postcosecha con hoja activa:
+“Después de cosecha el duraznero sigue trabajando. Si hay hoja verde y suelo estable, puede recuperar reservas para el siguiente ciclo.”
+
+Postcosecha tardía/sin hoja:
+“Si el árbol ya perdió hoja o entra a dormancia, no conviene empujar nutrición como si siguiera activo.”
+
+Stage unknown:
+“BIO-G puede leer NPK en modo general, pero será más preciso si eliges lo que ves en el árbol.”
+
+================================================================================
+17. MAPEO A CÓDIGO
+================================================================================
+
+Archivos esperados:
+- lib/core/crops/peach_tree/peach_tree_universal_profile.dart
+- lib/core/crops/peach_tree/peach_tree_crop_definition.dart
+- lib/core/agro/peach_tree_nutrition_modifier.dart
+- lib/core/agro/peach_tree_agro_score_engine.dart si no usa wrapper genérico
+- lib/core/agro/npk_caps.dart
+- lib/core/agro/nutrient_recommendation_engine.dart
+- dashboard / npk_screen solo si requieren helper de árbol frutal
+
+Constantes recomendadas:
+- kCropPeachTree = 'crop_peach_tree'
+- kPeachTreeLegacy = 'peach_tree'
+- kDzSkip = 'dz_skip'
+- kDz01CriolloRegional = 'dz_01_criollo_regional'
+- kDz02TempranoBajoFrio = 'dz_02_temprano_bajo_frio'
+- kDz03AmarilloComercial = 'dz_03_amarillo_comercial'
+- kDz04BlancoDulce = 'dz_04_blanco_dulce'
+- kDz05TardioIndustria = 'dz_05_tardio_industria'
+
+NpkCaps sugeridos:
+case 'peach_tree':
+case 'crop_peach_tree':
+case 'durazno':
+case 'duraznero':
+case 'melocoton':
+case 'melocotón':
+  N => 110.0
+  P => 95.0
+  K => 180.0
+
+Nutrition modifier:
+- PeachTreeNutritionGroup.generic
+- PeachTreeNutritionGroup.criolloRegional
+- PeachTreeNutritionGroup.tempranoBajoFrio
+- PeachTreeNutritionGroup.amarilloComercial
+- PeachTreeNutritionGroup.blancoDulce
+- PeachTreeNutritionGroup.tardioIndustria
+
+Funciones útiles:
+- stagePressureDelta(nutrient, stageKey)
+- lateNitrogenExcessPenaltyFactor(stageKey)
+- practicalCaution(nutrient, stageKey)
+- profileSeasonShift(profileId)
+
+Reglas de copy v1.5:
+- No usar isLate genérico para textos si mezcla fruit_fill con harvest_maturity.
+- isLateNitrogenRisk puede existir solo para scoring: fruit_fill || harvest_maturity.
+- fruit_fill: llenado/calibre/carozo/firmeza/calidad.
+- harvest_maturity: madurez/cosecha/color/firmeza final/almacenamiento.
+- post_harvest: reservas/siguiente ciclo.
+
+================================================================================
+18. TESTS MÍNIMOS
+================================================================================
+
+1. peach_tree_universal_profile trae StageTargets para todas las etapas cerradas.
+2. Ningún AgroRange de suelo/ambiente tiene lowMax == optimalMin ni optimalMax == highMin salvo EC/resistance high-only con placeholder documentado.
+3. fruit_fill + N alto no contiene “cosecha”, “cerca de cosecha”, “madurez” ni “maduración” como identidad.
+4. harvest_maturity + N alto sí puede hablar de madurez/cosecha/calidad final.
+5. post_harvest no cierra cultivo y mantiene copy de reservas.
+6. dz_skip + stage unknown usa targets conservadores.
+7. dz_skip + newly_planted no proyecta producción ni empuja N.
+8. dz_02_temprano_bajo_frio adelanta ventanas y protege postcosecha activa.
+9. dz_05_tardio_industria no empuja N postcosecha tardía sin hoja activa.
+10. fruit_fill + K bajo + humedad correcta => alerta de K/calibre.
+11. fruit_fill + K bajo + humedad baja => prioriza agua antes que K.
+12. K alto + EC alta => alerta de salinidad/acumulación, no “alto útil”.
+13. pH alto + hoja amarilla nueva => contexto Fe/Zn, no solo N.
+14. N alto + baja carga => alerta de vigor, no recomendación positiva.
+15. NpkCaps para crop_peach_tree devuelven N 110, P 95, K 180.
+16. NPK screen/dashboard usan AgroMetricEval del motor antes de fallback.
+17. StageTargets de fruit_fill distinguen pit hardening como subventana/copy, no stageId nuevo.
+18. post_harvest + hojaActiva=false baja recomendación N/P/K.
+19. resistance alta baja confianza NPK.
+20. EC alta bloquea mensajes de fertilización agresiva.
+
+
+================================================================================
+19. FUENTES Y TRAZABILIDAD
+================================================================================
+
+S1. BIO-G — Estandar BIO-G para integración de árboles perennes v1.5 con addendum.
+Uso:
+- estructura oficial de 5 documentos;
+- no usar sowingDate como eje;
+- post_harvest activo;
+- contrato StageTargets/AgroRange;
+- contrato v1.5 de etapa/NPK/copy/UI.
+
+S2. BIO-G — 01_Ficha_Tecnica_Universal_Perfiles_BioG_Durazno_DZ_v1_fortalecido.txt.
+Uso:
+- identidad crop_peach_tree;
+- perfiles DZ oficiales;
+- etapas y arquitectura;
+- pit hardening/endurecimiento de hueso como subventana de fruit_fill.
+
+S3. BIO-G — 02_Perfil_SKIP_BioG_Durazno_DZ_SKIP_v1_fortalecido.txt.
+Uso:
+- DZ-SKIP conservador, migrable y no visible como incompleto;
+- comportamiento si el usuario no sabe variedad.
+
+S4. BIO-G — 03_Rendimiento_Aproximado_BioG_Durazno_DZ_v1.txt.
+Uso:
+- kg/árbol, árboles/ha, t/ha, densidad, manejo, memoria y perfiles DZ.
+
+S5. BIO-G — 04_Riesgos_Cultivo_Sanidad_Estres_Memoria_BioG_Durazno_DZ_v1.txt.
+Uso:
+- torque/lepra, Monilinia, mancha bacteriana, barrenadores, palomilla oriental, helada, raleo, estrés hídrico, gomosis y memoria.
+
+S6. Código BIO-G lib.zip revisado.
+Archivos relevantes:
+- lib/core/agro/npk_caps.dart
+- lib/core/agro/nutrient_recommendation_engine.dart
+- lib/core/agro/apple_tree_nutrition_modifier.dart
+- lib/core/crops/apple_tree/apple_tree_universal_profile.dart
+Uso:
+- confirmar escala NPK 0..1 por caps;
+- confirmar necesidad de caps por cultivo;
+- confirmar contrato de copy NPK por etapa;
+- confirmar patrón de nutrition modifier por árbol/perfil.
+
+S7. UC IPM — Fertilizer Applications / Peach.
+URL:
+https://ipm.ucanr.edu/agriculture/peach/fertilizer-applications/
+Uso:
+- timing de N por variedades tempranas vs medias/tardías;
+- split applications para mejorar eficiencia y reducir lixiviación;
+- no fertilizar otoño/invierno cuando la capacidad de absorción es baja;
+- evitar sobreaplicación de N por crecimiento suculento/copa densa y plagas.
+
+S8. CDFA/FREP + UC Davis Nutrient Management — Peach and Nectarine Nitrogen Uptake and Partitioning.
+URL:
+https://www.cdfa.ca.gov/is/ffldrs/frep/FertilizationGuidelines/N_Peach.html
+Uso:
+- N uptake mínimo en dormancia/bud swell y máximo de mitad de primavera a inicios de otoño con hoja activa;
+- 2–3 lb N removidas por tonelada de durazno cosechado;
+- guía de N para árboles jóvenes y fertirriego;
+- crop load como driver de N.
+
+S9. CDFA/FREP + UC Davis Nutrient Management — Peach and Nectarine full guideline.
+URL:
+https://www.cdfa.ca.gov/is/ffldrs/frep/FertilizationGuidelines/Peach_Nectarine.html
+Uso:
+- análisis foliar más confiable que suelo para deficiencias/excesos;
+- muestreo 60–100 hojas de brotes moderadamente vigorosos;
+- P removido: 0.5–1.0 lb P2O5 por ton de fruta;
+- K removido: 4–5 lb K2O por ton de fruta;
+- K foliar adecuado >1.2%, preferible mantener promedios >1.5% para reducir riesgo de fruta chica;
+- suelo P/K por categorías generales.
+
+S10. UC ANR — Mineral Nutrition, Peaches, Plums and Nectarines.
+URL:
+https://ucanr.edu/sites/default/files/2012-11/76421.pdf
+Uso:
+- leaf N objetivo California: 2.6–3.0% para durazno/nectarina;
+- N alto retrasa madurez, reduce color rojo, aumenta vigor/sombreo y puede bajar rendimiento/tamaño;
+- P/K/Ca/Mg/Zn/B como contexto de calidad.
+
+S11. UF/IFAS — Nutrient Management in Low-Chill Peach Orchards: fertilizer rate application.
+URL:
+https://ask.ifas.ufl.edu/publication/HS1496
+Uso:
+- calendario para durazno bajo frío/subtropical;
+- N dividido entre demanda temprana de fruto y postcosecha;
+- P 20–40 lb/acre/año si lo piden suelo/tejido;
+- K alto en crecimiento de fruto y fraccionado en suelos arenosos;
+- K excesivo puede reducir Ca/Mg;
+- Ca temprano para fruto y Zn foliar como estrategia cuando aplica.
+
+S12. UF/IFAS — Nutrient Management in Low-Chill Peach Orchards: deficiency symptoms and leaf/soil sampling.
+URL:
+https://ask.ifas.ufl.edu/publication/HS1497
+Uso:
+- rangos foliares: N 2.60–3.50%, P 0.14–0.40%, K 2.00–3.00%, Ca 1.50–3.00%, Mg 0.30–0.80%, Zn 20–50 ppm, B 30–70 ppm;
+- K deficiency reduce fruto, color, calidad y vida postcosecha;
+- Ca/Mg/K balance;
+- Fe chlorosis por pH >7.5/calizo;
+- B y Zn como contexto de floración/brote.
+
+S13. University of Georgia / CAES — Cultural Management of the Bearing Peach Orchard.
+URL:
+https://fieldreport.caes.uga.edu/publications/C879/cultural-management-of-the-bearing-peach-orchard/
+Uso:
+- split N: parte postcosecha y parte invierno tardío;
+- postcosecha alimenta la cosecha siguiente;
+- exceso de N en tercer año/árbol joven produce vigor que compite con fruta y madera de fruto;
+- aplicar spring N al menos seis semanas antes de bloom en variedades tempranas.
+
+S14. Penn State Extension — Nitrogen Fertilization of Peach Trees / Peach Production.
+URL:
+https://extension.psu.edu/nitrogen-fertilization-of-peach-trees/
+URL:
+https://extension.psu.edu/peach-production/
+Uso:
+- N como nutriente central de fertilización;
+- maduro suele requerir N antes de floración;
+- P/K/Ca/B/Cu/Zn adecuados para producción y calidad.
+
+S15. Michigan State University Extension — Spring fertilization of garden fruits.
+URL:
+https://www.canr.msu.edu/news/spring_fertilization_of_garden_fruits
+Uso:
+- fertilizar frutales antes de brotación;
+- evitar crecimiento de fines de verano que causa daño invernal;
+- regla casera para stone fruits con 10-10-10, útil solo como contexto de traspatio, no como motor comercial BIO-G.
+
+S16. University of Minnesota Extension — Growing stone fruits in the home garden.
+URL:
+https://extension.umn.edu/fruit/growing-stone-fruits-home-garden
+Uso:
+- N normalmente es el único nutriente mineral anual frecuente en árboles establecidos;
+- usar crecimiento de brotes como guía;
+- no fertilizar árbol con crecimiento normal/vigoroso;
+- exceso de fertilizante es más dañino que deficiencia leve.
+
+S17. Utah State University — Utah Fertilizer Guide.
+URL:
+https://extension.usu.edu/agwastemanagement/files/Utah_Fertilizer_Guide.pdf
+Uso:
+- análisis de suelo antes de plantar;
+- análisis foliar como indicador más confiable en huertos;
+- pH/salinidad/textura/drenaje como filtro antes de fertilización;
+- salinidad >=3 dS/m como problema para frutales y necesidad de lixiviación/recuperación antes de plantar.
+
+S18. Oklahoma State University — Fertilizing Pecan and Fruit Trees / Planting and Early Care of the Peach Orchard.
+URL:
+https://extension.okstate.edu/fact-sheets/fertilizing-pecan-and-fruit-trees
+URL:
+https://extension.okstate.edu/fact-sheets/planting-and-early-care-of-the-peach-orchard
+Uso:
+- hoja como base de fertilización en durazno, manzano y pecán;
+- muestras de julio;
+- 100 hojas por muestra en manzano/durazno;
+- no mezclar variedades/condiciones.
+
+S19. SciELO México — Calidad del fruto del duraznero en sistema milpa intercalada.
+URL:
+https://www.scielo.org.mx/scielo.php?pid=S0568-25172008000200003&script=sci_arttext
+Uso:
+- ejemplo mexicano de fertilización por árbol: 30-15-25 g N-P-K + gallinaza en árboles jóvenes y 90-45-75 g N-P-K + gallinaza en ciclo posterior;
+- N fraccionado y P/K al inicio;
+- usado solo como contexto regional, no como receta universal.
+
+S20. INIFAP Zacatecas — Prácticas culturales para producir durazno.
+URL:
+https://zacatecas.inifap.gob.mx/modulo/mostrarPub.php?id=6&t=1
+Uso:
+- contexto México y necesidad de normas/análisis para definir criterios de fertilización;
+- no se extraen targets directos sin documento completo.
+
+S21. Foros InfoJardín / GrowingFruit / discusiones de productores.
+Uso:
+- lenguaje UX: “qué abono le pongo”, “hojas amarillas”, “fruta chica”, “se cae el fruto”, “tiene goma”, “mucha hoja y poca fruta”.
+- No usados para targets, dosis ni umbrales.
+
+================================================================================
+20. CIERRE
+================================================================================
+
+La guía NPK de Durazno debe servir como puente entre investigación agronómica y cableado real.
+El objetivo no es que BIO-G “recete fertilizante”, sino que lea sensores con inteligencia de etapa.
+
+La regla final:
+- Durazno necesita N para hoja y madera.
+- Durazno necesita P para raíz/arranque/energía, pero rara vez P es el protagonista en adulto.
+- Durazno necesita K fuerte para fruta, calibre y calidad.
+- Durazno necesita agua y raíz funcional para que cualquier NPK importe.
+- Durazno necesita postcosecha viva para formar el siguiente ciclo.
+- Durazno necesita que BIO-G no confunda llenado con cosecha ni vigor con salud.

@@ -1,0 +1,1897 @@
+BIO-G
+
+04_RIESGOS_CULTIVO_SANIDAD_ESTRES_MEMORIA_BIOG_NOGAL_v1_REFORZADO
+Cultivo: Nogal / Nogal pecanero / Nuez pecana
+cropId sugerido: crop_walnut_tree
+CropKey sugerido: walnutTree / walnut_tree
+Perfil base: NG-SKIP + NG-01 Western Schley + NG-02 Wichita + NG-03 Bloque Western/Wichita + NG-04 Criollo/Regional + NG-05 Temprano/Pawnee-Kanza-Cheyenne
+Nombre científico: Carya illinoinensis (Wangenh.) K.Koch
+
+Documento técnico interno BIO-G.
+No sustituye diagnóstico de campo, laboratorio, asesoría fitosanitaria local, análisis de suelo/agua/tejido ni normatividad vigente.
+BIO-G v1 no debe convertirse en recetario de plaguicidas: alerta, orienta revisión, prioriza riesgo, guarda memoria y recomienda confirmar.
+
+Versión: v1.0 reforzada
+Fecha: Junio 2026
+Módulo: Riesgos del Cultivo / Plant Health / Sanidad / Estrés / Memoria perenne
+Enfoque de producto: alertas farmer-friendly, cableables a motor, agrupadas por familia de riesgo, sin dosis ni ingredientes activos.
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+El nogal pecanero NO debe modelarse como durazno, manzano o pera con otro nombre.
+Es un árbol caducifolio perenne de nuez, con raíz profunda, alta dependencia de agua en llenado, alta demanda de zinc, sensibilidad a salinidad/compactación, polinización cruzada por viento, alternancia productiva y memoria multianual muy marcada.
+
+En BIO-G, el riesgo sanitario del nogal se concentra en diez frentes:
+
+1. Raíz, cuello, suelo y madera:
+   Phymatotrichopsis / pudrición texana o pudrición algodonosa de raíz, anoxia por exceso de agua, compactación, salinidad, nematodos, crown gall, daño de cuello, decaimiento por sitio, barrenadores de tronco/ambrosiales y muerte de ramas.
+
+2. Dormancia, frío, brotación y polinización:
+   déficit de frío, brotación irregular, helada tardía, desincronía floral Tipo I/Tipo II, baja liberación/recepción de polen, viento/lluvia en floración, baja carga por aborto temprano.
+
+3. Plagas directas de nuez y ruezno:
+   gusano barrenador de la nuez / pecan nut casebearer (Acrobasis nuxvorella), gusano barrenador del ruezno / hickory shuckworm (Cydia caryana), picudo/barrenador de la nuez / pecan weevil (Curculio caryae) donde aplique, chinches y leaf-footed bugs, daño por aves/roedores y pérdida por stick-tights.
+
+4. Pulgones, melaza, ácaros y plagas chupadoras:
+   complejo de pulgones amarillos (Monellia caryella, Monelliopsis pecanis), pulgón negro (Melanocallis caryaefoliae), mielecilla/fumagina, ácaros, pecan leaf scorch mite, escamas y phylloxera.
+
+5. Defoliadores y plagas de hoja/madera:
+   gusano telarañero, walnut caterpillar, sawfly, orugas, twig girdler, twig pruner, barrenador ambrosial del nogal y otras plagas que reducen hoja funcional o dañan estructura.
+
+6. Enfermedades de hoja, brote, nuez y ruezno:
+   pecan scab / roña/costra (Venturia effusa), antracnosis, powdery mildew, downy spot, vein spot, bacterial leaf scorch por Xylella, stem-end blight, shuck dieback, shuck and kernel rot por Phytophthora y pudriciones/manchado de almendra.
+
+7. Desórdenes nutricionales y fisiológicos:
+   deficiencia de zinc (rosette / little leaf), deficiencia o bloqueo de hierro, deficiencia de níquel (mouse ear), N bajo en llenado, N excesivo/vigor, K bajo en llenado, toxicidad por boro/cloruros/salinidad, hojas quemadas por sales y desequilibrios por pH alto.
+
+8. Estrés hídrico, térmico y calidad de nuez:
+   déficit de agua en llenado, exceso de agua/anoxia, calor extremo, baja HR, golpe de sol, kernel fill pobre, nuez vana, almendra arrugada/wafery, caída prematura y mala apertura de ruezno.
+
+9. Cosecha, postcosecha y suelo de huerto:
+   stick-tights, retraso de cosecha, nuez en suelo mojado, contaminación por piso sucio, fauna, cosecha después de lluvia, problemas de secado, pérdida de calidad y memoria de lote.
+
+10. Memoria multianual:
+   en nogal, un estrés fuerte en floración, amarre, llenado, defoliación tardía o postcosecha no termina al cosechar. Puede afectar reservas, retorno floral, alternancia, porcentaje de almendra, carga del siguiente año y sensibilidad a plagas.
+
+Regla v1:
+BIO-G debe decir: “esto lo favorece”, “revise aquí”, “se parece a”, “confirme si avanza”.
+BIO-G NO debe decir: “diagnóstico definitivo” ni “aplique X producto”.
+BIO-G debe cruzar etapa fenológica + sensores + clima + historial + clave visual.
+BIO-G debe bajar la confianza si solo hay sensor y no hay observación visual.
+
+Regla editorial específica del nogal:
+No hablar solamente de “fruto”. Hablar como nogalero: nuez, ruezno, almendra/grano, llenado, nuez vana, nuez pegada, stick-tight, manchado, melaza, hoja funcional, reservas y alternancia.
+
+================================================================================
+1. METODOLOGÍA Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+Este documento toma como molde editorial el documento 04 de Pera, especialmente en estructura: decisión ejecutiva, familias UX, catálogo biótico, riesgos abióticos, reglas de motor, matriz por etapa, lenguaje UX y memoria multianual. No copia la jerarquía sanitaria de pera: nogal tiene un sistema de riesgos distinto.
+
+El estándar BIO-G para árboles perennes exige que este documento alimente PlantHealthSyndrome, alertas, señales, severidad y memoria. También exige que el árbol no use sowingDate como eje; debe usar estado perenne, etapa visible, ancla temporal y memoria del cultivo.
+
+Criterio de fuentes:
+- Alta confianza: universidades, extensión, IPM oficial, manuales fitosanitarios institucionales, guías estatales y publicaciones de sanidad vegetal.
+- Media-alta: documentos técnicos regionales, INIFAP/SENASICA/organismos auxiliares, artículos académicos y guías especializadas.
+- Media: guías comerciales o divulgativas si coinciden con fuentes universitarias.
+- Baja-media: foros y lenguaje de productores, usados solo para UX y síntomas reportados, nunca para umbrales duros.
+
+Fuentes fuertes usadas:
+- New Mexico State University: Diseases and Other Disorders of Pecan in New Mexico.
+- New Mexico State University: Diagnosing Nutrient Disorders of New Mexico Pecan Trees.
+- New Mexico State University: Pecan Weevil - Wanted DEAD, Not Alive.
+- Oklahoma State University: A Calendar for Pecan Growers; Commercial Pecan Insect and Disease Control.
+- Texas A&M AgriLife Extension: Pecan diseases and pest guides.
+- University of Georgia Extension: commercial pecan insect/disease references and late-season updates.
+- Mississippi State University Extension: disease and insect management for pecans.
+- Missouri Extension: Pecan Pest Management: Insects and Diseases.
+- Texas Plant Disease Handbook: Pecan.
+- Clemson Cooperative Extension: Pecan diseases.
+- Junta Local de Sanidad Vegetal / documentos mexicanos de plagas del nogal.
+- INIFAP Agenda Técnica Agrícola Chihuahua/Sonora y documentos mexicanos sobre barrenador de la nuez y áfidos.
+
+Uso de foros/productores:
+Los foros y lenguaje de campo sirven para detectar cómo lo dice el usuario real:
+- “la hoja está pegajosa”
+- “la nuez se cayó chiquita”
+- “la almendra salió negra/manchada”
+- “hay aserrín en el tronco”
+- “se secó de repente”
+- “tiene pulgón negro”
+- “tiene mielecilla”
+- “no llenó la nuez”
+- “salió nuez vana”
+- “no abrió el ruezno”
+- “se quedó pegada la nuez”
+- “las hojas están quemadas de las orillas”
+- “está enrosetado / hoja chiquita”
+- “floreó pero no amarró”
+- “un año carga y otro no”
+
+No se usaron foros para fijar umbrales técnicos ni decisiones agronómicas duras.
+
+================================================================================
+2. RESUMEN EJECUTIVO PARA PRODUCTO
+================================================================================
+
+El riesgo del nogal cambia mucho según etapa.
+
+- Recién plantado / establecimiento:
+  Pesa raíz, drenaje, salinidad, compactación, Phymatotrichopsis/cotton root rot donde aplique, crown gall, nematodos, anoxia, daño de cuello, estrés por trasplante, zinc temprano y protección de raíz.
+
+- Juvenil no productivo:
+  Pesa crecimiento estructural, zinc/rosette, exceso de N/vigor blando, salinidad, riego, gusano telarañero, áfidos, ácaros, defoliadores, barrenadores de madera, daño de tronco y competencia de maleza.
+
+- Dormancia:
+  Pesa frío acumulado, madera, plagas invernantes, escamas, huevos de pulgón/ácaros/phylloxera, daño de roedores, poda, sanidad de madera, limpieza del piso y memoria de carga/estrés del ciclo anterior.
+
+- Brotación:
+  Pesa zinc temprano, phylloxera, áfidos, scab si hay humedad, powdery mildew, helada tardía, brotación irregular por falta de frío, daño de yemas y vigor inicial.
+
+- Floración masculina/femenina:
+  Etapa crítica. Pesa desincronía floral, helada, lluvia/viento inadecuado, baja liberación de polen, baja receptividad, déficit de frío, exceso de vigor y estrés hídrico. BIO-G no debe culpar NPK si el problema real fue clima/polinización.
+
+- Polinización / amarre:
+  Pesa clima, viento, compatibilidad Tipo I/Tipo II, aborto temprano, pecan nut casebearer en nuez recién amarrada, salinidad, humedad baja, estrés de raíz y caída natural vs caída por plaga.
+
+- Llenado de nuez / almendra:
+  Etapa más crítica para rendimiento/calidad. Pesa agua estable, K, N suficiente pero no excesivo, zinc, salinidad, calor, áfidos, pulgón negro, ácaros, chinches, hickory shuckworm, pecan weevil donde aplique, scab/humedad, shuck decline y carga excesiva.
+
+- Madurez / cosecha:
+  Pesa apertura de ruezno, stick-tights, manchado de almendra, chinches, shuckworm, pecan weevil, shuck dieback, stem-end blight, Phytophthora shuck/kernel rot, retraso de cosecha, suelo/piso de huerto, fauna y calidad comercial.
+
+- Postcosecha:
+  No se apaga el cultivo. Pesa hoja funcional, recuperación de reservas, riego postcosecha si hay hoja activa, salinidad, zinc/nutrición, defoliación por áfidos/ácaros/enfermedades, estrés tardío y memoria para el siguiente ciclo.
+
+Errores que el motor debe evitar:
+1. Ver hoja pegajosa/negrilla y asumir hongo si hay áfidos/melaza.
+2. Ver hoja quemada y asumir falta de agua si EC/salinidad o B/Cl están altos.
+3. Ver baja carga y culpar fertilizante si hubo helada, falta de frío o mala sincronía floral.
+4. Ver nuez vana y culpar solo NPK si hubo carga excesiva, sequía, calor, salinidad o daño de chinche.
+5. Ver marchitez con suelo húmedo y recomendar más riego.
+6. Tratar postcosecha como cultivo cerrado.
+7. Confundir llenado de nuez con cosecha: fruit_fill no es harvest_maturity.
+8. Crear plagas/diagnósticos regionales como universales sin contexto.
+
+================================================================================
+3. FAMILIAS UX DEL MÓDULO RIESGOS NOGAL
+================================================================================
+
+Familia UX 1: Raíz, cuello, suelo y madera
+Objetivo: proteger vida del árbol, longevidad del huerto y capacidad de absorción.
+Entradas principales:
+- phymatotrichopsis_root_rot
+- cotton_root_rot_texas_root_rot
+- root_crown_rot_anoxia_complex
+- crown_gall
+- pecan_root_knot_nematode
+- soil_compaction_root_stress
+- waterlogging_anoxia
+- salinity_ec_high
+- trunk_borer_ambrosia_complex
+- wood_canker_decline_complex
+- rodent_girdling_damage
+- poor_site_replant_decline_context
+
+Familia UX 2: Dormancia, brotación, floración y polinización
+Objetivo: proteger arranque del ciclo, sincronía floral y amarre.
+Entradas principales:
+- insufficient_chill_irregular_budbreak
+- frost_budbreak_flowering_damage
+- floral_dichogamy_mismatch
+- poor_wind_pollination_low_fruit_set
+- rain_humidity_pollination_stress
+- hail_wound_infection_risk
+- spring_freeze_shoot_damage
+- excessive_vigor_pollination_risk
+
+Familia UX 3: Plagas directas de nuez/ruezno
+Objetivo: proteger nuez comercial y rendimiento vendible.
+Entradas principales:
+- pecan_nut_casebearer
+- hickory_shuckworm
+- pecan_weevil_regional
+- stink_bug_leaf_footed_bug_kernel_spot
+- nut_curculio_regional
+- birds_rodents_nut_loss
+- premature_nut_drop_pest_context
+
+Familia UX 4: Pulgones, melaza, ácaros y chupadores
+Objetivo: proteger hoja funcional, fotosíntesis, calidad de almendra y reservas.
+Entradas principales:
+- yellow_aphid_complex
+- black_pecan_aphid
+- sooty_mold_honeydew_complex
+- pecan_phylloxera
+- pecan_leaf_scorch_mite
+- spider_mites_complex
+- scale_insects_complex
+- spittlebug_regional
+- beneficial_disruption_aphid_mite_flare
+
+Familia UX 5: Defoliadores, brotes y madera
+Objetivo: proteger hoja, brotes y estructura.
+Entradas principales:
+- fall_webworm
+- walnut_caterpillar
+- pecan_sawfly
+- leaf_feeding_caterpillars
+- twig_girdler_pruner_complex
+- ambrosia_borer_trunk_branch
+- fire_ant_orchard_floor_context
+
+Familia UX 6: Enfermedades de hoja, nuez y ruezno
+Objetivo: proteger hoja, ruezno, almendra y calidad comercial.
+Entradas principales:
+- pecan_scab
+- anthracnose_pecan
+- powdery_mildew_pecan
+- downy_spot_leaf_blotch_complex
+- vein_spot_leaf_spot_complex
+- bacterial_leaf_scorch_xylella
+- shuck_decline_dieback
+- stem_end_blight
+- phytophthora_shuck_kernel_rot
+- kernel_discoloration_complex
+
+Familia UX 7: Estrés fisiológico, nutrición y calidad
+Objetivo: leer problemas que parecen plaga/enfermedad pero nacen de agua, salinidad, pH, nutrición o carga.
+Entradas principales:
+- drought_stress_kernel_fill
+- water_stress_light_kernel_wafery
+- heat_stress_sunburn
+- salinity_marginal_leaf_burn
+- zinc_deficiency_rosette_little_leaf
+- iron_chlorosis_high_ph_waterlogging
+- nickel_deficiency_mouse_ear
+- potassium_low_kernel_fill_context
+- nitrogen_deficiency_kernel_fill_context
+- nitrogen_excess_vigor_freeze_pest_risk
+- boron_chloride_toxicity_context
+- alternate_bearing_memory
+- crop_overload_shuck_decline_context
+- vivipary_preharvest_sprouting_context
+- herbicide_phytotoxicity_drift
+
+Familia UX 8: Cosecha, postcosecha y memoria de lote
+Objetivo: proteger calidad final, reducir pérdida y guardar aprendizaje del ciclo.
+Entradas principales:
+- stick_tight_shuck_opening_issue
+- harvest_floor_contamination_context
+- wet_harvest_quality_risk
+- delayed_harvest_nut_loss
+- post_harvest_leaf_loss_memory
+- low_reserve_next_cycle_risk
+
+================================================================================
+4. CATÁLOGO MAESTRO DE RIESGOS BIÓTICOS
+================================================================================
+
+Formato:
+Riesgo | Dónde pesa más | Qué lo favorece | Clave visual | Etapa | Prioridad BIO-G | Memoria | Lectura BIO-G
+
+--------------------------------------------------------------------------------
+4.1 RAÍZ, CUELLO, SUELO Y MADERA
+--------------------------------------------------------------------------------
+
+1) phymatotrichopsis_root_rot
+Nombre UX: Pudrición texana / pudrición algodonosa de raíz
+Nombre técnico: Phymatotrichopsis omnivora / Phymatotrichum root rot / cotton root rot
+Dónde pesa más: suelos alcalinos/calizos, zonas áridas del norte, suelos con baja materia orgánica, huertos en áreas con historial de algodón/alfalfa/mezquite/vegetación hospedera, árboles jóvenes o adultos en focos.
+Qué lo favorece: clima cálido, suelos con pH alto, bajo contenido de materia orgánica, raíces en contacto con focos infectados, estrés hídrico o nutricional.
+Clave visual: árbol que se seca de forma repentina o por foco; hojas amarillan/broncean/se secan y pueden quedar pegadas; raíces podridas; lesión rojiza/café cerca de corona; muerte por manchones.
+Etapa: root_establishment, juvenile_vegetative, vegetative_growth, fruit_fill, post_harvest; más visible en verano/calor.
+Prioridad BIO-G: Muy alta regional en norte/semiárido donde exista historial.
+Memoria: Muy alta; puede matar árbol y deja sitio de riesgo para replantar.
+Lectura BIO-G: si hay marchitez/bronzeado rápido con suelo aparentemente suficiente y patrón por focos, sugerir revisión de raíz/corona. No diagnosticar solo por sensor. No recomendar más NPK como primera respuesta.
+
+2) root_crown_rot_anoxia_complex
+Nombre UX: Raíz asfixiada / pudrición de raíz-cuello por exceso de humedad
+Dónde pesa más: establecimiento, suelos pesados, zonas bajas, riegos largos, compactación, estratos que impiden drenaje.
+Qué lo favorece: soilMoisture alta, resistance alta, drenaje deficiente, riegos pesados, lluvia, salinidad acumulada y raíces heridas.
+Clave visual: marchitez con suelo húmedo, hojas amarillas, bajo vigor, raíz oscura, cuello afectado, respuesta pobre al fertilizante.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative, vegetative_growth, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta; reduce raíz funcional y puede arrastrar baja carga/alternancia.
+Lectura BIO-G: “Marchitez con suelo húmedo no es falta de agua”. Revisar drenaje, cuello, compactación y CE.
+
+3) crown_gall
+Nombre UX: Agalla de corona / tumores en cuello o raíz
+Nombre técnico: Agrobacterium tumefaciens
+Dónde pesa más: vivero, trasplante, árboles jóvenes, raíces heridas, injertos, zonas con herramientas contaminadas.
+Qué lo favorece: heridas de raíz/cuello, maquinaria, poda/injerto, material de vivero infectado, nematodos.
+Clave visual: agallas/tumores irregulares en raíz, base del tronco o cuello; bajo vigor lento; falla de crecimiento.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta si árbol queda comprometido.
+Lectura BIO-G: no diagnosticar por sensor; pedir revisar base/raíces si árbol joven no arranca y hay bultos.
+
+4) pecan_root_knot_nematode
+Nombre UX: Nematodo agallador de raíz del nogal
+Nombre técnico: Meloidogyne partityla / Meloidogyne spp.
+Dónde pesa más: sitios infestados, replantaciones, suelos arenosos o con historial de pecan/otros hospederos, árboles con producción pesada previa.
+Qué lo favorece: raíces susceptibles, historial del sitio, estrés hídrico/nutricional, heridas, suelos que favorecen nematodos.
+Clave visual: raíces con agallas pequeñas; bajo vigor; amarillamiento; síntomas parecidos a sequía o deficiencia; declinación de ramas.
+Etapa: root_establishment, juvenile_vegetative, vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Alta; persiste en sitio.
+Lectura BIO-G: si hay bajo vigor crónico con suelo/riego aparentemente correctos, preguntar historial y sugerir análisis de raíces/suelo.
+
+5) soil_compaction_root_stress
+Nombre UX: Compactación / raíz sin aire
+Dónde pesa más: huertos con maquinaria, suelos arcillosos, calles compactadas, riego rodado/pesado, establecimiento.
+Qué lo favorece: tránsito, suelo húmedo trabajado, poca materia orgánica, capas endurecidas, drenaje pobre.
+Clave visual: bajo vigor por líneas, encharcamiento, raíces superficiales, respuesta pobre a riego/fertilización, diferencias por zonas.
+Etapa: todas, especialmente planting_transplant y root_establishment.
+Prioridad BIO-G: Alta.
+Memoria: Alta; reduce exploración radicular y aumenta salinidad/anoxia.
+Lectura BIO-G: si resistance alta + humedad irregular + bajo vigor, clasificar como riesgo raíz/suelo antes de culpar NPK.
+
+6) salinity_root_stress_context
+Nombre UX: Estrés salino en raíz
+Dónde pesa más: norte árido, riego con sales, suelos con mal drenaje, calor y alta evaporación.
+Qué lo favorece: CE alta, bajo lavado, riego insuficiente para lixiviar, agua salina, compactación, drenaje pobre, fertilización concentrada.
+Clave visual: borde de hoja quemado, bajo vigor, hoja chica, nuez chica o mal llena, caída, síntomas que parecen sequía aunque se riegue.
+Etapa: root_establishment, vegetative_growth, fruit_set, fruit_fill, post_harvest.
+Prioridad BIO-G: Muy alta para zonas áridas.
+Memoria: Alta; afecta raíz, llenado y alternancia.
+Lectura BIO-G: usar EC + humedad + pH + etapa. Si CE alta, evitar empujar fertilizante sin revisar agua/drenaje.
+
+7) trunk_borer_ambrosia_complex
+Nombre UX: Barrenador de tronco/ramas / ambrosial
+Dónde pesa más: árboles estresados, ramas debilitadas, troncos con heridas, huertos viejos, estrés hídrico/salino.
+Qué lo favorece: madera debilitada, heridas, estrés de agua, ramas secas, falta de vigor.
+Clave visual: hoyos pequeños redondos como disparo, aserrín/frass, escurrimiento en corteza, ramas que mueren, galerías.
+Etapa: vegetative_growth, fruit_fill, post_harvest, dormancy.
+Prioridad BIO-G: Alta regional si se observa frass/hoyos.
+Memoria: Alta si compromete estructura.
+Lectura BIO-G: si frass/hoyos + rama decae, no tratar como plaga foliar; revisar madera y estrés base.
+
+8) wood_canker_decline_complex
+Nombre UX: Cancros y decaimiento de madera
+Dónde pesa más: heridas de poda, granizo, ramas viejas, árboles estresados, madera debilitada.
+Qué lo favorece: heridas, humedad, estrés, poda mal cicatrizada, heladas, golpes mecánicos.
+Clave visual: corteza hundida, grietas, exudados, muerte regresiva, ramas secas, zonas negras en madera.
+Etapa: dormancy, budbreak, vegetative_growth, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta.
+Lectura BIO-G: guardar evento de granizo/poda/herida. Si el daño aparece después, elevar riesgo de cancro/decaimiento.
+
+9) rodent_girdling_damage
+Nombre UX: Daño de roedores / anillado de tronco
+Dónde pesa más: árboles jóvenes, invierno, maleza/cobertura pegada al tronco.
+Qué lo favorece: cobertura densa, maleza, invierno, protección deficiente de tronco.
+Clave visual: corteza comida en base, árbol brota débil o colapsa, daño circular.
+Etapa: dormancy, budbreak, root_establishment.
+Prioridad BIO-G: Media-alta en jóvenes.
+Memoria: Alta si anilla.
+Lectura BIO-G: si árbol joven no brota y sensores están bien, revisar base del tronco.
+
+10) poor_site_replant_decline_context
+Nombre UX: Sitio débil / decaimiento por sitio o replantación
+Dónde pesa más: huertos nuevos en suelos con historial problemático, zonas calizas/salinas, replantes donde murió nogal.
+Qué lo favorece: pH alto, sales, compactación, nematodos, Phymatotrichopsis, mal drenaje, poca profundidad efectiva, selección de sitio incorrecta.
+Clave visual: falla repetida por zona, árboles que no arrancan, bajo vigor uniforme por línea/mancha.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative.
+Prioridad BIO-G: Alta como contexto.
+Memoria: Alta.
+Lectura BIO-G: antes de asumir falta de fertilizante, preguntar si ya murió nogal ahí, si hay sales, drenaje o suelo calizo.
+
+--------------------------------------------------------------------------------
+4.2 DORMANCIA, BROTACIÓN, FLORACIÓN Y POLINIZACIÓN
+--------------------------------------------------------------------------------
+
+11) insufficient_chill_irregular_budbreak
+Nombre UX: Falta de frío / brotación irregular
+Dónde pesa más: dormancia, brotación, floración; zonas cálidas o inviernos erráticos.
+Qué lo favorece: invierno insuficiente para el perfil, variedad no adaptada, calor invernal, fluctuaciones térmicas.
+Clave visual: brotación dispareja, floración extendida o débil, baja sincronía, baja carga, cosecha dispareja.
+Etapa: dormancy, budbreak, flowering.
+Prioridad BIO-G: Alta regional.
+Memoria: Media-alta; útil para perfil/zona.
+Lectura BIO-G: usar contexto climático/modelo; no es sensor v1. Si hubo poco frío, no culpar NPK por baja carga.
+
+12) frost_budbreak_flowering_damage
+Nombre UX: Daño por helada en brotación/floración
+Dónde pesa más: yemas, flores femeninas, brotes tiernos, nuez recién amarrada.
+Qué lo favorece: heladas tardías, zonas bajas, brotación adelantada, noche despejada, perfil temprano.
+Clave visual: flores/yemas negras o cafés, brotes quemados, baja carga, caída de nuez pequeña, daño por parches bajos.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta; afecta rendimiento del año y puede generar exceso de vigor por baja carga.
+Lectura BIO-G: si hubo helada, explicar que la pérdida de carga puede venir del clima, no de fertilización.
+
+13) floral_dichogamy_mismatch
+Nombre UX: Desincronía floral / falta de polinizador compatible
+Dónde pesa más: floración masculina/femenina y amarre.
+Qué lo favorece: mala combinación Tipo I/Tipo II, polinizador insuficiente, clima que adelanta/retrasa una fase, pocos árboles vecinos, huerto viejo con mezcla desconocida.
+Clave visual: muchos amentos/polen pero poca nuez, flores femeninas sin amarre, baja carga repetida, carga buena solo en zonas cercanas a otra variedad.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Muy alta para rendimiento.
+Memoria: Alta; se repite por huerto/perfil.
+Lectura BIO-G: preguntar si hay Western/Wichita u otro tipo floral cerca. No pedir al usuario seleccionar polinizador si no sabe; en SKIP evaluar riesgo conservador.
+
+14) poor_wind_pollination_low_fruit_set
+Nombre UX: Mala polinización por clima / bajo amarre
+Dónde pesa más: flowering, fruit_set.
+Qué lo favorece: lluvia durante polinización, viento insuficiente o extremo, humedad alta que afecta polen, calor/frío, floración desfasada.
+Clave visual: floración aparente pero bajo amarre, caída temprana, nueces pequeñas que abortan.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Alta.
+Memoria: Alta para rendimiento actual; media para siguiente ciclo.
+Lectura BIO-G: si baja carga aparece después de clima adverso, no culpar NPK. Guardar evento en memoria.
+
+15) hail_wound_infection_risk
+Nombre UX: Riesgo sanitario después de granizo
+Dónde pesa más: brotes, hojas, nuez, ruezno y madera joven.
+Qué lo favorece: granizo, viento fuerte, heridas abiertas, humedad posterior.
+Clave visual: hojas rotas, nuez golpeada, brotes quebrados, heridas en madera, caída.
+Etapa: flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: guardar evento extremo; subir riesgo de pudriciones de ruezno, stem-end blight, entrada de hongos y pérdida de calidad.
+
+16) excessive_vigor_pollination_risk
+Nombre UX: Exceso de vigor que compite con carga
+Dónde pesa más: árboles con baja carga, poda fuerte, N/agua altos.
+Qué lo favorece: exceso de N, riego alto, poda fuerte, baja carga por helada/polinización, crecimiento vegetativo blando.
+Clave visual: brotes largos, canopia muy densa, sombreo, poca nuez, más plagas chupadoras.
+Etapa: vegetative_growth, flowering, fruit_set, fruit_fill.
+Prioridad BIO-G: Media-alta como modificador.
+Memoria: Media.
+Lectura BIO-G: no es enfermedad; aumenta sombreo, plagas y alternancia. No empujar N sin revisar carga.
+
+--------------------------------------------------------------------------------
+4.3 PLAGAS DIRECTAS DE NUEZ Y RUEZNO
+--------------------------------------------------------------------------------
+
+17) pecan_nut_casebearer
+Nombre UX: Gusano barrenador de la nuez / pecan nut casebearer
+Nombre técnico: Acrobasis nuxvorella
+Dónde pesa más: polinización/amarre y nuez pequeña; primera generación en racimos jóvenes.
+Qué lo favorece: historial de plaga, ausencia de monitoreo con trampas/observación, coincidencia con huevo en puntas de nuez, huertos en regiones con presencia.
+Clave visual: nueces pequeñas perforadas, seda/frass, racimos con nueces abortadas, daño en una o varias nueces del racimo, caída temprana.
+Etapa: fruit_set, early fruit_fill.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta; presión del huerto para siguiente ciclo.
+Lectura BIO-G: si nuez recién amarrada cae con perforación/frass, priorizar barrenador de nuez antes que aborto por NPK.
+
+18) hickory_shuckworm
+Nombre UX: Gusano barrenador del ruezno / hickory shuckworm
+Nombre técnico: Cydia caryana
+Dónde pesa más: llenado, endurecimiento de cáscara, madurez y apertura de ruezno.
+Qué lo favorece: historial del huerto, nueces con ruezno susceptible, fruta no recogida, generaciones tardías, falta de monitoreo.
+Clave visual: galerías en ruezno, manchas negras en túneles, ruezno pegado a cáscara, mala apertura, stick-tights, reducción de calidad.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Muy alta para calidad/cosecha.
+Memoria: Alta.
+Lectura BIO-G: si ruezno no abre o se queda pegado con túneles negros, revisar shuckworm; no confundir solo con estrés hídrico.
+
+19) pecan_weevil_regional
+Nombre UX: Picudo/barrenador de la nuez / pecan weevil
+Nombre técnico: Curculio caryae
+Dónde pesa más: regiones donde está presente o en cuarentena/vigilancia; de etapa agua a gel/dough y madurez.
+Qué lo favorece: historial/región, emergencia de adultos después de lluvia o riego tras sequía, suelos bajo copa, nueces en desarrollo.
+Clave visual: caída de nuez en water stage por picaduras; larvas blancas dentro de nuez; agujero redondo BB en cáscara; nuez no comercial.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Muy alta donde aplique; baja si zona libre o sin registro.
+Memoria: Muy alta; plaga regulatoria/regional.
+Lectura BIO-G: no activarlo universalmente en México/Chihuahua sin contexto. Si se sospecha, recomendar conservar muestra/foto y consultar sanidad local.
+
+20) stink_bug_leaf_footed_bug_kernel_spot
+Nombre UX: Chinches / leaf-footed bugs / mancha amarga de almendra
+Dónde pesa más: nuez en llenado a madurez; bordes con maleza o cultivos vecinos.
+Qué lo favorece: maleza, cultivos vecinos cosechados, calor, movimiento desde bordes, nuez en gel/dough.
+Clave visual: caída prematura si ataque temprano; puntos/manchas negras o oscuras en almendra; sabor desagradable/rancio/amargo; daño más fuerte en bordes.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: si almendra sale con manchas negras sin pudrición externa clara y hay chinches/bordes con maleza, subir riesgo.
+
+21) nut_curculio_regional
+Nombre UX: Curculio de nuez / picudos regionales
+Dónde pesa más: zonas donde exista presión; nuez joven.
+Qué lo favorece: historial regional, hospederos, falta de monitoreo.
+Clave visual: caída, perforaciones, larvas o daño interno.
+Etapa: fruit_set, fruit_fill.
+Prioridad BIO-G: Media regional.
+Memoria: Media.
+Lectura BIO-G: riesgo regional/futuro; no activar global sin evidencia.
+
+22) birds_rodents_nut_loss
+Nombre UX: Pérdida de nuez por aves, ardillas, roedores o fauna
+Dónde pesa más: madurez/cosecha, huertos pequeños, árboles aislados.
+Qué lo favorece: retraso de cosecha, nuez expuesta, suelo con nuez caída, fauna local.
+Clave visual: cáscaras rotas, nueces mordidas, pérdida por sectores, daño irregular.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Media; alta en huertos pequeños.
+Memoria: Baja-media.
+Lectura BIO-G: separar pérdida de calidad fisiológica de depredación/robo por fauna.
+
+--------------------------------------------------------------------------------
+4.4 PULGONES, MELAZA, ÁCAROS Y CHUPADORES
+--------------------------------------------------------------------------------
+
+23) yellow_aphid_complex
+Nombre UX: Complejo de pulgones amarillos del nogal
+Nombre técnico: Monellia caryella / Monelliopsis pecanis
+Dónde pesa más: primavera-verano y llenado; hoja funcional.
+Qué lo favorece: calor moderado, brotes/hoja tierna, baja presencia de enemigos naturales, polvo, estrés, manejo agresivo no selectivo, exceso de N.
+Clave visual: pulgones amarillos en envés, mielecilla pegajosa, fumagina/negrilla, hojas brillosas, menor fotosíntesis, posible reducción de llenado.
+Etapa: budbreak, vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Alta si reduce hoja en llenado o postcosecha.
+Lectura BIO-G: si usuario dice “hoja pegajosa”, “mielecilla” o “negrilla”, buscar pulgón antes que hongo genérico.
+
+24) black_pecan_aphid
+Nombre UX: Pulgón negro del nogal
+Nombre técnico: Melanocallis caryaefoliae
+Dónde pesa más: verano y final de temporada; hoja funcional y reservas.
+Qué lo favorece: calor, estrés, cultivares sensibles, falta de monitoreo, desequilibrio de enemigos naturales.
+Clave visual: puntos amarillos en hojas que luego se vuelven cafés/necrosis; pocas colonias pueden causar daño fuerte; defoliación; menor llenado.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Muy alta para hoja funcional.
+Memoria: Alta si causa defoliación antes de reservas.
+Lectura BIO-G: no necesita verse como una colonia enorme para ser serio. Si hay puntitos amarillos/cafés y defoliación, priorizar pulgón negro/ácaros.
+
+25) sooty_mold_honeydew_complex
+Nombre UX: Fumagina / negrilla sobre melaza
+Dónde pesa más: hojas, nuez, tallos cuando hay pulgones/escamas.
+Qué lo favorece: mielecilla, alta población de chupadores, canopia densa, humedad/polvo.
+Clave visual: capa negra superficial, pegajosa o sucia sobre hoja/nuez; puede reducir fotosíntesis y manchar.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad; media-alta para vigor si cubre hoja.
+Memoria: Media.
+Lectura BIO-G: la negrilla es consecuencia; buscar pulgón/chupador. No tratar como hongo principal.
+
+26) pecan_phylloxera
+Nombre UX: Filoxera del nogal / agallas en hoja o brote
+Dónde pesa más: brotación y hoja/brote nuevo.
+Qué lo favorece: historial, yemas infestadas, brote tierno, ausencia de manejo en dormancia/brotación.
+Clave visual: agallas en hojas, pecíolos o brotes; deformación; reducción de crecimiento si severa.
+Etapa: budbreak, vegetative_growth.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Media.
+Lectura BIO-G: si hay agallas claras en hoja/brote, no clasificar como hongo ni deficiencia.
+
+27) pecan_leaf_scorch_mite
+Nombre UX: Ácaro del quemado / pecan leaf scorch mite
+Dónde pesa más: verano, calor, sequía, interior de copa y hojas.
+Qué lo favorece: clima caliente y seco, polvo, estrés hídrico, desequilibrio por insecticidas, baja humedad.
+Clave visual: bronceado/quemado en envés, punteado, hojas con aspecto tostado, defoliación tardía.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Alta si defolia antes o durante reservas.
+Lectura BIO-G: si calor + baja HR + hoja bronceada, revisar envés; no asumir solo sequía.
+
+28) spider_mites_complex
+Nombre UX: Ácaros / araña roja
+Dónde pesa más: hojas en verano y estrés hídrico.
+Qué lo favorece: calor, baja HR, polvo, reducción de depredadores, estrés.
+Clave visual: punteado, telaraña fina, bronceado, hojas secas.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Media-alta si defolia.
+Lectura BIO-G: diferenciar de quemadura por salinidad o sequía con revisión de envés.
+
+29) scale_insects_complex
+Nombre UX: Escamas / cochinillas de madera
+Dónde pesa más: ramas, tronco, dormancia y brotación.
+Qué lo favorece: árboles viejos, madera no revisada, baja vigorosidad, material infestado.
+Clave visual: escamas pegadas en corteza/ramas, ramas débiles, melaza si hay especies productoras.
+Etapa: dormancy, budbreak, vegetative_growth.
+Prioridad BIO-G: Media.
+Memoria: Media.
+Lectura BIO-G: revisar en reposo si hay ramas débiles o corteza con costras.
+
+30) beneficial_disruption_aphid_mite_flare
+Nombre UX: Desequilibrio de enemigos naturales / rebrote de áfidos-ácaros
+Dónde pesa más: huertos con presión de pulgón/ácaro y manejo agresivo.
+Qué lo favorece: aplicaciones no selectivas, polvo, baja biodiversidad, estrés, exceso de N.
+Clave visual: plagas que regresan fuerte después de tratamientos, ausencia de depredadores, flare tardío.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta como contexto.
+Memoria: Media.
+Lectura BIO-G: BIO-G no recomienda productos; sugiere revisar estrategia IPM y monitoreo.
+
+--------------------------------------------------------------------------------
+4.5 DEFOLIADORES, BROTES Y MADERA
+--------------------------------------------------------------------------------
+
+31) fall_webworm
+Nombre UX: Gusano telarañero del nogal
+Nombre técnico: Hyphantria cunea
+Dónde pesa más: hojas y brotes, especialmente árboles jóvenes o infestaciones severas.
+Qué lo favorece: historial, baja revisión, colonias en telarañas, final de temporada.
+Clave visual: telarañas en ramas, hojas comidas dentro de la bolsa, defoliación localizada o severa.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta; alta en árboles jóvenes.
+Memoria: Media si defolia fuerte.
+Lectura BIO-G: si hay telaraña visible, clasificar como defoliador; no confundir con enfermedad.
+
+32) walnut_caterpillar
+Nombre UX: Gusano de la hoja / walnut caterpillar
+Dónde pesa más: follaje, verano.
+Qué lo favorece: huevos en envés, poblaciones altas, falta de monitoreo.
+Clave visual: defoliación sin telarañas, grupos de larvas, hojas comidas.
+Etapa: vegetative_growth, fruit_fill.
+Prioridad BIO-G: Media-alta.
+Memoria: Media-alta si defolia en llenado.
+Lectura BIO-G: ausencia de telaraña ayuda a distinguir de fall webworm.
+
+33) pecan_sawfly
+Nombre UX: Mosca sierra del nogal
+Dónde pesa más: hojas, brotación y crecimiento.
+Qué lo favorece: presión regional, primavera, hojas tiernas.
+Clave visual: perforaciones redondas/raspado tipo tiros, larvas en envés, defoliación si severa.
+Etapa: budbreak, vegetative_growth.
+Prioridad BIO-G: Media regional.
+Memoria: Baja-media.
+Lectura BIO-G: si daño parece “tiros de munición” en hoja, revisar sawfly/larvas.
+
+34) twig_girdler_pruner_complex
+Nombre UX: Cortador/anillador de ramillas
+Dónde pesa más: ramas pequeñas, final de temporada y dormancia visible por ramitas caídas.
+Qué lo favorece: historial, árboles cerca de monte, poca limpieza.
+Clave visual: ramitas cortadas/anilladas, extremos caídos, corte casi limpio.
+Etapa: vegetative_growth, harvest_maturity, post_harvest, dormancy.
+Prioridad BIO-G: Media.
+Memoria: Baja-media, alta si afecta formación juvenil.
+Lectura BIO-G: no es sequía si el corte es limpio/circular en ramilla.
+
+35) fire_ant_orchard_floor_context
+Nombre UX: Hormigas / problema de piso y cosecha
+Dónde pesa más: suelo de huerto, cosecha, árboles jóvenes.
+Qué lo favorece: piso sucio, vegetación, cosecha retrasada, condiciones favorables.
+Clave visual: hormigueros, daño/contaminación en nuez caída o dificultad de cosecha.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Baja-media; más UX/operativo.
+Memoria: Baja.
+Lectura BIO-G: útil para huertos pequeños/comerciales por cosecha, no confundir con riesgo de árbol.
+
+--------------------------------------------------------------------------------
+4.6 ENFERMEDADES DE HOJA, NUEZ Y RUEZNO
+--------------------------------------------------------------------------------
+
+36) pecan_scab
+Nombre UX: Roña / costra del nogal
+Nombre técnico: Venturia effusa
+Dónde pesa más: regiones húmedas, primaveras/veranos lluviosos, cultivares susceptibles, tejido joven, hojas y ruezno.
+Qué lo favorece: lluvia, alta humedad, hoja/nuez mojada, canopia cerrada, baja ventilación, tejido joven creciendo.
+Clave visual: lesiones oliva-café-negras, costrosas o aterciopeladas en hoja, brote y ruezno; manchas negras en shuck; nuez que cae o no desarrolla.
+Etapa: budbreak, vegetative_growth, flowering, fruit_set, fruit_fill.
+Prioridad BIO-G: Muy alta en regiones húmedas; media en norte seco salvo lluvias/humedad.
+Memoria: Media-alta por inóculo y defoliación.
+Lectura BIO-G: si HR/lluvia + tejido joven + manchas negras/costrosas, alertar scab. En norte seco usarlo como riesgo condicional, no permanente.
+
+37) anthracnose_pecan
+Nombre UX: Antracnosis del nogal
+Dónde pesa más: hoja, brote y ruezno en condiciones húmedas; puede aparecer tarde.
+Qué lo favorece: humedad prolongada, lluvia, canopia cerrada, estrés, tejido susceptible.
+Clave visual: manchas, necrosis, quemado de hoja, shuck ennegrecido en algunos casos, caída.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta en húmedo.
+Memoria: Alta si defolia o afecta cosecha.
+Lectura BIO-G: diferenciar de scab, pulgón negro, ácaros y quemadura por salinidad.
+
+38) powdery_mildew_pecan
+Nombre UX: Cenicilla / polvo blanco en nuez u hoja
+Dónde pesa más: nuez joven, hojas, brotes; noches frescas/húmedas y canopia cerrada.
+Qué lo favorece: HR alta, mala ventilación, tejido joven.
+Clave visual: polvo blanco/gris en nuez o hoja; nuez pequeña o con russet/pardo si infección temprana.
+Etapa: budbreak, vegetative_growth, fruit_set, fruit_fill.
+Prioridad BIO-G: Media.
+Memoria: Baja-media.
+Lectura BIO-G: si polvo blanco claro, separar de residuo de aplicación o polvo del camino.
+
+39) downy_spot_leaf_blotch_complex
+Nombre UX: Manchas foliares secundarias / downy spot
+Dónde pesa más: regiones húmedas, hoja funcional, árboles con poca ventilación.
+Qué lo favorece: humedad, lluvia, tejido foliar, canopia densa.
+Clave visual: manchas en hoja, amarillamiento, pérdida de área foliar.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Alta si defolia temprano.
+Lectura BIO-G: riesgo secundario; agrupar como “manchas foliares” si no hay clave visual precisa.
+
+40) vein_spot_leaf_spot_complex
+Nombre UX: Mancha de nervadura / manchas de hoja
+Dónde pesa más: hoja, regiones húmedas.
+Qué lo favorece: lluvia, humedad, tejido susceptible, inóculo.
+Clave visual: lesiones asociadas a nervaduras o manchas necróticas; posible defoliación si severa.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Media-alta si defolia.
+Lectura BIO-G: no sobre-especificar si no hay imagen; mantener como complejo.
+
+41) bacterial_leaf_scorch_xylella
+Nombre UX: Quemadura bacteriana de hoja / Xylella
+Nombre técnico: Xylella fastidiosa
+Dónde pesa más: verano cálido, alta demanda hídrica, regiones donde esté presente.
+Qué lo favorece: vectores xilemáticos (chicharritas/sharpshooters/spittlebugs), material infectado, estrés hídrico.
+Clave visual: bordes/tips cafés como quemados, patrón que parece estrés de agua, síntomas en algunas ramas/hojas, reducción de crecimiento y producción.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Muy alta si se confirma.
+Lectura BIO-G: BIO-G no confirma Xylella; si el “quemado” no cuadra con agua/CE/calor y se repite por ramas, sugerir diagnóstico técnico.
+
+42) shuck_decline_dieback
+Nombre UX: Decaimiento / muerte del ruezno
+Dónde pesa más: llenado avanzado, madurez y cosecha; árboles con carga pesada.
+Qué lo favorece: carga excesiva, estrés hídrico, árbol viejo/grande, falta de agua en llenado, calor, estrés general, cultivares prolíficos.
+Clave visual: ruezno se oscurece desde punta o zonas, se pone negro, puede abrir como tulipán, nuez sin almendra o con mala calidad.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Muy alta para calidad.
+Memoria: Alta; se relaciona con carga/agua/alternancia.
+Lectura BIO-G: tratar como problema estrés-carga-ruezno; no siempre es hongo primario. Guardar carga alta/agua baja.
+
+43) stem_end_blight
+Nombre UX: Tizón de la base del ruezno / stem-end blight
+Dónde pesa más: madurez y cosecha.
+Qué lo favorece: estrés, humedad, posibles hongos asociados, carga pesada, heridas.
+Clave visual: mancha café/negra cerca del pedúnculo/base del ruezno que avanza; shuck negro; líquido/almendra afectada.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: si ennegrecimiento inicia cerca del pedúnculo/base, separar de shuck dieback distal y de shuckworm.
+
+44) phytophthora_shuck_kernel_rot
+Nombre UX: Pudrición de ruezno y almendra por Phytophthora
+Nombre técnico: Phytophthora cactorum u otros contextos
+Dónde pesa más: nuez/ruezno, humedad alta, lluvia/aspersión, suelos/ambiente húmedos.
+Qué lo favorece: agua libre, lluvia, humedad prolongada, nuez mojada, drenaje/ambiente favorable.
+Clave visual: pudrición que inicia en extremo de fruto/ruezno o base según caso, ruezno negro, suave, húmedo; almendra inservible.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta en humedad.
+Memoria: Media-alta.
+Lectura BIO-G: activar con humedad alta/ruezno negro húmedo; diferenciar de estrés seco o shuckworm.
+
+45) kernel_discoloration_complex
+Nombre UX: Manchado / oscurecimiento de almendra
+Dónde pesa más: llenado a cosecha y postcosecha.
+Qué lo favorece: chinches, shuckworm, hongos, estrés hídrico, retraso de cosecha, humedad, almacenamiento deficiente.
+Clave visual: almendra con puntos negros, zonas oscuras, mal olor/sabor, pudrición o manchas internas.
+Etapa: fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad.
+Memoria: Media.
+Lectura BIO-G: no diagnosticar una causa única sin abrir nuez y revisar shuck, perforaciones, chinches y humedad.
+
+================================================================================
+5. RIESGOS ABIÓTICOS Y FISIOLÓGICOS QUE DEBEN ENTRAR AL MOTOR
+================================================================================
+
+Formato:
+Riesgo | Qué lo dispara | Qué se observa | Momento sensible | Lectura BIO-G v1 | Prioridad
+
+1) drought_stress_kernel_fill
+Nombre UX: Estrés hídrico en llenado de nuez
+Qué lo dispara: soilMoisture baja, evapotranspiración alta, calor, viento, riego insuficiente, raíz limitada, competencia de maleza.
+Qué se observa: nuez chica, mala almendra, almendra arrugada/wafery, caída, más daño por calor/salinidad, shuck decline, alternancia.
+Momento sensible: fruit_set, fruit_fill, post_harvest.
+Lectura BIO-G: alerta fuerte si humedad baja coincide con llenado de almendra. Explicar “puede bajar peso y calidad, aunque la nuez se vea formada”.
+Prioridad: Muy alta.
+
+2) water_stress_light_kernel_wafery
+Nombre UX: Almendra liviana / mal llenado
+Qué lo dispara: falta de agua durante kernel fill, carga excesiva, defoliación, N/K/Zn insuficiente, salinidad, calor.
+Qué se observa: nuez con bajo peso, almendra delgada, arrugada, poco aceite/proteína, menor calidad.
+Momento sensible: fruit_fill, harvest_maturity.
+Lectura BIO-G: leer como resultado de agua + carga + hoja funcional + nutrición; no como solo fertilizante.
+Prioridad: Muy alta para calidad.
+
+3) waterlogging_anoxia
+Nombre UX: Exceso de agua / raíz sin oxígeno
+Qué lo dispara: soilMoisture alta prolongada, drenaje pobre, compactación, riego pesado, lluvia.
+Qué se observa: marchitez con suelo húmedo, clorosis, raíz oscura, Fe bloqueado, caída de vigor.
+Momento sensible: root_establishment y cualquier etapa con suelo saturado.
+Lectura BIO-G: “no riegues por reflejo si ya está mojado”. Revisar drenaje y compactación.
+Prioridad: Muy alta.
+
+4) salinity_marginal_leaf_burn
+Nombre UX: Quemado marginal por salinidad/sales
+Qué lo dispara: EC alta, sales acumuladas, agua salina, drenaje pobre, lavado insuficiente, calor.
+Qué se observa: bordes de hoja quemados, clorosis, bajo vigor, nuez chica, síntomas parecidos a sequía.
+Momento sensible: todo el ciclo; crítico en establecimiento y llenado.
+Lectura BIO-G: si EC alta + bordes quemados, no asumir falta de N. Recomendar revisar agua/suelo/lavado.
+Prioridad: Muy alta en norte árido.
+
+5) heat_stress_sunburn
+Nombre UX: Estrés por calor / golpe de sol
+Qué lo dispara: >38-40 °C, radiación alta, baja HR, riego bajo, canopia abierta, defoliación.
+Qué se observa: hoja quemada, nuez/ruezno dañado, mayor caída, menor llenado, estrés visible en copa.
+Momento sensible: fruit_set, fruit_fill, harvest_maturity.
+Lectura BIO-G: cruzar temperatura + humedad suelo + defoliación + etapa. Si hay hoja dañada, guardar memoria.
+Prioridad: Alta.
+
+6) zinc_deficiency_rosette_little_leaf
+Nombre UX: Deficiencia de zinc / roseta / hoja chica
+Qué lo dispara: pH alto/calizo, baja disponibilidad de Zn, falta de aplicaciones tempranas, suelos arenosos, Wichita más sensible, exceso de P/Mn/N como contexto.
+Qué se observa: entrenudos cortos, hojas pequeñas, clorosis internerval, bordes ondulados, brotes en roseta, bajo crecimiento, baja producción.
+Momento sensible: budbreak, vegetative_growth, juvenile_vegetative.
+Lectura BIO-G: en nogal, zinc es central. Si hay hoja chica/roseta + pH alto, sugerir confirmar con análisis foliar; no confundir con solo agua.
+Prioridad: Muy alta.
+
+7) iron_chlorosis_high_ph_waterlogging
+Nombre UX: Clorosis férrica por pH alto o exceso de agua
+Qué lo dispara: pH alto/calizo, bicarbonatos, mal drenaje, exceso de riego, suelos fríos/húmedos.
+Qué se observa: hojas nuevas amarillas con nervaduras verdes; severidad variable por ramas/árboles.
+Momento sensible: vegetative_growth.
+Lectura BIO-G: si pH alto + hojas nuevas amarillas internervales, sugerir Fe/pH/drenaje; no N.
+Prioridad: Alta.
+
+8) nickel_deficiency_mouse_ear
+Nombre UX: Deficiencia de níquel / mouse ear
+Qué lo dispara: suelos arenosos/calizos, frío, árboles jóvenes, desequilibrios por zinc excesivo, baja disponibilidad de Ni.
+Qué se observa: hojas pequeñas y redondeadas como “oreja de ratón”, brotación lenta, follaje escaso, madera quebradiza.
+Momento sensible: budbreak, vegetative_growth.
+Lectura BIO-G: riesgo avanzado; no diagnosticar sin observación/análisis. Guardar como diferencial si hoja chica no cuadra con Zn.
+Prioridad: Media-alta.
+
+9) potassium_low_kernel_fill_context
+Nombre UX: Potasio bajo en llenado / baja calidad
+Qué lo dispara: K bajo, alta carga, salinidad, agua irregular, extracción por fruto, hojas con K insuficiente antes de llenado.
+Qué se observa: llenado pobre, bajo peso, estrés hídrico funcional, hoja con síntomas si severo.
+Momento sensible: fruit_fill.
+Lectura BIO-G: K pesa en llenado, pero no recomendar dosis sin análisis. Usar como prioridad de revisión.
+Prioridad: Alta.
+
+10) nitrogen_deficiency_kernel_fill_context
+Nombre UX: N bajo durante demanda alta
+Qué lo dispara: N bajo, alta carga, suelo pobre, baja mineralización, lixiviación, manejo insuficiente.
+Qué se observa: clorosis general, bajo vigor, baja calidad, nueces pequeñas/mal llenas, senescencia temprana en llenado.
+Momento sensible: vegetative_growth y fruit_fill.
+Lectura BIO-G: si N bajo y etapa de llenado, revisar junto con agua y carga. No confundir con Fe (internerval) o sales (bordes).
+Prioridad: Media-alta.
+
+11) nitrogen_excess_vigor_freeze_pest_risk
+Nombre UX: Exceso de N / vigor blando
+Qué lo dispara: N alto, riego alto, baja carga, poda fuerte.
+Qué se observa: brotes largos, canopia densa, sombreo, más pulgones/ácaros, madera susceptible a helada temprana, menor calidad.
+Momento sensible: vegetative_growth, fruit_fill, post_harvest.
+Lectura BIO-G: no empujar N si hay vigor alto y carga baja. Vincular a alternancia y plagas.
+Prioridad: Alta como modificador.
+
+12) boron_chloride_toxicity_context
+Nombre UX: Toxicidad por boro/cloruros / quemado de borde
+Qué lo dispara: agua con B/Cl, salinidad, mal drenaje, acumulación por riego.
+Qué se observa: quemado marginal parecido a salinidad, necrosis, bajo vigor.
+Momento sensible: vegetative_growth, fruit_fill.
+Lectura BIO-G: si hojas con borde quemado y EC/B/Cl sospechosos, pedir análisis de agua/suelo. No corregir con más fertilizante.
+Prioridad: Media-alta.
+
+13) crop_overload_shuck_decline_context
+Nombre UX: Sobrecarga del árbol / decaimiento de ruezno
+Qué lo dispara: carga muy alta, árbol viejo, riego insuficiente, hoja limitada, calor, déficit de reservas.
+Qué se observa: nuez vana, shuck decline, almendra mal llena, alternancia al siguiente año.
+Momento sensible: fruit_fill, harvest_maturity.
+Lectura BIO-G: si año cargado + agua/hoja limitadas, alertar riesgo de calidad y alternancia.
+Prioridad: Muy alta.
+
+14) alternate_bearing_memory
+Nombre UX: Alternancia productiva
+Qué lo dispara: carga alta un año, estrés en llenado/postcosecha, defoliación, baja reserva, falta de manejo de carga, helada/polinización variable.
+Qué se observa: un año carga mucho y otro poco, nuez chica en año cargado, brotes/carga desbalanceados.
+Momento sensible: fruit_fill, post_harvest, dormancy siguiente.
+Lectura BIO-G: guardar historial; no tratar cada año como independiente.
+Prioridad: Muy alta en nogal.
+
+15) premature_nut_drop_physiological
+Nombre UX: Caída prematura de nuez
+Qué lo dispara: aborto natural, mala polinización, estrés hídrico, plagas, carga excesiva, salinidad, calor.
+Qué se observa: caída en ondas, nueces pequeñas o medianas en suelo, racimos raleados.
+Momento sensible: fruit_set, fruit_fill.
+Lectura BIO-G: preguntar cuándo cae y si hay perforaciones/frass. Separar caída natural, polinización, sequía y plaga.
+Prioridad: Alta.
+
+16) vivipary_preharvest_sprouting_context
+Nombre UX: Germinación en árbol / viviparidad / brotado prematuro
+Qué lo dispara: condiciones húmedas/cálidas cerca de madurez, retraso de cosecha, variedad/sitio, humedad en ruezno.
+Qué se observa: nuez germinando antes de cosecha, calidad perdida.
+Momento sensible: harvest_maturity.
+Lectura BIO-G: riesgo de cosecha/calidad; activar con humedad/lluvia en madurez y retraso de cosecha.
+Prioridad: Media-alta regional.
+
+17) herbicide_phytotoxicity_drift
+Nombre UX: Fitotoxicidad / deriva de herbicida
+Qué lo dispara: aplicación reciente, deriva de lote vecino, calor, viento, contacto con hojas/tronco joven.
+Qué se observa: daño por línea/borde, deformación, quemado uniforme, patrón no biológico.
+Momento sensible: cualquier etapa.
+Lectura BIO-G: preguntar por aplicación reciente y dirección del viento antes de asumir enfermedad.
+Prioridad: Alta como descarte.
+
+18) weed_competition_orchard_floor
+Nombre UX: Competencia de maleza / piso de huerto
+Qué lo dispara: maleza alta, cubierta mal manejada, falta de humedad, competencia por N/agua, cosecha en piso sucio.
+Qué se observa: bajo vigor, estrés hídrico, dificultad de cosecha, más humedad local, refugio de plagas.
+Momento sensible: establecimiento, fruit_fill, harvest_maturity.
+Lectura BIO-G: no es plaga del árbol, pero afecta agua/nutrición/cosecha. Útil para recomendaciones de revisión.
+Prioridad: Media.
+
+================================================================================
+6. PRIORIZACIÓN POR PERFIL BIO-G
+================================================================================
+
+Regla:
+El catálogo base es el mismo para todos los perfiles de Nogal. El perfil solo modifica sensibilidad, ventana relativa, confianza y mensajes. No se crea un catálogo totalmente separado por variedad.
+
+NG-SKIP / Nogal general
+- Peso alto conservador: drought_stress_kernel_fill, salinity_marginal_leaf_burn, zinc_deficiency_rosette_little_leaf, yellow_aphid_complex, black_pecan_aphid, pecan_nut_casebearer, hickory_shuckworm, floral_dichogamy_mismatch, alternate_bearing_memory.
+- Mensaje: “Como no sabemos la variedad ni el paquete de polinización, BIO-G usa alertas conservadoras.”
+- No asumir que tiene Western/Wichita si el usuario no lo dijo.
+
+NG-01 Western Schley
+- Sube: alternate_bearing_memory, pecan_scab solo si hay humedad/región, black_pecan_aphid/aphids, drought_stress_kernel_fill, crop_overload_shuck_decline_context.
+- Baja relativa: zinc_deficiency comparado con Wichita, pero no desaparece.
+- Mensaje: “Western es fuerte en el norte, pero el llenado y la alternancia dependen mucho de agua, hoja funcional y carga.”
+
+NG-02 Wichita
+- Sube: zinc_deficiency_rosette_little_leaf, black_pecan_aphid, yellow_aphid_complex, drought_stress_kernel_fill, shuck_decline_dieback, pecan_scab si hay humedad.
+- Nota: Wichita puede ser más precoz/prolífica y sensible a Zn; cuidar mucho hoja, zinc, carga y agua.
+- Mensaje: “En Wichita, hoja chica/roseta y mala calidad de llenado ameritan revisar zinc, agua y carga.”
+
+NG-03 Bloque Western/Wichita
+- Sube: plagas y estrés por alta carga comercial: casebearer, shuckworm, aphids, kernel_fill, salinidad, alternancia.
+- Baja relativa: floral_dichogamy_mismatch si el bloque está bien plantado, pero mantener riesgo si el usuario no confirmó proporciones.
+- Mensaje: “El bloque Western/Wichita ayuda a polinización, pero no elimina riesgos de clima, helada o desfase.”
+
+NG-04 Criollo / Regional / Huerto viejo
+- Sube: alternate_bearing_memory, crop_overload_shuck_decline_context, trunk_borer_ambrosia_complex, wood_canker_decline_complex, birds_rodents_nut_loss, variable_pollination, salinity/root stress, plagas foliares si bajo manejo.
+- Nota: más variabilidad, menos confianza en fechas y calidad.
+- Mensaje: “En criollo/huerto viejo, BIO-G prioriza patrón del huerto, carga, agua y memoria antes que variedad exacta.”
+
+NG-05 Temprano / Pawnee-Kanza-Cheyenne
+- Sube: frost_budbreak_flowering_damage si brota/florece temprano, floral_dichogamy_mismatch si no hay polinizador complementario, pecan_weevil_regional en zonas con presencia por transición temprana a gel/dough, drought_stress_kernel_fill, shuckworm.
+- Matiz: Kanza puede mostrar mejor llenado en ciertos escenarios de estrés que otros cultivares, pero no se marca inmune.
+- Mensaje: “Los tempranos pueden adelantar riesgo de helada y cosecha; vigila sincronía y etapa real.”
+
+================================================================================
+7. MONITOREO Y DIAGNÓSTICO: PROTOCOLO MÍNIMO CONFIABLE
+================================================================================
+
+Frecuencia recomendada:
+- Reposo: 1 revisión estructural cada 2-4 semanas o después de helada, poda, viento o granizo.
+- Brotación a pre-polinización: 1-2 revisiones por semana si hay historial de phylloxera, áfidos, zinc o helada.
+- Floración / polinización: 2 revisiones por semana si hay clima cambiante; registrar viento, lluvia, helada y sincronía macho/hembra.
+- Amarre a nuez pequeña: 1-2 revisiones por semana; buscar caída, perforación, huevos/frass de casebearer.
+- Llenado de nuez: 1-2 revisiones por semana; 2-3 si hay pulgón negro/amarillo, ácaros, calor, salinidad o sequía.
+- Madurez/cosecha: revisar apertura de ruezno, stick-tights, daño de shuckworm, chinches, picudo regional, manchado, calidad de almendra y piso de huerto.
+- Postcosecha: revisar hoja activa, defoliación, áfidos/ácaros tardíos, humedad, salinidad y reservas.
+
+Dónde revisar:
+- Orillas del huerto.
+- Zonas bajas/húmedas.
+- Zonas salinas o con suelo blanco/costras.
+- Zonas secas/calientes.
+- Árboles jóvenes y árboles que no arrancan.
+- Árboles con carga alta y carga baja.
+- Envés de hojas, brotes tiernos, racimos, nuez pequeña, ruezno, almendra abierta, tronco, base del árbol, raíces sospechosas, heridas y piso de huerto.
+- Árboles sanos, débiles, bordes y parches; no revisar solo árboles bonitos.
+
+Preguntas mínimas de diagnóstico:
+1. ¿En qué etapa visible está el nogal? ¿Brotando, floreando, amarrando, llenando nuez, abriendo ruezno o postcosecha?
+2. ¿El problema aparece por parches, por línea, por borde o uniforme?
+3. ¿El suelo está seco, húmedo o saturado?
+4. ¿La CE/salinidad está alta o hay costras de sal?
+5. ¿Hubo lluvia, granizo, helada, calor extremo o viento fuerte?
+6. ¿Hay melaza, negrilla, pulgones, ácaros, telarañas o insectos visibles?
+7. ¿La nuez caída tiene perforación, frass, seda, túneles o larva?
+8. ¿El ruezno abre normal o se queda pegado?
+9. ¿La almendra sale llena, vana, arrugada, negra o manchada?
+10. ¿Hay Western/Wichita u otra variedad cerca para polinización?
+11. ¿Se repite cada año?
+12. ¿El árbol perdió hojas temprano el ciclo anterior?
+13. ¿El árbol cargó demasiado el año pasado?
+14. ¿Hubo aplicaciones recientes o deriva?
+15. ¿Hay aserrín/hoyos en tronco o ramas?
+
+================================================================================
+8. REGLAS PARA EL MOTOR BIO-G
+================================================================================
+
+Estas reglas traducen el documento a lógica de producto. No son diagnóstico definitivo; son disparadores de riesgo y mensajes de revisión.
+
+--------------------------------------------------------------------------------
+8.1 Reglas raíz/suelo
+--------------------------------------------------------------------------------
+
+Señal:
+soilMoisture alta + resistance alta + etapa establecimiento/vegetativo + bajo vigor o marchitez
+Aumenta riesgo:
+waterlogging_anoxia, root_crown_rot_anoxia_complex, soil_compaction_root_stress
+Salida:
+“Riesgo de raíz por exceso de humedad o poca aireación. Revise cuello, raíces y drenaje antes de regar más.”
+Confianza:
+media si solo sensor; alta si hay marchitez con suelo húmedo.
+
+Señal:
+soilMoisture baja + temperatura alta + etapa fruit_set/fruit_fill/post_harvest
+Aumenta riesgo:
+drought_stress_kernel_fill, water_stress_light_kernel_wafery, shuck_decline_dieback, alternate_bearing_memory
+Salida:
+“Estrés hídrico en etapa sensible. Puede bajar llenado de almendra, calidad de nuez y reservas del siguiente ciclo.”
+
+Señal:
+EC alta + borde de hoja quemado + pH alto o drenaje pobre
+Aumenta riesgo:
+salinity_marginal_leaf_burn, iron_chlorosis_high_ph_waterlogging, root stress
+Salida:
+“Condición compatible con sales o bloqueo por suelo/agua. Evite empujar fertilización sin revisar agua, CE y drenaje.”
+
+Señal:
+árbol se seca repentino por focos + calor/verano + suelo alcalino/historial regional
+Aumenta riesgo:
+phymatotrichopsis_root_rot
+Salida:
+“Secamiento por focos puede ser compatible con pudrición texana de raíz. Revise raíces/corona y confirme localmente; no es un diagnóstico por sensor.”
+
+--------------------------------------------------------------------------------
+8.2 Reglas dormancia/floración/polinización
+--------------------------------------------------------------------------------
+
+Señal:
+dormancy/budbreak + chill bajo/modelo + brotación irregular
+Aumenta riesgo:
+insufficient_chill_irregular_budbreak, floral_dichogamy_mismatch
+Salida:
+“Frío invernal bajo puede causar brotación/floración dispareja y baja carga. BIO-G no lo leerá como falla de NPK.”
+
+Señal:
+flowering + helada reportada o temperatura bajo cero
+Aumenta riesgo:
+frost_budbreak_flowering_damage, poor_wind_pollination_low_fruit_set
+Salida:
+“Riesgo de daño por helada en floración. Revise flores femeninas, brotes tiernos y nuez recién amarrada.”
+
+Señal:
+flowering + lluvia/humedad alta/viento bajo + baja carga posterior
+Aumenta riesgo:
+poor_wind_pollination_low_fruit_set
+Salida:
+“La baja carga puede venir de clima y polinización. Revise sincronía de flor masculina/femenina y variedad compatible cercana.”
+
+Señal:
+flowering/fruit_set + usuario no sabe variedad/polinizador
+Aumenta riesgo:
+floral_dichogamy_mismatch con confianza media
+Salida:
+“Como no sabemos el paquete de polinización, BIO-G mantiene una alerta conservadora de sincronía floral.”
+
+--------------------------------------------------------------------------------
+8.3 Reglas plagas de nuez/ruezno
+--------------------------------------------------------------------------------
+
+Señal:
+fruit_set + nuez pequeña caída + perforación/frass/seda
+Aumenta riesgo:
+pecan_nut_casebearer
+Salida:
+“Daño compatible con gusano barrenador de la nuez. Revise racimos, nueces pequeñas perforadas y frass; confirme en campo.”
+
+Señal:
+fruit_fill/harvest_maturity + ruezno con túneles/manchas negras + stick-tight
+Aumenta riesgo:
+hickory_shuckworm
+Salida:
+“Ruezno pegado o con túneles negros puede apuntar a barrenador del ruezno. Revise apertura y galerías.”
+
+Señal:
+fruit_fill/harvest_maturity + zona con pecan_weevil + lluvia/riego tras sequía + agujero redondo/larva
+Aumenta riesgo:
+pecan_weevil_regional
+Salida:
+“Daño compatible con picudo de la nuez en zona de riesgo. Conserve muestra/foto y consulte sanidad local.”
+
+Señal:
+fruit_fill/harvest_maturity + almendra con punto negro/amargo + bordes con maleza/cultivos
+Aumenta riesgo:
+stink_bug_leaf_footed_bug_kernel_spot
+Salida:
+“Mancha interna de almendra puede venir de chinches. Revise bordes, maleza y cultivos vecinos.”
+
+--------------------------------------------------------------------------------
+8.4 Reglas pulgones/ácaros/hoja
+--------------------------------------------------------------------------------
+
+Señal:
+vegetative_growth/fruit_fill + melaza pegajosa + negrilla
+Aumenta riesgo:
+yellow_aphid_complex, sooty_mold_honeydew_complex
+Salida:
+“La negrilla suele crecer sobre mielecilla. Revise primero pulgones/chupadores en el envés de la hoja.”
+
+Señal:
+fruit_fill/post_harvest + manchas amarillas que se vuelven cafés + caída de hoja
+Aumenta riesgo:
+black_pecan_aphid
+Salida:
+“Pocas colonias de pulgón negro pueden causar daño fuerte. Revise hojas compuestas y guarde memoria si hay defoliación.”
+
+Señal:
+calor + baja HR + hojas bronceadas/punteadas + envés afectado
+Aumenta riesgo:
+pecan_leaf_scorch_mite, spider_mites_complex
+Salida:
+“Condición favorable a ácaros. Revise envés; no asumir solo sequía o sales.”
+
+Señal:
+budbreak + agallas en hoja/brote
+Aumenta riesgo:
+pecan_phylloxera
+Salida:
+“Agallas en brote/hoja son compatibles con phylloxera; no parece hongo común ni deficiencia.”
+
+--------------------------------------------------------------------------------
+8.5 Reglas enfermedades hoja/nuez/ruezno
+--------------------------------------------------------------------------------
+
+Señal:
+budbreak/fruit_set/fruit_fill + lluvia/HR alta + manchas negras/costrosas en hoja o ruezno
+Aumenta riesgo:
+pecan_scab
+Salida:
+“Ambiente favorable a roña/costra del nogal. Revise tejido joven, hojas y ruezno; en zonas secas la alerta depende de humedad real.”
+
+Señal:
+fruit_fill/harvest_maturity + ruezno negro desde punta + carga alta/estrés hídrico
+Aumenta riesgo:
+shuck_decline_dieback, crop_overload_shuck_decline_context
+Salida:
+“Ruezno negro puede estar ligado a estrés y carga alta. Revise agua, carga, hoja funcional y calidad de almendra.”
+
+Señal:
+harvest_maturity + ruezno negro húmedo/blando + humedad/lluvia
+Aumenta riesgo:
+phytophthora_shuck_kernel_rot, stem_end_blight
+Salida:
+“Riesgo de pudrición de ruezno/almendra. Revise si inicia en base/punta y si la almendra ya está afectada.”
+
+Señal:
+vegetative_growth + borde/tips quemados + patrón por ramas + no explica agua/EC
+Aumenta riesgo:
+bacterial_leaf_scorch_xylella como sospecha
+Salida:
+“Quemado de hoja persistente puede requerir diagnóstico técnico. BIO-G no confirma Xylella solo por imagen/sensor.”
+
+--------------------------------------------------------------------------------
+8.6 Reglas nutrición/calidad
+--------------------------------------------------------------------------------
+
+Señal:
+budbreak/vegetative_growth + hoja chica + entrenudos cortos + pH alto
+Aumenta riesgo:
+zinc_deficiency_rosette_little_leaf
+Salida:
+“Síntomas compatibles con roseta por zinc. En nogal el Zn es clave; confirme con análisis foliar y historial de aplicaciones.”
+
+Señal:
+hoja nueva amarilla con nervadura verde + pH alto o suelo húmedo
+Aumenta riesgo:
+iron_chlorosis_high_ph_waterlogging
+Salida:
+“Amarillamiento internerval puede ser hierro bloqueado por pH o exceso de agua. Revise drenaje y análisis antes de corregir.”
+
+Señal:
+fruit_fill + N alto + vigor alto + carga baja
+Aumenta riesgo:
+nitrogen_excess_vigor_freeze_pest_risk, alternate_bearing_memory
+Salida:
+“Exceso de vigor puede competir con nuez y favorecer plagas. No empujar N sin revisar carga y etapa.”
+
+Señal:
+fruit_fill + carga alta + humedad baja + hoja dañada
+Aumenta riesgo:
+water_stress_light_kernel_wafery, crop_overload_shuck_decline_context
+Salida:
+“Carga alta con poca agua/hoja puede dejar almendra ligera o vana y aumentar alternancia.”
+
+--------------------------------------------------------------------------------
+8.7 Reglas cosecha/postcosecha
+--------------------------------------------------------------------------------
+
+Señal:
+harvest_maturity + ruezno no abre + túneles/frass
+Aumenta riesgo:
+hickory_shuckworm, stick_tight_shuck_opening_issue
+Salida:
+“Ruezno que no abre puede venir de plaga o estrés. Revise túneles y calidad de almendra.”
+
+Señal:
+harvest_maturity + lluvia/humedad + nuez en suelo
+Aumenta riesgo:
+wet_harvest_quality_risk, harvest_floor_contamination_context
+Salida:
+“Cosecha húmeda o retrasada puede bajar calidad. Revise secado, piso y nuez dañada.”
+
+Señal:
+post_harvest + defoliación alta
+Aumenta riesgo:
+low_reserve_next_cycle_risk, alternate_bearing_memory
+Salida:
+“La postcosecha sigue activa. Pérdida temprana de hoja puede reducir reservas y carga del siguiente ciclo.”
+
+================================================================================
+9. QUÉ SÍ DEBERÍA QUEDAR DADO DE ALTA EN BIO-G
+================================================================================
+
+Grupo UX: raiz_suelo_madera
+Risk IDs:
+- phymatotrichopsis_root_rot
+- cotton_root_rot_texas_root_rot
+- root_crown_rot_anoxia_complex
+- crown_gall
+- pecan_root_knot_nematode
+- soil_compaction_root_stress
+- waterlogging_anoxia
+- salinity_root_stress_context
+- trunk_borer_ambrosia_complex
+- wood_canker_decline_complex
+- rodent_girdling_damage
+- poor_site_replant_decline_context
+
+Grupo UX: dormancia_brotacion_floracion_polinizacion
+Risk IDs:
+- insufficient_chill_irregular_budbreak
+- frost_budbreak_flowering_damage
+- floral_dichogamy_mismatch
+- poor_wind_pollination_low_fruit_set
+- rain_humidity_pollination_stress
+- hail_wound_infection_risk
+- spring_freeze_shoot_damage
+- excessive_vigor_pollination_risk
+
+Grupo UX: plagas_nuez_ruezno
+Risk IDs:
+- pecan_nut_casebearer
+- hickory_shuckworm
+- pecan_weevil_regional
+- stink_bug_leaf_footed_bug_kernel_spot
+- nut_curculio_regional
+- birds_rodents_nut_loss
+- premature_nut_drop_pest_context
+
+Grupo UX: pulgones_melaza_acaros_chupadores
+Risk IDs:
+- yellow_aphid_complex
+- black_pecan_aphid
+- sooty_mold_honeydew_complex
+- pecan_phylloxera
+- pecan_leaf_scorch_mite
+- spider_mites_complex
+- scale_insects_complex
+- spittlebug_regional
+- beneficial_disruption_aphid_mite_flare
+
+Grupo UX: defoliadores_brotes_madera
+Risk IDs:
+- fall_webworm
+- walnut_caterpillar
+- pecan_sawfly
+- leaf_feeding_caterpillars
+- twig_girdler_pruner_complex
+- ambrosia_borer_trunk_branch
+- fire_ant_orchard_floor_context
+
+Grupo UX: enfermedades_hoja_nuez_ruezno
+Risk IDs:
+- pecan_scab
+- anthracnose_pecan
+- powdery_mildew_pecan
+- downy_spot_leaf_blotch_complex
+- vein_spot_leaf_spot_complex
+- bacterial_leaf_scorch_xylella
+- shuck_decline_dieback
+- stem_end_blight
+- phytophthora_shuck_kernel_rot
+- kernel_discoloration_complex
+
+Grupo UX: estres_fisiologico_nutricion_calidad
+Risk IDs:
+- drought_stress_kernel_fill
+- water_stress_light_kernel_wafery
+- heat_stress_sunburn
+- salinity_marginal_leaf_burn
+- zinc_deficiency_rosette_little_leaf
+- iron_chlorosis_high_ph_waterlogging
+- nickel_deficiency_mouse_ear
+- potassium_low_kernel_fill_context
+- nitrogen_deficiency_kernel_fill_context
+- nitrogen_excess_vigor_freeze_pest_risk
+- boron_chloride_toxicity_context
+- crop_overload_shuck_decline_context
+- alternate_bearing_memory
+- premature_nut_drop_physiological
+- vivipary_preharvest_sprouting_context
+- herbicide_phytotoxicity_drift
+- weed_competition_orchard_floor
+
+Grupo UX: cosecha_postcosecha_memoria
+Risk IDs:
+- stick_tight_shuck_opening_issue
+- harvest_floor_contamination_context
+- wet_harvest_quality_risk
+- delayed_harvest_nut_loss
+- post_harvest_leaf_loss_memory
+- low_reserve_next_cycle_risk
+
+================================================================================
+10. CAMPOS SUGERIDOS PARA CÓDIGO
+================================================================================
+
+Cada riesgo debería poder traducirse a una estructura tipo PlantHealthSyndrome o equivalente:
+
+{
+  cropKey: walnut_tree,
+  riskId: string,
+  riskFamily: string,
+  commonName: string,
+  scientificName: string?,
+  preferredStages: List<TreeStageId>,
+  sensitiveStates: List<PerennialStateId>,
+  sensorTriggers: {
+    soilMoisture: low/optimal/high?,
+    soilTemp: low/optimal/high?,
+    ph: low/optimal/high?,
+    ec: low/optimal/high?,
+    resistance: low/optimal/high?,
+    n: low/optimal/high?,
+    p: low/optimal/high?,
+    k: low/optimal/high?
+  },
+  weatherTriggers: {
+    rain: bool?,
+    highHumidity: bool?,
+    frost: bool?,
+    heat: bool?,
+    hail: bool?,
+    wind: bool?,
+    leafWetness: bool? // modelo/contexto, no sensor v1 obligatorio
+  },
+  visualClues: List<String>,
+  questions: List<String>,
+  profileModifiers: Map<profileId, weight>,
+  memoryImpact: none/low/medium/high/veryHigh,
+  sourceConfidence: low/medium/high,
+  farmerMessage: string,
+  confirmationPrompt: string,
+  noDiagnosisWarning: true
+}
+
+Campos perennes que debe usar:
+- perennialStateId
+- phenologyStageId
+- perennialAnchorDate
+- perennialAnchorTypeId
+
+Campos que NO debe usar como eje:
+- sowingDate en árboles
+
+Métricas sensor permitidas v1:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Contexto/modelo permitido:
+- lluvia
+- helada
+- calor
+- HR
+- horas frío
+- viento
+- GDD
+- historial de estrés
+- evento extremo
+- etapa visible
+- perfil/variedad
+- observación visual del usuario
+- polinizador/tipo floral como pregunta UX, no sensor
+- presencia regional de plagas reguladas
+
+Nota de mapeo al código actual:
+- Si no existe organNut u organShuck, usar PlantHealthIds.organFruit para nuez/ruezno y PlantHealthIds.organGrain para almendra/kernel si ya está disponible.
+- No inventar sensores nuevos en StageTargets.
+- Si se agregan síntomas propios de nogal, hacerlo en plant_health_ids.dart con tests y labels UX claros.
+- En v1, puede implementarse un subconjunto priorizado en walnut_tree_syndromes.dart y dejar el resto como catálogo documental extensible.
+
+Síntomas/señales nuevas sugeridas para PlantHealthIds si Codex decide agregarlas:
+- symptomNutShuckTunnels = 'nut_shuck_tunnels'
+- symptomKernelDarkSpots = 'kernel_dark_spots'
+- symptomHoneydewSootyLeaves = 'honeydew_sooty_leaves'
+- symptomRosetteLittleLeaf = 'rosette_little_leaf'
+- symptomMarginalLeafBurn = 'marginal_leaf_burn'
+- symptomShuckDiebackBlackening = 'shuck_dieback_blackening'
+- symptomPrematureNutDrop = 'premature_nut_drop'
+- symptomAmbrosiaBorerFrass = 'ambrosia_borer_frass'
+- signalShuckStuck = 'shuck_stuck'
+- signalNutFrassSilk = 'nut_frass_silk'
+- signalRoundBbExitHole = 'round_bb_exit_hole'
+- signalYellowAphids = 'yellow_aphids'
+- signalBlackPecanAphids = 'black_pecan_aphids'
+- signalRosetteShortInternodes = 'rosette_short_internodes'
+- signalMarginalSaltBurn = 'marginal_salt_burn'
+- signalLowChillContext = 'low_chill_context'
+- signalPollinatorUnknown = 'pollinator_unknown'
+
+================================================================================
+11. MATRIZ DE PESOS POR ETAPA
+================================================================================
+
+Escala:
+0.0 = no relevante
+0.3 = bajo
+0.5 = medio
+0.7 = alto
+1.0 = crítico
+
+planting_transplant:
+- root_crown_rot_anoxia_complex 1.0
+- waterlogging_anoxia 1.0
+- salinity_root_stress_context 0.9
+- soil_compaction_root_stress 0.9
+- crown_gall 0.8
+- phymatotrichopsis_root_rot 0.8 regional
+- poor_site_replant_decline_context 0.9
+- rodent_girdling_damage 0.5
+
+root_establishment:
+- root_crown_rot_anoxia_complex 1.0
+- drought_stress_kernel_fill 0.8 as young tree water stress
+- waterlogging_anoxia 1.0
+- salinity_marginal_leaf_burn 0.9
+- soil_compaction_root_stress 0.9
+- zinc_deficiency_rosette_little_leaf 0.7
+- phymatotrichopsis_root_rot 0.9 regional
+- pecan_root_knot_nematode 0.6
+
+juvenile_vegetative:
+- zinc_deficiency_rosette_little_leaf 1.0
+- salinity_marginal_leaf_burn 0.9
+- drought_stress_kernel_fill 0.7 as vegetative water stress
+- yellow_aphid_complex 0.7
+- black_pecan_aphid 0.7
+- pecan_phylloxera 0.7
+- fall_webworm 0.6
+- walnut_caterpillar 0.6
+- trunk_borer_ambrosia_complex 0.7
+- nitrogen_excess_vigor_freeze_pest_risk 0.8
+
+climacteric note:
+- El nogal no es fruto climatérico tipo pera/manzana. BIO-G v1 no debe inferir madurez de almendra por sensor de suelo; solo alerta estrés, etapa, calidad y cosecha.
+
+dormancy:
+- insufficient_chill_irregular_budbreak 1.0
+- scale_insects_complex 0.6
+- pecan_phylloxera overwintering 0.7
+- wood_canker_decline_complex 0.7
+- rodent_girdling_damage 0.8
+- alternate_bearing_memory 0.9
+- low_reserve_next_cycle_risk 0.9
+- orchard floor sanitation context 0.5
+
+budbreak:
+- zinc_deficiency_rosette_little_leaf 1.0
+- insufficient_chill_irregular_budbreak 0.9
+- frost_budbreak_flowering_damage 0.8
+- pecan_phylloxera 0.9
+- pecan_scab 0.7 humid/regional
+- powdery_mildew_pecan 0.5
+- yellow_aphid_complex 0.6
+- nickel_deficiency_mouse_ear 0.6
+
+vegetative_growth:
+- zinc_deficiency_rosette_little_leaf 1.0
+- salinity_marginal_leaf_burn 0.9
+- iron_chlorosis_high_ph_waterlogging 0.8
+- yellow_aphid_complex 0.9
+- black_pecan_aphid 0.9
+- pecan_leaf_scorch_mite 0.8
+- spider_mites_complex 0.8
+- pecan_scab 0.7 humid/regional
+- anthracnose_pecan 0.6 humid/regional
+- bacterial_leaf_scorch_xylella 0.6 regional
+- fall_webworm 0.6
+- walnut_caterpillar 0.6
+- trunk_borer_ambrosia_complex 0.7
+
+flowering:
+- floral_dichogamy_mismatch 1.0
+- poor_wind_pollination_low_fruit_set 1.0
+- frost_budbreak_flowering_damage 1.0
+- insufficient_chill_irregular_budbreak 0.9
+- rain_humidity_pollination_stress 0.8
+- hail_wound_infection_risk 0.8
+- drought_stress_kernel_fill 0.7 as early water stress
+- nitrogen_excess_vigor_freeze_pest_risk 0.5 as modifier
+
+fruit_set:
+- pecan_nut_casebearer 1.0
+- poor_wind_pollination_low_fruit_set 0.9
+- premature_nut_drop_physiological 0.9
+- frost_budbreak_flowering_damage memory 0.8
+- drought_stress_kernel_fill 0.8
+- salinity_marginal_leaf_burn 0.8
+- pecan_scab 0.8 humid/regional
+- stink_bug_leaf_footed_bug_kernel_spot 0.6
+- floral_dichogamy_mismatch 0.8
+
+fruit_fill:
+- drought_stress_kernel_fill 1.0
+- water_stress_light_kernel_wafery 1.0
+- crop_overload_shuck_decline_context 1.0
+- hickory_shuckworm 1.0
+- yellow_aphid_complex 0.9
+- black_pecan_aphid 1.0
+- pecan_leaf_scorch_mite 0.9
+- pecan_weevil_regional 0.9 regional
+- stink_bug_leaf_footed_bug_kernel_spot 0.9
+- pecan_scab 0.8 humid/regional
+- salinity_marginal_leaf_burn 0.9
+- heat_stress_sunburn 0.8
+- potassium_low_kernel_fill_context 0.8
+- nitrogen_deficiency_kernel_fill_context 0.7
+
+harvest_maturity:
+- hickory_shuckworm 1.0
+- pecan_weevil_regional 1.0 regional
+- stink_bug_leaf_footed_bug_kernel_spot 0.9
+- shuck_decline_dieback 1.0
+- stem_end_blight 0.9
+- phytophthora_shuck_kernel_rot 0.8 humid
+- kernel_discoloration_complex 0.9
+- stick_tight_shuck_opening_issue 0.9
+- wet_harvest_quality_risk 0.8
+- delayed_harvest_nut_loss 0.8
+- vivipary_preharvest_sprouting_context 0.6 regional/humid
+
+post_harvest:
+- post_harvest_leaf_loss_memory 1.0
+- low_reserve_next_cycle_risk 1.0
+- alternate_bearing_memory 1.0
+- black_pecan_aphid 0.8
+- yellow_aphid_complex 0.7
+- pecan_leaf_scorch_mite 0.7
+- drought_stress_kernel_fill 0.7 as reserve stress
+- salinity_marginal_leaf_burn 0.8
+- wood_canker_decline_complex 0.7
+- harvest_floor_contamination_context 0.6
+
+unknown:
+- drought_stress_kernel_fill 0.7 if sensor confirms
+- waterlogging_anoxia 0.7 if sensor confirms
+- salinity_marginal_leaf_burn 0.7 if EC confirms
+- yellow_aphid_complex 0.6 if melaza/visual
+- black_pecan_aphid 0.6 if leaf spots/visual
+- pecan_nut_casebearer 0.5 if nut young visible
+- hickory_shuckworm 0.5 if shuck/stick-tight visible
+- zinc_deficiency_rosette_little_leaf 0.7 if rosette visible
+- confidence: baja-media
+
+================================================================================
+12. LENGUAJE DE SALIDA RECOMENDADO PARA UX
+================================================================================
+
+Situación:
+Hoja pegajosa + negrilla
+No decir:
+“Es hongo negro.”
+Mejor:
+“La negrilla suele crecer sobre mielecilla. En nogal, revise primero pulgones o chupadores en el envés de la hoja.”
+
+Situación:
+Nuez pequeña caída con perforación/frass
+No decir:
+“Se cayó por falta de fertilizante.”
+Mejor:
+“La caída con perforación puede parecer daño de gusano barrenador de la nuez. Revise racimos, seda/frass y nueces recién amarradas.”
+
+Situación:
+Ruezno negro o pegado
+No decir:
+“Está podrido, aplique fungicida.”
+Mejor:
+“El ruezno negro o pegado puede venir de estrés, barrenador del ruezno, pudrición o carga alta. Abra varias nueces y revise túneles, humedad y calidad de almendra.”
+
+Situación:
+Hoja con borde quemado
+No decir:
+“Le falta agua.”
+Mejor:
+“El borde quemado puede venir de salinidad, boro/cloruros, calor o sequía. Revise CE, riego, drenaje y patrón del daño antes de corregir.”
+
+Situación:
+Hoja chica / roseta
+No decir:
+“Le falta fertilizante general.”
+Mejor:
+“En nogal, hoja chica y entrenudos cortos son compatibles con problema de zinc. Conviene confirmar con análisis foliar y revisar pH/agua.”
+
+Situación:
+Floreó pero no amarró
+No decir:
+“Faltó NPK.”
+Mejor:
+“El bajo amarre puede venir de frío insuficiente, helada, lluvia/viento en floración o falta de polinizador compatible. BIO-G revisará clima y etapa antes de sugerir nutrición.”
+
+Situación:
+Almendra ligera o vana
+No decir:
+“La nuez salió mala.”
+Mejor:
+“La almendra ligera suele relacionarse con agua, carga, hoja funcional, salinidad, calor o nutrición durante llenado. Guardaremos este evento para revisar alternancia.”
+
+Situación:
+Marchitez con suelo mojado
+No decir:
+“Riegue más.”
+Mejor:
+“Marchitez con suelo húmedo puede indicar raíz con poco oxígeno o pudrición. Revise drenaje, cuello y raíces antes de aumentar riego.”
+
+Situación:
+Postcosecha con hoja dañada o caída temprana
+No decir:
+“Ya no importa porque ya cosechó.”
+Mejor:
+“La postcosecha sigue activa. La hoja después de cosecha ayuda a llenar reservas para el siguiente ciclo.”
+
+Situación:
+Aserrín u hoyos en tronco
+No decir:
+“Es hoja quemada.”
+Mejor:
+“Aserrín u hoyos en tronco apuntan a barrenadores o madera debilitada. Revise ramas, heridas y estrés del árbol.”
+
+Situación:
+Daño uniforme después de aplicación
+No decir:
+“Es enfermedad.”
+Mejor:
+“El patrón puede ser fitotoxicidad o deriva. Revise aplicaciones recientes, bordes y dirección del viento.”
+
+================================================================================
+13. MEMORIA MULTIANUAL BIO-G
+================================================================================
+
+Cada evento debe guardarse con:
+- riskId
+- fecha
+- etapa fenológica
+- estado perenne
+- perfil NG
+- severidad 0..1
+- duración estimada
+- órgano afectado
+- sensorSnapshot
+- weatherContext
+- visualConfirmationLevel
+- impactCurrentCycle
+- impactNextCycle
+- confidence
+
+Impacto por tipo:
+- phymatotrichopsis_root_rot: impacto actual muy alto; impacto de sitio muy alto; no replantar en el mismo foco sin evaluación.
+- waterlogging_anoxia/root stress: impacto actual medio-alto; impacto siguiente medio si reduce raíz o reservas.
+- salinity_marginal_leaf_burn: impacto actual medio-alto; impacto siguiente alto si persiste y reduce hoja/raíz.
+- insufficient_chill_irregular_budbreak: impacto anual/regional; útil para perfil y zona.
+- frost_budbreak_flowering_damage: impacto actual muy alto; puede generar baja carga y exceso de vigor.
+- floral_dichogamy_mismatch: impacto actual alto; memoria de diseño de huerto/perfil.
+- pecan_nut_casebearer: impacto actual alto; memoria de presión para siguiente año.
+- hickory_shuckworm: impacto actual alto en calidad; memoria de presión y cosecha.
+- pecan_weevil_regional: impacto actual y regulatorio muy alto; requiere contexto local.
+- black_pecan_aphid: impacto actual medio-alto; impacto siguiente alto si defolia.
+- yellow_aphid_complex: impacto medio-alto; alto si melaza/fumagina reduce hoja en llenado.
+- pecan_leaf_scorch_mite/spider mites: impacto alto si defolia durante llenado/postcosecha.
+- pecan_scab: impacto alto en regiones húmedas; memoria por inóculo y pérdida de nuez.
+- shuck_decline_dieback: impacto alto en calidad; memoria ligada a carga/agua/alternancia.
+- zinc_deficiency_rosette_little_leaf: impacto persistente; afecta crecimiento, hoja y producción.
+- drought_stress_kernel_fill: impacto actual alto; impacto siguiente medio-alto si reduce reservas.
+- crop_overload_shuck_decline_context: impacto actual alto; impacto siguiente alto por alternancia.
+- post_harvest_leaf_loss_memory: impacto siguiente alto.
+
+Regla:
+Un nogal que sufrió estrés fuerte no debe volver a “óptimo” inmediatamente solo porque hoy los sensores estén bien. Debe conservar una advertencia suave de recuperación según etapa, severidad y memoria.
+
+Ejemplo:
+Si fruit_fill tuvo soilMoisture crítico bajo por 10 días y luego se normalizó, BIO-G puede decir:
+“El riego ya se recuperó, pero el evento ocurrió durante llenado de almendra. Mantén observación de calidad y guarda memoria para alternancia.”
+
+================================================================================
+14. DECISIÓN EDITORIAL PARA PRODUCTO
+================================================================================
+
+El nogal debe tener un catálogo robusto, pero la UX no debe mostrar 60 problemas al usuario.
+La app debe agrupar en tarjetas:
+
+1. Raíz / suelo
+2. Floración / polinización
+3. Nuez / ruezno
+4. Pulgones / melaza
+5. Hojas / manchas / ácaros
+6. Madera / tronco
+7. Agua / salinidad / nutrición
+8. Cosecha / calidad
+9. Memoria del nogal
+
+Cada tarjeta debe mostrar:
+- “Qué lo favorece”
+- “Qué revisar”
+- “Qué tan urgente es”
+- “Por qué importa para esta cosecha”
+- “Si puede afectar el siguiente ciclo”
+
+BIO-G v1 no debe recomendar ingredientes activos.
+En el futuro, un modo Pro podría mostrar “consulte programa fitosanitario regional” o integrarse a IPM local, pero siempre con normatividad y asesoría.
+
+================================================================================
+15. PRUEBAS MÍNIMAS RECOMENDADAS
+================================================================================
+
+Test 1:
+walnut_tree + fruit_fill + soilMoisture baja + temperatura alta => drought_stress_kernel_fill y water_stress_light_kernel_wafery suben; mensaje habla de llenado de almendra, no de cosecha.
+
+Test 2:
+walnut_tree + fruit_fill + N alto + vigor alto + baja carga => nitrogen_excess_vigor_freeze_pest_risk, no recomendación de más N.
+
+Test 3:
+soilMoisture alta + resistance alta + marchitez => waterlogging_anoxia/root_crown_rot_anoxia_complex, no drought_stress.
+
+Test 4:
+EC alta + borde de hoja quemado => salinity_marginal_leaf_burn; mensaje pide revisar agua/CE/drenaje.
+
+Test 5:
+budbreak + roseta/hoja chica + pH alto => zinc_deficiency_rosette_little_leaf.
+
+Test 6:
+flowering + frost event => frost_budbreak_flowering_damage y baja producción probable; no culpar NPK.
+
+Test 7:
+flowering + usuario no sabe polinizador + baja carga => floral_dichogamy_mismatch con confianza media y copy conservador.
+
+Test 8:
+fruit_set + nuez pequeña caída + frass/seda => pecan_nut_casebearer.
+
+Test 9:
+harvest_maturity + ruezno pegado + túneles negros => hickory_shuckworm / stick_tight_shuck_opening_issue.
+
+Test 10:
+fruit_fill/harvest + agujero redondo BB + larva + zona con presencia => pecan_weevil_regional; mensaje pide muestra/foto y sanidad local.
+
+Test 11:
+fruit_fill + melaza/negrilla => yellow_aphid_complex/sooty_mold_honeydew_complex, no “hongo genérico”.
+
+Test 12:
+post_harvest + defoliación por pulgón negro/ácaros => post_harvest_leaf_loss_memory y low_reserve_next_cycle_risk.
+
+Test 13:
+NG-02 Wichita + hoja chica/roseta => zinc_deficiency modifier mayor que NG-SKIP o NG-01.
+
+Test 14:
+NG-04 Criollo + huerto viejo + aserrín/hoyos => trunk_borer_ambrosia_complex y wood_canker_decline_context suben.
+
+Test 15:
+unknown stage + sensor only => confianza baja-media y mensaje conservador.
+
+Test 16:
+fruit_fill + shuck decline + carga alta + humedad baja => crop_overload_shuck_decline_context + drought_stress, no diagnóstico cerrado de hongo.
+
+Test 17:
+harvest_maturity + lluvia + nuez en suelo => wet_harvest_quality_risk.
+
+Test 18:
+post_harvest + sensores óptimos hoy pero evento severo previo en llenado => no borrar memoria; mostrar recuperación/observación.
+
+================================================================================
+16. FUENTES BASE Y TRAZABILIDAD
+================================================================================
+
+S1. BIO-G - 04_Riesgos_Cultivo_Sanidad_Estres_Memoria_BioG_Pera_v1.txt
+Uso: molde editorial, familias UX, reglas de motor, memoria perenne, lenguaje sin diagnóstico definitivo.
+
+S2. BIO-G - Estandar_BIOG_Integracion_Arboles_Perennes_v1_5_con_addendum.pdf
+Uso: contrato oficial del documento 04, PlantHealthSyndrome, memoria multianual, no usar sowingDate, etapas perennes y campos permitidos.
+
+S3. BIO-G - 01_Ficha_Tecnica_Universal_BioG_Nogal_NG_v1_Reforzada.txt
+Uso: perfiles NG, etapas, enfoque nogal pecanero, lenguaje de nuez/ruezno/almendra, polinización y memoria.
+
+S4. BIO-G - 02_Perfil_SKIP_BioG_Nogal_NG_SKIP_v1_Reforzado.txt
+Uso: comportamiento NG-SKIP, regla conservadora, usuario no sabe variedad ni polinizador.
+
+S5. BIO-G - 03_Rendimiento_Aproximado_BioG_Nogal_v1_Reforzado.txt
+Uso: rendimiento por kg/árbol, t/ha, alternancia, calidad de nuez, densidad, carga, riego y memoria.
+
+S6. New Mexico State University - Diseases and Other Disorders of Pecan in New Mexico
+URL: https://pubs.nmsu.edu/_h/H657/index.html
+Uso: Phymatotrichopsis/cotton root rot, bacterial leaf scorch, crown gall, nematodos, scab como riesgo condicional, clorosis, zinc, salinidad y caída prematura.
+
+S7. New Mexico State University - Diagnosing Nutrient Disorders of New Mexico Pecan Trees
+URL: https://pubs.nmsu.edu/_h/H658/index.html
+Uso: zinc, hierro, níquel, N, P, K, B/Cl, análisis foliar, rangos de tejido, relación N/K/Zn con llenado y vigor.
+
+S8. New Mexico State University - Pecan Weevil: Wanted DEAD, Not Alive
+URL: https://pubs.nmsu.edu/_circulars/CR683/index.html
+Uso: Curculio caryae, daño por water stage, agujeros BB, larvas, cuarentena, emergencia tras lluvia/riego, riesgo regional.
+
+S9. Oklahoma State University - A Calendar for Pecan Growers
+URL: https://extension.okstate.edu/fact-sheets/a-calendar-for-pecan-growers
+Uso: calendario por mes, monitoreo de casebearer, shuckworm, pecan weevil, aphids, scab, zinc, riego y preparación de cosecha.
+
+S10. Oklahoma State University - Commercial Pecan Insect and Disease Control CR-6209
+URL: https://extension.okstate.edu/fact-sheets/print-publications/cr/commercial-pecan-insect-and-disease-control-cr-6209.pdf
+Uso: pecan weevil, casebearer, scab, shuckworm, aphids y manejo por etapa. No se trasladan ingredientes activos al documento BIO-G.
+
+S11. Texas A&M AgriLife Extension - Homeowners Guide to Pests of Peaches, Plums and Pecans
+URL: https://agrilifeextension.tamu.edu/wp-content/uploads/2025/05/Homeowners-Guide-to-Pests-of-Peaches-Plums-and-Pecans.pdf
+Uso: plagas por etapa, zinc temprano, phylloxera, scab/foliar/nut diseases, casebearer, aphids, shuckworm, pecan weevil, wetness/disease risk.
+
+S12. Texas Plant Disease Handbook - Pecan
+URL: https://plantdiseasehandbook.tamu.edu/food-crops/nut-crops/pecan/
+Uso: shuck decline, shuck/kernel rot, stem-end blight, root-knot nematode, kernel discoloration.
+
+S13. Texas A&M AgriLife Extension Entomology - Diseases / Pecan Pests in the Home Orchard
+URL: https://extensionentomology.tamu.edu/resources/management-guides/pecan-pests-in-the-home-orchard/diseases/
+Uso: scab, bacterial leaf scorch, downy spot, powdery mildew, shuck dieback, stem-end blight, cotton root rot, crown gall, root-knot nematodes.
+
+S14. University of Georgia Extension / Georgia Pest Management Handbook - Pecan sections
+URL: https://extension.uga.edu/content/dam/extension/programs-and-services/integrated-pest-management/documents/handbooks/2022-comm-chapters/Fruit%20and%20Nuts.pdf
+Uso: black pecan aphid, yellow aphid, mites, hickory shuckworm, scab, anthracnose, powdery mildew y manejo por etapa.
+
+S15. UGA Pecan Extension updates
+URL: https://site.extension.uga.edu/pecan/
+Uso: lenguaje técnico actualizado sobre pulgones, ácaros, scab, antracnosis, calidad y llenado.
+
+S16. Mississippi State University Extension - Disease and Insect Management for Pecans in Home Landscapes
+URL: https://extension.msstate.edu/publications/disease-and-insect-management-for-pecans-home-landscapes
+Uso: scab, insects, home orchards, diferencia entre huerto comercial y árboles de patio.
+
+S17. Missouri Extension - Pecan Pest Management: Insects and Diseases
+URL: https://extension.missouri.edu/publications/mp711
+Uso: IPM, casebearer, hickory shuckworm, pecan weevil, phylloxera y scab como riesgos económicos.
+
+S18. Clemson Cooperative Extension - Pecan Diseases
+URL: https://hgic.clemson.edu/factsheet/pecan-diseases/
+Uso: shuck dieback, stem-end blight, scab, crown gall, enfoque de prevención y limitantes en árboles grandes.
+
+S19. Junta Local de Sanidad Vegetal / Campaña contra plagas del nogal
+URL: https://jlsvsanluis.com/project/campana-contra-plagas-del-nogal/
+Uso: contexto México/norte: barrenador de la nuez, barrenador del ruezno, pulgón amarillo, pulgón negro, trampeo y afectación a rendimiento/calidad.
+
+S20. INIFAP Agenda Técnica Agrícola Chihuahua / Sonora
+URL: https://vun.inifap.gob.mx/VUN_MEDIA/BibliotecaWeb/_media/_agendas/4124_4821_Agenda_T%C3%A9cnica_Chihuahua_2017.pdf
+URL: https://vun.inifap.gob.mx/VUN_MEDIA/BibliotecaWeb/_media/_agendas/4143_4840_Agenda_T%C3%A9cnica_Sonora_2017.pdf
+Uso: plagas de importancia regional, pulgones, barrenadores, contexto de manejo técnico mexicano.
+
+S21. Universidad de Sonora / Biotecnia - Trampeo e identificación de la feromona sexual del gusano barrenador de la nuez en México
+URL: https://biblat.unam.mx/hevila/Biotecnia/2013/vol15/no2/5.pdf
+Uso: Acrobasis nuxvorella en México, feromonas/trampeo, referencias INIFAP y MIP.
+
+S22. Fuentes de lenguaje real de productores / divulgación agrícola
+Uso: solo lenguaje UX: “mielecilla”, “ruezno”, “barrenador”, “pulgón negro”, “nuez vana”, “almendra manchada”, “se quedó pegada”. No se usaron para umbrales duros.
+
+================================================================================
+17. CIERRE TÉCNICO
+================================================================================
+
+Este documento deja listo el módulo 04 de Nogal para BIO-G:
+
+- Catálogo robusto de riesgos bióticos.
+- Catálogo de estrés abiótico/fisiológico.
+- Reglas de motor.
+- Priorización por etapa.
+- Modificadores por perfil NG.
+- Memoria perenne.
+- Lenguaje UX seguro.
+- Campos sugeridos para Plant Health.
+- Sin recetas ni ingredientes activos.
+
+Conclusión:
+El nogal debe tratarse como árbol perenne de nuez con memoria fuerte, no como frutal fresco.
+Su jerarquía sanitaria en BIO-G debe priorizar: raíz/suelo/salinidad, zinc, agua en llenado, polinización, barrenador de nuez, barrenador del ruezno, pulgones, ácaros, scab condicional por humedad, shuck decline, calidad de almendra, cosecha y memoria multianual.
+
+La cosecha no cierra el cultivo.
+La postcosecha alimenta el siguiente ciclo.
+El riesgo no se diagnostica de forma cerrada: se estima, se explica y se confirma.

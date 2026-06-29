@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:bio_g/bootstrap_gate.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/pear_tree/pear_tree_catalog.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/onboarding/onboarding_draft.dart';
@@ -39,6 +40,33 @@ void main() {
     );
   }
 
+  DeviceCropContext resolvePearTreeDraft({
+    required String productionStatusId,
+    required String stageId,
+    DateTime? selectedDate,
+    bool useFlexibleDate = false,
+    String? profileId,
+  }) {
+    final draft = OnboardingDraft(
+      cropCategory: CropCatalog.treeCategoryId,
+      cropId: CropCatalog.pearTreeCropId,
+      varietyId: profileId,
+      varietyAlias: profileId,
+      treeProductionStatusId: productionStatusId,
+      stage: stageId,
+      selectedDate: selectedDate,
+      useFlexibleDate: useFlexibleDate,
+    );
+
+    return resolveOnboardingTreeDraftContext(
+      deviceId: 'pear-tree-device',
+      draft: draft,
+      cropId: CropCatalog.pearTreeCropId,
+      stage: stageId,
+      now: now,
+    );
+  }
+
   void expectActiveTreeContext(DeviceCropContext context) {
     expect(context.cropCategoryId, CropCatalog.treeCategoryId);
     expect(context.cropId, CropCatalog.appleTreeCropId);
@@ -46,6 +74,18 @@ void main() {
     expect(context.lifecycleStatus, isNot(CropLifecycleStatus.fallow));
 
     final seed = SeedInstall.fromDeviceCropContext(context);
+    expect(seed.status, SowingStatus.planted);
+    expect(seed.status, isNot(SowingStatus.skip));
+  }
+
+  void expectActivePearTreeContext(DeviceCropContext context) {
+    expect(context.cropCategoryId, CropCatalog.treeCategoryId);
+    expect(context.cropId, CropCatalog.pearTreeCropId);
+    expect(context.lifecycleStatus, CropLifecycleStatus.planted);
+    expect(context.lifecycleStatus, isNot(CropLifecycleStatus.fallow));
+
+    final seed = SeedInstall.fromDeviceCropContext(context);
+    expect(seed.cropKey, CropCatalog.pearTreeCropId);
     expect(seed.status, SowingStatus.planted);
     expect(seed.status, isNot(SowingStatus.skip));
   }
@@ -215,17 +255,65 @@ void main() {
       expectActiveTreeContext(context);
     });
 
-    test('solo manzano esta habilitado en arboles; limon no queda activado', () {
+    test('manzano y pera estan habilitados; limon no queda activado', () {
       final treeCrops = CropCatalog.cropsByCategory(
         CropCatalog.treeCategoryId,
         enabledOnly: true,
       );
 
       expect(
-        treeCrops.map((crop) => crop.cropId).toList(),
-        [CropCatalog.appleTreeCropId],
+        treeCrops.map((crop) => crop.cropId),
+        containsAll([CropCatalog.appleTreeCropId, CropCatalog.pearTreeCropId]),
       );
       expect(contextOrNullForLemon(), isNull);
+    });
+  });
+
+  group('onboarding pera -> contexto perenne canonico', () {
+    test('PR-03 + llenado de fruto guarda crop/profile de pera', () {
+      final context = resolvePearTreeDraft(
+        profileId: kPr03Bosc,
+        productionStatusId: TreeProductionStatusIds.productiveOrProduced,
+        stageId: TreeStageIds.fruitFill,
+        selectedDate: now.subtract(const Duration(days: 7)),
+      );
+
+      expect(context.cropId, CropCatalog.pearTreeCropId);
+      expect(context.profileId, kPr03Bosc);
+      expect(context.profileId, isNot(CropCatalog.appleTreeDefaultProfileId));
+      expect(context.perennialStateId, TreeStateIds.productiveSeason);
+      expect(context.phenologyStageId, TreeStageIds.fruitFill);
+      expect(context.perennialAnchorTypeId, TreeAnchorTypeIds.stageStart);
+      expect(context.sowingDate, isNull);
+      expectActivePearTreeContext(context);
+    });
+
+    test('sin perfil usa PR-SKIP activo, nunca AP-SKIP ni fallow', () {
+      final context = resolvePearTreeDraft(
+        productionStatusId: TreeProductionStatusIds.unknown,
+        stageId: TreeStageIds.unknown,
+        useFlexibleDate: true,
+      );
+
+      expect(context.profileId, kPrSkip);
+      expect(context.profileId, isNot(CropCatalog.appleTreeDefaultProfileId));
+      expect(context.perennialStateId, TreeStateIds.unknown);
+      expect(context.phenologyStageId, TreeStageIds.unknown);
+      expectActivePearTreeContext(context);
+    });
+
+    test('post_harvest sigue activo y no cierra el peral', () {
+      final context = resolvePearTreeDraft(
+        profileId: kPr01BartlettWilliams,
+        productionStatusId: TreeProductionStatusIds.productiveOrProduced,
+        stageId: TreeStageIds.postHarvest,
+        selectedDate: now.subtract(const Duration(days: 18)),
+      );
+
+      expect(context.perennialStateId, TreeStateIds.established);
+      expect(context.phenologyStageId, TreeStageIds.postHarvest);
+      expect(context.lifecycleStatus, CropLifecycleStatus.planted);
+      expectActivePearTreeContext(context);
     });
   });
 

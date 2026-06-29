@@ -8,6 +8,7 @@ import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
+import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -32,6 +33,33 @@ class NpkScreen extends StatelessWidget {
   }
 
   int _roundInt(double v) => v.isNaN ? 0 : v.round();
+
+  bool _isFruitTreeCrop(String? cropKey) {
+    final crop = CropCatalog.canonicalCropKey(cropKey).trim().toLowerCase();
+    return crop == 'apple_tree' ||
+        crop == 'crop_apple_tree' ||
+        crop == 'manzano' ||
+        crop == 'pear_tree' ||
+        crop == 'crop_pear_tree' ||
+        crop == 'pera' ||
+        crop == 'peral' ||
+        crop == 'peach_tree' ||
+        crop == 'crop_peach_tree' ||
+        crop == 'peach' ||
+        crop == 'peachtree' ||
+        crop == 'durazno' ||
+        crop == 'duraznero' ||
+        crop == 'melocoton' ||
+        crop == 'melocotón' ||
+        crop == 'melocotonero' ||
+        crop == 'walnut_tree' ||
+        crop == 'crop_walnut_tree' ||
+        crop == 'walnut' ||
+        crop == 'walnuttree' ||
+        crop == 'nogal' ||
+        crop == 'pecan' ||
+        crop == 'nuez';
+  }
 
   double? _trendPctFromSeries(List<double> series) {
     if (series.length < 6) return null;
@@ -74,10 +102,27 @@ class NpkScreen extends StatelessWidget {
     }
   }
 
-  InsightTone _toneForInterpretation(
-    NutrientInterpretationResult? interpretation,
-  ) {
-    switch (interpretation?.label) {
+  InsightTone _toneForNutrient({
+    required AgroMetricEval? evalMetric,
+    required NutrientInterpretationResult? interpretation,
+    required String? cropKey,
+  }) {
+    return _toneForPriorityLabel(
+      evalMetric?.priorityLabel ?? interpretation?.label,
+      cropKey: cropKey,
+    );
+  }
+
+  InsightTone _toneForPriorityLabel(
+    NutrientPriorityLabel? label, {
+    required String? cropKey,
+  }) {
+    if (_isFruitTreeCrop(cropKey) &&
+        label == NutrientPriorityLabel.possibleExcess) {
+      return InsightTone.ok;
+    }
+
+    switch (label) {
       case NutrientPriorityLabel.actionRecommended:
       case NutrientPriorityLabel.highPriority:
         return InsightTone.warn;
@@ -212,11 +257,13 @@ class NpkScreen extends StatelessWidget {
             targets: targets,
           );
 
-    final targetMinPpm =
-        comparableRange == null ? null : comparableRange.optimalMin.round();
+    final targetMinPpm = comparableRange == null
+        ? null
+        : comparableRange.optimalMin.round();
 
-    final targetMaxPpm =
-        comparableRange == null ? null : comparableRange.optimalMax.round();
+    final targetMaxPpm = comparableRange == null
+        ? null
+        : comparableRange.optimalMax.round();
 
     final capPpm = _ppmCap(channel, cropKey: cropKey).round();
 
@@ -229,12 +276,14 @@ class NpkScreen extends StatelessWidget {
             comparableRange: comparableRange,
           );
 
+    final priorityLabel = evalMetric?.priorityLabel ?? interpretation?.label;
+
     final String bandLabel =
-        interpretation?.labelEs ?? evalMetric?.labelEs ?? _bandLabelEs(band);
+        evalMetric?.labelEs ?? interpretation?.labelEs ?? _bandLabelEs(band);
 
     final bool hideShadow =
-        interpretation?.label == NutrientPriorityLabel.noPriority ||
-        interpretation?.label == NutrientPriorityLabel.lowPriority;
+        priorityLabel == NutrientPriorityLabel.noPriority ||
+        priorityLabel == NutrientPriorityLabel.lowPriority;
 
     final targetMinPctPainter =
         (allowStageInterpretation && !hideShadow && targetMinPpm != null)
@@ -324,11 +373,43 @@ class NpkScreen extends StatelessWidget {
                           final isPlanned = runtime.isPlanned;
                           final targets = runtime.targets;
                           final eval = runtime.eval;
+                          final nEvalMetric = eval?.metrics[AgroMetricKey.n];
+                          final pEvalMetric = eval?.metrics[AgroMetricKey.p];
+                          final kEvalMetric = eval?.metrics[AgroMetricKey.k];
                           final stageKey = runtime.stageResult?.stageKey;
                           final weights = _resolveRuntimeWeights(runtime);
                           final cultivationScaleId = _resolveCultivationScaleId(
                             cropContext,
                           );
+
+                          NutrientInterpretationResult? interpretNutrientFallback({
+                            required AgroMetricKey nutrient,
+                            required double rawPpm,
+                            required double? trendPct,
+                            required AgroMetricEval? evalMetric,
+                          }) {
+                            if (!isPlanted || live == null) return null;
+                            if (evalMetric?.hasNutrientInterpretation == true) {
+                              return null;
+                            }
+                            return NutrientRecommendationEngine.interpret(
+                              nutrient: nutrient,
+                              rawPpm: rawPpm,
+                              cropKey: runtime.cropKeyName,
+                              stageKey: stageKey,
+                              profileId: runtime.profile?.id,
+                              varietyId: cropContext?.varietyId,
+                              varietyAlias: cropContext?.varietyAlias,
+                              calendarId: cropContext?.calendarTypeId,
+                              targets: targets,
+                              weights: weights,
+                              cultivationScaleId: cultivationScaleId,
+                              ph: live.ph,
+                              ec: live.ec,
+                              soilMoisturePct: live.soilMoisturePct,
+                              trendPct: trendPct,
+                            );
+                          }
 
                           final nBase = _statsForChannel(
                             channel: NpkChannel.n,
@@ -337,7 +418,7 @@ class NpkScreen extends StatelessWidget {
                             targets: targets,
                             allowStageInterpretation: isPlanted,
                             cropKey: runtime.cropKeyName,
-                            evalMetric: eval?.metrics[AgroMetricKey.n],
+                            evalMetric: nEvalMetric,
                           );
 
                           final pBase = _statsForChannel(
@@ -347,7 +428,7 @@ class NpkScreen extends StatelessWidget {
                             targets: targets,
                             allowStageInterpretation: isPlanted,
                             cropKey: runtime.cropKeyName,
-                            evalMetric: eval?.metrics[AgroMetricKey.p],
+                            evalMetric: pEvalMetric,
                           );
 
                           final kBase = _statsForChannel(
@@ -357,71 +438,35 @@ class NpkScreen extends StatelessWidget {
                             targets: targets,
                             allowStageInterpretation: isPlanted,
                             cropKey: runtime.cropKeyName,
-                            evalMetric: eval?.metrics[AgroMetricKey.k],
+                            evalMetric: kEvalMetric,
                           );
 
-                          final nInterpretation =
-                              isPlanted && live != null
-                              ? NutrientRecommendationEngine.interpret(
+                          final nInterpretation = live == null
+                              ? null
+                              : interpretNutrientFallback(
                                   nutrient: AgroMetricKey.n,
                                   rawPpm: live.n.toDouble(),
-                                  cropKey: runtime.cropKeyName,
-                                  stageKey: stageKey,
-                                  profileId: runtime.profile?.id,
-                                  varietyId: cropContext?.varietyId,
-                                  varietyAlias: cropContext?.varietyAlias,
-                                  calendarId: cropContext?.calendarTypeId,
-                                  targets: targets,
-                                  weights: weights,
-                                  cultivationScaleId: cultivationScaleId,
-                                  ph: live.ph,
-                                  ec: live.ec,
-                                  soilMoisturePct: live.soilMoisturePct,
                                   trendPct: nBase.avgTrendPct,
-                                )
-                              : null;
+                                  evalMetric: nEvalMetric,
+                                );
 
-                          final pInterpretation =
-                              isPlanted && live != null
-                              ? NutrientRecommendationEngine.interpret(
+                          final pInterpretation = live == null
+                              ? null
+                              : interpretNutrientFallback(
                                   nutrient: AgroMetricKey.p,
                                   rawPpm: live.p.toDouble(),
-                                  cropKey: runtime.cropKeyName,
-                                  stageKey: stageKey,
-                                  profileId: runtime.profile?.id,
-                                  varietyId: cropContext?.varietyId,
-                                  varietyAlias: cropContext?.varietyAlias,
-                                  calendarId: cropContext?.calendarTypeId,
-                                  targets: targets,
-                                  weights: weights,
-                                  cultivationScaleId: cultivationScaleId,
-                                  ph: live.ph,
-                                  ec: live.ec,
-                                  soilMoisturePct: live.soilMoisturePct,
                                   trendPct: pBase.avgTrendPct,
-                                )
-                              : null;
+                                  evalMetric: pEvalMetric,
+                                );
 
-                          final kInterpretation =
-                              isPlanted && live != null
-                              ? NutrientRecommendationEngine.interpret(
+                          final kInterpretation = live == null
+                              ? null
+                              : interpretNutrientFallback(
                                   nutrient: AgroMetricKey.k,
                                   rawPpm: live.k.toDouble(),
-                                  cropKey: runtime.cropKeyName,
-                                  stageKey: stageKey,
-                                  profileId: runtime.profile?.id,
-                                  varietyId: cropContext?.varietyId,
-                                  varietyAlias: cropContext?.varietyAlias,
-                                  calendarId: cropContext?.calendarTypeId,
-                                  targets: targets,
-                                  weights: weights,
-                                  cultivationScaleId: cultivationScaleId,
-                                  ph: live.ph,
-                                  ec: live.ec,
-                                  soilMoisturePct: live.soilMoisturePct,
                                   trendPct: kBase.avgTrendPct,
-                                )
-                              : null;
+                                  evalMetric: kEvalMetric,
+                                );
 
                           final n = _statsForChannel(
                             channel: NpkChannel.n,
@@ -430,7 +475,7 @@ class NpkScreen extends StatelessWidget {
                             targets: targets,
                             allowStageInterpretation: isPlanted,
                             cropKey: runtime.cropKeyName,
-                            evalMetric: eval?.metrics[AgroMetricKey.n],
+                            evalMetric: nEvalMetric,
                             interpretation: nInterpretation,
                           );
 
@@ -441,7 +486,7 @@ class NpkScreen extends StatelessWidget {
                             targets: targets,
                             allowStageInterpretation: isPlanted,
                             cropKey: runtime.cropKeyName,
-                            evalMetric: eval?.metrics[AgroMetricKey.p],
+                            evalMetric: pEvalMetric,
                             interpretation: pInterpretation,
                           );
 
@@ -452,7 +497,7 @@ class NpkScreen extends StatelessWidget {
                             targets: targets,
                             allowStageInterpretation: isPlanted,
                             cropKey: runtime.cropKeyName,
-                            evalMetric: eval?.metrics[AgroMetricKey.k],
+                            evalMetric: kEvalMetric,
                             interpretation: kInterpretation,
                           );
 
@@ -462,58 +507,87 @@ class NpkScreen extends StatelessWidget {
                               ? 'Pre-siembra'
                               : 'Modo genérico';
 
+                          final nDoseGuide =
+                              nEvalMetric?.doseGuideEs ??
+                              nInterpretation?.doseGuideEs;
+                          final pDoseGuide =
+                              pEvalMetric?.doseGuideEs ??
+                              pInterpretation?.doseGuideEs;
+                          final kDoseGuide =
+                              kEvalMetric?.doseGuideEs ??
+                              kInterpretation?.doseGuideEs;
+
+                          final nFertilizerEquivalent =
+                              nEvalMetric?.fertilizerEquivalentEs ??
+                              nInterpretation?.fertilizerEquivalentEs;
+                          final pFertilizerEquivalent =
+                              pEvalMetric?.fertilizerEquivalentEs ??
+                              pInterpretation?.fertilizerEquivalentEs;
+                          final kFertilizerEquivalent =
+                              kEvalMetric?.fertilizerEquivalentEs ??
+                              kInterpretation?.fertilizerEquivalentEs;
+
                           final insightN = isPlanted
-                              ? (nInterpretation?.shortRecommendation ??
+                              ? (nEvalMetric?.shortRecommendationEs ??
+                                    nInterpretation?.shortRecommendation ??
                                     'Lectura real de N disponible.')
                               : isPlanned
                               ? 'Lectura real de N en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final insightP = isPlanted
-                              ? (pInterpretation?.shortRecommendation ??
+                              ? (pEvalMetric?.shortRecommendationEs ??
+                                    pInterpretation?.shortRecommendation ??
                                     'Lectura real de P disponible.')
                               : isPlanned
                               ? 'Lectura real de P en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final insightK = isPlanted
-                              ? (kInterpretation?.shortRecommendation ??
+                              ? (kEvalMetric?.shortRecommendationEs ??
+                                    kInterpretation?.shortRecommendation ??
                                     'Lectura real de K disponible.')
                               : isPlanned
                               ? 'Lectura real de K en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final descN = isPlanted
-                              ? (nInterpretation?.justification ??
+                              ? (nEvalMetric?.justificationEs ??
+                                    nInterpretation?.justification ??
                                     'Lectura actual de nitrógeno del suelo.')
                               : 'Lectura real de nitrógeno del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
 
                           final descP = isPlanted
-                              ? (pInterpretation?.justification ??
+                              ? (pEvalMetric?.justificationEs ??
+                                    pInterpretation?.justification ??
                                     'Lectura actual de fósforo del suelo.')
                               : 'Lectura real de fósforo del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
 
                           final descK = isPlanted
-                              ? (kInterpretation?.justification ??
+                              ? (kEvalMetric?.justificationEs ??
+                                    kInterpretation?.justification ??
                                     'Lectura actual de potasio del suelo.')
                               : 'Lectura real de potasio del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
 
                           final actionNRaw = isPlanted
-                              ? (nInterpretation?.practicalRecommendation ??
+                              ? (nEvalMetric?.practicalRecommendationEs ??
+                                    nInterpretation?.practicalRecommendation ??
                                     'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'
                               : 'Configura un cultivo para ver prioridad nutricional.';
 
                           final actionPRaw = isPlanted
-                              ? (pInterpretation?.practicalRecommendation ??
+                              ? (pEvalMetric?.practicalRecommendationEs ??
+                                    pInterpretation?.practicalRecommendation ??
                                     'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'
                               : 'Configura un cultivo para ver prioridad nutricional.';
 
                           final actionKRaw = isPlanted
-                              ? (kInterpretation?.practicalRecommendation ??
+                              ? (kEvalMetric?.practicalRecommendationEs ??
+                                    kInterpretation?.practicalRecommendation ??
                                     'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'
@@ -521,33 +595,36 @@ class NpkScreen extends StatelessWidget {
 
                           final actionN = _cleanMergedActionText(
                             actionNRaw,
-                            nInterpretation?.doseGuideEs,
+                            nDoseGuide,
                           );
                           final actionP = _cleanMergedActionText(
                             actionPRaw,
-                            pInterpretation?.doseGuideEs,
+                            pDoseGuide,
                           );
                           final actionK = _cleanMergedActionText(
                             actionKRaw,
-                            kInterpretation?.doseGuideEs,
+                            kDoseGuide,
                           );
 
                           final windowN = isPlanted
-                              ? (nInterpretation?.demandWindowLabel ??
+                              ? (nEvalMetric?.demandWindowLabelEs ??
+                                    nInterpretation?.demandWindowLabel ??
                                     'Ventana activa')
                               : isPlanned
                               ? 'Pre-siembra'
                               : 'Sin cultivo';
 
                           final windowP = isPlanted
-                              ? (pInterpretation?.demandWindowLabel ??
+                              ? (pEvalMetric?.demandWindowLabelEs ??
+                                    pInterpretation?.demandWindowLabel ??
                                     'Ventana activa')
                               : isPlanned
                               ? 'Pre-siembra'
                               : 'Sin cultivo';
 
                           final windowK = isPlanted
-                              ? (kInterpretation?.demandWindowLabel ??
+                              ? (kEvalMetric?.demandWindowLabelEs ??
+                                    kInterpretation?.demandWindowLabel ??
                                     'Ventana activa')
                               : isPlanned
                               ? 'Pre-siembra'
@@ -574,12 +651,16 @@ class NpkScreen extends StatelessWidget {
                                   description: descN,
                                   stageLabel: stageLabel,
                                   insight: insightN,
-                                  tone: _toneForInterpretation(nInterpretation),
+                                  tone: _toneForNutrient(
+                                    evalMetric: nEvalMetric,
+                                    interpretation: nInterpretation,
+                                    cropKey: runtime.cropKeyName,
+                                  ),
                                   windowLabel: windowN,
                                   actionText: actionN,
-                                  doseGuideText: nInterpretation?.doseGuideEs,
+                                  doseGuideText: nDoseGuide,
                                   fertilizerEquivalentText:
-                                      nInterpretation?.fertilizerEquivalentEs,
+                                      nFertilizerEquivalent,
                                   targetMinPctPainter: n.targetMinPctPainter,
                                   targetMaxPctPainter: n.targetMaxPctPainter,
                                   targetMinPpm: n.targetMinPpm,
@@ -600,12 +681,16 @@ class NpkScreen extends StatelessWidget {
                                   description: descP,
                                   stageLabel: stageLabel,
                                   insight: insightP,
-                                  tone: _toneForInterpretation(pInterpretation),
+                                  tone: _toneForNutrient(
+                                    evalMetric: pEvalMetric,
+                                    interpretation: pInterpretation,
+                                    cropKey: runtime.cropKeyName,
+                                  ),
                                   windowLabel: windowP,
                                   actionText: actionP,
-                                  doseGuideText: pInterpretation?.doseGuideEs,
+                                  doseGuideText: pDoseGuide,
                                   fertilizerEquivalentText:
-                                      pInterpretation?.fertilizerEquivalentEs,
+                                      pFertilizerEquivalent,
                                   targetMinPctPainter: p.targetMinPctPainter,
                                   targetMaxPctPainter: p.targetMaxPctPainter,
                                   targetMinPpm: p.targetMinPpm,
@@ -626,12 +711,16 @@ class NpkScreen extends StatelessWidget {
                                   description: descK,
                                   stageLabel: stageLabel,
                                   insight: insightK,
-                                  tone: _toneForInterpretation(kInterpretation),
+                                  tone: _toneForNutrient(
+                                    evalMetric: kEvalMetric,
+                                    interpretation: kInterpretation,
+                                    cropKey: runtime.cropKeyName,
+                                  ),
                                   windowLabel: windowK,
                                   actionText: actionK,
-                                  doseGuideText: kInterpretation?.doseGuideEs,
+                                  doseGuideText: kDoseGuide,
                                   fertilizerEquivalentText:
-                                      kInterpretation?.fertilizerEquivalentEs,
+                                      kFertilizerEquivalent,
                                   targetMinPctPainter: k.targetMinPctPainter,
                                   targetMaxPctPainter: k.targetMaxPctPainter,
                                   targetMinPpm: k.targetMinPpm,

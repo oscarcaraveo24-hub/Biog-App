@@ -9,6 +9,7 @@ import 'package:bio_g/core/crops/crop_cycle_display_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
+import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
@@ -227,7 +228,7 @@ class _SeedsScreenState extends State<SeedsScreen>
       final String stageId = normalizeTreeStageId(cropContext.phenologyStageId);
       final String? criticalLabel = treeCriticalWindowLabel(stageId);
 
-      stageTitle = treeStageDisplayName(stageId);
+      stageTitle = treeStageDisplayNameForCrop(cropContext.cropId, stageId);
       statusChip = criticalLabel != null ? 'Ventana activa' : 'Perenne';
       topSubtitle = activeDevice?.locationName ?? 'Monitoreo continuo';
       dayPrefix = 'Estado:';
@@ -241,7 +242,7 @@ class _SeedsScreenState extends State<SeedsScreen>
       growthCmPerWeek = 0;
       heroAsset = runtime.stageResult?.heroAsset.trim().isNotEmpty == true
           ? runtime.stageResult!.heroAsset
-          : 'assets/icons/wizard/ic_arbol.png';
+          : 'assets/icons/wizard/ic_tree.png';
       showGrowthRows = false;
     } else if (isMaizeRuntime &&
         runtime.isPlanted &&
@@ -1046,6 +1047,15 @@ class SeedsScreenLogic {
     required SeedInstall? seed,
     required String? routeVarietyAlias,
   }) {
+    if (isTreeCrop(cropId: cropId, cropCategoryId: cropContext?.cropCategoryId)) {
+      return _resolvedTreeProfileLabel(
+        cropId: cropId,
+        cropContext: cropContext,
+        seed: seed,
+        routeVarietyAlias: routeVarietyAlias,
+      );
+    }
+
     if (cropId.isNotEmpty) {
       final variety = CropCatalog.varietyByAny(
         cropId,
@@ -1066,6 +1076,37 @@ class SeedsScreenLogic {
     if (normalized == null || normalized.isEmpty) return '';
 
     return normalized;
+  }
+
+  static String _resolvedTreeProfileLabel({
+    required String cropId,
+    required DeviceCropContext? cropContext,
+    required SeedInstall? seed,
+    required String? routeVarietyAlias,
+  }) {
+    final rawProfileValue =
+        cropContext?.profileId ??
+        seed?.profileId ??
+        cropContext?.varietyId ??
+        cropContext?.varietyAlias ??
+        seed?.varietyAlias ??
+        routeVarietyAlias;
+
+    final profile = CropCatalog.profileByAny(cropId, rawProfileValue);
+    if (profile != null) {
+      return TreeProfilePresentation.displayLabel(
+        cropId,
+        profile.id,
+        fallbackLabel: profile.label,
+      );
+    }
+
+    final defaultProfileId = CropCatalog.cropById(cropId)?.defaultProfileId;
+    return TreeProfilePresentation.displayLabel(
+      cropId,
+      rawProfileValue ?? defaultProfileId,
+      fallbackLabel: rawProfileValue,
+    );
   }
 
   static bool isGenericSelection({
@@ -1130,6 +1171,13 @@ class SeedsScreenLogic {
     }
 
     if (isGenericSelection) {
+      if (isTreeCrop(cropId: cropId)) {
+        return TreeProfilePresentation.displayLabel(
+          cropId,
+          CropCatalog.cropById(cropId)?.defaultProfileId,
+          fallbackLabel: cropDisplayName,
+        );
+      }
       if (cropId == CropCatalog.squashCropId) {
         return '$cropDisplayName - Calabaza generica';
       }

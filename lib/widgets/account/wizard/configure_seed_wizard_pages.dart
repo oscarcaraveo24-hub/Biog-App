@@ -89,7 +89,7 @@ class CategoryPage extends StatelessWidget {
             child: WizardLongPill(
               iconPath: ConfigureSeedWizardAssets.categoryTree,
               title: 'Arbol',
-              subtitle: 'Manzano y otros frutales perennes',
+              subtitle: 'Manzano, pera y otros frutales perennes',
               selected: category == 'tree',
               enabled: true,
               onTap: () => onSelect('tree'),
@@ -163,7 +163,7 @@ class CropVarietyPage extends StatelessWidget {
 
   String get _subtitleText {
     if (isTreeFlow) {
-      return 'Selecciona el arbol y el perfil de manzano.';
+      return 'Selecciona el árbol y su variedad.';
     }
     if (_isChiliCrop) {
       return 'Selecciona el cultivo y el tipo de chile.';
@@ -179,7 +179,7 @@ class CropVarietyPage extends StatelessWidget {
 
   String get _varietyPillTitle {
     if (isTreeFlow) {
-      return 'Tipo de manzano';
+      return 'Variedad';
     }
     if (_isChiliCrop) {
       return 'Tipo de chile';
@@ -199,7 +199,7 @@ class CropVarietyPage extends StatelessWidget {
 
   String get _helperText {
     if (isTreeFlow) {
-      return 'Si no sabes la variedad, usa No se / Manzano general. Es un perfil general, no descanso del suelo.';
+      return 'Si no sabes la variedad, usa la opción general. Es migrable, no descanso del suelo.';
     }
     if (cropUsesBrands) {
       return 'Si no conoces tu semilla exacta, podras elegir un perfil generico.';
@@ -806,6 +806,20 @@ bool treeReproSignalIsUnknown(String? signalId) {
   return signalId == TreeReproSignalOptionIds.notSure;
 }
 
+String treeReproSignalIconPath(String? signalId) {
+  return switch (signalId) {
+    TreeReproSignalOptionIds.growingOnly =>
+      ConfigureSeedWizardAssets.treeGrowingOnly,
+    TreeReproSignalOptionIds.hasFlower =>
+      ConfigureSeedWizardAssets.treeHasFlower,
+    TreeReproSignalOptionIds.hasFruitSet =>
+      ConfigureSeedWizardAssets.treeTinyFruit,
+    TreeReproSignalOptionIds.hasFruitFill =>
+      ConfigureSeedWizardAssets.treeFruitGrowing,
+    _ => ConfigureSeedWizardAssets.treeUnknownState,
+  };
+}
+
 /// Resuelve la fecha de una opción rápida de anclaje. En la rama de plantación
 /// (3A) las opciones son antigüedades del árbol; en la de inicio de etapa (3B)
 /// son tiempos relativos cortos. Devuelve `null` para opciones sin fecha
@@ -854,11 +868,13 @@ class TreeStatePage extends StatelessWidget {
   const TreeStatePage({
     super.key,
     required this.productionStatusId,
+    required this.iconForStatus,
     required this.summary,
     required this.onSelect,
   });
 
   final String? productionStatusId;
+  final String Function(String statusId) iconForStatus;
   final Widget? summary;
   final ValueChanged<String> onSelect;
 
@@ -867,20 +883,20 @@ class TreeStatePage extends StatelessWidget {
       id: TreeProductionStatusIds.nonProductive,
       title: 'Todavía no',
       subtitle: 'Es un árbol joven.',
-      iconPath: ConfigureSeedWizardAssets.appleTreeYoungNotFruiting,
+      iconPath: ConfigureSeedWizardAssets.treeYoungNotFruiting,
     ),
     _TreeWizardOptionData(
       id: TreeProductionStatusIds.productiveOrProduced,
       title: 'Sí, ya produce',
       subtitle: 'o ya ha dado antes.',
-      iconPath: AppleTreeAssets.cropIcon,
+      iconPath: ConfigureSeedWizardAssets.categoryTree,
     ),
     _TreeWizardOptionData(
       id: TreeProductionStatusIds.unknown,
       title: 'No estoy seguro',
       subtitle:
           'BIO-G usará un perfil general y ajustará la interpretación con los sensores.',
-      iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+      iconPath: ConfigureSeedWizardAssets.treeUnknownState,
     ),
   ];
 
@@ -895,7 +911,7 @@ class TreeStatePage extends StatelessWidget {
           const StaggerIn(
             delay: 0,
             child: Text(
-              '¿Tu manzano ya da fruta?',
+              '¿Tu árbol ya da fruta?',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
@@ -915,7 +931,7 @@ class TreeStatePage extends StatelessWidget {
               child: StaggerIn(
                 delay: 90 + index * 45,
                 child: WizardLongPill(
-                  iconPath: option.iconPath,
+                  iconPath: iconForStatus(option.id),
                   title: option.title,
                   subtitle: option.subtitle,
                   selected: productionStatusId == option.id,
@@ -940,12 +956,14 @@ class TreePhenologyStagePage extends StatelessWidget {
     super.key,
     required this.productionStatusId,
     required this.stageId,
+    required this.iconForStage,
     required this.summary,
     required this.onSelect,
   });
 
   final String? productionStatusId;
   final String? stageId;
+  final String Function(String stageId) iconForStage;
   final Widget? summary;
   final ValueChanged<String> onSelect;
 
@@ -983,7 +1001,7 @@ class TreePhenologyStagePage extends StatelessWidget {
               child: StaggerIn(
                 delay: 90 + (index.clamp(0, 8)) * 35,
                 child: WizardLongPill(
-                  iconPath: option.iconPath,
+                  iconPath: iconForStage(option.id),
                   title: option.title,
                   subtitle: option.subtitle,
                   selected: stageId == option.id,
@@ -1012,31 +1030,31 @@ class TreePhenologyStagePage extends StatelessWidget {
             id: TreeStageIds.plantingTransplant,
             title: 'Recién plantado o trasplantado',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeYoungNotFruiting,
+            iconPath: ConfigureSeedWizardAssets.treeYoungNotFruiting,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.rootEstablishment,
             title: 'Se está estableciendo / agarrando raíz',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeYoungNotFruiting,
+            iconPath: ConfigureSeedWizardAssets.treeYoungNotFruiting,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.juvenileVegetative,
             title: 'Está creciendo con hojas nuevas',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeGrowingOnly,
+            iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.dormancy,
             title: 'Está sin hojas / en reposo',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeDormantLeafless,
+            iconPath: ConfigureSeedWizardAssets.treeDormantLeafless,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.unknown,
             title: 'No lo sé',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+            iconPath: ConfigureSeedWizardAssets.treeUnknownState,
           ),
         ];
       case TreeProductionStatusIds.productiveOrProduced:
@@ -1045,55 +1063,55 @@ class TreePhenologyStagePage extends StatelessWidget {
             id: TreeStageIds.dormancy,
             title: 'En reposo / Sin hojas',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeDormantLeafless,
+            iconPath: ConfigureSeedWizardAssets.treeDormantLeafless,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.budbreak,
             title: 'Brotando / Sacando hojitas',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeBudding,
+            iconPath: ConfigureSeedWizardAssets.treeBudding,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.vegetativeGrowth,
             title: 'Puro follaje / Lleno de hoja',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeFullFoliage,
+            iconPath: ConfigureSeedWizardAssets.treeFullFoliage,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.flowering,
             title: 'En floración',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeFlowering,
+            iconPath: ConfigureSeedWizardAssets.treeFlowering,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.fruitSet,
             title: 'Frutito amarrado / Tirando flor',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeFruitSetFlowerDrop,
+            iconPath: ConfigureSeedWizardAssets.treeFruitSetFlowerDrop,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.fruitFill,
             title: 'Fruto verde / Creciendo',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeGreenFruitGrowing,
+            iconPath: ConfigureSeedWizardAssets.treeGreenFruitGrowing,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.harvestMaturity,
             title: 'Listo para la pisca / Cosecha',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeReadyHarvest,
+            iconPath: ConfigureSeedWizardAssets.treeReadyHarvest,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.postHarvest,
             title: 'Acabo de cosechar',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeAfterHarvest,
+            iconPath: ConfigureSeedWizardAssets.treeAfterHarvest,
           ),
           _TreeWizardOptionData(
             id: TreeStageIds.unknown,
             title: 'No lo sé',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+            iconPath: ConfigureSeedWizardAssets.treeUnknownState,
           ),
         ];
       case TreeProductionStatusIds.unknown:
@@ -1102,7 +1120,7 @@ class TreePhenologyStagePage extends StatelessWidget {
             id: TreeStageIds.unknown,
             title: 'No lo sé',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+            iconPath: ConfigureSeedWizardAssets.treeUnknownState,
           ),
         ];
       default:
@@ -1121,11 +1139,13 @@ class TreeReproSignalPage extends StatelessWidget {
   const TreeReproSignalPage({
     super.key,
     required this.selectedOptionId,
+    required this.iconForSignal,
     required this.summary,
     required this.onSelect,
   });
 
   final String? selectedOptionId;
+  final String Function(String signalId) iconForSignal;
   final Widget? summary;
   final ValueChanged<String> onSelect;
 
@@ -1134,31 +1154,31 @@ class TreeReproSignalPage extends StatelessWidget {
       id: TreeReproSignalOptionIds.growingOnly,
       title: 'No, solo está creciendo',
       subtitle: '',
-      iconPath: ConfigureSeedWizardAssets.appleTreeGrowingOnly,
+      iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
     ),
     _TreeWizardOptionData(
       id: TreeReproSignalOptionIds.hasFlower,
       title: 'Sí, tiene flor',
       subtitle: '',
-      iconPath: ConfigureSeedWizardAssets.appleTreeHasFlower,
+      iconPath: ConfigureSeedWizardAssets.treeHasFlower,
     ),
     _TreeWizardOptionData(
       id: TreeReproSignalOptionIds.hasFruitSet,
       title: 'Sí, tiene frutito chiquito',
       subtitle: '',
-      iconPath: ConfigureSeedWizardAssets.appleTreeTinyFruit,
+      iconPath: ConfigureSeedWizardAssets.treeTinyFruit,
     ),
     _TreeWizardOptionData(
       id: TreeReproSignalOptionIds.hasFruitFill,
       title: 'Sí, fruto creciendo',
       subtitle: '',
-      iconPath: ConfigureSeedWizardAssets.appleTreeFruitGrowing,
+      iconPath: ConfigureSeedWizardAssets.treeFruitGrowing,
     ),
     _TreeWizardOptionData(
       id: TreeReproSignalOptionIds.notSure,
       title: 'No estoy seguro',
       subtitle: '',
-      iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+      iconPath: ConfigureSeedWizardAssets.treeUnknownState,
     ),
   ];
 
@@ -1194,7 +1214,7 @@ class TreeReproSignalPage extends StatelessWidget {
               child: StaggerIn(
                 delay: 90 + index * 40,
                 child: WizardLongPill(
-                  iconPath: option.iconPath,
+                  iconPath: iconForSignal(option.id),
                   title: option.title,
                   subtitle: option.subtitle,
                   selected: selectedOptionId == option.id,
@@ -1222,6 +1242,7 @@ class TreeAnchorPage extends StatelessWidget {
     required this.anchorTypeId,
     required this.selectedOptionId,
     required this.selectedDate,
+    required this.cropIconPath,
     required this.summary,
     required this.saving,
     required this.onSelectOption,
@@ -1234,6 +1255,7 @@ class TreeAnchorPage extends StatelessWidget {
   final String? anchorTypeId;
   final String? selectedOptionId;
   final DateTime selectedDate;
+  final String cropIconPath;
   final Widget? summary;
   final bool saving;
   final ValueChanged<String> onSelectOption;
@@ -1252,7 +1274,7 @@ class TreeAnchorPage extends StatelessWidget {
       normalizeTreeStageId(stageId) == TreeStageIds.unknown;
 
   String get _title {
-    if (_isUnknownStage) return 'Manzano general';
+    if (_isUnknownStage) return 'Seguimiento general del árbol';
     if (_isPlantingAnchor) return '¿Cuándo lo plantaste en tierra?';
     return switch (normalizeTreeStageId(stageId)) {
       TreeStageIds.flowering => '¿Hace cuánto notaste la flor?',
@@ -1265,7 +1287,7 @@ class TreeAnchorPage extends StatelessWidget {
 
   String get _subtitle {
     if (_isUnknownStage) {
-      return 'BIO-G usará un perfil general, sin fecha de etapa.';
+      return 'BIO-G usará ajustes generales, sin fecha de etapa.';
     }
     if (_isPlantingAnchor) {
       return 'Con esto BIO-G calcula la edad y la etapa aproximada del árbol.';
@@ -1287,31 +1309,31 @@ class TreeAnchorPage extends StatelessWidget {
           id: TreeAnchorWizardOptionIds.plantedThisMonth,
           title: 'Apenas este mes',
           subtitle: '',
-          iconPath: ConfigureSeedWizardAssets.stagePlanted,
+          iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
         ),
         _TreeWizardOptionData(
           id: TreeAnchorWizardOptionIds.plantedSixMonths,
           title: 'Hace unos 6 meses',
           subtitle: '',
-          iconPath: ConfigureSeedWizardAssets.stagePlanted,
+          iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
         ),
         _TreeWizardOptionData(
           id: TreeAnchorWizardOptionIds.plantedOneYear,
           title: 'Hace 1 año',
           subtitle: '',
-          iconPath: ConfigureSeedWizardAssets.stagePlanted,
+          iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
         ),
         _TreeWizardOptionData(
           id: TreeAnchorWizardOptionIds.plantedTwoYearsPlus,
           title: 'Hace 2 años o más',
           subtitle: '',
-          iconPath: AppleTreeAssets.cropIcon,
+          iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
         ),
         _TreeWizardOptionData(
           id: TreeAnchorWizardOptionIds.unknown,
           title: 'No lo recuerdo',
           subtitle: '',
-          iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+          iconPath: ConfigureSeedWizardAssets.treeUnknownState,
         ),
       ];
     }
@@ -1326,21 +1348,34 @@ class TreeAnchorPage extends StatelessWidget {
         id: TreeAnchorWizardOptionIds.thisWeek,
         title: 'Apenas esta semana',
         subtitle: '',
-        iconPath: ConfigureSeedWizardAssets.stagePlanted,
+        iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
       ),
       _TreeWizardOptionData(
         id: TreeAnchorWizardOptionIds.twoWeeks,
         title: 'Hace unas 2 semanas',
         subtitle: '',
-        iconPath: ConfigureSeedWizardAssets.stagePlanted,
+        iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
       ),
       _TreeWizardOptionData(
         id: TreeAnchorWizardOptionIds.oneMonth,
         title: 'Hace 1 mes',
         subtitle: '',
-        iconPath: ConfigureSeedWizardAssets.stagePlanted,
+        iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
       ),
     ];
+  }
+
+  String _iconForAnchorOption(String optionId, String fallbackIconPath) {
+    switch (optionId) {
+      case TreeAnchorWizardOptionIds.custom:
+        return fallbackIconPath;
+      case TreeAnchorWizardOptionIds.unknown:
+        return ConfigureSeedWizardAssets.treeUnknownState;
+      default:
+        return _isPlantingAnchor
+            ? ConfigureSeedWizardAssets.treeGrowingOnly
+            : ConfigureSeedWizardAssets.treeStageIconFor(stageId);
+    }
   }
 
   @override
@@ -1388,7 +1423,10 @@ class TreeAnchorPage extends StatelessWidget {
               child: StaggerIn(
                 delay: 90 + (entry.key.clamp(0, 7)) * 40,
                 child: WizardLongPill(
-                  iconPath: entry.value.iconPath,
+                  iconPath: _iconForAnchorOption(
+                    entry.value.id,
+                    entry.value.iconPath,
+                  ),
                   title: entry.value.title,
                   subtitle: entry.value.subtitle,
                   selected: selectedOptionId == entry.value.id,
@@ -1435,7 +1473,7 @@ class TreeAnchorPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   WizardAssetIcon(
-                    assetPath: AppleTreeAssets.cropIcon,
+                    assetPath: cropIconPath,
                     slotWidth: 34,
                     slotHeight: 34,
                     imageWidth: 34,

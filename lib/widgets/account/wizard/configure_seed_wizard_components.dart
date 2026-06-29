@@ -1,5 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 
 class ConfigureSeedWizardAssets {
@@ -11,42 +14,67 @@ class ConfigureSeedWizardAssets {
   static const String categoryGrain = 'assets/icons/wizard/ic_grano.png';
   static const String categoryVegetable =
       'assets/icons/wizard/ic_hortaliza.png';
-  static const String categoryTree = 'assets/icons/wizard/ic_arbol.png';
+  static const String categoryTree = 'assets/icons/wizard/ic_tree.png';
   static const String categoryOrnamental =
       'assets/icons/wizard/ic_planta_hornamental.png';
   static const String categoryGeneric =
       'assets/icons/wizard/ic_planta_generica.png';
 
-  static const String appleTreeYoungNotFruiting =
-      'assets/icons/wizard/ic_apple_tree_young_not_fruiting.png';
-  static const String appleTreeUnknownState =
-      'assets/icons/wizard/ic_apple_tree_unknown_state.png';
-  static const String appleTreeGrowingOnly =
-      'assets/icons/wizard/ic_apple_tree_growing_only.png';
-  static const String appleTreeHasFlower =
-      'assets/icons/wizard/ic_apple_tree_has_flower.png';
-  static const String appleTreeTinyFruit =
-      'assets/icons/wizard/ic_apple_tree_tiny_fruit.png';
-  static const String appleTreeFruitGrowing =
-      'assets/icons/wizard/ic_apple_tree_fruit_growing.png';
+  static const String treeYoungNotFruiting =
+      'assets/icons/wizard/ic_tree_young_not_fruiting.png';
+  static const String treeUnknownState =
+      'assets/icons/wizard/ic_tree_unknown_state.png';
+  static const String treeGrowingOnly =
+      'assets/icons/wizard/ic_tree_growing_only.png';
+  static const String treeHasFlower =
+      'assets/icons/wizard/ic_tree_has_flower.png';
+  static const String treeTinyFruit =
+      'assets/icons/wizard/ic_tree_tiny_fruit.png';
+  static const String treeFruitGrowing =
+      'assets/icons/wizard/ic_tree_fruit_growing.png';
   static const String exactDateCalendarClock =
       'assets/icons/wizard/ic_exact_date_calendar_clock.png';
-  static const String appleTreeDormantLeafless =
-      'assets/icons/wizard/ic_apple_tree_dormant_leafless.png';
-  static const String appleTreeBudding =
-      'assets/icons/wizard/ic_apple_tree_budding.png';
-  static const String appleTreeFullFoliage =
-      'assets/icons/wizard/ic_apple_tree_full_foliage.png';
-  static const String appleTreeFlowering =
-      'assets/icons/wizard/ic_apple_tree_flowering.png';
-  static const String appleTreeFruitSetFlowerDrop =
-      'assets/icons/wizard/ic_apple_tree_fruit_set_flower_drop.png';
-  static const String appleTreeGreenFruitGrowing =
-      'assets/icons/wizard/ic_apple_tree_green_fruit_growing.png';
-  static const String appleTreeReadyHarvest =
-      'assets/icons/wizard/ic_apple_tree_ready_harvest.png';
-  static const String appleTreeAfterHarvest =
-      'assets/icons/wizard/ic_apple_tree_after_harvest.png';
+  static const String treeDormantLeafless =
+      'assets/icons/wizard/ic_tree_dormant_leafless.png';
+  static const String treeBudding =
+      'assets/icons/wizard/ic_tree_budding.png';
+  static const String treeFullFoliage =
+      'assets/icons/wizard/ic_tree_full_foliage.png';
+  static const String treeFlowering =
+      'assets/icons/wizard/ic_tree_flowering.png';
+  static const String treeFruitSetFlowerDrop =
+      'assets/icons/wizard/ic_tree_fruit_set_flower_drop.png';
+  static const String treeGreenFruitGrowing =
+      'assets/icons/wizard/ic_tree_green_fruit_growing.png';
+  static const String treeReadyHarvest =
+      'assets/icons/wizard/ic_tree_ready_harvest.png';
+  static const String treeAfterHarvest =
+      'assets/icons/wizard/ic_tree_after_harvest.png';
+
+  static String treeStageIconFor(String? stageId) {
+    return switch (normalizeTreeStageId(stageId)) {
+      TreeStageIds.plantingTransplant => treeYoungNotFruiting,
+      TreeStageIds.rootEstablishment => treeYoungNotFruiting,
+      TreeStageIds.juvenileVegetative => treeGrowingOnly,
+      TreeStageIds.dormancy => treeDormantLeafless,
+      TreeStageIds.budbreak => treeBudding,
+      TreeStageIds.vegetativeGrowth => treeFullFoliage,
+      TreeStageIds.flowering => treeFlowering,
+      TreeStageIds.fruitSet => treeFruitSetFlowerDrop,
+      TreeStageIds.fruitFill => treeGreenFruitGrowing,
+      TreeStageIds.harvestMaturity => treeReadyHarvest,
+      TreeStageIds.postHarvest => treeAfterHarvest,
+      _ => treeUnknownState,
+    };
+  }
+
+  static String treeProductionStatusIconFor(String? statusId) {
+    return switch (normalizeTreeProductionStatusId(statusId)) {
+      TreeProductionStatusIds.nonProductive => treeYoungNotFruiting,
+      TreeProductionStatusIds.productiveOrProduced => categoryTree,
+      _ => treeUnknownState,
+    };
+  }
 
   static const String cropMaize = 'assets/icons/wizard/ic_maiz.png';
   static const String cropWheat = 'assets/icons/wizard/ic_trigo.png';
@@ -1455,6 +1483,7 @@ class WizardAssetIcon extends StatelessWidget {
     this.scale = 1.0,
     this.offsetX = 0,
     this.offsetY = 0,
+    this.fallbackAsset = 'assets/icons/wizard/ic_tree.png',
   });
 
   final String assetPath;
@@ -1465,6 +1494,10 @@ class WizardAssetIcon extends StatelessWidget {
   final double scale;
   final double offsetX;
   final double offsetY;
+
+  /// Asset de respaldo si [assetPath] no existe o falla al cargar (p. ej. arte
+  /// de un cultivo aun no generado). Evita que un PNG faltante rompa la UI.
+  final String fallbackAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -1489,6 +1522,23 @@ class WizardAssetIcon extends StatelessWidget {
               fit: BoxFit.contain,
               filterQuality: FilterQuality.high,
               alignment: Alignment.centerLeft,
+              // Fallback seguro: si el asset no existe (arte faltante), cae a un
+              // icono generico de arbol en lugar de romper el render.
+              errorBuilder: (context, error, stackTrace) {
+                if (fallbackAsset == assetPath) {
+                  return SizedBox(width: imageWidth, height: imageHeight);
+                }
+                return Image.asset(
+                  fallbackAsset,
+                  width: imageWidth,
+                  height: imageHeight,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  alignment: Alignment.centerLeft,
+                  errorBuilder: (context, error, stackTrace) =>
+                      SizedBox(width: imageWidth, height: imageHeight),
+                );
+              },
             ),
           ),
         ),

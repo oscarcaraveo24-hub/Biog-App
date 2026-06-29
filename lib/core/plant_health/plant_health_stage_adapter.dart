@@ -43,6 +43,12 @@ class PlantHealthStageAdapter {
         return _fromGarlic(stage, daySinceSowing);
       case CropCatalog.appleTreeCropId:
         return _fromAppleTree(stage);
+      case CropCatalog.pearTreeCropId:
+        return _fromPearTree(stage);
+      case CropCatalog.peachTreeCropId:
+        return _fromPeachTree(stage);
+      case CropCatalog.walnutTreeCropId:
+        return _fromWalnutTree(stage);
     }
     return null;
   }
@@ -71,6 +77,138 @@ class PlantHealthStageAdapter {
     }
     if (_matches(stage, const <String>['dormancy', 'post_harvest'])) {
       return PlantHealthStageBucket.lateSeason;
+    }
+    return null;
+  }
+
+  /// Pera / peral perenne (doc 04 §6): mapea los TreeStageIds del peral a los
+  /// buckets del motor de sanidad para que cada etapa fenológica filtre/pondere
+  /// sus riesgos propios, sin reusar el mapeo del manzano.
+  ///
+  /// Decisiones clave frente al manzano:
+  /// - `flowering` → reproductiveEarly: prioriza fuego bacteriano, helada y
+  ///   polinización (familia flor/bacterias del catálogo de pera).
+  /// - `fruit_fill` → reproductiveMid (no grainFill): mantiene activos psila y
+  ///   roña/Fabraea (foliares) JUNTO con carpocapsa, ácaros, golpe de sol,
+  ///   cork spot y pudriciones (fruto), tal como pide el doc para llenado.
+  /// - `post_harvest` NO se apaga: cae en lateSeason, que el catálogo de pera
+  ///   cubre con psila tardía, ácaros/defoliación y pudriciones residuales.
+  /// - `unknown` devuelve null: el motor opera conservador y con menor confianza
+  ///   (sin bono de etapa), no bloquea.
+  static PlantHealthStageBucket? _fromPearTree(String stage) {
+    if (_matches(stage, const <String>['planting_transplant', 'root_establish'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['vegetative_growth'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['flowering'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    // fruit_set y fruit_fill comparten bucket reproductiveMid: ambos conservan
+    // riesgos foliares (psila/roña) y de fruto (carpocapsa/calidad).
+    if (_matches(stage, const <String>['fruit_set', 'fruit_fill'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    // post_harvest debe evaluarse ANTES que harvest (contiene "harvest").
+    if (_matches(stage, const <String>['post_harvest', 'dormancy'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (_matches(stage, const <String>['harvest_maturity', 'harvest'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    return null;
+  }
+
+  /// Durazno / duraznero perenne (doc 04 §12): mapea los TreeStageIds del
+  /// durazno a los buckets del motor de sanidad para que cada etapa fenológica
+  /// filtre/pondere sus riesgos propios, sin reusar el mapeo del manzano/pera.
+  ///
+  /// Decisiones clave (frutal de hueso/carozo):
+  /// - `flowering` → reproductiveEarly: prioriza helada en flor, Monilinia
+  ///   (blossom blight) y bajo cuajado (familia flor del catálogo de durazno).
+  /// - `fruit_set` y `fruit_fill` → reproductiveMid: mantienen activos riesgos
+  ///   foliares (torque/leaf curl, tiro de munición, mancha bacteriana, ácaros)
+  ///   JUNTO con plagas/desórdenes de fruto (palomilla oriental, barrenador,
+  ///   golpe de sol, split pit). El endurecimiento de hueso es subventana de
+  ///   `fruit_fill`, no un stageId nuevo.
+  /// - `post_harvest` NO se apaga: cae en lateSeason (reservas, ácaros,
+  ///   defoliación, roya/tiro de munición, barrenadores, cancros residuales).
+  /// - `harvest_maturity` → grainFill: pudrición café/Monilinia, pudriciones de
+  ///   almacén, golpe de sol, rajado y daño de fruto cerca de cosecha.
+  /// - `unknown` devuelve null: el motor opera conservador y con menor confianza
+  ///   (sin bono de etapa), no bloquea.
+  static PlantHealthStageBucket? _fromPeachTree(String stage) {
+    if (_matches(stage, const <String>['planting_transplant', 'root_establish'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['vegetative_growth'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['flowering'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    // fruit_set y fruit_fill comparten bucket reproductiveMid: ambos conservan
+    // riesgos foliares (torque/shot hole) y de fruto (palomilla/calibre/calidad).
+    if (_matches(stage, const <String>['fruit_set', 'fruit_fill'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    // post_harvest debe evaluarse ANTES que harvest (contiene "harvest").
+    if (_matches(stage, const <String>['post_harvest', 'dormancy'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (_matches(stage, const <String>['harvest_maturity', 'harvest'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    return null;
+  }
+
+  /// Nogal pecanero perenne (doc 04 §11): mapea los TreeStageIds del nogal a los
+  /// buckets del motor de sanidad para que cada etapa fenológica filtre/pondere
+  /// sus riesgos propios, sin reusar el mapeo del manzano/pera/durazno.
+  ///
+  /// Decisiones clave (frutal de nuez):
+  /// - `flowering` → reproductiveEarly: prioriza helada en flor, desincronía
+  ///   floral/falta de polinizador y frío insuficiente (familia flor del nogal).
+  /// - `fruit_set` y `fruit_fill` → reproductiveMid: mantienen activos riesgos
+  ///   foliares (zinc/roseta, pulgón amarillo/negro, ácaros) JUNTO con plagas y
+  ///   desórdenes de nuez/ruezno (barrenador de la nuez/ruezno, chinches, shuck
+  ///   decline, estrés hídrico). El estado acuoso/endurecimiento de cáscara/
+  ///   llenado de almendra son subventanas de `fruit_fill`, no stageIds nuevos.
+  /// - `post_harvest` NO se apaga: cae en lateSeason (reservas, pulgón negro/
+  ///   ácaros tardíos, defoliación, alternancia).
+  /// - `harvest_maturity` → grainFill: shuckworm, picudo, chinches, decaimiento
+  ///   de ruezno, manchado de almendra y sticktights cerca de cosecha.
+  /// - `unknown` devuelve null: el motor opera conservador y con menor confianza
+  ///   (sin bono de etapa), no bloquea.
+  static PlantHealthStageBucket? _fromWalnutTree(String stage) {
+    if (_matches(stage, const <String>['planting_transplant', 'root_establish'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['vegetative_growth'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['flowering'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['fruit_set', 'fruit_fill'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    // post_harvest debe evaluarse ANTES que harvest (contiene "harvest").
+    if (_matches(stage, const <String>['post_harvest', 'dormancy'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (_matches(stage, const <String>['harvest_maturity', 'harvest'])) {
+      return PlantHealthStageBucket.grainFill;
     }
     return null;
   }

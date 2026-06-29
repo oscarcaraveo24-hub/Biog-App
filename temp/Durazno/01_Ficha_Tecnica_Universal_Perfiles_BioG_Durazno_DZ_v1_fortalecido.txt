@@ -1,0 +1,1826 @@
+BIO-G
+01_FICHA_TECNICA_UNIVERSAL + PERFILES/VARIEDADES
+DURAZNO / DURAZNERO / MELOCOTON / PEACH TREE
+
+Archivo: 01_Ficha_Tecnica_Universal_Perfiles_BioG_Durazno_DZ_v1_fortalecido.txt
+Cultivo BIO-G: Durazno / Duraznero
+cropId: crop_peach_tree
+prefix perfiles: DZ
+Version: v1.0 texto cableable fortalecido
+Estado: listo para revision, refinamiento y posterior paso a Codex/Claude junto con SKIP, rendimiento, riesgos y fertilizacion.
+Formato: TXT interno para codigo. No es recomendacion agronomica local.
+
+================================================================================
+0. CORRECCIONES Y DECISIONES DE ESTA VERSION
+================================================================================
+
+0.1 Decision documental
+La Ficha Tecnica Universal y la Ficha de Perfiles/Variedades quedan en ESTE MISMO DOCUMENTO.
+No se crea documento separado de variedades. Esto sigue el Estandar BIO-G para arboles
+perennes v1.5 y el patron que ya quedo validado en Manzano y Pera:
+
+cultivo madre
++ perfiles/variedades
++ aliases
++ etapas
++ rangos base
++ UX
++ assets
++ mapeo tecnico
+
+0.2 Decision tecnica central
+En arboles, BIO-G NO debe usar sowingDate como eje principal.
+
+El eje correcto es:
+
+estado fisiologico del arbol
++ etapa/evento visible
++ ancla temporal
++ memoria del cultivo
+
+La variedad/perfil ajusta:
+- requerimiento relativo de frio,
+- epoca relativa de floracion/cosecha,
+- sensibilidad a helada, calor, enfermedades y sanidad,
+- destino de fruta,
+- rendimiento relativo,
+- textos,
+- confianza.
+
+La variedad NO cambia la arquitectura fenologica base.
+
+0.3 Por que Durazno es el siguiente arbol correcto
+Durazno valida que BIO-G no quedo amarrado solo a frutales de pepita como Manzano/Pera.
+El durazno es:
+
+- Rosaceae, como Manzano/Pera;
+- caducifolio, con dormancia real;
+- perenne, con memoria de estres;
+- frutal templado;
+- pero de HUESO/CAROZO, no de pepita.
+
+Eso obliga a BIO-G a respetar una diferencia clave:
+
+En durazno existe una subventana fisiologica muy importante dentro de fruit_fill:
+- crecimiento inicial de fruto,
+- endurecimiento de hueso/carozo,
+- llenado final / aumento rapido de calibre.
+
+BIO-G v1 NO debe inventar un nuevo stageId para "endurecimiento de hueso".
+Debe mapearlo como subventana o contexto dentro de `fruit_fill`.
+
+0.4 Que se corrigio respecto al borrador de durazno recibido
+El borrador original ya traia muy buena base:
+- cropId crop_peach_tree,
+- identidad Prunus persica,
+- estructura caducifolia,
+- perfiles DZ-01 a DZ-05,
+- sensibilidad extrema a heladas en floracion,
+- alta importancia de cuajado y llenado.
+
+Esta version lo fortalece para BIO-G:
+- se aterrizan IDs de codigo estables;
+- se separa "Durazno" como fruto y "Duraznero" como arbol en UX;
+- se agrega `dz_skip` como perfil obligatorio;
+- se conectan estados perennes oficiales;
+- se usan solo etapas cerradas del estandar;
+- se define que "hueso/carozo" no es stageId nuevo;
+- se agregan StageTargets base;
+- se agregan StageWeights base;
+- se agregan aliases humanos;
+- se agregan reglas de assets;
+- se agregan tests minimos para Codex;
+- se protege el contrato AgroRange v1.4/v1.5;
+- se protege que fruit_fill no se convierta en harvest_maturity por copy UX;
+- se protege post_harvest como etapa viva.
+
+0.5 Que NO se sobre-modela en v1
+- No se calcula requerimiento exacto de horas frio por huerto.
+- No se calcula GDD real por variedad.
+- No se crea etapa nueva para endurecimiento de hueso.
+- No se fuerza portainjerto como input obligatorio.
+- No se modela numero de frutos por arbol.
+- No se calcula raleo automaticamente.
+- No se promete rendimiento.
+- No se receta fertilizacion en kg/ha dentro de este documento.
+- No se diagnostican plagas/enfermedades de forma cerrada.
+- No se inventan sensores fuera de:
+  soilMoisture, soilTemp, ph, ec, resistance, n, p, k.
+
+0.6 Nota critica para Durazno
+El durazno es uno de los frutales donde la etapa temprana decide mucho:
+
+- La dormancia y el frio acumulado condicionan brotacion/floracion.
+- La floracion es temprana y muy vulnerable a heladas tardias.
+- El cuajado puede caer por frio, lluvia, calor, baja viabilidad de flor, baja reserva o estres hidrico.
+- El raleo/carga afecta calibre y calidad.
+- Durante endurecimiento de hueso el fruto crece distinto y el agua/nutricion se interpreta diferente.
+- En llenado final el deficit hidrico reduce calibre de forma fuerte.
+- Postcosecha es muy importante porque las yemas florales del siguiente ciclo se forman en madera del año.
+
+Regla BIO-G:
+Durazno no debe tratarse como "Manzano con fruto anaranjado".
+Debe ser el primer frutal de hueso/carozo real del sistema.
+
+================================================================================
+1. PROPOSITO Y ALCANCE
+================================================================================
+
+Este documento define el cultivo madre Durazno/Duraznero para BIO-G y sus perfiles DZ oficiales.
+
+Sirve para que el codigo pueda crear:
+
+- peach_tree_catalog.dart
+- peach_tree_assets.dart
+- peach_tree_universal_profile.dart
+- peach_tree_crop_definition.dart
+- peach_tree_yield_reference.dart
+- peach_tree_syndromes.dart si Plant Health aplica
+- peach_tree_nutrition_modifier.dart si el motor usa modificadores por arbol/perfil
+- altas en CropKey / CropCatalog / crop_registry.dart
+- resolver de perfil
+- StageTargets base por etapa
+- StageWeights base por etapa
+- textos UX del wizard
+- aliases de variedad/tipo
+- reglas de migracion futura desde DZ-SKIP a perfil especifico
+- tests equivalentes a Manzano/Pera/perennes
+
+Alcance v1:
+- Huertos a cielo abierto.
+- Productores con arboles aislados, pequenos huertos o huertos comerciales.
+- Sistemas tradicionales, semiintensivos y modernos.
+- Duraznos frescos, criollos/regionales, bajo frio, amarillos comerciales, blancos/dulces,
+  tardios e industria/proceso.
+- Compatible con sensor de suelo BIO-G y contexto climatico externo.
+- Compatible con arboles recien plantados, juveniles, establecidos, productivos y usuario
+  que no sabe estado.
+- Pensado para Mexico y zonas templadas, templadas-altas, subtropicales con bajo frio,
+  regiones de sierra y valles donde se cultiva durazno.
+
+Limitaciones:
+- No sustituye analisis de suelo, agua o tejido.
+- No sustituye recomendacion agronomica local.
+- No diagnostica plagas/enfermedades de forma cerrada.
+- No decide pesticidas ni dosis.
+- No promete rendimiento.
+- No valida automaticamente horas frio reales.
+- No decide compatibilidad de portainjerto.
+
+================================================================================
+2. IDENTIDAD UNIVERSAL DEL CULTIVO
+================================================================================
+
+Nombre comun:
+- Durazno
+- Duraznero
+- Melocoton
+- Melocotonero
+
+Nombre cientifico principal:
+- Prunus persica (L.) Batsch
+
+Familia botanica:
+- Rosaceae
+
+Genero:
+- Prunus
+
+Grupo agronomico:
+- Frutal de hueso / frutal de carozo / stone fruit
+
+Tipo:
+- Arbol frutal caducifolio
+- Perenne
+- C3
+- Cultivo de fruto
+- Frutal templado a templado-adaptado
+
+Organo objetivo:
+- FRUTO
+
+Tipo de fruto:
+- Drupa con hueso/carozo central.
+
+cropId BIO-G:
+- crop_peach_tree
+
+Alias legacy permitido:
+- peach_tree
+
+Aliases humanos recomendados:
+- durazno
+- duraznero
+- melocoton
+- melocotonero
+- peach
+- peach tree
+
+CropKey recomendado:
+- CropKey.peachTree
+  Nota: si el proyecto decide usar CropKey.peach_tree, respetar el nombre existente y no
+  renombrar sin migracion/test.
+
+Categoria:
+- tree
+
+profilePrefix:
+- DZ
+
+Perfil generico obligatorio:
+- dz_skip
+
+Perfiles especificos oficiales v1:
+- dz_01_criollo_regional
+- dz_02_temprano_bajo_frio
+- dz_03_amarillo_comercial
+- dz_04_blanco_dulce
+- dz_05_tardio_industria
+
+Asset principal sugerido:
+- assets/icons/wizard/ic_peach_tree.png
+- assets/icons/wizard/ic_peach_tree_generic.png
+
+Assets de etapas sugeridos:
+- assets/seeds/peach/peach_stage_planting_transplant.png
+- assets/seeds/peach/peach_stage_root_establishment.png
+- assets/seeds/peach/peach_stage_juvenile_vegetative.png
+- assets/seeds/peach/peach_stage_dormancy.png
+- assets/seeds/peach/peach_stage_budbreak.png
+- assets/seeds/peach/peach_stage_vegetative_growth.png
+- assets/seeds/peach/peach_stage_flowering.png
+- assets/seeds/peach/peach_stage_fruit_set.png
+- assets/seeds/peach/peach_stage_fruit_fill.png
+- assets/seeds/peach/peach_stage_harvest_maturity.png
+- assets/seeds/peach/peach_stage_post_harvest.png
+- assets/seeds/peach/peach_stage_unknown.png
+
+Regla de assets:
+- `ic_tree_*` se usa para estados generales del wizard de arboles.
+- `ic_peach_*` se usa para cultivo/perfil/variedad de Durazno.
+- `peach_stage_*` se usa para imagen fenologica del SeedScreen/motor visual por etapa.
+
+Nota sobre nectarinas:
+La nectarina es agronomicamente muy cercana a durazno y pertenece a Prunus persica, pero en BIO-G v1 NO se crea perfil oficial de nectarina sin documento dedicado.
+Si el usuario escribe "nectarina", "pelon", "pavia" o "durazno sin pelusa":
+- resolver a dz_skip con nota de baja confianza o futureProfile=nectarine,
+- no romper app,
+- no inventar DZ-06 sin investigacion.
+
+================================================================================
+3. CULTIVO ANUAL VS ARBOL PERENNE EN BIO-G
+================================================================================
+
+Tabla conceptual:
+
+Aspecto                         | Cultivo anual                         | Durazno / arbol perenne
+--------------------------------|---------------------------------------|---------------------------------------------
+Eje temporal                    | siembra/trasplante                    | estado visible + ancla temporal + memoria
+Fin del ciclo                   | cosecha o fin de temporada            | la cosecha NO cierra la vida del arbol
+Edad                            | explica muchas etapas                 | ayuda, pero no debe ser input principal
+Variedad                        | puede cambiar calendario completo     | ajusta frio, floracion/cosecha relativa y sensibilidad
+Postcosecha                     | cierre/transicion                     | etapa activa de reservas y yemas del siguiente ciclo
+Memoria                         | menor o de un ciclo                   | importante; estres afecta retorno floral y calibre
+Rendimiento                     | plantas/ha o t/ha por ciclo           | kg/arbol + arboles/ha + estado productivo
+Usuario que no sabe             | perfil generico                       | DZ-SKIP conservador y migrable
+Fruto                           | fruto anual lineal                    | fruto de hueso con subfases dentro de fruit_fill
+Carga                           | manejo anual                          | raleo/carga afecta calibre y proximo ciclo
+
+Regla BIO-G:
+La UX debe preguntar cosas visibles y practicas:
+- ¿Es un arbol recien plantado?
+- ¿Aun no produce?
+- ¿Ya produce esta temporada?
+- ¿Que se ve en el arbol ahorita?
+- ¿Hace cuanto empezo esa etapa?
+- ¿La fruta ya esta creciendo o apenas es frutito?
+- ¿Ya se cosecho?
+
+No debe obligar al productor a contestar:
+- GDD exactos
+- horas frio exactas
+- portainjerto exacto
+- edad exacta si no la sabe
+- numero de frutos
+- variedad exacta si no la sabe
+- etapa de endurecimiento de hueso como concepto tecnico
+
+================================================================================
+4. ARQUITECTURA BIO-G PARA DURAZNO
+================================================================================
+
+Jerarquia:
+
+Cultivo madre:
+- Durazno / crop_peach_tree
+
+Estado perenne UX:
+- newly_planted
+- juvenile_non_productive
+- established
+- productive_season
+- unknown
+
+Perfil/variedad:
+- dz_skip
+- dz_01_criollo_regional
+- dz_02_temprano_bajo_frio
+- dz_03_amarillo_comercial
+- dz_04_blanco_dulce
+- dz_05_tardio_industria
+
+Etapa fenologica visible:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Ancla temporal:
+- planting
+- stage_start
+- budbreak
+- flowering
+- harvest
+- post_harvest
+- manual_stage
+- unknown
+
+Metricas permitidas:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Regla de compatibilidad:
+- newly_planted puede usar planting_transplant o root_establishment.
+- juvenile_non_productive puede usar juvenile_vegetative, root_establishment o unknown.
+- established puede usar dormancy, budbreak, vegetative_growth o unknown.
+- productive_season puede usar todas las etapas productivas anuales.
+- unknown debe usar DZ-SKIP o perfil elegido con confianza baja/media segun senales.
+
+================================================================================
+5. ESTADOS DEL ARBOL Y UX RECOMENDADA
+================================================================================
+
+5.1 Estados perennes permitidos
+
+ID: newly_planted
+Etiqueta UX:
+- Recien plantado
+Descripcion:
+- Arbol colocado recientemente en campo, trasplante o reposicion.
+Regla:
+- No producir.
+- Priorizar raiz, humedad estable, baja salinidad y baja compactacion.
+- Ancla preferida: planting.
+Confianza:
+- Alta si hay fecha de plantacion.
+- Media si solo hay etapa visible.
+
+ID: juvenile_non_productive
+Etiqueta UX:
+- Aun no produce
+Descripcion:
+- Arbol en crecimiento estructural. Puede tener hojas, ramas y vigor, pero todavia
+  no entra a produccion comercial o el usuario confirma que no produce.
+Regla:
+- No forzar floracion ni rendimiento.
+- Priorizar agua, suelo, raiz, estructura vegetativa y formacion de madera fructifera.
+- Ancla preferida: stage_start o manual_stage.
+Confianza:
+- Media.
+
+ID: established
+Etiqueta UX:
+- Arbol establecido
+Descripcion:
+- Arbol vivo, con estructura formada, pero el usuario no confirma produccion esta temporada.
+Regla:
+- Permitir ciclo anual si el usuario selecciona etapa visible.
+- No proyectar rendimiento alto si no hay confirmacion de carga.
+Confianza:
+- Media-baja si no hay etapa visible.
+
+ID: productive_season
+Etiqueta UX:
+- En produccion esta temporada
+Descripcion:
+- Arbol con ciclo productivo anual activo: brotacion, floracion, cuajado, fruto,
+  cosecha o postcosecha.
+Regla:
+- Usar etapa visible como eje principal.
+- Activar memoria de estres critica.
+- Permitir rendimiento aproximado en Documento 03.
+Confianza:
+- Media-alta si etapa visible y fecha de inicio existen.
+
+ID: unknown
+Etiqueta UX:
+- No lo se
+Descripcion:
+- Usuario no sabe estado.
+Regla:
+- No bloquear.
+- Usar DZ-SKIP y preguntas visuales simples.
+- Alertas conservadoras.
+Confianza:
+- Baja al inicio; sube si hay sensor + etapa visible.
+
+5.2 Pregunta UX recomendada para estado
+
+Pregunta:
+"¿Como esta tu duraznero actualmente?"
+
+Opciones:
+1. Recien plantado
+2. Aun no produce
+3. Ya produce esta temporada
+4. Esta establecido, pero no se si va a producir
+5. No lo se
+
+Mapeo:
+- Recien plantado -> newly_planted
+- Aun no produce -> juvenile_non_productive
+- Ya produce esta temporada -> productive_season
+- Esta establecido... -> established
+- No lo se -> unknown
+
+5.3 Pregunta UX recomendada si YA PRODUCE
+
+Pregunta:
+"¿Que se ve en el arbol ahorita?"
+
+Opciones visibles:
+- Pelon / sin hojas -> dormancy
+- Brotando -> budbreak
+- Lleno de hojas -> vegetative_growth
+- En flor -> flowering
+- Tirando flor / frutito recien amarrado -> fruit_set
+- Fruto verde creciendo -> fruit_fill
+- Fruto madurando / listo para cortar -> harvest_maturity
+- Despues de cosecha -> post_harvest
+- No lo se -> unknown
+
+Pregunta dinamica posterior:
+"¿Hace cuanto empezo mas o menos esta etapa?"
+
+Anclas:
+- Brotando -> budbreak
+- En flor -> flowering
+- Fruto madurando/listo -> harvest
+- Despues de cosecha -> post_harvest
+- Otras -> stage_start / manual_stage
+
+5.4 Pregunta UX recomendada si AUN NO PRODUCE
+
+Pregunta:
+"¿Que describe mejor tu arbol?"
+
+Opciones:
+- Lo acabo de plantar -> planting_transplant
+- Esta echando raiz / agarrando -> root_establishment
+- Esta creciendo con hojas y ramas, pero no produce -> juvenile_vegetative
+- No lo se -> unknown
+
+En esta ruta, evitar preguntar "sin hojas / reposo" como criterio principal si no aporta.
+Un arbol juvenil puede estar sin hojas por temporada, pero eso no define produccion.
+
+================================================================================
+6. ETAPAS FENOLOGICAS BIO-G DEL DURAZNO
+================================================================================
+
+Tabla de etapas v1:
+
+ID: planting_transplant
+UX:
+- Plantacion / trasplante
+Aplica en:
+- newly_planted
+Ancla:
+- planting
+Descripcion:
+- El duraznero acaba de establecerse en campo.
+Prioridad BIO-G:
+- Evitar estres por trasplante, saturacion, salinidad y compactacion.
+No producir:
+- Si, bloquea produccion.
+Sensibilidad:
+- agua alta, suelo alto, EC alta, resistance alta.
+
+ID: root_establishment
+UX:
+- Establecimiento radicular
+Aplica en:
+- newly_planted, juvenile_non_productive
+Ancla:
+- stage_start o planting
+Descripcion:
+- Desarrollo de raices finas y recuperacion de trasplante.
+Duracion orientativa:
+- 0-6 meses despues de plantacion, variable por clima, suelo y manejo.
+Prioridad BIO-G:
+- Humedad estable, oxigeno en suelo, baja salinidad, suelo suelto.
+No producir:
+- Si, bloquea produccion.
+
+ID: juvenile_vegetative
+UX:
+- Crecimiento juvenil
+Aplica en:
+- juvenile_non_productive
+Ancla:
+- stage_start / manual_stage
+Descripcion:
+- Construccion rapida de estructura, ramas, hojas, raiz y madera fructifera futura.
+Duracion orientativa:
+- Ano 1-2 en sistemas modernos; puede ser mas en manejo extensivo o arboles debiles.
+Prioridad BIO-G:
+- Vigor equilibrado, sanidad, agua, suelo.
+No producir:
+- Si, salvo floracion/fruta aislada sin valor comercial; BIO-G no proyecta rendimiento alto.
+
+ID: dormancy
+UX:
+- Reposo / pelon / sin hojas
+Aplica en:
+- established, productive_season
+Ancla:
+- stage_start / manual_stage
+Descripcion:
+- El arbol caducifolio esta en reposo invernal. Requiere frio para brotacion/floracion uniforme.
+Prioridad BIO-G:
+- No sobreinterpretar NPK; vigilar frio, heladas extremas, humedad excesiva y raices.
+Nota:
+- Horas frio son contexto climatico v2, no sensor BIO-G v1.
+
+ID: budbreak
+UX:
+- Brotacion
+Aplica en:
+- established, productive_season
+Ancla:
+- budbreak
+Descripcion:
+- Yemas salen de dormancia; aparecen puntas verdes, hojas y/o botones florales.
+Prioridad BIO-G:
+- Evitar frio tardio, estres hidrico, salinidad y exceso de N.
+Riesgo:
+- las yemas de durazno pierden tolerancia al frio conforme avanzan de hinchazon a flor.
+
+ID: vegetative_growth
+UX:
+- Desarrollo vegetativo / lleno de hojas
+Aplica en:
+- established, productive_season
+Ancla:
+- stage_start
+Descripcion:
+- Expansion de hojas, brotes y soporte fotosintetico.
+Prioridad BIO-G:
+- Agua y nutricion moderada; no empujar vigor excesivo si hay fruta.
+Nota:
+- En durazno la luz en la copa y la poda son claves para madera fructifera del siguiente ciclo.
+
+ID: flowering
+UX:
+- Floracion
+Aplica en:
+- productive_season
+Ancla:
+- flowering
+Descripcion:
+- Etapa critica: flor abierta, riesgo de helada, lluvia/frio y aborto.
+Prioridad BIO-G:
+- Temperatura estable, agua estable, evitar saturacion, estres y salinidad.
+Riesgo:
+- helada tardia, lluvia/frio en flor, calor seco, baja reserva, enfermedades de flor.
+
+ID: fruit_set
+UX:
+- Cuajado / amarre / frutito
+Aplica en:
+- productive_season
+Ancla:
+- stage_start o flowering
+Descripcion:
+- Despues de floracion/petalos, el fruto recien amarrado define carga potencial.
+Prioridad BIO-G:
+- Agua estable, evitar calor, salinidad y estres.
+Nota:
+- El raleo/carga futura afecta calibre; BIO-G v1 lo maneja como contexto, no como motor automatico.
+
+ID: fruit_fill
+UX:
+- Llenado / fruto verde creciendo
+Aplica en:
+- productive_season
+Ancla:
+- stage_start
+Descripcion:
+- Crecimiento de fruto, calibre, endurecimiento de hueso/carozo como subventana y llenado final.
+Prioridad BIO-G:
+- Humedad estable, K/Ca/Mg en doc 05, evitar deficit y EC alta.
+
+Subventanas internas NO stageId:
+- crecimiento inicial / division-expansion temprana;
+- endurecimiento de hueso/carozo;
+- llenado final / final swell.
+
+Contrato v1.5:
+- NO usar copy de cosecha, madurez o "cerca de cosecha" como identidad.
+- Copy permitido: llenado, calibre, fruto verde, hueso/carozo como subventana, firmeza, balance N-K-Ca/Mg.
+
+ID: harvest_maturity
+UX:
+- Maduracion / cosecha / fruto madurando
+Aplica en:
+- productive_season
+Ancla:
+- harvest
+Descripcion:
+- Fruto alcanza madurez comercial. La ventana de cosecha de durazno puede ser corta.
+Prioridad BIO-G:
+- Evitar estres hidrico fuerte, golpe de sol, exceso de humedad y perdida de firmeza/calidad.
+Contrato v1.5:
+- Aqui si puede hablar de madurez, cosecha, color, firmeza final, aroma, grados de madurez, mercado.
+
+ID: post_harvest
+UX:
+- Postcosecha / despues de cosecha
+Aplica en:
+- productive_season, established
+Ancla:
+- post_harvest
+Descripcion:
+- Etapa activa de recuperacion, hoja funcional, reservas y diferenciacion de yemas del siguiente ciclo.
+Prioridad BIO-G:
+- No apagar alertas; guardar estres; recuperacion hidrica/nutricional.
+Regla:
+- Cosecha/postcosecha NO cierran el cultivo.
+Contrato v1.5:
+- No tratar como dormancia pasiva ni como cultivo cerrado.
+
+ID: unknown
+UX:
+- No lo se
+Aplica en:
+- todos
+Ancla:
+- unknown
+Descripcion:
+- Estado fenologico no confirmado.
+Prioridad BIO-G:
+- Mantener app funcionando con confianza baja/media y alertas conservadoras.
+
+================================================================================
+7. TIEMPOS FISIOLOGICOS ORIENTATIVOS
+================================================================================
+
+Estos tiempos son para visualizacion, calendario aproximado y mensajes. No son promesas.
+
+7.1 Ventanas universales productivas
+- Dormancia/frio: invierno; depende de region, variedad y clima.
+- Brotacion -> floracion: 15-45 dias, segun frio acumulado, temperatura y perfil.
+- Floracion: 10-30 dias orientativos.
+- Floracion -> cuajado visible: 5-15 dias.
+- Cuajado sensible: 5-12 dias despues de floracion.
+- Llenado/crecimiento de fruto: 55-120 dias segun perfil, carga, clima y destino.
+- Plena floracion -> cosecha: 80-190 dias segun perfil.
+- Postcosecha: desde cosecha hasta senescencia/caida de hoja o inicio de dormancia.
+
+7.2 Entrada a produccion
+- Sistemas modernos/intensivos: puede iniciar ano 2-3.
+- Criollo/regional: entrada orientativa ano 2-3; plena ano 4+.
+- Temprano/bajo frio: entrada orientativa ano 2; plena ano 3+ si manejo es bueno.
+- Amarillo comercial: entrada ano 2-3; plena ano 4+.
+- Blanco/dulce: entrada ano 3; plena ano 4+.
+- Tardio/industria: entrada ano 3; plena ano 5+.
+
+BIO-G v1 no debe pedir edad exacta para resolver etapa.
+La edad puede ayudar en rendimiento, pero no debe mandar el motor fenologico.
+
+================================================================================
+8. RANGOS MEDIBLES BASE PARA BIO-G v1
+================================================================================
+
+IMPORTANTE:
+Los rangos son de monitoreo y score, no recetas. Ajustes finos de NPK van en Documento 05.
+
+8.1 Temperatura ambiente / contexto climatico
+- Activacion fisiologica orientativa: >7-10 °C.
+- Desarrollo vegetativo favorable: 18-30 °C.
+- Observacion por calor: >30-32 °C, especialmente en cuajado/llenado.
+- Estres termico: >35 °C segun humedad, viento, carga y etapa.
+- Riesgo de helada: cerca o bajo 0 °C.
+- En floracion, los umbrales de dano por helada cambian segun yema, duracion y humedad.
+
+Uso en BIO-G:
+- Temperatura ambiente es contexto externo, no lectura del sensor de suelo.
+- soilTemp si puede influir en raiz/actividad.
+
+8.2 Temperatura de suelo / soilTemp
+- Baja actividad radicular: <7-8 °C.
+- Rango operativo general raiz: 8-25/26 °C.
+- Favorable aproximado: 12-24 °C.
+- Observacion: >26-28 °C en suelo superficial si se combina con baja humedad.
+- Alerta: temperaturas extremas + deficit hidrico.
+
+8.3 Humedad de suelo / soilMoisture
+Interpretacion preferida:
+- % de agua disponible o escala normalizada por textura.
+Si el sensor da porcentaje volumetrico, convertir a bandas relativas por suelo.
+
+Rangos base:
+- Bajo critico: <45% AW
+- Observacion baja: 45-55% AW
+- Operativo: 55-85% AW
+- Optimo conservador: 60-80/85% AW segun etapa
+- Exceso/saturacion: >90% AW o lectura persistentemente alta con mala aireacion
+
+Regla:
+- Durazno requiere buen drenaje y no tolera encharcamiento prolongado.
+- En floracion/cuajado, agua y temperatura pesan mucho.
+- En pit hardening/endurecimiento de hueso se puede tolerar demanda hidrica diferente, pero no sequia severa.
+- En llenado final, deficit sostenido reduce calibre y calidad.
+- En postcosecha, estres fuerte puede afectar reservas y yemas del siguiente ciclo.
+
+8.4 pH
+- Optimo BIO-G v1: 6.0-7.0
+- Aceptable amplio: 5.5-7.5
+- Observacion: 5.0-5.5 o 7.5-8.0
+- Alerta: <5.0 o >8.0, especialmente si hay sintomas o bloqueo nutricional.
+
+8.5 Conductividad electrica / ec
+Usar como alerta conservadora por sensibilidad media a sales, no como diagnostico unico.
+
+- Seguro/normal: <1.0 dS/m
+- Observacion: 1.0-2.0 dS/m
+- Alerta inicial BIO-G: >2.0-2.5 dS/m
+- Alerta fuerte: >3.0 dS/m o tendencia ascendente + estres hidrico
+
+8.6 Resistencia/compactacion / resistance
+- Favorable: <1.0 MPa
+- Observacion: 1.0-2.0 MPa
+- Alerta: >2.0 MPa
+- Critico: >3.0 MPa
+
+Nota:
+2 MPa se usa como umbral general donde muchas raices ya no crecen bien.
+En durazno el problema se agrava si coincide con baja humedad, suelo pesado, baja materia
+organica, mal drenaje o saturacion.
+
+8.7 NPK relativo
+No usar como dosis.
+
+N:
+- Bajo/moderado en dormancia.
+- Moderado en brotacion/vegetativo.
+- Evitar exceso en floracion/cuajado: puede empujar vigor, sombra y baja calidad.
+- En postcosecha puede apoyar reservas solo si analisis/contexto lo justifica.
+
+P:
+- Importante en raiz, establecimiento, brotacion, energia y floracion.
+- Interpretar con pH y analisis de suelo.
+
+K:
+- Alto peso en llenado, calibre, firmeza/calidad y rendimiento.
+- Interpretar con Ca/Mg, carga, agua y salinidad.
+
+Ca/B/Mg:
+- No son sensores BIO-G v1, pero deben aparecer como contexto:
+  Ca para firmeza/desordenes de calidad; B para floracion/cuajado; Mg como balance.
+- No inventar metricas nuevas; solo mencionar como contexto o recomendacion de analisis.
+
+================================================================================
+9. STAGETARGETS BASE POR ETAPA
+================================================================================
+
+IMPORTANTE:
+Esta tabla es base documental para peach_tree_universal_profile.dart.
+El Documento 05 cerrara rangos finos por etapa y NPK.
+Codex debe convertir estos rangos a AgroRange respetando:
+
+AgroRange(
+  lowMax: frontera_critica_baja,
+  optimalMin: inicio_optimo,
+  optimalMax: fin_optimo,
+  highMin: frontera_critica_alta
+)
+
+NO usar lowMax == optimalMin ni optimalMax == highMin en suelo/ambiente sin justificacion
+documental y test.
+
+Formato conceptual:
+stageId | soilMoisture(AW%) | soilTemp(°C) | pH | EC dS/m | resistance MPa | N | P | K
+
+planting_transplant
+- soilMoisture optimo: 60-80 | critico bajo <45 | saturacion >90
+- soilTemp optimo: 10-24
+- pH optimo: 6.0-7.0 | aceptable 5.5-7.5
+- EC: <1.5 preferible, observacion 1.5-2.5, alerta >2.5
+- resistance: <1.5 preferible, alerta >2.0
+- N: bajo-moderado
+- P: medio-alto
+- K: medio
+- Nota: no quemar raiz, no saturar, no plantar en suelo compactado.
+
+root_establishment
+- soilMoisture optimo: 65-85 | critico bajo <45 | saturacion >90
+- soilTemp optimo: 10-24
+- pH: 6.0-7.0
+- EC: <1.5 preferible, alerta >2.5
+- resistance: <1.5 preferible, alerta >2.0
+- N: bajo-moderado
+- P: alto relativo
+- K: medio
+- Nota: raices finas y oxigeno mandan.
+
+juvenile_vegetative
+- soilMoisture optimo: 60-85
+- soilTemp optimo: 10-26
+- pH: 6.0-7.0
+- EC: <1.8 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: crecer estructura y madera fructifera sin estres ni exceso de vigor.
+
+dormancy
+- soilMoisture optimo operativo: 45-70
+- soilTemp: estacional; no penalizar frio normal de invierno
+- pH: 6.0-7.5
+- EC: <2.0 preferible; alerta >2.5
+- resistance: no ponderar fuerte si suelo muy seco/frio
+- N: bajo
+- P: bajo
+- K: bajo
+- Nota: no sobreinterpretar NPK; frio es contexto externo.
+
+budbreak
+- soilMoisture optimo: 55-80
+- soilTemp optimo: 8-22
+- pH: 6.0-7.0
+- EC: <1.8 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: arranque sin frio tardio ni deficit.
+
+vegetative_growth
+- soilMoisture optimo: 55-80
+- soilTemp optimo: 10-26
+- pH: 6.0-7.0
+- EC: <2.0 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: vigilar exceso de vigor, sombra y baja luz interna.
+
+flowering
+- soilMoisture optimo: 60-80 estable
+- soilTemp optimo: 10-24
+- pH: 6.0-7.0
+- EC: <1.8 preferible, alerta >2.5
+- resistance: <2.0
+- N: bajo-medio
+- P: medio
+- K: medio
+- Nota: etapa critica; temperatura, agua y helada pesan mucho.
+
+fruit_set
+- soilMoisture optimo: 65-85 estable
+- soilTemp optimo: 12-26
+- pH: 6.0-7.0
+- EC: <1.8 preferible, alerta >2.5
+- resistance: <2.0
+- N: bajo-medio
+- P: medio
+- K: medio-alto
+- Nota: evitar aborto por estres hidrico/calor/salinidad.
+
+fruit_fill
+- soilMoisture optimo: 60-85, con ajuste por subventana
+- soilTemp optimo: 12-28
+- pH: 6.0-7.0
+- EC: <2.0 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio-bajo
+- P: medio
+- K: alto relativo
+- Nota: calibre, firmeza y calidad dependen de agua estable, K y balance con Ca/Mg.
+- Subventana pit hardening: no empujar agua/N como si fuera llenado final si el contexto indica Stage II.
+- Copy prohibido: "cerca de cosecha" si la etapa real es fruit_fill.
+
+harvest_maturity
+- soilMoisture optimo: 55-75
+- soilTemp optimo: 10-28
+- pH: 6.0-7.0
+- EC: <2.0 preferible, alerta >2.5
+- resistance: <2.0
+- N: bajo
+- P: bajo-medio
+- K: medio
+- Nota: madurez/cosecha, firmeza final, color, calidad; evitar exceso vegetativo.
+
+post_harvest
+- soilMoisture optimo: 55-75
+- soilTemp optimo: 8-25
+- pH: 6.0-7.0
+- EC: <2.0 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio-bajo
+- P: medio
+- K: medio
+- Nota: etapa activa de reservas y yemas; impacta ciclo siguiente.
+
+unknown
+- soilMoisture optimo: 55-80
+- soilTemp optimo: 8-26
+- pH: 6.0-7.5
+- EC: <2.0 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: conservador; pedir etapa visible.
+
+================================================================================
+10. STAGEWEIGHTS BASE POR ETAPA
+================================================================================
+
+Escala: 0.0 a 1.0
+Componentes:
+- waterWeight
+- soilTempWeight
+- phWeight
+- ecWeight
+- resistanceWeight
+- nWeight
+- pWeight
+- kWeight
+
+Nota:
+Los pesos no tienen que sumar perfecto si el motor normaliza; se recomiendan como pesos
+relativos. Si el modelo existente exige suma 1.0, normalizar sin cambiar jerarquia.
+
+planting_transplant:
+- water 0.25
+- soilTemp 0.15
+- pH 0.12
+- EC 0.18
+- resistance 0.20
+- N 0.03
+- P 0.05
+- K 0.02
+
+root_establishment:
+- water 0.30
+- soilTemp 0.12
+- pH 0.10
+- EC 0.18
+- resistance 0.18
+- N 0.03
+- P 0.06
+- K 0.03
+
+juvenile_vegetative:
+- water 0.22
+- soilTemp 0.12
+- pH 0.10
+- EC 0.12
+- resistance 0.15
+- N 0.14
+- P 0.08
+- K 0.07
+
+dormancy:
+- water 0.15
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.05
+- P 0.05
+- K 0.05
+- contextoClimatico/frio: usar fuera de sensor si existe.
+
+budbreak:
+- water 0.22
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.12
+- P 0.08
+- K 0.08
+
+vegetative_growth:
+- water 0.22
+- soilTemp 0.12
+- pH 0.10
+- EC 0.10
+- resistance 0.12
+- N 0.17
+- P 0.08
+- K 0.09
+
+flowering:
+- water 0.27
+- soilTemp 0.20
+- pH 0.08
+- EC 0.14
+- resistance 0.08
+- N 0.05
+- P 0.08
+- K 0.10
+- climaHelada: contexto externo muy alto.
+
+fruit_set:
+- water 0.30
+- soilTemp 0.16
+- pH 0.08
+- EC 0.16
+- resistance 0.08
+- N 0.05
+- P 0.07
+- K 0.10
+
+fruit_fill:
+- water 0.26
+- soilTemp 0.12
+- pH 0.08
+- EC 0.13
+- resistance 0.08
+- N 0.07
+- P 0.06
+- K 0.18
+- subventana pit_hardening: reducir urgencia de agua plena si hay regla avanzada y no hay deficit severo.
+
+harvest_maturity:
+- water 0.22
+- soilTemp 0.14
+- pH 0.08
+- EC 0.12
+- resistance 0.08
+- N 0.05
+- P 0.05
+- K 0.12
+- calidad/sunburn/clima/mercado: externo.
+
+post_harvest:
+- water 0.22
+- soilTemp 0.10
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.10
+- P 0.10
+- K 0.12
+
+unknown:
+- water 0.24
+- soilTemp 0.12
+- pH 0.10
+- EC 0.14
+- resistance 0.12
+- N 0.09
+- P 0.09
+- K 0.10
+
+================================================================================
+11. SENSIBILIDAD POR ETAPA
+================================================================================
+
+planting_transplant:
+- Deficit hidrico: muy alta
+- Exceso de humedad: alta
+- Salinidad: alta
+- Compactacion: muy alta
+- Helada/calor: media
+- Nutricion: media, pero no empujar N
+
+root_establishment:
+- Deficit hidrico: muy alta
+- Exceso: alta
+- Salinidad: alta
+- Compactacion: muy alta
+- Sanidad raiz/cuello: alta
+
+juvenile_vegetative:
+- Deficit: alta
+- N moderado: importante
+- Compactacion: alta
+- Exceso de vigor: observacion
+- Luz/poda/formacion: alta como contexto
+- Estres acumulado: alto para formacion futura
+
+dormancy:
+- Falta de frio: alta como contexto
+- Heladas extremas: media-alta
+- Agua: media
+- NPK: bajo peso
+
+budbreak:
+- Frio tardio: alta
+- Deficit hidrico: media
+- Exceso de N: media
+- Enfermedades tempranas: media
+- Yema avanzada: sensibilidad creciente a helada
+
+vegetative_growth:
+- Agua: media
+- N: media-alta
+- Calor: media
+- Vigor excesivo: observacion
+- Luz interna/copa: alta como contexto
+
+flowering:
+- Helada: extrema
+- Deficit hidrico: alta
+- Calor seco: alta
+- Exceso de humedad/lluvia: alta
+- Baja reserva por postcosecha anterior: media-alta
+- Enfermedades de flor: contexto alto
+
+fruit_set:
+- Deficit hidrico: muy alta
+- Calor: alta
+- Salinidad: alta
+- Carga/ralear: contexto alto
+- Estres nutricional/Ca/B: media-alta
+
+fruit_fill:
+- Deficit hidrico: muy alta en llenado final
+- Agua excesiva en pit hardening: puede empujar vigor innecesario si no hay deficit
+- K: alta
+- N excesivo: observacion alta
+- Calor/sunburn: alta
+- EC: alta
+- Compactacion: media-alta
+
+harvest_maturity:
+- Calor/sunburn: alta
+- Exceso de humedad/rajado/pudriciones: media-alta
+- N alto: riesgo calidad
+- K bajo: calidad/calibre
+- Agua: media-alta
+
+post_harvest:
+- Deficit hidrico: alta si hoja activa
+- Defoliacion temprana: alta
+- N/K/reservas: media-alta
+- Sanidad residual: alta
+- Memoria del ciclo siguiente: alta
+
+unknown:
+- Usar sensibilidad conservadora y pedir etapa visible.
+
+================================================================================
+12. PERFILES/VARIEDADES OFICIALES DZ
+================================================================================
+
+Decision:
+Los perfiles DZ no representan todas las marcas/variedades comerciales.
+Representan grupos de manejo utiles para BIO-G v1.
+
+Los nombres comerciales y regionales entran como aliases.
+Si el usuario no sabe, usar dz_skip.
+
+--------------------------------------------------------------------------------
+DZ-SKIP / dz_skip
+--------------------------------------------------------------------------------
+
+Nombre UX:
+- No se / Durazno general
+
+Uso:
+- Usuario solo sabe que tiene durazno/duraznero.
+- Usuario no sabe si es temprano, amarillo, blanco, criollo o industria.
+- Usuario quiere avanzar rapido.
+
+Rendimiento relativo:
+- medio conservador.
+
+Sensibilidad:
+- promedio conservadora.
+
+Regla:
+- No asumir variedad temprana.
+- No asumir bajo frio.
+- No asumir produccion plena.
+- El estado/etapa visible manda.
+
+Detalle en Documento 02.
+
+--------------------------------------------------------------------------------
+DZ-01 / dz_01_criollo_regional
+--------------------------------------------------------------------------------
+
+Label tecnico:
+- DZ-01 - Criollo / Regional
+
+Label UX:
+- Criollo / Regional
+
+Aliases:
+- criollo
+- regional
+- tradicional
+- durazno criollo
+- durazno de rancho
+- durazno amarillo criollo
+- durazno local
+- otra variedad criolla
+- variedad regional
+- Prisco, Oro Azteca, Diamante, San Juan, Regio, Toro, Tlaxcala y otros nombres locales si el documento regional lo justifica como alias blando.
+
+Tipo de fruto:
+- Variable, usualmente fresco local o mercado regional.
+- Puede ser amarillo, firme, hueso pegado o variable segun region.
+
+Uso:
+- Fresco local
+- autoconsumo
+- mercado regional
+- tradicional
+
+Frio relativo:
+- medio, variable por region.
+- No asumir bajo frio si el usuario solo dice criollo.
+
+Floracion relativa:
+- temprana-media a media.
+
+Cosecha relativa:
+- mayo-julio orientativo en Mexico, variable por altitud y region.
+
+Entrada a produccion:
+- ano 2-3 orientativo.
+- plena ano 4+.
+
+Densidad tipica:
+- 400-1200 arboles/ha.
+
+Sensibilidad particular:
+- heladas tardias en floracion;
+- cenicilla si fuente/regional lo sugiere;
+- sanidad de fruto;
+- estres hidrico en llenado;
+- heterogeneidad de calidad.
+
+Rendimiento relativo:
+- medio, variable.
+- No sobreestimar si es huerto tradicional sin datos de manejo.
+
+Ajuste permitido:
+- fechas relativas, sensibilidad, textos y rendimiento relativo.
+- no cambia estructura fenologica.
+
+--------------------------------------------------------------------------------
+DZ-02 / dz_02_temprano_bajo_frio
+--------------------------------------------------------------------------------
+
+Label tecnico:
+- DZ-02 - Temprano / Bajo frio
+
+Label UX:
+- Temprano / Bajo frio
+
+Aliases:
+- bajo frio
+- temprano
+- muy temprano
+- precoz
+- Flordaprince
+- Anna
+- Fred
+- Victoria Temprano
+- June Gold
+- otra variedad de bajo frio
+- durazno temprano
+
+Tipo de fruto:
+- Fresco temprano, mercado local/temprano.
+
+Uso:
+- fruta fresca temprana
+- ventana temprana de mercado
+
+Frio relativo:
+- bajo a medio-bajo.
+
+Floracion relativa:
+- muy temprana a temprana.
+
+Cosecha relativa:
+- marzo-mayo orientativo en zonas calidas/templadas; variable por region.
+
+Entrada a produccion:
+- ano 2 orientativo.
+- plena ano 3+ con manejo.
+
+Densidad tipica:
+- 600-2000 arboles/ha.
+
+Sensibilidad particular:
+- falta de frio si el perfil real no coincide con zona;
+- helada tardia MUY alta por floracion temprana;
+- calor en cuajado;
+- cosecha concentrada;
+- baja reserva si postcosecha anterior fue mala.
+
+Rendimiento relativo:
+- medio.
+- puede ser alto si sistema esta bien adaptado, pero no asumir sin region.
+
+Ajuste permitido:
+- adelantar ventanas relativas;
+- aumentar riesgo helada por floracion temprana;
+- aumentar sensibilidad a desincronizacion por frio.
+
+--------------------------------------------------------------------------------
+DZ-03 / dz_03_amarillo_comercial
+--------------------------------------------------------------------------------
+
+Label tecnico:
+- DZ-03 - Amarillo comercial
+
+Label UX:
+- Amarillo comercial
+
+Aliases:
+- amarillo
+- comercial
+- durazno amarillo
+- Redhaven
+- Suncrest
+- O'Henry si aplica regionalmente
+- oro
+- mercado nacional
+- otra variedad amarilla
+
+Tipo de fruto:
+- amarillo, fresco/mercado nacional, calibre y color importantes.
+
+Uso:
+- fresco
+- mercado nacional
+- empaque local/regional
+
+Frio relativo:
+- medio.
+
+Floracion relativa:
+- media.
+
+Cosecha relativa:
+- junio-agosto orientativo.
+
+Entrada a produccion:
+- ano 2-3.
+- plena ano 4+.
+
+Densidad tipica:
+- 600-1800 arboles/ha.
+
+Sensibilidad particular:
+- deficit hidrico en cuajado/llenado;
+- heladas tardias;
+- desbalance K/N;
+- manejo de carga y raleo;
+- golpe de sol;
+- sanidad de fruto.
+
+Rendimiento relativo:
+- medio-alto si hay riego, poda, raleo y sanidad.
+
+Ajuste permitido:
+- mantener fenologia intermedia;
+- subir peso de calidad/calibre en fruit_fill/harvest_maturity.
+
+--------------------------------------------------------------------------------
+DZ-04 / dz_04_blanco_dulce
+--------------------------------------------------------------------------------
+
+Label tecnico:
+- DZ-04 - Blanco / Dulce
+
+Label UX:
+- Blanco / Dulce
+
+Aliases:
+- blanco
+- durazno blanco
+- dulce
+- especialidad
+- premium
+- donut
+- saturn
+- chato
+- paraguayo si se decide usar como alias regional
+- otra variedad blanca
+
+Tipo de fruto:
+- carne blanca o especialidad, valor por sabor/dulzor/mercado premium.
+
+Uso:
+- fresco premium
+- nicho
+- consumo local de calidad
+
+Frio relativo:
+- medio a medio-alto segun variedad real.
+
+Floracion relativa:
+- media a media-tardia.
+
+Cosecha relativa:
+- julio-septiembre orientativo.
+
+Entrada a produccion:
+- ano 3.
+- plena ano 4+.
+
+Densidad tipica:
+- 600-1500 arboles/ha.
+
+Sensibilidad particular:
+- heladas tardias;
+- estres hidrico en llenado;
+- pudriciones y manejo de sanidad;
+- magulladuras/calidad por fruta delicada;
+- calidad organoleptica mas importante que solo t/ha.
+
+Rendimiento relativo:
+- bajo-medio a medio.
+- premium no significa necesariamente mas toneladas.
+
+Ajuste permitido:
+- subir sensibilidad de calidad/firmness/pudriciones;
+- no subir rendimiento solo por valor de mercado.
+
+--------------------------------------------------------------------------------
+DZ-05 / dz_05_tardio_industria
+--------------------------------------------------------------------------------
+
+Label tecnico:
+- DZ-05 - Tardio / Industria
+
+Label UX:
+- Tardio / Industria
+
+Aliases:
+- tardio
+- industria
+- proceso
+- processing peach
+- conserva
+- almibar
+- durazno para industria
+- mercado tardio
+- otra variedad tardia
+
+Tipo de fruto:
+- firmeza/proceso/industria o mercado tardio.
+
+Uso:
+- industria
+- conserva
+- proceso
+- mercado tardio
+
+Frio relativo:
+- medio a medio-alto.
+
+Floracion relativa:
+- media a tardia.
+
+Cosecha relativa:
+- agosto-septiembre orientativo.
+
+Entrada a produccion:
+- ano 3.
+- plena ano 5+.
+
+Densidad tipica:
+- 500-1200 arboles/ha.
+
+Sensibilidad particular:
+- estres hidrico prolongado;
+- calor en maduracion;
+- golpe de sol;
+- pudriciones;
+- alternancia ligera si carga/memoria lo indica.
+
+Rendimiento relativo:
+- medio.
+- puede tener kg/arbol alto en sistemas tradicionales, pero calidad/proceso cambia lectura economica.
+
+Ajuste permitido:
+- retrasar ventanas relativas;
+- subir peso de calor/madurez/industria en harvest_maturity.
+
+================================================================================
+13. RESOLUCION DE ALIASES Y MIGRACION
+================================================================================
+
+Reglas:
+- "durazno" solo -> dz_skip
+- "duraznero" solo -> dz_skip
+- "melocoton" solo -> dz_skip
+- "melocotonero" solo -> dz_skip
+- "criollo/regional/tradicional/local" -> dz_01_criollo_regional
+- "bajo frio/temprano/precoz/flordaprince/anna/fred/victoria temprano" -> dz_02_temprano_bajo_frio
+- "amarillo/comercial/redhaven/suncrest/oh enry/oh Henry" -> dz_03_amarillo_comercial
+- "blanco/dulce/donut/saturn/chato/premium" -> dz_04_blanco_dulce
+- "tardio/industria/proceso/conserva/almibar" -> dz_05_tardio_industria
+- "nectarina/pelon/pavia" -> dz_skip + futureProfile=nectarine, no crear perfil nuevo sin documento.
+
+Migracion:
+Si el usuario empieza en dz_skip y luego identifica el tipo:
+- conservar cropId;
+- cambiar profileId;
+- conservar estado perenne;
+- conservar etapa fenologica;
+- conservar ancla temporal;
+- conservar historial de sensores;
+- conservar memoria de estres;
+- conservar historial de rendimiento;
+- recalcular targets/recomendaciones desde nuevo perfil sin borrar datos.
+
+No permitir:
+- migrar a apple_tree o pear_tree por nombre parecido;
+- usar AP-SKIP o PR-SKIP como fallback;
+- borrar historial al cambiar perfil.
+
+================================================================================
+14. CARGA, RALEO Y HUESO/CAROZO
+================================================================================
+
+Durazno necesita una nota especial porque la carga afecta mucho el calibre.
+
+Regla BIO-G v1:
+- No calcular numero de frutos.
+- No pedir raleo obligatorio en onboarding.
+- No prometer calibre.
+- Si hay mucha fruta chica en fruit_set/fruit_fill, sugerir "revisar carga/ralear con asesor/local" como contexto.
+- Si hay pocos frutos despues de helada/floracion mala, no empujar N; podria generar exceso de vigor.
+
+Hueso/carozo:
+- "Endurecimiento de hueso" es subfase real, pero NO se crea stageId.
+- Se guarda como subventana contextual dentro de fruit_fill si algun modulo futuro la calcula.
+- En v1, si el usuario solo dice "fruto verde creciendo", usar fruit_fill general.
+- Copy permitido:
+  "fruto en crecimiento", "calibre", "hueso/carozo en desarrollo" si el texto es contextual.
+- Copy prohibido:
+  tratarlo como cosecha/madurez si no hay harvest_maturity.
+
+================================================================================
+15. ALERTAS UNIVERSALES BASE
+================================================================================
+
+alertId:
+- peach_low_chill_or_irregular_budbreak
+Mensaje:
+- "El duraznero puede estar mostrando brotacion irregular. Revisa si la variedad coincide con el frio de tu zona."
+
+alertId:
+- peach_bloom_frost_risk
+Mensaje:
+- "La floracion del duraznero es muy sensible a heladas tardias. Si esta en flor, revisa el huerto."
+
+alertId:
+- peach_low_fruit_set_risk
+Mensaje:
+- "La floracion no siempre asegura carga. Frio, lluvia, calor o estres pueden bajar el cuajado."
+
+alertId:
+- peach_water_deficit_fruit_fill
+Mensaje:
+- "En llenado, el deficit de agua puede reducir calibre y calidad del durazno."
+
+alertId:
+- peach_excess_water_root_risk
+Mensaje:
+- "El durazno necesita buen drenaje. Humedad alta persistente puede afectar raiz y cuello."
+
+alertId:
+- peach_heat_sunburn_risk
+Mensaje:
+- "Calor y baja humedad pueden aumentar estres, golpe de sol y perdida de calidad."
+
+alertId:
+- peach_post_harvest_reserve_risk
+Mensaje:
+- "Despues de cosecha el arbol sigue activo. El estres en esta etapa puede afectar el siguiente ciclo."
+
+Lenguaje:
+- Humano.
+- Prudente.
+- No decir diagnostico cerrado.
+- No decir "aplica X quimico".
+- Sugerir revisar, confirmar y observar.
+
+================================================================================
+16. ASSETS
+================================================================================
+
+16.1 Iconos de cultivo/perfiles
+
+Ruta sugerida:
+assets/icons/wizard/
+
+Archivos:
+- ic_peach_tree.png
+- ic_peach_tree_generic.png
+- ic_peach_criollo_regional.png
+- ic_peach_temprano_bajo_frio.png
+- ic_peach_amarillo_comercial.png
+- ic_peach_blanco_dulce.png
+- ic_peach_tardio_industria.png
+
+Notas:
+- Fondo/estilo debe seguir Manzano/Pera: glossy, limpio, premium, sin texto.
+- El arbol principal puede mostrar duraznero con frutos.
+- Las variedades pueden mostrarse como fruto individual/par.
+
+16.2 Etapas fenologicas
+
+Ruta sugerida:
+assets/seeds/peach/
+
+Archivos:
+- peach_stage_planting_transplant.png
+- peach_stage_root_establishment.png
+- peach_stage_juvenile_vegetative.png
+- peach_stage_dormancy.png
+- peach_stage_budbreak.png
+- peach_stage_vegetative_growth.png
+- peach_stage_flowering.png
+- peach_stage_fruit_set.png
+- peach_stage_fruit_fill.png
+- peach_stage_harvest_maturity.png
+- peach_stage_post_harvest.png
+- peach_stage_unknown.png
+
+16.3 Iconos generales del wizard de arboles
+No crear icons de estado apple-only o peach-only si son generales.
+Usar:
+- ic_tree.png
+- ic_tree_after_harvest.png
+- ic_tree_budding.png
+- ic_tree_dormant_leafless.png
+- ic_tree_flowering.png
+- ic_tree_fruit_growing.png
+- ic_tree_fruit_set_flower_drop.png
+- ic_tree_full_foliage.png
+- ic_tree_green_fruit_growing.png
+- ic_tree_growing_only.png
+- ic_tree_has_flower.png
+- ic_tree_ready_harvest.png
+- ic_tree_tiny_fruit.png
+- ic_tree_unknown_state.png
+- ic_tree_young_not_fruiting.png
+
+================================================================================
+17. MAPEO FUTURO A CODIGO
+================================================================================
+
+Archivos esperados:
+- lib/core/crops/peach_tree/peach_tree_catalog.dart
+- lib/core/crops/peach_tree/peach_tree_assets.dart
+- lib/core/crops/peach_tree/peach_tree_universal_profile.dart
+- lib/core/crops/peach_tree/peach_tree_crop_definition.dart
+- lib/core/crops/peach_tree/peach_tree_yield_reference.dart
+- lib/core/crops/peach_tree/peach_tree_nutrition_modifier.dart
+- lib/core/plant_health/catalog/peach_tree_syndromes.dart
+
+Altas esperadas:
+- CropKey.peachTree
+- crop_pear_tree NO debe tocarse
+- crop_apple_tree NO debe tocarse
+- crop_peach_tree nuevo
+- CropCatalog entry
+- CropRegistry aliases
+- CropPresentationResolver
+- CropCycleDisplayResolver
+- TreeYieldReferenceCatalog
+- PlantHealthRegistry
+- plant_health_stage_adapter.dart
+- NutrientRecommendationEngine si aplica
+- npk_caps.dart si usa caps por cultivo
+- wizard/onboarding si necesita seleccionar perfiles DZ
+
+Constantes recomendadas:
+- kCropPeachTree = 'crop_peach_tree'
+- kPeachTreeLegacyId = 'peach_tree'
+- kDzSkip = 'dz_skip'
+- kDz01CriolloRegional = 'dz_01_criollo_regional'
+- kDz02TempranoBajoFrio = 'dz_02_temprano_bajo_frio'
+- kDz03AmarilloComercial = 'dz_03_amarillo_comercial'
+- kDz04BlancoDulce = 'dz_04_blanco_dulce'
+- kDz05TardioIndustria = 'dz_05_tardio_industria'
+
+Reglas de implementacion:
+- No usar sowingDate como eje.
+- No cerrar el cultivo en cosecha.
+- No apagar post_harvest.
+- No borrar memoria al migrar desde dz_skip.
+- No inventar nuevos stageIds.
+- No crear pit_hardening como etapa cerrada.
+- No usar fallback de Manzano/Pera para Durazno.
+- No mostrar DZ-01/DZ-SKIP en UI visible; usar labels humanos.
+- SKIP debe ir al final de la lista de variedades.
+- Usar ic_tree_* para estados generales de arboles.
+
+================================================================================
+18. TESTS MINIMOS RECOMENDADOS
+================================================================================
+
+Catalogo:
+- crop_peach_tree existe.
+- peach_tree, durazno, duraznero, melocoton, melocotonero resuelven correctamente.
+- dz_skip existe y es generico/migrable.
+- perfiles DZ-01 a DZ-05 existen.
+- "nectarina" no crea perfil nuevo; cae a dz_skip/futureProfile.
+
+UX:
+- pregunta visible: "¿Que variedad de duraznero tienes?"
+- no mostrar DZ-01, DZ-SKIP, ids internos.
+- No se / Durazno general aparece al final.
+- perfiles se muestran con labels humanos.
+
+Runtime:
+- newly_planted bloquea rendimiento.
+- harvest_maturity no cierra cultivo.
+- post_harvest sigue activo.
+- unknown funciona con baja confianza.
+- no usa sowingDate como eje.
+
+AgroRange:
+- soilMoisture apenas debajo de optimalMin => low/watch, no critical.
+- soilMoisture dentro de optimo => optimal.
+- soilMoisture apenas encima de optimalMax => high/watch, no critical.
+- soilMoisture debajo de lowMax => criticalLow permitido.
+- soilMoisture encima de highMin => saturacion/exceso.
+
+NPK/UI:
+- fruit_fill + N alto NO contiene "cosecha", "cerca de cosecha", "madurez" ni "maduracion".
+- harvest_maturity + N alto SI puede hablar de madurez/cosecha/calidad.
+- post_harvest habla de reservas/siguiente ciclo.
+- pit_hardening no aparece como stageId nuevo.
+
+Assets:
+- iconos de cultivo usan ic_peach_*.
+- estados generales usan ic_tree_*.
+- etapas usan assets/seeds/peach/peach_stage_*.
+
+Plant Health futuro:
+- flowering prioriza helada/flor/enfermedades de flor.
+- fruit_fill prioriza agua/calibre/plagas de fruto/sunburn.
+- post_harvest no queda apagada.
+
+================================================================================
+19. FUENTES CONSULTADAS Y TRAZABILIDAD
+================================================================================
+
+Fuentes internas BIO-G:
+- Estandar BIO-G Integracion Arboles Perennes v1.5 con addendum.
+- Documentos finales de Pera PR v1.
+- Documento Universal Durazno recibido por el usuario.
+- Documento SKIP Durazno recibido por el usuario.
+- Arquitectura Manzano/Pera revisada en lib.zip.
+
+Fuentes externas revisadas para fortalecer criterio:
+- University of Georgia Extension / CAES: Home Garden Peaches; bloom/chill/critical frost references.
+- Penn State Extension: Peach Production; thinning and crop-load management; pruning and light/crop load.
+- UC ANR / UCCE: Peach Management & Care; Growing Processing Cling/Freestone Peaches in California.
+- Utah State University Extension: peaches in the garden; Intermountain Tree Fruit Guide; critical temperatures by peach stage.
+- Michigan State University Extension: reduced crop load, fruit development, pit hardening, irrigation and stone-fruit water management.
+- Colorado State University Extension: tree fruit basics, soils, pH, drainage, chill concepts.
+- INIFAP / Chapingo / Revista Mexicana de Ciencias Agricolas: variedades mexicanas, durazno criollo, bajo frio, Zacatecas/Chihuahua/Mexico.
+- SIAP/SADER references for Mexican context when used in later rendimiento document.
+
+Criterio:
+- Universidades y extension mandan para fisiologia, stages, helada, suelo, riego y sanidad.
+- Fuentes mexicanas mandan para perfiles, aliases y contexto regional.
+- Foros solo deben usarse en documentos posteriores para lenguaje UX, no para umbrales tecnicos.
+
+================================================================================
+FIN DEL DOCUMENTO 01
+================================================================================

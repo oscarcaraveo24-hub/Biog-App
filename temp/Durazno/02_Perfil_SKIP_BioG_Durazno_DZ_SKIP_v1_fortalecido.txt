@@ -1,0 +1,997 @@
+BIO-G
+02_PERFIL SKIP / GENERAL
+DURAZNO DZ-SKIP
+
+Archivo: 02_Perfil_SKIP_BioG_Durazno_DZ_SKIP_v1_fortalecido.txt
+Cultivo BIO-G: Durazno / Duraznero
+cropId: crop_peach_tree
+profileId: dz_skip
+Label tecnico: DZ-SKIP · Durazno general
+Label UX: No se / Durazno general
+Version: v1.0 texto cableable fortalecido
+Estado: listo para revision y posterior paso a Codex/Claude
+Formato: TXT interno para codigo. No es recomendacion agronomica local.
+
+================================================================================
+0. DECISION EJECUTIVA
+================================================================================
+
+DZ-SKIP es obligatorio.
+
+No es un perfil incompleto.
+No significa descanso.
+No significa suelo sin cultivo.
+No significa arbol apagado.
+No significa "sin duraznero".
+No significa durazno temprano por defecto.
+No significa durazno criollo por defecto.
+No significa durazno amarillo comercial por defecto.
+
+DZ-SKIP es la entrada segura cuando el usuario:
+- solo sabe que tiene un duraznero,
+- no sabe variedad,
+- no sabe si es temprano, intermedio, tardio o bajo frio,
+- no distingue entre durazno criollo, amarillo, blanco, industria o nectarina,
+- no quiere elegir perfiles,
+- esta registrando rapido,
+- o todavia esta aprendiendo que arbol tiene.
+
+BIO-G debe permitir avanzar sin bloquear, con comportamiento conservador y migrable.
+
+Regla:
+El estado real del arbol y la etapa visible corrigen el comportamiento.
+Ejemplo:
+- Si usuario elige DZ-SKIP pero estado = newly_planted, BIO-G NO proyecta produccion.
+- Si usuario elige DZ-SKIP y etapa = flowering, BIO-G activa sensibilidad extrema a helada/floracion.
+- Si usuario elige DZ-SKIP y etapa = fruit_fill, BIO-G habla de llenado/calibre/fruto verde, NO de cosecha.
+- Si usuario elige DZ-SKIP y etapa = post_harvest, BIO-G habla de reservas del siguiente ciclo.
+- Si despues aprende que es temprano/bajo frio, puede migrar a dz_02_temprano_bajo_frio sin borrar historial.
+
+================================================================================
+1. IDENTIDAD DEL PERFIL SKIP
+================================================================================
+
+profileId:
+- dz_skip
+
+profileCode visible tecnico:
+- DZ-SKIP
+
+label tecnico:
+- DZ-SKIP · Durazno general
+
+label UX:
+- No se / Durazno general
+
+cropId:
+- crop_peach_tree
+
+Alias legacy permitido:
+- peach_tree
+
+Cultivo:
+- Durazno / Duraznero
+
+Nombre cientifico asumido:
+- Prunus persica (L.) Batsch como grupo base de durazno/melocoton.
+
+Familia:
+- Rosaceae
+
+Genero:
+- Prunus
+
+Tipo:
+- Arbol frutal caducifolio
+- Perenne
+- C3
+- Frutal de hueso/carozo
+- Frutal de clima templado a templado-adaptado
+
+Organo objetivo:
+- FRUTO
+
+isGeneric:
+- true
+
+isSkip:
+- true
+
+isMigrable:
+- true
+
+defaultConfidence:
+- baja si solo hay cultivo
+- media si hay estado del arbol
+- media-alta si hay etapa visible + sensor estable
+- nunca alta si no hay variedad/perfil confirmado
+
+migrationTargets:
+- dz_01_criollo_regional
+- dz_02_temprano_bajo_frio
+- dz_03_amarillo_comercial
+- dz_04_blanco_dulce
+- dz_05_tardio_industria
+
+futureProfileHint:
+- nectarine / pelon / pavia solo como futuro, no crear DZ-06 sin documento.
+
+================================================================================
+2. SUPUESTO BASE CONSERVADOR
+================================================================================
+
+BIO-G asume para DZ-SKIP:
+
+- Duraznero promedio.
+- Variedad desconocida.
+- Portainjerto desconocido.
+- Requerimiento de frio desconocido.
+- Sensibilidad media-conservadora.
+- Huerto a cielo abierto.
+- Manejo estandar.
+- Sin informacion de densidad.
+- Sin rendimiento fino.
+- Sin historial de raleo/carga confirmado.
+- Sin calendario exacto.
+- Sin perfil de bajo frio confirmado.
+
+El perfil NO asume:
+- Criollo.
+- Bajo frio.
+- Temprano.
+- Amarillo comercial.
+- Blanco/dulce.
+- Tardio/industria.
+- Nectarina.
+- Arbol adulto por defecto.
+- Produccion plena por defecto.
+- Edad exacta.
+- Portainjerto enano o vigoroso.
+- Carga de fruta.
+- Dosis de fertilizacion.
+- Raleo correcto.
+- Frio suficiente.
+
+Regla:
+El estado visible manda mas que el supuesto.
+Si el usuario dice "recien plantado", el arbol es no productivo aunque DZ-SKIP sea general.
+Si el usuario dice "en flor", se activa etapa critica aunque no se conozca variedad.
+Si el usuario dice "despues de cosecha", post_harvest sigue activo y no se cierra el cultivo.
+
+================================================================================
+3. CASOS QUE DEBE CUBRIR
+================================================================================
+
+Caso 1:
+Usuario dice "tengo durazno/duraznero" y no sabe variedad.
+- profileId: dz_skip
+- state: unknown o el que elija
+- confidence: baja/media
+
+Caso 2:
+Usuario elige arbol recien plantado.
+- state: newly_planted
+- stage: planting_transplant o root_establishment
+- yield: bloqueado/no productivo
+- targets: raiz/agua/suelo
+- alerts: no hablar de cosecha
+
+Caso 3:
+Usuario dice que aun no produce.
+- state: juvenile_non_productive
+- stage: juvenile_vegetative o unknown
+- yield: no productivo
+- targets: crecimiento estructural, madera fructifera futura
+- copy: arbol joven, raiz, estructura, sanidad
+
+Caso 4:
+Usuario dice que ya produce y esta en flor.
+- state: productive_season
+- stage: flowering
+- alerts: helada, lluvia/frio, deficit hidrico, calor seco, reserva, enfermedades de flor
+- confidence: media si solo hay etapa; media-alta si hay sensores/clima
+
+Caso 5:
+Usuario dice que tiene frutito recien amarrado.
+- state: productive_season
+- stage: fruit_set
+- targets: agua estable, EC baja, temperatura estable, riesgo de aborto
+- copy: amarre/cuajado, no llenado avanzado
+
+Caso 6:
+Usuario dice que tiene fruto verde creciendo.
+- state: productive_season
+- stage: fruit_fill
+- targets: agua estable, K relativo, EC, calor/golpe de sol
+- copy obligatorio: llenado/calibre/fruto verde/firmeza/calidad
+- copy permitido: hueso/carozo en desarrollo solo como contexto
+- copy prohibido: cosecha/madurez/cerca de cosecha como identidad de etapa
+
+Caso 7:
+Usuario dice que el fruto esta maduro/listo para cortar.
+- state: productive_season
+- stage: harvest_maturity
+- targets: evitar estres, calidad final, firmeza, ventana de corte
+- copy permitido: madurez/cosecha/color/aroma/firmeza final
+
+Caso 8:
+Usuario cosecho.
+- stage: post_harvest
+- no cerrar cultivo
+- activar memoria y recuperacion de reservas
+- copy: siguiente ciclo, hoja activa, raiz activa, yemas futuras
+
+Caso 9:
+Luego el usuario aprende la variedad.
+- migration: dz_skip -> perfil especifico
+- conservar historial y memoria
+
+Caso 10:
+Usuario dice "nectarina" o "pelon".
+- no crear perfil nuevo en v1
+- usar dz_skip + futureProfile=nectarine
+- mostrar baja/media confianza hasta tener documento oficial.
+
+================================================================================
+4. ESTRUCTURA FENOLOGICA ACTIVA EN DZ-SKIP
+================================================================================
+
+DZ-SKIP usa el esqueleto completo del duraznero universal:
+
+Pre-productivas:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+
+Productivas anuales:
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+
+Fallback:
+- unknown
+
+Regla:
+DZ-SKIP no elimina etapas. Solo usa rangos y sensibilidad mas amplios/conservadores.
+DZ-SKIP nunca debe significar descanso, barbecho ni cultivo ausente.
+
+Subventana especial:
+- pit_hardening / endurecimiento de hueso = contexto dentro de fruit_fill, NO stageId.
+
+================================================================================
+5. CALENDARIO FISIOLOGICO PROMEDIO DZ-SKIP
+================================================================================
+
+Usar solo para visualizacion, mensajes y alertas generales.
+
+- Dormancia/frio: invierno, variable por region.
+- Brotacion -> floracion: 20-40 dias orientativos.
+- Floracion: 10-30 dias.
+- Floracion -> cuajado visible: 5-15 dias.
+- Cuajado: 5-12 dias.
+- Llenado/crecimiento de fruto: 60-100 dias.
+- Plena floracion -> inicio de cosecha: 100-150 dias.
+- Ventana visual MX general: mayo-agosto, variable por region/perfil.
+- Postcosecha: desde cosecha hasta senescencia/caida de hoja o reposo.
+
+Notas:
+- No es promesa.
+- No sustituye perfil DZ especifico.
+- No sustituye datos locales.
+- No debe disparar alertas agresivas si el usuario no confirmo etapa.
+- Si hay etapa visible, la etapa pesa mas que el calendario.
+
+================================================================================
+6. RANGOS CONSERVADORES DZ-SKIP PARA SENSORES
+================================================================================
+
+Formato:
+metric | rango operativo | observacion | alerta
+
+soilMoisture:
+- operativo general: 55-80% AW
+- etapa critica floracion/cuajado/llenado final: 60-85% AW estable
+- observacion baja: 45-55% AW
+- alerta baja: <45% AW
+- observacion exceso: 85-90% AW
+- alerta exceso: >90% AW o saturacion persistente
+
+soilTemp:
+- operativo general: 8-26 °C
+- favorable raiz: 12-24 °C
+- baja actividad: <7-8 °C
+- observacion calor: >26-28 °C en suelo + baja humedad
+- alerta contextual: extremo + estres hidrico
+
+pH:
+- optimo conservador: 6.0-7.0
+- aceptable amplio: 5.5-7.5
+- observacion: 5.0-5.5 o 7.5-8.0
+- alerta: <5.0 o >8.0
+
+ec:
+- seguro/normal: <1.0 dS/m
+- observacion: 1.0-2.0 dS/m
+- alerta inicial: >2.0-2.5 dS/m
+- alerta fuerte: >3.0 dS/m o tendencia ascendente con estres
+
+resistance:
+- favorable: <1.0 MPa
+- observacion: 1.0-2.0 MPa
+- alerta: >2.0 MPa
+- critico: >3.0 MPa
+
+n:
+- DZ-SKIP no interpreta dosis.
+- bajo/moderado aceptable segun etapa.
+- alerta de exceso solo si la logica general detecta desbalance + etapa sensible.
+- en fruit_fill puede marcar exceso si lectura lo amerita, pero NO usar copy de cosecha.
+
+p:
+- importante en establecimiento, brotacion, floracion.
+- interpretar con pH y confianza baja si no hay analisis.
+
+k:
+- importante en llenado, calibre, firmeza/calidad.
+- interpretar con agua/EC/carga.
+
+Ca/B/Mg:
+- No son sensores BIO-G v1.
+- Pueden aparecer como contexto: Ca para calidad/firmeza; B para floracion/cuajado; Mg como balance.
+- No crear metricas nuevas.
+
+================================================================================
+7. STAGETARGETS DZ-SKIP
+================================================================================
+
+DZ-SKIP usa bandas amplias para evitar falsa precision.
+
+IMPORTANTE:
+Al convertir a AgroRange:
+- lowMax = frontera critica baja
+- optimalMin = inicio optimo
+- optimalMax = fin optimo
+- highMin = frontera critica alta
+No usar rangos pegados sin justificacion/test.
+
+planting_transplant:
+- soilMoisture optimo 60-80 | low/watch 45-60 | criticalLow <45 | saturation >90
+- soilTemp 10-24
+- pH 6.0-7.0
+- EC alerta >2.5
+- resistance alerta >2.0
+- N bajo-moderado
+- P medio-alto
+- K medio
+
+root_establishment:
+- soilMoisture optimo 65-85 | low/watch 45-65 | criticalLow <45 | saturation >90
+- soilTemp 10-24
+- pH 6.0-7.0
+- EC alerta >2.5
+- resistance alerta >2.0
+- N bajo-moderado
+- P alto relativo
+- K medio
+
+juvenile_vegetative:
+- soilMoisture optimo 60-85
+- soilTemp 10-26
+- pH 6.0-7.0
+- EC alerta >2.5
+- resistance alerta >2.0
+- N medio
+- P medio
+- K medio
+
+dormancy:
+- soilMoisture optimo operativo 45-70
+- soilTemp estacional; no penalizar frio normal
+- pH 6.0-7.5
+- EC alerta >2.5
+- resistance baja ponderacion si suelo seco/frio
+- N bajo
+- P bajo
+- K bajo
+
+budbreak:
+- soilMoisture 55-80
+- soilTemp 8-22
+- pH 6.0-7.0
+- EC alerta >2.5
+- resistance alerta >2.0
+- N medio
+- P medio
+- K medio
+
+vegetative_growth:
+- soilMoisture 55-80
+- soilTemp 10-26
+- pH 6.0-7.0
+- EC alerta >2.5
+- resistance alerta >2.0
+- N medio
+- P medio
+- K medio
+
+flowering:
+- soilMoisture 60-80 estable
+- soilTemp 10-24
+- pH 6.0-7.0
+- EC alerta >2.5
+- resistance alerta >2.0
+- N bajo-medio
+- P medio
+- K medio
+- prioridad externa: helada/lluvia/calor/reserva/flor
+
+fruit_set:
+- soilMoisture 65-85 estable
+- soilTemp 12-26
+- pH 6.0-7.0
+- EC alerta >2.5
+- resistance alerta >2.0
+- N bajo-medio
+- P medio
+- K medio-alto
+
+fruit_fill:
+- soilMoisture 60-85, ajustar por subventana
+- soilTemp 12-28
+- pH 6.0-7.0
+- EC alerta >2.5
+- resistance alerta >2.0
+- N medio-bajo
+- P medio
+- K alto relativo
+- copy: llenado/calibre/fruto verde/firmeza/calidad
+- nota: endurecimiento de hueso/carozo es contexto, no etapa nueva
+
+harvest_maturity:
+- soilMoisture 55-75
+- soilTemp 10-28
+- pH 6.0-7.0
+- EC alerta >2.5
+- resistance alerta >2.0
+- N bajo
+- P bajo-medio
+- K medio
+- copy: madurez/cosecha/color/firmeza final/calidad
+
+post_harvest:
+- soilMoisture 55-75
+- soilTemp 8-25
+- pH 6.0-7.0
+- EC alerta >2.5
+- resistance alerta >2.0
+- N medio-bajo
+- P medio
+- K medio
+- copy: reservas/siguiente ciclo/yemas futuras
+
+unknown:
+- soilMoisture 55-80
+- soilTemp 8-26
+- pH 6.0-7.5
+- EC alerta >2.5
+- resistance alerta >2.0
+- N medio
+- P medio
+- K medio
+
+================================================================================
+8. STAGEWEIGHTS DZ-SKIP
+================================================================================
+
+Regla:
+DZ-SKIP penaliza menos agresivamente que perfiles especificos si no hay etapa confirmada.
+Si hay etapa confirmada, usa pesos de etapa universal pero con mensajes menos cerrados.
+
+Pesos base cuando etapa unknown:
+- water 0.24
+- soilTemp 0.12
+- pH 0.10
+- EC 0.14
+- resistance 0.12
+- N 0.09
+- P 0.09
+- K 0.10
+
+Ajustes:
+- flowering: subir water/soilTemp/EC y riesgo climatico/helada.
+- fruit_set: subir water/EC/soilTemp.
+- fruit_fill: subir water/K/EC y contexto de subventanas.
+- harvest_maturity: mantener agua/K/calidad, bajar N.
+- post_harvest: mantener agua y reservas, no apagar cultivo.
+- root_establishment: subir water/resistance/EC.
+- dormancy: bajar NPK.
+
+Tabla recomendada si el codigo requiere pesos por etapa:
+
+planting_transplant:
+- water 0.25
+- soilTemp 0.15
+- pH 0.12
+- EC 0.18
+- resistance 0.20
+- N 0.03
+- P 0.05
+- K 0.02
+
+root_establishment:
+- water 0.30
+- soilTemp 0.12
+- pH 0.10
+- EC 0.18
+- resistance 0.18
+- N 0.03
+- P 0.06
+- K 0.03
+
+juvenile_vegetative:
+- water 0.22
+- soilTemp 0.12
+- pH 0.10
+- EC 0.12
+- resistance 0.15
+- N 0.14
+- P 0.08
+- K 0.07
+
+dormancy:
+- water 0.15
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.05
+- P 0.05
+- K 0.05
+
+budbreak:
+- water 0.22
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.12
+- P 0.08
+- K 0.08
+
+vegetative_growth:
+- water 0.22
+- soilTemp 0.12
+- pH 0.10
+- EC 0.10
+- resistance 0.12
+- N 0.17
+- P 0.08
+- K 0.09
+
+flowering:
+- water 0.27
+- soilTemp 0.20
+- pH 0.08
+- EC 0.14
+- resistance 0.08
+- N 0.05
+- P 0.08
+- K 0.10
+
+fruit_set:
+- water 0.30
+- soilTemp 0.16
+- pH 0.08
+- EC 0.16
+- resistance 0.08
+- N 0.05
+- P 0.07
+- K 0.10
+
+fruit_fill:
+- water 0.26
+- soilTemp 0.12
+- pH 0.08
+- EC 0.13
+- resistance 0.08
+- N 0.07
+- P 0.06
+- K 0.18
+
+harvest_maturity:
+- water 0.22
+- soilTemp 0.14
+- pH 0.08
+- EC 0.12
+- resistance 0.08
+- N 0.05
+- P 0.05
+- K 0.12
+
+post_harvest:
+- water 0.22
+- soilTemp 0.10
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.10
+- P 0.10
+- K 0.12
+
+================================================================================
+9. SENSIBILIDAD CRITICA DZ-SKIP
+================================================================================
+
+Sensibilidad promedio:
+- Heladas tardias en floracion: extrema.
+- Lluvia/frio/calor en floracion: alta.
+- Baja reserva/postcosecha anterior: media-alta.
+- Deficit hidrico en cuajado/llenado: alta a muy alta.
+- Exceso de humedad en suelo: alta en raiz.
+- Estres termico prolongado: medio-alto.
+- Salinidad: media.
+- Compactacion: alta.
+- Falta de frio: contexto alto si region calida y etapa irregular.
+- Vigor excesivo por N: observacion, especialmente si hay baja carga.
+
+Penalizacion:
+- Moderada si solo hay DZ-SKIP.
+- Alta si etapa critica esta confirmada y sensor/clima muestran estres.
+- Baja si estado/etapa son unknown y no hay datos suficientes.
+- Nunca afirmar diagnostico cerrado sin confirmacion.
+
+================================================================================
+10. VENTANAS FISIOLOGICAS DZ-SKIP
+================================================================================
+
+Ventana critica:
+- dormancy -> budbreak -> flowering -> fruit_set
+
+Ventana de agua:
+- root_establishment -> fruit_set
+- fruit_fill final
+- post_harvest si hubo carga alta o estres
+
+Ventana de raiz/suelo:
+- planting_transplant -> juvenile_vegetative
+
+Ventana de nutricion relativa:
+- root_establishment
+- budbreak
+- pre-floracion/floracion como balance, no empujar N
+- fruit_fill
+- post_harvest
+
+Ventana de memoria:
+- siempre activa
+- especialmente flowering, fruit_set, fruit_fill y post_harvest
+
+Ventana de sanidad:
+- budbreak/flowering: rizado/leaf curl, flores, helada, bacteriosis/hongos segun region
+- fruit_set/fruit_fill: plagas de fruto, enfermedades de fruto, sunburn, carga
+- post_harvest: hojas/reservas/sanidad residual
+
+================================================================================
+11. ALERTAS DZ-SKIP
+================================================================================
+
+alertId sugerido:
+- peach_skip_low_chill_risk
+Mensaje:
+- "Si el duraznero no acumulo suficiente frio, puede brotar o florear disparejo. Revisa si la variedad coincide con tu zona."
+
+alertId:
+- peach_skip_frost_bloom_risk
+Mensaje:
+- "La floracion del duraznero es muy sensible a heladas tardias. Si esta en flor o con frutito, revisa el huerto."
+
+alertId:
+- peach_skip_flowering_weather_risk
+Mensaje:
+- "Lluvia, frio o calor durante floracion pueden bajar el cuajado del duraznero."
+
+alertId:
+- peach_skip_low_fruit_set_risk
+Mensaje:
+- "Si hubo buena floracion pero poca fruta, revisa helada, clima, reservas y estres antes de culpar fertilizante."
+
+alertId:
+- peach_skip_water_deficit
+Mensaje:
+- "La humedad parece baja para el duraznero. Si esta en cuajado o llenado, el riesgo sube."
+
+alertId:
+- peach_skip_water_excess
+Mensaje:
+- "La humedad del suelo parece alta. El durazno necesita buen drenaje; el exceso puede afectar raiz y cuello."
+
+alertId:
+- peach_skip_salinity_observation
+Mensaje:
+- "La salinidad va en aumento. Conviene revisar agua/suelo antes de fertilizar mas."
+
+alertId:
+- peach_skip_compaction_observation
+Mensaje:
+- "La resistencia del suelo sugiere posible compactacion. Esto puede limitar raiz y absorcion."
+
+alertId:
+- peach_skip_heat_sunburn_risk
+Mensaje:
+- "Condiciones de calor pueden estresar fruto, hoja y aumentar golpe de sol."
+
+alertId:
+- peach_skip_fruit_fill_water_quality
+Mensaje:
+- "En llenado, el agua estable pesa mucho para calibre, firmeza y calidad del durazno."
+
+alertId:
+- peach_skip_harvest_maturity_quality
+Mensaje:
+- "En madurez/cosecha, vigila firmeza, golpes, exceso de humedad y ventana de corte."
+
+alertId:
+- peach_skip_post_harvest_stress
+Mensaje:
+- "Despues de cosecha el duraznero sigue activo. El estres en esta etapa puede afectar las yemas del siguiente ciclo."
+
+alertId:
+- peach_skip_unknown_stage
+Mensaje:
+- "BIO-G puede seguir en modo general, pero sera mas preciso si eliges lo que ves en el arbol."
+
+Lenguaje:
+- Humano.
+- Prudente.
+- No decir diagnostico cerrado.
+- No decir "aplica X quimico".
+- Sugerir revisar, confirmar y observar.
+
+================================================================================
+12. UX VISIBLE AL USUARIO
+================================================================================
+
+Texto principal:
+"Este es un perfil general de durazno. Para mayor precision, puedes elegir el tipo o variedad mas adelante."
+
+Texto corto:
+"Durazno general"
+
+Texto de confianza:
+"Precision media: BIO-G usa rangos seguros porque aun no sabe el tipo de durazno."
+
+Texto de migracion:
+"Si despues sabes si es criollo, temprano/bajo frio, amarillo comercial, blanco/dulce o tardio/industria, puedes cambiarlo sin perder historial."
+
+Texto si estado unknown:
+"Sin etapa confirmada, BIO-G mantendra alertas conservadoras."
+
+Texto si recien plantado:
+"Como esta recien plantado, BIO-G priorizara raiz, humedad estable, baja salinidad y suelo sin compactacion."
+
+Texto si no produce:
+"Como aun no produce, BIO-G priorizara crecimiento, estructura y salud del arbol."
+
+Texto si produce:
+"BIO-G ajustara recomendaciones segun lo que se vea en el arbol: flor, frutito, fruto verde, cosecha o postcosecha."
+
+Texto prohibido:
+- "DZ-SKIP"
+- "perfil incompleto"
+- "sin datos"
+- "cultivo sin configurar"
+- "se desconoce, no se puede evaluar"
+- "perfil del arbol"
+
+================================================================================
+13. MEMORIA DEL CULTIVO EN DZ-SKIP
+================================================================================
+
+Guardar memoria aunque no haya variedad:
+
+Campos recomendados:
+- stressType
+- severity
+- duration
+- stageId
+- stateId
+- sensorSnapshot
+- weatherContext
+- confidence
+- likelyFutureImpact
+- notes
+
+Eventos que deben guardarse:
+- helada en floracion
+- baja floracion/brotacion irregular
+- baja carga despues de floracion
+- deficit hidrico en cuajado/llenado
+- calor extremo/golpe de sol
+- granizo
+- defoliacion temprana
+- exceso de humedad/saturacion
+- salinidad alta
+- compactacion alta
+- postcosecha mala
+- poda/carga extrema si el usuario lo registra
+
+Impacto:
+- currentCycleYieldImpact
+- fruitSizeImpact
+- fruitQualityImpact
+- nextCycleBloomImpact
+- reserveImpact
+- confidenceImpact
+
+Regla:
+En durazno, la memoria impacta principalmente 1 ciclo, pero eventos severos de raiz/madera/estructura pueden afectar mas.
+
+================================================================================
+14. MIGRACION DESDE DZ-SKIP
+================================================================================
+
+Targets:
+- dz_01_criollo_regional
+- dz_02_temprano_bajo_frio
+- dz_03_amarillo_comercial
+- dz_04_blanco_dulce
+- dz_05_tardio_industria
+
+Al migrar:
+- conservar cropId crop_peach_tree
+- cambiar profileId
+- conservar perennialStateId
+- conservar phenologyStageId
+- conservar perennialAnchorDate
+- conservar perennialAnchorTypeId
+- conservar sensor history
+- conservar stress memory
+- conservar yield history
+- conservar plant health history
+- conservar NPK/eval history
+- conservar notas del usuario
+
+No hacer:
+- no reiniciar como si fuera arbol nuevo;
+- no borrar historial;
+- no cambiar a Manzano/Pera por error;
+- no usar fallback AP/PR;
+- no reescribir etapa si el usuario no la cambio.
+
+Conflictos:
+- Si usuario dice "temprano" y "blanco", preferir preguntar confirmacion.
+- Si usuario dice "nectarina", dejar dz_skip + futureProfile=nectarine.
+- Si usuario dice "criollo amarillo", resolver a dz_01 si habla de regional/tradicional; a dz_03 si habla de comercial/mercado nacional.
+- Si usuario dice "industria amarillo", resolver a dz_05 si destino proceso es claro.
+
+================================================================================
+15. MAPEO A CODIGO
+================================================================================
+
+Archivo esperado:
+- lib/core/crops/peach_tree/peach_tree_catalog.dart
+
+Constantes:
+- kCropPeachTree
+- kPeachTreeLegacyId
+- kDzSkip
+- kDz01CriolloRegional
+- kDz02TempranoBajoFrio
+- kDz03AmarilloComercial
+- kDz04BlancoDulce
+- kDz05TardioIndustria
+
+CropProfileEntry:
+- id: dz_skip
+- label interno: DZ-SKIP · Durazno general
+- displayName UX: No se / Durazno general
+- isGeneric: true
+- isSkip: true
+- migrationTargets: DZ-01..DZ-05
+
+Resolver:
+- if input in ['durazno', 'duraznero', 'melocoton', 'melocotonero', 'peach', 'peach_tree'] -> dz_skip
+- alias mapping por perfiles
+- futureProfile para nectarina/pelon/pavia
+
+Targets:
+- usar StageTargets de Documento 01/05
+- bandas conservadoras si no hay etapa
+
+EvaluateTelemetry:
+- stage unknown -> baja confianza
+- fruit_fill -> copy de llenado/calibre/fruto verde
+- harvest_maturity -> copy de cosecha/madurez
+- post_harvest -> reservas/siguiente ciclo
+- no usar pit_hardening como stageId
+
+UX:
+- "¿Que variedad de duraznero tienes?"
+- opciones:
+  - Criollo / Regional
+  - Temprano / Bajo frio
+  - Amarillo comercial
+  - Blanco / Dulce
+  - Tardio / Industria
+  - No se / Durazno general
+- SKIP al final
+
+================================================================================
+16. TESTS MINIMOS
+================================================================================
+
+Catalogo:
+1. dz_skip existe.
+2. dz_skip es generico.
+3. dz_skip es migrable.
+4. "durazno" resuelve crop_peach_tree + dz_skip.
+5. "duraznero" resuelve crop_peach_tree + dz_skip.
+6. "melocoton" resuelve crop_peach_tree + dz_skip.
+7. "criollo" resuelve dz_01.
+8. "bajo frio" resuelve dz_02.
+9. "amarillo comercial" resuelve dz_03.
+10. "blanco" resuelve dz_04.
+11. "industria" resuelve dz_05.
+12. "nectarina" no crea perfil oficial; cae a dz_skip/futureProfile.
+
+Runtime:
+13. newly_planted + dz_skip no proyecta rendimiento.
+14. juvenile_non_productive + dz_skip no proyecta rendimiento.
+15. flowering + dz_skip activa sensibilidad fuerte a helada.
+16. fruit_fill + dz_skip habla de llenado, no cosecha.
+17. harvest_maturity + dz_skip puede hablar de cosecha.
+18. post_harvest + dz_skip sigue activo.
+19. unknown mantiene baja confianza.
+
+AgroRange:
+20. No hay lowMax == optimalMin en suelo/ambiente.
+21. No hay optimalMax == highMin en suelo/ambiente.
+22. Humedad apenas debajo de optimo -> low/watch, no critical.
+23. Humedad critica real -> criticalLow.
+24. Saturacion real -> high/excess.
+
+NPK/UI:
+25. fruit_fill + N alto no contiene cosecha/cerca de cosecha/madurez.
+26. harvest_maturity + N alto puede hablar de madurez/cosecha.
+27. post_harvest habla de reservas.
+28. pit_hardening no aparece como stageId.
+
+UX:
+29. UI no muestra DZ-SKIP.
+30. UI no muestra DZ-01.
+31. UI no muestra "Perfil del arbol".
+32. "No se / Durazno general" aparece al final.
+
+Assets:
+33. estados generales usan ic_tree_*.
+34. perfiles de durazno usan ic_peach_*.
+35. etapas usan assets/seeds/peach/.
+
+================================================================================
+17. FUENTES
+================================================================================
+
+Fuentes internas BIO-G:
+- Estandar BIO-G Integracion Arboles Perennes v1.5 con addendum.
+- Documento Universal Durazno recibido.
+- Documento SKIP Durazno recibido.
+- Documentos finales de Pera usados como plantilla de estructura.
+- Arquitectura Manzano/Pera revisada.
+
+Fuentes externas consultadas:
+- University of Georgia Extension / CAES: sitio, sol, drenaje, frio, floracion y temperaturas criticas.
+- Penn State Extension: produccion de durazno, raleo, poda y manejo de carga/luz.
+- UC ANR / UCCE: manejo de durazno, agua, sunburn, procesamiento.
+- Utah State University Extension: horas frio, critical temperatures, guia intermountain de frutales.
+- Michigan State University Extension: pit hardening, crop load, riego en frutales de hueso.
+- Colorado State University Extension: suelos, pH, drainage y conceptos de chill.
+- INIFAP / Chapingo / Revista Mexicana de Ciencias Agricolas: variedades mexicanas, criollos, bajo frio y contexto de Mexico.
+
+================================================================================
+FIN DEL DOCUMENTO 02
+================================================================================

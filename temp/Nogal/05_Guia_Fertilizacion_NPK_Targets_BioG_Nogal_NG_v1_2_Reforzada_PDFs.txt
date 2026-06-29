@@ -1,0 +1,3123 @@
+BIO-G
+
+05_GUIA_FERTILIZACION_NPK_TARGETS_BIOG_NOGAL_NG_v1_2_REFORZADA_PDFS
+Cultivo: Nogal / Nogal pecanero / Nuez pecana / Pecan tree
+cropId: crop_walnut_tree
+cropKey esperado: walnut_tree
+profilePrefix: NG
+Documento: 05 de 05 — Fertilización NPK y targets por etapa
+Versión: v1.2 reforzada con PDFs anexos INIFAP/Chihuahua/NMSU/Chile + investigación universitaria previa + revisión del motor BIO-G
+Formato: TXT técnico para Flutter/Dart
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+IMPORTANTE:
+Este documento NO es una receta agronómica local.
+No sustituye análisis de suelo, agua, tejido/foliar, asesoría regional ni normatividad.
+BIO-G v1 debe orientar, ponderar riesgo, mejorar lectura de sensores y pedir confirmación.
+No debe prometer rendimiento, no debe indicar dosis comerciales cerradas y no debe sustituir
+un plan de fertirriego construido con laboratorio, análisis foliar y asesoría local.
+
+================================================================================
+0. CAMBIOS PRINCIPALES v1.2 — REFORZADA CON PDFs ANEXOS
+================================================================================
+
+Esta versión v1.2 refuerza la guía NPK del nogal con los PDFs anexos entregados por el usuario:
+
+A) PT-0008Nogal1.pdf — Paquete Tecnológico para Nogal Pecanero, Chihuahua.
+   Fuente práctica regional para Chihuahua.
+   Aporta:
+   - suelos profundos, bien drenados, textura media y libres de sales;
+   - plantación 12 x 12 m como referencia tradicional, 69 árboles/ha;
+   - polinización Western/Wichita/Bradley como paquete Chihuahua;
+   - no fertilizar al suelo el primer año como regla general;
+   - años 2 a 7: 60 g de N por cm de diámetro de tronco, dividido mitad a mediados de marzo y mitad a fines de mayo;
+   - crecimiento juvenil esperado antes de producción: 60-90 cm de brote/año;
+   - producción: fertilización con base en vigor, rendimiento esperado y foliar del ciclo anterior;
+   - esquema base N producción: 110 kg N/ha a mediados de marzo + 110 kg N/ha a mediados de mayo si se espera buena carga;
+   - si en mayo la carga de nuez es baja, sólo aplicar 20-30% del N adicional;
+   - brote fructífero adulto deseable: 15-30 cm/año;
+   - P y K sólo si el análisis foliar lo indica; mantenimiento aproximado: 60 kg/ha;
+   - Zn foliar como práctica obligada en regiones semiáridas: 4-5 aspersiones desde emisión de brote;
+   - foliar: última semana de julio a primera de agosto, 60 foliolos por lote;
+   - agua con sales <1,000 ppm como referencia práctica;
+   - fertirriego de marzo a junio y evitar sulfato de amonio si agua/suelo tienen problema de sales.
+
+B) manejo_del_nogal_pecanero_con_base_en_su_fenologia1.pdf — INIFAP, Delicias, Chihuahua.
+   Fuente clave para ajustar el motor por etapa visible.
+   Aporta:
+   - la raíz se activa antes de la yema: raíz con base térmica aprox. 7 °C y brotación con base aprox. 10 °C;
+   - riego y fertilización deben adelantarse a brotación cuando la raíz empieza a activarse;
+   - en Delicias/Ojinaga, Western y Wichita tienen ventanas fenológicas distintas, con Wichita generalmente más temprana;
+   - brotes vigorosos con área foliar suficiente retienen más nueces y llenan mejor almendra;
+   - Western: brotes de 15-30 cm; Wichita: brotes más productivos de 25-45 cm;
+   - en los 45 días posteriores a brotación ocurre gran parte del crecimiento total de brote;
+   - el manejo de N debe fraccionarse según fenología, no por calendario genérico;
+   - en fertirriego, un ejemplo funcional fracciona N en 7 ventanas: 15%, 17.5%, 17.5%, 10%, 10%, 15%, 15%; P/K se fracciona también de marzo a agosto;
+   - aportar N-P-K en agosto dentro de un esquema MIC ayudó a rendimientos >2 t/ha y baja alternancia;
+   - una regla práctica regional indica 8-10 kg de N por cada 100 kg de nuez esperada;
+   - demasiado N o demasiado riego no generan automáticamente más rendimiento;
+   - la caída de nuez en junio-julio y agosto puede estar ligada a estrés hídrico/nutrimental y competencia entre frutos/hojas;
+   - el 85% del peso seco de la nuez se acumula en los últimos tres meses del ciclo, dejando poco tiempo para recuperar reservas.
+
+C) manejo-sostenible-del-suelo-en-nogaleras-1.pdf — INIFAP, Delicias, Chihuahua.
+   Fuente clave para suelo, materia orgánica, micorrizas y sobrefertilización.
+   Aporta:
+   - la nutrición del nogal depende fuertemente de factores no nutricionales: materia orgánica, aireación, humedad, drenaje, actividad microbiana y labranza;
+   - fertilización excesiva deteriora propiedades químicas y biológicas del suelo;
+   - reconocidos especialistas citados por INIFAP afirman que muchos nogaleros aportan 3-5 veces más N del requerido y que las dosis pueden bajarse hasta 50% sin perjudicar rendimiento/calidad si el manejo es técnico;
+   - N es el nutrimento requerido en mayor cantidad, pero no es una cura mágica;
+   - rangos de referencia: 100 kg N/ha en textura franca, 130 kg N/ha en arena-migajonosa, hasta 200 kg N/ha en suelos calcáreos pobres en materia orgánica;
+   - P/K en regiones semiáridas suelen moverse entre 20-60 kg/ha según suelo;
+   - concentración mínima en suelo: nitratos 20 mg/kg, P 10 mg/kg, K 100 mg/kg, Mg 50 mg/kg, S 25 mg/kg, materia orgánica 1.5%; 
+   - foliar para alta producción: N 2.50-2.90%, P 0.14-0.20%, K 1.0-1.3%, Ca 1.4-2.0%, Mg 0.38-0.50%, S 0.20-0.50%, Zn 60-100 mg/kg, Fe 60-120 mg/kg, Cu 10-15 mg/kg, Mn 85-300 mg/kg, B 40-150 mg/kg, Ni 3-10 mg/kg;
+   - estiércol nuevo y bajo en sales 5-10 t/ha/año puede aportar materia orgánica y suplir P/K, pero dosis altas pueden aumentar sales;
+   - el ruezno y la hojarasca deben regresar al suelo: reciclan N, P, Ca, Zn y Mg; el ruezno es valioso como fuente orgánica de K;
+   - coberturas segadas pueden proteger suelo, reducir erosión/compactación, aportar materia orgánica, movilizar P/K y reducir lixiviación de nitratos;
+   - leguminosas pueden aportar 80-95 kg/ha de N según especie, pero compiten por agua si no se manejan;
+   - las micorrizas aumentan absorción de agua y N, P, K, Ca, Mg, Zn y Cu; su formación se favorece con drenaje, humedad adecuada, aireación, materia orgánica y no laboreo.
+
+D) NR22650.pdf — Nutrición y fertilización del nogal.
+   Fuente de apoyo sobre diagnóstico nutricional y síntomas en huertos de nogal.
+   Precaución: puede referirse a nogal de nuez no necesariamente pecanero. Usar sólo como referencia comparativa, no como fuente primaria para Carya illinoinensis.
+   Aporta:
+   - necesidad de diagnóstico con suelo + foliar + observación del árbol;
+   - deficiencias frecuentes de N, K, Mg y Zn, y toxicidad por cloruros como riesgo;
+   - análisis foliar como herramienta para evaluar nutrientes absorbidos y no sólo presentes en suelo;
+   - N como protagonista por su impacto en hoja, brote, fruto, reserva y crecimiento;
+   - N de reserva después de cuaja se almacena en yemas, dardos, madera y raíces para la siguiente temporada;
+   - K: síntomas de borde de hoja, amarillamiento irregular, tendencia longitudinal y menor llenado/tamaño de nuez;
+   - déficit de K puede aparecer por déficit hídrico, baja permeabilidad/drenaje, exceso de laboreo, nematodos/patógenos y suelos arenosos/gravas/calcáreos;
+   - KCl/muriato debe evitarse si hay aguas altas en cloruro, anoxia, suelos pesados, riego por goteo concentrado o sequía;
+   - Mg compite con K/Ca y puede aparecer en suelos arenosos, arcillosos o fuertemente nivelados;
+   - Zn causa hojas pequeñas, pérdida de forma normal, clorosis, necrosis y menor crecimiento;
+   - cloruro se acumula en hojas, especialmente con agua de riego alta en Cl, baja permeabilidad y estrés hídrico.
+
+E) 4-Manejo-actual-de-la-nutricion-del-nogal.pdf — Manual de manejos productivos del nogal en Chile.
+   Precaución: trata principalmente nogal Chandler/Serr, NO nogal pecanero de Chihuahua. Usar como apoyo fisiológico/comparativo para huertos de alta producción, no para targets primarios de pecan.
+   Aporta:
+   - la nuez como producto rico en aceite implica alto gasto energético;
+   - alternancia/añerismo ligado a gasto de reservas y manejo de riego/nutrición/poda;
+   - N de reserva/argininas mejora brotación, calibre potencial e inducción floral;
+   - exceso de N en adultos causa sombreamiento y pérdida productiva baja;
+   - fórmula conceptual: dosis N = (demanda - suministro) / eficiencia;
+   - demanda comparativa para nogal común: N 35 unidades/t fruta con cáscara, P 15 unidades/t, K 40-50 unidades/t;
+   - K se dirige fuertemente al fruto y se asocia con relación pulpa/cáscara, agua, estomas, fotosíntesis y transporte de azúcares;
+   - fuentes con cloro como KCl/muriato no son recomendables en temporada por susceptibilidad a Cl;
+   - Zn se limita por pH alcalino, carbonatos, baja MO, arcillas con bajo oxígeno, baja raíz fina y baja biomasa microbiana;
+   - B debe manejarse con cuidado: es más frecuente la toxicidad que la deficiencia en ciertos ambientes.
+
+F) Plan-de-Fertilizacion-Nogal.pdf — plan comercial de foliares.
+   Precaución: fuente comercial; NO define targets ni dosis BIO-G.
+   Uso permitido:
+   - confirmar ventanas UX de foliares y micronutrientes: brotación, floración, fruto cuajado, fruto en desarrollo, postcosecha, trasplante/formación;
+   - reforzar que el código no debe hardcodear marcas, productos ni dosis comerciales;
+   - usar sólo como lenguaje de etapa: crecimiento, madurador, equilibrio, fósforo/potasio, Ca/B, Fe, Mg, Mn, Zn.
+
+================================================================================
+0.1 DECISIONES v1.2 QUE TIENEN PRIORIDAD SOBRE v1.0 SI HAY DUDA
+================================================================================
+
+1) El documento v1.0 ya estaba bien orientado. v1.2 NO cambia el contrato BIO-G:
+   - StageIds cerrados se conservan.
+   - fruit_fill sigue siendo llenado de nuez/almendra, NO cosecha.
+   - harvest_maturity sigue siendo apertura de ruezno/madurez/cosecha.
+   - post_harvest sigue siendo etapa viva si hay hoja activa.
+   - AgroRange conserva el contrato correcto: lowMax = frontera crítica baja, optimalMin = inicio óptimo, optimalMax = fin óptimo, highMin = frontera crítica alta.
+   - N/P/K relativo se mantiene en escala 0.00-1.00 en el documento y 0-100 en código.
+
+2) Se fortalece el principio: MÁS N NO ES IGUAL A MÁS NUEZ.
+   Las fuentes de Chihuahua e INIFAP coinciden en que el N es central, pero su eficiencia depende del fraccionamiento, la etapa fenológica, el agua, el suelo y la carga.
+   Para BIO-G:
+   - N alto sin agua estable no se celebra.
+   - N alto con EC alta se penaliza.
+   - N alto con baja carga se vuelve riesgo de vigor/sombra.
+   - N alto en árbol joven después de junio se considera riesgo de hoja tardía/madera inmadura.
+   - N alto en adulto durante etapas tardías sólo se interpreta con carga alta, hoja activa, análisis y manejo local.
+
+3) Se fortalece el principio: EL ZINC ES OBLIGATORIO COMO CONTEXTO, NO COMO SENSOR.
+   En regiones semiáridas el Zn foliar es práctica obligada en nogaleras; debe aparecer en UX de brotación, crecimiento de brote, floración/pospolinización, cuajado y crecimiento de nuez.
+   Pero BIO-G v1 NO debe inventar valor de Zn desde NPK.
+
+4) Se fortalece el principio: P/K NO SE APLICAN “POR COSTUMBRE”.
+   En nogal pecanero regional, P y K se ajustan por análisis foliar/suelo; una referencia de mantenimiento puede ser 20-60 kg/ha o 60 kg/ha según fuente/contexto, pero no como receta visible al productor.
+   En BIO-G:
+   - P tiene peso alto en plantación/establecimiento/raíz/floración, pero no domina adulto todo el ciclo.
+   - K gana peso en crecimiento de nuez y llenado de almendra, especialmente con carga alta y estrés hídrico.
+
+5) Se añade una regla de carga de nuez para N.
+   Si en mayo la carga es baja, el segundo aporte de N de producción debe reducirse fuerte en modo avanzado.
+   En motor v1:
+   - cropLoadStatus=low + N alto + vegetative_growth/fruit_set/fruit_fill => riesgo de vigor excesivo.
+   - cropLoadStatus=high + N bajo + fruit_fill o post_harvest => riesgo de agotamiento/reserva.
+   - cropLoadStatus=unknown => no ajustar dosis; sólo advertencia conservadora.
+
+6) Se añade relación hoja/nuez.
+   H-602 indica que para producir y sostener una nuez pecana mediana se requieren aproximadamente 10 hojas compuestas, cada una con 9-13 foliolos; nueces grandes requieren más hoja.
+   En BIO-G esto NO se convierte en sensor directo, pero sí en UX:
+   - poca hoja + mucha nuez = riesgo de mal llenado, alternancia y nuez vana;
+   - mucha nuez no se arregla sólo con fertilizante;
+   - defoliación por pulgón/ácaro/enfermedad durante llenado debe afectar nutrición y rendimiento futuro.
+
+7) Se añade “suelo vivo” como parte de nutrición.
+   Materia orgánica, cobertura segada, hojarasca/ruezno, micorrización y labranza mínima no son adornos: modifican absorción real de agua, N, P, K, Zn y otros elementos.
+   En BIO-G:
+   - materiaOrganicStatus y groundCoverStatus pueden ser campos futuros.
+   - resistance alta + MO baja + EC alta debe bajar confianza NPK.
+   - cobertura o leguminosa puede aportar N y modificar demanda de fertilizante.
+   - residuos de poda/ruezno/hojarasca pueden reciclar K/N/P/Ca/Zn/Mg y mejorar suelo.
+
+8) Se añade bloque de cloro/sodio/salinidad.
+   Además de EC, las fuentes nuevas alertan por cloruros y sodio:
+   - agua con sales >1,000 ppm merece observación;
+   - EC alta en suelo >4 dS/m se considera severa para infiltración/estrés;
+   - sodio intercambiable >20% compacta/flocula, baja permeabilidad y agrava estrés;
+   - KCl/muriato de potasio no debe asumirse seguro si hay Cl alto, agua salina, anoxia, suelos pesados o sequía.
+   En BIO-G v1, EC sigue siendo sensor; Cl/Na quedan como contexto avanzado.
+
+9) Se añade preferencia por fraccionamiento fenológico en modo avanzado.
+   En nogal adulto con fertirriego, se puede documentar internamente un ejemplo de distribución:
+   - Prebrotación: N 15%, P/K 14%
+   - Inicio crecimiento rápido de brote: N 17.5%, P/K 14%
+   - Plenitud crecimiento rápido de brote y expansión foliar: N 17.5%, P/K 14%
+   - Fin crecimiento rápido de brote: N 10%, P/K 14%
+   - Plenitud crecimiento rápido de fruto: N 10%, P/K 14%
+   - Inicio llenado de almendra: N 15%, P/K 15%
+   - Plenitud llenado de almendra: N 15%, P/K 15%
+   Esto NO se muestra como receta universal; se usa para validar que BIO-G no concentre todo NPK en un solo momento.
+
+10) Se incorpora la regla Kilby/INIFAP como referencia avanzada, no automática:
+    - Por cada 100 kg de nuez esperada, se documentan 8-10 kg N/ha como referencia conceptual regional.
+    - Para 2.3 t/ha, eso implica aproximadamente 184-230 kg N/ha.
+    - Esta escala coincide con ejemplos de MIC de 220-240 kg N/ha en huertas Western adultas de Delicias con fertirriego y baja alternancia.
+    - Esto NO invalida el principio de no sobrefertilizar: el mismo documento muestra que más N aplicado mal puede rendir menos que N moderado bien fraccionado.
+
+================================================================================
+0.2 AJUSTES DIRECTOS RECOMENDADOS AL MOTOR BIO-G v1.2
+================================================================================
+
+A) NpkCaps
+Mantener los caps v1.0 como default seguro:
+- N cap: 120.0
+- P cap: 95.0
+- K cap: 180.0
+
+No subir N cap por las dosis kg/ha de los PDFs, porque cap NO es dosis.
+El cap sólo normaliza lectura cruda del sensor NPK.
+Las dosis regionales van a modo avanzado/documentación.
+
+Opción futura si el sensor se calibra localmente para Chihuahua:
+- N cap override avanzado: 130.0
+- P cap override avanzado: 100.0
+- K cap override avanzado: 190.0
+Sólo si se valida contra análisis de suelo/foliar, no por documento.
+
+B) StageTargets
+No es obligatorio cambiar los StageTargets v1.0.
+Los PDFs nuevos refuerzan la jerarquía ya definida:
+- N alto relativo en budbreak/vegetative_growth.
+- N moderado en fruit_set/fruit_fill, con acción mayor si hay carga alta.
+- K alto en fruit_set/fruit_fill.
+- P alto en plantación/raíz/floración, bajo-moderado al final.
+- EC/resistance/humedad como bloqueos fuertes.
+
+Ajuste opcional recomendado si Codex implementa v1.2:
+- En `fruit_fill`, mantener K optimalMin 0.70 y optimalMax 0.90.
+- En `fruit_fill`, permitir N optimalMax 0.60 como v1.0, pero agregar `requiresCropLoadContextForHighN = true`.
+- En `post_harvest`, permitir N/K moderados si `leafActive == true`, `ec` baja, `soilMoisture` estable y `soilTemp` funcional.
+- En `dormancy`, no usar NPK para alertas agresivas; usar análisis de suelo/agua/planeación.
+
+C) StageWeights
+Agregar contexto de stage weights no medidos:
+- `zincContextWeight` fuerte en budbreak/vegetative_growth/flowering.
+- `leafAreaLoadContextWeight` fuerte en fruit_set/fruit_fill.
+- `salinityContextWeight` fuerte en todas las etapas, máximo en root_establishment, fruit_set y fruit_fill.
+- `nutritionMemoryWeight` fuerte en budbreak/flowering/post_harvest.
+
+D) evaluateTelemetry
+Antes de recomendar NPK, el motor debe revisar:
+1. etapa visible;
+2. estado perenne;
+3. humedad;
+4. EC/salinidad;
+5. pH;
+6. resistencia/compactación;
+7. temperatura de suelo;
+8. carga de nuez si existe;
+9. hoja activa / área foliar;
+10. N/P/K relativo;
+11. memoria de postcosecha/carga/defoliación.
+
+E) UX
+Mensajes nuevos:
+- “En nogal, más nitrógeno no siempre significa más nuez. Si hay poca carga, el exceso puede irse a puro follaje.”
+- “El zinc no lo mide este sensor, pero en nogal pecanero es clave para brotación y hoja. Si ves hojas chicas o roseta, confirma con análisis foliar.”
+- “El potasio ayuda al llenado de almendra, pero si la salinidad está alta puede convertirse en estrés.”
+- “La nuez se llena con hoja, agua y reservas. Si el árbol perdió hoja o trae demasiada carga, fertilizar no corrige todo.”
+- “Si el agua o el suelo tienen sales, evita interpretar NPK como si todo estuviera disponible.”
+
+================================================================================
+0.3 REGLAS v1.2 POR NUTRIENTE
+================================================================================
+
+NITRÓGENO — REFORZADO
+
+1) Función central:
+- crecimiento de brotes;
+- expansión de hoja;
+- área foliar para sostener nueces;
+- reservas;
+- llenado de almendra;
+- retorno floral;
+- reducción de alternancia si se maneja bien.
+
+2) Indicadores humanos:
+- Juvenil antes de producción: crecimiento anual deseable 60-90 cm.
+- Adulto Western productivo: brote fructífero 15-30 cm.
+- Adulto Wichita: brotes productivos pueden requerir 25-45 cm.
+- Si crecimiento supera claramente lo deseable, revisar exceso de N, baja carga, poda fuerte, agua y sombra.
+- Si crecimiento está por debajo, revisar N, agua, compactación, salinidad, Zn, raíz y poda de rejuvenecimiento.
+
+3) Regla de árbol joven:
+- No fertilizar al suelo el año de plantación como regla general.
+- En modo avanzado puede haber pequeñas aplicaciones sólo si el árbol crece rápido y hay asesoría.
+- No aplicar N a árboles jóvenes después de junio; riesgo de retrasar caída de hoja y daño invernal.
+
+4) Regla de árbol adulto:
+- N debe fraccionarse por fenología, no aplicarse en un solo golpe.
+- En fertirriego, marzo-agosto puede tener sentido en sistemas con manejo técnico.
+- En riego por gravedad/suelos pesados, parte importante puede ir temprano.
+- En suelos medios/arenosos, fraccionar más para reducir lixiviación.
+- La segunda aplicación de N se ajusta con carga real de nuez.
+
+5) Regla de carga:
+- Si buena carga: N de soporte puede subir en crecimiento de fruto/llenado.
+- Si baja carga: reducir presión de N para evitar vigor inútil/sombra.
+- Si carga alta el año anterior y postcosecha mala: anticipar posible reserva baja al siguiente budbreak/flowering.
+
+6) Reglas de bloqueo:
+- N bajo + humedad crítica => no decir “falta N” primero; decir absorción limitada.
+- N alto + EC alta => alerta por sales/fertilizante acumulado.
+- N alto + pH alto + hojas chicas => no diagnosticar N; considerar Zn/Fe.
+- N alto + poca carga => riesgo de follaje excesivo.
+- N alto + postcosecha sin hoja activa => no accionable.
+
+FÓSFORO — REFORZADO
+
+1) Función central:
+- raíz;
+- energía;
+- floración/cuaja;
+- crecimiento de raíces nuevas;
+- metabolismo de reservas;
+- apoyo temprano y en sistemas radicales pobres.
+
+2) Reglas:
+- P bajo pesa fuerte en planting_transplant/root_establishment/budbreak/flowering.
+- P bajo en adulto se corrige con análisis; no por sensor simple.
+- P en suelos de pH alto se vuelve insoluble; no aplicar más P a ciegas.
+- P alto puede agravar desbalances con Zn/Fe/Cu.
+- En fertirriego con fuentes solubles, P puede fraccionarse; en programas sin fertirriego, P/K de fondo requieren planeación.
+
+3) Modo avanzado:
+- Suelo mínimo de referencia: P 10 mg/kg.
+- Si P suelo >20 mg/kg, algunas fuentes indican que puede no haber respuesta a aporte de P.
+- En regiones semiáridas, P puede moverse/movilizarse mejor con materia orgánica, cobertura y actividad biológica.
+
+POTASIO — REFORZADO
+
+1) Función central:
+- economía del agua;
+- estomas;
+- fotosíntesis;
+- transporte de azúcares;
+- tamaño de nuez;
+- llenado de almendra;
+- relación almendra/cáscara;
+- reservas y almidón;
+- tolerancia a estrés hídrico y térmico.
+
+2) Reglas:
+- K bajo en fruit_fill es alerta de llenado/calidad si humedad/EC/pH están correctos.
+- K bajo + humedad baja => priorizar agua antes de K.
+- K bajo + alta carga => riesgo de nuez chica/almendra pobre.
+- K alto + EC alta => riesgo salino.
+- K alto + Mg/Ca bajo o síntomas => advertencia de antagonismo.
+- KCl/muriato NO debe asumirse seguro en temporada si hay cloruro/salinidad/sequía/suelo pesado/anoxia.
+
+3) Modo avanzado:
+- Suelo mínimo de referencia: K 100 mg/kg.
+- P/K regionales en pecan pueden mantenerse en 20-60 kg/ha según suelo/foliar.
+- PT Chihuahua documenta 60 kg/ha como mantenimiento cuando análisis lo justifica.
+- El documento de Chile reporta altos requerimientos de K en huertos Chandler/Serr intensivos; usar sólo como referencia fisiológica comparativa, no como target primario de pecan.
+
+ZINC — CONTEXTO OBLIGATORIO
+
+1) Función central:
+- crecimiento vegetativo;
+- auxinas;
+- brotación;
+- tamaño de hoja;
+- entrenudos;
+- calidad de nuez;
+- funcionamiento de brote fructífero.
+
+2) Reglas:
+- pH >7.0-7.5 baja disponibilidad de Zn.
+- Carbonatos, baja MO, suelos arcillosos con bajo oxígeno, poca raíz fina y poca microbiología reducen disponibilidad.
+- Deficiencia visual: hojas pequeñas, roseta, brotes cortos, clorosis, necrosis y pérdida de dominancia apical.
+- En regiones semiáridas, la provisión foliar de Zn es práctica obligada.
+- BIO-G no debe sugerir dosis cerradas, pero sí debe decir “confirmar Zn con análisis foliar” cuando haya señales.
+
+3) Ventana:
+- primera aplicación foliar cuando el tejido foliar se expone / brote de 1 pulgada / hoja desplegando;
+- repetir temprano durante crecimiento de brote;
+- adultos suelen requerir 4-5 aplicaciones;
+- árboles jóvenes pueden requerir aplicaciones cada dos semanas hasta finales de julio por crecimiento continuo.
+
+BORO — CONTEXTO DE ALTA PRECAUCIÓN
+
+1) Función:
+- polen/cuaja;
+- yemas;
+- carbohidratos;
+- floración.
+
+2) Regla:
+- No recomendar boro automáticamente.
+- En regiones semiáridas puede ser suficiente o incluso tóxico.
+- Usar sólo con análisis de suelo/agua/foliar y síntomas.
+- Si mal cuajado ocurre, revisar primero polinización, clima, frío, viento, reservas, Zn, agua y carga.
+
+CALCIO / MAGNESIO / HIERRO / MANGANESO / NÍQUEL — CONTEXTO
+
+- Ca: estructura, raíces, cáscara, resistencia, calidad; no asumir desde NPK.
+- Mg: clorofila, fotosíntesis, transporte de azúcares; puede antagonizarse con K/Ca.
+- Fe: clorosis férrica por pH alto/caliza.
+- Mn: contexto foliar, no sensor v1.
+- Ni: incluido en estándares foliares de alto rendimiento; no sensor v1; usar sólo en modo agrónomo.
+
+CLORO / SODIO / SALINIDAD — CONTEXTO CRÍTICO
+
+- Cloruro alto puede causar síntomas parecidos a K: necrosis marginal y acumulación en hoja.
+- Sodio alto reduce estructura/permeabilidad y aumenta compactación.
+- EC alta bloquea recomendaciones de fertilización.
+- Agua con sales altas o pozo salino debe elevar riesgo.
+- BIO-G v1 mide EC; Cl/Na se dejan para modo avanzado.
+
+================================================================================
+0.4 RANGOS FOLIARES v1.2 — MULTIFUENTE PARA MODO AVANZADO
+================================================================================
+
+NO mezclar estos valores con el sensor NPK de suelo.
+Foliar = lo que el árbol absorbió.
+Suelo = oferta/disponibilidad potencial.
+Sensor NPK = lectura rápida relativa.
+
+A) Rango Chihuahua / PT-0008, amplio para diagnóstico regional:
+- N: 2.5-2.9%
+- P: 0.14-0.30%
+- K: 0.95-1.5%
+- Ca: 1.4-3.0%
+- Mg: 0.32-0.60%
+- S: 0.20-2.5%
+- Zn: 70-200 ppm
+- Mn: 80-300 ppm
+- Fe: 50-150 ppm
+- Cu: 10-30 ppm
+- B: 35-150 ppm
+
+B) Rango INIFAP/Manejo sostenible, estándar para alta producción:
+- N: 2.50-2.90%
+- P: 0.14-0.20%
+- K: 1.0-1.3%
+- Ca: 1.4-2.0%
+- Mg: 0.38-0.50%
+- S: 0.20-0.50%
+- Zn: 60-100 mg/kg
+- Fe: 60-120 mg/kg
+- Cu: 10-15 mg/kg
+- Mn: 85-300 mg/kg
+- B: 40-150 mg/kg
+- Ni: 3-10 mg/kg
+
+C) Rango comparativo NR22650/California para nogal de nuez:
+Usar sólo como apoyo si el usuario trabaja con nogal no pecanero o documentos de nogal común:
+- N: adecuado 2.20-3.20%, exceso >3.20%
+- P: adecuado >0.14%
+- K: adecuado 0.90-1.20%, alto >1.20%
+- Ca: adecuado >1.0%
+- Mg: adecuado >0.25%
+- Zn: adecuado >15 mg/kg
+- B: adecuado 35-200 mg/kg, exceso >200
+- Na: exceso >0.90%
+- Cl: exceso >0.30%
+
+D) Decisión BIO-G:
+- Para crop_walnut_tree / nogal pecanero, usar A y B como fuentes primarias.
+- C sólo es referencia comparativa, no target primario.
+- Si A y B difieren, usar rango conservador y mostrar confidence gradual.
+- No alarmar por una sola muestra si rendimiento, brote y calidad son buenos.
+- Comparar por bloque, variedad, edad, carga, suelo, riego y manejo.
+
+Muestreo foliar recomendado:
+- Última semana de julio a primera de agosto como rango regional.
+- Ejemplo MIC: 15 de agosto.
+- 60 foliolos por lote: 10 foliolos por árbol, 6 árboles.
+- Tomar el par de foliolos centrales de la hoja central de un brote fructífero.
+- Muestrear alrededor del árbol, a 2-3 m de altura.
+- Separar muestras por edad, variedad, carga, tipo de suelo y condición del árbol.
+- No mezclar árboles enfermos con árboles normales.
+- No muestrear inmediatamente después de aplicaciones foliares del nutriente a interpretar.
+
+================================================================================
+0.5 SUELO Y AGUA v1.2 — MODO AVANZADO
+================================================================================
+
+Suelo mínimo de referencia para nutrición adecuada de nogal pecanero:
+- Nitrógeno como nitratos: 20 mg/kg
+- Fósforo: 10 mg/kg
+- Potasio: 100 mg/kg
+- Magnesio: 50 mg/kg
+- Azufre: 25 mg/kg
+- Materia orgánica: 1.5%
+
+Materia orgánica:
+- 1.5% = mínimo de referencia en suelo.
+- 5% o más = condición de alto beneficio: mayor disponibilidad de nutrimentos, retención de agua, aireación y microbiología.
+- En regiones semiáridas, 5-10 t/ha/año de estiércol vacuno nuevo y bajo en sales puede ser estrategia de largo plazo.
+- Composta puede aportar humus/microbios, pero tiene menor N disponible y puede concentrar sales; no usarla como “segura” sin EC.
+
+Cobertura/hojarasca/ruezno:
+- Ruezno y hojarasca deben regresar al suelo cuando sea posible.
+- El ruezno es especialmente valioso por K orgánico.
+- Conservar foliolos, raquis, escamas, amentos, frutos caídos, rueznos y ramillas recicla N, P, Ca, Zn y Mg.
+- Cobertura segada puede reducir erosión, compactación y lixiviación de nitratos.
+- Cobertura sin manejo puede competir con árboles jóvenes o con huertas de riego/fertilización poco frecuentes.
+
+Micorrizas:
+- El nogal tiene raicillas alimentadoras superficiales y micorrizadas.
+- Micorrización aumenta absorción de agua, N, P, K, Ca, Mg, Zn y Cu.
+- Se favorece con drenaje, humedad adecuada, temperatura moderada, aireación, materia orgánica, cobertura y no laboreo.
+- Fósforo excesivo y fertilidad demasiado alta pueden reducir micorrización.
+
+Salinidad/agua:
+- Agua con sales >1,000 ppm = observación fuerte.
+- EC del suelo >4 dS/m = riesgo severo para infiltración/estrés.
+- Sodio intercambiable >20% = riesgo de compactación/permeabilidad baja.
+- Si EC alta, BIO-G bloquea fertilización agresiva.
+- Si EC alta + humedad baja, subir alerta de estrés osmótico.
+- Si EC alta + K/N altos, advertir acumulación de fertilizante/sales.
+- Si el agua/suelo tiene problema de sales, evitar fuentes de alto índice salino en el mensaje técnico.
+
+================================================================================
+0.6 CALENDARIO FISIOLÓGICO v1.2 — NO CALENDARIO FIJO
+================================================================================
+
+BIO-G no debe hardcodear meses, pero los PDFs de Chihuahua permiten una base de coherencia regional.
+
+Región Chihuahua / norte como referencia:
+- Dormancia: invierno.
+- Riego/análisis de suelo: invierno/prebrotación.
+- Prebrotación: alrededor de mediados de marzo.
+- Brotación Western/Wichita: finales de marzo a principios de abril según zona/variedad.
+- Crecimiento rápido de brote: principios de abril a mediados de mayo.
+- Floración/polinización: abril-mayo.
+- Nuez comienza crecimiento lento: finales de mayo.
+- Crecimiento rápido de fruto/nuez: junio a mediados de julio.
+- Endurecimiento de cáscara: alrededor de mediados de julio.
+- Estado acuoso/mucilaginoso: junio-agosto.
+- Llenado de almendra: agosto.
+- Apertura de ruezno: septiembre.
+- Cosecha: octubre-noviembre según zona/perfil.
+- Postcosecha: hasta caída de hoja/primeras heladas si hay hoja activa.
+
+Traducción a StageIds BIO-G:
+- prebrotación / raíz activa antes de brote => budbreak temprano o dormancy con rootActivationContext.
+- crecimiento rápido de brote => vegetative_growth.
+- floración/polinización => flowering.
+- amarre/nuez recién formada => fruit_set.
+- crecimiento rápido de nuez + estado acuoso + endurecimiento de cáscara + estado mucilaginoso + llenado de almendra => fruit_fill, con subventanas UX.
+- apertura de ruezno/cosecha => harvest_maturity.
+- hoja verde después de cosecha => post_harvest.
+
+Subventanas sugeridas dentro de fruit_fill:
+- nut_growth_fast
+- water_stage
+- shell_hardening
+- mucilage_stage
+- kernel_fill_start
+- kernel_fill_peak
+Estas NO son StageIds nuevos; sólo labels UX o tags internos opcionales.
+
+================================================================================
+0.7 REFERENCIAS DE DOSIS — SOLO MODO AVANZADO / NO RECETA
+================================================================================
+
+Esta sección NO debe alimentar recomendaciones automáticas en BIO-G v1.
+Sirve para calibración técnica, modo agrónomo y tests de coherencia.
+
+A) Árboles jóvenes / desarrollo
+
+PT Chihuahua:
+- Año de plantación: no fertilizar al suelo como regla general.
+- Años 2-7: 60 g N por cm de diámetro de tronco por año.
+- Dividir: mitad mediados de marzo, mitad fines de mayo.
+- Crecimiento anual esperado antes de producción: 60-90 cm de brote.
+
+H-602/NMSU, referencia adicional:
+- Regla general jóvenes: 1/4 lb de N puro por pulgada de diámetro de tronco, medido a 3 pies del suelo.
+- No colocar fertilizante cerca del tronco; mantener distancia mínima.
+- No aplicar N a jóvenes después de junio.
+
+Decisión BIO-G:
+- Modo simple: no mostrar gramos ni libras.
+- Modo avanzado: guardar como referencia por edad/diámetro/vigor.
+- Si el árbol joven no crece rápido, no empujar N automáticamente: revisar agua, raíz, sales, compactación y Zn.
+
+B) Árboles en producción
+
+PT Chihuahua:
+- 110 kg N/ha a mediados de marzo.
+- Si se espera buena cosecha, otros 110 kg N/ha a mediados de mayo.
+- Si carga baja, sólo 20-30% del N adicional.
+- P/K sólo con análisis foliar; mantenimiento alrededor de 60 kg/ha cuando corresponde.
+
+INIFAP/Manejo sostenible:
+- N 100 kg/ha en textura franca.
+- N 130 kg/ha en arena-migajonosa.
+- Hasta 200 kg/ha en suelos calcáreos pobres en materia orgánica.
+- P/K 20-60 kg/ha según contenido en suelo.
+- Los programas deben diseñarse con edad, suelo, vigor, análisis foliar/suelo y rendimiento esperado.
+
+INIFAP/Fenología MIC:
+- 220-240 kg N/ha + 40 kg/ha P/K en huertas Western adultas con fertirriego y baja alternancia.
+- Regla: 8-10 kg N por cada 100 kg de nuez esperada.
+- Fraccionar según fenología puede ser más importante que subir dosis total.
+
+H-602/NMSU:
+- 150-200 lb N/acre anuales para árboles maduros como referencia regional; equivalente aproximado 168-224 kg N/ha.
+- La respuesta al N puede tardar varios años.
+- En suelos ligeros conviene dividir la dosis por lixiviación.
+- Árboles maduros pueden recibir N a finales de julio/principios de agosto; árboles jóvenes no después de junio.
+
+C) Comparativo Chile / nogal común Chandler-Serr
+
+Usar sólo como referencia fisiológica no primaria para pecan:
+- N: 35 unidades/t fruta con cáscara.
+- P: 15 unidades/t fruta con cáscara.
+- K: 40-50 unidades/t fruta con cáscara.
+- Huertos de alta producción pueden superar 300 unidades K2O/temporada, pero esto NO es default para nogal pecanero de Chihuahua.
+
+Decisión BIO-G:
+- El modo avanzado puede mostrar “referencia técnica consultada”, nunca “aplica esto”.
+- El modo normal sólo debe hablar de prioridad, alerta, balance y confirmación.
+- Las unidades deben distinguir N elemental, P2O5, K2O, P elemental y K elemental.
+
+================================================================================
+0.8 TESTS NUEVOS RECOMENDADOS v1.2
+================================================================================
+
+1) walnut_low_crop_high_n_test
+Caso:
+stage fruit_set o fruit_fill, cropLoadStatus=low, N alto, humedad correcta.
+Esperado:
+mensaje advierte vigor excesivo/sombra; no decir “N óptimo para más nuez”.
+
+2) walnut_high_crop_n_support_test
+Caso:
+stage fruit_fill, cropLoadStatus=high, N bajo-moderado, K correcto, agua correcta, EC baja.
+Esperado:
+mensaje de observación sobre carga y reservas; no receta dosis; sugiere confirmar con análisis.
+
+3) walnut_young_tree_no_late_n_test
+Caso:
+perennialState=juvenile_non_productive, stage post_harvest o harvest_maturity, fecha tardía/hoja activa, N bajo.
+Esperado:
+no empujar N tardío; advertir daño por invierno si se fuerza crecimiento después de junio.
+
+4) walnut_zinc_context_rosette_test
+Caso:
+pH alto, N normal/alto, hoja chica/roseta reportada.
+Esperado:
+mensaje de Zn/Fe disponibilidad; no diagnosticar falta de N.
+
+5) walnut_pt_foliar_ranges_test
+Caso:
+modo avanzado con foliar N 2.7%, K 1.1%, Zn 80 ppm.
+Esperado:
+interpretar dentro de rango primario; no usar sensor NPK suelo como sustituto.
+
+6) walnut_high_ec_blocks_npk_test
+Caso:
+stage fruit_fill, K bajo, EC high/critical.
+Esperado:
+priorizar salinidad/agua; bloquear fertilización agresiva.
+
+7) walnut_chloride_context_test
+Caso:
+modo avanzado reporta agua sales >1000 ppm o Cl alto, K alto o uso de KCl.
+Esperado:
+advertir cloruros/salinidad; no recomendar fuente clorada.
+
+8) walnut_mycorrhiza_soil_context_test
+Caso:
+resistance alta, MO baja, pH alto, Zn bajo visual.
+Esperado:
+mensaje de suelo/raíz/micorriza/disponibilidad; no sólo “aplica Zn/N”.
+
+9) walnut_fenology_split_reference_not_visible_test
+Caso:
+modo normal productor.
+Esperado:
+no mostrar porcentajes 15/17.5/etc. ni kg/ha; sólo lenguaje de etapa.
+
+10) walnut_fruit_fill_not_harvest_test
+Caso:
+stage fruit_fill.
+Esperado:
+copy habla de llenado de almendra, agua/K/reservas; no de cosecha, vareo o ruezno abierto.
+
+================================================================================
+0.9 NO HACER EN CÓDIGO v1.2
+================================================================================
+
+- No convertir las dosis regionales en recomendaciones automáticas.
+- No mostrar 110+110 kg N/ha al productor en modo simple.
+- No usar el plan comercial de foliares para hardcodear productos, marcas o dosis.
+- No usar el manual chileno Chandler/Serr como target primario del nogal pecanero.
+- No diagnosticar deficiencia de N si hay pH alto + hoja chica/roseta: primero Zn/Fe/raíz.
+- No recomendar B sin análisis; en ambientes semiáridos puede haber toxicidad.
+- No asumir KCl/muriato como fuente segura con EC/Cl/salinidad/sequía.
+- No interpretar P/K bajos como urgencia si no hay etapa sensible, análisis o síntomas.
+- No ignorar carga de nuez: carga baja cambia totalmente el sentido del N.
+- No cerrar el cultivo en cosecha; postcosecha con hoja activa sigue alimentando el siguiente ciclo.
+
+================================================================================
+0.10 CUERPO BASE v1.0 REFORZADO — CONSERVADO ABAJO
+================================================================================
+
+Las reglas v1.2 anteriores tienen prioridad si hay contradicción de interpretación.
+El cuerpo v1.0 se conserva completo porque ya estaba alineado al contrato BIO-G y al motor.
+
+
+
+BIO-G
+
+05_GUIA_FERTILIZACION_NPK_TARGETS_BIOG_NOGAL_NG_v1_2_REFORZADA_PDFS
+Cultivo: Nogal / Nogal pecanero / Nuez pecana / Pecan tree
+cropId: crop_walnut_tree
+cropKey esperado: walnut_tree
+profilePrefix: NG
+Documento: 05 de 05 — Fertilización NPK y targets por etapa
+Versión: v1.2 reforzada con PDFs anexos INIFAP/Chihuahua/NMSU/Chile + investigación universitaria previa + revisión del motor BIO-G
+Formato: TXT técnico para Flutter/Dart
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+IMPORTANTE:
+Este documento NO es una receta agronómica local.
+No sustituye análisis de suelo, agua, tejido/foliar, asesoría regional ni normatividad.
+BIO-G v1 debe orientar, ponderar riesgo, mejorar lectura de sensores y pedir confirmación.
+No debe prometer rendimiento, no debe indicar dosis comerciales cerradas y no debe sustituir
+un plan de fertirriego construido con laboratorio, análisis foliar y asesoría local.
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+La fertilización del nogal pecanero en BIO-G es una de las piezas más delicadas del sistema,
+porque el nogal no se comporta como manzano, pera o durazno.
+
+En nogal pecanero, el motor debe entender cinco verdades:
+
+1) Nitrógeno y zinc son protagonistas reales del nogal.
+   - N sostiene brote, hoja, área foliar, reservas, productividad y llenado.
+   - Zn no es NPK ni sensor v1, pero en nogal pecanero es demasiado importante para omitirse.
+   - En suelos alcalinos/calizos del norte de México y del suroeste de EE. UU., el Zn y el Fe
+     pueden estar presentes pero no disponibles.
+   - BIO-G v1 debe mostrar Zn como CONTEXTO crítico, no como sensor obligatorio.
+
+2) Potasio es protagonista de nuez en etapa de llenado.
+   - K pesa en tamaño de nuez, transporte de azúcares, regulación hídrica, llenado de almendra,
+     aceite, calidad y tolerancia al estrés.
+   - K bajo en fruit_fill/llenado de almendra es mucho más grave que K bajo en dormancia.
+   - K alto no se celebra automáticamente si EC está alta o hay desbalance con Mg/Ca.
+
+3) Fósforo es importante para raíz/establecimiento/arranque, pero no debe dominar todo el ciclo.
+   - P se corrige mejor antes de plantar o con análisis.
+   - P/K se mueven lentamente en el perfil de suelo.
+   - P alto puede bloquear o antagonizar Zn/Cu/Fe en ciertos contextos.
+   - En nogal adulto, P bajo sin análisis no debe tumbar el score como si fuera falla productiva inmediata.
+
+4) Agua, raíz, pH, salinidad y compactación mandan antes que NPK.
+   - Un nogal con NPK “bien” pero con agua baja durante llenado de almendra puede tener nuez vana,
+     mala almendra o alternancia.
+   - Un nogal con EC alta puede sufrir estrés osmótico aunque haya nutrientes.
+   - Un nogal con pH alto puede leer “nutrientes presentes” pero tener Zn/Fe poco disponibles.
+   - Un nogal con resistencia/compactación alta puede tener poca raíz fina activa.
+
+5) El nogal tiene memoria multianual fuerte.
+   - Un año de carga alta, estrés hídrico, defoliación, salinidad o mala postcosecha puede afectar
+     retorno floral, reservas, brotación, llenado y alternancia del siguiente ciclo.
+   - La cosecha NO cierra el cultivo.
+   - Postcosecha es etapa viva si hay hoja activa, temperatura suficiente, humedad estable y baja salinidad.
+
+Regla BIO-G para Nogal:
+AGUA + RAÍZ + SALINIDAD + pH + ZINC CONTEXTUAL + ETAPA + CARGA mandan antes que NPK.
+
+Un nogal con nuez chica, nuez vana o bajo llenado no necesariamente necesita más fertilizante.
+Puede necesitar:
+- mejor humedad en llenado;
+- menor estrés salino;
+- revisar Zn/Fe en suelos calizos;
+- revisar carga alta / alternancia;
+- mejor polinización;
+- recuperar reservas postcosecha;
+- control de pulgón/ácaros/defoliación;
+- corregir compactación o drenaje;
+- no empujar N si hubo baja carga por helada/polinización.
+
+BIO-G v1 debe funcionar como:
+1) Prioridades relativas N-P-K por etapa.
+2) StageTargets medibles para soilMoisture, soilTemp, pH, EC, resistance, N, P, K.
+3) StageWeights para AgroScore.
+4) Mensajes UX humanos, prudentes y cableables.
+5) Modo avanzado con análisis foliar/suelo/agua.
+6) Memoria nutricional perenne.
+7) Reglas de bloqueo: no sugerir fertilización fuerte si agua, EC, pH, temperatura, compactación,
+   hoja activa o sanidad están mal.
+
+================================================================================
+0.1 CAMBIOS IMPORTANTES RESPECTO A DOCUMENTOS 01-04
+================================================================================
+
+1) Se confirma que Nogal usa prefijo NG:
+   - ng_skip
+   - ng_01_western
+   - ng_02_wichita
+   - ng_03_western_wichita
+   - ng_04_criollo_regional
+   - ng_05_temprano_nuevo
+
+2) Se confirma que “nuez” reemplaza el lenguaje genérico de “fruto” en UX.
+   Los StageIds técnicos NO cambian:
+   - fruit_set = amarre / nuez recién cuajada
+   - fruit_fill = llenado de nuez / llenado de almendra / kernel fill
+   - harvest_maturity = madurez de nuez / apertura de ruezno / cosecha
+   - post_harvest = recuperación de reservas
+
+3) fruit_fill NO es harvest_maturity.
+   En fruit_fill el copy debe hablar de:
+   - llenado de nuez;
+   - llenado de almendra/grano;
+   - tamaño de nuez;
+   - agua estable;
+   - K protagonista;
+   - balance N-K-Zn-Ca/Mg;
+   - evitar nuez vana y mal llenado.
+
+   No debe hablar como si ya fuera:
+   - cosecha,
+   - ruezno abriendo,
+   - madurez,
+   - vareo,
+   - recolección.
+
+4) Se confirma que post_harvest no apaga el cultivo.
+   En nogal, postcosecha puede ser muy importante para:
+   - reservas;
+   - hoja activa;
+   - raíz activa;
+   - recuperación tras carga alta;
+   - siguiente brotación/floración;
+   - alternancia.
+
+5) Se propone cap NPK operativo para el motor:
+   - N cap: 120 mg/kg relativo
+   - P cap: 95 mg/kg relativo
+   - K cap: 180 mg/kg relativo
+
+Justificación:
+- N en nogal es más protagonista que en manzano/pera y comparable o mayor que en otros frutales,
+  pero el exceso de N sigue siendo peligroso por vigor, salinidad y desbalance con Zn.
+- P no debe tener cap demasiado alto porque en nogal adulto rara vez es el protagonista si el suelo
+  fue corregido; se deja suficiente margen para establecimiento.
+- K sube fuerte durante fruit_set/fruit_fill por nuez/almendra, por eso se acerca al cap de durazno.
+- Cap NO es dosis. Cap solo traduce lectura cruda del sensor a escala relativa 0.00–1.00.
+
+6) Se añade un contexto obligatorio de Zinc.
+   BIO-G v1 no mide Zn, pero el documento obliga a:
+   - mencionarlo en brotación, vegetative_growth, fruit_set, fruit_fill y post_harvest;
+   - no diagnosticar “falta de N” cuando hay hoja chica, roseta, entrenudos cortos o pH alto;
+   - pedir análisis foliar/visual si hay síntomas;
+   - no convertir Zn en sensor v1 ni sugerir dosis cerradas al productor.
+
+================================================================================
+1. ALCANCE DEL DOCUMENTO
+================================================================================
+
+Este documento alimenta:
+
+- walnut_tree_universal_profile.dart
+- walnut_tree_crop_definition.dart
+- walnut_tree_nutrition_modifier.dart
+- walnut_tree_agro_score_engine.dart si existe wrapper por árbol
+- tree_agro_score_engine.dart vía delegación genérica
+- resolveTargets(...)
+- evaluateTelemetry(...)
+- AgroScore por etapa
+- AgroMetricEval para N/P/K
+- dashboard y NPK screen
+- NutrientRecommendationEngine
+- NpkCaps
+- planner nutricional v1/v2
+- memoria nutricional de nogal futura
+
+No alimenta directamente:
+- recetas cerradas por fertilizante;
+- marcas comerciales;
+- programas regionales obligatorios;
+- aplicaciones sin análisis;
+- corrección automática de Zn/Fe/Mn/B/Ni/Ca/Mg como si fueran sensores v1;
+- promesa de rendimiento;
+- recomendación de pesticidas;
+- plan comercial de fertirriego.
+
+Compatible con estándar BIO-G de árboles perennes:
+
+Estados perennes:
+- newly_planted
+- juvenile_non_productive
+- established
+- productive_season
+- unknown
+
+Etapas árbol:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Métricas sensor v1:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Contexto avanzado NO sensor v1:
+- Zn
+- Fe
+- Mn
+- Ni
+- B
+- Ca
+- Mg
+- S
+- Na
+- Cl
+- SAR
+- materia orgánica
+- textura
+- drenaje
+- salinidad del agua
+- bicarbonatos/caliza
+- vigor visible
+- crecimiento terminal
+- carga de nuez
+- porcentaje de almendra
+- nuez vana
+- viviparidad
+- polinización
+- helada
+- defoliación
+- pulgón/ácaros
+- costra/sarna
+- análisis foliar/suelo/agua
+
+================================================================================
+2. FUENTES Y CRITERIO DE CONFIANZA
+================================================================================
+
+Alta confianza:
+- New Mexico State University Extension: Pecan Orchard Fertilization; Diagnosing Nutrient
+  Disorders of New Mexico Pecan Trees; Growth and Development of Pecan Nuts.
+- Oklahoma State University Extension: Fertilizing Pecan and Fruit Trees; Establishing a Pecan Orchard.
+- Mississippi State University Extension: Fertilizing Pecan Trees.
+- University of Arizona Cooperative Extension: salinidad y manejo de suelos salinos en nogal.
+- Texas A&M / Aggie Horticulture: zinc foliar, crecimiento, manejo comercial.
+- Estudios académicos mexicanos en Western Schley y norte de México sobre N, calidad de nuez,
+  eficiencia de uso de N y alternancia.
+
+Media-alta:
+- UGA Pecan Extension y publicaciones de extensión por condado cuando coinciden con guías universitarias.
+- Artículos revisados sobre rangos foliares y respuesta a N/P/K/Zn.
+
+Media:
+- Guías comerciales usadas solo para contrastar patrones fisiológicos, no para marcas/dosis.
+- Revistas técnicas de productores usadas solo cuando coinciden con universidades.
+
+Baja-media:
+- Foros y discusiones de productores usados para lenguaje UX y confusiones reales, nunca para
+  umbrales o reglas duras.
+
+Lectura de foros / lenguaje real usado solo para UX:
+- “nuez vana”
+- “nuez no llenó”
+- “se amarillaron las hojas”
+- “hoja chica / roseta”
+- “se queman las orillas”
+- “le falta zinc”
+- “puro follaje y poca nuez”
+- “se cayó la nuez”
+- “mucha nuez un año y poca al siguiente”
+- “agua salada”
+- “la nuez germinó en el árbol”
+- “no abrió bien el ruezno”
+- “está pegajoso por pulgón”
+- “lo aboné y se quemó”
+
+Los foros NO definen:
+- rangos de pH;
+- EC;
+- dosis;
+- NPK targets;
+- umbrales de suficiencia.
+
+================================================================================
+3. PRINCIPIOS AGRONÓMICOS PARA BIO-G EN NOGAL
+================================================================================
+
+3.1 Suelo primero
+
+Antes de interpretar NPK, BIO-G debe revisar:
+
+- humedad;
+- salinidad/EC;
+- pH;
+- compactación/resistance;
+- temperatura del suelo;
+- etapa fenológica;
+- estado perenne;
+- perfil NG;
+- memoria de carga, estrés hídrico, salinidad, defoliación, plaga, helada o mala postcosecha.
+
+Si NPK aparece bajo o alto pero hay problema de raíz/suelo, el mensaje debe cambiar de:
+“falta fertilizante”
+a:
+“baja disponibilidad / baja absorción / raíz limitada / sales / pH”.
+
+Mensaje base:
+“Puede haber nutrientes, pero el nogal quizá no los está aprovechando bien. Revisa primero agua,
+pH, salinidad, compactación y raíz.”
+
+3.2 Agua siempre
+
+En nogal pecanero, agua estable es crítica para:
+- absorción de N/P/K;
+- expansión de hoja;
+- brotación;
+- cuajado;
+- tamaño de nuez;
+- llenado de almendra;
+- transporte de carbohidratos;
+- calidad;
+- reducción de nuez vana;
+- evitar estrés salino;
+- sostener hoja postcosecha.
+
+Reglas:
+- Si soilMoisture está baja en flowering, fruit_set o fruit_fill, penalizar agua antes que NPK.
+- Si soilMoisture está baja en fruit_fill, el mensaje debe hablar de llenado de almendra/nuez vana.
+- Si soilMoisture está alta/saturada, no recomendar más riego ni más fertilizante.
+- Si EC alta + humedad baja, subir alerta de estrés osmótico.
+- Si EC alta + N/K altos, advertir acumulación de sales/fertilizante.
+- Si K bajo pero humedad baja en fruit_fill, priorizar agua antes que K.
+- Si hubo estrés hídrico severo en llenado, guardar memoria para rendimiento/calidad y alternancia.
+
+3.3 Salinidad: punto crítico de nogal en el norte
+
+El nogal pecanero puede producir en zonas áridas, pero la salinidad es un riesgo real:
+- pH alto y suelos calizos reducen disponibilidad de Zn/Fe/Mn;
+- EC alta reduce absorción de agua;
+- Na, Cl y B pueden provocar toxicidad;
+- margen quemado en hojas puede parecer “falta de K” o “calor”, pero puede ser sales.
+
+Regla BIO-G:
+- EC no tiene deficiencia baja.
+- EC alta bloquea recomendaciones agresivas de NPK.
+- EC alta + soilMoisture baja = estrés osmótico fuerte.
+- EC alta + fruit_fill = riesgo de mal llenado de almendra.
+- EC alta + plantación/establecimiento = riesgo alto para raíz joven.
+- Si EC es crítica, el mensaje debe hablar de sales/agua/drenaje antes de fertilizar.
+
+3.4 pH, caliza y disponibilidad de Zn/Fe/P
+
+El rango práctico de pH para nogal debe ser amplio, pero BIO-G debe distinguir:
+- pH 6.0–7.0/7.2: favorable general;
+- pH >7.5: aumenta riesgo de bloqueo de Zn/Fe/P/Mn;
+- pH muy bajo: no es típico del norte árido, pero puede generar desbalances.
+
+Regla:
+- pH alto + hoja chica/roseta = posible Zn, no N.
+- pH alto + hoja amarilla nueva con nervadura verde = posible Fe/Mn, no N.
+- pH alto + P bajo = disponibilidad, no necesariamente falta total.
+- P alto + Zn bajo/contexto = advertir antagonismo/desbalance.
+- No sugerir enmiendas de pH sin análisis.
+
+3.5 Nitrógeno: protagonista, pero no “más N = más nuez”
+
+N es necesario para:
+- brotación;
+- expansión de hoja;
+- crecimiento de brote;
+- fotosíntesis;
+- área foliar;
+- reservas;
+- retorno floral;
+- calidad de almendra;
+- producción sostenida.
+
+Pero N excesivo o mal sincronizado puede:
+- generar mucho vigor vegetativo;
+- aumentar sombra;
+- competir con llenado;
+- elevar salinidad si el sistema acumula sales;
+- reducir eficiencia de uso;
+- agravar desbalances con Zn;
+- producir brotes tiernos tardíos;
+- inducir gasto sin respuesta si el limitante real es agua, Zn, pH, salinidad o carga.
+
+Regla BIO-G:
+- N bajo en budbreak/vegetative_growth pesa fuerte si agua/pH/EC/resistance están bien.
+- N bajo en fruit_fill puede afectar hoja activa y llenado, pero primero revisar agua/K/Zn.
+- N alto en fruit_fill debe ser “observación de balance”, no “óptimo automático”.
+- N alto en harvest_maturity debe alertar calidad/madurez/reservas, pero sin decir que ya es cosecha si etapa real es fruit_fill.
+- N alto en post_harvest solo es accionable si hay hoja activa, raíz activa, EC baja y temperatura suficiente.
+- Si hubo helada, mala polinización o baja carga, bajar presión de N para evitar vigor excesivo.
+- Si hubo carga muy alta, sí puede subir la importancia de recuperación postcosecha, pero sin saltarse agua/EC.
+
+3.6 Zinc: no es sensor v1, pero es parte del cerebro del nogal
+
+Zn es obligatorio como contexto porque el nogal pecanero es muy sensible a deficiencia de Zn,
+especialmente en suelos alcalinos/calizos.
+
+Zn pesa más en:
+- budbreak;
+- vegetative_growth;
+- expansión foliar;
+- hojas nuevas;
+- brotes;
+- juveniles;
+- árboles vigorosos;
+- huertos con pH alto;
+- suelos calizos;
+- árboles con roseta/hoja chica.
+
+Síntomas compatibles:
+- hoja chica;
+- entrenudos cortos;
+- brotes en roseta;
+- crecimiento débil;
+- hojas angostas/deformes;
+- mala expansión de follaje;
+- baja superficie fotosintética.
+
+Reglas:
+- No convertir Zn en sensor obligatorio.
+- No recomendar dosis cerradas de Zn en modo simple.
+- Si pH > 7.5 y N está normal pero hay hoja chica/roseta, decir “posible disponibilidad de zinc”.
+- Si N alto + Zn contextual bajo, advertir desbalance: mucho N no arregla roseta.
+- En ng_04_criollo_regional / huerto viejo, mantener alerta de Zn pero con confianza conservadora si no hay análisis.
+- En ng_05_temprano_nuevo / Pawnee-Kanza-Cheyenne, el buen arranque temprano exige hoja funcional: Zn contextual pesa en brotación.
+
+3.7 Potasio: protagonista del llenado de nuez
+
+K es clave para:
+- regulación hídrica;
+- transporte de azúcares;
+- tamaño de nuez;
+- llenado de almendra;
+- calidad;
+- kernel percentage;
+- aceite;
+- tolerancia a estrés;
+- postcosecha/reservas.
+
+Regla BIO-G:
+- K sube desde fruit_set.
+- K es máximo en fruit_fill.
+- K bajo en fruit_fill + humedad correcta = alerta fuerte de llenado/calidad.
+- K bajo en fruit_fill + humedad baja = priorizar agua antes que fertilización.
+- K alto + EC alta = riesgo salino/fertilizante.
+- K alto + Mg/Ca contextual bajo = advertir balance.
+- K bajo después de una carga alta puede afectar reservas/postcosecha.
+
+3.8 Fósforo: raíz, energía y preplantación
+
+P pesa en:
+- preplantación;
+- plantación;
+- establecimiento radicular;
+- raíz fina;
+- energía;
+- brotación;
+- floración temprana.
+
+En nogal adulto:
+- P responde con menor frecuencia que N/Zn o K cuando no hay deficiencia real.
+- P/K conviene corregir con suelo/foliar, no por sensor rápido únicamente.
+- P se mueve lentamente; preplantación y zona de raíz importan.
+
+Regla:
+- P bajo en planting/root_establishment sí pesa.
+- P bajo en budbreak/flowering/fruit_set genera observación.
+- P bajo en harvest_maturity no debe tumbar score si agua/K/calidad están bien.
+- P alto no es “más vigor”: puede indicar desbalance o bloqueo de Zn/Cu/Fe.
+- pH alto + P bajo = hablar de disponibilidad.
+
+3.9 Calcio, magnesio, boro, manganeso, hierro, níquel y azufre como contexto
+
+Ca:
+- estructura celular;
+- suelo/raíz;
+- balance con Na;
+- calidad general.
+- En salinidad/sodicidad, Ca/Mg/Na/SAR son contexto avanzado.
+
+Mg:
+- clorofila;
+- fotosíntesis;
+- balance con K;
+- hoja activa.
+
+B:
+- floración, tubo polínico, cuajado, tejido nuevo;
+- exceso de B puede ser tóxico y se parece a quemadura marginal/salinidad.
+
+Mn/Fe:
+- clorosis en pH alto/calizo;
+- disponibilidad baja por pH y bicarbonatos.
+
+Ni:
+- importante en pecan y algunos desórdenes nutricionales; no sensor v1.
+- Solo modo avanzado/laboratorio.
+
+S:
+- asociado a aminoácidos y proteínas;
+- puede estar ligado a fuentes nitrogenadas acidificantes.
+- No sensor v1.
+
+Regla:
+- Todos estos son contexto avanzado.
+- No simularlos desde NPK.
+- No sugerir productos ni dosis en modo productor simple.
+
+3.10 Carga, alternancia y nutrición
+
+El nogal tiene alternancia marcada:
+- año de mucha nuez puede agotar reservas;
+- año de poca nuez puede generar exceso de vigor si se fertiliza como año de carga alta;
+- el estrés en llenado y postcosecha afecta el siguiente ciclo.
+
+Campo UX opcional futuro:
+nutLoadStatus:
+- low
+- balanced
+- heavy
+- unknown
+
+Reglas:
+- nutLoadStatus=heavy + fruit_fill => subir presión de agua/K y memoria de postcosecha.
+- nutLoadStatus=low + N alto => advertir vigor excesivo.
+- nutLoadStatus=heavy + post_harvest + hoja activa => permitir mensaje de recuperación de reservas.
+- nutLoadStatus=unknown => no inferir dosis.
+
+3.11 Postcosecha y reservas
+
+Después de cosecha el nogal sigue vivo.
+Si todavía hay hoja verde y raíz activa:
+- puede recuperar reservas;
+- puede preparar siguiente brotación;
+- puede amortiguar carga alta;
+- puede sostener yemas/retorno floral;
+- puede recuperarse de estrés si agua/EC están bien.
+
+Regla:
+- post_harvest es etapa activa.
+- N y K tienen prioridad media si hay hoja activa.
+- Zn/B pueden ser contexto según historial/análisis.
+- No empujar N si:
+  - hoja ya cayó;
+  - el árbol está entrando a dormancia;
+  - EC está alta;
+  - hay sequía;
+  - suelo está saturado;
+  - temperatura de suelo es baja;
+  - existe riesgo de brotes tiernos tardíos.
+- Si hubo defoliación temprana por pulgón/ácaros/costra, bajar confianza de reservas.
+
+================================================================================
+4. CAPAS DEL MODELO BIO-G
+================================================================================
+
+Capa A — Motor BIO-G v1:
+- sensor de suelo;
+- etapa;
+- estado;
+- perfil NG;
+- memoria;
+- StageTargets;
+- StageWeights;
+- N/P/K relativo;
+- AgroMetricEval por métrica.
+
+Capa B — Modo avanzado:
+- análisis de suelo;
+- análisis de agua;
+- análisis foliar;
+- textura;
+- pH laboratorio;
+- materia orgánica;
+- salinidad del agua;
+- SAR;
+- Na/Cl/B;
+- Ca/Mg/S/Zn/Fe/Mn/Ni/Cu/B;
+- producción esperada;
+- árboles/ha;
+- vigor;
+- portainjerto;
+- patrón de riego/fertirriego;
+- historial de carga y alternancia.
+
+Capa C — Contexto UX:
+- helada;
+- carga de nuez;
+- polinización;
+- nuez vana;
+- viviparidad;
+- alternancia;
+- pulgón;
+- ácaros;
+- costra/sarna;
+- defoliación;
+- postcosecha anterior;
+- foros/experiencia como lenguaje, no como targets.
+
+================================================================================
+5. ESCALA INTERNA BIO-G PARA N/P/K RELATIVO
+================================================================================
+
+Los sensores NPK económicos varían mucho. BIO-G v1 debe normalizar N/P/K a escala 0.00–1.00.
+
+Escala interna:
+0.00–0.20 = muy bajo
+0.20–0.35 = bajo
+0.35–0.50 = bajo-moderado
+0.50–0.65 = suficiente moderado
+0.65–0.80 = alto útil según etapa
+0.80–1.00 = alto / posible exceso según etapa
+>1.00 = fuera de escala/cap; revisar acumulación o calibración
+
+Caps sugeridos para NpkCaps:
+- crop_walnut_tree / walnut_tree / nogal / nogal_pecanero / pecan:
+  N: 120.0
+  P: 95.0
+  K: 180.0
+
+Nota:
+- Cap no es dosis.
+- Cap solo traduce ppm crudo del sensor a ratio 0..1.
+- La etapa decide si una lectura alta es útil, neutra o peligrosa.
+- El motor debe usar primero AgroMetricEval en dashboard/NPK screen.
+- `walnut_tree_universal_profile.dart` debe guardar nRel/pRel/kRel en escala 0..100 si sigue el patrón de pera/manzano/durazno:
+  doc 0.70 -> código 70.
+
+================================================================================
+6. TARGETS BASE UNIVERSALES DE SUELO Y AMBIENTE
+================================================================================
+
+6.1 pH
+
+Target BIO-G:
+- óptimo práctico general: 6.0–7.2
+- preferido técnico cuando es posible: 6.0–6.8
+- aceptable amplio: 5.5–7.8
+- alerta baja: <5.5
+- alerta alta: >7.5
+- crítico: <5.2 o >8.2
+
+Regla:
+- pH alto baja disponibilidad de Zn, Fe, Mn y P.
+- pH bajo puede generar desbalances, aunque en zonas nogaleras del norte el problema típico es alcalinidad/caliza.
+- pH se corrige con análisis; no por intuición de NPK.
+- En modo simple, si pH >7.5 y hay síntomas de roseta/hoja chica, hablar de Zn contextual.
+
+6.2 EC / salinidad
+
+Target general:
+- seguro/preferido: <1.5–1.8 dS/m
+- observación: 1.8–2.2 dS/m
+- alerta: 2.2–3.0 dS/m
+- crítico: >3.0–3.5 dS/m según etapa, suelo y agua
+- daño fuerte posible: >5.0 dS/m con tendencia/estrés
+- riesgo severo: >6.0 dS/m o acumulación persistente
+
+Regla:
+- En plantación y establecimiento usar umbrales más conservadores.
+- En fruit_set y fruit_fill, EC alta debe pesar más porque el árbol necesita agua funcional.
+- Si EC alta, bloquear sugerencias de fertilización agresiva.
+- Si EC alta + humedad baja, alertar estrés osmótico.
+- Si EC alta + K/N altos, advertir sales/fertilizante acumulado.
+- Si el agua de riego tiene EC alta, pedir análisis de agua y revisar lixiviación/drenaje.
+
+6.3 Humedad del suelo
+
+Interpretación preferida:
+- % de agua disponible (AW) o escala normalizada por textura.
+
+Targets generales:
+- operativo: 55–85% AW
+- etapas críticas de nuez: 65–90% AW
+- observación baja: 45–60% AW
+- crítico bajo: <40–45% AW
+- observación alta: 88–94% AW
+- crítico alto/saturación: >94–96% AW o lectura alta persistente
+
+Regla:
+- Déficit afecta cuajado, tamaño y llenado de almendra.
+- Exceso reduce oxígeno y puede favorecer raíz/cuello.
+- El nogal es profundo, pero la raíz fina activa y absorción pueden limitarse si hay compactación/sales.
+- En fruit_fill, humedad baja tiene prioridad sobre NPK.
+- En post_harvest, humedad estable ayuda a reservas si hay hoja activa.
+
+6.4 Temperatura de suelo
+
+- raíz muy lenta: <7–8 °C
+- funcional lenta: 8–12 °C
+- target activo general: 12–28 °C
+- target fruit_fill cálido funcional: 16–30 °C si humedad/EC están bien
+- calor observación: 30–34 °C
+- alerta: >34–35 °C
+- crítico: >37 °C o calor + baja humedad + EC alta
+
+6.5 Resistance / compactación
+
+- target: <1.5 MPa
+- observación: 1.5–2.0 MPa
+- alerta: >2.0–2.5 MPa
+- crítico: >2.5–3.0 MPa
+
+Regla:
+- Compactación baja agua útil, aireación, infiltración y raíz fina.
+- En plantación/establecimiento pesa mucho.
+- En huerto adulto, compactación + salinidad + humedad irregular puede explicar NPK “malo”.
+- Si resistance alta, bajar confianza NPK.
+
+================================================================================
+7. RANGOS FOLIARES AVANZADOS PARA NOGAL PECANERO
+================================================================================
+
+Usar SOLO en modo avanzado con análisis foliar.
+No mezclar estos valores con el sensor NPK de suelo.
+Foliar = estado integrado del árbol.
+Suelo = oferta/disponibilidad potencial.
+Sensor NPK = lectura rápida relativa de apoyo.
+
+7.1 Método de muestreo foliar recomendado
+
+Patrón general:
+- muestreo a mitad de temporada, normalmente julio a inicios de agosto según región;
+- tomar foliolos/leaflets, no hojas completas al azar;
+- tomar el par medio de foliolos de una hoja compuesta ubicada en la mitad del brote del año;
+- tomar de lados soleados/accesibles;
+- no mezclar cultivares;
+- no mezclar zonas de suelo muy distintas;
+- no mezclar árboles sanos y problemáticos;
+- no muestrear hojas dañadas por insectos, enfermedad, viento o residuos;
+- si se aplicó zinc foliar, lavar conforme protocolo de laboratorio o tomar nota del residuo;
+- comparar el mismo bloque/año con método consistente.
+
+Formato BIO-G para modo avanzado:
+PecanLeafAnalysisSample:
+- sampleDate
+- orchardBlockId
+- profileId
+- cultivar
+- treesSampled
+- leafletsCount
+- labName
+- nPct
+- pPct
+- kPct
+- caPct
+- mgPct
+- sPct
+- bPpm
+- znPpm
+- fePpm
+- mnPpm
+- cuPpm
+- niPpm
+- notes
+- washedAfterFoliarSpray: true/false/unknown
+
+7.2 Rangos foliares de suficiencia
+
+Usar como bandas de referencia, no como verdad única universal.
+
+Rangos generales de suficiencia en pecan leaflets:
+- N: 2.3–3.0% en sistemas de baja entrada; 2.4–3.0% en sistemas de alta entrada.
+- P: 0.12–0.30% baja entrada; 0.14–0.30% alta entrada.
+- K: 0.85–2.50% baja entrada; 1.00–2.50% alta entrada.
+- S: 0.20–0.35%.
+- Ca: 0.70–1.75%.
+- Mg: 0.30–0.60%.
+- B: 15–50 ppm.
+- Cu: 6–30 ppm.
+- Fe: 50–300 ppm.
+- Mn: 100–2000 ppm.
+- Zn: 60–150 ppm.
+- Ni: >2.5 ppm.
+
+Interpretación BIO-G:
+- Foliar bajo + sensor bajo + síntomas + suelo correcto = alta confianza.
+- Foliar bajo + sensor alto = revisar pH, EC, raíz, agua, bloqueo o calibración.
+- Foliar alto + aplicación foliar reciente = posible residuo; bajar confianza.
+- N >3.0% no debe celebrarse automáticamente; revisar vigor, carga y eficiencia.
+- Zn <60 ppm o síntomas de roseta deben activar contexto fuerte, especialmente con pH alto.
+- B puede ser útil pero exceso puede ser tóxico; no recomendar sin laboratorio.
+- Si foliar está normal pero el árbol falla, buscar agua, salinidad, polinización, sanidad o alternancia.
+
+7.3 Rangos de suelo para modo avanzado
+
+Usar SOLO si hay análisis de suelo.
+No convertir en sensores v1 obligatorios.
+
+Referencia general de suelo para pecan:
+- pH: 6.0–6.5 preferido; 6.0–7.0 suficiente en muchos casos.
+- P: 30–60 lb/acre como rango de referencia en algunas guías.
+- K: 60–150 lb/acre.
+- S: 10–50 lb/acre.
+- Ca: 400–900 lb/acre.
+- Mg: 90–100 lb/acre.
+- B: 0.5–1.0 lb/acre.
+- Cu: 0.5–1.5 lb/acre.
+- Fe: 12–25 lb/acre.
+- Mn: 15–40 lb/acre.
+- Zn: 15–20 lb/acre.
+
+Advertencia:
+Estos rangos dependen de método de laboratorio, extracción, unidad, región, textura y pH.
+BIO-G no debe convertirlos en recetas directas.
+
+================================================================================
+8. PRIORIDAD NPK POR ETAPA
+================================================================================
+
+Escala 0.00–1.00.
+No es dosis. Es prioridad fisiológica para BIO-G.
+
+planting_transplant:
+N 0.18 | P 0.78 | K 0.48
+Cuidado: raíz joven, baja salinidad, humedad estable, no quemar raíces; P/K idealmente antes de plantar con análisis.
+
+root_establishment:
+N 0.25 | P 0.80 | K 0.52
+Cuidado: raíz fina, oxígeno, P de arranque, salinidad baja y suelo sin compactación.
+
+juvenile_vegetative:
+N 0.70 | P 0.48 | K 0.55
+Cuidado: formar tronco/copa/raíz; N útil pero sin vigor blando; Zn contextual muy importante.
+
+dormancy:
+N 0.08 | P 0.18 | K 0.20
+Cuidado: baja demanda NPK; revisar pH, EC, frío, suelo, salinidad, madera y plan.
+
+budbreak:
+N 0.65 | P 0.48 | K 0.50
+Cuidado: arranque, brote y expansión foliar; Zn contextual crítico; suelo frío baja absorción.
+
+vegetative_growth:
+N 0.72 | P 0.38 | K 0.55
+Cuidado: hoja, brote, área foliar y reservas; evitar N alto si no hay agua/Zn.
+
+flowering:
+N 0.38 | P 0.55 | K 0.60
+Cuidado: floración/polinización dependen de reservas, clima y viento; no resolver con N alto.
+
+fruit_set:
+N 0.45 | P 0.45 | K 0.75
+Cuidado: amarre de nuez, caída temprana, agua estable, salinidad baja, K comienza a pesar.
+
+fruit_fill:
+N 0.42 | P 0.30 | K 0.92
+Cuidado: llenado de almendra/grano; K protagonista; N suficiente pero no excesivo; agua/EC primero.
+
+harvest_maturity:
+N 0.20 | P 0.20 | K 0.65
+Cuidado: madurez de nuez, apertura de ruezno, cosecha; evitar N alto tardío y salinidad.
+
+post_harvest:
+N 0.50 | P 0.30 | K 0.60
+Cuidado: reservas del siguiente ciclo; solo si hay hoja activa, humedad estable, baja EC y raíz funcional.
+
+unknown:
+N 0.42 | P 0.42 | K 0.50
+Cuidado: conservador, pedir etapa visible, no inventar calendario ni dosis.
+
+================================================================================
+9. LECTURA AGRONÓMICA POR ETAPA
+================================================================================
+
+planting_transplant — Plantación / trasplante
+Prioridad relativa: N 0.18 | P 0.78 | K 0.48
+Lectura: no es etapa para empujar producción. La prioridad es raíz, agua, salinidad y suelo.
+N: bajo. No usar N concentrado cerca del tronco/raíz.
+P: alto relativo si el suelo/análisis lo pide; idealmente incorporado antes de plantar.
+K: apoyo; no justificar K alto si EC o salinidad ya están elevadas.
+Zn: contexto; árboles jóvenes en suelos alcalinos pueden necesitar vigilancia de brotación/hoja.
+Bloqueo BIO-G: si EC alta, resistance alta o humedad saturada, primero corregir suelo/agua.
+
+root_establishment — Establecimiento radicular
+Prioridad relativa: N 0.25 | P 0.80 | K 0.52
+Lectura: raíz fina y oxígeno mandan. El sensor NPK pierde valor si hay compactación, anoxia o sales.
+N: moderado-bajo; exceso empuja brote sin raíz o aumenta salinidad.
+P: ventana fuerte de raíz; no aplicar a ciegas sin pH/suelo.
+K: sostén hídrico y turgencia; secundario frente a raíz/agua.
+Zn: observar brote/hoja; no convertir en sensor.
+
+juvenile_vegetative — Crecimiento juvenil
+Prioridad relativa: N 0.70 | P 0.48 | K 0.55
+Lectura: formar tronco, copa, raíz profunda y área foliar futura.
+N: importante, pero exceso da crecimiento blando y dependiente de agua.
+P: apoyo de raíz/energía.
+K: base de vigor equilibrado.
+Zn: obligatorio como contexto; hoja chica/roseta no se arregla con N.
+
+dormancy — Dormancia invernal
+Prioridad relativa: N 0.08 | P 0.18 | K 0.20
+Lectura: demanda NPK baja. Dormancia no es una ventana para interpretar NPK como hambre activa.
+N: no empujar; árbol sin hoja activa.
+P/K: planificar con análisis de suelo si se harán correcciones de fondo.
+Contexto: frío, salinidad, humedad invernal, madera, daño de raíz, reservas del ciclo anterior.
+
+budbreak — Brotación
+Prioridad relativa: N 0.65 | P 0.48 | K 0.50
+Lectura: arranque desde reservas + raíz que empieza a activarse.
+N: moderado-alto si agua/EC/pH están bien y el árbol requiere brote.
+P: medio; disponibilidad depende de pH.
+K: apoyo de turgencia/arranque.
+Zn: crítico contextual. En nogal, mala expansión foliar puede ser Zn, no N.
+
+vegetative_growth — Desarrollo vegetativo
+Prioridad relativa: N 0.72 | P 0.38 | K 0.55
+Lectura: hoja y brote sostienen fotosíntesis y reservas.
+N: mayor peso, con control de vigor.
+P: peso medio-bajo salvo deficiencia/análisis.
+K: sostiene agua y hoja.
+Zn: vigilar hoja chica, entrenudos cortos, roseta.
+Mensaje: “Mucho N sin Zn/agua suficiente no llena la nuez; solo hace más presión vegetativa.”
+
+flowering — Floración masculina/femenina
+Prioridad relativa: N 0.38 | P 0.55 | K 0.60
+Lectura: etapa crítica, pero NPK no resuelve helada, polinización, sincronía floral o viento.
+N: bajo-moderado; no empujar N para “mejorar floración”.
+P: relevante por energía/tejidos.
+K: suficiente para soporte fisiológico.
+Contexto: B/Zn/reservas/polinización/clima; no sensor v1.
+
+fruit_set — Amarre / nuez recién cuajada
+Prioridad relativa: N 0.45 | P 0.45 | K 0.75
+Lectura: el árbol decide qué nueces sostiene. Agua estable y baja salinidad pesan más que una lectura NPK aislada.
+N: moderado; sostiene hoja y brote.
+P: medio.
+K: sube fuerte; inicia demanda de nuez.
+Mensaje: “Si la nuez se cae, puede ser polinización, reservas, agua o estrés; no culpes NPK de entrada.”
+
+fruit_fill — Llenado de nuez / llenado de almendra
+Prioridad relativa: N 0.42 | P 0.30 | K 0.92
+Lectura: etapa máxima para calidad de nuez.
+N: suficiente para hoja activa y fotosíntesis, pero no debe empujar vigor sin agua/K/Zn.
+P: bajo-medio; no tumbar score si agua/K están bien.
+K: protagonista para almendra, aceite, calidad y nuez llena.
+Zn: contexto fuerte si hay hoja chica/roseta y mala área foliar.
+Copy prohibido: cosecha, cerca de cosecha, madurez como identidad si la etapa sigue siendo fruit_fill.
+Copy permitido: llenado, almendra, grano, calidad, nuez vana, K, agua estable, salinidad, reservas.
+
+harvest_maturity — Madurez de nuez / ruezno abriendo / cosecha
+Prioridad relativa: N 0.20 | P 0.20 | K 0.65
+Lectura: madurez/cosecha. Calidad final, apertura de ruezno y recolección mandan.
+N: bajo. N alto aquí debe activar advertencia de vigor tardío/calidad/reservas, no recomendación positiva.
+P: bajo.
+K: medio-alto, pero si EC alta o Mg/Ca contextuales bajos, advertir desbalance.
+Mensaje: “Ya no buscamos empujar brotes; cuidamos calidad de nuez y transición a postcosecha.”
+
+post_harvest — Postcosecha / recuperación de reservas
+Prioridad relativa: N 0.50 | P 0.30 | K 0.60
+Lectura: etapa viva. El nogal puede recuperar reservas y preparar el siguiente ciclo si conserva hoja activa.
+N: relevante solo con hoja verde, raíz activa, humedad estable y baja EC.
+P: apoyo de raíz/reservas, no protagonista sin análisis.
+K: apoyo de recuperación, especialmente tras carga alta.
+Zn/B: contexto si hay historial/análisis.
+No activar “boost” nutricional si ya cayó hoja, hay sequía, salinidad, frío o defoliación.
+Mensaje: “Después de cosecha el nogal todavía puede trabajar; si perdió hoja temprano, la reserva queda en riesgo.”
+
+unknown — No lo sé
+Prioridad relativa: N 0.42 | P 0.42 | K 0.50
+Lectura: conservadora. Sin etapa visible, no inferir demanda fina.
+N/P/K: rangos medios.
+UX: pedir al usuario si el árbol está brotando, floreando, con nuez chica, llenando almendra, con ruezno abriendo o después de cosecha.
+No prometer rendimiento ni calidad con stage unknown.
+
+================================================================================
+10. STAGETARGETS CABLEABLES — AGRO RANGE
+================================================================================
+
+Contrato obligatorio:
+AgroRange(lowMax, optimalMin, optimalMax, highMin)
+
+Interpretación:
+- lowMax = frontera crítica baja.
+- optimalMin = inicio del óptimo.
+- optimalMax = fin del óptimo.
+- highMin = frontera crítica alta.
+- No usar lowMax == optimalMin.
+- No usar optimalMax == highMin.
+- En EC y resistance, la métrica es principalmente de exceso. Se usa lowMax seguro/documentado
+  solo para cumplir estructura; no debe penalizar por “EC baja” o “resistance baja”.
+
+NOTA DE CÓDIGO:
+En los archivos `*_universal_profile.dart` existentes, nRel/pRel/kRel se escriben en escala 0..100.
+Este documento los expresa en 0.00..1.00 por claridad agronómica.
+Ejemplo:
+- doc: k optimalMin 0.70
+- código: kRel AgroRange(optimalMin: 70)
+
+--------------------------------------------------------------------------------
+10.1 planting_transplant — Plantación / trasplante
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 60, optimalMax: 82, highMin: 90)
+- soilTemp: AgroRange(lowMax: 7, optimalMin: 12, optimalMax: 24, highMin: 30)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 8.0)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.2, highMin: 1.8)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.0)
+- n: AgroRange(lowMax: 0.05, optimalMin: 0.18, optimalMax: 0.35, highMin: 0.70)
+- p: AgroRange(lowMax: 0.20, optimalMin: 0.55, optimalMax: 0.75, highMin: 0.92)
+- k: AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.58, highMin: 0.85)
+- prioridad NPK: N 0.18 | P 0.78 | K 0.48
+- lectura BIO-G: raíz joven, baja salinidad, humedad estable, no quemar raíces.
+
+--------------------------------------------------------------------------------
+10.2 root_establishment — Establecimiento radicular
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 62, optimalMax: 84, highMin: 92)
+- soilTemp: AgroRange(lowMax: 7, optimalMin: 12, optimalMax: 24, highMin: 30)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 8.0)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.2, highMin: 1.8)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.0)
+- n: AgroRange(lowMax: 0.10, optimalMin: 0.22, optimalMax: 0.45, highMin: 0.75)
+- p: AgroRange(lowMax: 0.20, optimalMin: 0.55, optimalMax: 0.75, highMin: 0.92)
+- k: AgroRange(lowMax: 0.15, optimalMin: 0.38, optimalMax: 0.60, highMin: 0.85)
+- prioridad NPK: N 0.25 | P 0.80 | K 0.52
+- lectura BIO-G: raíz fina, oxígeno, P de arranque y suelo sin compactación.
+
+--------------------------------------------------------------------------------
+10.3 juvenile_vegetative — Crecimiento juvenil
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 58, optimalMax: 85, highMin: 92)
+- soilTemp: AgroRange(lowMax: 8, optimalMin: 12, optimalMax: 28, highMin: 34)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.2, highMin: 8.0)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.2)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.3)
+- n: AgroRange(lowMax: 0.25, optimalMin: 0.55, optimalMax: 0.75, highMin: 0.90)
+- p: AgroRange(lowMax: 0.18, optimalMin: 0.40, optimalMax: 0.62, highMin: 0.85)
+- k: AgroRange(lowMax: 0.20, optimalMin: 0.42, optimalMax: 0.65, highMin: 0.88)
+- prioridad NPK: N 0.70 | P 0.48 | K 0.55
+- lectura BIO-G: estructura, copa, raíz, Zn contextual y vigor sin exceso.
+
+--------------------------------------------------------------------------------
+10.4 dormancy — Dormancia invernal
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 35, optimalMin: 45, optimalMax: 70, highMin: 90)
+- soilTemp: AgroRange(lowMax: -5, optimalMin: 0, optimalMax: 12, highMin: 20)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.5, highMin: 8.2)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 2.0, highMin: 3.0)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 2.0, highMin: 2.6)
+- n: AgroRange(lowMax: 0.00, optimalMin: 0.15, optimalMax: 0.35, highMin: 0.80)
+- p: AgroRange(lowMax: 0.00, optimalMin: 0.20, optimalMax: 0.40, highMin: 0.85)
+- k: AgroRange(lowMax: 0.00, optimalMin: 0.20, optimalMax: 0.45, highMin: 0.88)
+- prioridad NPK: N 0.08 | P 0.18 | K 0.20
+- lectura BIO-G: baja demanda NPK; frío, salinidad, suelo y memoria como contexto.
+
+--------------------------------------------------------------------------------
+10.5 budbreak — Brotación
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 82, highMin: 92)
+- soilTemp: AgroRange(lowMax: 6, optimalMin: 10, optimalMax: 24, highMin: 30)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.2, highMin: 8.0)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.6, highMin: 2.2)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.3)
+- n: AgroRange(lowMax: 0.25, optimalMin: 0.50, optimalMax: 0.70, highMin: 0.88)
+- p: AgroRange(lowMax: 0.18, optimalMin: 0.40, optimalMax: 0.62, highMin: 0.85)
+- k: AgroRange(lowMax: 0.20, optimalMin: 0.42, optimalMax: 0.62, highMin: 0.86)
+- prioridad NPK: N 0.65 | P 0.48 | K 0.50
+- lectura BIO-G: arranque desde reservas, Zn contextual crítico, suelo templado.
+
+--------------------------------------------------------------------------------
+10.6 vegetative_growth — Desarrollo vegetativo
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 84, highMin: 92)
+- soilTemp: AgroRange(lowMax: 8, optimalMin: 12, optimalMax: 30, highMin: 35)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.2, highMin: 8.0)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.4)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.4)
+- n: AgroRange(lowMax: 0.30, optimalMin: 0.55, optimalMax: 0.75, highMin: 0.90)
+- p: AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.58, highMin: 0.82)
+- k: AgroRange(lowMax: 0.22, optimalMin: 0.45, optimalMax: 0.68, highMin: 0.90)
+- prioridad NPK: N 0.72 | P 0.38 | K 0.55
+- lectura BIO-G: hoja funcional, área foliar, reservas y Zn contextual.
+
+--------------------------------------------------------------------------------
+10.7 flowering — Floración masculina/femenina
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 60, optimalMax: 85, highMin: 92)
+- soilTemp: AgroRange(lowMax: 8, optimalMin: 12, optimalMax: 26, highMin: 32)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.2, highMin: 8.0)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.6, highMin: 2.2)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.3)
+- n: AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.55, highMin: 0.80)
+- p: AgroRange(lowMax: 0.20, optimalMin: 0.45, optimalMax: 0.65, highMin: 0.86)
+- k: AgroRange(lowMax: 0.25, optimalMin: 0.50, optimalMax: 0.70, highMin: 0.90)
+- prioridad NPK: N 0.38 | P 0.55 | K 0.60
+- lectura BIO-G: floración/polinización, reservas, clima; no empujar N como solución única.
+
+--------------------------------------------------------------------------------
+10.8 fruit_set — Amarre / nuez recién cuajada
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 65, optimalMax: 88, highMin: 94)
+- soilTemp: AgroRange(lowMax: 10, optimalMin: 14, optimalMax: 28, highMin: 34)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.2, highMin: 8.0)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.4)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.4)
+- n: AgroRange(lowMax: 0.20, optimalMin: 0.38, optimalMax: 0.60, highMin: 0.83)
+- p: AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.58, highMin: 0.82)
+- k: AgroRange(lowMax: 0.30, optimalMin: 0.60, optimalMax: 0.80, highMin: 0.94)
+- prioridad NPK: N 0.45 | P 0.45 | K 0.75
+- lectura BIO-G: amarre de nuez, caída, agua estable, salinidad baja, K subiendo.
+
+--------------------------------------------------------------------------------
+10.9 fruit_fill — Llenado de nuez / almendra
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 68, optimalMax: 90, highMin: 95)
+- soilTemp: AgroRange(lowMax: 10, optimalMin: 16, optimalMax: 30, highMin: 35)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.2, highMin: 8.0)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.5)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.9, highMin: 2.5)
+- n: AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.60, highMin: 0.80)
+- p: AgroRange(lowMax: 0.10, optimalMin: 0.25, optimalMax: 0.45, highMin: 0.75)
+- k: AgroRange(lowMax: 0.35, optimalMin: 0.70, optimalMax: 0.90, highMin: 0.96)
+- prioridad NPK: N 0.42 | P 0.30 | K 0.92
+- lectura BIO-G: almendra/grano, calidad, K protagonista, agua y EC primero.
+
+--------------------------------------------------------------------------------
+10.10 harvest_maturity — Madurez de nuez / cosecha
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 82, highMin: 92)
+- soilTemp: AgroRange(lowMax: 8, optimalMin: 14, optimalMax: 30, highMin: 35)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.5, highMin: 8.2)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.7)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.9, highMin: 2.5)
+- n: AgroRange(lowMax: 0.05, optimalMin: 0.20, optimalMax: 0.45, highMin: 0.70)
+- p: AgroRange(lowMax: 0.05, optimalMin: 0.20, optimalMax: 0.40, highMin: 0.75)
+- k: AgroRange(lowMax: 0.25, optimalMin: 0.55, optimalMax: 0.78, highMin: 0.92)
+- prioridad NPK: N 0.20 | P 0.20 | K 0.65
+- lectura BIO-G: calidad final, apertura de ruezno, evitar N tardío.
+
+--------------------------------------------------------------------------------
+10.11 post_harvest — Postcosecha / recuperación
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 80, highMin: 92)
+- soilTemp: AgroRange(lowMax: 7, optimalMin: 10, optimalMax: 26, highMin: 32)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.5, highMin: 8.2)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.7)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.9, highMin: 2.5)
+- n: AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.60, highMin: 0.80)
+- p: AgroRange(lowMax: 0.10, optimalMin: 0.25, optimalMax: 0.50, highMin: 0.80)
+- k: AgroRange(lowMax: 0.20, optimalMin: 0.45, optimalMax: 0.70, highMin: 0.90)
+- prioridad NPK: N 0.50 | P 0.30 | K 0.60
+- lectura BIO-G: reservas del siguiente ciclo; solo si hay hoja activa.
+
+--------------------------------------------------------------------------------
+10.12 unknown — No lo sé
+--------------------------------------------------------------------------------
+- soilMoisture: AgroRange(lowMax: 45, optimalMin: 60, optimalMax: 85, highMin: 92)
+- soilTemp: AgroRange(lowMax: 7, optimalMin: 12, optimalMax: 28, highMin: 34)
+- ph: AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.5, highMin: 8.2)
+- ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.5)
+- resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.4)
+- n: AgroRange(lowMax: 0.15, optimalMin: 0.38, optimalMax: 0.62, highMin: 0.85)
+- p: AgroRange(lowMax: 0.10, optimalMin: 0.35, optimalMax: 0.60, highMin: 0.85)
+- k: AgroRange(lowMax: 0.15, optimalMin: 0.40, optimalMax: 0.68, highMin: 0.90)
+- prioridad NPK: N 0.42 | P 0.42 | K 0.50
+- lectura BIO-G: conservador, pedir etapa visible, no inventar calendario.
+
+================================================================================
+11. STAGEWEIGHTS BASE POR ETAPA
+================================================================================
+
+Escala 0.0 a 1.0.
+Componentes:
+- waterWeight
+- soilTempWeight
+- phWeight
+- ecWeight
+- resistanceWeight
+- nWeight
+- pWeight
+- kWeight
+
+Nota:
+Los pesos no tienen que sumar perfecto si el motor normaliza. Si el modelo existente exige suma 1.0,
+normalizar sin cambiar jerarquía.
+
+planting_transplant:
+- water 0.26
+- soilTemp 0.14
+- pH 0.12
+- EC 0.20
+- resistance 0.18
+- N 0.03
+- P 0.05
+- K 0.02
+
+root_establishment:
+- water 0.30
+- soilTemp 0.12
+- pH 0.10
+- EC 0.18
+- resistance 0.18
+- N 0.03
+- P 0.06
+- K 0.03
+
+juvenile_vegetative:
+- water 0.22
+- soilTemp 0.12
+- pH 0.10
+- EC 0.12
+- resistance 0.14
+- N 0.17
+- P 0.06
+- K 0.07
+
+dormancy:
+- water 0.16
+- soilTemp 0.18
+- pH 0.12
+- EC 0.18
+- resistance 0.12
+- N 0.04
+- P 0.04
+- K 0.04
+- contexto frío/reserva/madera/salinidad 0.12 si el motor lo permite.
+
+budbreak:
+- water 0.22
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.13
+- P 0.06
+- K 0.07
+- contexto Zn/reservas 0.02 si el motor lo permite.
+
+vegetative_growth:
+- water 0.20
+- soilTemp 0.12
+- pH 0.09
+- EC 0.12
+- resistance 0.10
+- N 0.19
+- P 0.05
+- K 0.08
+- contexto Zn/vigor 0.05 si el motor lo permite.
+
+flowering:
+- water 0.26
+- soilTemp 0.18
+- pH 0.08
+- EC 0.14
+- resistance 0.08
+- N 0.06
+- P 0.09
+- K 0.11
+- contexto polinización/B/Zn/clima 0.00 externo.
+
+fruit_set:
+- water 0.30
+- soilTemp 0.14
+- pH 0.08
+- EC 0.16
+- resistance 0.08
+- N 0.07
+- P 0.06
+- K 0.11
+
+fruit_fill:
+- water 0.30
+- soilTemp 0.12
+- pH 0.07
+- EC 0.14
+- resistance 0.08
+- N 0.07
+- P 0.04
+- K 0.18
+- contexto carga/almendra/Zn 0.00 externo.
+
+harvest_maturity:
+- water 0.22
+- soilTemp 0.12
+- pH 0.08
+- EC 0.14
+- resistance 0.08
+- N 0.04
+- P 0.04
+- K 0.16
+
+post_harvest:
+- water 0.24
+- soilTemp 0.12
+- pH 0.10
+- EC 0.14
+- resistance 0.10
+- N 0.11
+- P 0.05
+- K 0.14
+
+unknown:
+- water 0.25
+- soilTemp 0.14
+- pH 0.12
+- EC 0.15
+- resistance 0.12
+- N 0.08
+- P 0.07
+- K 0.07
+
+================================================================================
+12. REGLAS PARA evaluateTelemetry(...)
+================================================================================
+
+12.1 Orden de prioridad antes de sugerir fertilización
+
+1. Confirmar etapa visible.
+2. Confirmar estado perenne.
+3. Revisar humedad.
+4. Revisar EC/salinidad.
+5. Revisar pH.
+6. Revisar resistencia/compactación.
+7. Revisar temperatura de suelo.
+8. Revisar N/P/K relativo.
+9. Revisar vigor/carga si existe.
+10. Revisar historial de alternancia, carga alta, helada, caída, estrés, defoliación o postcosecha.
+11. Solo entonces hablar de nutrición.
+
+12.2 Bloqueos duros
+
+Bloquear recomendación agresiva de NPK si:
+- EC >= highMin.
+- soilMoisture está en criticalLow.
+- soilMoisture está en criticalHigh/saturación.
+- resistance está crítica.
+- soilTemp < 8 °C en etapa activa.
+- árbol está en dormancia sin hoja activa.
+- post_harvest sin hoja verde.
+- fruit_fill con humedad baja.
+- N alto + baja carga.
+- pH alto + síntomas de Zn/Fe sin análisis.
+- salinidad alta + K/N alto.
+- defoliación severa por pulgón/ácaros/costra.
+
+12.3 Reglas maestras
+
+A) Si humedad está crítica:
+Mensaje:
+“Primero estabiliza humedad; con raíz estresada la nutrición del nogal se vuelve menos confiable.”
+
+B) Si humedad está saturada:
+Mensaje:
+“El suelo está muy húmedo. Más agua o fertilizante puede empeorar oxígeno de raíz.”
+
+C) Si EC está alta:
+Mensaje:
+“La salinidad está elevada; aplicar más fertilizante puede aumentar estrés radicular y afectar llenado de almendra.”
+
+D) Si pH está alto:
+Mensaje:
+“Puede haber bloqueo de zinc, hierro, manganeso o fósforo aunque estén presentes.”
+
+E) Si pH está bajo:
+Mensaje:
+“El pH bajo puede limitar raíz y disponibilidad; confirma con análisis antes de corregir.”
+
+F) Si resistance está alta:
+Mensaje:
+“La compactación puede limitar raíz fina, infiltración y absorción de agua/nutrientes.”
+
+G) Si soilTemp está baja:
+Mensaje:
+“Con suelo frío, el nogal puede absorber lento aunque haya nutrientes.”
+
+H) Si etapa = post_harvest y no hay hoja activa:
+Mensaje:
+“Sin hoja activa, la recuperación de reservas baja; evita decisiones fuertes de N/K.”
+
+I) Si etapa = post_harvest con hoja activa + humedad adecuada + soilTemp suficiente + EC baja:
+Mensaje:
+“Postcosecha sigue activa; estas condiciones ayudan a recuperar reservas para el siguiente ciclo.”
+
+12.4 Nitrógeno
+
+N bajo:
+- pesa en juvenile_vegetative, budbreak, vegetative_growth, fruit_set, fruit_fill y post_harvest.
+- no pesa mucho en dormancy.
+- si N bajo coincide con pH alto y hoja chica, revisar Zn primero.
+
+N alto:
+- en juvenil puede ser útil si vigor bajo y suelo/agua están bien.
+- en vegetative_growth puede generar vigor excesivo si agua/Zn/carga no acompañan.
+- en flowering/fruit_set: advertir no empujar solo N.
+- en fruit_fill: advertir balance hoja/nuez; no decir “cerca de cosecha”.
+- en harvest_maturity: advertir calidad/vigor tardío.
+- en post_harvest: depende de hoja activa, EC, suelo y temperatura.
+
+Mensajes:
+N bajo + agua/pH/EC/resistance correctos + vigor bajo:
+“La lectura de N puede estar limitando hoja y brote. Confirma con análisis foliar si se repite.”
+
+N bajo + pH alto + roseta/hoja chica:
+“El problema puede ser zinc/disponibilidad, no solo nitrógeno.”
+
+N alto + fruit_fill:
+“El N está alto para llenado. En nogal, demasiado vigor puede competir con el llenado de almendra si agua/K/Zn no acompañan.”
+
+N alto + baja carga:
+“Con poca nuez, mucho N puede irse a hoja y brote. Revisa carga antes de empujar fertilización.”
+
+12.5 Fósforo
+
+P bajo:
+- pesa fuerte en planting/root_establishment.
+- pesa medio en budbreak/flowering/fruit_set.
+- pesa bajo en fruit_fill/harvest salvo deficiencia clara.
+
+P alto:
+- puede antagonizar Zn/Cu/Fe en ciertos contextos;
+- no corregir sin análisis.
+
+Mensajes:
+P bajo + plantación:
+“El fósforo pesa en raíz, pero conviene corregirlo con análisis y colocación adecuada.”
+
+P bajo + pH alto:
+“El problema puede ser disponibilidad por pH, no falta total de fósforo.”
+
+P alto + Zn contextual bajo:
+“P alto puede agravar disponibilidad de micronutrientes; revisa Zn/Fe con análisis.”
+
+12.6 Potasio
+
+K bajo:
+- pesa fuerte desde fruit_set a fruit_fill.
+- afecta tamaño de nuez, llenado de almendra, calidad y tolerancia a estrés.
+- si humedad está baja, priorizar agua.
+
+K alto:
+- puede ser útil en fruit_fill si EC y balance están bien;
+- si EC alta, advertir sales;
+- si Mg/Ca contextual bajo, advertir balance.
+
+Mensajes:
+K bajo + fruit_fill + humedad correcta:
+“Potasio bajo en llenado puede limitar almendra y calidad de nuez. Confirma con análisis si se repite.”
+
+K bajo + fruit_fill + humedad baja:
+“Antes de corregir K, estabiliza agua; el llenado de almendra depende primero de humedad disponible.”
+
+K alto + EC alta:
+“K alto con salinidad puede aumentar estrés osmótico. Revisa agua/sales antes de fertilizar.”
+
+K alto + Mg contextual bajo:
+“El K ayuda a la nuez, pero en exceso relativo puede desbalancear Mg/Ca.”
+
+12.7 Combinaciones importantes
+
+N alto + K bajo en fruit_fill:
+Mensaje:
+“El balance favorece crecimiento vegetativo más que llenado de almendra.”
+
+N bajo + K bajo + fruit_fill:
+Mensaje:
+“La hoja y la nuez pueden estar compitiendo por recursos. Revisa agua, carga, K y análisis foliar.”
+
+K bajo + buena humedad + alta carga:
+Mensaje:
+“Carga alta con K bajo puede traducirse en nuez chica o mal llenada.”
+
+pH alto + hoja chica/roseta + N normal:
+Mensaje:
+“Se parece más a disponibilidad de zinc que a falta de nitrógeno.”
+
+pH alto + hoja amarilla nueva:
+Mensaje:
+“Puede ser clorosis por hierro/manganeso disponible bajo, no necesariamente N.”
+
+EC alta + déficit hídrico:
+Mensaje:
+“El suelo está seco y concentrado; primero estabiliza agua/sales.”
+
+Postcosecha + hoja activa + humedad adecuada + N/K moderados:
+Mensaje:
+“Condiciones favorables para reservas del siguiente ciclo.”
+
+Postcosecha + defoliación temprana:
+Mensaje:
+“La pérdida temprana de hoja limita reservas; BIO-G bajará confianza del siguiente arranque.”
+
+12.8 Reglas de etapa/copy v1.5
+
+fruit_fill + N alto/exceso:
+- Puede marcar exceso si la lectura lo amerita.
+- NO debe contener “cosecha”, “cerca de cosecha”, “madurez” ni “ruezno abriendo” como identidad.
+- Debe hablar de “llenado de almendra”, “nuez”, “calidad”, “vigor vs llenado”.
+
+harvest_maturity + N alto/exceso:
+- Sí puede hablar de madurez, cosecha, ruezno, recolección, calidad final y transición a postcosecha.
+
+post_harvest:
+- No tratar como dormancia.
+- No apagar N/K si hay hoja activa.
+- No recomendar N/K si no hay hoja activa o si EC/agua/temperatura están mal.
+
+================================================================================
+13. GUÍA UX CORTA POR ETAPA
+================================================================================
+
+planting_transplant:
+“Tu nogal está recién establecido. La prioridad es raíz, humedad estable, baja salinidad y suelo sin compactación. No conviene empujar nitrógeno.”
+
+root_establishment:
+“El nogal está formando raíz fina. Fósforo, agua estable y baja salinidad pesan más que una lectura alta de N.”
+
+juvenile_vegetative:
+“El árbol joven necesita crecer y formar estructura. El nitrógeno ayuda, pero zinc, agua y raíz son igual de importantes en nogal.”
+
+dormancy:
+“El nogal está en reposo. La demanda NPK es baja. Usa esta etapa para revisar pH, salinidad, suelo, frío y planear.”
+
+budbreak:
+“El árbol está brotando. El arranque usa reservas y necesita hoja funcional. En nogal, zinc contextual y N moderado son claves, pero con suelo frío la absorción baja.”
+
+vegetative_growth:
+“Etapa de hoja y brote. Nitrógeno ayuda a formar copa, pero si falta agua o zinc, más N no resuelve el problema.”
+
+flowering:
+“Floración y polinización son críticas. No se resuelven solo con NPK. Revisa clima, sincronía floral, viento, agua y reservas.”
+
+fruit_set:
+“La nuez está amarrando. Agua estable, baja salinidad y K suficiente ayudan a sostener la carga. La caída puede venir de polinización o reservas.”
+
+fruit_fill:
+“En llenado de almendra, K y agua mandan. El N debe ser suficiente, no excesivo. Revisa salinidad, carga y zinc si la hoja está débil.”
+
+harvest_maturity:
+“En madurez/cosecha, cuida calidad de nuez y evita empujar brotes con N tardío. La etapa sigue viva hacia postcosecha.”
+
+post_harvest:
+“Después de cosecha el nogal sigue trabajando. Si conserva hoja activa y el suelo está bien, puede recuperar reservas para el siguiente ciclo.”
+
+unknown:
+“Con etapa desconocida, BIO-G usa rangos conservadores. Para mayor precisión, indica si el nogal está brotando, floreando, con nuez chica, llenando almendra, en cosecha o después de cosecha.”
+
+================================================================================
+14. DEFICIENCIAS Y EXCESOS — MENSAJES SEGUROS
+================================================================================
+
+N bajo posible:
+- hojas pálidas;
+- crecimiento débil;
+- brotes cortos;
+- bajo vigor;
+- menor área foliar;
+- mal llenado si coincide con alta carga;
+- reservas bajas.
+
+Mensaje:
+“Puede parecer bajo nitrógeno, pero también puede ser raíz fría, falta/exceso de agua, compactación, salinidad, pH alto, defoliación o zinc bajo.”
+
+N alto posible:
+- brotes largos;
+- copa muy vegetativa;
+- sombreo;
+- consumo de agua alto;
+- salinidad por fertilización acumulada;
+- baja eficiencia si el árbol no tiene agua/Zn;
+- riesgo de brote tierno tardío.
+
+Mensaje:
+“El nitrógeno está alto para esta etapa. En nogal, demasiado N puede generar vigor y no necesariamente más nuez llena.”
+
+P bajo posible:
+- bajo crecimiento radicular;
+- arranque lento;
+- raíz débil;
+- energía baja en etapas tempranas.
+
+Mensaje:
+“El fósforo pesa más en raíz y arranque. Si el pH está alto, el problema puede ser disponibilidad.”
+
+P alto posible:
+- bloqueo o antagonismo con Zn/Cu/Fe;
+- poca utilidad si no hay deficiencia real.
+
+Mensaje:
+“No conviene corregir P sin análisis; en nogal, P alto puede complicar micronutrientes.”
+
+K bajo posible:
+- nuez chica;
+- almendra mal llenada;
+- menor calidad;
+- menor tolerancia a estrés hídrico;
+- borde de hojas viejas quemado en casos de deficiencia/desbalance.
+
+Mensaje:
+“El potasio pesa mucho desde amarre y llenado de almendra. Revisa también agua, salinidad y carga.”
+
+K alto posible:
+- EC alta;
+- estrés osmótico;
+- desbalance Mg/Ca;
+- falsa sensación de “muy bien” si el agua está mal.
+
+Mensaje:
+“El K ayuda a llenar la nuez, pero no debe leerse aislado. Revisa EC, humedad y balance con Mg/Ca.”
+
+Zn bajo contextual:
+- roseta;
+- hoja chica;
+- entrenudos cortos;
+- brotación débil;
+- mala expansión foliar;
+- menor fotosíntesis.
+
+Mensaje:
+“BIO-G v1 no mide zinc, pero en nogal es clave. Con pH alto y hoja chica, revisa Zn antes de culpar N.”
+
+Fe/Mn bajo contextual:
+- hojas jóvenes amarillas con nervaduras verdes;
+- clorosis en suelos calizos;
+- pH alto/bicarbonatos.
+
+Mensaje:
+“Puede haber hierro o manganeso en el suelo, pero no estar disponible por pH alto/caliza.”
+
+B bajo/contextual:
+- mal cuajado;
+- tejido joven débil;
+- posible mala floración, pero estrecho margen con toxicidad.
+
+Mensaje:
+“El boro importa, pero su exceso puede ser tóxico. Confirmar antes de aplicar.”
+
+Mg bajo contextual:
+- clorosis internerval en hojas viejas;
+- baja fotosíntesis;
+- puede agravarse con K alto.
+
+Mensaje:
+“Magnesio debe revisarse junto con K/Ca y pH, no aislado.”
+
+Salinidad / B / Na / Cl:
+- quemadura marginal;
+- bajo vigor;
+- nuez mal llenada;
+- caída;
+- estrés hídrico aunque se riegue.
+
+Mensaje:
+“Las orillas quemadas pueden ser sales o toxicidad, no solo falta de potasio. Revisa EC, agua, B/Na/Cl y drenaje.”
+
+================================================================================
+15. REFERENCIAS DE DOSIS — SOLO MODO AVANZADO / NO RECETA
+================================================================================
+
+Esta sección NO alimenta recomendaciones automáticas en BIO-G v1.
+Sirve para:
+- calibración técnica;
+- modo agrónomo;
+- documentación;
+- pruebas unitarias de coherencia;
+- comparación con análisis de suelo/hoja/agua.
+
+Regla de producto:
+La app puede mostrar “referencia técnica” o “rango histórico consultado”, pero no debe decir
+“aplica esta dosis” sin análisis, etapa, vigor, suelo, agua, clima, carga y asesoría regional.
+
+15.1 Nitrógeno en huertos adultos
+
+Referencias técnicas muestran rangos muy variables según región y sistema:
+- NMSU maneja para árboles maduros 150–200 lb de N real por acre/año como referencia general,
+  con ajuste por crecimiento terminal.
+- Algunas guías del sureste reportan que muchos huertos no requieren más de 100–125 lb N/acre
+  incluso en años de carga fuerte.
+- Estudios mexicanos en Western Schley muestran que más N no siempre significa mejor respuesta;
+  en un estudio, 100 kg N/ha tuvo alta eficiencia y buen rendimiento, mientras que otros estudios
+  regionales reportan respuestas entre 60 y 160 kg N/ha según año, sitio y manejo.
+
+Lectura BIO-G:
+- No usar una tabla única universal.
+- N se ajusta por:
+  - crecimiento terminal;
+  - análisis foliar;
+  - carga de nuez;
+  - riego;
+  - salinidad;
+  - pH;
+  - sistema;
+  - alternancia;
+  - defoliación/postcosecha;
+  - edad/densidad.
+
+15.2 Crecimiento terminal como sensor humano
+
+Referencia de manejo:
+- Árbol adulto productivo: crecimiento terminal deseado frecuente 6–12 pulgadas/año
+  en parte productiva.
+- Si crecimiento >12 pulgadas, reducir N.
+- Si crecimiento <6 pulgadas, N puede estar bajo, pero primero revisar agua, salinidad, raíz y Zn.
+- En árboles jóvenes, crecimiento deseable puede ser mayor; algunas guías mencionan 2–3 pies o
+  12–36 pulgadas/año según edad/sistema.
+
+Campo UX opcional:
+shootGrowthStatus:
+- low
+- adequate
+- excessive
+- unknown
+
+Reglas:
+- N alto + shootGrowthStatus=excessive = advertencia.
+- N bajo + shootGrowthStatus=low + agua/pH/EC correctos = posible N real.
+- N bajo + shootGrowthStatus=low + pH alto/roseta = posible Zn.
+- N alto + baja carga = riesgo de vigor.
+
+15.3 N por carga esperada
+
+Referencia conceptual:
+- En año “on”, algunas guías dividen N: parte temprana y parte ajustada a la carga esperada.
+- Una regla clásica de NMSU: mitad del N recomendado en abril y segunda aplicación según nuez esperada.
+- En BIO-G, esto solo puede existir en modo agrónomo porque requiere rendimiento esperado y análisis.
+
+Decisión:
+- BIO-G v1 normal no calcula dosis por lb de nuez esperada.
+- El documento de rendimiento puede alimentar contexto de carga/rendimiento esperado.
+- Si rendimiento esperado es alto y la hoja está activa, aumentar prioridad de agua/K/postcosecha, no dar dosis.
+
+15.4 Fósforo y potasio
+
+Referencias:
+- P y K se mueven lentamente; se corrigen mejor antes de plantar o por análisis.
+- P puede incorporarse antes de plantar si el análisis lo indica.
+- P/K deficientes deben corregirse con suelo/foliar, pero aplicaciones anuales sin deficiencia pueden no ser necesarias.
+- En leaf analysis, P bajo <0.12–0.14% y K bajo <0.85–1.0% suelen disparar revisión en algunas guías.
+
+Lectura BIO-G:
+- P/K no deben aplicarse “por costumbre” si suelo/foliar están suficientes.
+- K sí recibe alta prioridad en fruit_fill, pero siempre cruza agua/EC.
+- P alto puede afectar Zn/Cu; no celebrarlo.
+
+15.5 Zinc
+
+Referencias:
+- Zn foliar es práctica común en nogal pecanero.
+- En pH alto, aplicación de Zn al suelo suele ser menos efectiva.
+- El programa de Zn suele concentrarse desde budbreak y primera mitad de temporada.
+- Árboles jóvenes/vigorosos pueden necesitar más vigilancia.
+
+Lectura BIO-G:
+- No recomendar dosis de Zn en modo simple.
+- Sí mostrar alerta contextual:
+  “En nogal, zinc es clave para hoja y brote. Si hay roseta/hoja chica, confirma con análisis foliar.”
+- Mantener Zn como modo avanzado y pregunta UX, no sensor v1.
+
+15.6 Salinidad y agua
+
+Referencias:
+- En pecan del suroeste, ECe cercana a 2 dS/m puede considerarse límite sin reducción de crecimiento.
+- ECe 3.5 dS/m puede reducir crecimiento de forma importante.
+- 5 dS/m puede asociarse con muerte regresiva de ramas.
+- 6 dS/m o más puede ser severo.
+- EC de agua, drenaje, lixiviación y SAR/Na/B/Cl importan.
+
+Lectura BIO-G:
+- Si EC sube, no empujar fertilizante.
+- Si el agua ya trae sales, “fertilizar más” puede empeorar.
+- En norte de México, la salinidad debe ser parte central del motor.
+
+15.7 Modo avanzado por hectárea / árbol
+
+Variables requeridas:
+- árboles/ha;
+- edad/estado productivo;
+- rendimiento esperado;
+- análisis foliar;
+- análisis de suelo;
+- análisis de agua;
+- pH;
+- EC;
+- textura;
+- sistema de riego;
+- vigor terminal;
+- carga de nuez;
+- historial de alternancia.
+
+Fórmulas conceptuales:
+árboles_ha = 10000 / (distancia_filas_m * distancia_arboles_m)
+kg_por_árbol = kg_ha / árboles_ha
+kg_ha = kg_por_árbol * árboles_ha
+
+Regla:
+No comparar gramos/árbol sin saber densidad.
+No convertir kg/ha de N en recomendación si EC/agua/pH/vigor/carga no están claros.
+
+================================================================================
+16. MEMORIA NUTRICIONAL DEL NOGAL
+================================================================================
+
+WalnutTreeNutritionMemory sugerido:
+
+- lastCyclePostHarvestReserveRisk: low | medium | high | unknown
+- lastCycleFruitFillWaterStress: low | medium | high | unknown
+- lastCycleFruitFillKStress: low | medium | high | unknown
+- lastCycleLateNitrogenExcessRisk: low | medium | high | unknown
+- lastCycleZincAvailabilityRisk: low | medium | high | unknown
+- lastCycleEcNutritionStress: low | medium | high | unknown
+- lastCyclePhAvailabilityRisk: low | medium | high | unknown
+- lastCycleCompactionRootRisk: low | medium | high | unknown
+- lastCycleDefoliationBeforeReserveRecharge: low | medium | high | unknown
+- lastCycleHeavyCropReserveDrain: low | medium | high | unknown
+- lastCycleLowCropVigorRisk: low | medium | high | unknown
+- lastCycleKernelFillQualityRisk: low | medium | high | unknown
+- lastCycleAlternateBearingRisk: low | medium | high | unknown
+- lastCycleViviparyOrLateWaterRisk: low | medium | high | unknown
+- lastCycleSalinityMarginalBurnRisk: low | medium | high | unknown
+
+Eventos que deben guardarse:
+- N alto en fruit_fill/harvest_maturity.
+- K bajo en fruit_fill.
+- humedad baja en fruit_set/fruit_fill.
+- EC alta en brotación/cuajado/llenado/postcosecha.
+- pH alto con hoja chica/roseta.
+- defoliación temprana por pulgón/ácaros/costra.
+- carga alta sin recuperación postcosecha.
+- baja carga por helada/polinización.
+- nuez vana/mal llenado.
+- salinidad/quemadura marginal.
+
+Impacto en siguiente ciclo:
+- postHarvestReserveRisk high:
+  - budbreak confidence baja;
+  - flowering confidence baja;
+  - fruit_set confidence baja.
+- fruitFillWaterStress high:
+  - calidad/rendimiento del ciclo actual baja;
+  - alternateBearingRisk sube.
+- fruitFillKStress high:
+  - riesgo de nuez chica/mal llenado;
+  - no extrapolar rendimiento sin revisión.
+- zincAvailabilityRisk high:
+  - budbreak/vegetative_growth warnings;
+  - no diagnosticar N bajo automáticamente.
+- lateNitrogenExcessRisk high:
+  - advertencia de vigor/carga baja;
+  - revisar poda y crecimiento terminal.
+- ecNutritionStress high:
+  - baja confianza NPK;
+  - priorizar agua/sales.
+- heavyCropReserveDrain high:
+  - post_harvest y siguiente budbreak/flowering reciben advertencia de reservas.
+
+Regla:
+Un nogal que sufrió estrés fuerte no vuelve a “óptimo” solo porque hoy los sensores se ven bien.
+Debe conservar una advertencia suave o memoria de recuperación según etapa.
+
+================================================================================
+17. MODIFICADORES POR PERFIL NG
+================================================================================
+
+Regla:
+Los perfiles NG NO cambian la estructura fenológica ni los StageTargets base.
+Solo ajustan sensibilidad, copy, confianza y presión de algunas alertas.
+
+NG-SKIP / Nogal general:
+- Usar targets universales amplios.
+- Confianza media si etapa visible; baja si solo se sabe “nogal”.
+- Mensajes conservadores.
+- No asumir variedad, tipo floral, densidad, edad ni rendimiento.
+- Zn contextual siempre activo.
+
+ng_01_western / Western Schley:
+- Base fuerte para Chihuahua/norte.
+- Subir atención a:
+  - N eficiente, no excesivo;
+  - Zn;
+  - agua en llenado;
+  - K en fruit_fill;
+  - alternancia;
+  - salinidad.
+- Mensaje: “Western responde a manejo fino de agua/N/Zn; no todo se resuelve con más N.”
+
+ng_02_wichita:
+- Cultivar productivo/vigoroso y usado en bloque con Western.
+- Subir atención a:
+  - vigor;
+  - N alto;
+  - Zn;
+  - llenado/calidad;
+  - salinidad;
+  - carga.
+- Si N alto + baja carga, advertir vigor fuerte.
+- Mensaje: “Wichita puede responder mucho a manejo, pero requiere balance para no irse a vigor.”
+
+ng_03_western_wichita:
+- Bloque comercial con polinización robusta.
+- Usar enfoque productivo medio-alto.
+- Subir atención a:
+  - carga de nuez;
+  - K en fruit_fill;
+  - agua;
+  - postcosecha;
+  - alternancia;
+  - Zn.
+- Si carga alta, post_harvest tiene más importancia.
+
+ng_04_criollo_regional:
+- Mayor variabilidad genética y de manejo.
+- Usar targets amplios y confianza moderada.
+- No sobre-alertar por pequeñas desviaciones.
+- Subir atención a:
+  - huerto viejo;
+  - raíz/suelo;
+  - pH;
+  - salinidad;
+  - Zn/Fe contextual;
+  - alternancia;
+  - defoliación.
+- Mensaje: “En huertos viejos/regionales, suelo, agua y memoria pesan tanto como NPK.”
+
+ng_05_temprano_nuevo / Pawnee-Kanza-Cheyenne:
+- Fenología puede adelantar ventanas.
+- Subir atención a:
+  - brotación temprana;
+  - Zn en arranque;
+  - helada tardía;
+  - agua/K en fruit_set/fruit_fill;
+  - evitar N tardío si cosecha temprana deja postcosecha larga.
+- Pawnee puede tener madurez más temprana; no convertir fruit_fill en harvest_maturity.
+- Mensaje: “En tempranos, el arranque y el llenado pueden adelantarse; etapa visible manda.”
+
+================================================================================
+18. PSEUDOCÓDIGO DE MOTOR
+================================================================================
+
+function resolveTargets(profileId, perennialStateId, phenologyStageId, nutritionMemory):
+  stage = normalizeTreeStageId(phenologyStageId ?? unknown)
+  base = walnutUniversalStageTargets[stage]
+  modifier = walnutProfileModifiers[profileId ?? ng_skip]
+  statePolicy = treeStatePolicies[perennialStateId ?? unknown]
+
+  targets = applyModifier(base, modifier)
+  targets = applyStatePolicy(targets, statePolicy)
+
+  if perennialStateId == newly_planted:
+    lower N target max
+    increase EC/resistance/moisture weights
+    disable fruit-specific messages unless user explicitly selected fruit stage
+
+  if perennialStateId == juvenile_non_productive:
+    allow N for structure
+    keep Zn contextual
+    disable harvest/nut quality messages unless stage explicitly indicates fruit
+
+  if stage == fruit_fill:
+    force copy identity = "llenado de nuez / almendra"
+    prohibit harvest/cosecha/madurez copy
+    increase K priority
+    increase water priority
+    if soilMoisture low:
+      prioritize water over K
+    if EC high:
+      block fertilizer push
+
+  if stage == harvest_maturity:
+    allow copy identity = "madurez/cosecha/ruezno"
+    keep N low
+    warn on N high
+
+  if stage == post_harvest:
+    if leafActive == false:
+      lower nutritionBoostConfidence
+      lower N/K actionability
+    if EC high or soilMoisture critical:
+      block nutrition push
+    if nutritionMemory.heavyCropReserveDrain == high:
+      add warning "recuperación de reservas"
+
+  if nutritionMemory.lastCyclePostHarvestReserveRisk == high and stage in [budbreak, flowering, fruit_set]:
+    lowerConfidence()
+    addContextWarning("reservas posiblemente bajas")
+
+  if pH high and visual rosette/littleLeaf:
+    addContextWarning("posible disponibilidad de zinc")
+    do not classify as pure N deficiency
+
+  return targets
+
+function evaluateWalnutNutrition(t, stage, targets, weights, profile, memory):
+  eval = TreeAgroScoreEngine.evaluate(
+    t: t,
+    cropKey: 'walnut_tree',
+    modifier: WalnutTreeNutritionModifier(profile),
+    stageId: stage,
+    targets: targets,
+    weights: weights,
+  )
+
+  if eval.metrics.ec is high/critical:
+    block aggressive fertilizer messages
+
+  if eval.metrics.soilMoisture is criticalLow and stage in [fruit_set, fruit_fill]:
+    prioritize water and kernel/nut set message
+
+  if stage == fruit_fill and eval.metrics.k is low and water/EC/pH are ok:
+    show potassium/kernels/nut-fill warning
+
+  if stage == fruit_fill and eval.metrics.n is excess:
+    show "vigor vs llenado" warning, not harvest warning
+
+  if stage == harvest_maturity and eval.metrics.n is excess:
+    show "madurez/cosecha/calidad final" warning
+
+  return eval
+
+================================================================================
+19. TESTS MÍNIMOS RECOMENDADOS
+================================================================================
+
+1) walnut_agro_range_contract_test
+Caso:
+Revisar todos los StageTargets suelo/ambiente.
+Esperado:
+Ningún soilMoisture/soilTemp/pH/EC/resistance tiene lowMax == optimalMin ni optimalMax == highMin.
+EC y resistance usan lowMax -0.01 documentado.
+
+2) walnut_npk_caps_test
+Caso:
+NpkCaps.forCropMetric(crop_walnut_tree)
+Esperado:
+N 120, P 95, K 180.
+
+3) walnut_fruit_fill_k_low_water_ok_test
+Caso:
+stage fruit_fill, K bajo, soilMoisture óptima, EC normal.
+Esperado:
+mensaje prioriza K/llenado de almendra/calidad.
+
+4) walnut_fruit_fill_k_low_water_low_test
+Caso:
+stage fruit_fill, K bajo, soilMoisture criticalLow.
+Esperado:
+mensaje prioriza agua/absorción antes que fertilización potásica.
+
+5) walnut_high_ec_blocks_fertilizer_test
+Caso:
+stage fruit_fill, N/P/K bajos, EC criticalHigh.
+Esperado:
+no sugerir fertilizar; advertir salinidad/acumulación.
+
+6) walnut_ph_high_rosette_not_n_test
+Caso:
+pH alto + hoja chica/roseta + N normal.
+Esperado:
+contexto Zn/disponibilidad, no deficiencia de N.
+
+7) walnut_high_n_low_crop_test
+Caso:
+vegetative_growth o fruit_fill, N alto, baja carga por helada/polinización.
+Esperado:
+advertir vigor excesivo, no decir óptimo.
+
+8) walnut_fruit_fill_n_high_no_harvest_copy_test
+Caso:
+fruit_fill + N alto/exceso.
+Esperado:
+puede marcar exceso, pero NO contiene “cosecha”, “cerca de cosecha”, “madurez”, “ruezno abriendo”.
+Debe hablar de llenado/almendra/vigor.
+
+9) walnut_harvest_maturity_n_high_copy_test
+Caso:
+harvest_maturity + N alto/exceso.
+Esperado:
+sí puede hablar de madurez/cosecha/ruezno/calidad final.
+
+10) walnut_post_harvest_leaf_active_test
+Caso:
+post_harvest, hoja activa, humedad estable, EC baja.
+Esperado:
+permitir mensaje de reservas/recuperación.
+
+11) walnut_post_harvest_no_leaf_test
+Caso:
+post_harvest tardío sin hoja activa.
+Esperado:
+no recomendar N/K; transición a dormancia.
+
+12) walnut_newly_planted_n_high_test
+Caso:
+newly_planted + N alto.
+Esperado:
+advertir raíz/salinidad; no producción.
+
+13) walnut_dormancy_npk_leve_test
+Caso:
+dormancy + NPK fuera de target leve.
+Esperado:
+no tumbar score agresivamente.
+
+14) walnut_unknown_stage_test
+Caso:
+stage unknown.
+Esperado:
+targets conservadores y pedir etapa visible.
+
+15) walnut_western_profile_modifier_test
+Caso:
+ng_01_western + fruit_fill + water low.
+Esperado:
+mensaje específico de Western/norte: agua y llenado de almendra, no N genérico.
+
+16) walnut_wichita_profile_modifier_test
+Caso:
+ng_02_wichita + N alto + baja carga.
+Esperado:
+advertir vigor/carga, no recomendar más N.
+
+17) walnut_criollo_profile_confidence_test
+Caso:
+ng_04_criollo_regional + stage unknown.
+Esperado:
+confianza moderada/baja, no sobre-alertar por pequeñas desviaciones.
+
+18) walnut_temprano_stage_identity_test
+Caso:
+ng_05_temprano_nuevo + fruit_fill.
+Esperado:
+puede adelantar ventanas, pero no convertir fruit_fill en harvest_maturity.
+
+19) walnut_post_harvest_memory_test
+Caso:
+lastCyclePostHarvestReserveRisk high + budbreak.
+Esperado:
+bajar confianza y mostrar advertencia de reservas.
+
+20) walnut_npk_screen_uses_agrometriceval_test
+Caso:
+dashboard/NPK screen con eval disponible.
+Esperado:
+usar AgroMetricEval del motor antes que fallback visual.
+
+================================================================================
+20. NO HACER EN CÓDIGO
+================================================================================
+
+No usar sowingDate como eje de nogal.
+No cerrar cultivo en cosecha.
+No apagar post_harvest.
+No usar un isLate genérico para copy que mezcle fruit_fill y harvest_maturity.
+No recomendar kg/ha automáticos.
+No decir “aplica N” si EC/humedad/pH/resistance están mal.
+No tratar N alto como bueno por defecto.
+No tratar K alto como bueno por defecto.
+No convertir Zn/Fe/Mn/Ni/B/Ca/Mg en sensores obligatorios v1.
+No crear etapas fuera del estándar.
+No borrar memoria al migrar de ng_skip a perfil específico.
+No copiar dosis de NMSU/OSU/MSU/Texas/Chihuahua como receta universal.
+No copiar marcas comerciales.
+No usar foros como fuente de umbrales.
+No interpretar hoja chica/roseta como N bajo sin revisar pH/Zn.
+No interpretar borde quemado como K bajo sin revisar salinidad/B/Na/Cl.
+No interpretar nuez vana como falta de fertilizante sin revisar agua/carga/polinización.
+No empujar N en baja carga por helada o mala polinización.
+No usar “fruto” en UX si se puede decir “nuez”, “almendra”, “ruezno”, “llenado”.
+
+================================================================================
+21. ARCHIVOS ESPERADOS EN CÓDIGO
+================================================================================
+
+Archivos directos:
+- lib/core/crops/walnut_tree/walnut_tree_universal_profile.dart
+- lib/core/crops/walnut_tree/walnut_tree_crop_definition.dart
+- lib/core/agro/walnut_tree_nutrition_modifier.dart
+- lib/core/agro/walnut_tree_agro_score_engine.dart
+
+Alta en caps:
+- lib/core/agro/npk_caps.dart
+  - N: 120.0
+  - P: 95.0
+  - K: 180.0
+  para:
+  - walnut_tree
+  - crop_walnut_tree
+  - nogal
+  - nogal_pecanero
+  - pecan
+
+Wrapper recomendado:
+class WalnutTreeAgroScoreEngine {
+  const WalnutTreeAgroScoreEngine._();
+
+  static ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluate({
+    required BioGTelemetry t,
+    required String stageId,
+    required String stageLabelEs,
+    required StageTargets targets,
+    required StageWeights weights,
+    AlertsState alertsState = const AlertsState(),
+    Calibration? cal,
+    String? cropLabel,
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+  }) {
+    return TreeAgroScoreEngine.evaluate(
+      t: t,
+      cropKey: 'walnut_tree',
+      modifier: resolveWalnutTreeNutritionModifier(profileId),
+      stageId: stageId,
+      stageLabelEs: stageLabelEs,
+      targets: targets,
+      weights: weights,
+      alertsState: alertsState,
+      cal: cal,
+      cropLabel: cropLabel ?? 'Nogal',
+      profileId: profileId,
+      varietyId: varietyId,
+      varietyAlias: varietyAlias,
+    );
+  }
+}
+
+================================================================================
+22. FUENTES Y TRAZABILIDAD
+================================================================================
+
+S1. BIO-G — Estandar BIO-G para integración de árboles perennes v1.5 con addendum.
+Uso:
+- estructura oficial de 5 documentos;
+- no usar sowingDate como eje;
+- post_harvest activo;
+- contrato StageTargets/AgroRange;
+- contrato v1.5 de etapa/NPK/copy/UI.
+
+S2. BIO-G — 05_Guia_Fertilizacion_NPK_Targets_BioG_Pera_v1_1_reforzada.txt.
+Uso:
+- plantilla editorial;
+- estructura de StageTargets/StageWeights;
+- reglas de motor;
+- no convertir dosis en receta.
+
+S3. BIO-G — 05_Guia_Fertilizacion_NPK_Targets_BioG_Manzano_v1_1_mejorado.txt.
+Uso:
+- patrón de reservas perennes;
+- N tardío;
+- post_harvest activo;
+- estructura de wrapper/caps.
+
+S4. BIO-G — 05_Guia_Fertilizacion_NPK_Targets_BioG_Durazno_DZ_v1_1_reforzada.txt.
+Uso:
+- contrato fruit_fill vs harvest_maturity;
+- K protagonista de fruto;
+- NpkCaps por árbol con alta demanda;
+- reglas de no sobrefertilizar por agua/EC.
+
+S5. Código BIO-G lib.zip revisado.
+Uso:
+- tree_agro_score_engine.dart como motor genérico;
+- tree_nutrition_modifier.dart como contrato común;
+- pear/apple/peach universal_profile como patrón;
+- NpkCaps como conversión de sensor crudo a índice relativo;
+- crop_definition evaluateTelemetry con StageTargets + StageWeights.
+
+S6. New Mexico State University — Pecan Orchard Fertilization.
+URL:
+https://pubs.nmsu.edu/_h/H602/index.html
+Uso:
+- leaf analysis como estado real absorbido por el árbol;
+- N como nutriente clave;
+- N maduro 150–200 lb/acre como referencia regional;
+- crecimiento terminal 6–12 pulgadas;
+- ajuste por carga;
+- Zn e iron contextuales;
+- P preplantación;
+- prácticas de suelo/cover crop.
+
+S7. New Mexico State University — Diagnosing Nutrient Disorders of New Mexico Pecan Trees.
+URL:
+https://pubs.nmsu.edu/_h/H658/index.html
+Uso:
+- síntomas visibles no bastan;
+- análisis foliar anual;
+- método de muestreo de foliolos;
+- consistencia de protocolo;
+- comparación por bloque/cultivar.
+
+S8. New Mexico State University — Growth and Development of Pecan Nuts.
+URL:
+https://pubs.nmsu.edu/_h/H618/index.html
+Uso:
+- nuez como órgano de almacenamiento;
+- alternancia;
+- caída de flores/nuececillas por reservas, humedad o polinización;
+- dos fases: tamaño de nuez y llenado/almendra;
+- importancia de humedad y alimento disponible.
+
+S9. Oklahoma State University — Fertilizing Pecan and Fruit Trees.
+URL:
+https://extension.okstate.edu/fact-sheets/fertilizing-pecan-and-fruit-trees
+Uso:
+- fertilizantes no compensan malas condiciones;
+- zinc foliar con pH alto;
+- muestreo foliar;
+- reducir N si se pierde flor/fruta por helada;
+- mantener P/K y Zn según contexto.
+
+S10. Oklahoma State University — Establishing a Pecan Orchard.
+URL:
+https://extension.okstate.edu/fact-sheets/establishing-a-pecan-orchard
+Uso:
+- pH 6.0–7.0;
+- P/K se mueven lentamente y conviene incorporarlos antes de plantar;
+- calidad de agua antes de establecer huerto;
+- Na/B/sales como limitantes.
+
+S11. Mississippi State University Extension — Fertilizing Pecan Trees.
+URL:
+https://extension.msstate.edu/sites/default/files/publications/P3055.pdf
+Uso:
+- suelo primero;
+- pH 6.0–6.5/6.0–7.0;
+- foliar como mejor barómetro;
+- rangos foliares N/P/K/S/Ca/Mg/B/Cu/Fe/Mn/Zn/Ni;
+- Zn como nutriente muy demandado;
+- recomendaciones por análisis foliar.
+
+S12. University of Arizona Cooperative Extension — Salinity Management and Soil Amendments for Southwestern Pecan Orchards.
+URL:
+https://extension.arizona.edu/sites/default/files/2025-03/az1411-2011.pdf
+Uso:
+- ECe 3.5 dS/m puede reducir crecimiento;
+- ECe 5 dS/m puede generar dieback;
+- ECe >=6 dS/m puede ser severo;
+- pecan moderately sensitive to Na/B toxicity;
+- ECe sin reducción aproximada 2 dS/m;
+- ECw/ECe/leaching/drenaje.
+
+S13. Texas A&M / Aggie Horticulture — Commercial Pecan Orchards in Texas.
+URL:
+https://aggie-horticulture.tamu.edu/fruit-nut/commercial-pecan-orchards-in-texas/
+Uso:
+- Zn foliar esencial en pecan;
+- aplicaciones tempranas/frecuentes;
+- jóvenes no productivos requieren vigilancia de Zn;
+- N puede ayudar absorción foliar de Zn;
+- no convertir en receta v1.
+
+S14. UGA Pecan Extension — What to Look for in your Leaf Samples.
+URL:
+https://site.extension.uga.edu/pecan/2015/07/what-to-look-for-in-your-leaf-samples/
+Uso:
+- ventana de muestreo julio 7–agosto 7;
+- nutrientes se estabilizan a mitad de temporada;
+- la fruta madura actúa como sink.
+
+S15. Revista Chapingo / SciELO México — Nitrogen fertilization in pecan and its effect on leaf nutrient concentration, yield and nut quality.
+URL:
+https://www.scielo.org.mx/scielo.php?pid=S1027-152X2020000300163&script=sci_arttext
+Uso:
+- investigación mexicana en Western Schley;
+- dosis 100/150/200 kg N/ha;
+- 100 kg N/ha con alta eficiencia y rendimiento en estudio;
+- N, agua y manejo afectan rendimiento/calidad;
+- Chihuahua y norte de México como contexto productivo;
+- no asumir que más N es mejor.
+
+S16. Journal / HortTechnology — Pecan Leaf Elemental Sufficiency Ranges and Fertilizer Recommendations.
+URL:
+https://journals.ashs.org/view/journals/horttech/22/5/article-p594.xml
+Uso:
+- base científica de rangos foliares para baja/alta entrada;
+- referencia indirecta citada por MSU;
+- no usar como única fuente.
+
+S17. Foros y conversaciones de productores.
+Uso:
+- lenguaje real del usuario;
+- confusiones visuales;
+- “nuez vana”, “roseta”, “hoja chica”, “quemado”, “agua salada”, “mucho follaje”.
+No usados para umbrales.
+
+================================================================================
+23. CIERRE TÉCNICO
+================================================================================
+
+Este documento deja listo el módulo 05 de Nogal para BIO-G:
+
+- Prioridades NPK por etapa.
+- StageTargets cableables.
+- StageWeights por etapa.
+- Reglas evaluateTelemetry.
+- Reglas de NpkCaps.
+- Contexto obligatorio de Zn sin convertirlo en sensor v1.
+- Salinidad como bloqueo fuerte.
+- Agua y K como núcleo de fruit_fill.
+- N como protagonista con advertencia de exceso/vigor.
+- P como raíz/arranque/preplantación, no héroe universal.
+- Modo avanzado con foliar/suelo/agua.
+- Memoria nutricional multianual.
+- Modificadores por perfil NG.
+- Tests mínimos para Codex.
+- Lenguaje UX seguro.
+
+Conclusión:
+El nogal pecanero debe tratarse como árbol grande, perenne, de nuez, con memoria fuerte,
+alto peso de agua, nitrógeno, zinc y potasio, y gran sensibilidad a salinidad/pH/carga.
+BIO-G no debe recetar fertilización; debe interpretar etapa + sensor + suelo + memoria,
+pedir confirmación y proteger al productor de mensajes peligrosos.
+
+La cosecha no cierra el cultivo.
+La postcosecha alimenta el siguiente ciclo.
+fruit_fill es llenado de almendra, no cosecha.
+Zinc importa, pero no es sensor v1.
+Agua y salinidad mandan antes que NPK.

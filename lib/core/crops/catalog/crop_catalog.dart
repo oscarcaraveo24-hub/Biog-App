@@ -13,6 +13,9 @@ import 'package:bio_g/core/crops/lettuce/lettuce_catalog.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
 import 'package:bio_g/core/crops/oat/oat_catalog.dart';
 import 'package:bio_g/core/crops/onion/onion_catalog.dart';
+import 'package:bio_g/core/crops/peach_tree/peach_tree_catalog.dart';
+import 'package:bio_g/core/crops/pear_tree/pear_tree_catalog.dart';
+import 'package:bio_g/core/crops/walnut_tree/walnut_tree_catalog.dart';
 import 'package:bio_g/core/crops/spinach/spinach_catalog.dart';
 import 'package:bio_g/core/crops/squash/squash_catalog.dart';
 import 'package:bio_g/core/crops/tomato/tomato_catalog.dart';
@@ -49,6 +52,9 @@ class CropCatalog {
   static const String onionCropId = kCropOnion;
   static const String garlicCropId = kCropGarlic;
   static const String appleTreeCropId = kCropAppleTree;
+  static const String pearTreeCropId = kCropPearTree;
+  static const String peachTreeCropId = kCropPeachTree;
+  static const String walnutTreeCropId = kCropWalnutTree;
 
   static const String tomatoDefaultProfileId = 'tm_gen';
   static const String tomatoDefaultCalendarId = 'tomato_default';
@@ -71,6 +77,15 @@ class CropCatalog {
 
   // Manzano (perenne) — perfil general/seguro AP-SKIP. No es fallow.
   static const String appleTreeDefaultProfileId = kApSkip;
+
+  // Pera (perenne) — perfil general/seguro PR-SKIP. No es fallow.
+  static const String pearTreeDefaultProfileId = kPrSkip;
+
+  // Durazno (perenne, frutal de hueso) — perfil general/seguro DZ-SKIP. No es fallow.
+  static const String peachTreeDefaultProfileId = kDzSkip;
+
+  // Nogal pecanero (perenne, frutal de nuez) — perfil general/seguro NG-SKIP. No es fallow.
+  static const String walnutTreeDefaultProfileId = kNgSkip;
 
   // ── Maize catalog constants ─────────────────────────────────────────────────
   static const String maizeDemoVarietyId = 'dk_2069';
@@ -668,6 +683,41 @@ class CropCatalog {
       enabled: true,
       defaultProfileId: appleTreeDefaultProfileId,
       profiles: appleTreeProfileEntries,
+    ),
+    // Pera habilitada: segundo árbol real. Sin calendarios: los árboles no usan
+    // fecha de siembra; el anclaje perenne vive en DeviceCropContext.
+    CropCatalogEntry(
+      cropId: pearTreeCropId,
+      categoryId: treeCategoryId,
+      label: 'Pera',
+      subtitle: 'Pyrus communis · árbol frutal perenne',
+      enabled: true,
+      defaultProfileId: pearTreeDefaultProfileId,
+      profiles: pearTreeProfileEntries,
+    ),
+    // Durazno habilitado: tercer árbol real y primer frutal de hueso/carozo.
+    // Sin calendarios: los árboles no usan fecha de siembra; el anclaje perenne
+    // vive en DeviceCropContext.
+    CropCatalogEntry(
+      cropId: peachTreeCropId,
+      categoryId: treeCategoryId,
+      label: 'Durazno',
+      subtitle: 'Prunus persica · árbol frutal perenne (hueso/carozo)',
+      enabled: true,
+      defaultProfileId: peachTreeDefaultProfileId,
+      profiles: peachTreeProfileEntries,
+    ),
+    // Nogal pecanero habilitado: cuarto árbol real y primer frutal de nuez. Sin
+    // calendarios: los árboles no usan fecha de siembra; el anclaje perenne vive
+    // en DeviceCropContext.
+    CropCatalogEntry(
+      cropId: walnutTreeCropId,
+      categoryId: treeCategoryId,
+      label: 'Nogal',
+      subtitle: 'Carya illinoinensis · árbol frutal perenne (nuez pecana)',
+      enabled: true,
+      defaultProfileId: walnutTreeDefaultProfileId,
+      profiles: walnutTreeProfileEntries,
     ),
   ];
 
@@ -1418,6 +1468,40 @@ class CropCatalog {
       'manzano' ||
       'manzana' ||
       'manzanos' => appleTreeCropId,
+      'crop_pear_tree' ||
+      'pear_tree' ||
+      'peartree' ||
+      'pear' ||
+      'pera' ||
+      'peral' ||
+      'peras' ||
+      'perales' => pearTreeCropId,
+      'crop_peach_tree' ||
+      'peach_tree' ||
+      'peachtree' ||
+      'peach' ||
+      'durazno' ||
+      'duraznos' ||
+      'duraznero' ||
+      'duraznera' ||
+      'melocoton' ||
+      'melocotón' ||
+      'melocotones' ||
+      'melocotonero' => peachTreeCropId,
+      'crop_walnut_tree' ||
+      'walnut_tree' ||
+      'walnuttree' ||
+      'walnut' ||
+      'nogal' ||
+      'nogales' ||
+      'nogal pecanero' ||
+      'nogal pecano' ||
+      'pecan' ||
+      'pecana' ||
+      'pecanero' ||
+      'nuez' ||
+      'nuez pecana' ||
+      'nuez pecanera' => walnutTreeCropId,
       _ => value,
     };
   }
@@ -1448,6 +1532,9 @@ class CropCatalog {
       onionCropId => 'Cebolla',
       garlicCropId => 'Ajo',
       appleTreeCropId => 'Manzano',
+      pearTreeCropId => 'Pera',
+      peachTreeCropId => 'Durazno',
+      walnutTreeCropId => 'Nogal',
       _ => 'Cultivo',
     };
   }

@@ -1,0 +1,1021 @@
+# 03_RENDIMIENTO_APROXIMADO_BIOG_NOGAL_NG_V1_REFORZADO
+
+BIO-G | Documento 03 oficial para arbol perenne
+Cultivo: Nogal pecanero / Nuez pecana
+Nombre cientifico: Carya illinoinensis (Wangenh.) K.Koch
+CropId recomendado: crop_walnut_tree
+Alias legacy sugerido: walnut_tree
+Prefijo de perfiles: NG
+Perfil general: ng_skip
+Version: v1 reforzada
+Uso: documento fuente para `walnut_tree_yield_reference.dart` y alta minima en `TreeYieldReferenceCatalog`.
+
+===============================================================================
+0. DECISIONES EJECUTIVAS Y CORRECCIONES
+===============================================================================
+
+0.1. Enfoque correcto
+Este documento modela rendimiento de NOGAL PECANERO, no nogal generico de castilla. Para BIO-G v1, "Nogal" significa principalmente nuez pecana comercial del norte de Mexico: Chihuahua, Sonora, Coahuila, Durango y zonas comparables del suroeste de Estados Unidos.
+
+0.2. Unidad principal
+La unidad principal de rendimiento es:
+
+- kg de nuez con cascara por arbol
+- toneladas de nuez con cascara por hectarea
+- kg totales de nuez con cascara si el usuario captura numero de arboles
+
+No se calcula "frutos frescos" ni "numero de frutos" como salida principal. La nuez puede existir como numero de nueces por kg, porcentaje de almendra y calidad, pero el motor de rendimiento v1 debe mantenerse en kg/arbol y t/ha para no contaminar la pantalla actual.
+
+0.3. No prometer cosecha
+La proyeccion BIO-G es aproximada. El documento no promete rendimiento. Entrega rango bajo / esperado / alto y confianza. El rendimiento real puede moverse fuerte por agua, alternancia, polinizacion, helada, plagas, llenado de almendra, carga del ano anterior, edad, poda, zinc y manejo de riego.
+
+0.4. Diferencia contra manzano/durazno/pera
+En nogal, el "fruto" que importa comercialmente es la nuez seca con cascara. La calidad puede mejorar o empeorar aunque los kg sean altos. Un ano muy cargado puede dar mas kg, pero con nuez chica, bajo porcentaje de almendra, mas nuez vana y menor floracion del siguiente ciclo. Por eso rendimiento y memoria multianual deben trabajar juntos.
+
+0.5. Regla BIO-G no negociable
+No usar sowingDate como eje de rendimiento. El rendimiento se estima por:
+
+kg/arbol base del perfil x estado productivo x densidad x manejo x agua x polinizacion x memoria de estres.
+
+La cosecha no cierra el cultivo. Postcosecha se mantiene activa porque define reservas para el siguiente ciclo.
+
+0.6. Relacion con el motor actual
+El zip revisado muestra dos capas existentes para arboles:
+
+A) Capa minima global:
+`core/yield/tree_yield_reference_catalog.dart`
+- Usa `TreeYieldReference`.
+- Estima kg totales = kg/arbol x numero de arboles.
+- Trabaja por `TreeProductiveTier`.
+- No persiste densidad ni modifica Supabase.
+- Sirve para pantalla simple.
+
+B) Capa completa por arbol:
+`core/crops/apple_tree/apple_tree_yield_reference.dart`
+`core/crops/pear_tree/pear_tree_yield_reference.dart`
+`core/crops/peach_tree/peach_tree_yield_reference.dart`
+
+Cada archivo completo usa:
+- `YieldRange(low, expected, high)`
+- `fullKgPerTree`
+- `expectedTonPerHa`
+- `ProductionState`
+- `ManagementLevel`
+- `IrrigationLevel`
+- `StressMemory`
+- `DensitySystem`
+- conversiones `treesPerHaFromSpacing`, `tonHaFromKgTree`, `kgTreeFromTonHa`
+- resolver tipo `resolve[Tree]Yield(...)`
+
+Para Nogal, se recomienda replicar esa arquitectura con:
+`core/crops/walnut_tree/walnut_tree_yield_reference.dart`
+
+===============================================================================
+1. OBJETIVO DEL DOCUMENTO
+===============================================================================
+
+Este documento define la referencia de rendimiento aproximado para Nogal en BIO-G. Debe permitir que Codex implemente una proyeccion conservadora, cableable y coherente con el motor actual de arboles perennes.
+
+Debe responder:
+
+- Cuanto puede producir un nogal por arbol segun su estado productivo.
+- Cuanto puede producir una hectarea segun densidad y manejo.
+- Como afecta el perfil NG: Western, Wichita, bloque Western/Wichita, criollo/regional y tempranos.
+- Como castigar rendimiento por falta de agua, mala polinizacion, helada, estres en llenado, plagas, deficiencia de zinc y alternancia.
+- Como mantener la memoria multianual sin convertirla en diagnostico cerrado.
+
+No debe responder:
+
+- Precio de la nuez.
+- Rentabilidad financiera completa.
+- Receta exacta de fertilizacion.
+- Numero exacto de nueces por arbol.
+- Prediccion comercial garantizada.
+- Contrato de compra o clasificacion de exportacion.
+
+===============================================================================
+2. BASE AGRONOMICA DE REFERENCIA
+===============================================================================
+
+2.1. Referencias fuertes usadas
+
+Las fuentes revisadas muestran que el rendimiento comercial de nogal pecanero se mueve en rangos amplios.
+
+Puntos de anclaje para BIO-G:
+
+- Universidad de Arizona, guia para huertos pequenos y traspatio: un arbol maduro puede promediar aproximadamente 40 a 50 lb/arbol, equivalente a 18 a 23 kg/arbol. Esta referencia es util para productores con pocos arboles, pero no basta para huertos comerciales intensivos.
+
+- NMSU Enterprise Budget 2024: para variedades comunes en Nuevo Mexico, se usa una base economica de 2,000 lb/acre de nuez limpia, seca y con cascara. Eso equivale aproximadamente a 2.24 t/ha.
+
+- Manejo del nogal pecanero con base en fenologia, documento tecnico mexicano: en regiones nogaleras de Chihuahua, bajo manejo comercial, se reportan promedios de 1.44 a 2.36 t/ha; como referencia de alta productividad estatal se propone 2.3 t/ha/ano. Tambien menciona huertas de centro-sur de Chihuahua con 3.1 t/ha de buena nuez, pero advierte que ese ano de alta carga puede disminuir el potencial de fructificacion del siguiente ciclo.
+
+- Estudios mexicanos con SIAP-SAGARPA 2016: Chihuahua aparece con 1.84 t/ha; Jimenez, Chihuahua con 2.0 t/ha; Hermosillo con 2.3 t/ha; Comarca Lagunera con 1.3 t/ha. Esto permite calibrar un rango realista para el norte de Mexico.
+
+- Agro Productividad 2020 con datos SIAP 2017: el promedio nacional fue 1.63 t/ha y Chihuahua 1.72 t/ha. A escala municipal, Chihuahua, Camargo y San Francisco de Conchos estuvieron alrededor de 2.03 a 2.14 t/ha, mientras zonas de menor rendimiento bajaron cerca de 0.89 a 1.06 t/ha.
+
+- Gobierno del Estado de Chihuahua / SIAP 2025: para 2025 se proyecto rendimiento promedio de 1.39 t/ha. Esto no debe usarse como techo agronomico, sino como recordatorio de que el rendimiento anual puede bajar fuerte por agua, clima o alternancia.
+
+2.2. Decision BIO-G de rango base
+
+Para BIO-G v1, el rendimiento de nogal debe quedar calibrado asi:
+
+- Bajo comercial: 0.5 a 1.2 t/ha
+- Comercial promedio conservador: 1.3 a 1.8 t/ha
+- Buen manejo regional: 1.8 a 2.4 t/ha
+- Muy buen manejo / fertirriego / buena zona: 2.4 a 3.1 t/ha
+- Excepcional o ano muy cargado: >3.1 t/ha solo como alerta de alternancia, no como promesa permanente
+
+2.3. Regla de no sobreestimar
+
+Si BIO-G no conoce densidad, estado productivo ni perfil, debe usar SKIP conservador. No debe mostrar 3 t/ha como expectativa por defecto.
+
+===============================================================================
+3. ENTRADAS MINIMAS PARA BIO-G
+===============================================================================
+
+3.1. Entradas recomendadas para pantalla simple
+
+- Cultivo: Nogal
+- Perfil: ng_skip o NG-01 a NG-05
+- Estado perenne: newly_planted, juvenile_non_productive, established, productive_season, unknown
+- Etapa fenologica: planting_transplant, root_establishment, juvenile_vegetative, dormancy, budbreak, flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest, unknown
+- Numero de arboles, si el usuario lo sabe
+
+3.2. Entradas recomendadas para calculo completo
+
+- Hectareas
+- Arboles por hectarea o marco de plantacion
+- Numero total de arboles
+- Perfil NG
+- Estado productivo
+- Nivel de manejo
+- Nivel de riego
+- Polinizador / compatibilidad conocida
+- Memoria de estres
+
+3.3. Entradas opcionales futuras
+
+- Porcentaje de almendra
+- Numero de nueces por kg
+- Humedad de nuez al momento de venta
+- Perdida por barrenador / ruezno / plagas
+- Alternancia historica por anos
+- Calidad comercial por color de almendra
+
+Estas entradas futuras no deben bloquear v1.
+
+===============================================================================
+4. ESTADOS PRODUCTIVOS PARA RENDIMIENTO
+===============================================================================
+
+El estado productivo es propio del rendimiento. No debe inventar nuevos TreeStateIds globales. Puede existir como enum local en `walnut_tree_yield_reference.dart`.
+
+Tabla recomendada:
+
+| Estado rendimiento | Descripcion BIO-G | Salida |
+|---|---|---|
+| nonProductive | Recien plantado, establecimiento o juvenil sin cosecha comercial | 0 kg/arbol |
+| firstBearing | Primeras cosechas comerciales ligeras | 5-25% del potencial adulto |
+| youngBearing | Produccion joven, arbol aun creciendo | 25-75% del potencial adulto |
+| fullBearing | Produccion plena o adulta | 70-120% del potencial adulto |
+| alternateLowYear | Ano bajo por alternancia, carga previa o reservas bajas | 15-70% del potencial adulto |
+| unknown | El usuario no sabe; estimar conservador | 30-80% del potencial adulto |
+
+4.1. Multiplicadores sugeridos para codigo
+
+```dart
+({double low, double expected, double high}) _productionStateFactors(
+  WalnutProductionState state,
+) {
+  return switch (state) {
+    WalnutProductionState.nonProductive => (low: 0, expected: 0, high: 0),
+    WalnutProductionState.firstBearing => (low: 0.05, expected: 0.15, high: 0.30),
+    WalnutProductionState.youngBearing => (low: 0.25, expected: 0.50, high: 0.75),
+    WalnutProductionState.fullBearing => (low: 0.70, expected: 1.00, high: 1.20),
+    WalnutProductionState.alternateLowYear => (low: 0.15, expected: 0.45, high: 0.70),
+    WalnutProductionState.unknown => (low: 0.25, expected: 0.55, high: 0.80),
+  };
+}
+```
+
+4.2. Inferencia desde estado perenne
+
+- newly_planted => nonProductive
+- juvenile_non_productive => nonProductive
+- established => unknown o firstBearing si el usuario reporta que ya produce poco
+- productive_season => fullBearing por defecto, salvo si el usuario marca alternancia baja
+- unknown => unknown
+
+4.3. Etapas que bloquean rendimiento
+
+Si la etapa es:
+
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+
+Entonces BIO-G proyecta 0 kg/arbol, con mensaje:
+
+"Todavia no proyectamos cosecha. En nogal joven importa mas formar raiz, estructura, luz y reservas que forzar produccion."
+
+===============================================================================
+5. DENSIDAD Y MARCO DE PLANTACION
+===============================================================================
+
+5.1. Formula
+
+`arbolesPorHa = 10000 / (distanciaEntreHileras_m * distanciaEntreArboles_m)`
+
+`tonHa = (kgPorArbol * arbolesPorHa) / 1000`
+
+`kgPorArbol = (tonHa * 1000) / arbolesPorHa`
+
+5.2. Densidades orientativas
+
+| Marco | Arboles/ha aprox. | Lectura BIO-G |
+|---|---:|---|
+| 14 x 14 m | 51 | Tradicional amplio / adulto grande |
+| 12 x 12 m | 69 | Tradicional comercial |
+| 10 x 10 m | 100 | Comercial semi-intensivo |
+| 9 x 9 m | 123 | Semi-intensivo |
+| 8 x 8 m | 156 | Intensivo joven / requiere manejo de copa |
+| 7 x 7 m | 204 | Alta densidad temporal, no asumir adulto permanente |
+| 6 x 6 m | 278 | Muy alta densidad, alto riesgo de sombra si no hay poda/aclareo |
+
+5.3. Regla de copa y sombreo
+
+El nogal no tiene portainjertos enanizantes equivalentes a manzano moderno. El arbol adulto grande reduce rendimiento por arbol y por hectarea si se encierra demasiado. Por eso el sistema debe aplicar un tope de kg/arbol segun densidad.
+
+5.4. Sistemas de densidad sugeridos para codigo
+
+```dart
+class WalnutDensitySystem {
+  const WalnutDensitySystem(this.id, this.kgPerTreeCap);
+
+  final String id;
+  final double kgPerTreeCap;
+
+  static const WalnutDensitySystem extensive = WalnutDensitySystem(
+    'extensive_or_old_spacing',
+    90,
+  );
+  static const WalnutDensitySystem traditionalCommercial = WalnutDensitySystem(
+    'traditional_commercial',
+    65,
+  );
+  static const WalnutDensitySystem semiIntensive = WalnutDensitySystem(
+    'semi_intensive',
+    48,
+  );
+  static const WalnutDensitySystem intensiveYoung = WalnutDensitySystem(
+    'intensive_young_or_managed',
+    34,
+  );
+  static const WalnutDensitySystem veryHighDensityTemporary = WalnutDensitySystem(
+    'very_high_density_temporary',
+    24,
+  );
+
+  static WalnutDensitySystem fromTreesPerHa(double treesPerHa) {
+    if (treesPerHa < 60) return extensive;
+    if (treesPerHa < 90) return traditionalCommercial;
+    if (treesPerHa < 130) return semiIntensive;
+    if (treesPerHa < 200) return intensiveYoung;
+    return veryHighDensityTemporary;
+  }
+}
+```
+
+5.5. Por que se usan caps
+
+Un arbol en marco amplio puede dar mas kg por arbol. Pero si hay muchos arboles por hectarea, cada arbol individual debe cargar menos por competencia de luz, agua y copa. El cap evita que 100-200 arboles/ha multipliquen kg/arbol como si fueran arboles aislados.
+
+===============================================================================
+6. REFERENCIA BASE POR PERFIL NG
+===============================================================================
+
+Todos los rangos son aproximados, para nuez seca con cascara. `fullKgPerTree` representa un arbol adulto con condiciones productivas razonables antes de aplicar estado, manejo, agua, polinizacion, estres y densidad.
+
+| Perfil | Label | kg/arbol adulto bajo | kg/arbol esperado | kg/arbol alto | t/ha bajo | t/ha esperado | t/ha alto | Confianza |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| ng_skip | NG-SKIP - Nogal general | 12 | 24 | 40 | 0.8 | 1.6 | 2.4 | 0.48 |
+| ng_01_western | NG-01 - Western Schley | 16 | 28 | 45 | 1.2 | 2.0 | 2.8 | 0.72 |
+| ng_02_wichita | NG-02 - Wichita | 18 | 30 | 48 | 1.3 | 2.2 | 3.0 | 0.68 |
+| ng_03_western_wichita | NG-03 - Bloque Western/Wichita | 18 | 31 | 50 | 1.4 | 2.3 | 3.1 | 0.76 |
+| ng_04_criollo_regional | NG-04 - Criollo/Regional | 6 | 15 | 32 | 0.4 | 1.0 | 1.8 | 0.38 |
+| ng_05_temprano_nuevo | NG-05 - Temprano/Pawnee-Kanza-Cheyenne | 12 | 24 | 40 | 1.0 | 1.7 | 2.5 | 0.55 |
+
+6.1. Lectura por perfil
+
+NG-SKIP
+- Perfil conservador.
+- No asume Western, Wichita, marco, riego, polinizador ni manejo intensivo.
+- Debe dar confianza media-baja.
+
+NG-01 Western Schley
+- Perfil dominante del oeste/norte.
+- Referencia de trabajo para Chihuahua y regiones similares.
+- Productivo y relativamente confiable, pero puede sobrecargar y bajar calidad de almendra.
+
+NG-02 Wichita
+- Mas precoz y prolifico que Western.
+- Mayor potencial, pero mas riesgo de sobrecarga, zinc, nuez pegada en ruezno, desordenes fisiologicos y calidad bajo calor.
+
+NG-03 Bloque Western/Wichita
+- Representa huertos comerciales donde el sistema de polinizacion esta mejor armado.
+- Es el perfil con mayor confianza porque modela el paquete regional mas comun.
+- Aun asi, no debe prometer >3 t/ha como normal.
+
+NG-04 Criollo/Regional
+- Muy variable.
+- Puede incluir huertos viejos, arboles nativos, mezcla genetica y manejo irregular.
+- Rango mas amplio y confianza baja.
+
+NG-05 Temprano/Nuevo
+- Agrupa Pawnee, Kanza, Cheyenne y otros tempranos.
+- Pawnee puede tener buena calidad y cosecha temprana, pero es menos prolifico que Western/Wichita.
+- Cheyenne puede ser muy precoz, pero con alternancia fuerte y susceptibilidad a pulgones.
+- Kanza puede llenar bien bajo estres moderado, pero con nuez mas chica.
+
+===============================================================================
+7. MODIFICADORES DE MANEJO
+===============================================================================
+
+7.1. Nivel de manejo
+
+```dart
+enum WalnutManagementLevel { low, medium, good, high, exceptional }
+
+double _managementFactor(WalnutManagementLevel? level) => switch (level) {
+  null => 1.0,
+  WalnutManagementLevel.low => 0.55,
+  WalnutManagementLevel.medium => 0.85,
+  WalnutManagementLevel.good => 1.05,
+  WalnutManagementLevel.high => 1.18,
+  WalnutManagementLevel.exceptional => 1.30,
+};
+```
+
+Lectura humana:
+
+- low: manejo irregular, poca poda, poca nutricion, plagas no controladas.
+- medium: manejo promedio, riego y fertilizacion funcionales, sanidad variable.
+- good: huerta bien manejada, riego estable, poda y nutricion razonables.
+- high: fertirriego, monitoreo, poda, sanidad y cosecha ordenada.
+- exceptional: solo para huertas tecnificadas y con datos confiables. No usar por defecto.
+
+7.2. Nivel de riego
+
+```dart
+enum WalnutIrrigationLevel { rainfed, irregular, stable, fertigation }
+
+double _irrigationFactor(WalnutIrrigationLevel? level) => switch (level) {
+  null => 1.0,
+  WalnutIrrigationLevel.rainfed => 0.45,
+  WalnutIrrigationLevel.irregular => 0.72,
+  WalnutIrrigationLevel.stable => 1.02,
+  WalnutIrrigationLevel.fertigation => 1.10,
+};
+```
+
+Regla nogalera:
+
+En nogal el agua pesa mucho. El deficit en llenado de almendra puede bajar kg y calidad. Riego estable no significa encharcar; significa humedad suficiente y sin salinidad excesiva durante amarre, crecimiento de nuez, llenado de almendra y postcosecha.
+
+7.3. Polinizacion
+
+```dart
+double _pollinationFactor(bool? pollinatorKnown) => switch (pollinatorKnown) {
+  null => 1.0,
+  true => 1.06,
+  false => 0.72,
+};
+```
+
+Explicacion:
+
+En nogal pecanero la polinizacion cruzada es central. Si el usuario no sabe, SKIP no debe castigar fuerte. Pero si se sabe que falta polinizador compatible o hay mala sincronizacion floral, el castigo debe ser mayor que en manzano/pera/durazno.
+
+7.4. Frio invernal
+
+En v1, horas frio pueden ser contexto y memoria, no sensor directo. Si el sistema ya tiene modelo climatico, puede afectar rendimiento mediante memoria:
+
+- frio insuficiente leve: 0.85
+- frio insuficiente moderado: 0.65
+- frio insuficiente severo: 0.40
+
+No se debe convertir automaticamente en 0 porque muchas huertas pueden compensar parcialmente segun cultivar, zona y acumulacion real.
+
+===============================================================================
+8. MEMORIA DE ESTRES Y ALTERNANCIA
+===============================================================================
+
+8.1. Por que memoria pesa mas en nogal
+
+El nogal guarda memoria fisiologica fuerte. Una cosecha alta consume carbohidratos y puede bajar la floracion o la carga del siguiente ciclo. El estres hidrico en llenado, mala postcosecha, plagas o deficiencia de zinc tambien pueden reducir el retorno de flor y aumentar nuez vana.
+
+8.2. Enum sugerido
+
+```dart
+enum WalnutStressSeverity { none, mild, moderate, severe }
+```
+
+8.3. Clase sugerida
+
+```dart
+class WalnutTreeStressMemory {
+  const WalnutTreeStressMemory({
+    this.insufficientWinterChill = WalnutStressSeverity.none,
+    this.floweringFrost = WalnutStressSeverity.none,
+    this.pollinationMismatch = WalnutStressSeverity.none,
+    this.fruitSetDrop = WalnutStressSeverity.none,
+    this.fruitFillWaterStress = WalnutStressSeverity.none,
+    this.zincOrNutritionStress = WalnutStressSeverity.none,
+    this.nutBorerOrPestDamage = WalnutStressSeverity.none,
+    this.alternateBearing = WalnutStressSeverity.none,
+    this.postHarvestReserveRisk = WalnutStressSeverity.none,
+  });
+
+  final WalnutStressSeverity insufficientWinterChill;
+  final WalnutStressSeverity floweringFrost;
+  final WalnutStressSeverity pollinationMismatch;
+  final WalnutStressSeverity fruitSetDrop;
+  final WalnutStressSeverity fruitFillWaterStress;
+  final WalnutStressSeverity zincOrNutritionStress;
+  final WalnutStressSeverity nutBorerOrPestDamage;
+  final WalnutStressSeverity alternateBearing;
+  final WalnutStressSeverity postHarvestReserveRisk;
+}
+```
+
+8.4. Factor de estres sugerido
+
+Usar el peor cuello de botella, igual que manzano/pera/durazno. No multiplicar todos los estreses porque se desploma demasiado y puede sonar falso.
+
+```dart
+double factorFor(WalnutStressSeverity s) => switch (s) {
+  WalnutStressSeverity.none => 1.0,
+  WalnutStressSeverity.mild => 0.88,
+  WalnutStressSeverity.moderate => 0.65,
+  WalnutStressSeverity.severe => 0.35,
+};
+```
+
+Ajuste especial:
+
+- `floweringFrost.severe`, `pollinationMismatch.severe` o `nutBorerOrPestDamage.severe` pueden justificar factor 0.25 si el motor sanitario confirma daño fuerte.
+- `alternateBearing.severe` no debe borrar el ciclo; debe explicar que el ano bajo puede ser consecuencia de carga alta previa.
+
+8.5. Mensajes humanos
+
+- "El calculo baja por memoria de estres. En nogal, una carga alta o un llenado dificil puede pegarle al siguiente ciclo."
+- "No es que el nogal no sirva; probablemente viene arrastrando reservas, agua, polinizacion o alternancia."
+- "Confirma con historial de cosecha, vigor, llenado de almendra y manejo de riego."
+
+===============================================================================
+9. CALIDAD DE NUEZ: NO TODO ES KG
+===============================================================================
+
+9.1. Salida principal v1
+
+La salida principal sigue siendo kg/arbol y t/ha.
+
+9.2. Calidad como notas / confianza
+
+BIO-G puede mostrar notas de calidad sin cambiar el motor:
+
+- Porcentaje de almendra esperado.
+- Nuez vana o pobre llenado.
+- Nuez chica por sobrecarga.
+- Ruezno pegado / sticktights.
+- Color de almendra afectado por calor.
+- Humedad de cosecha/venta.
+
+9.3. Rangos orientativos de almendra
+
+- Western: 55-60% de almendra en condiciones normales.
+- Wichita: 56-62% de almendra, pero con mayor riesgo de desordenes bajo estres.
+- Pawnee: 57-59% de almendra, buena calidad, menos prolifico.
+- Kanza: 51-54% de almendra, nuez mas chica, suele llenar bien bajo estres moderado.
+- Criollo: variable; no inferir premium.
+
+9.4. Regla para UI
+
+Si kg esperado es alto pero hay estres en llenado, zinc, agua o sobrecarga, el mensaje no debe decir solo "alto rendimiento". Debe decir:
+
+"Puede haber carga, pero revisa llenado de almendra y nuez vana. En nogal, mas kilos no siempre significan mejor calidad."
+
+===============================================================================
+10. FORMULA OFICIAL BIO-G PARA NOGAL
+===============================================================================
+
+10.1. Formula conceptual
+
+`kgArbol = fullKgPerTree(profile) x factorEstadoProductivo x factorManejo x factorRiego x factorPolinizacion x factorMemoria`
+
+`kgArbol = min(kgArbol, capKgPorArbolSegunDensidad)`
+
+`tonHa = kgArbol x arbolesPorHa / 1000`
+
+`totalKg = kgArbol x numeroArboles`
+
+10.2. Confianza
+
+Base:
+
+- NG-SKIP: 0.48
+- Western: 0.72
+- Wichita: 0.68
+- Bloque Western/Wichita: 0.76
+- Criollo: 0.38
+- Temprano: 0.55
+
+Penalizaciones:
+
+- Sin densidad ni arboles/ha: -0.15
+- Estado productivo unknown: -0.10
+- Etapa unknown: -0.05
+- Perfil SKIP: ya viene baja, no castigar doble salvo que falte todo
+- Memoria de estres activa: -0.10
+- Polinizacion desconocida en etapa reproductiva: -0.05
+- Criollo/regional: confianza max 0.55
+
+Clamp final: 0.05 a 0.95.
+
+10.3. Rango sano para no mentir
+
+Si el resultado da mas de 3.2 t/ha:
+
+- Permitido como alto teorico solo con perfil especifico, densidad conocida, manejo alto y riego/fertirriego.
+- Agregar nota obligatoria:
+  "Proyeccion alta. En nogal, anos de mucha carga pueden aumentar alternancia y bajar llenado o retorno de flor el siguiente ciclo."
+
+Si el resultado da menos de 0.5 t/ha en productive_season:
+
+- No decir "fracaso".
+- Decir:
+  "Proyeccion baja. Revisa agua, polinizacion, helada, barrenador, zinc, historial de carga y reservas de postcosecha."
+
+===============================================================================
+11. TABLA MINIMA PARA TreeYieldReferenceCatalog
+===============================================================================
+
+El motor actual tiene una tabla minima por tier para la pantalla simple. Para Nogal se recomienda agregar estas entradas con perfil SKIP.
+
+```dart
+// Nogal pecanero (doc 03): tabla minima por tier para la pantalla simple.
+// La referencia agronomica completa vive en walnut_tree_yield_reference.dart.
+'walnut_tree_ng_skip_young': TreeYieldReference(
+  id: 'walnut_tree_ng_skip_young',
+  cropId: kCropWalnutTree,
+  profileId: kNgSkip,
+  tier: TreeProductiveTier.young,
+  kgPerTreeLow: 2,
+  kgPerTreeHigh: 10,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (nogal pecanero, sin historial)',
+),
+'walnut_tree_ng_skip_first': TreeYieldReference(
+  id: 'walnut_tree_ng_skip_first',
+  cropId: kCropWalnutTree,
+  profileId: kNgSkip,
+  tier: TreeProductiveTier.firstProduction,
+  kgPerTreeLow: 6,
+  kgPerTreeHigh: 22,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (nogal pecanero, sin historial)',
+),
+'walnut_tree_ng_skip_full': TreeYieldReference(
+  id: 'walnut_tree_ng_skip_full',
+  cropId: kCropWalnutTree,
+  profileId: kNgSkip,
+  tier: TreeProductiveTier.full,
+  kgPerTreeLow: 15,
+  kgPerTreeHigh: 45,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (nogal pecanero, sin historial)',
+),
+```
+
+Agregar en `_skipProfileForCrop`:
+
+```dart
+case kCropWalnutTree:
+  return kNgSkip;
+```
+
+11.1. Mapeo de tier desde estado perenne
+
+El metodo actual `tierForPerennialState` puede mantenerse:
+
+- established => firstProduction
+- productiveSeason => full
+- newlyPlanted / juvenile / unknown => null
+
+Para Nogal funciona bien porque no se debe proyectar cosecha en arbol joven sin produccion.
+
+===============================================================================
+12. ARCHIVO COMPLETO RECOMENDADO: walnut_tree_yield_reference.dart
+===============================================================================
+
+12.1. Nombre y ubicacion
+
+`lib/core/crops/walnut_tree/walnut_tree_yield_reference.dart`
+
+12.2. Imports
+
+```dart
+import 'package:bio_g/core/crops/walnut_tree/walnut_tree_catalog.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
+```
+
+12.3. Estructuras esperadas
+
+- `YieldRange`
+- `WalnutTreeYieldReference`
+- `WalnutProductionState`
+- `WalnutManagementLevel`
+- `WalnutIrrigationLevel`
+- `WalnutStressSeverity`
+- `WalnutTreeStressMemory`
+- `WalnutDensitySystem`
+- `WalnutTreeYieldProjection`
+- `walnutYieldReferenceByProfile`
+- `treesPerHaFromSpacing`
+- `tonHaFromKgTree`
+- `kgTreeFromTonHa`
+- `_productionStateFactors`
+- `_managementFactor`
+- `_irrigationFactor`
+- `_pollinationFactor`
+- `_inferProductionState`
+- `_blocksYield`
+- `resolveWalnutTreeYield`
+
+12.4. Mapa de referencias por perfil
+
+```dart
+const Map<String, WalnutTreeYieldReference>
+walnutYieldReferenceByProfile = <String, WalnutTreeYieldReference>{
+  kNgSkip: WalnutTreeYieldReference(
+    profileId: kNgSkip,
+    fullKgPerTree: YieldRange(12, 24, 40),
+    expectedTonPerHa: YieldRange(0.8, 1.6, 2.4),
+    confidenceBase: 0.48,
+    kernelPct: YieldRange(48, 54, 58),
+    notesEs: <String>[
+      'Perfil general: no asume Western, Wichita, marco, riego ni polinizador especifico.',
+    ],
+  ),
+  kNg01Western: WalnutTreeYieldReference(
+    profileId: kNg01Western,
+    fullKgPerTree: YieldRange(16, 28, 45),
+    expectedTonPerHa: YieldRange(1.2, 2.0, 2.8),
+    confidenceBase: 0.72,
+    kernelPct: YieldRange(55, 58, 60),
+    notesEs: <String>[
+      'Western Schley: cultivar base del oeste; productivo y relativamente confiable, pero puede sobrecargar.',
+    ],
+  ),
+  kNg02Wichita: WalnutTreeYieldReference(
+    profileId: kNg02Wichita,
+    fullKgPerTree: YieldRange(18, 30, 48),
+    expectedTonPerHa: YieldRange(1.3, 2.2, 3.0),
+    confidenceBase: 0.68,
+    kernelPct: YieldRange(56, 59, 62),
+    notesEs: <String>[
+      'Wichita: precoz y prolifico; mayor riesgo de sobrecarga, zinc y desordenes fisiologicos.',
+    ],
+  ),
+  kNg03WesternWichita: WalnutTreeYieldReference(
+    profileId: kNg03WesternWichita,
+    fullKgPerTree: YieldRange(18, 31, 50),
+    expectedTonPerHa: YieldRange(1.4, 2.3, 3.1),
+    confidenceBase: 0.76,
+    kernelPct: YieldRange(54, 58, 61),
+    notesEs: <String>[
+      'Bloque Western/Wichita: paquete regional fuerte; no prometer >3 t/ha como normal permanente.',
+    ],
+  ),
+  kNg04CriolloRegional: WalnutTreeYieldReference(
+    profileId: kNg04CriolloRegional,
+    fullKgPerTree: YieldRange(6, 15, 32),
+    expectedTonPerHa: YieldRange(0.4, 1.0, 1.8),
+    confidenceBase: 0.38,
+    kernelPct: YieldRange(42, 50, 56),
+    notesEs: <String>[
+      'Criollo/regional: muy heterogeneo; confianza baja y fuerte dependencia de manejo y edad.',
+    ],
+  ),
+  kNg05TempranoNuevo: WalnutTreeYieldReference(
+    profileId: kNg05TempranoNuevo,
+    fullKgPerTree: YieldRange(12, 24, 40),
+    expectedTonPerHa: YieldRange(1.0, 1.7, 2.5),
+    confidenceBase: 0.55,
+    kernelPct: YieldRange(51, 56, 60),
+    notesEs: <String>[
+      'Temprano/Pawnee-Kanza-Cheyenne: buena ventana temprana; no asumir misma productividad que Western/Wichita.',
+    ],
+  ),
+};
+```
+
+Nota: `kernelPct` no existe todavia en todos los arboles. Puede agregarse en WalnutTreeYieldReference como campo propio sin tocar otros cultivos. Si Codex quiere mantener paridad estricta, dejar `kernelPct` como nota y no como campo.
+
+===============================================================================
+13. RESOLVER SUGERIDO
+===============================================================================
+
+```dart
+WalnutTreeYieldProjection resolveWalnutTreeYield({
+  required String? profileId,
+  required String? perennialStateId,
+  required String? phenologyStageId,
+  double? treesPerHa,
+  double? hectares,
+  int? treeCount,
+  WalnutProductionState? productionState,
+  WalnutManagementLevel? managementLevel,
+  WalnutIrrigationLevel? irrigationLevel,
+  bool? pollinatorKnown,
+  WalnutTreeStressMemory? stressMemory,
+}) {
+  final stateId = normalizeTreeStateId(perennialStateId);
+  final stageId = normalizeTreeStageId(phenologyStageId);
+  final ref =
+      walnutYieldReferenceByProfile[profileId?.trim().toLowerCase()] ??
+      walnutYieldReferenceByProfile[kNgSkip]!;
+
+  if (_blocksYield(stateId, stageId)) {
+    return WalnutTreeYieldProjection.zero(
+      profileId: ref.profileId,
+      confidence: 0.85,
+      notesEs: const <String>[
+        'Todavia no proyectamos cosecha: el nogal esta en formacion. Importa mas raiz, estructura y reservas.',
+      ],
+    );
+  }
+
+  final state = _inferProductionState(
+    stateId: stateId,
+    stageId: stageId,
+    explicit: productionState,
+  );
+
+  if (state == WalnutProductionState.nonProductive) {
+    return WalnutTreeYieldProjection.zero(
+      profileId: ref.profileId,
+      confidence: 0.85,
+    );
+  }
+
+  final density =
+      treesPerHa ??
+      ((treeCount != null && hectares != null && hectares > 0)
+          ? treeCount / hectares
+          : null);
+
+  final sf = _productionStateFactors(state);
+  final mgmt = _managementFactor(managementLevel);
+  final irr = _irrigationFactor(irrigationLevel);
+  final poll = _pollinationFactor(pollinatorKnown);
+  final stress = stressMemory?.yieldFactor01 ?? 1.0;
+  final commonFactor = mgmt * irr * poll * stress;
+
+  YieldRange kgTree = ref.fullKgPerTree
+      .scaleEach(sf.low, sf.expected, sf.high)
+      .scale(commonFactor);
+
+  if (density != null) {
+    kgTree = kgTree.cappedAt(
+      WalnutDensitySystem.fromTreesPerHa(density).kgPerTreeCap,
+    );
+  }
+
+  final tonHa = density == null
+      ? null
+      : YieldRange(
+          tonHaFromKgTree(kgTree.low, density),
+          tonHaFromKgTree(kgTree.expected, density),
+          tonHaFromKgTree(kgTree.high, density),
+        );
+
+  final totalKg = treeCount == null ? null : kgTree.scale(treeCount.toDouble());
+
+  double confidence = ref.confidenceBase;
+  if (density == null) confidence -= 0.15;
+  if (state == WalnutProductionState.unknown) confidence -= 0.10;
+  if (stageId == TreeStageIds.unknown) confidence -= 0.05;
+  if (stressMemory != null && stressMemory.hasAnyStress) confidence -= 0.10;
+  if (pollinatorKnown == null &&
+      (stageId == TreeStageIds.flowering || stageId == TreeStageIds.fruitSet)) {
+    confidence -= 0.05;
+  }
+  confidence = confidence.clamp(0.05, 0.95);
+
+  final notes = <String>[...ref.notesEs];
+  if (ref.profileId == kNgSkip) {
+    notes.add(
+      'Este calculo usa un perfil general de nogal. Puede mejorar si eliges Western, Wichita, bloque Western/Wichita, criollo/regional o temprano.',
+    );
+  }
+  if (density == null) {
+    notes.add(
+      'Sin densidad ni numero de arboles no estimamos t/ha; indica arboles/ha o marco de plantacion para mas precision.',
+    );
+  }
+  if (stress < 1.0) {
+    notes.add(
+      'Ajustamos a la baja por memoria de estres. En nogal, agua, helada, polinizacion, barrenador, zinc y alternancia pueden mover mucho la cosecha.',
+    );
+  }
+  if (tonHa != null && tonHa.expected > 3.2) {
+    notes.add(
+      'Proyeccion alta: revisa sobrecarga, llenado de almendra y alternancia del siguiente ciclo. Mas kg no siempre significa mejor calidad.',
+    );
+  }
+
+  return WalnutTreeYieldProjection(
+    isProductive: true,
+    profileId: ref.profileId,
+    productionState: state,
+    confidence01: confidence,
+    kgPerTree: kgTree,
+    tonPerHa: tonHa,
+    totalKg: totalKg,
+    notesEs: notes,
+  );
+}
+```
+
+===============================================================================
+14. EJEMPLOS DE CALCULO
+===============================================================================
+
+14.1. Usuario con pocos arboles
+
+Entrada:
+- Perfil: ng_skip
+- Estado: productive_season
+- Numero de arboles: 20
+- Sin densidad
+
+Salida aproximada:
+- kg/arbol: 8-40 kg segun estado inferido y manejo default
+- total: rango total en kg
+- t/ha: null porque no hay hectareas/densidad
+- nota: pedir marco o arboles/ha para estimar por hectarea
+
+14.2. Huerta comercial Western/Wichita
+
+Entrada:
+- Perfil: ng_03_western_wichita
+- Estado: productive_season
+- Densidad: 69 arboles/ha (12 x 12 m)
+- Manejo: good
+- Riego: stable
+- Polinizador: true
+- Sin estres severo
+
+Lectura esperada:
+- Debe moverse cerca de buen manejo regional.
+- Si la proyeccion se acerca a 2.3-3.0 t/ha, mostrar nota de calidad/alternancia.
+
+14.3. Huerta criolla vieja
+
+Entrada:
+- Perfil: ng_04_criollo_regional
+- Estado: productive_season
+- Densidad: 50 arboles/ha
+- Manejo: medium
+- Riego: irregular
+- Alternancia: moderate
+
+Lectura esperada:
+- Rango bajo a medio.
+- Confianza baja.
+- Mensaje sobre variabilidad genetica, edad, agua y alternancia.
+
+14.4. Nogal joven
+
+Entrada:
+- Estado: juvenile_non_productive
+- Etapa: juvenile_vegetative
+
+Salida:
+- 0 kg/arbol
+- Mensaje de formacion, no de falla.
+
+===============================================================================
+15. TEXTO UX RECOMENDADO
+===============================================================================
+
+15.1. Perfil general
+
+"Este es un estimado general de nogal. Para mayor precision, selecciona si es Western, Wichita, bloque Western/Wichita, criollo/regional o temprano."
+
+15.2. Baja proyeccion
+
+"La proyeccion sale baja para un nogal en produccion. Revisa agua, polinizacion, helada, barrenador, zinc, carga del ano pasado y reservas de postcosecha."
+
+15.3. Alta proyeccion
+
+"La proyeccion sale alta. En nogal, una carga fuerte puede traer nuez mas chica, menor llenado de almendra o alternancia el siguiente ciclo. Conviene vigilar agua, K, Zn, sanidad y postcosecha."
+
+15.4. No productivo
+
+"Aun no proyectamos cosecha. En nogal joven primero se forma raiz, estructura y copa. Forzar carga temprano puede atrasar el potencial futuro."
+
+15.5. Falta densidad
+
+"Para convertir a toneladas por hectarea necesito arboles por hectarea o marco de plantacion. Con solo numero de arboles puedo estimar kg totales."
+
+===============================================================================
+16. PRUEBAS MINIMAS PARA CODEX
+===============================================================================
+
+16.1. No productivo
+
+- newly_planted + any profile => kgPerTree = 0
+- juvenile_non_productive + juvenile_vegetative => kgPerTree = 0
+
+16.2. SKIP no falla
+
+- crop_walnut_tree + ng_skip + productive_season + treeCount 10 => devuelve totalKg y notas conservadoras.
+
+16.3. Densidad
+
+- 12 x 12 m => treesPerHa ~69.44
+- kgTree 30 kg + 69.44 arboles/ha => 2.08 t/ha
+
+16.4. Cap por densidad
+
+- Si treesPerHa = 200 y kgTree alto >24 kg, debe capear a 24 kg/arbol.
+
+16.5. Polinizacion
+
+- pollinatorKnown false en flowering/fruit_set debe bajar rendimiento y agregar nota.
+
+16.6. Alternancia
+
+- alternateBearing severe debe bajar rendimiento y nota debe mencionar memoria del ciclo anterior.
+
+16.7. Calidad
+
+- Si tonHa.expected >3.2, agregar nota de sobrecarga/alternancia/calidad.
+
+16.8. Fallback correcto
+
+- Nogal nunca debe caer al SKIP de manzano, pera o durazno.
+
+===============================================================================
+17. FUENTES CONSULTADAS Y CRITERIO DE USO
+===============================================================================
+
+1. New Mexico State University. Sample Pecan Enterprise Budgets to Produce Pecan, 2024.
+Uso BIO-G: ancla economica de 2,000 lb/acre de nuez limpia, seca y con cascara; sensibilidad 1,400-2,600 lb/acre.
+URL: https://pubs.nmsu.edu/_z/Z124/index.html
+
+2. New Mexico State University. Pecan Cultivars for New Mexico.
+Uso BIO-G: comportamiento de Western, Wichita, Pawnee, Kanza, Cheyenne; porcentajes de almendra; precocidad; alternancia; polinizacion Tipo I/Tipo II.
+URL: https://pubs.nmsu.edu/_h/H659/index.html
+
+3. University of Arizona Cooperative Extension. Pecan Production Guidelines for Small Orchards and Home Yards.
+Uso BIO-G: referencia por arbol maduro 40-50 lb/arbol y alto requerimiento de agua.
+URL: https://extension.arizona.edu/publication/pecan-production-guidelines-small-orchards-and-home-yards
+
+4. Oklahoma State University Extension. Establishing a Pecan Orchard.
+Uso BIO-G: espaciamiento inicial 40 x 40 pies, 27 arboles/acre; necesidad de aclareos; diseno de polinizadores.
+URL: https://extension.okstate.edu/fact-sheets/establishing-a-pecan-orchard.html
+
+5. Oklahoma State University Extension. Pecan Crop Load Management.
+Uso BIO-G: relacion entre carga, calidad de almendra, alternancia y retorno de flor; datos de lb/arbol en tratamientos de raleo.
+URL: https://extension.okstate.edu/fact-sheets/pecan-crop-load-management
+
+6. S. H. Tarango / Comenuez. Manejo del nogal pecanero con base en su fenologia.
+Uso BIO-G: rangos de Chihuahua 1.44-2.36 t/ha; referencia alta 2.3 t/ha; potencial 3.1 t/ha y riesgo de alternancia por alta carga.
+URL: https://comenuez.com/wp-content/uploads/manejo_del_nogal_pecanero_con_base_en_su_fenologia1.pdf
+
+7. Garcia-Gonzalez et al. 2020. Recent evolution of pecan nut (Carya illinoinensis) production in Chihuahua, Mexico. Agro Productividad.
+Uso BIO-G: promedio nacional 1.63 t/ha, Chihuahua 1.72 t/ha, municipios de Chihuahua/Camargo/San Francisco de Conchos arriba de 2 t/ha.
+URL: https://revista-agroproductividad.org/index.php/agroproductividad/article/download/1613/1292/4287
+
+8. Castillo et al. Revista Mexicana de Ciencias Agricolas / INIFAP. La produccion y comercializacion de nuez pecanera en Mexico.
+Uso BIO-G: SIAP-SAGARPA 2016; Chihuahua 1.84 t/ha; Sonora 2.06; Jimenez 2.0; Hermosillo 2.3; Comarca Lagunera 1.3.
+URL: https://cienciasagricolas.inifap.gob.mx/index.php/agricolas/article/download/1833/2864?inline=1
+
+9. Sanchez et al. Terra Latinoamericana. Eficiencia de uso del nitrogeno en nogal pecanero.
+Uso BIO-G: huertos de Chihuahua con 2.421-3.116 t/ha; medicion de rendimiento por kg/arbol multiplicado por arboles/ha; relacion entre N, calidad y rendimiento.
+URL: https://terralatinoamericana.org.mx/index.php/terra/article/download/1268/1487
+
+10. Gobierno del Estado de Chihuahua. Mantiene Chihuahua liderazgo nacional en produccion de nuez pecana.
+Uso BIO-G: contexto regional actual; Chihuahua como productor lider; proyeccion 2025 de 1.39 t/ha; no se usa como techo, solo como contexto anual.
+URL: https://chihuahua.gob.mx/prensa/mantiene-chihuahua-liderazgo-nacional-en-produccion-de-nuez-pecana
+
+===============================================================================
+18. CIERRE TECNICO
+===============================================================================
+
+El rendimiento de nogal en BIO-G debe ser conservador, regional y multianual. La salida principal es nuez con cascara en kg/arbol, t/ha y kg totales. El motor no debe prometer cosecha ni copiar rangos de huertas excepcionales como si fueran normales.
+
+La mejor integracion es mantener la pantalla simple con `TreeYieldReferenceCatalog` y crear el archivo completo `walnut_tree_yield_reference.dart` siguiendo manzano, pera y durazno, pero con modificadores fuertes para agua, polinizacion, alternancia, zinc, llenado de almendra y memoria del ciclo anterior.

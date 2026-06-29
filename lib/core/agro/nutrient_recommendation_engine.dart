@@ -8,6 +8,9 @@ import 'package:bio_g/core/agro/garlic_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/lettuce_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/agro/onion_nutrition_modifier.dart';
+import 'package:bio_g/core/agro/peach_tree_nutrition_modifier.dart';
+import 'package:bio_g/core/agro/pear_tree_nutrition_modifier.dart';
+import 'package:bio_g/core/agro/walnut_tree_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/spinach_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/squash_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
@@ -169,13 +172,41 @@ class NutrientRecommendationEngine {
             calendarId: calendarId ?? cultivationScaleId,
           )
         : null;
+    final isPearTreeCrop = _isPearTreeCrop(cropKey);
+    final pearTreeModifier = isPearTreeCrop
+        ? resolvePearTreeNutritionModifier(
+            profileId: profileId,
+            varietyId: varietyId,
+            alias: varietyAlias,
+            calendarId: calendarId ?? cultivationScaleId,
+          )
+        : null;
+    final isPeachTreeCrop = _isPeachTreeCrop(cropKey);
+    final peachTreeModifier = isPeachTreeCrop
+        ? resolvePeachTreeNutritionModifier(
+            profileId: profileId,
+            varietyId: varietyId,
+            alias: varietyAlias,
+            calendarId: calendarId ?? cultivationScaleId,
+          )
+        : null;
+    final isWalnutTreeCrop = _isWalnutTreeCrop(cropKey);
+    final walnutTreeModifier = isWalnutTreeCrop
+        ? resolveWalnutTreeNutritionModifier(
+            profileId: profileId,
+            varietyId: varietyId,
+            alias: varietyAlias,
+            calendarId: calendarId ?? cultivationScaleId,
+          )
+        : null;
 
     final combinedStagePressure01 = _combineStagePressure01(
       baseStagePressure01: baseStagePressure01,
       contextModifier01: contextModifier01,
       trendModifier01: trendModifier01,
     );
-    final effectiveStagePressure01 = chiliModifier?.adjustStagePressure(
+    final effectiveStagePressure01 =
+        chiliModifier?.adjustStagePressure(
           combinedStagePressure01,
           nutrient: nutrient,
           stageKey: stageKey,
@@ -211,6 +242,21 @@ class NutrientRecommendationEngine {
           stageKey: stageKey,
         ) ??
         appleTreeModifier?.adjustStagePressure(
+          combinedStagePressure01,
+          nutrient: nutrient,
+          stageKey: stageKey,
+        ) ??
+        pearTreeModifier?.adjustStagePressure(
+          combinedStagePressure01,
+          nutrient: nutrient,
+          stageKey: stageKey,
+        ) ??
+        peachTreeModifier?.adjustStagePressure(
+          combinedStagePressure01,
+          nutrient: nutrient,
+          stageKey: stageKey,
+        ) ??
+        walnutTreeModifier?.adjustStagePressure(
           combinedStagePressure01,
           nutrient: nutrient,
           stageKey: stageKey,
@@ -265,6 +311,9 @@ class NutrientRecommendationEngine {
       trendPct: trendPct,
       stagePressure01: effectiveStagePressure01,
       targets: targets,
+      ph: ph,
+      ec: ec,
+      soilMoisturePct: soilMoisturePct,
       chiliModifier: chiliModifier,
       eggplantModifier: eggplantModifier,
       squashModifier: squashModifier,
@@ -273,6 +322,9 @@ class NutrientRecommendationEngine {
       onionModifier: onionModifier,
       garlicModifier: garlicModifier,
       appleTreeModifier: appleTreeModifier,
+      pearTreeModifier: pearTreeModifier,
+      peachTreeModifier: peachTreeModifier,
+      walnutTreeModifier: walnutTreeModifier,
     );
 
     final practicalRecommendation = _mergePracticalAndDose(
@@ -290,7 +342,7 @@ class NutrientRecommendationEngine {
       contextModifier01: contextModifier01,
       trendModifier01: trendModifier01,
       label: label,
-      labelEs: label.labelEs,
+      labelEs: _displayLabelEs(label, cropKey: cropKey),
       demandWindowLabel: demandWindowLabel,
       shortRecommendation: _shortRecommendation(
         nutrient: nutrient,
@@ -316,6 +368,17 @@ class NutrientRecommendationEngine {
     );
   }
 
+  static String _displayLabelEs(
+    NutrientPriorityLabel label, {
+    required String? cropKey,
+  }) {
+    if (_isFruitTreeCrop(cropKey) &&
+        label == NutrientPriorityLabel.possibleExcess) {
+      return 'Alto útil';
+    }
+    return label.labelEs;
+  }
+
   // =========================================================================
   // PRESIÓN FENOLÓGICA (0..1)
   // =========================================================================
@@ -338,12 +401,15 @@ class NutrientRecommendationEngine {
     if (range == null) {
       rangeMid01 = 0.50;
     } else {
-      final double cap = NpkCaps.forCropMetric(cropKey: cropKey, metricKey: nutrient);
+      final double cap = NpkCaps.forCropMetric(
+        cropKey: cropKey,
+        metricKey: nutrient,
+      );
       if (cap <= 0) {
         rangeMid01 = 0.50;
       } else {
-        rangeMid01 =
-            (((range.optimalMin + range.optimalMax) / 2.0) / cap).clamp(0.0, 1.0);
+        rangeMid01 = (((range.optimalMin + range.optimalMax) / 2.0) / cap)
+            .clamp(0.0, 1.0);
       }
     }
 
@@ -510,6 +576,10 @@ class NutrientRecommendationEngine {
       if (label == NutrientPriorityLabel.lowPriority) {
         return 'Por ahora ${_nutrientShortName(nutrient)} no es la prioridad.';
       }
+      if (_isFruitTreeCrop(cropKey) &&
+          label == NutrientPriorityLabel.possibleExcess) {
+        return _pepitaTreeHighUsefulShortRecommendation(nutrient);
+      }
       if (label == NutrientPriorityLabel.possibleExcess ||
           label == NutrientPriorityLabel.reviewAccumulation) {
         if (nutrient == AgroMetricKey.n) {
@@ -556,6 +626,11 @@ class NutrientRecommendationEngine {
         label: label,
         isExcess: isExcess,
       );
+    }
+
+    if (_isFruitTreeCrop(cropKey) &&
+        label == NutrientPriorityLabel.possibleExcess) {
+      return _pepitaTreeHighUsefulShortRecommendation(nutrient);
     }
 
     if (isExcess) {
@@ -689,6 +764,20 @@ class NutrientRecommendationEngine {
     return 'Faltan datos para evaluar $nutrientName en ajo.';
   }
 
+  static String _pepitaTreeHighUsefulShortRecommendation(
+    AgroMetricKey nutrient,
+  ) {
+    return switch (nutrient) {
+      AgroMetricKey.n =>
+        'N alto útil. No agregues más N por ahora; vigila follaje de más.',
+      AgroMetricKey.p =>
+        'P alto útil. Pausa fósforo extra y sigue la tendencia.',
+      AgroMetricKey.k =>
+        'K alto útil para fruto. No subas más K si el fruto va bien.',
+      _ => 'Nutriente alto útil. Mantén monitoreo sin aplicar de más.',
+    };
+  }
+
   // =========================================================================
   // RECOMENDACIÓN PRÁCTICA
   // =========================================================================
@@ -700,6 +789,11 @@ class NutrientRecommendationEngine {
     double? trendPct,
     double? stagePressure01,
     StageTargets? targets,
+    // Contexto de suelo para guardas (hoy solo lo usa el nogal; otros cultivos
+    // lo ignoran). Aditivo y opcional: no cambia el comportamiento existente.
+    double? ph,
+    double? ec,
+    double? soilMoisturePct,
     ChiliNutritionModifier? chiliModifier,
     EggplantNutritionModifier? eggplantModifier,
     SquashNutritionModifier? squashModifier,
@@ -708,6 +802,9 @@ class NutrientRecommendationEngine {
     OnionNutritionModifier? onionModifier,
     GarlicNutritionModifier? garlicModifier,
     AppleTreeNutritionModifier? appleTreeModifier,
+    PearTreeNutritionModifier? pearTreeModifier,
+    PeachTreeNutritionModifier? peachTreeModifier,
+    WalnutTreeNutritionModifier? walnutTreeModifier,
   }) {
     final stage = (stageKey ?? '').toLowerCase();
     final crop = (cropKey ?? '').toLowerCase();
@@ -787,9 +884,7 @@ class NutrientRecommendationEngine {
         chiliModifier,
       );
     }
-    if (crop == 'eggplant' ||
-        crop == 'berenjena' ||
-        crop == 'aubergine') {
+    if (crop == 'eggplant' || crop == 'berenjena' || crop == 'aubergine') {
       return _eggplantPracticalRecommendation(
         nutrient,
         label,
@@ -859,6 +954,33 @@ class NutrientRecommendationEngine {
         label,
         stage,
         appleTreeModifier,
+      );
+    }
+    if (_isPearTreeCrop(crop)) {
+      return _pearTreePracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        pearTreeModifier,
+      );
+    }
+    if (_isPeachTreeCrop(crop)) {
+      return _peachTreePracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        peachTreeModifier,
+      );
+    }
+    if (_isWalnutTreeCrop(crop)) {
+      return _walnutTreePracticalRecommendation(
+        nutrient,
+        label,
+        stage,
+        walnutTreeModifier,
+        ph: ph,
+        ec: ec,
+        soilMoisturePct: soilMoisturePct,
       );
     }
 
@@ -2198,7 +2320,8 @@ class NutrientRecommendationEngine {
         stage.contains('establec') || stage.contains('emerg');
     final isVeg = stage.contains('vegetativo') || stage.contains('vegetative');
     final isFlowering = stage.contains('floracion') || stage.contains('flor');
-    final isFruitSet = stage.contains('cuajado') ||
+    final isFruitSet =
+        stage.contains('cuajado') ||
         stage.contains('amarre') ||
         stage.contains('fruitset') ||
         stage.contains('poliniz');
@@ -2636,13 +2759,16 @@ class NutrientRecommendationEngine {
     final isGerm = stage.contains('germin');
     final isEstablishment =
         stage.contains('establec') || stage.contains('emerg');
-    final isVeg = stage.contains('vegetativo') ||
+    final isVeg =
+        stage.contains('vegetativo') ||
         stage.contains('expansion') ||
         stage.contains('foliar');
-    final isHarvest = stage.contains('madurez') ||
+    final isHarvest =
+        stage.contains('madurez') ||
         stage.contains('cosecha') ||
         stage.contains('ventana');
-    final isLate = stage.contains('perdida') ||
+    final isLate =
+        stage.contains('perdida') ||
         stage.contains('espig') ||
         stage.contains('bolting') ||
         stage.contains('senesc') ||
@@ -2808,15 +2934,18 @@ class NutrientRecommendationEngine {
     OnionNutritionModifier? modifier,
   ) {
     final isGerm = stage.contains('germin');
-    final isEstablishment = stage.contains('establec') ||
+    final isEstablishment =
+        stage.contains('establec') ||
         stage.contains('emergencia') ||
         stage.contains('emerg');
     final isVeg = stage.contains('vegetativo');
     final isInduction = stage.contains('induccion');
-    final isBulbFill = stage.contains('llenado') ||
+    final isBulbFill =
+        stage.contains('llenado') ||
         stage.contains('iniciobulbo') ||
         stage.contains('bulbo');
-    final isLate = stage.contains('maduracion') ||
+    final isLate =
+        stage.contains('maduracion') ||
         stage.contains('cosecha') ||
         stage.contains('curado') ||
         stage.contains('espig') ||
@@ -2974,22 +3103,25 @@ class NutrientRecommendationEngine {
     StageTargets? targets,
     GarlicNutritionModifier? modifier,
   ) {
-    final isPlanting = stage.contains('plant') ||
+    final isPlanting =
+        stage.contains('plant') ||
         stage.contains('clove') ||
         stage.contains('diente');
-    final isEstablishment = isPlanting ||
-        stage.contains('emerg') ||
-        stage.contains('establec');
+    final isEstablishment =
+        isPlanting || stage.contains('emerg') || stage.contains('establec');
     final isVeg = stage.contains('veget') || stage.contains('foliar');
-    final isVernalization = stage.contains('vernal') ||
+    final isVernalization =
+        stage.contains('vernal') ||
         stage.contains('frio') ||
         stage.contains('cold');
-    final isBulb = stage.contains('diferenci') ||
+    final isBulb =
+        stage.contains('diferenci') ||
         stage.contains('llenado') ||
         stage.contains('bulb') ||
         stage.contains('bulbo') ||
         stage.contains('fill');
-    final isLate = stage.contains('maduracion') ||
+    final isLate =
+        stage.contains('maduracion') ||
         stage.contains('matur') ||
         stage.contains('cosecha') ||
         stage.contains('harvest') ||
@@ -3587,7 +3719,8 @@ class NutrientRecommendationEngine {
           return 'Cuajado: evita pudrición de punta';
         }
         if (stage.contains('llenado')) return 'Llenado: calidad y dulzor';
-        if (stage.contains('progresiv')) return 'Cosecha: firmeza y anti-rajado';
+        if (stage.contains('progresiv'))
+          return 'Cosecha: firmeza y anti-rajado';
         if (stage.contains('fincic')) return 'Cierre de ciclo';
         return 'Reserva de potasio';
       }
@@ -3646,9 +3779,7 @@ class NutrientRecommendationEngine {
       }
     }
 
-    if (crop == 'eggplant' ||
-        crop == 'berenjena' ||
-        crop == 'aubergine') {
+    if (crop == 'eggplant' || crop == 'berenjena' || crop == 'aubergine') {
       if (nutrient == AgroMetricKey.n) {
         if (stage.contains('germin') ||
             stage.contains('emerg') ||
@@ -3753,15 +3884,18 @@ class NutrientRecommendationEngine {
     }
 
     if (crop == 'spinach' || crop == 'espinaca' || crop == 'crop_spinach') {
-      final early = stage.contains('germin') ||
+      final early =
+          stage.contains('germin') ||
           stage.contains('emerg') ||
           stage.contains('establec');
       final expansion =
           stage.contains('vegetativo') || stage.contains('expansion');
-      final quality = stage.contains('madurez') ||
+      final quality =
+          stage.contains('madurez') ||
           stage.contains('cosecha') ||
           stage.contains('ventana');
-      final late = stage.contains('perdida') ||
+      final late =
+          stage.contains('perdida') ||
           stage.contains('espig') ||
           stage.contains('senesc');
       if (nutrient == AgroMetricKey.n) {
@@ -3783,15 +3917,18 @@ class NutrientRecommendationEngine {
     }
 
     if (crop == 'onion' || crop == 'cebolla' || crop == 'crop_onion') {
-      final early = stage.contains('germin') ||
+      final early =
+          stage.contains('germin') ||
           stage.contains('emerg') ||
           stage.contains('establec');
       final foliar = stage.contains('vegetativo');
       final induction = stage.contains('induccion');
-      final bulb = stage.contains('llenado') ||
+      final bulb =
+          stage.contains('llenado') ||
           stage.contains('iniciobulbo') ||
           stage.contains('bulbo');
-      final late = stage.contains('maduracion') ||
+      final late =
+          stage.contains('maduracion') ||
           stage.contains('cosecha') ||
           stage.contains('espig') ||
           stage.contains('senesc');
@@ -3815,21 +3952,25 @@ class NutrientRecommendationEngine {
     }
 
     if (crop == 'garlic' || crop == 'ajo' || crop == 'crop_garlic') {
-      final early = stage.contains('plant') ||
+      final early =
+          stage.contains('plant') ||
           stage.contains('clove') ||
           stage.contains('diente') ||
           stage.contains('emerg') ||
           stage.contains('establec');
       final foliar = stage.contains('veget') || stage.contains('foliar');
-      final vernalization = stage.contains('vernal') ||
+      final vernalization =
+          stage.contains('vernal') ||
           stage.contains('frio') ||
           stage.contains('cold');
-      final bulb = stage.contains('diferenci') ||
+      final bulb =
+          stage.contains('diferenci') ||
           stage.contains('llenado') ||
           stage.contains('bulb') ||
           stage.contains('bulbo') ||
           stage.contains('fill');
-      final late = stage.contains('maduracion') ||
+      final late =
+          stage.contains('maduracion') ||
           stage.contains('matur') ||
           stage.contains('cosecha') ||
           stage.contains('harvest') ||
@@ -3876,9 +4017,7 @@ class NutrientRecommendationEngine {
 
   static bool _isEggplantCrop(String? cropKey) {
     final crop = (cropKey ?? '').toLowerCase();
-    return crop == 'eggplant' ||
-        crop == 'berenjena' ||
-        crop == 'aubergine';
+    return crop == 'eggplant' || crop == 'berenjena' || crop == 'aubergine';
   }
 
   static bool _isSquashCrop(String? cropKey) {
@@ -3917,9 +4056,54 @@ class NutrientRecommendationEngine {
         crop == 'manzano';
   }
 
+  static bool _isPearTreeCrop(String? cropKey) {
+    final crop = (cropKey ?? '').toLowerCase();
+    return crop == 'pear_tree' ||
+        crop == 'crop_pear_tree' ||
+        crop == 'pera' ||
+        crop == 'peral';
+  }
+
+  static bool _isPeachTreeCrop(String? cropKey) {
+    final crop = (cropKey ?? '').toLowerCase();
+    return crop == 'peach_tree' ||
+        crop == 'crop_peach_tree' ||
+        crop == 'peach' ||
+        crop == 'peachtree' ||
+        crop == 'durazno' ||
+        crop == 'duraznero' ||
+        crop == 'melocoton' ||
+        crop == 'melocotón' ||
+        crop == 'melocotonero';
+  }
+
+  static bool _isWalnutTreeCrop(String? cropKey) {
+    final crop = (cropKey ?? '').toLowerCase();
+    return crop == 'walnut_tree' ||
+        crop == 'crop_walnut_tree' ||
+        crop == 'walnut' ||
+        crop == 'walnuttree' ||
+        crop == 'nogal' ||
+        crop == 'nogal pecanero' ||
+        crop == 'pecan' ||
+        crop == 'nuez' ||
+        crop == 'nuez pecana';
+  }
+
+  /// Árbol frutal perenne (manzano/pera de pepita + durazno de hueso + nogal de
+  /// nuez): comparten la semántica "alto útil" del modelo de 5 zonas (un valor
+  /// por encima del óptimo pero por debajo de `highMin` no penaliza ni alerta).
+  /// El nogal es de nuez/almendra, pero la lógica de bandas NPK del árbol es la
+  /// misma.
+  static bool _isFruitTreeCrop(String? cropKey) =>
+      _isAppleTreeCrop(cropKey) ||
+      _isPearTreeCrop(cropKey) ||
+      _isPeachTreeCrop(cropKey) ||
+      _isWalnutTreeCrop(cropKey);
+
   // ── MANZANO ────────────────────────────────────────────────────────────────
   // Recomendaciones prácticas del manzano (doc 05 §11–§13). Reglas clave:
-  // - N: "más N no es más fruta"; el riesgo es el N tardío (llenado/madurez).
+  // - N: "más N no es más fruta"; llenado y madurez no son la misma ventana.
   // - K: sube tras cuajado (calibre, azúcares, firmeza); cuidar K vs Ca/Mg.
   // - P: pesa en raíz/brotación/floración; en pH alto puede ser disponibilidad.
   static String _appleTreePracticalRecommendation(
@@ -3934,75 +4118,570 @@ class NutrientRecommendationEngine {
         isEstablishment ||
         stage.contains('budbreak') ||
         stage.contains('flower');
-    final isFruit =
-        stage.contains('fruit_set') ||
-        stage.contains('fruit_fill') ||
-        stage.contains('harvest');
-    final isLate =
-        stage.contains('fruit_fill') || stage.contains('harvest');
-    final isExcess =
-        label == NutrientPriorityLabel.possibleExcess ||
-        label == NutrientPriorityLabel.reviewAccumulation;
+    final isFruitSet = stage.contains('fruit_set');
+    final isFruitFill = stage.contains('fruit_fill');
+    final isHarvestMaturity =
+        stage.contains('harvest_maturity') ||
+        (stage.contains('harvest') && !stage.contains('post_harvest'));
+    final isFruit = isFruitSet || isFruitFill || isHarvestMaturity;
+    final isUsefulHigh = label == NutrientPriorityLabel.possibleExcess;
+    final isRealExcess = label == NutrientPriorityLabel.reviewAccumulation;
     final caution = modifier?.practicalCaution(nutrient, stage);
     final cautionSuffix = caution == null ? '' : ' $caution';
 
     switch (nutrient) {
       case AgroMetricKey.n:
-        if (isExcess) {
-          if (isLate) {
-            return 'Frena el nitrógeno. Cerca de cosecha, el N alto retrasa la '
-                'madurez, apaga el color y ablanda el fruto.$cautionSuffix';
+        if (isUsefulHigh) {
+          if (isHarvestMaturity) {
+            return 'BioG lee N alto para madurez de manzano. No agregues más '
+                'nitrógeno por ahora: puede retrasar color, bajar firmeza y '
+                'castigar calidad.$cautionSuffix';
           }
-          return 'Hay nitrógeno de sobra. En manzano más N no es más fruta: '
-              'demasiado vigor da sombra y baja calidad.$cautionSuffix';
+          if (isFruitFill) {
+            return 'BioG lee N alto en llenado de manzano. Frena N por ahora: '
+                'mucho follaje le quita fuerza al fruto y puede bajar calibre '
+                'o firmeza.$cautionSuffix';
+          }
+          return 'BioG lee N alto, todavía manejable. No apliques más N por '
+              'costumbre; vigila brotes y sombra excesiva.$cautionSuffix';
+        }
+        if (isRealExcess) {
+          if (isHarvestMaturity) {
+            return 'Nitrógeno alto en manzano. Frena fertilizantes '
+                'nitrogenados: cerca de cosecha retrasa madurez, apaga color '
+                'y ablanda el fruto.$cautionSuffix';
+          }
+          if (isFruitFill) {
+            return 'Nitrógeno alto en llenado de manzano. No apliques más N: '
+                'puede empujar demasiado follaje, quitar fuerza al fruto y '
+                'bajar firmeza.$cautionSuffix';
+          }
+          return 'BioG detecta nitrógeno de sobra en manzano. Pausa N: más '
+              'follaje no significa más fruta y puede bajar calidad.$cautionSuffix';
         }
         if (label == NutrientPriorityLabel.noPriority ||
             label == NutrientPriorityLabel.lowPriority) {
-          return 'El nitrógeno está en su punto para esta etapa del árbol. No '
-              'hace falta empujar más.';
+          return 'Nitrógeno en rango para esta etapa del manzano. Mantén el '
+              'plan y no apliques N extra por costumbre.';
         }
-        if (isLate) {
-          return 'El N va bajo, pero cerca de cosecha no conviene empujarlo: '
-              'prioriza calidad y guarda la corrección para postcosecha.';
+        if (isHarvestMaturity) {
+          return 'BioG lee N bajo cerca de cosecha. No lo corrijas fuerte '
+              'ahora: protege color y firmeza; ajusta después si sigue bajo.';
         }
-        return 'El árbol pide nitrógeno para sostener hoja y brote. Conviene '
-            'apoyar, sobre todo si el suelo no está frío ni salino.';
+        if (isFruitFill) {
+          return 'BioG lee N bajo en llenado. Si el árbol se ve débil, corrige '
+              'ligero; evita pasarte porque ahora el fruto y el K mandan.';
+        }
+        return 'BioG detecta poco N para sostener hoja y brote del manzano. '
+            'Aplica una corrección ligera y evita excederte.';
 
       case AgroMetricKey.p:
-        if (isExcess) {
-          return 'Fósforo de sobra. No conviene corregir P sin análisis; en '
-              'suelo suele inmovilizarse y no baja rápido a la raíz.';
+        if (isUsefulHigh) {
+          return 'BioG lee fósforo algo alto en manzano. No agregues más P por '
+              'ahora; sigue la tendencia.';
+        }
+        if (isRealExcess) {
+          return 'Fósforo alto en manzano. Pausa fertilizantes fosfatados: el '
+              'exceso puede bloquear otros nutrientes y no baja rápido.';
         }
         if (label == NutrientPriorityLabel.noPriority ||
             label == NutrientPriorityLabel.lowPriority) {
-          return 'El fósforo acompaña bien la etapa del árbol.';
+          return 'Fósforo en rango para esta etapa del manzano. Mantén el plan.';
         }
         if (isEarlyP) {
-          return 'El fósforo pesa en raíz, brotación y floración. Revisa '
-              'disponibilidad: con pH alto el problema puede ser bloqueo, no '
-              'falta real de P.';
+          return 'BioG detecta fósforo bajo en una etapa sensible. Corrige de '
+              'forma moderada para apoyar raíz, brotación y floración.';
         }
-        return 'Fósforo bajo. Fuera de raíz/floración la corrección rinde '
-            'menos; úsala también para preparar el siguiente ciclo.';
+        return 'Fósforo bajo en manzano. Corrige sin excederte; si el suelo '
+            'está frío o seco, primero estabiliza humedad para que lo tome.';
 
       case AgroMetricKey.k:
-        if (isExcess) {
-          return 'Potasio alto. Ayuda al fruto, pero vigílalo: desbalancea Ca/Mg '
-              '(riesgo de bitter pit) y con CE alta suma estrés salino.$cautionSuffix';
+        if (isUsefulHigh) {
+          return 'BioG lee K alto pero útil para fruto. No subas más potasio si '
+              'el desarrollo va bien; mantén riego parejo.$cautionSuffix';
+        }
+        if (isRealExcess) {
+          return 'Potasio alto en manzano. Pausa K: demasiado potasio puede '
+              'desbalancear calcio, subir sales y afectar firmeza.$cautionSuffix';
         }
         if (label == NutrientPriorityLabel.noPriority ||
             label == NutrientPriorityLabel.lowPriority) {
-          return 'El potasio está listo para cuando el fruto lo pida.';
+          return 'Potasio en rango para esta etapa del manzano.';
         }
         if (isFruit) {
-          return 'Falta potasio justo cuando el fruto define calibre, azúcar y '
-              'firmeza. Conviene corregir cuidando el balance con Ca/Mg.$cautionSuffix';
+          return 'Potasio bajo en manzano. En esta etapa ayuda a calibre, '
+              'azúcar y firmeza; refuerza K de forma gradual con riego '
+              'parejo.$cautionSuffix';
         }
-        return 'El potasio va bajo. Prepárate para cuajado y llenado, que es '
-            'cuando más pesa en el manzano.';
+        return 'BioG lee potasio bajo en manzano. Prepara el árbol para '
+            'cuajado y llenado con una corrección gradual.';
 
       default:
         return 'Revisa el manejo nutricional del árbol según su etapa.';
+    }
+  }
+
+  // ── PERA ───────────────────────────────────────────────────────────────────
+  // Recomendaciones prácticas de la pera (doc 05 §9, §12, §14). Reglas clave:
+  // - N: "más N no es más fruta"; el exceso sube riesgo de fuego bacteriano,
+  //   baja firmeza/calidad y retrasa madurez; llenado != madurez (v1.5).
+  // - K: protagonista de fruto desde cuajado; cuidar K vs Ca/Mg (cork spot).
+  // - P: pesa en raíz/brotación/floración; en árbol adulto responde poco.
+  static String _pearTreePracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    PearTreeNutritionModifier? modifier,
+  ) {
+    final isEstablishment =
+        stage.contains('planting') || stage.contains('root_establish');
+    final isEarlyP =
+        isEstablishment ||
+        stage.contains('budbreak') ||
+        stage.contains('flower');
+    final isFruitSet = stage.contains('fruit_set');
+    final isFruitFill = stage.contains('fruit_fill');
+    final isHarvestMaturity =
+        stage.contains('harvest_maturity') ||
+        (stage.contains('harvest') && !stage.contains('post_harvest'));
+    final isVegetative = stage.contains('vegetative_growth');
+    final isFruit = isFruitSet || isFruitFill || isHarvestMaturity;
+    final isUsefulHigh = label == NutrientPriorityLabel.possibleExcess;
+    final isRealExcess = label == NutrientPriorityLabel.reviewAccumulation;
+    final caution = modifier?.practicalCaution(nutrient, stage);
+    final cautionSuffix = caution == null ? '' : ' $caution';
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (isUsefulHigh) {
+          if (isHarvestMaturity) {
+            return 'BioG lee N alto para madurez de peral. No agregues más '
+                'nitrógeno por ahora: puede bajar firmeza, retrasar madurez y '
+                'acortar conservación.$cautionSuffix';
+          }
+          if (isFruitFill) {
+            return 'BioG lee N alto en llenado de peral. Frena N por ahora: '
+                'mucho follaje compite con calibre y firmeza del fruto.$cautionSuffix';
+          }
+          if (isVegetative) {
+            return 'BioG lee N alto en crecimiento del peral. No empujes más '
+                'brotes tiernos; eso sube riesgo de enfermedad.$cautionSuffix';
+          }
+          return 'BioG lee N alto, todavía manejable. No apliques más N por '
+              'costumbre; vigila brotes tiernos y sombra.$cautionSuffix';
+        }
+        if (isRealExcess) {
+          if (isHarvestMaturity) {
+            return 'Nitrógeno alto en peral. Frena fertilizantes nitrogenados: '
+                'cerca de cosecha baja firmeza, retrasa madurez y acorta '
+                'conservación.$cautionSuffix';
+          }
+          if (isFruitFill) {
+            return 'Nitrógeno alto en llenado de peral. No apliques más N: '
+                'puede mandar el árbol a follaje, restar calibre y bajar '
+                'calidad.$cautionSuffix';
+          }
+          if (isVegetative) {
+            return 'BioG detecta nitrógeno de sobra en peral. Pausa N: los '
+                'brotes tiernos aumentan riesgo de fuego bacteriano.$cautionSuffix';
+          }
+          return 'BioG detecta nitrógeno de sobra en peral. Más N no es más '
+              'fruta: sube follaje, sombra y riesgo sanitario.$cautionSuffix';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'Nitrógeno en rango para esta etapa del peral. Mantén el plan '
+              'y no apliques N extra por costumbre.';
+        }
+        if (isHarvestMaturity) {
+          return 'BioG lee N bajo cerca de cosecha. No lo corrijas fuerte '
+              'ahora: cuida firmeza y ajusta después si sigue bajo.';
+        }
+        if (isFruitFill) {
+          return 'BioG lee N bajo en llenado de peral. Si el árbol se ve débil, '
+              'corrige ligero; evita pasarte porque ahora manda el fruto.';
+        }
+        return 'BioG detecta poco N para sostener hoja y brote del peral. '
+            'Aplica una corrección ligera y cuida no disparar brotes tiernos.';
+
+      case AgroMetricKey.p:
+        if (isUsefulHigh) {
+          return 'BioG lee fósforo algo alto en peral. No agregues más P por '
+              'ahora; sigue la tendencia.';
+        }
+        if (isRealExcess) {
+          return 'Fósforo alto en peral. Pausa fertilizantes fosfatados: el '
+              'exceso puede bloquear otros nutrientes y no corrige el fruto.';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'Fósforo en rango para esta etapa del peral. Mantén el plan.';
+        }
+        if (isEarlyP) {
+          return 'BioG detecta fósforo bajo en una etapa sensible. Corrige de '
+              'forma moderada para apoyar raíz, brotación y floración.';
+        }
+        return 'Fósforo bajo en peral. Corrige sin excederte; si el suelo está '
+            'frío o seco, primero estabiliza humedad para que lo tome.';
+
+      case AgroMetricKey.k:
+        if (isUsefulHigh) {
+          return 'BioG lee K alto pero útil para fruto. No subas más potasio si '
+              'el desarrollo va bien; mantén riego parejo.$cautionSuffix';
+        }
+        if (isRealExcess) {
+          return 'Potasio alto en peral. Pausa K: demasiado potasio puede '
+              'desbalancear calcio, subir sales y bajar firmeza.$cautionSuffix';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'Potasio en rango para esta etapa del peral.';
+        }
+        if (isFruit) {
+          return 'Potasio bajo en peral. En esta etapa ayuda a calibre, firmeza '
+              'y calidad; refuerza K de forma gradual con riego parejo.$cautionSuffix';
+        }
+        return 'BioG lee potasio bajo en peral. Prepara el árbol para cuajado '
+            'y llenado con una corrección gradual.';
+
+      default:
+        return 'Revisa el manejo nutricional del árbol según su etapa.';
+    }
+  }
+
+  // ── DURAZNO ──────────────────────────────────────────────────────────────
+  // Recomendaciones prácticas del durazno (doc 05 §12–§16). Frutal de
+  // HUESO/carozo. Reglas clave:
+  // - N: necesario para hoja/madera, pero el exceso "roba fruta": vigor blando,
+  //   sombra, peor color/firmeza y más presión sanitaria. No fire blight.
+  // - K: protagonista del fruto desde cuajado; el durazno es muy sensible a la
+  //   deficiencia de K (calibre, firmeza, azúcares).
+  // - P: pesa en raíz/establecimiento/floración; en árbol adulto responde poco.
+  // - Contrato v1.5: fruit_fill habla de LLENADO/calibre/carozo (NO cosecha);
+  //   harvest_maturity sí habla de madurez/cosecha/color/firmeza final.
+  static String _peachTreePracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    PeachTreeNutritionModifier? modifier,
+  ) {
+    final isEstablishment =
+        stage.contains('planting') || stage.contains('root_establish');
+    final isEarlyP =
+        isEstablishment ||
+        stage.contains('budbreak') ||
+        stage.contains('flower');
+    final isFruitSet = stage.contains('fruit_set');
+    final isFruitFill = stage.contains('fruit_fill');
+    final isHarvestMaturity =
+        stage.contains('harvest_maturity') ||
+        (stage.contains('harvest') && !stage.contains('post_harvest'));
+    final isVegetative = stage.contains('vegetative_growth');
+    final isFruit = isFruitSet || isFruitFill || isHarvestMaturity;
+    final isUsefulHigh = label == NutrientPriorityLabel.possibleExcess;
+    final isRealExcess = label == NutrientPriorityLabel.reviewAccumulation;
+    final caution = modifier?.practicalCaution(nutrient, stage);
+    final cautionSuffix = caution == null ? '' : ' $caution';
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (isUsefulHigh) {
+          if (isHarvestMaturity) {
+            return 'BioG lee N alto para madurez de duraznero. No agregues más '
+                'nitrógeno por ahora: puede retrasar color, bajar firmeza y '
+                'castigar calidad.$cautionSuffix';
+          }
+          if (isFruitFill) {
+            return 'BioG lee N alto en llenado de duraznero. Frena N por '
+                'ahora: mucho follaje compite con el fruto y puede bajar '
+                'calibre o firmeza.$cautionSuffix';
+          }
+          if (isVegetative) {
+            return 'BioG lee N alto en crecimiento del duraznero. No empujes '
+                'más brotes tiernos; eso da sombra y sube presión de plagas.$cautionSuffix';
+          }
+          return 'BioG lee N alto, todavía manejable. No apliques más N por '
+              'costumbre; vigila follaje y sombra.$cautionSuffix';
+        }
+        if (isRealExcess) {
+          if (isHarvestMaturity) {
+            return 'Nitrógeno alto en duraznero. Frena fertilizantes '
+                'nitrogenados: cerca de cosecha retrasa madurez, baja color y '
+                'afloja el fruto.$cautionSuffix';
+          }
+          if (isFruitFill) {
+            return 'Nitrógeno alto en llenado de duraznero. No apliques más N: '
+                'puede mandar el árbol a follaje, restar calibre y bajar '
+                'calidad.$cautionSuffix';
+          }
+          if (isVegetative) {
+            return 'BioG detecta nitrógeno de sobra en duraznero. Pausa N: los '
+                'brotes tiernos dan sombra, bajan calidad y atraen más plaga.$cautionSuffix';
+          }
+          return 'BioG detecta nitrógeno de sobra en duraznero. Más N no es '
+              'más fruta: sube follaje, sombra y riesgo sanitario.$cautionSuffix';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'Nitrógeno en rango para esta etapa del duraznero. Mantén el '
+              'plan y no apliques N extra por costumbre.';
+        }
+        if (isHarvestMaturity) {
+          return 'BioG lee N bajo cerca de cosecha. No lo corrijas fuerte '
+              'ahora: cuida color y firmeza; ajusta después si sigue bajo.';
+        }
+        if (isFruitFill) {
+          return 'BioG lee N bajo en llenado de duraznero. Si el árbol se ve '
+              'débil, corrige ligero; evita pasarte porque ahora manda el fruto.';
+        }
+        return 'BioG detecta poco N para sostener hoja y brote del duraznero. '
+            'Aplica una corrección ligera y evita disparar follaje.';
+
+      case AgroMetricKey.p:
+        if (isUsefulHigh) {
+          return 'BioG lee fósforo algo alto en duraznero. No agregues más P '
+              'por ahora; sigue la tendencia.';
+        }
+        if (isRealExcess) {
+          return 'Fósforo alto en duraznero. Pausa fertilizantes fosfatados: '
+              'el exceso puede bloquear otros nutrientes y no mejora el fruto.';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'Fósforo en rango para esta etapa del duraznero. Mantén el plan.';
+        }
+        if (isEarlyP) {
+          return 'BioG detecta fósforo bajo en una etapa sensible. Corrige de '
+              'forma moderada para apoyar raíz, brotación y floración.';
+        }
+        return 'Fósforo bajo en duraznero. Corrige sin excederte; si el suelo '
+            'está frío o seco, primero estabiliza humedad para que lo tome.';
+
+      case AgroMetricKey.k:
+        if (isUsefulHigh) {
+          return 'BioG lee K alto pero útil para fruto. No subas más potasio si '
+              'el desarrollo va bien; mantén riego parejo.$cautionSuffix';
+        }
+        if (isRealExcess) {
+          return 'Potasio alto en duraznero. Pausa K: demasiado potasio puede '
+              'subir sales, desbalancear calcio y bajar firmeza.$cautionSuffix';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'Potasio en rango para esta etapa del duraznero.';
+        }
+        if (isFruit) {
+          return 'Potasio bajo en duraznero. En esta etapa ayuda a tamaño, '
+              'firmeza, dulzor y llenado; refuerza K de forma gradual con '
+              'riego parejo.$cautionSuffix';
+        }
+        return 'BioG lee potasio bajo en duraznero. Prepara el árbol para '
+            'cuajado y llenado con una corrección gradual.';
+
+      default:
+        return 'Revisa el manejo nutricional del árbol según su etapa.';
+    }
+  }
+
+  // ── NOGAL PECANERO ─────────────────────────────────────────────────────────
+  // Guardas de suelo del nogal (doc 05 §12.2, §3.1-§3.4). Devuelve un mensaje de
+  // guarda cuando agua/raíz/salinidad/pH deben mandar ANTES que NPK; null si el
+  // suelo no bloquea y se puede hablar de nutrición. Umbrales conservadores
+  // (doc 05 §0.5): EC alta ~>2.0 dS/m; humedad crítica baja <45%; saturación
+  // >90%; pH alto >7.5. NO son dosis; orientan y piden confirmar con análisis.
+  static String? _walnutSoilGuard({
+    required String stage,
+    double? ph,
+    double? ec,
+    double? soilMoisturePct,
+  }) {
+    final isFruitFill = stage.contains('fruit_fill');
+    final isFruit =
+        isFruitFill ||
+        stage.contains('fruit_set') ||
+        stage.contains('harvest');
+
+    // 1) Saturación: oxígeno/raíz/drenaje primero (no más agua ni fertilizante).
+    if (soilMoisturePct != null && soilMoisturePct > 90) {
+      return 'El suelo está saturado para el nogal. Más agua o fertilizante '
+          'empeora el oxígeno de la raíz: revisa drenaje y aireación antes de '
+          'tocar NPK.';
+    }
+    // 2) Humedad crítica baja: agua/absorción primero.
+    if (soilMoisturePct != null && soilMoisturePct < 45) {
+      final tail = isFruitFill
+          ? ' En llenado, la nuez no perdona falta de agua: se juega el llenado '
+                'de almendra.'
+          : '';
+      return 'Primero estabiliza la humedad: con raíz estresada el nogal '
+          'aprovecha mal el NPK.$tail';
+    }
+    // 3) Salinidad alta: sales/agua/drenaje antes de fertilizar.
+    if (ec != null && ec >= 2.0) {
+      final tail = isFruit
+          ? ' Con sales altas en amarre/llenado, empujar fertilizante agrava el '
+                'estrés y castiga el llenado de almendra.'
+          : '';
+      return 'La salinidad (EC) está alta en el nogal. No apliques fertilización '
+          'fuerte: prioriza riego de lavado/lixiviación, agua parejo y '
+          'drenaje.$tail';
+    }
+    // 4) pH alto: disponibilidad de Zn/Fe/P, no más N.
+    if (ph != null && ph > 7.5) {
+      return 'El pH está alto para el nogal: puede haber bloqueo de zinc, hierro '
+          'o fósforo aunque estén presentes. Revisa disponibilidad y zinc '
+          'contextual antes de subir N. Confirma con análisis.';
+    }
+    return null;
+  }
+
+  // Recomendaciones prácticas del nogal (doc 05 §12, §14, §17). Frutal de NUEZ.
+  // Reglas clave:
+  // - N: protagonista de hoja/área foliar/reservas/llenado, pero "más N no es
+  //   más nuez": el exceso se va a follaje/sombra, sube sales y desbalancea Zn.
+  // - K: protagonista del crecimiento de nuez y el llenado de almendra (calibre,
+  //   % almendra, calidad). Alta sensibilidad a K bajo en fruit_fill.
+  // - P: pesa en raíz/establecimiento/floración; en suelo calizo el problema
+  //   suele ser disponibilidad por pH, no falta total.
+  // - Zinc es CONTEXTO crítico (no sensor v1): con pH alto + hoja chica/roseta,
+  //   no diagnosticar "falta de N".
+  // - Contrato v1.5: fruit_fill habla de LLENADO de nuez/almendra (NO cosecha);
+  //   harvest_maturity sí habla de madurez/ruezno/cosecha/calidad final.
+  static String _walnutTreePracticalRecommendation(
+    AgroMetricKey nutrient,
+    NutrientPriorityLabel label,
+    String stage,
+    WalnutTreeNutritionModifier? modifier, {
+    double? ph,
+    double? ec,
+    double? soilMoisturePct,
+  }) {
+    // GUARDAS de Nogal (doc 05 §12.2 "bloqueos duros", §3.1-§3.4): agua, raíz,
+    // salinidad y pH MANDAN antes que NPK. Si el contexto de suelo está fuera de
+    // rango, BIO-G antepone la guarda y NO empuja fertilización agresiva. Es
+    // orientación, no dosis. Umbrales conservadores alineados al doc 05 §0.5.
+    final guard = _walnutSoilGuard(
+      stage: stage,
+      ph: ph,
+      ec: ec,
+      soilMoisturePct: soilMoisturePct,
+    );
+    if (guard != null) return guard;
+
+    final isEstablishment =
+        stage.contains('planting') || stage.contains('root_establish');
+    final isEarlyP =
+        isEstablishment ||
+        stage.contains('budbreak') ||
+        stage.contains('flower');
+    final isFruitSet = stage.contains('fruit_set');
+    final isFruitFill = stage.contains('fruit_fill');
+    final isHarvestMaturity =
+        stage.contains('harvest_maturity') ||
+        (stage.contains('harvest') && !stage.contains('post_harvest'));
+    final isVegetative = stage.contains('vegetative_growth');
+    final isFruit = isFruitSet || isFruitFill || isHarvestMaturity;
+    final isUsefulHigh = label == NutrientPriorityLabel.possibleExcess;
+    final isRealExcess = label == NutrientPriorityLabel.reviewAccumulation;
+    final caution = modifier?.practicalCaution(nutrient, stage);
+    final cautionSuffix = caution == null ? '' : ' $caution';
+
+    switch (nutrient) {
+      case AgroMetricKey.n:
+        if (isUsefulHigh) {
+          if (isHarvestMaturity) {
+            return 'BioG lee N alto en madurez del nogal. No agregues mas '
+                'nitrogeno: cerca de cosecha el N tardio retrasa madurez y puede '
+                'favorecer pre-germinacion y brote tierno.$cautionSuffix';
+          }
+          if (isFruitFill) {
+            return 'BioG lee N alto en llenado de nuez. Frena el N por ahora: '
+                'mucho vigor compite con el llenado de almendra; revisa agua, K '
+                'y zinc.$cautionSuffix';
+          }
+          if (isVegetative) {
+            return 'BioG lee N alto en crecimiento del nogal. No empujes mas '
+                'brotes tiernos: dan sombra y suben pulgon/acaros sin mas nuez.$cautionSuffix';
+          }
+          return 'BioG lee N alto, todavia manejable. En nogal mas N no es mas '
+              'nuez; vigila follaje, sombra y carga.$cautionSuffix';
+        }
+        if (isRealExcess) {
+          if (isHarvestMaturity) {
+            return 'Nitrogeno alto en nogal. Frena fertilizantes nitrogenados: '
+                'cerca de cosecha el N tardio castiga calidad y reservas.$cautionSuffix';
+          }
+          if (isFruitFill) {
+            return 'Nitrogeno alto en llenado de nuez. No apliques mas N: puede '
+                'irse a follaje, restar llenado de almendra y subir alternancia.$cautionSuffix';
+          }
+          return 'BioG detecta nitrogeno de sobra en nogal. Mas N no es mas '
+              'nuez: sube follaje, sombra, sales y presion de plagas.$cautionSuffix';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'Nitrogeno en rango para esta etapa del nogal. Manten el plan '
+              'y no apliques N extra por costumbre.';
+        }
+        if (isHarvestMaturity) {
+          return 'BioG lee N bajo cerca de cosecha. No lo corrijas fuerte ahora: '
+              'cuida calidad de almendra; ajusta en postcosecha si sigue bajo.';
+        }
+        if (isFruitFill) {
+          return 'BioG lee N bajo en llenado de nuez. Si la hoja se ve debil, '
+              'corrige ligero junto con agua y K; no te pases porque ahora manda '
+              'la nuez. Si hay pH alto y hoja chica, revisa zinc antes que N.';
+        }
+        return 'BioG detecta poco N para sostener hoja y brote del nogal. '
+            'Aplica una correccion ligera y evita disparar follaje; revisa '
+            'tambien agua, raiz y zinc contextual.';
+
+      case AgroMetricKey.p:
+        if (isUsefulHigh) {
+          return 'BioG lee fosforo algo alto en nogal. No agregues mas P por '
+              'ahora; en suelo calizo el P alto puede agravar disponibilidad de '
+              'zinc/hierro.';
+        }
+        if (isRealExcess) {
+          return 'Fosforo alto en nogal. Pausa fertilizantes fosfatados: el '
+              'exceso puede bloquear micronutrientes (Zn/Fe) y no mejora la nuez.';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'Fosforo en rango para esta etapa del nogal. Manten el plan.';
+        }
+        if (isEarlyP) {
+          return 'BioG detecta fosforo bajo en una etapa sensible. Corrige de '
+              'forma moderada para apoyar raiz, brotacion y floracion; en pH '
+              'alto confirma si es disponibilidad mas que falta total.';
+        }
+        return 'Fosforo bajo en nogal. Corrige sin excederte y con analisis; si '
+            'el suelo esta frio o seco, primero estabiliza humedad para que lo tome.';
+
+      case AgroMetricKey.k:
+        if (isUsefulHigh) {
+          return 'BioG lee K alto pero util para la nuez. No subas mas potasio '
+              'si el llenado va bien; cuida que la salinidad no se dispare.$cautionSuffix';
+        }
+        if (isRealExcess) {
+          return 'Potasio alto en nogal. Pausa K: demasiado potasio puede subir '
+              'sales/EC y desbalancear magnesio y calcio.$cautionSuffix';
+        }
+        if (label == NutrientPriorityLabel.noPriority ||
+            label == NutrientPriorityLabel.lowPriority) {
+          return 'Potasio en rango para esta etapa del nogal.';
+        }
+        if (isFruit) {
+          return 'Potasio bajo en nogal. En crecimiento y llenado de nuez el K '
+              'ayuda a calibre, llenado de almendra y calidad; refuerza K de '
+              'forma gradual con riego parejo. Si la humedad esta baja, primero '
+              'estabiliza agua.$cautionSuffix';
+        }
+        return 'BioG lee potasio bajo en nogal. Prepara el arbol para amarre y '
+            'llenado de almendra con una correccion gradual.';
+
+      default:
+        return 'Revisa el manejo nutricional del nogal según su etapa.';
     }
   }
 
@@ -4073,9 +4752,7 @@ class NutrientRecommendationEngine {
           s.contains('emerg') ||
           s.contains('vegetativo');
     }
-    if (crop == 'eggplant' ||
-        crop == 'berenjena' ||
-        crop == 'aubergine') {
+    if (crop == 'eggplant' || crop == 'berenjena' || crop == 'aubergine') {
       return s.contains('establec') ||
           s.contains('emerg') ||
           s.contains('vegetativo');
@@ -4121,7 +4798,8 @@ class NutrientRecommendationEngine {
     required AgroMetricKey nutrient,
     required NutrientPriorityLabel label,
   }) {
-    final isExcess = label == NutrientPriorityLabel.possibleExcess ||
+    final isExcess =
+        label == NutrientPriorityLabel.possibleExcess ||
         label == NutrientPriorityLabel.reviewAccumulation;
 
     if (isExcess) {

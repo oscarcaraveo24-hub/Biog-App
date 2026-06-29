@@ -16,5 +16,8 @@ enum CropKey {
   onion,
   garlic,
   appleTree,
+  pearTree,
+  peachTree,
+  walnutTree,
   generic,
 }

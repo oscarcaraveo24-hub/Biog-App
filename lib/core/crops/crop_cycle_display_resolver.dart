@@ -425,6 +425,30 @@ _CropFamily _resolveFamily(String crop) {
     case 'apple':
     case 'manzano':
     case 'manzana':
+    case 'crop_pear_tree':
+    case 'pear_tree':
+    case 'peartree':
+    case 'pear':
+    case 'pera':
+    case 'peral':
+    case 'crop_peach_tree':
+    case 'peach_tree':
+    case 'peachtree':
+    case 'peach':
+    case 'durazno':
+    case 'duraznero':
+    case 'melocoton':
+    case 'melocotón':
+    case 'melocotonero':
+    case 'crop_walnut_tree':
+    case 'walnut_tree':
+    case 'walnuttree':
+    case 'walnut':
+    case 'nogal':
+    case 'nogal pecanero':
+    case 'pecan':
+    case 'nuez':
+    case 'nuez pecana':
       return _CropFamily.tree;
     case 'tomato':
     case 'tomate':

@@ -1,0 +1,2282 @@
+BIO-G
+
+05_GUIA_FERTILIZACION_NPK_TARGETS_BIOG_PERA_v1_1_REFORZADA
+Cultivo: Pera / Peral / Pear tree
+cropId: crop_pear_tree
+cropKey esperado: pear_tree
+profilePrefix: PR
+Documento: 05 de 05 — Fertilización NPK y targets por etapa
+Versión: v1.1 reforzada con investigación adicional y PDFs anexos
+Formato: TXT técnico para Flutter/Dart
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+IMPORTANTE:
+Este documento NO es una receta agronómica local.
+No sustituye análisis de suelo, agua, tejido/foliar, asesoría regional ni normatividad.
+BIO-G v1 debe orientar, ponderar riesgo, mejorar lectura de sensores y pedir confirmación.
+No debe prometer rendimiento ni indicar dosis comerciales cerradas.
+
+================================================================================
+0. CAMBIOS PRINCIPALES v1.1 REFORZADA
+================================================================================
+
+Esta versión refuerza la guía de fertilización de pera con información adicional entregada por el usuario y con PDFs anexos específicos de peral/pera Williams/pera Conferencia.
+
+Cambios importantes:
+
+1) Se refuerza la regla anti-exceso de vigor.
+   - En peral, el exceso de N, riego, poda fuerte o baja carga puede generar brotes tiernos y copa demasiado vegetativa.
+   - Ese vigor excesivo no solo baja calidad: también aumenta vulnerabilidad a fuego bacteriano y dificulta el endurecimiento de madera antes del invierno.
+   - BIO-G debe penalizar N alto en vegetative_growth tardío, fruit_fill, harvest_maturity y después de mediados/finales de verano si no hay justificación agronómica.
+
+2) Se corrige el calendario de aplicación para no crear mensajes peligrosos.
+   - Árbol joven: puede necesitar nutrición más frecuente durante crecimiento activo, pero BIO-G no debe traducirlo como “aplicar cada mes” de forma universal.
+   - Árbol maduro/productivo: separar al menos dos ventanas fuertes de razonamiento: antes de brotación/inicio de primavera y postcosecha si hay hoja activa.
+   - Restricción crítica: no empujar fertilización nitrogenada fuerte a finales de verano u otoño si eso genera brotes tiernos vulnerables a heladas.
+   - En post_harvest, N/K/B/Zn solo son accionables si todavía hay hoja verde activa, humedad estable, baja EC y temperatura suficiente.
+
+3) Se agregan referencias de dosis SOLO para modo avanzado.
+   - Rango N adulto frecuente: 75–140 kg N/ha según producción, vigor, suelo, riego, materia orgánica y análisis.
+   - Referencia tipo producción 30 t/ha: 75 kg N/ha, 25 kg P2O5/ha, 85 kg K2O/ha.
+   - Referencia Peral Conferencia en producción: 90–110 UF N/ha, 50–60 UF P2O5/ha, 120–135 UF K2O/ha.
+   - Referencia práctica intensiva: 82 kg N/ha, 63 kg P2O5/ha, 50 kg MgO/ha y 182 kg K2O/ha, normalmente dividido en 3–4 sesiones; NO usar como receta universal.
+   - Referencia P/K por exportación: P = 0.73 kg/t de fruto; K = 2.78 kg/t de fruto.
+
+4) Se fortalecen los rangos foliares avanzados.
+   - Manual Pera Williams / INTA Alto Valle: N 2.20–2.50%, P 0.13–0.45%, K 1.20–2.00%, Ca 1.10–2.50%, Mg 0.24–0.50%, B 30–60 ppm, Zn 18–60 ppm.
+   - Guías complementarias entregadas por el usuario: N 2.3–2.7%, P 0.14–0.40%, K 1.2–2.2%, Ca 1.5–2.0%, Mg 0.25–0.50%.
+   - BIO-G debe guardar estos rangos como MODO AVANZADO, no como lectura directa del sensor NPK.
+
+5) Se añade lógica de análisis foliar/suelo como pilar.
+   - Práctica recomendada: análisis foliar anual en verano; la fecha exacta depende de región.
+   - Manual Williams: muestra entre 15 enero y 15 febrero, hojas medias del brote del año, 10–15 plantas, ~40 hojas por muestra.
+   - Guía general aportada por usuario: al menos 100 hojas en verano/julio-agosto, cuando aplique por región.
+   - BIO-G debe almacenar historial foliar y no sobre-reaccionar a un solo valor si producción/calidad se mantienen.
+
+6) Se fortalece el modelo de suelo, agua y disponibilidad.
+   - El peral requiere suelo fértil, bien drenado, pH práctico 6.0–7.0 y baja salinidad.
+   - En pera Williams, el manual regional recalca que anegamiento, freática alta, salinidad, compactación y riego deficiente reducen raíz, absorción y productividad.
+   - BIO-G debe bloquear sugerencias de fertilización si antes no está estable el suelo.
+
+7) Se agrega interacción K/Ca/Mg más fuerte.
+   - K es protagonista del calibre y la turgencia del fruto.
+   - Pero K no se debe celebrar automáticamente: en exceso o con Ca/Mg bajos puede elevar riesgo de problemas de calidad y almacenamiento.
+   - Vida Rural/Neiker usa explícitamente relación K/(Ca+Mg), textura, materia orgánica y producción anterior como variables para potasio.
+
+8) Se refuerza que la guía es cableable, no recetario.
+   - Las dosis son referencias de calibración para modo avanzado/agronómico.
+   - BIO-G v1 debe trabajar con prioridades, targets relativos, alertas y confianza.
+   - Nunca debe indicar aplicación automática sin análisis, etapa, suelo, agua, vigor y contexto sanitario.
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+La fertilización del peral en BIO-G debe ser uno de los módulos más cuidadosos del sistema.
+
+La pera se parece al manzano como frutal de pepita, pero NO debe copiarse como manzano:
+- En pera, N y K influyen de forma fuerte en tamaño de fruto.
+- N excesivo puede reducir calidad, firmeza, color/cubierta, sabor, sólidos solubles,
+  conservación y aumentar vigor blando.
+- K es clave para tamaño, llenado y productividad, pero exceso o mala relación K/Ca/Mg
+  puede elevar problemas fisiológicos y de almacenamiento.
+- Boro es crítico para formación de yemas florales, floración, polen/cuaje y retorno floral.
+- Calcio no es NPK, pero es obligatorio como contexto por calidad, cork spot, bitter pit,
+  firmeza y vida de anaquel.
+- Zinc, hierro y magnesio entran como contexto avanzado, especialmente en suelos de pH alto,
+  calizos o con síntomas visuales.
+- La postcosecha no cierra el cultivo; puede recargar reservas si hay hoja activa, raíz activa,
+  humedad adecuada, baja salinidad y temperatura suficiente.
+
+Regla BIO-G:
+La guía de pera NO debe convertirse en receta fija kg/ha.
+Debe funcionar como:
+
+1) Prioridades relativas N-P-K por etapa fenológica.
+2) StageTargets medibles:
+   - soilMoisture
+   - soilTemp
+   - ph
+   - ec
+   - resistance
+   - n
+   - p
+   - k
+3) StageWeights para AgroScore.
+4) Mensajes UX humanos, prudentes y accionables.
+5) Memoria nutricional perenne.
+6) Modo avanzado con análisis foliar/suelo/agua, pero sin obligar al productor.
+7) Reglas de no sobrefertilizar cuando agua, EC, pH, suelo frío o compactación ya limitan la raíz.
+
+Regla de oro:
+AGUA + RAÍZ + pH + EC + ETAPA mandan antes que NPK.
+
+Si la raíz no puede absorber, “tener nutriente” no significa “nutrir al árbol”.
+
+================================================================================
+1. ALCANCE DEL DOCUMENTO
+================================================================================
+
+Este documento alimenta:
+
+- pear_tree_universal_profile.dart
+- pear_tree_crop_definition.dart
+- pear_tree_nutrition_modifier.dart si existe
+- resolveTargets(...)
+- evaluateTelemetry(...)
+- AgroScore por etapa
+- AgroMetricEval para N/P/K
+- mensajes de dashboard/NPK screen
+- planner de nutrición v1/v2
+- PearTreeNutritionMemory opcional/futuro
+
+No alimenta directamente:
+- dosis cerradas por fertilizante;
+- marcas comerciales;
+- ingredientes comerciales;
+- programas regionales obligatorios;
+- planes sin análisis;
+- recomendaciones de aplicación química sin asesor técnico.
+
+Compatible con estándar BIO-G de árboles perennes:
+
+Estados perennes:
+- newly_planted
+- juvenile_non_productive
+- established
+- productive_season
+- unknown
+
+Etapas árbol:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Métricas sensor v1:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Contexto avanzado NO sensor v1:
+- Ca
+- Mg
+- B
+- Zn
+- Fe
+- materia orgánica
+- textura
+- drenaje
+- salinidad del agua
+- bicarbonatos/caliza
+- vigor visible
+- crecimiento de brote
+- carga de fruta
+- polinización
+- helada
+- defoliación
+- postcosecha anterior
+- análisis foliar/suelo/agua
+
+================================================================================
+2. FUENTES Y CRITERIO DE CONFIANZA
+================================================================================
+
+Criterio de fuentes:
+- Alta confianza: universidades, extensión, guías técnicas públicas, artículos revisados.
+- Media-alta: guías regionales, documentos técnicos comerciales que coinciden con universidades.
+- Media: fuentes comerciales usadas solo para patrón fisiológico, no para marcas/dosis.
+- Baja-media: foros usados para lenguaje UX y confusiones reales, no para targets.
+
+Fuentes base usadas para criterio agronómico:
+- Oregon State University Extension: Fertilizer Guide: Pears.
+- Washington State University Tree Fruit: fall pear sprays, target leaf nutrient ranges, tree fruit nutrition.
+- Washington State University Tree Fruit: post-bloom nutrition priorities.
+- NSW Department of Primary Industries: Apple and pear nutrition.
+- Montana State University / Western Agricultural Research Center: Orchard Nutrition.
+- WSU Crop Protection Guide / Nutrient applications / Boron / Zinc.
+- BIO-G: estándar perennes v1.5 y guía NPK manzano v1.1 como plantilla editorial.
+
+Uso de foros:
+Se revisan como señal de lenguaje:
+- “hojas amarillas”
+- “peral no da fruta”
+- “fruta chica”
+- “le puse mucho abono”
+- “lo riego mucho y se le caen hojas”
+- “abono casero / estiércol / composta”
+- “¿falta nitrógeno?”
+- “¿qué NPK uso?”
+
+Pero los foros NO definen rangos técnicos.
+En BIO-G se usan para UX: evitar que la app diga “falta N” cuando puede ser exceso de agua,
+compactación, pH alto, psila, fuego bacteriano, alternancia, falta de polinizador o raíz dañada.
+
+================================================================================
+3. PRINCIPIOS AGRONÓMICOS PARA BIO-G EN PERA
+================================================================================
+
+3.1 Suelo primero
+
+Antes de interpretar NPK, BIO-G debe revisar:
+
+- humedad;
+- salinidad/EC;
+- pH;
+- compactación/resistencia;
+- temperatura del suelo;
+- etapa fenológica;
+- estado perenne;
+- memoria del ciclo anterior.
+
+Si una lectura NPK aparece baja o alta, pero hay problema de raíz/suelo, el mensaje debe
+cambiar de “falta fertilizante” a “baja disponibilidad / baja absorción”.
+
+Mensaje:
+“Puede haber nutrientes, pero el árbol quizá no los está absorbiendo bien. Revisa primero agua, pH, salinidad y suelo.”
+
+3.2 Agua siempre
+
+En pera, el agua estable es crítica para:
+- absorción de N/P/K;
+- tamaño de fruto;
+- cuajado;
+- transporte de Ca;
+- evitar estrés salino;
+- evitar caída;
+- recuperación postcosecha.
+
+Regla:
+- Si soilMoisture está baja en flowering, fruit_set o fruit_fill, penalizar agua antes que NPK.
+- Si soilMoisture está alta/saturada, no recomendar más riego ni más fertilizante.
+- Si EC alta + suelo seco, subir alerta por concentración de sales.
+- Si EC alta + riego/fertirriego reciente, advertir acumulación o mala lixiviación.
+
+3.3 Raíz activa y temperatura
+
+La absorción real depende de raíz fina activa.
+Con suelo frío, saturado o compactado, el sensor puede leer nutrientes pero el árbol no absorberlos.
+
+Regla:
+- soilTemp < 8 °C: absorción muy limitada; bajar confianza NPK.
+- soilTemp 8–12 °C: absorción lenta; alertas prudentes.
+- soilTemp 12–24/26 °C: zona funcional para raíz en la mayoría de etapas activas.
+- soilTemp > 30 °C + humedad baja: estrés térmico/radicular; bajar confianza NPK.
+- soilTemp > 32–35 °C: riesgo severo si coincide con baja humedad o EC alta.
+
+3.4 Nitrógeno: necesario, pero no es “más fruta”
+
+N es necesario para:
+- brotación;
+- hoja;
+- crecimiento de brote;
+- formación de yemas;
+- floración y cuajado;
+- tamaño de fruto;
+- reservas.
+
+Pero demasiado N puede provocar:
+- vigor excesivo;
+- sombra y mala ventilación;
+- mayor riesgo de fuego bacteriano por tejido blando;
+- retraso de madurez;
+- menor calidad de fruta;
+- menor firmeza;
+- menor vida de almacenamiento;
+- peor balance con Ca;
+- más sensibilidad a estrés o daño de invierno si se aplica tarde.
+
+Regla BIO-G:
+- N alto temprano puede ser útil si hay deficiencia real y vigor bajo.
+- N alto en fruit_fill debe ser observación de balance, no “óptimo automático”.
+- N alto en harvest_maturity debe advertir calidad/madurez/almacenamiento.
+- Si hubo mala carga o helada y hay poco fruto, bajar recomendación de N para evitar vigor excesivo.
+- Si hay fuego bacteriano activo o historial fuerte, no empujar N.
+- Si el árbol crece más de lo deseable, reducir o suspender N antes de pensar en más fertilizante.
+- Si el árbol está en césped/pasto fertilizado, considerar aporte indirecto de N para evitar doble fertilización.
+
+3.4.1 Ventanas de nitrógeno por estado productivo
+
+Perales jóvenes:
+- Requieren formar raíz, eje, copa y hoja.
+- Pueden recibir aportes más frecuentes durante crecimiento activo si el suelo, EC, humedad y pH son correctos.
+- BIO-G NO debe decir “fertiliza cada mes” como regla universal; debe convertirlo en “ventana de crecimiento activo con revisión mensual”.
+- Si el árbol juvenil muestra crecimiento excesivo, brotes blandos o susceptibilidad sanitaria, bajar N.
+
+Perales maduros en producción:
+- La fertilización debe separarse por al menos dos ventanas lógicas:
+  1) antes de brotación / inicio de primavera, para sostener arranque si las reservas y el suelo lo permiten;
+  2) postcosecha, para reservas del siguiente ciclo, únicamente con hoja activa.
+- En muchos programas técnicos, el ajuste fino se realiza después de conocer carga, vigor y análisis.
+- No fertilizar fuerte por impulso si hubo helada, bajo cuajado o poca carga: el árbol con poca fruta puede irse a vigor excesivo.
+
+Restricción fuerte:
+- No empujar fertilización nitrogenada a finales de verano u otoño si inducirá brotes tiernos.
+- Los brotes tardíos no endurecen bien y pueden dañarse con heladas.
+- Esta regla se activa especialmente en harvest_maturity, post_harvest tardío, clima frío próximo o perfil con historial de daño invernal.
+
+Mensaje BIO-G:
+“En peral, más nitrógeno no siempre significa más fruta. Si el árbol ya está muy vigoroso, fertilizar puede bajar calidad y aumentar riesgo de fuego bacteriano o daño por frío.”
+
+3.5 Fósforo: raíz, energía y arranque, pero poca respuesta en árboles adultos
+
+P pesa más en:
+- preplantación;
+- establecimiento radicular;
+- raíz fina;
+- brotación;
+- floración;
+- división celular temprana;
+- árboles jóvenes en suelos deficientes.
+
+En perales adultos, la respuesta a P suele ser menos frecuente que N/K, salvo suelos
+deficientes, pH que limita disponibilidad o establecimiento en suelo pobre.
+
+Regla BIO-G:
+- P bajo en planting/root_establishment sí debe tener peso.
+- P bajo en budbreak/flowering/fruit_set debe generar observación.
+- P bajo en harvest_maturity no debe tumbar score si agua, K y calidad están bien.
+- pH alto puede bloquear P: no resolver con “aplicar más P” sin análisis.
+- P alto también puede interferir con Zn/Fe; no celebrarlo siempre.
+
+3.6 Potasio: nutriente protagonista de fruto, pero con balance
+
+K es clave en pera para:
+- tamaño de fruto;
+- llenado;
+- transporte de azúcares;
+- regulación hídrica;
+- productividad;
+- calidad;
+- retorno del árbol cuando hay carga.
+
+OSU reporta respuestas de rendimiento y tamaño de fruto a K en perales y recomienda que cada
+productor monitoree variedad, crecimiento, tejido, tamaño de fruto y carga antes de definir
+programa. Esto encaja perfecto con BIO-G: K no debe ser una receta fija.
+
+Regla BIO-G:
+- K tiene alto peso desde fruit_set y máximo en fruit_fill.
+- K bajo en fruit_fill es más grave que K bajo en dormancy.
+- K alto puede ser útil si el árbol está llenando fruta y EC está bien.
+- K alto + EC alta = riesgo salino.
+- K alto + historial de cork spot/bitter pit/low Ca = advertencia de balance Ca/K/Mg.
+- Bosc/Comice pueden requerir atención especial a Mg según fuentes OSU.
+
+3.7 Calcio: no es NPK, pero en pera es obligatorio como contexto
+
+Ca es fundamental para:
+- firmeza;
+- almacenamiento;
+- calidad;
+- reducción de desórdenes fisiológicos;
+- cork spot / bitter pit-like disorders;
+- menor colapso postcosecha.
+
+Ca no se mueve fácilmente al fruto.
+Puede haber Ca en suelo y aun así faltar Ca funcional en fruto si:
+- hay riego irregular;
+- mucho N;
+- mucho K;
+- mucho Mg relativo;
+- fruto grande;
+- baja carga;
+- calor;
+- estrés hídrico;
+- raíz débil;
+- poca transpiración/flujo.
+
+Regla BIO-G:
+- Ca no se mide en NPK v1.
+- En fruit_set/fruit_fill/harvest_maturity debe aparecer como contexto.
+- Si hay K alto + N alto + historial de cork spot/bitter pit/almacenamiento, subir warning.
+- No decir “aplica calcio” automáticamente; decir “revisa balance Ca/K/Mg, riego y análisis”.
+
+3.8 Boro: floración, yema, polen, cuajado y retorno floral
+
+Boro es un micronutriente pequeño en cantidad pero enorme en impacto.
+
+En pera debe entrar como contexto fuerte porque:
+- participa en tejido joven;
+- formación de yemas florales;
+- floración;
+- germinación de polen;
+- cuajado;
+- calidad/forma del fruto;
+- retorno floral del siguiente ciclo.
+
+Regla BIO-G:
+- B no es sensor v1, pero debe aparecer en flowering, fruit_set y post_harvest.
+- No recomendar B a ciegas porque el rango entre deficiencia y toxicidad es estrecho.
+- No aplicar B en árboles no productivos sin justificación/análisis.
+- En SKIP o etapa desconocida, solo mostrar nota contextual si hay mal cuajado recurrente.
+
+3.9 Zinc, hierro y magnesio
+
+Zinc:
+- brotación;
+- crecimiento de brotes;
+- hoja pequeña;
+- entrenudos cortos;
+- roseta;
+- retorno floral;
+- suelos calizos o pH alto.
+
+Hierro:
+- clorosis en hojas jóvenes;
+- nervaduras verdes con lámina amarilla;
+- pH alto/caliza/bicarbonatos.
+
+Magnesio:
+- clorofila;
+- fotosíntesis;
+- balance con K/Ca;
+- Bosc y Comice pueden mostrar más problemas de Mg en ciertas regiones;
+- exceso de K puede agravar deficiencia de Mg.
+
+Regla BIO-G:
+- pH alto + hoja amarilla nueva = posible Fe, no necesariamente N.
+- hoja chica/roseta + pH alto = posible Zn.
+- hoja vieja con clorosis internerval + K alto = posible Mg.
+- No convertir Fe/Zn/Mg en sensores obligatorios v1.
+
+3.10 Postcosecha y reservas
+
+El peral no termina en cosecha.
+Después de cosecha, si la hoja sigue activa, el árbol puede:
+- reponer reservas;
+- sostener yemas para el siguiente ciclo;
+- recuperar N;
+- mejorar estado del árbol antes de dormancia;
+- absorber/redistribuir B/Zn/N en programas técnicos.
+
+Regla:
+- post_harvest es etapa viva.
+- N/K/B/Zn pueden ser relevantes, pero solo si:
+  - hay hoja activa;
+  - suelo no está seco;
+  - suelo no está saturado;
+  - EC está baja;
+  - raíz está activa;
+  - temperatura es suficiente;
+  - no hay riesgo alto de lixiviación.
+- Si ya cayó la hoja o el árbol está entrando a dormancia, no activar “boost” nutricional.
+
+================================================================================
+4. CAPAS DEL MODELO BIO-G
+================================================================================
+
+Capa A — Motor BIO-G v1:
+- sensor de suelo;
+- etapa;
+- estado;
+- perfil PR;
+- memoria;
+- targets;
+- weights;
+- N/P/K relativo.
+
+Capa B — Modo avanzado:
+- análisis de suelo;
+- análisis de agua;
+- análisis foliar;
+- textura;
+- pH de laboratorio;
+- materia orgánica;
+- salinidad del agua;
+- Ca/Mg/B/Zn/Fe;
+- producción esperada;
+- vigor;
+- portainjerto;
+- densidad;
+- riego/fertirriego.
+
+Capa C — Contexto UX:
+- polinización;
+- helada;
+- fuego bacteriano;
+- psila;
+- defoliación;
+- cosecha alta o baja;
+- postcosecha anterior;
+- foros/experiencia del usuario solo como lenguaje.
+
+================================================================================
+5. ESCALA INTERNA BIO-G PARA N/P/K RELATIVO
+================================================================================
+
+Los sensores NPK económicos pueden variar mucho. BIO-G v1 debe normalizar N/P/K a escala 0.00–1.00.
+
+0.00–0.20 = muy bajo
+0.20–0.35 = bajo
+0.35–0.50 = bajo-moderado
+0.50–0.65 = suficiente moderado
+0.65–0.80 = alto útil según etapa
+0.80–1.00 = alto / posible exceso según etapa
+
+Regla:
+- Alto no siempre es bueno.
+- Bajo no siempre es problema si la etapa tiene baja demanda.
+- La etapa define si N/P/K pesa.
+- El pH, EC, humedad, temperatura y compactación cambian la disponibilidad.
+- Si hay análisis foliar, usarlo como contexto superior al sensor NPK simple.
+
+================================================================================
+6. TARGETS BASE UNIVERSALES PARA PERA
+================================================================================
+
+6.1 pH
+
+Target BIO-G:
+- óptimo práctico: 6.0–7.0
+- preferido técnico en muchos sistemas: 6.0–6.8
+- aceptable amplio: 5.5–7.5
+- alerta baja: <5.5
+- alerta alta: >7.5
+- crítico: <5.2 o >8.0
+
+Regla:
+- pH alto baja disponibilidad de Fe, Zn y P.
+- pH bajo puede aumentar toxicidad/desbalance y reducir actividad radicular.
+- En suelos calizos, no interpretar hoja amarilla automáticamente como falta de N.
+
+6.2 EC / salinidad
+
+Target general:
+- seguro/preferido: <1.5 dS/m
+- observación: 1.5–2.0 dS/m
+- alerta: 2.0–2.5 dS/m
+- crítico: >2.5–3.0 dS/m, más fuerte en árbol joven/flor/cuajado/calor.
+
+Regla:
+- En plantación y root_establishment usar umbrales más conservadores.
+- Si EC alta, bloquear mensajes que empujen fertilización.
+- Si EC alta + humedad baja, alertar estrés osmótico.
+- Si EC alta + K/N altos, advertir acumulación de sales/fertilizante.
+
+6.3 Humedad del suelo
+
+Interpretación:
+- usar % de agua disponible (AW) o escala normalizada por textura.
+- si sensor entrega VWC, convertir a bandas por suelo.
+
+Targets:
+- general: 60–85% AW
+- etapas críticas: 65–85/90% AW
+- observación baja: 45–60% AW según etapa
+- crítico bajo: <40–45% AW
+- observación alta: 85–92% AW
+- crítico alto/saturación: >92–95% AW o lectura alta persistente
+
+Regla:
+- El déficit afecta cuajado, tamaño y absorción.
+- El exceso reduce oxígeno y eleva pudriciones de raíz/corona.
+- Pera puede tolerar algunos suelos más pesados que manzano según portainjerto, pero BIO-G no debe permitir saturación.
+
+6.4 Temperatura del suelo
+
+- raíz muy lenta: <8 °C
+- funcional lenta: 8–12 °C
+- target activo: 12–26 °C
+- calor observación: 27–30 °C
+- alerta: >30–32 °C
+- crítico: >35 °C o calor + baja humedad
+
+6.5 Resistencia / compactación
+
+- target: <1.5 MPa
+- observación: 1.5–2.0 MPa
+- alerta: >2.0 MPa
+- crítico: >2.5–3.0 MPa
+
+Regla:
+Compactación reduce agua útil, aireación y raíz fina. Si resistance está alta, bajar confianza NPK.
+
+6.6 Rangos foliares avanzados para pera
+
+Usar SOLO en modo avanzado con análisis foliar.
+No mezclar estos valores con el sensor NPK de suelo.
+Foliar = estado integrado del árbol.
+Suelo = oferta/disponibilidad potencial.
+Sensor NPK = lectura rápida relativa de apoyo.
+
+6.6.1 Rangos INTA Alto Valle / Pera Williams
+
+Muestra recomendada en el manual Williams:
+- fecha regional: 15 de enero a 15 de febrero;
+- hojas medias del brote del año;
+- 10–15 plantas;
+- muestra compuesta aproximada: 40 hojas;
+- enviar al laboratorio en bolsa plástica dentro de 24 horas.
+
+Rangos de referencia en hojas medias de brotes del año:
+- N: 2.20–2.50%
+- P: 0.13–0.45%
+- K: 1.20–2.00%
+- Ca: 1.10–2.50%
+- Mg: 0.24–0.50%
+- Mn: 30–200 ppm
+- B: 30–60 ppm
+- Cu: 5–15 ppm
+- Zn: 18–60 ppm
+
+Lectura BIO-G:
+- Estos rangos son fuertes para PR-01 Bartlett/Williams y perfiles similares.
+- Un alto rendimiento puede bajar concentraciones foliares por “dilución” hacia fruto; no sobre-reaccionar si rendimiento y calidad son buenos.
+- La tendencia de varios años pesa más que un solo análisis.
+
+6.6.2 Rangos complementarios generales aportados por usuario
+
+Usar como banda amplia de revisión, no como target único:
+- N: 2.3–2.7%
+- P: 0.14–0.40%
+- K: 1.2–2.2%
+- Ca: 1.5–2.0%
+- Mg: 0.25–0.50%
+
+Niveles críticos complementarios:
+- N deficiente aproximado: <=2.2%
+- K deficiente aproximado: <=0.7%; adecuado desde ~1.0% según fuente.
+- Mg adecuado desde ~0.25%.
+- Ca adecuado desde ~1.0%.
+- B deficiente: ~15 ppm; adecuado 21–70 ppm; exceso cerca de 80 ppm.
+- Zn deficiente: <15 ppm.
+
+Regla BIO-G:
+- Si fuentes difieren, usar rangos conservadores y mostrar “revisar con análisis local”.
+- Para código v1, preferir bandas amplias y confidence gradual.
+
+6.6.3 Rangos WSU / OSU complementarios
+
+Rangos de referencia WSU para hojas recientemente maduras de pera:
+- N: 1.8–2.6%
+- P: 0.12–0.25%
+- K: 1.0–2.0%
+- Ca: 1.0–3.7%
+- Mg: 0.25–0.90%
+- Zn: 20–60 mg/kg
+- Fe: 100–800 mg/kg
+- B: 20–60 mg/kg
+
+Rangos OSU complementarios:
+- Leaf N en agosto:
+  <1.9 = shortage
+  1.9–2.1 = below normal
+  2.1–2.5 = normal
+  >2.5 = above normal
+- Leaf P en agosto:
+  <0.10 = shortage
+  0.10–0.14 = below normal
+  >0.14 = normal
+- Leaf B:
+  <20 ppm = shortage
+  20–30 ppm = below normal
+  30–80 ppm = normal en OSU; WSU maneja 20–60 mg/kg como rango objetivo.
+  >80 ppm = above normal / cuidado.
+- Leaf Zn:
+  <17 ppm en OSU puede sugerir deficiencia; WSU objetivo 20–60 mg/kg.
+
+6.6.4 Muestreo foliar: decisión BIO-G
+
+BIO-G debe permitir tres modos:
+
+Modo simple:
+- El productor no tiene análisis.
+- La app usa sensor + etapa + vigor + historial.
+
+Modo productor avanzado:
+- El productor ingresa N/P/K/Ca/Mg/B/Zn/Fe de hoja.
+- BIO-G aumenta confianza y puede explicar tendencias.
+
+Modo agrónomo:
+- Se ingresan análisis foliar, suelo, agua, textura, materia orgánica, pH, EC, CIC, K/(Ca+Mg), producción esperada, árboles/ha y vigor.
+- BIO-G puede calcular necesidades aproximadas, pero siempre como apoyo técnico.
+
+Regla:
+No generar alarma fuerte por foliar bajo si el árbol tiene alta producción, fruta de buena calidad y tendencia estable. En Williams, los frutos son destino fuerte de N/P/K/Mg/Zn y pueden reducir concentración foliar sin que exista deficiencia real.
+
+================================================================================
+7. VIGOR COMO SENSOR HUMANO
+================================================================================
+
+El vigor visible es una entrada muy valiosa.
+
+Referencias de crecimiento anual:
+- Peral joven: 20–30 pulgadas/año aprox. (50–75 cm).
+- Peral adulto productivo: 12–18 pulgadas/año aprox. (30–45 cm).
+- OSU indica que perales mayores de 15 años deberían hacer 8–10 pulgadas de crecimiento nuevo en extremos de ramas estructurales.
+
+BIO-G UX opcional:
+shootGrowthStatus:
+- low
+- adequate
+- excessive
+- unknown
+
+Reglas:
+- N alto + vigor excesivo = advertencia.
+- N bajo + vigor bajo + humedad/pH/EC correctos = posible deficiencia real.
+- Vigor bajo + N alto = buscar otra causa: raíz, agua, pH, enfermedad, compactación o salinidad.
+- Vigor excesivo + poca fruta = bajar N; puede haber baja carga, poda fuerte o poca polinización.
+- Vigor excesivo + fire_blight risk = advertencia fuerte.
+
+================================================================================
+8. PRIORIDAD NPK POR ETAPA
+================================================================================
+
+Escala 0.00–1.00.
+No es dosis. Es prioridad fisiológica para BIO-G.
+
+planting_transplant:
+N 0.20 | P 0.80 | K 0.45
+Cuidado: raíz joven, baja salinidad, no quemar, P/Mg/K/lime idealmente antes de plantar según análisis.
+
+root_establishment:
+N 0.30 | P 0.82 | K 0.50
+Cuidado: raíz fina, humedad estable, EC baja, oxígeno, compactación baja.
+
+juvenile_vegetative:
+N 0.72 | P 0.55 | K 0.58
+Cuidado: formar estructura sin vigor blando; no forzar fruta.
+
+dormancy:
+N 0.10 | P 0.20 | K 0.20
+Cuidado: demanda baja; revisar suelo/pH/EC/plan, no sobreinterpretar NPK.
+
+budbreak:
+N 0.60 | P 0.60 | K 0.55
+Cuidado: arranque desde reservas; raíz puede estar fría.
+
+vegetative_growth:
+N 0.65 | P 0.45 | K 0.60
+Cuidado: hoja y brote; controlar exceso de vigor por fuego bacteriano/calidad.
+
+flowering:
+N 0.30 | P 0.68 | K 0.65
+Cuidado: floración usa reservas; B/Zn/Ca contexto; agua y clima pesan más que N.
+
+fruit_set:
+N 0.32 | P 0.50 | K 0.78
+Cuidado: amarre, caída, tamaño potencial, agua estable, salinidad baja.
+
+fruit_fill:
+N 0.28 | P 0.35 | K 0.90
+Cuidado: K protagonista; N bajo-moderado; Ca/Mg/B contexto; vigilar EC.
+
+harvest_maturity:
+N 0.15 | P 0.25 | K 0.65
+Cuidado: cosecha/madurez comercial en pera; evitar N alto; firmeza y conservación.
+
+post_harvest:
+N 0.55 | P 0.35 | K 0.60
+Cuidado: reservas y yemas del siguiente ciclo; B/Zn contexto; solo con hoja activa.
+
+unknown:
+N 0.45 | P 0.45 | K 0.50
+Cuidado: conservador; pedir etapa visible.
+
+================================================================================
+9. LECTURA AGRONÓMICA POR ETAPA
+================================================================================
+
+9.1 Plantación / trasplante
+
+Prioridad:
+- raíz;
+- suelo;
+- P;
+- humedad estable;
+- EC baja;
+- compactación baja.
+
+No hacer:
+- aplicar N concentrado cerca de raíz;
+- interpretar NPK como demanda productiva;
+- permitir EC alta;
+- asumir que un árbol recién plantado debe “llenar fruta”.
+
+Mensaje:
+“En plantación, la prioridad es que el peral agarre raíz. Fósforo, suelo sin compactación, humedad estable y baja salinidad pesan más que nitrógeno.”
+
+9.2 Establecimiento radicular
+
+Prioridad:
+- raíces finas;
+- oxígeno;
+- agua estable;
+- P alto relativo;
+- N bajo-moderado;
+- K medio.
+
+Regla:
+Si humedad alta + resistance alta + bajo vigor, advertir raíz/anoxia antes de NPK.
+
+9.3 Juvenil vegetativo
+
+Prioridad:
+- estructura;
+- hoja;
+- madera;
+- raíz;
+- N moderado-alto controlado.
+
+Regla:
+El N ayuda a formar árbol, pero exceso puede retrasar entrada a producción y aumentar fire blight/vigor.
+
+9.4 Dormancia
+
+Prioridad:
+- baja demanda NPK;
+- suelo/pH/EC;
+- planificación;
+- memoria del ciclo anterior;
+- frío como contexto.
+
+Regla:
+No disparar alertas NPK agresivas en dormancia.
+
+9.5 Brotación
+
+Prioridad:
+- reservas;
+- N moderado;
+- P/K balanceados;
+- temperatura de suelo;
+- humedad estable.
+
+Regla:
+Si postcosecha anterior fue mala, bajar confianza de brotación/floración.
+
+9.6 Desarrollo vegetativo
+
+Prioridad:
+- hoja funcional;
+- crecimiento controlado;
+- evitar vigor excesivo.
+
+Regla:
+Si N alto + vegetative_growth + historial fire_blight, subir advertencia.
+
+9.7 Floración
+
+Prioridad:
+- agua estable;
+- temperatura/clima;
+- B/Zn/Ca contexto;
+- P/K suficientes;
+- N bajo-moderado.
+
+Regla:
+No empujar N durante floración para “mejorar cuajado”.
+Mal cuajado puede venir de clima, polinizador, B, Zn, reservas o helada.
+
+9.8 Cuajado / amarre
+
+Prioridad:
+- agua estable;
+- K sube;
+- salinidad baja;
+- Ca/Mg contexto;
+- evitar calor/estrés.
+
+Regla:
+Si K bajo + fruit_set + humedad correcta, generar observación de nutrición de fruto.
+Si humedad baja o EC alta, priorizar estrés hídrico/salino antes que K.
+
+9.9 Llenado de fruto
+
+Prioridad:
+- K alto relativo;
+- agua estable;
+- N moderado-bajo;
+- Ca/Mg balance;
+- evitar EC alta.
+
+Regla:
+fruit_fill NO es harvest_maturity.
+Copy debe hablar de llenado/calibre/firmeza/calidad, no de “cerca de cosecha” como identidad.
+
+9.10 Madurez / cosecha
+
+Prioridad:
+- calidad;
+- firmeza;
+- madurez comercial;
+- almacenamiento;
+- evitar N alto;
+- K suficiente pero sin desbalance.
+
+Regla:
+La pera europea muchas veces se cosecha firme y madura fuera del árbol. BIO-G debe hablar de madurez/cosecha sin asumir fruta blanda en árbol.
+
+9.11 Postcosecha
+
+Prioridad:
+- reservas;
+- hoja activa;
+- N/K moderados;
+- B/Zn contexto;
+- humedad adecuada;
+- EC baja;
+- raíz activa.
+
+Regla:
+No tratar post_harvest como cultivo cerrado.
+Si hoja activa + suelo adecuado + baja EC, puede haber oportunidad de reserva.
+Si hoja caída/sequía/salinidad, bajar acción nutricional.
+
+================================================================================
+10. STAGE TARGETS CABLEABLES — AGRO RANGE
+================================================================================
+
+Contrato obligatorio:
+AgroRange(lowMax, optimalMin, optimalMax, highMin)
+
+Interpretación:
+- lowMax = frontera crítica baja.
+- optimalMin = inicio del óptimo.
+- optimalMax = fin del óptimo.
+- highMin = frontera crítica alta.
+- No usar lowMax == optimalMin.
+- No usar optimalMax == highMin.
+- En EC y resistance, la métrica es principalmente de exceso. Se usa lowMax seguro/documentado
+  solo para cumplir estructura; no debe penalizar por “EC baja”.
+
+================================================================================
+10.1 soilMoisture AW% por etapa
+================================================================================
+
+planting_transplant:
+AgroRange(lowMax: 45, optimalMin: 65, optimalMax: 85, highMin: 92)
+
+root_establishment:
+AgroRange(lowMax: 45, optimalMin: 65, optimalMax: 85, highMin: 92)
+
+juvenile_vegetative:
+AgroRange(lowMax: 45, optimalMin: 60, optimalMax: 85, highMin: 92)
+
+dormancy:
+AgroRange(lowMax: 35, optimalMin: 45, optimalMax: 70, highMin: 90)
+
+budbreak:
+AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 80, highMin: 90)
+
+vegetative_growth:
+AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 80, highMin: 90)
+
+flowering:
+AgroRange(lowMax: 45, optimalMin: 60, optimalMax: 85, highMin: 90)
+
+fruit_set:
+AgroRange(lowMax: 45, optimalMin: 65, optimalMax: 85, highMin: 90)
+
+fruit_fill:
+AgroRange(lowMax: 45, optimalMin: 65, optimalMax: 90, highMin: 94)
+
+harvest_maturity:
+AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 80, highMin: 90)
+
+post_harvest:
+AgroRange(lowMax: 45, optimalMin: 55, optimalMax: 80, highMin: 90)
+
+unknown:
+AgroRange(lowMax: 45, optimalMin: 60, optimalMax: 85, highMin: 92)
+
+================================================================================
+10.2 soilTemp °C por etapa
+================================================================================
+
+planting_transplant:
+AgroRange(lowMax: 7, optimalMin: 12, optimalMax: 24, highMin: 30)
+
+root_establishment:
+AgroRange(lowMax: 7, optimalMin: 12, optimalMax: 24, highMin: 30)
+
+juvenile_vegetative:
+AgroRange(lowMax: 8, optimalMin: 12, optimalMax: 26, highMin: 32)
+
+dormancy:
+AgroRange(lowMax: -5, optimalMin: 0, optimalMax: 12, highMin: 20)
+Nota: en dormancia soilTemp no evalúa absorción NPK; pesa más protección de raíz y contexto.
+
+budbreak:
+AgroRange(lowMax: 6, optimalMin: 10, optimalMax: 22, highMin: 28)
+
+vegetative_growth:
+AgroRange(lowMax: 8, optimalMin: 12, optimalMax: 26, highMin: 32)
+
+flowering:
+AgroRange(lowMax: 8, optimalMin: 12, optimalMax: 24, highMin: 28)
+
+fruit_set:
+AgroRange(lowMax: 10, optimalMin: 14, optimalMax: 26, highMin: 30)
+
+fruit_fill:
+AgroRange(lowMax: 10, optimalMin: 16, optimalMax: 28, highMin: 32)
+
+harvest_maturity:
+AgroRange(lowMax: 8, optimalMin: 14, optimalMax: 28, highMin: 32)
+
+post_harvest:
+AgroRange(lowMax: 7, optimalMin: 10, optimalMax: 24, highMin: 30)
+
+unknown:
+AgroRange(lowMax: 7, optimalMin: 12, optimalMax: 26, highMin: 32)
+
+================================================================================
+10.3 pH por etapa
+================================================================================
+
+Base general:
+AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 8.0)
+
+Etapas activas sensibles:
+- planting_transplant
+- root_establishment
+- budbreak
+- flowering
+- fruit_set
+- fruit_fill
+
+Usar:
+AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 6.8, highMin: 7.8)
+
+Dormancy / unknown:
+AgroRange(lowMax: 5.2, optimalMin: 6.0, optimalMax: 7.0, highMin: 8.0)
+
+Reglas:
+- pH >7.5: posible bloqueo Fe/Zn/P/B.
+- pH <5.5: alerta por acidez/desbalance.
+- pH corregido requiere análisis; no sugerir enmiendas a ciegas.
+
+================================================================================
+10.4 EC dS/m por etapa
+================================================================================
+
+EC es una métrica de exceso/salinidad.
+No hay “deficiencia de EC baja”.
+
+planting_transplant:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.2, highMin: 1.8)
+
+root_establishment:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.2, highMin: 1.8)
+
+juvenile_vegetative:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.2)
+
+dormancy:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.5)
+
+budbreak:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.0)
+
+flowering:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.0)
+
+fruit_set:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.0)
+
+fruit_fill:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.6, highMin: 2.2)
+
+harvest_maturity:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.3)
+
+post_harvest:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.3)
+
+unknown:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.2)
+
+Regla:
+Si EC >= highMin, bloquear sugerencias de fertilización agresiva.
+
+================================================================================
+10.5 resistance MPa por etapa
+================================================================================
+
+Resistance es principalmente métrica de compactación/exceso.
+No hay “deficiencia de resistance baja”.
+
+planting_transplant:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.0)
+
+root_establishment:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.0)
+
+juvenile_vegetative:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.2)
+
+dormancy:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 2.0, highMin: 2.5)
+
+budbreak:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.2)
+
+vegetative_growth:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.3)
+
+flowering:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.2)
+
+fruit_set:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.2)
+
+fruit_fill:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.3)
+
+harvest_maturity:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.3)
+
+post_harvest:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.3)
+
+unknown:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.3)
+
+================================================================================
+10.6 N relativo por etapa
+================================================================================
+
+planting_transplant:
+AgroRange(lowMax: 0.05, optimalMin: 0.20, optimalMax: 0.40, highMin: 0.75)
+
+root_establishment:
+AgroRange(lowMax: 0.10, optimalMin: 0.25, optimalMax: 0.45, highMin: 0.75)
+
+juvenile_vegetative:
+AgroRange(lowMax: 0.25, optimalMin: 0.55, optimalMax: 0.75, highMin: 0.90)
+
+dormancy:
+AgroRange(lowMax: 0.00, optimalMin: 0.20, optimalMax: 0.40, highMin: 0.80)
+Nota: no sobreinterpretar en dormancia.
+
+budbreak:
+AgroRange(lowMax: 0.25, optimalMin: 0.50, optimalMax: 0.70, highMin: 0.85)
+
+vegetative_growth:
+AgroRange(lowMax: 0.30, optimalMin: 0.50, optimalMax: 0.70, highMin: 0.88)
+
+flowering:
+AgroRange(lowMax: 0.15, optimalMin: 0.30, optimalMax: 0.50, highMin: 0.75)
+
+fruit_set:
+AgroRange(lowMax: 0.15, optimalMin: 0.30, optimalMax: 0.50, highMin: 0.75)
+
+fruit_fill:
+AgroRange(lowMax: 0.10, optimalMin: 0.25, optimalMax: 0.45, highMin: 0.70)
+
+harvest_maturity:
+AgroRange(lowMax: 0.05, optimalMin: 0.18, optimalMax: 0.35, highMin: 0.60)
+
+post_harvest:
+AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.60, highMin: 0.78)
+Requiere hoja activa para acción positiva.
+
+unknown:
+AgroRange(lowMax: 0.15, optimalMin: 0.40, optimalMax: 0.65, highMin: 0.85)
+
+================================================================================
+10.7 P relativo por etapa
+================================================================================
+
+planting_transplant:
+AgroRange(lowMax: 0.20, optimalMin: 0.55, optimalMax: 0.75, highMin: 0.92)
+
+root_establishment:
+AgroRange(lowMax: 0.20, optimalMin: 0.55, optimalMax: 0.75, highMin: 0.92)
+
+juvenile_vegetative:
+AgroRange(lowMax: 0.20, optimalMin: 0.45, optimalMax: 0.65, highMin: 0.85)
+
+dormancy:
+AgroRange(lowMax: 0.00, optimalMin: 0.25, optimalMax: 0.45, highMin: 0.90)
+
+budbreak:
+AgroRange(lowMax: 0.20, optimalMin: 0.45, optimalMax: 0.65, highMin: 0.85)
+
+vegetative_growth:
+AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.60, highMin: 0.85)
+
+flowering:
+AgroRange(lowMax: 0.20, optimalMin: 0.50, optimalMax: 0.70, highMin: 0.88)
+
+fruit_set:
+AgroRange(lowMax: 0.15, optimalMin: 0.40, optimalMax: 0.60, highMin: 0.85)
+
+fruit_fill:
+AgroRange(lowMax: 0.10, optimalMin: 0.30, optimalMax: 0.50, highMin: 0.80)
+
+harvest_maturity:
+AgroRange(lowMax: 0.05, optimalMin: 0.25, optimalMax: 0.45, highMin: 0.80)
+
+post_harvest:
+AgroRange(lowMax: 0.10, optimalMin: 0.30, optimalMax: 0.55, highMin: 0.85)
+
+unknown:
+AgroRange(lowMax: 0.10, optimalMin: 0.40, optimalMax: 0.65, highMin: 0.85)
+
+================================================================================
+10.8 K relativo por etapa
+================================================================================
+
+planting_transplant:
+AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.55, highMin: 0.85)
+
+root_establishment:
+AgroRange(lowMax: 0.15, optimalMin: 0.35, optimalMax: 0.60, highMin: 0.85)
+
+juvenile_vegetative:
+AgroRange(lowMax: 0.20, optimalMin: 0.45, optimalMax: 0.65, highMin: 0.88)
+
+dormancy:
+AgroRange(lowMax: 0.00, optimalMin: 0.25, optimalMax: 0.45, highMin: 0.90)
+
+budbreak:
+AgroRange(lowMax: 0.20, optimalMin: 0.45, optimalMax: 0.65, highMin: 0.88)
+
+vegetative_growth:
+AgroRange(lowMax: 0.20, optimalMin: 0.50, optimalMax: 0.70, highMin: 0.88)
+
+flowering:
+AgroRange(lowMax: 0.25, optimalMin: 0.50, optimalMax: 0.70, highMin: 0.88)
+
+fruit_set:
+AgroRange(lowMax: 0.30, optimalMin: 0.60, optimalMax: 0.80, highMin: 0.92)
+
+fruit_fill:
+AgroRange(lowMax: 0.35, optimalMin: 0.70, optimalMax: 0.90, highMin: 0.96)
+
+harvest_maturity:
+AgroRange(lowMax: 0.25, optimalMin: 0.55, optimalMax: 0.75, highMin: 0.92)
+
+post_harvest:
+AgroRange(lowMax: 0.20, optimalMin: 0.45, optimalMax: 0.70, highMin: 0.90)
+
+unknown:
+AgroRange(lowMax: 0.15, optimalMin: 0.40, optimalMax: 0.70, highMin: 0.90)
+
+================================================================================
+11. STAGE WEIGHTS PROPUESTOS PARA AGROSCORE
+================================================================================
+
+Escala 0.00–1.00.
+Estos pesos son cableables y conservadores.
+
+planting_transplant:
+- water 0.25
+- soilTemp 0.15
+- pH 0.12
+- EC 0.18
+- resistance 0.18
+- N 0.03
+- P 0.06
+- K 0.03
+
+root_establishment:
+- water 0.30
+- soilTemp 0.12
+- pH 0.10
+- EC 0.18
+- resistance 0.18
+- N 0.03
+- P 0.06
+- K 0.03
+
+juvenile_vegetative:
+- water 0.20
+- soilTemp 0.12
+- pH 0.10
+- EC 0.10
+- resistance 0.13
+- N 0.18
+- P 0.08
+- K 0.09
+
+dormancy:
+- water 0.18
+- soilTemp 0.20
+- pH 0.12
+- EC 0.15
+- resistance 0.12
+- N 0.05
+- P 0.04
+- K 0.04
+- contexto frío/reserva/madera 0.10 si el motor lo permite.
+Nota: no sobreinterpretar NPK en reposo.
+
+budbreak:
+- water 0.22
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.12
+- P 0.08
+- K 0.08
+
+vegetative_growth:
+- water 0.20
+- soilTemp 0.12
+- pH 0.10
+- EC 0.10
+- resistance 0.12
+- N 0.18
+- P 0.07
+- K 0.11
+
+flowering:
+- water 0.28
+- soilTemp 0.20
+- pH 0.08
+- EC 0.14
+- resistance 0.08
+- N 0.04
+- P 0.08
+- K 0.10
+- contexto B/Zn/Ca/polinización: externo.
+
+fruit_set:
+- water 0.30
+- soilTemp 0.15
+- pH 0.08
+- EC 0.16
+- resistance 0.08
+- N 0.04
+- P 0.07
+- K 0.12
+
+fruit_fill:
+- water 0.26
+- soilTemp 0.12
+- pH 0.08
+- EC 0.13
+- resistance 0.08
+- N 0.05
+- P 0.05
+- K 0.23
+
+harvest_maturity:
+- water 0.22
+- soilTemp 0.14
+- pH 0.08
+- EC 0.12
+- resistance 0.08
+- N 0.05
+- P 0.05
+- K 0.26
+
+post_harvest:
+- water 0.22
+- soilTemp 0.12
+- pH 0.10
+- EC 0.14
+- resistance 0.10
+- N 0.12
+- P 0.07
+- K 0.13
+
+unknown:
+- water 0.24
+- soilTemp 0.12
+- pH 0.10
+- EC 0.14
+- resistance 0.12
+- N 0.09
+- P 0.09
+- K 0.10
+
+================================================================================
+12. REGLAS DE INTERPRETACIÓN evaluateTelemetry(...)
+================================================================================
+
+12.1 Reglas maestras
+
+A) Si humedad está crítica:
+- Priorizar agua sobre NPK.
+- Bajar confianza de NPK.
+Mensaje:
+“Primero estabiliza humedad; con raíz estresada la nutrición se vuelve menos confiable.”
+
+B) Si humedad está saturada:
+- Priorizar aireación/raíz.
+- Bajar score raíz/suelo.
+Mensaje:
+“El suelo está muy húmedo. Más agua o fertilizante puede empeorar oxígeno de raíz.”
+
+C) Si EC está alta:
+- No sugerir fertilización agresiva.
+- Advertir sales/fertilizante acumulado.
+Mensaje:
+“La salinidad está elevada; aplicar más fertilizante puede aumentar estrés radicular.”
+
+D) Si pH está alto:
+- Bajar confianza P/Fe/Zn/B.
+Mensaje:
+“Puede haber bloqueo de fósforo, hierro, zinc o boro aunque estén presentes.”
+
+E) Si pH está bajo:
+- Advertir desbalance/acidez.
+Mensaje:
+“El pH bajo puede limitar raíz y disponibilidad; confirma con análisis antes de corregir.”
+
+F) Si resistance está alta:
+- Penalizar suelo.
+Mensaje:
+“La compactación puede limitar raíz fina y absorción de agua/nutrientes.”
+
+G) Si soilTemp está baja:
+- Bajar confianza NPK.
+Mensaje:
+“Con suelo frío, el peral puede absorber lento aunque haya nutrientes.”
+
+H) Si etapa = post_harvest y no hay hoja activa:
+- No elevar N/K.
+Mensaje:
+“Sin hoja activa, la recuperación de reservas baja; evita decisiones fuertes sin análisis.”
+
+I) Si etapa = post_harvest con hoja activa + humedad adecuada + soilTemp suficiente + EC baja:
+- Permitir mensaje positivo de reservas.
+Mensaje:
+“Postcosecha sigue activa; estas condiciones ayudan a recuperar reservas para el siguiente ciclo.”
+
+12.2 Nitrógeno
+
+N bajo:
+- pesa en juvenile_vegetative, budbreak, vegetative_growth, post_harvest y, con cautela, flowering/fruit_set.
+- no pesa mucho en dormancy.
+
+N alto:
+- en juvenile puede ser útil si vigor bajo y no hay fire blight.
+- en vegetative_growth puede generar vigor excesivo.
+- en flowering/fruit_set: advertir no empujar solo N.
+- en fruit_fill: advertir balance/vigor vs fruto.
+- en harvest_maturity: advertir calidad, firmeza, madurez, almacenamiento.
+- en post_harvest: depende de hoja activa, EC y suelo.
+
+12.3 Fósforo
+
+P bajo:
+- pesa fuerte en planting/root_establishment.
+- pesa medio en budbreak/flowering/fruit_set.
+- pesa bajo en fruit_fill/harvest salvo deficiencia clara.
+
+P alto:
+- puede ser menos urgente, pero con pH alto o Zn/Fe bajo puede indicar desbalance.
+- no corregir sin análisis.
+
+12.4 Potasio
+
+K bajo:
+- pesa fuerte desde fruit_set a fruit_fill.
+- afecta tamaño/calibre/calidad.
+- en post_harvest puede afectar reservas si hubo alta carga.
+
+K alto:
+- puede ser útil en fruit_fill si EC y Ca/Mg están bien.
+- si EC alta, advertir sales.
+- si Ca/Mg/bitter pit/cork spot, advertir balance.
+
+12.5 Combinaciones importantes
+
+N alto + K bajo en fruit_fill:
+Mensaje:
+“El balance favorece crecimiento vegetativo más que llenado de fruto.”
+
+K bajo + buena humedad + fruit_fill:
+Mensaje:
+“Potasio bajo en llenado puede limitar tamaño/calidad. Confirma con análisis si el problema se repite.”
+
+K alto + EC alta:
+Mensaje:
+“K alto con salinidad puede aumentar estrés osmótico; revisa agua/sales antes de fertilizar.”
+
+K alto + historial cork spot/bitter pit:
+Mensaje:
+“El K ayuda al fruto, pero si se desbalancea con Ca/Mg puede afectar conservación.”
+
+N alto + fire_blight risk:
+Mensaje:
+“Mucho vigor puede aumentar tejido susceptible a fuego bacteriano; no empujar N sin revisar sanidad.”
+
+pH alto + hoja amarilla nueva:
+Mensaje:
+“Puede ser clorosis por hierro disponible bajo, no necesariamente falta de nitrógeno.”
+
+pH alto + hoja pequeña/roseta:
+Mensaje:
+“Puede haber problema de zinc/disponibilidad. Confirma con análisis.”
+
+Postcosecha + hoja activa + N/K/B adecuados:
+Mensaje:
+“Condiciones favorables para reservas y yemas del siguiente ciclo.”
+
+Postcosecha + defoliación temprana:
+Mensaje:
+“La pérdida temprana de hoja limita reservas; BIO-G bajará confianza del siguiente arranque.”
+
+================================================================================
+13. GUÍA UX CORTA POR ETAPA
+================================================================================
+
+planting_transplant:
+“Tu peral está recién establecido. La prioridad es raíz, humedad estable, baja salinidad y suelo sin compactación. No conviene empujar nitrógeno.”
+
+root_establishment:
+“El peral está formando raíz fina. Fósforo y condición del suelo pesan más que una lectura alta de N.”
+
+juvenile_vegetative:
+“El árbol joven necesita crecer, pero sin exceso de vigor. Mucho N puede formar brotes blandos y aumentar riesgo sanitario.”
+
+dormancy:
+“El peral está en reposo. La demanda NPK es baja. Usa esta etapa para revisar pH, salinidad, suelo y planear.”
+
+budbreak:
+“El árbol está arrancando. Parte del arranque viene de reservas del ciclo anterior. Si el suelo está frío, la absorción será lenta.”
+
+vegetative_growth:
+“Etapa de hojas y brotes. Nitrógeno moderado ayuda, pero exceso puede generar sombra, vigor blando y más riesgo de fuego bacteriano.”
+
+flowering:
+“Floración es crítica. No se resuelve solo con N. Agua estable, clima, polinización, B/Zn/Ca contextuales y reservas pesan mucho.”
+
+fruit_set:
+“En cuajado el árbol decide qué fruta sostiene. El K empieza a pesar más, pero agua, salinidad y calor pueden cambiar todo.”
+
+fruit_fill:
+“En llenado, K es protagonista para tamaño y calidad. N debe mantenerse bajo-moderado; revisa balance con Ca/Mg y EC.”
+
+harvest_maturity:
+“En madurez/cosecha, evita N alto. Prioridad: firmeza, calidad, conservación y fruta comercial.”
+
+post_harvest:
+“Después de cosecha el peral sigue vivo. Si conserva hoja activa y el suelo está bien, puede recuperar reservas para el siguiente ciclo.”
+
+unknown:
+“Con etapa desconocida, BIO-G usa rangos conservadores. Para mayor precisión, indica si el árbol está brotando, floreando, con frutito, llenando fruto, en cosecha o postcosecha.”
+
+================================================================================
+14. DEFICIENCIAS Y EXCESOS — MENSAJES SEGUROS
+================================================================================
+
+N bajo posible:
+- hojas pálidas;
+- hojas pequeñas;
+- brotes cortos;
+- pobre crecimiento;
+- fruta chica;
+- caída temprana de hoja.
+
+Mensaje:
+“Puede parecer bajo nitrógeno, pero también puede ser raíz fría, falta/exceso de agua, compactación, pH alto o estrés sanitario.”
+
+N alto posible:
+- brotes largos;
+- copa densa;
+- fruta menos firme;
+- retraso de madurez;
+- peor conservación;
+- mayor riesgo de fuego bacteriano;
+- crecimiento tardío vulnerable.
+
+Mensaje:
+“El nitrógeno está alto para esta etapa. En peral, demasiado N puede bajar calidad y aumentar vigor blando.”
+
+P bajo posible:
+- bajo crecimiento;
+- raíz débil;
+- arranque lento;
+- hojas oscuras/broncedas en casos fuertes.
+
+Mensaje:
+“El fósforo pesa más en raíz y arranque. Si el pH está alto, el problema puede ser disponibilidad.”
+
+P alto posible:
+- riesgo de desbalance con Zn/Fe;
+- poca utilidad si no hay deficiencia.
+
+Mensaje:
+“No conviene corregir P sin análisis; en árboles adultos la respuesta no siempre es clara.”
+
+K bajo posible:
+- fruta chica;
+- peor llenado;
+- borde de hojas viejas quemado;
+- menor productividad;
+- menor calidad.
+
+Mensaje:
+“El potasio pesa mucho desde cuajado y llenado. Revisa también agua y carga de fruta.”
+
+K alto posible:
+- EC alta;
+- desbalance Ca/Mg;
+- mayor riesgo de problemas de calidad si hay Ca bajo.
+
+Mensaje:
+“El K ayuda al fruto, pero no debe leerse aislado. Revisa EC y balance con calcio/magnesio.”
+
+Ca bajo contextual:
+- cork spot;
+- bitter pit-like disorder;
+- menor firmeza;
+- vida de almacenamiento corta.
+
+Mensaje:
+“BIO-G v1 no mide calcio, pero si hay problemas de conservación conviene revisar Ca, K, Mg, riego y carga.”
+
+B bajo contextual:
+- mal cuajado;
+- yemas florales débiles;
+- deformación de fruto;
+- retornos de flor pobres.
+
+Mensaje:
+“El boro importa en floración y yemas, pero el exceso puede ser tóxico. Confirmar antes de aplicar.”
+
+Zn bajo contextual:
+- hojas pequeñas;
+- roseta;
+- entrenudos cortos;
+- brotación irregular.
+
+Mensaje:
+“En pH alto puede haber bloqueo de zinc. Revisa síntomas y análisis.”
+
+Fe bajo contextual:
+- hojas jóvenes amarillas con nervaduras verdes.
+
+Mensaje:
+“Puede haber hierro en el suelo pero no estar disponible por pH alto/caliza.”
+
+Mg bajo contextual:
+- hojas viejas con clorosis internerval;
+- se puede agravar con K alto;
+- Bosc/Comice pueden requerir más vigilancia.
+
+Mensaje:
+“Magnesio debe revisarse junto con K/Ca y pH, no aislado.”
+
+================================================================================
+14B. REFERENCIAS DE DOSIS — SOLO MODO AVANZADO / NO RECETA
+================================================================================
+
+Esta sección NO alimenta recomendaciones automáticas en BIO-G v1.
+Sirve para:
+- calibración técnica;
+- modo agrónomo;
+- documentación;
+- pruebas unitarias de coherencia;
+- comparación con análisis de suelo/hoja/agua.
+
+Regla de producto:
+La app puede mostrar “referencia técnica” o “rango histórico consultado”, pero no debe decir “aplica esta dosis” sin análisis, etapa, vigor, suelo, agua, clima y asesoría regional.
+
+14B.1 Dosis base por producción esperada
+
+Referencia de abonado medio para peral:
+- Producción esperada: 30,000 kg/ha.
+- N: 75 kg/ha.
+- P2O5: 25 kg/ha.
+- K2O: 85 kg/ha.
+
+Lectura BIO-G:
+- Es una referencia útil para un escenario productivo medio.
+- No debe usarse si el suelo tiene P/K alto, si hay baja carga, si hay EC alta o si el árbol ya tiene exceso de vigor.
+- Para rendimiento mayor, el ajuste debe considerar exportaciones, reservas, suelo, foliar y agua.
+
+14B.2 Peral Conferencia en producción
+
+Referencia Navarra Agraria:
+- N: 90–110 UF/ha.
+- P2O5: 50–60 UF/ha.
+- K2O: 120–135 UF/ha.
+
+Lectura BIO-G:
+- Fuente útil para PR-02/PR-04 tipo europeo y manejo productivo intensivo.
+- Refuerza que K supera a N en demanda de fruto/calidad.
+- Debe combinarse con análisis foliar periódico y ajuste del abonado nitrogenado para mantener vegetación equilibrada.
+
+14B.3 Programa común intensivo reportado por productores
+
+Referencia general entregada por usuario:
+- N: 82 kg/ha.
+- P2O5: 63 kg/ha.
+- MgO: 50 kg/ha.
+- K2O: 182 kg/ha.
+- Supuesto: 600–800 árboles/ha, sin cultivo de cobertura.
+- Distribución: 3–4 sesiones anuales.
+- Foliares: B, Zn y Ca según análisis de hoja.
+- Periodo foliar crítico: 5–7 semanas después de floración.
+
+Lectura BIO-G:
+- No programar como receta.
+- Útil para validar que K es muy alto en planes productivos y que Mg/Ca/B/Zn aparecen como contexto obligatorio.
+- Si existe cultivo de cobertura leguminosa, fertirriego eficiente, materia orgánica alta o agua con nitratos, el aporte puede bajar.
+
+14B.4 Extracciones de P y K por tonelada de fruto
+
+Referencia:
+- P: 0.73 kg/t de fruto.
+- K: 2.78 kg/t de fruto.
+
+Cálculo conceptual:
+P_exportado = yieldTonHa * 0.73
+K_exportado = yieldTonHa * 2.78
+
+Regla de suelo:
+- Si el nivel de P/K en suelo es bajo: aporte máximo orientativo = exportación total * 1.5.
+- Si el nivel es medio: aporte = exportación total.
+- Si el nivel es alto: aporte = 50% de exportación.
+- Si el nivel es muy alto: no aportar.
+
+Lectura BIO-G:
+- Esto debe quedar para modo avanzado porque requiere análisis de suelo y producción esperada.
+- Es útil para no inflar P/K cuando el suelo ya está alto.
+
+14B.5 Fase de preplantación y formación
+
+Preplantación, si P/K del suelo están bajos:
+- P2O5 máximo orientativo: 50 kg/ha.
+- K2O máximo orientativo: 350 kg/ha.
+
+Árboles en formación:
+- Año 1: 10 kg P2O5/ha y 20 kg K2O/ha.
+- Año 2: 15 kg P2O5/ha y 40 kg K2O/ha.
+- Si la fase de formación se prolonga, no superar las dosis del año 2 sin análisis.
+
+Lectura BIO-G:
+- En árboles jóvenes, P y K de base son más importantes que empujar N.
+- La competencia de maleza/cobertura puede reducir crecimiento juvenil; BIO-G debe preguntar manejo de suelo si el árbol no arranca.
+
+14B.6 Nitrógeno: balance, no dosis fija
+
+El cálculo de N debe considerar:
+- producción esperada;
+- crecimiento/vigor;
+- materia orgánica;
+- textura;
+- cobertura vegetal;
+- agua de riego con nitratos;
+- edad y estado productivo;
+- análisis foliar;
+- carga del año anterior;
+- fecha de entrada en reposo.
+
+Referencias:
+- Adultos productivos: 75–140 kg N/ha como rango frecuente de trabajo.
+- Producción tipo 30 t/ha: 75 kg N/ha.
+- Williams alta producción: demanda anual aproximada de N puede rondar 110 kg/ha para 60 t/ha, distribuida entre hojas, madera, raíz y frutos.
+
+Restricción:
+- Si vigor excesivo, se puede reducir o incluso omitir N en una temporada.
+- Si hay fuego bacteriano activo/historial, tejido tierno o baja carga por helada, bajar N.
+- Si se aplica N tarde y genera brote nuevo, se eleva riesgo de helada invernal.
+
+14B.7 Fertilización foliar
+
+Regla:
+- La fertilización foliar complementa, no reemplaza suelo/fertirriego para macronutrientes.
+- Tiene más sentido para micronutrientes, respuesta rápida, estrés temporal y reservas postcosecha.
+
+En pera Williams:
+- Urea foliar en primavera puede apoyar cuando se sospecha relación hoja/fruto insuficiente por alta carga.
+- Urea foliar postcosecha puede incrementar reservas nitrogenadas si todavía hay hoja activa.
+- B, Zn y Ca deben depender de análisis/historial, no de impulso.
+
+Advertencia:
+- No incluir dosis foliares comerciales ni productos en código v1.
+- No recomendar foliares con calor, estrés, salinidad o fitotoxicidad sin asesoría.
+
+14B.8 Fuentes orgánicas y cobertura
+
+La materia orgánica y los cultivos de cobertura pueden cambiar necesidades de fertilización.
+Reglas:
+- Cobertura con leguminosas puede aportar N y reducir fertilización mineral.
+- Estiércoles/guanos liberan N lentamente; no todo está disponible el primer año.
+- En el manual Williams se estima que durante el primer año no más de ~30% del N del estiércol queda disponible para la planta.
+- Si hay cobertura o césped fertilizado, BIO-G debe advertir aporte indirecto de N.
+
+Mensaje:
+“El abono orgánico también cuenta. Aunque sea natural, puede elevar N, EC o vigor si se usa sin medir.”
+
+================================================================================
+15. MEMORIA NUTRICIONAL DEL PERAL
+================================================================================
+
+PearTreeNutritionMemory sugerido:
+
+- lastCyclePostHarvestReserveRisk: low | medium | high | unknown
+- lastCycleLateNitrogenExcessRisk: low | medium | high | unknown
+- lastCycleFruitFillKStress: low | medium | high | unknown
+- lastCycleBoronFlowerBudRisk: low | medium | high | unknown
+- lastCycleCalciumQualityRisk: low | medium | high | unknown
+- lastCyclePhAvailabilityRisk: low | medium | high | unknown
+- lastCycleEcNutritionStress: low | medium | high | unknown
+- lastCycleCompactionRootRisk: low | medium | high | unknown
+- lastCycleDefoliationBeforeReserveRecharge: low | medium | high | unknown
+- lastCycleFireBlightVigorRisk: low | medium | high | unknown
+
+Eventos que deben guardarse:
+- N alto en fruit_fill/harvest_maturity.
+- K bajo en fruit_fill.
+- EC alta en floración/cuajado/llenado/postcosecha.
+- pH alto con clorosis/roseta.
+- estrés hídrico en fruit_set/fruit_fill.
+- defoliación temprana por psila/ácaros/enfermedad.
+- postcosecha sin hoja activa.
+- mal cuajado recurrente.
+- alto vigor + fire blight.
+
+Impacto siguiente ciclo:
+- Postcosecha mala -> baja confianza en budbreak/flowering.
+- Defoliación temprana -> reservas bajas.
+- Mal cuajado + B/Zn sospechoso -> advertir en próxima floración.
+- N alto tardío -> mayor riesgo de vigor/quality/fire blight.
+- K bajo en llenado -> calidad/tamaño bajo y memoria de carga.
+- EC alta persistente -> bajar confianza NPK hasta corregir sales/agua.
+
+================================================================================
+16. MODIFICADORES POR PERFIL PR
+================================================================================
+
+PR-SKIP / pr_skip:
+- Usar targets universales amplios.
+- Confianza baja si solo se sabe “pera”.
+- Confianza media si etapa visible y sensor estable.
+- No asumir variedad, portainjerto, densidad ni destino.
+- Advertir polinización/cuaje de forma general.
+
+PR-01 Bartlett / Williams:
+- Prioridad fuerte: tamaño, cosecha temprana/intermedia, N/K balanceado.
+- K bajo puede afectar calibre.
+- N alto cerca de cosecha puede afectar firmeza/calidad.
+- B importante por floración/cuajado.
+- Mantener mensajes claros para fruta de mesa/conserva.
+
+PR-02 Anjou:
+- Perfil con énfasis en calidad, firmeza y almacenamiento.
+- Penalizar más N alto en fruit_fill/harvest_maturity.
+- OSU menciona que exceso de N disminuye color de piel, sólidos solubles, sabor y densidad en Anjou.
+- K importante para tamaño, pero vigilar Ca/Mg/EC.
+
+PR-03 Bosc:
+- Vigilar Mg más de cerca según OSU.
+- Cosecha/calidad firme.
+- K alto sin balance puede afectar Ca/Mg.
+- Mensajes de calidad y almacenamiento.
+
+PR-04 Comice / Seckel:
+- Comice aparece en OSU como referencia de demanda N total en alta producción.
+- Vigilar Mg y balance K/Ca/Mg.
+- En fruta premium, calidad > vigor.
+- N alto debe penalizar por calidad/almacenamiento.
+- Boro/contexto fuerte por floración y retorno.
+
+PR-05 Kieffer / rústicas:
+- Usar rangos conservadores.
+- Puede tolerar manejo más extensivo, pero no ignorar raíz/suelo.
+- Mayor variabilidad de vigor/rendimiento.
+- No sobreactuar con pequeñas desviaciones.
+- Si hay destino proceso, calidad visual pesa menos, pero tamaño/sanidad/reserva siguen importantes.
+
+================================================================================
+17. PSEUDOCÓDIGO PARA CODEX / DART
+================================================================================
+
+class PearTreeNutritionMemory {
+  final RiskLevel lastCyclePostHarvestReserveRisk;
+  final RiskLevel lastCycleLateNitrogenExcessRisk;
+  final RiskLevel lastCycleFruitFillKStress;
+  final RiskLevel lastCycleBoronFlowerBudRisk;
+  final RiskLevel lastCycleCalciumQualityRisk;
+  final RiskLevel lastCyclePhAvailabilityRisk;
+  final RiskLevel lastCycleEcNutritionStress;
+  final RiskLevel lastCycleCompactionRootRisk;
+  final RiskLevel lastCycleDefoliationBeforeReserveRecharge;
+  final RiskLevel lastCycleFireBlightVigorRisk;
+}
+
+function resolvePearTargets(profileId, perennialStateId, phenologyStageId, memory):
+  stage = normalizeStage(phenologyStageId) ?? 'unknown'
+  profile = resolvePearProfile(profileId) ?? pr_skip
+
+  targets = pearUniversalStageTargets[stage]
+  weights = pearStageWeights[stage]
+
+  targets = applyProfileModifier(targets, profile)
+  targets = applyStatePolicy(targets, perennialStateId)
+
+  if perennialStateId == newly_planted:
+    lower N target max
+    increase EC/resistance/water weights
+    disable production-fruit copy
+
+  if perennialStateId == juvenile_non_productive:
+    use juvenile_vegetative unless user explicitly selected reproductive stage
+    avoid fruit yield/nutrition copy
+
+  if stage == post_harvest:
+    if leafActive == false:
+      lower N/K actionability
+      add reserve warning
+    if ecHigh or soilMoisture critical or soilTemp < 7:
+      lower nutrition confidence
+
+  if memory.lastCyclePostHarvestReserveRisk == high and stage in [budbreak, flowering]:
+    add warning "reservas posiblemente bajas"
+    lower confidence
+
+  return targets, weights
+
+function evaluatePearTelemetry(reading, targets, weights, stage, profile, memory):
+  score = 100
+  alerts = []
+  confidence = baseConfidence(stage, reading.completeness)
+
+  if reading.soilMoisture below targets.soilMoisture.lowMax:
+    apply critical water penalty by stage
+    lower NPK confidence
+    alerts.add(waterFirstMessage(stage))
+
+  if reading.soilMoisture above targets.soilMoisture.highMin:
+    apply saturation penalty
+    lower NPK confidence
+    alerts.add(rootOxygenMessage(stage))
+
+  if reading.ec >= targets.ec.highMin:
+    block aggressive fertilizer hints
+    alerts.add(salinityMessage(stage))
+
+  if reading.ph outside target:
+    lower P/Fe/Zn/B confidence
+    alerts.add(phAvailabilityMessage(reading.ph))
+
+  if reading.resistance >= targets.resistance.highMin:
+    lower root score
+    alerts.add(compactionMessage())
+
+  if reading.soilTemp < 8:
+    lower nutrient absorption confidence
+    alerts.add(coldSoilMessage())
+
+  evaluatePearN(reading.n, stage, profile, memory)
+  evaluatePearP(reading.p, stage, profile, memory)
+  evaluatePearK(reading.k, stage, profile, memory)
+  evaluatePearBalanceRules(reading, stage, profile, memory)
+
+  return AgroEvalResult(score, alerts, confidence)
+
+function evaluatePearN(n, stage, profile, memory):
+  if stage == fruit_fill and n high:
+    add warning "vigor compitiendo con llenado"
+    if profile in [pr_02_anjou, pr_03_bosc, pr_04_comice_seckel]:
+      emphasize firmness/storage
+
+  if stage == harvest_maturity and n high:
+    add warning "calidad, madurez y almacenamiento"
+    memory.lastCycleLateNitrogenExcessRisk = medium_or_high
+
+  if stage == vegetative_growth and n high and fireBlightRisk:
+    add warning "vigor y fuego bacteriano"
+
+function evaluatePearK(k, stage, profile, memory):
+  if stage in [fruit_set, fruit_fill] and k low:
+    add warning "tamaño/calibre/calidad"
+    memory.lastCycleFruitFillKStress = medium_or_high
+
+  if stage == fruit_fill and k high:
+    if ecHigh:
+      add warning "K alto + EC alta"
+    if memory.lastCycleCalciumQualityRisk != low:
+      add context "balance Ca/K/Mg"
+
+function evaluatePearPostHarvest(reading, stage, leafActive, memory):
+  if stage != post_harvest:
+    return
+
+  if !leafActive:
+    memory.lastCyclePostHarvestReserveRisk = high
+    add info "sin hoja activa, baja recuperación de reservas"
+    return
+
+  if soil conditions are optimal and N/K are in target:
+    memory.lastCyclePostHarvestReserveRisk = low
+    add positive hint "condiciones para reservas"
+  else:
+    memory.lastCyclePostHarvestReserveRisk = medium_or_high
+
+================================================================================
+18. TESTS MÍNIMOS RECOMENDADOS
+================================================================================
+
+1. crop_pear_tree + stage fruit_fill + N alto:
+   Resultado: puede marcar exceso/riesgo, pero NO debe decir “cerca de cosecha” ni “madurez”
+   como identidad de etapa.
+
+2. fruit_fill + K bajo + humedad óptima:
+   Resultado: advertencia de calibre/llenado/calidad, no alerta de cosecha.
+
+3. harvest_maturity + N alto:
+   Resultado: advertencia de calidad, firmeza, madurez/comercialización/almacenamiento.
+
+4. post_harvest + hoja activa + humedad óptima + EC baja:
+   Resultado: mensaje de reservas del siguiente ciclo.
+
+5. post_harvest + hoja caída:
+   Resultado: bajar acción nutricional; no empujar N/K.
+
+6. flowering + N alto + fireBlightRisk:
+   Resultado: advertir vigor/fuego bacteriano; no “N bueno”.
+
+7. fruit_set + humedad baja:
+   Resultado: agua pesa más que NPK.
+
+8. pH alto + P bajo:
+   Resultado: mensaje de disponibilidad/bloqueo, no aplicar P directo.
+
+9. pH alto + hoja amarilla nueva:
+   Resultado: posible Fe; no clasificar como N bajo automáticamente.
+
+10. K alto + EC alta:
+    Resultado: warning por sales/fertilizante acumulado.
+
+11. pr_02_anjou + harvest_maturity + N alto:
+    Resultado: penalización fuerte por calidad/almacenamiento.
+
+12. pr_03_bosc/pr_04_comice + Mg contextual bajo:
+    Resultado: warning contextual, no sensor obligatorio.
+
+13. newly_planted + N alto:
+    Resultado: advertir salinidad/raíz; no producción.
+
+14. dormancy + NPK fuera de target leve:
+    Resultado: no tumbar score agresivamente.
+
+15. unknown + sin etapa:
+    Resultado: targets conservadores y pedir etapa visible.
+
+================================================================================
+19. NO HACER EN CÓDIGO
+================================================================================
+
+No usar sowingDate como eje de pera.
+No cerrar cultivo en cosecha.
+No apagar post_harvest.
+No usar un isLate genérico para copy que mezcle fruit_fill y harvest_maturity.
+No recomendar kg/ha automáticos.
+No decir “aplica N” si EC/humedad/pH/resistance están mal.
+No tratar N alto como bueno por defecto.
+No tratar K alto como bueno por defecto.
+No convertir Ca/B/Zn/Fe/Mg en sensores obligatorios v1.
+No crear etapas fuera del estándar.
+No borrar memoria al migrar de pr_skip a perfil específico.
+No copiar dosis de OSU/WSU/NSW como receta universal.
+No copiar marcas comerciales.
+No usar foros como fuente de umbrales.
+No interpretar hoja amarilla como N bajo sin revisar pH, agua, raíz, psila, fuego bacteriano o compactación.
+
+================================================================================
+20. FUENTES CONSULTADAS Y CRITERIO DE USO
+================================================================================
+
+S1. BIO-G — 05_Guia_Fertilizacion_NPK_Targets_BioG_Manzano_v1_1_mejorado.txt
+Uso:
+- plantilla editorial;
+- enfoque de prioridades relativas;
+- postcosecha viva;
+- StageTargets/StageWeights;
+- no dosis sin análisis.
+
+S2. BIO-G — Estandar_BIOG_Integracion_Arboles_Perennes_v1_5_con_addendum.pdf
+Uso:
+- contrato StageTargets/AgroRange;
+- contrato etapa/NPK/copy/UI;
+- fruit_fill no es harvest_maturity;
+- UI debe usar AgroMetricEval.
+
+S3. Oregon State University Extension — Fertilizer Guide: Pears.
+URL:
+https://smallfarms.oregonstate.edu/sites/agscid7/files/fg59-e.pdf
+Uso:
+- no fertilizar como seguro;
+- exceso de N afecta calidad en Anjou;
+- N y reservas;
+- crecimiento/vigor como indicador;
+- targets foliares OSU de N/P/K/B/Zn;
+- K y tamaño/rendimiento;
+- Mg más problemático en Bosc/Comice;
+- B con cautela;
+- cal como preparación de pH.
+
+S4. Washington State University Tree Fruit — Fall Pear Sprays.
+URL:
+https://treefruit.wsu.edu/article/fall-pear-sprays/
+Uso:
+- N/K bajos reducen tamaño;
+- B crítico para yema floral;
+- N postcosecha/removilización;
+- B en postcosecha/prepink;
+- importancia de hoja verde.
+
+S5. Washington State University Tree Fruit — Target Leaf Nutrient Ranges for Tree Fruit.
+URL:
+https://treefruit.wsu.edu/orchard-management/soils-nutrition/target-leaf-nutrient-ranges-for-tree-fruit/
+Uso:
+- rangos foliares de pera: N, P, K, Ca, Mg, Zn, Fe, B.
+
+S6. Washington State University Tree Fruit — Post-bloom nutrition priorities.
+URL:
+https://treefruit.wsu.edu/article/post-bloom-nutrition-priorities-for-washington-tree-fruit-orchards/
+Uso:
+- N post-bloom ligado a demanda;
+- exceso de N reduce calidad y retrasa madurez;
+- falta de suministro puede limitar tamaño/copa y alternancia;
+- si helada/pobre cuajado, ajustar N a la baja;
+- Ca en primeras 4–6 semanas después de floración;
+- riego/nutrientes para reducir pérdidas.
+
+S7. NSW Department of Primary Industries — Apple and pear nutrition.
+URL:
+https://www.dpi.nsw.gov.au/__data/assets/pdf_file/0004/41485/Apple_and_pear_nutrition_-_Primefact_85.pdf
+Uso:
+- N, K, Ca, Zn y B como nutrientes frecuentemente problemáticos;
+- deficiencia/exceso de N;
+- P rara vez limita árboles maduros;
+- K en pera: hojas basales, margen oscuro, hoja enrollada, fruta chica;
+- exceso K puede aumentar susceptibilidad a bitter pit;
+- Ca, Mg, Zn, B como contexto.
+
+S8. Montana State University / Western Agricultural Research Center — Orchard Nutrition.
+URL:
+https://agresearch.montana.edu/warc/guides/apples/apple_orchard_nutrition.html
+Uso:
+- N exceso reduce calidad/yield, color, almacenamiento, dormancia e incrementa winter injury;
+- fire blight se favorece con vigor excesivo;
+- crecimiento anual recomendado en pear: joven 20–30", maduro 12–18";
+- P raíz/energía;
+- K agua/transporte y relación con humedad;
+- B con cuidado.
+
+S9. WSU Crop Protection Guide — Nutrient Applications.
+URL:
+https://cpg.treefruit.wsu.edu/nutrients/applications/
+Uso:
+- B requerido en tejido joven;
+- foliar efectivo;
+- fertirrigación de B puede ser irregular y tóxica;
+- cuidado en interpretación de micronutrientes.
+
+S10. WSU Tree Fruit — Fruit Tree Nutrition.
+URL:
+https://treefruit.wsu.edu/orchard-management/soils-nutrition/fruit-tree-nutrition/
+Uso:
+- suelos bien drenados pueden lixiviar N/B;
+- disponibilidad regional;
+- Zn en suelos calizos/pH alto y timing.
+
+S11. Foros InfoJardín / GrowingFruit / discusiones de productores.
+Uso:
+- lenguaje real: hojas amarillas, fruta chica, exceso de riego, “qué abono le pongo”.
+- No usados para targets ni dosis.
+
+S12. INTA Alto Valle / Universidad Nacional del Comahue / Manual Pera Williams.
+Archivo aportado por usuario:
+- manual_pera_williams.pdf
+Uso:
+- capítulo 6 de manejo del suelo y fertilización;
+- rangos foliares Williams: N, P, K, Ca, Mg, B, Zn, Fe, Mn, Cu;
+- suelo, pH, CIC, materia orgánica, salinidad, sodicidad, drenaje y compactación;
+- demanda anual para 60 t/ha: N 110, P 15, K 93 kg/ha;
+- N 80–140 kg/ha según rendimiento/vigor;
+- P en plantación/replante y fertirriego;
+- K como mineral dominante en fruto y ligado a calibre;
+- foliar como complemento, no reemplazo.
+Nivel de uso: fuente fuerte para PR-01 Bartlett/Williams, suelo, NPK y modo avanzado.
+
+S13. Navarra Agraria — Guía de cultivo Peral Conferencia en producción.
+Archivo aportado por usuario:
+- guia_pera.pdf
+Uso:
+- N 90–110 UF/ha, P2O5 50–60 UF/ha, K2O 120–135 UF/ha;
+- fertirrigación de N/P/K corregida con análisis foliares periódicos;
+- control de vigor mediante poda, riego y ajuste de N;
+- sensibilidad de Conferencia a fuego bacteriano;
+- riego abril-octubre y continuidad después de cosecha.
+Nivel de uso: fuente fuerte para PR-02/PR-04 tipo europeo y stage post_harvest.
+
+S14. Vida Rural / Neiker / Bialka / Diputación Foral de Vizcaya — Fertilización de pera Conferencia.
+Archivo aportado por usuario:
+- Vrural_2003_175_41_43.pdf
+Uso:
+- recomendaciones basadas en análisis foliar y suelo;
+- ensayos factoriales N/P/K/Mg;
+- importancia de vigor, suelo, hoja, producción y calidad;
+- variables de recomendación: vigor, MO, fecha de reposo, N foliar; P foliar/suelo/MO/pH; K foliar, producción anterior, K suelo, K/(Ca+Mg), textura, MO; Mg foliar/suelo/textura/MO;
+- historial nutricional de la plantación como base de decisión.
+Nivel de uso: fuente fuerte para el modelo BIO-G de memoria nutricional y modo agrónomo.
+
+S15. Información técnica adicional entregada por usuario en conversación.
+Uso:
+- pH práctico 6.0–7.0;
+- evitar finales de verano/otoño por brotes tiernos y heladas;
+- fertilización joven durante crecimiento activo como ventana de monitoreo, no receta mensual universal;
+- N adulto 80–140 kg/ha como referencia;
+- rangos foliares complementarios N 2.3–2.7, P 0.14–0.40, K 1.2–2.2, Ca 1.5–2.0, Mg 0.25–0.50;
+- programa común 82N–63P2O5–50MgO–182K2O kg/ha, 3–4 sesiones, con B/Zn/Ca foliares según análisis.
+Nivel de uso: se incorpora como referencia avanzada y se filtra por reglas de seguridad BIO-G.
+
+================================================================================
+21. RESUMEN CERRADO PARA CODEX/CLAUDE
+================================================================================
+
+Implementar pera con NPK relativo por etapa, no dosis cerradas.
+
+Prioridades:
+- Plantación/establecimiento: raíz + P + baja EC + humedad estable + baja compactación.
+- Juvenil: N moderado-alto controlado; formar estructura, no fruta.
+- Dormancia: baja demanda; suelo, pH, EC, memoria.
+- Brotación: reservas + N/P/K balanceados si raíz activa.
+- Floración: agua, clima, polinización, B/Zn/Ca contexto; no empujar N.
+- Cuajado: agua estable, K sube, salinidad baja.
+- Llenado: K protagonista; N bajo-moderado; Ca/Mg/EC contexto.
+- Cosecha/madurez: calidad, firmeza, conservación; evitar N alto.
+- Postcosecha: reservas; N/K/B/Zn contextuales solo con hoja activa y suelo funcional.
+- Unknown/SKIP: conservador, pedir etapa visible.
+
+Reglas de oro:
+1. Agua/suelo primero.
+2. N no es más fruta.
+3. K es protagonista en fruto, pero no aislado.
+4. P pesa más en raíz/arranque que en cosecha.
+5. Ca/B/Zn/Mg/Fe son contexto obligatorio, no sensores NPK v1.
+6. Postcosecha sigue viva.
+7. fruit_fill no es harvest_maturity.
+8. No dosis sin análisis.
+9. No N tardío que induzca brotes tiernos.
+10. Rangos foliares y dosis solo en modo avanzado.
+11. No marcas comerciales.
+12. UI debe usar AgroMetricEval del motor.
+
+Archivos esperados:
+- pear_tree_universal_profile.dart
+- pear_tree_crop_definition.dart
+- pear_tree_nutrition_modifier.dart si existe
+- pear_tree_stage_targets_test.dart
+- pear_tree_agro_score_engine_test.dart
+- pear_tree_npk_ui_contract_test.dart
+
+FIN DEL DOCUMENTO

@@ -121,6 +121,44 @@ class DashboardSyncPlan {
   bool get hasChanges => shouldSetEval || shouldSetAlerts;
 }
 
+class _DashboardNpkCandidate {
+  const _DashboardNpkCandidate({
+    required this.metric,
+    required this.evalMetric,
+    required this.interpretation,
+  });
+
+  final AgroMetricKey metric;
+  final AgroMetricEval? evalMetric;
+  final NutrientInterpretationResult? interpretation;
+
+  String get labelEs =>
+      evalMetric?.labelEs ?? interpretation?.labelEs ?? AgroBand.unknown.labelEs;
+
+  String? get doseGuideEs =>
+      evalMetric?.doseGuideEs ?? interpretation?.doseGuideEs;
+
+  String get shortRecommendation {
+    final fromEval = evalMetric?.shortRecommendationEs;
+    if (fromEval != null && fromEval.trim().isNotEmpty) return fromEval;
+    final fromInterpretation = interpretation?.shortRecommendation;
+    if (fromInterpretation != null && fromInterpretation.trim().isNotEmpty) {
+      return fromInterpretation;
+    }
+    return 'Lectura actual de ${metric.shortLabel} disponible.';
+  }
+
+  double get urgency01 {
+    final label = evalMetric?.priorityLabel;
+    if (label != null) {
+      return label.severityScore01(
+        stagePressure01: evalMetric?.stagePressure01 ?? 0.0,
+      );
+    }
+    return interpretation?.priorityScore01 ?? 0.0;
+  }
+}
+
 class DashboardScreenPresenter {
   static const String kRiegoIcon = 'assets/icons/metrics/ic_riego.png';
 
@@ -209,9 +247,9 @@ class DashboardScreenPresenter {
               ? (effectiveEval.metrics[AgroMetricKey.soilMoisture]?.labelEs ??
                     '—')
               : ((targets != null)
-                    ? _rawMetricStatusFromTargets(
-                        value: telemetry.soilMoisturePct,
-                        range: targets.moistureRaw,
+                    ? _moistureStatusFromTargets(
+                        soilMoisturePct: telemetry.soilMoisturePct,
+                        targets: targets,
                       )
                     : 'Monitoreo'))
         : _preSowingMoistureStatus(telemetry.soilMoisturePct);
@@ -271,56 +309,79 @@ class DashboardScreenPresenter {
     if (isPlanted && telemetry != null) {
       final scaleId = runtime.cropContext?.cultivationScaleId;
       final cropContext = runtime.cropContext;
+      final nEvalMetric = effectiveEval?.metrics[AgroMetricKey.n];
+      final pEvalMetric = effectiveEval?.metrics[AgroMetricKey.p];
+      final kEvalMetric = effectiveEval?.metrics[AgroMetricKey.k];
 
-      final nInt = NutrientRecommendationEngine.interpret(
+      NutrientInterpretationResult? interpretFallback({
+        required AgroMetricKey nutrient,
+        required double rawPpm,
+        required AgroMetricEval? evalMetric,
+      }) {
+        if (evalMetric?.hasNutrientInterpretation == true) return null;
+        return NutrientRecommendationEngine.interpret(
+          nutrient: nutrient,
+          rawPpm: rawPpm,
+          cropKey: runtime.cropKeyName,
+          stageKey: stageResult?.stageKey,
+          profileId: runtime.profile?.id,
+          varietyId: cropContext?.varietyId,
+          varietyAlias: cropContext?.varietyAlias,
+          calendarId: cropContext?.calendarTypeId,
+          targets: targets,
+          cultivationScaleId: scaleId,
+          ph: telemetry.ph,
+          ec: telemetry.ec,
+          soilMoisturePct: telemetry.soilMoisturePct,
+        );
+      }
+
+      final nInt = interpretFallback(
         nutrient: AgroMetricKey.n,
         rawPpm: telemetry.n.toDouble(),
-        cropKey: runtime.cropKeyName,
-        stageKey: stageResult?.stageKey,
-        profileId: runtime.profile?.id,
-        varietyId: cropContext?.varietyId,
-        varietyAlias: cropContext?.varietyAlias,
-        calendarId: cropContext?.calendarTypeId,
-        targets: targets,
-        cultivationScaleId: scaleId,
+        evalMetric: nEvalMetric,
       );
-      final pInt = NutrientRecommendationEngine.interpret(
+      final pInt = interpretFallback(
         nutrient: AgroMetricKey.p,
         rawPpm: telemetry.p.toDouble(),
-        cropKey: runtime.cropKeyName,
-        stageKey: stageResult?.stageKey,
-        profileId: runtime.profile?.id,
-        varietyId: cropContext?.varietyId,
-        varietyAlias: cropContext?.varietyAlias,
-        calendarId: cropContext?.calendarTypeId,
-        targets: targets,
-        cultivationScaleId: scaleId,
+        evalMetric: pEvalMetric,
       );
-      final kInt = NutrientRecommendationEngine.interpret(
+      final kInt = interpretFallback(
         nutrient: AgroMetricKey.k,
         rawPpm: telemetry.k.toDouble(),
-        cropKey: runtime.cropKeyName,
-        stageKey: stageResult?.stageKey,
-        profileId: runtime.profile?.id,
-        varietyId: cropContext?.varietyId,
-        varietyAlias: cropContext?.varietyAlias,
-        calendarId: cropContext?.calendarTypeId,
-        targets: targets,
-        cultivationScaleId: scaleId,
+        evalMetric: kEvalMetric,
+      );
+
+      final nCandidate = _DashboardNpkCandidate(
+        metric: AgroMetricKey.n,
+        evalMetric: nEvalMetric,
+        interpretation: nInt,
+      );
+      final pCandidate = _DashboardNpkCandidate(
+        metric: AgroMetricKey.p,
+        evalMetric: pEvalMetric,
+        interpretation: pInt,
+      );
+      final kCandidate = _DashboardNpkCandidate(
+        metric: AgroMetricKey.k,
+        evalMetric: kEvalMetric,
+        interpretation: kInt,
       );
 
       // Usamos las etiquetas premium cortas para el title
-      npkTitle = 'N: ${nInt.labelEs} · P: ${pInt.labelEs} · K: ${kInt.labelEs}';
+      npkTitle =
+          'N: ${nCandidate.labelEs} · P: ${pCandidate.labelEs} · K: ${kCandidate.labelEs}';
 
       // Buscamos el nutriente con más urgencia
-      final allInts = [nInt, pInt, kInt]
-        ..sort((a, b) => b.priorityScore01.compareTo(a.priorityScore01));
-      final top = allInts.first;
+      final allNutrients = [nCandidate, pCandidate, kCandidate]
+        ..sort((a, b) => b.urgency01.compareTo(a.urgency01));
+      final top = allNutrients.first;
 
       // Si hay una guía de dosis matemática, la mostramos. Si no, mostramos la alerta.
-      if (top.doseGuideEs != null && top.doseGuideEs!.isNotEmpty) {
+      final topDoseGuide = top.doseGuideEs;
+      if (topDoseGuide != null && topDoseGuide.isNotEmpty) {
         npkSubtitle =
-            top.doseGuideEs!.split('.').first +
+            topDoseGuide.split('.').first +
             '.'; // Extrae la frase exacta "Aplica ~45 kg/ha..."
       } else {
         npkSubtitle = top.shortRecommendation;
@@ -443,7 +504,10 @@ class DashboardScreenPresenter {
   DashboardTreeStatusUiData _buildTreeStatus(DeviceCropContext context) {
     final String stateId = normalizeTreeStateId(context.perennialStateId);
     final String stageId = normalizeTreeStageId(context.phenologyStageId);
-    final String profileLabel = treeProfileDisplayName(context.profileId);
+    final String profileLabel = treeProfileDisplayName(
+      context.profileId,
+      cropId: context.cropId,
+    );
     final bool hasGeneralProfile = profileLabel == 'Perfil general';
     final bool hasUnknownState = stateId == TreeStateIds.unknown;
     final bool hasUnknownStage = stageId == TreeStageIds.unknown;
@@ -452,7 +516,7 @@ class DashboardScreenPresenter {
       title: treeCropDisplayTitle(context),
       stateLabel: 'Estado: ${treeStateDisplayName(stateId)}',
       profileLabel: 'Perfil: $profileLabel',
-      stageLabel: 'Etapa: ${treeStageDisplayName(stageId)}',
+      stageLabel: 'Etapa: ${treeStageDisplayNameForCrop(context.cropId, stageId)}',
       anchorText: treeAnchorDisplayText(
         context.perennialAnchorDate,
         context.perennialAnchorTypeId,
@@ -556,7 +620,8 @@ class DashboardScreenPresenter {
     final telemetry = runtime.live;
     final String stageId = normalizeTreeStageId(context.phenologyStageId);
     final String stageLabel =
-        stageResult?.stageLabelEs ?? treeStageDisplayName(stageId);
+        stageResult?.stageLabelEs ??
+        treeStageDisplayNameForCrop(context.cropId, stageId);
     final String cropTitle = treeCropDisplayTitle(context);
     final events = <AgronomicEvent>[
       AgronomicEvent(
@@ -568,7 +633,10 @@ class DashboardScreenPresenter {
         timestamp: now,
         deviceId: runtime.device?.id,
         seedProfileId: context.profileId,
-        seedAlias: treeProfileDisplayName(context.profileId),
+        seedAlias: treeProfileDisplayName(
+          context.profileId,
+          cropId: context.cropId,
+        ),
         stageKey: stageId,
         stageLabel: stageLabel,
         isInformative: true,
@@ -620,7 +688,10 @@ class DashboardScreenPresenter {
           deviceId: runtime.device?.id,
           metricKey: metricKey,
           seedProfileId: context.profileId,
-          seedAlias: treeProfileDisplayName(context.profileId),
+          seedAlias: treeProfileDisplayName(
+            context.profileId,
+            cropId: context.cropId,
+          ),
           stageKey: stageId,
           stageLabel: stageLabel,
           isCritical: isCritical || severity == AgronomicEventSeverity.critical,
@@ -1007,6 +1078,16 @@ class DashboardScreenPresenter {
     required double value,
     required AgroRange range,
   }) => _labelFromRangeTuned(index0to100: value, range: range);
+
+  String _moistureStatusFromTargets({
+    required double soilMoisturePct,
+    required StageTargets targets,
+  }) {
+    final range = targets.moistureRaw;
+    if (soilMoisturePct > range.highMin) return 'Saturacion';
+    return _rawMetricStatusFromTargets(value: soilMoisturePct, range: range);
+  }
+
   double _scoreFromRawRange({
     required double value,
     required AgroRange range,
@@ -1064,13 +1145,14 @@ class DashboardScreenPresenter {
     required double soilMoisturePct,
     required StageTargets targets,
   }) {
-    switch (_rawMetricStatusFromTargets(
-      value: soilMoisturePct,
-      range: targets.moistureRaw,
+    switch (_moistureStatusFromTargets(
+      soilMoisturePct: soilMoisturePct,
+      targets: targets,
     )) {
       case 'Crítico':
       case 'Bajo':
         return 'Riega dentro de las próximas 24 horas';
+      case 'Saturacion':
       case 'Alto':
         return 'Evita riego por ahora';
       case 'Óptimo':
@@ -1084,13 +1166,14 @@ class DashboardScreenPresenter {
     required double soilMoisturePct,
     required StageTargets targets,
   }) {
-    switch (_rawMetricStatusFromTargets(
-      value: soilMoisturePct,
-      range: targets.moistureRaw,
+    switch (_moistureStatusFromTargets(
+      soilMoisturePct: soilMoisturePct,
+      targets: targets,
     )) {
       case 'Crítico':
       case 'Bajo':
         return '24h';
+      case 'Saturacion':
       case 'Alto':
         return 'OK';
       case 'Óptimo':

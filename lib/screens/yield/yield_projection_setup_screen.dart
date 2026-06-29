@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/peach_tree/peach_tree_yield_reference.dart';
+import 'package:bio_g/core/crops/pear_tree/pear_tree_yield_reference.dart';
+import 'package:bio_g/core/crops/walnut_tree/walnut_tree_yield_reference.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/yield_projection_config.dart';
 import 'package:bio_g/core/yield/yield_projection_engine_proposed.dart';
 import 'package:bio_g/core/yield/yield_reference_catalog.dart';
+import 'package:bio_g/core/yield/tree_yield_reference_catalog.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/theme/bio_g_theme.dart';
 import 'package:bio_g/widgets/onboarding/onboarding_asset_badge.dart';
@@ -168,6 +172,11 @@ class _YieldProjectionSetupScreenState
       return;
     }
 
+    if (isTreeContext(ctx)) {
+      _calculateTreeProjections(area, populationInput, ctx);
+      return;
+    }
+
     final reference = _resolveYieldReference(ctx);
     if (reference == null) {
       _projectedTotalYield = 0.0;
@@ -217,6 +226,184 @@ class _YieldProjectionSetupScreenState
     }
 
     _projectedIncome = 0.0;
+  }
+
+  void _calculateTreeProjections(
+    double area,
+    double populationInput,
+    DeviceCropContext ctx,
+  ) {
+    final cropId = CropCatalog.canonicalCropKey(ctx.cropId);
+    final hectares = _treeAreaInHectares(area);
+    final treesPerHa = _treeDensityPerHa(area, populationInput);
+    final treeCount = _treeCountFromInput(area, populationInput);
+
+    if (treeCount <= 0) {
+      _setZeroTreeProjection();
+      return;
+    }
+
+    if (cropId == CropCatalog.pearTreeCropId) {
+      final projection = resolvePearTreeYield(
+        profileId: ctx.profileId,
+        perennialStateId: ctx.perennialStateId,
+        phenologyStageId: ctx.phenologyStageId,
+        treesPerHa: treesPerHa,
+        hectares: hectares,
+        treeCount: treeCount,
+        fruitVisible:
+            normalizeTreeStageId(ctx.phenologyStageId) ==
+                TreeStageIds.fruitFill ||
+            normalizeTreeStageId(ctx.phenologyStageId) ==
+                TreeStageIds.harvestMaturity,
+      );
+      _setPearTreeProjection(projection, area);
+      return;
+    }
+
+    if (cropId == CropCatalog.peachTreeCropId) {
+      final projection = resolvePeachTreeYield(
+        profileId: ctx.profileId,
+        perennialStateId: ctx.perennialStateId,
+        phenologyStageId: ctx.phenologyStageId,
+        treesPerHa: treesPerHa,
+        hectares: hectares,
+        treeCount: treeCount,
+        fruitVisible:
+            normalizeTreeStageId(ctx.phenologyStageId) ==
+                TreeStageIds.fruitFill ||
+            normalizeTreeStageId(ctx.phenologyStageId) ==
+                TreeStageIds.harvestMaturity,
+      );
+      _setPeachTreeProjection(projection, area);
+      return;
+    }
+
+    if (cropId == CropCatalog.walnutTreeCropId) {
+      final projection = resolveWalnutTreeYield(
+        profileId: ctx.profileId,
+        perennialStateId: ctx.perennialStateId,
+        phenologyStageId: ctx.phenologyStageId,
+        treesPerHa: treesPerHa,
+        hectares: hectares,
+        treeCount: treeCount,
+      );
+      _setWalnutTreeProjection(projection, area);
+      return;
+    }
+
+    final tier = TreeYieldReferenceCatalog.tierForPerennialState(
+      ctx.perennialStateId,
+    );
+    if (tier == null) {
+      _setZeroTreeProjection();
+      return;
+    }
+
+    final estimate = TreeYieldReferenceCatalog.estimateTotalKg(
+      cropId: cropId,
+      profileId: ctx.profileId,
+      tier: tier,
+      treeCount: treeCount,
+    );
+    if (estimate == null) {
+      _setZeroTreeProjection();
+      return;
+    }
+
+    final expectedTotalKg = (estimate.kgLow + estimate.kgHigh) / 2.0;
+    _projectedTotalYield = expectedTotalKg;
+    _totalUnitLabel = 'kg';
+    if (_areaUnit == YieldAreaUnit.hectare) {
+      final perHaTon = hectares <= 0 ? 0.0 : expectedTotalKg / hectares / 1000.0;
+      _projectedYieldPerUnit = perHaTon;
+      _yieldUnitLabel = 't/ha';
+    } else {
+      _projectedYieldPerUnit = area <= 0 ? 0.0 : expectedTotalKg / area;
+      _yieldUnitLabel = 'kg/m2';
+    }
+    _projectedIncome = 0.0;
+  }
+
+  double _treeAreaInHectares(double area) {
+    return switch (_areaUnit) {
+      YieldAreaUnit.hectare => area,
+      YieldAreaUnit.squareMeter => area / 10000.0,
+      YieldAreaUnit.pot => 0.0,
+    };
+  }
+
+  double _treeDensityPerHa(double area, double populationInput) {
+    return switch (_areaUnit) {
+      YieldAreaUnit.hectare => populationInput,
+      YieldAreaUnit.squareMeter => populationInput * 10000.0,
+      YieldAreaUnit.pot => 0.0,
+    };
+  }
+
+  int _treeCountFromInput(double area, double populationInput) {
+    final total = switch (_areaUnit) {
+      YieldAreaUnit.hectare => area * populationInput,
+      YieldAreaUnit.squareMeter => area * populationInput,
+      YieldAreaUnit.pot => populationInput,
+    };
+    return total.isFinite ? total.round() : 0;
+  }
+
+  void _setPearTreeProjection(PearTreeYieldProjection projection, double area) {
+    final expectedTotalKg = projection.totalKg?.expected ?? 0.0;
+    _projectedTotalYield = expectedTotalKg;
+    _totalUnitLabel = 'kg';
+
+    if (_areaUnit == YieldAreaUnit.hectare) {
+      _projectedYieldPerUnit = projection.tonPerHa?.expected ?? 0.0;
+      _yieldUnitLabel = 't/ha';
+    } else {
+      _projectedYieldPerUnit = area <= 0 ? 0.0 : expectedTotalKg / area;
+      _yieldUnitLabel = 'kg/m2';
+    }
+    _projectedIncome = 0.0;
+  }
+
+  void _setPeachTreeProjection(PeachTreeYieldProjection projection, double area) {
+    final expectedTotalKg = projection.totalKg?.expected ?? 0.0;
+    _projectedTotalYield = expectedTotalKg;
+    _totalUnitLabel = 'kg';
+
+    if (_areaUnit == YieldAreaUnit.hectare) {
+      _projectedYieldPerUnit = projection.tonPerHa?.expected ?? 0.0;
+      _yieldUnitLabel = 't/ha';
+    } else {
+      _projectedYieldPerUnit = area <= 0 ? 0.0 : expectedTotalKg / area;
+      _yieldUnitLabel = 'kg/m2';
+    }
+    _projectedIncome = 0.0;
+  }
+
+  void _setWalnutTreeProjection(
+    WalnutTreeYieldProjection projection,
+    double area,
+  ) {
+    final expectedTotalKg = projection.totalKg?.expected ?? 0.0;
+    _projectedTotalYield = expectedTotalKg;
+    _totalUnitLabel = 'kg';
+
+    if (_areaUnit == YieldAreaUnit.hectare) {
+      _projectedYieldPerUnit = projection.tonPerHa?.expected ?? 0.0;
+      _yieldUnitLabel = 't/ha';
+    } else {
+      _projectedYieldPerUnit = area <= 0 ? 0.0 : expectedTotalKg / area;
+      _yieldUnitLabel = 'kg/m2';
+    }
+    _projectedIncome = 0.0;
+  }
+
+  void _setZeroTreeProjection() {
+    _projectedTotalYield = 0.0;
+    _projectedYieldPerUnit = 0.0;
+    _projectedIncome = 0.0;
+    _yieldUnitLabel = _areaUnit == YieldAreaUnit.hectare ? 't/ha' : 'kg/m2';
+    _totalUnitLabel = 'kg';
   }
 
   YieldOutputMode _defaultOutputModeForContext(DeviceCropContext? ctx) {
@@ -1634,6 +1821,14 @@ class _YieldProjectionSetupScreenState
                   supportBadgeLabel: _referenceSupportBadgeLabel(
                     activeReference,
                   ),
+                  manualBaseHint: _isTreeCrop
+                      ? 'Ingresa la superficie y árboles abajo'
+                      : 'Ingresa la superficie y semillas abajo',
+                  yieldNoun:
+                      CropCatalog.canonicalCropKey(cropContext?.cropId) ==
+                          CropCatalog.walnutTreeCropId
+                      ? 'rendimiento aproximado de nuez con cáscara'
+                      : 'rendimiento aproximado',
                 ),
                 const SizedBox(height: 24),
 
@@ -1698,7 +1893,7 @@ class _YieldProjectionSetupScreenState
                   GestureDetector(
                     onTap: _showVarietyInfoDialog,
                     child: _OverviewInfoCard(
-                      title: 'Variedad de semilla',
+                      title: _varietyCardTitle(cropContext),
                       value: _varietyTitle(cropContext),
                       subtitle: _varietySubtitle(cropContext),
                       leading: _AssetGlyph(
@@ -1719,6 +1914,7 @@ class _YieldProjectionSetupScreenState
                   isCalculated: _isCalculated,
                   unsupported: !isProjectionSupported,
                   supportNote: _projectionSupportNote(activeReference),
+                  missingTargetLabel: _isTreeCrop ? 'Árboles' : 'Semillas',
                 ),
               ],
             ),
@@ -1797,8 +1993,8 @@ class _YieldProjectionSetupScreenState
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Variedad Inteligente',
+                Text(
+                  _isTreeCrop ? 'Variedad del árbol' : 'Variedad Inteligente',
                   style: TextStyle(
                     fontSize: 19,
                     fontWeight: FontWeight.w900,
@@ -1807,7 +2003,9 @@ class _YieldProjectionSetupScreenState
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'El modelo matemático de BIO-G se adapta a la genética específica de tu semilla.\n\nPara cambiar la variedad y ajustar el cálculo, debes reconfigurarla directamente desde el Wizard del dispositivo.',
+                  _isTreeCrop
+                      ? 'El modelo matemático de BIO-G se adapta a la variedad y etapa de tu árbol.\n\nPara cambiar la variedad y ajustar el cálculo, debes reconfigurarla directamente desde el Wizard del dispositivo.'
+                      : 'El modelo matemático de BIO-G se adapta a la genética específica de tu semilla.\n\nPara cambiar la variedad y ajustar el cálculo, debes reconfigurarla directamente desde el Wizard del dispositivo.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -2603,8 +2801,22 @@ class _YieldProjectionSetupScreenState
     return OnboardingUiAssets.assetForCrop(cropContext?.cropId);
   }
 
+  String _varietyCardTitle(DeviceCropContext? cropContext) {
+    if (isTreeContext(cropContext)) {
+      final cropId = CropCatalog.canonicalCropKey(cropContext?.cropId);
+      return switch (cropId) {
+        CropCatalog.appleTreeCropId => 'Variedad de manzano',
+        CropCatalog.pearTreeCropId => 'Variedad de peral',
+        CropCatalog.peachTreeCropId => 'Variedad de duraznero',
+        CropCatalog.walnutTreeCropId => 'Variedad de nogal',
+        _ => 'Variedad',
+      };
+    }
+    return 'Variedad de semilla';
+  }
+
   String _varietyTitle(DeviceCropContext? cropContext) {
-    if (cropContext == null) return 'Sin semilla configurada';
+    if (cropContext == null) return 'Sin cultivo configurado';
     final cropId = CropCatalog.canonicalCropKey(cropContext.cropId);
     if (cropId == CropCatalog.squashCropId &&
         (CropCatalog.isGenericAlias(cropContext.varietyAlias) ||
@@ -3005,6 +3217,11 @@ class _HeroProjectionCard extends StatelessWidget {
   final double targetIncome;
   final double healthScore;
   final String? supportBadgeLabel;
+  final String manualBaseHint;
+
+  /// Sustantivo del producto bajo el contador (p. ej. "rendimiento aproximado"
+  /// genérico; en nogal "rendimiento aproximado de nuez con cáscara").
+  final String yieldNoun;
 
   const _HeroProjectionCard({
     super.key,
@@ -3019,7 +3236,9 @@ class _HeroProjectionCard extends StatelessWidget {
     required this.totalUnitLabel,
     required this.targetIncome,
     required this.healthScore,
+    required this.manualBaseHint,
     this.supportBadgeLabel,
+    this.yieldNoun = 'rendimiento aproximado',
   });
 
   @override
@@ -3086,7 +3305,7 @@ class _HeroProjectionCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Ingresa la superficie y semillas abajo',
+                    manualBaseHint,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -3186,7 +3405,7 @@ class _HeroProjectionCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              'rendimiento aproximado',
+              yieldNoun,
               style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w800,
@@ -3579,6 +3798,7 @@ class _InlineInfoText extends StatelessWidget {
   final bool isCalculated;
   final bool unsupported;
   final String? supportNote;
+  final String missingTargetLabel;
 
   const _InlineInfoText({
     super.key,
@@ -3586,6 +3806,7 @@ class _InlineInfoText extends StatelessWidget {
     required this.isCalculated,
     this.unsupported = false,
     this.supportNote,
+    this.missingTargetLabel = 'Semillas',
   });
 
   @override
@@ -3596,7 +3817,7 @@ class _InlineInfoText extends StatelessWidget {
               ? 'Proyección guardada. Estos datos alimentarán tus métricas y alertas.'
               : (ready
                     ? 'Listo para calcular. BIO-G usará estos datos para proyectar un rango productivo.'
-                    : 'Faltan parámetros. Toca sobre "Superficie" o "Semillas" para usar la calculadora.'));
+                    : 'Faltan parámetros. Toca sobre "Superficie" o "$missingTargetLabel" para usar la calculadora.'));
 
     final icon = unsupported
         ? Icons.hourglass_top_rounded

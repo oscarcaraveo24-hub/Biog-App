@@ -1,0 +1,1625 @@
+BIO-G
+
+04_RIESGOS_CULTIVO_SANIDAD_ESTRES_MEMORIA_BIOG_PERA_v1
+Cultivo: Pera / Peral
+cropId: crop_pear_tree
+CropKey sugerido: pearTree / pear_tree
+Perfil base: PR-SKIP + PR-01 Bartlett/Williams + PR-02 Anjou + PR-03 Bosc + PR-04 Seckel/Comice + PR-05 Kieffer/Rusticas
+
+Documento técnico interno BIO-G.
+No sustituye diagnóstico de campo, laboratorio, asesoría fitosanitaria local, análisis de suelo/agua/tejido ni normatividad vigente.
+BIO-G v1 no debe convertirse en recetario de plaguicidas: alerta, orienta revisión, prioriza riesgo, guarda memoria y recomienda confirmar.
+
+Versión: v1.0
+Fecha: Junio 2026
+Módulo: Riesgos del Cultivo / Plant Health / Memoria perenne
+Enfoque de producto: alertas farmer-friendly, cableables a motor, agrupadas por familia de riesgo, sin dosis ni ingredientes activos.
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+El peral no debe modelarse como una hortaliza larga ni como un manzano con otro fruto.
+Es un árbol frutal caducifolio perenne con memoria fisiológica, dependencia fuerte de floración/polinización, sensibilidad a fuego bacteriano y un riesgo sanitario propio muy importante: psila del peral.
+
+En BIO-G, los riesgos del peral se concentran en ocho frentes:
+
+1. Raíz, cuello, suelo y madera:
+   Phytophthora, Armillaria, complejos de raíz/corona, anoxia por exceso de agua, compactación, decaimiento por replantación, cancros y daño de tronco.
+
+2. Floración, brotes tiernos y bacterias:
+   fuego bacteriano, blossom blast/bacteriosis de flor, helada tardía, granizo, heridas, exceso de vigor y poda fuerte.
+
+3. Psila del peral y decaimiento:
+   Cacopsylla/Cacopsylla pyricola o C. pyri según región, melaza, negrilla/fumagina, debilitamiento, defoliación, baja calidad de fruto y posible vector de pear decline/fitoplasma.
+
+4. Enfermedades de hoja y fruto:
+   pear scab/roña/moteado, Fabraea leaf spot/black spot, pear rust/roya del peral, powdery mildew/cenicilla, bull's eye rot, botrytis, pudriciones de cosecha/postcosecha y enfermedades de almacenamiento.
+
+5. Plagas directas de fruto:
+   palomilla/carpocapsa, chinches/lygus, leafrollers/enrolladores, trips, moscas/fruta según región, daño por aves/roedores en sistemas pequeños y plagas regionales.
+
+6. Plagas de hoja, brote y madera:
+   ácaros, pear rust mite, pearleaf blister mite, aphids/pulgones, San Jose scale, Italian pear scale, pear sawfly/pearslug, cankerworms, barrenadores y defoliadores.
+
+7. Estrés fisiológico, clima y calidad:
+   helada, falta de frío, mala polinización, calor, sequía, riego irregular, salinidad, compactación, rajado, russeting, sunburn, cork spot/calcio funcional, clorosis por pH alto y fitotoxicidad.
+
+8. Memoria multianual:
+   en peral, un evento severo en floración, cuajado, llenado o postcosecha puede afectar no solo el ciclo actual, sino la reserva, el retorno floral, la carga y el vigor del siguiente ciclo.
+
+Regla v1:
+BIO-G debe decir: “esto lo favorece”, “revise aquí”, “se parece a”, “confirme si avanza”.
+BIO-G NO debe decir: “diagnóstico definitivo” ni “aplique X producto”.
+BIO-G debe cruzar etapa fenológica + sensores + clima + historial + clave visual.
+BIO-G debe bajar la confianza si solo hay sensor y no hay observación visual.
+
+
+================================================================================
+1. METODOLOGÍA Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+Este documento toma como plantilla editorial el documento 04 del Manzano, pero no copia su catálogo de forma automática.
+El peral comparte familia botánica con manzano, pero la jerarquía de riesgos cambia:
+
+- fuego bacteriano pesa muy fuerte en floración/brotes y puede matar ramas o árboles jóvenes;
+- psila del peral es riesgo central de vigor, fruta, melaza/negrilla y decaimiento;
+- pear scab/roña es importante en ambientes húmedos;
+- Fabraea/leaf spot es más relevante en regiones húmedas y árboles de bajo manejo;
+- polinización cruzada y clima en floración son determinantes de carga;
+- postcosecha y sanidad foliar afectan reservas para el siguiente ciclo.
+
+Criterio de fuentes:
+- Alta confianza: universidades, extensión, IPM oficial, manuales fitosanitarios institucionales y guías regionales de manejo integrado.
+- Media-alta: documentos técnicos regionales, reportes de producción y artículos académicos.
+- Media: guías comerciales o divulgativas si coinciden con fuentes universitarias.
+- Baja-media: foros y discusiones de productores, usados solo para lenguaje UX y problemas reportados, nunca para umbrales ni reglas duras.
+
+Fuentes fuertes usadas:
+- UC IPM Pear Pest Management Guidelines.
+- UC IPM Pear Psylla.
+- UC IPM Fire Blight in Pear.
+- UC Davis Fruit & Nut Research and Information Center: Pear Diseases & Disorders.
+- Washington State University Tree Fruit: Pear IPM.
+- WSU Production Guide: Pear Programs.
+- Pacific Northwest Pest Management Handbooks: Pear Fire Blight, Pear Scab.
+- Ontario Crop IPM: Fabraea leaf spot.
+- ITACyl: Psila del peral.
+- Chapingo / Revista de Geografía Agrícola: Agronomía y ambiente de la pera en Veracruz.
+- Foros GrowingFruit e InfoJardín: lenguaje real del usuario, confusiones y reportes visuales.
+
+Uso de foros:
+Los foros sirvieron para detectar cómo habla el usuario real:
+- “hojas negras”
+- “punta quemada”
+- “melaza pegajosa”
+- “hojas con puntitos negros”
+- “pera con gusano”
+- “fruto con mancha corchosa”
+- “se seca una rama”
+- “tiene como negrilla”
+- “no sé si es hongo o plaga”
+- “floreó pero no cuajó”
+
+No se usaron para definir umbrales técnicos ni decisiones agronómicas duras.
+
+
+================================================================================
+2. RESUMEN EJECUTIVO PARA PRODUCTO
+================================================================================
+
+El riesgo del peral cambia mucho según etapa:
+
+- Recién plantado / establecimiento:
+  Pesa raíz, drenaje, Phytophthora, anoxia, compactación, salinidad, cuello, daño de raíces, estrés por trasplante y replantación.
+
+- Juvenil no productivo:
+  Pesa vigor equilibrado, psila temprana, pulgones, ácaros, defoliadores, cenicilla, cancros, fire blight en brotes tiernos y exceso de N/vigor.
+
+- Reposo / dormancia:
+  Pesa madera, cancros, escamas, huevos/adultos invernantes de psila, frío acumulado, daño de roedores, inóculo de roña/moteado, hojas caídas y memoria del ciclo anterior.
+
+- Brotación:
+  Pesa psila, roña/moteado, cenicilla, ácaros, pulgones, helada tardía, pear rust mite/blister mite y vigor inicial.
+
+- Floración:
+  Etapa crítica. Pesa fuego bacteriano, helada, lluvia, humedad, baja actividad de polinizadores, incompatibilidad, blossom blast, exceso de N/vigor y granizo.
+
+- Cuajado / amarre:
+  Pesa baja polinización, caída de fruto, fuego bacteriano de brote, psila, carpocapsa temprana, chinches, déficit hídrico, salinidad y calor.
+
+- Llenado de fruto:
+  Pesa agua estable, psila/melaza/negrilla, carpocapsa, ácaros, leafrollers, roña en fruto, Fabraea, sunburn, rajado, russeting, cork spot/calcio funcional y pudriciones.
+
+- Madurez / cosecha:
+  Pesa calidad, golpes, carpocapsa, chinches, melaza/negrilla por psila, storage rots, bull's eye rot, Botrytis, pudriciones, rajado, sobremadurez y manejo de cosecha.
+
+- Postcosecha:
+  No apaga el cultivo. Pesa recuperación de reservas, hoja funcional, psila tardía, ácaros, defoliación, estrés hídrico, cancros, fertilidad del siguiente ciclo y memoria.
+
+Errores que el motor debe evitar:
+1. Ver hojas negras y asumir hongo si hay melaza/psila.
+2. Ver marchitez y recomendar riego si el suelo está saturado.
+3. Ver baja carga y culpar NPK si hubo helada, baja polinización o falta de polinizador compatible.
+4. Ver fruta con manchas y no distinguir roña, daño de chinche, russeting, sunburn, fitotoxicidad o pudrición.
+5. Tratar postcosecha como cultivo cerrado.
+
+
+================================================================================
+3. FAMILIAS UX DEL MÓDULO RIESGOS PERA
+================================================================================
+
+Familia UX 1: Raíz, cuello, suelo y madera
+Objetivo: proteger vida del árbol y longevidad del huerto.
+Entradas principales:
+- phytophthora_root_crown_rot
+- root_crown_rot_complex
+- armillaria_root_rot
+- pear_replant_decline
+- canker_wood_decline_complex
+- european_canker_nectria
+- soil_anoxia_excess_moisture
+- soil_compaction_root_stress
+- rodent_girdling_damage
+- rootstock_incompatibility_decline_context
+
+Familia UX 2: Flor, brote y bacterias
+Objetivo: proteger floración, cuajado y madera joven.
+Entradas principales:
+- fire_blight
+- bacterial_blossom_blast
+- frost_bloom_damage
+- hail_wound_infection_risk
+- excessive_vigor_fire_blight_risk
+- blossom_weather_pollination_stress
+
+Familia UX 3: Psila, melaza y decaimiento
+Objetivo: proteger vigor, hoja, fruto y memoria del árbol.
+Entradas principales:
+- pear_psylla
+- pear_decline_phytoplasma_context
+- sooty_mold_honeydew_complex
+- natural_enemy_disruption
+- excessive_vigor_psylla_risk
+
+Familia UX 4: Enfermedades de hoja y fruto
+Objetivo: proteger fotosíntesis, fruto y calidad comercial.
+Entradas principales:
+- pear_scab
+- fabraea_leaf_spot_black_spot
+- pear_rust
+- powdery_mildew_pear
+- botrytis_gray_mold
+- bulls_eye_rot_neofabraea
+- storage_rot_complex
+- alternaria_fruit_rot_context
+- blossom_end_rot_storage_context
+
+Familia UX 5: Plagas directas de fruto
+Objetivo: proteger fruta comercial y rendimiento vendible.
+Entradas principales:
+- codling_moth
+- leafroller_fruit_scarring_complex
+- stink_bug_lygus_fruit_damage
+- pear_thrips_regional
+- fruit_fly_regional
+- birds_rodents_fruit_damage_small_orchard
+
+Familia UX 6: Plagas de hoja, brote y madera
+Objetivo: proteger hoja, brote, fotosíntesis y flujo de savia.
+Entradas principales:
+- spider_mites_complex
+- pear_rust_mite
+- pearleaf_blister_mite
+- aphids_complex
+- san_jose_scale
+- italian_pear_scale
+- pear_sawfly_pearslug
+- caterpillar_defoliators
+- borers_wood_complex
+
+Familia UX 7: Estrés fisiológico, clima y calidad
+Objetivo: leer problemas que parecen plaga/enfermedad pero nacen de ambiente, agua, vigor o manejo.
+Entradas principales:
+- drought_stress
+- heat_stress_fruit_fill
+- sunburn_sunscald
+- waterlogging_anoxia
+- salinity_ec_high
+- insufficient_chill_irregular_budbreak
+- poor_pollination_low_fruit_set
+- biennial_or_irregular_bearing
+- cork_spot_calcium_functional
+- fruit_cracking_weather
+- russeting_weather_skin_disorder
+- iron_chlorosis_high_ph
+- herbicide_phytotoxicity
+- nutrient_excess_vigor
+
+
+================================================================================
+4. CATÁLOGO MAESTRO DE RIESGOS BIÓTICOS
+================================================================================
+
+Formato:
+Riesgo | Dónde pesa más | Qué lo favorece | Clave visual | Etapa | Prioridad BIO-G | Memoria | Lectura BIO-G
+
+--------------------------------------------------------------------------------
+4.1 RAÍZ, CUELLO, SUELO Y MADERA
+--------------------------------------------------------------------------------
+
+1) phytophthora_root_crown_rot
+Nombre UX: Pudrición de raíz/corona por exceso de humedad
+Dónde pesa más: árboles jóvenes, replantes, suelos pesados, zonas bajas, riego excesivo, drenaje pobre.
+Qué lo favorece: suelo saturado, compactación, cuello húmedo, heridas en raíces, textura pesada, riegos largos, lluvias fuertes.
+Clave visual: árbol decae por parches, hojas marchitas con suelo húmedo, poco crecimiento, raíces finas oscuras/muertas, tejido del cuello café/rojizo.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative, vegetative_growth, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta; puede reducir vigor varios ciclos o matar el árbol.
+Lectura BIO-G: si soilMoisture alta + resistance alta + bajo vigor/marchitez, alertar raíz/anoxia. No recomendar más riego.
+
+2) root_crown_rot_complex
+Nombre UX: Complejo de raíz y cuello
+Dónde pesa más: establecimiento, árboles que no arrancan, replantes, huertos con drenaje irregular.
+Qué lo favorece: estrés hídrico alternado, raíces heridas, patógenos de suelo, suelo frío y húmedo, material débil de vivero.
+Clave visual: bajo vigor crónico, hojas pequeñas, amarillamiento, muerte progresiva, raíces café/negras, falla por zonas.
+Etapa: establecimiento a postcosecha.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: riesgo base cuando hay decaimiento sin patrón foliar claro y sensores apuntan a raíz.
+
+3) armillaria_root_rot
+Nombre UX: Pudrición blanca / Armillaria
+Dónde pesa más: suelos con raíces viejas, huertos replantados, zonas con historial forestal/frutal viejo.
+Qué lo favorece: restos de raíces leñosas, estrés, humedad, árboles debilitados.
+Clave visual: declinación lenta, muerte por focos, micelio blanco bajo corteza en base, setas en temporada, muerte regresiva.
+Etapa: cualquier etapa; más visible en estrés de verano o brotación débil.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Alta.
+Lectura BIO-G: si historial de replantación + árboles por focos + declinación crónica, sugerir revisión de cuello/raíces.
+
+4) pear_replant_decline
+Nombre UX: Decaimiento por replantación en peral
+Dónde pesa más: huertos nuevos donde hubo peral, manzano, membrillo u otros frutales de pepita.
+Qué lo favorece: suelo con historial frutal, nematodos, complejos fúngicos, raíces viejas, microbioma desfavorable, compactación.
+Clave visual: bajo vigor uniforme o por líneas, entrenudos cortos, mala brotación, raíces débiles sin lesión única clara.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative.
+Prioridad BIO-G: Alta si hay historial.
+Memoria: Media-alta.
+Lectura BIO-G: antes de asumir falta de fertilizante, preguntar si ya había frutal en ese sitio.
+
+5) canker_wood_decline_complex
+Nombre UX: Cancros y decaimiento de madera
+Dónde pesa más: tronco, ramas, heridas de poda, granizo, árboles viejos o estresados.
+Qué lo favorece: heridas, poda en húmedo, heladas, estrés, fuego bacteriano previo, mala cicatrización.
+Clave visual: áreas hundidas en corteza, grietas, goma/exudado, muerte regresiva de rama, zonas oscuras alrededor de heridas.
+Etapa: dormancy, budbreak, vegetative_growth, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Alta; puede ser reservorio de enfermedad y debilitar estructura.
+Lectura BIO-G: si hubo granizo/poda/helada y aparece muerte regresiva, no tratar como simple hoja amarilla.
+
+6) european_canker_nectria
+Nombre UX: Cancro europeo / Nectria
+Dónde pesa más: regiones húmedas, heridas de poda, madera joven, árboles bajo estrés.
+Qué lo favorece: humedad, heridas, poda, lluvia, tejido debilitado.
+Clave visual: cancros anillados o hundidos, muerte de brotes/ramas, lesiones en madera.
+Etapa: dormancy, vegetative_growth, post_harvest.
+Prioridad BIO-G: Media-alta en ambientes húmedos.
+Memoria: Alta.
+Lectura BIO-G: activar si hay heridas + humedad + cancros progresivos.
+
+7) rodent_girdling_damage
+Nombre UX: Daño de roedores / anillado
+Dónde pesa más: árboles jóvenes, invierno, zonas con maleza/cobertura junto al tronco.
+Qué lo favorece: maleza alrededor del tronco, acolchado pegado, invierno, protección deficiente.
+Clave visual: corteza comida en base, árbol brota débil o colapsa, marchitez sin lesión foliar.
+Etapa: dormancy, budbreak, root_establishment.
+Prioridad BIO-G: Media-alta en jóvenes.
+Memoria: Alta si anilla el tronco.
+Lectura BIO-G: si árbol joven colapsa al brotar y suelo está bien, revisar base del tronco.
+
+8) rootstock_incompatibility_decline_context
+Nombre UX: Decaimiento por incompatibilidad/portainjerto como contexto
+Dónde pesa más: combinaciones injerto-portainjerto, perales sobre membrillo u otros sistemas, árboles con unión problemática.
+Qué lo favorece: mala compatibilidad, estrés, frío, carga fuerte, material no adaptado.
+Clave visual: unión de injerto anormal, diferencia de vigor arriba/abajo, declinación lenta, quiebre o estrangulamiento.
+Etapa: juvenile_vegetative, productive_season, post_harvest.
+Prioridad BIO-G: Media, solo como sospecha.
+Memoria: Alta si se confirma.
+Lectura BIO-G: no diagnosticar sin observación; guardar como pregunta de diagnóstico si el árbol declina sin causa clara.
+
+--------------------------------------------------------------------------------
+4.2 FLOR, BROTE Y BACTERIAS
+--------------------------------------------------------------------------------
+
+9) fire_blight
+Nombre UX: Fuego bacteriano / tizón de fuego
+Dónde pesa más: floración, brotes tiernos, árboles jóvenes, cultivares susceptibles, periodos cálidos y húmedos.
+Qué lo favorece: flores abiertas, clima cálido-húmedo, lluvia, granizo, heridas, insectos, exceso de N, poda fuerte, exceso de vigor, riego alto.
+Clave visual: flores, brotes o frutos se marchitan, ennegrecen y mueren; brotes con forma de “cayado de pastor”; exudado ámbar/pegajoso; ramas con aspecto quemado.
+Etapa: flowering, fruit_set, vegetative_growth, post_harvest si hay cancros.
+Prioridad BIO-G: Muy alta.
+Memoria: Muy alta; puede matar ramas, árboles jóvenes y quedar en cancros.
+Perfil: subir en PR-01 Bartlett/Williams por floración extendida/susceptibilidad; PR-03 Bosc susceptible; PR-04 Comice puede ser sensible; PR-05 Kieffer puede ser más rústico pero no inmune; PR-SKIP conservador.
+Lectura BIO-G: si flowering + lluvia/HR alta + temperatura templada-cálida + brote tierno, alertar alto. Si además hubo granizo, subir prioridad.
+
+10) bacterial_blossom_blast
+Nombre UX: Bacteriosis de flor / blossom blast
+Dónde pesa más: floración fría-húmeda, tejido tierno.
+Qué lo favorece: frío, lluvia, heladas leves, humedad alta, heridas.
+Clave visual: flores quemadas o cafés, daño en racimos, tejido papiráceo; puede confundirse con helada o fuego bacteriano.
+Etapa: flowering.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Media.
+Lectura BIO-G: si flor dañada después de frío/lluvia, no asumir de inmediato fuego bacteriano; pedir revisar exudado y progresión.
+
+11) frost_bloom_damage
+Nombre UX: Daño por helada en floración
+Dónde pesa más: botón, flor abierta, fruto recién cuajado, zonas bajas, noches despejadas.
+Qué lo favorece: temperaturas bajo cero, inversión térmica, aire frío acumulado, floración temprana.
+Clave visual: pistilos cafés/negros, flores colapsadas, bajo cuajado, frutos deformados/anillados.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta; afecta rendimiento del año y puede generar vigor vegetativo por baja carga.
+Lectura BIO-G: si hubo helada y baja carga, no culpar NPK ni falta de agua.
+
+12) hail_wound_infection_risk
+Nombre UX: Riesgo sanitario después de granizo
+Dónde pesa más: floración a cosecha; brotes, fruto y madera joven.
+Qué lo favorece: granizo, viento fuerte, heridas abiertas, humedad posterior.
+Clave visual: hojas rotas, fruta golpeada, heridas en brotes, ramas lesionadas.
+Etapa: flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: guardar evento extremo; subir riesgo de fire blight, cancros, pudriciones y fruta no comercial.
+
+13) excessive_vigor_fire_blight_risk
+Nombre UX: Exceso de vigor asociado a fuego bacteriano
+Dónde pesa más: brotes tiernos, árboles jóvenes, huertos con N/agua/poda altos.
+Qué lo favorece: exceso de N, riego alto, poda fuerte, baja carga de fruta, crecimiento blando.
+Clave visual: brotes largos y tiernos, canopia muy vigorosa, crecimiento suave susceptible.
+Etapa: vegetative_growth, flowering, fruit_set.
+Prioridad BIO-G: Alta como modificador.
+Memoria: Media.
+Lectura BIO-G: no es enfermedad por sí misma; aumenta riesgo y severidad de fire blight/psila.
+
+--------------------------------------------------------------------------------
+4.3 PSILA, MELAZA Y DECAIMIENTO
+--------------------------------------------------------------------------------
+
+14) pear_psylla
+Nombre UX: Psila del peral
+Dónde pesa más: brotación, crecimiento vegetativo, cuajado, llenado y postcosecha; especialmente en peras europeas.
+Qué lo favorece: adultos invernantes, primavera templada, brotes tiernos, exceso de vigor, canopia densa, ruptura de enemigos naturales, manejo agresivo no selectivo, calor moderado.
+Clave visual: insectos pequeños tipo chicharrita/cigarrilla, huevos/ninfas en brotes/hojas, melaza pegajosa, hojas ennegrecidas por negrilla, fruto manchado, hojas amarillas o caídas.
+Etapa: dormancy, budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Muy alta; puede debilitar árbol y afectar uno o más ciclos.
+Perfil: PR-SKIP conservador; PR-01/PR-02/PR-03/PR-04 son peras europeas y mantienen riesgo alto; futura pera asiática podría ponderar diferente.
+Lectura BIO-G: si usuario reporta “melaza”, “pegajoso”, “negrilla”, “hojas negras” o “puntitos/insectos en brote”, priorizar psila antes que hongo genérico.
+
+15) pear_decline_phytoplasma_context
+Nombre UX: Decaimiento del peral asociado a fitoplasma
+Dónde pesa más: huertos con psila, portainjertos sensibles, árboles con declinación crónica.
+Qué lo favorece: pear psylla como vector, material infectado, portainjertos susceptibles, estrés de raíz/agua.
+Clave visual: decaimiento progresivo, hojas pequeñas o rojizas/amarillentas según contexto, bajo vigor, reducción de productividad, muerte gradual.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Alta como sospecha, no diagnóstico.
+Memoria: Muy alta.
+Lectura BIO-G: si hay historial fuerte de psila + declinación persistente, sugerir revisión técnica/laboratorio; no diagnosticar solo por sensor.
+
+16) sooty_mold_honeydew_complex
+Nombre UX: Negrilla / fumagina sobre melaza
+Dónde pesa más: hojas, fruto y tallos cuando hay psila/pulgones/cochinillas.
+Qué lo favorece: melaza, alta población de chupadores, humedad, canopia densa.
+Clave visual: película negra superficial en hojas/fruto, textura sucia/pegajosa, disminución de fotosíntesis y valor comercial.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad; media-alta para vigor si defolia.
+Memoria: Media.
+Lectura BIO-G: negrilla no es la causa principal; buscar insecto que produce melaza, especialmente psila.
+
+17) natural_enemy_disruption
+Nombre UX: Desequilibrio de enemigos naturales
+Dónde pesa más: huertos con presión de psila/ácaros y manejo no selectivo.
+Qué lo favorece: insecticidas de amplio espectro, falta de refugio, polvo, estrés, baja biodiversidad.
+Clave visual: rebrote de psila/ácaros después de tratamientos, ausencia de depredadores, plaga recurrente.
+Etapa: todo el ciclo activo.
+Prioridad BIO-G: Media-alta como contexto.
+Memoria: Media.
+Lectura BIO-G: BIO-G v1 no recomienda productos; solo sugiere revisar estrategia IPM y monitoreo.
+
+--------------------------------------------------------------------------------
+4.4 ENFERMEDADES DE HOJA Y FRUTO
+--------------------------------------------------------------------------------
+
+18) pear_scab
+Nombre UX: Roña / moteado del peral
+Dónde pesa más: primavera húmeda, floración a fruto joven, hojas y fruto; regiones con lluvia o alta humedad.
+Qué lo favorece: hojas/fruta mojadas, lluvia, humedad prolongada, hojas caídas infectadas, brotes/twigs infectados, canopia densa.
+Clave visual: lesiones oliva, gris-café o negras con aspecto aterciopelado en hojas/fruto; fruta deformada, costras, grietas o russeting alrededor de lesión.
+Etapa: budbreak, flowering, fruit_set, fruit_fill.
+Prioridad BIO-G: Muy alta en húmedo; media en seco salvo lluvias.
+Memoria: Media-alta por inóculo en hojas/twigs.
+Lectura BIO-G: si lluvia/HR alta + etapa temprana + manchas oscuras aterciopeladas, alertar roña. No confundir con daño de sol o chinche.
+
+19) fabraea_leaf_spot_black_spot
+Nombre UX: Mancha foliar Fabraea / black spot
+Dónde pesa más: regiones húmedas, veranos lluviosos, árboles sin manejo, cultivares susceptibles.
+Qué lo favorece: humedad, lluvia, hojas mojadas, restos infectados, canopia densa.
+Clave visual: manchas café-negras en hojas, amarillamiento, defoliación; también manchas en fruto y ramillas.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta en húmedo; media regional.
+Memoria: Alta si causa defoliación antes de reservas.
+Lectura BIO-G: si manchas + caída de hoja en verano/postcosecha, guardar memoria de menor reserva y menor retorno floral.
+
+20) pear_rust
+Nombre UX: Roya del peral
+Dónde pesa más: zonas con juníperos/sabinos/cedros alternantes, primaveras húmedas.
+Qué lo favorece: hospedero alternante cercano, lluvia, humedad, viento, primavera fresca-húmeda.
+Clave visual: manchas naranja/rojizas en hojas, estructuras en envés; a veces afecta fruta.
+Etapa: budbreak, vegetative_growth, fruit_set.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Baja-media; alta si defolia.
+Lectura BIO-G: si manchas naranjas, preguntar por juníperos/sabinos cercanos.
+
+21) powdery_mildew_pear
+Nombre UX: Cenicilla / oídio del peral
+Dónde pesa más: brotes, hojas nuevas, yemas, fruto joven.
+Qué lo favorece: brotes tiernos, días cálidos, noches frescas/húmedas, canopia cerrada.
+Clave visual: polvo blanco/gris en hojas o brotes, deformación, brotes débiles, russeting en fruto joven.
+Etapa: budbreak, vegetative_growth, flowering, fruit_set.
+Prioridad BIO-G: Media-alta.
+Memoria: Media si afecta yemas/brotes.
+Lectura BIO-G: si brote nuevo + polvo blanco, revisar cenicilla antes de interpretar deficiencia.
+
+22) botrytis_gray_mold
+Nombre UX: Moho gris / Botrytis
+Dónde pesa más: flores viejas, heridas, fruta cerca de cosecha, almacenamiento, humedad alta.
+Qué lo favorece: tejido senescente, heridas, alta humedad, mala ventilación, fruta mojada.
+Clave visual: moho gris en flores/fruta/heridas, pudrición blanda.
+Etapa: flowering, harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta en humedad.
+Memoria: Baja-media en árbol; alta para lote/cosecha si afecta fruta almacenada.
+Lectura BIO-G: si flor/fruto herido + humedad alta, revisar tejido senescente y ventilación.
+
+23) bulls_eye_rot_neofabraea
+Nombre UX: Pudrición ojo de buey / Bull's eye rot
+Dónde pesa más: fruta de cosecha y almacenamiento; puede originarse en huerto y verse después en frío.
+Qué lo favorece: cancro/madera infectada, lluvia pre-cosecha, heridas, fruta madura, almacenamiento prolongado.
+Clave visual: lesiones circulares hundidas en almacenamiento, anillos concéntricos o “ojo de buey”.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para comercialización.
+Memoria: Media-alta por cancro/inóculo.
+Lectura BIO-G: si hubo lluvia pre-cosecha + historial de pudriciones en almacén, guardar riesgo aunque el fruto se vea sano al corte.
+
+24) storage_rot_complex
+Nombre UX: Complejo de pudriciones de almacenamiento
+Dónde pesa más: fruta madura, cosecha, transporte, almacenamiento.
+Qué lo favorece: golpes, heridas, granizo, fruta sobremadura, alta humedad, cosecha con fruta mojada, mala ventilación.
+Clave visual: pudriciones blandas o firmes que aparecen después de cosecha.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para comercialización.
+Memoria: Baja sobre árbol, alta para lote/cosecha.
+Lectura BIO-G: distinguir producción biológica de producción comercial; guardar evento de calidad.
+
+25) alternaria_fruit_rot_context
+Nombre UX: Alternaria / pudrición secundaria como contexto
+Dónde pesa más: fruta herida, fruta estresada, postcosecha.
+Qué lo favorece: heridas, fruta debilitada, estrés, almacenamiento.
+Clave visual: manchas oscuras/pudrición en heridas o tejido debilitado.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Baja-media.
+Lectura BIO-G: no diagnosticar como causa primaria si hubo granizo, sunburn, chinches o golpes.
+
+--------------------------------------------------------------------------------
+4.5 PLAGAS DIRECTAS DE FRUTO
+--------------------------------------------------------------------------------
+
+26) codling_moth
+Nombre UX: Palomilla / carpocapsa / gusano de la pera
+Dónde pesa más: fruto desde cuajado hasta cosecha.
+Qué lo favorece: historial del huerto, fruta no retirada, clima cálido, generaciones acumuladas, árboles abandonados cercanos.
+Clave visual: perforación en fruto, frass/aserrín rojizo-café, galería hacia semillas, fruta caída, larva dentro.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta; presión de siguiente año depende del historial.
+Lectura BIO-G: si fruta con agujero + frass, priorizar carpocapsa antes que pudrición.
+
+27) leafroller_fruit_scarring_complex
+Nombre UX: Enrolladores / daño superficial de fruto
+Dónde pesa más: brotes, flores, fruto joven y fruta en crecimiento.
+Qué lo favorece: brotación, canopia densa, historial, malezas/hospederos.
+Clave visual: hojas enrolladas/pegadas, larvas protegidas, mordidas, cicatrices superficiales en fruto.
+Etapa: budbreak, flowering, fruit_set, fruit_fill.
+Prioridad BIO-G: Media-alta.
+Memoria: Baja-media.
+Lectura BIO-G: si hoja enrollada + cicatriz de fruto, revisar larvas, no solo enfermedad.
+
+28) stink_bug_lygus_fruit_damage
+Nombre UX: Chinches / Lygus / daño por picadura
+Dónde pesa más: fruto joven a cosecha, bordes con maleza o cultivos vecinos.
+Qué lo favorece: maleza, calor, movimiento desde lotes vecinos, bordes de huerto.
+Clave visual: picaduras, deformaciones, manchas hundidas, tejido corchoso bajo piel.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta regional.
+Memoria: Baja-media.
+Lectura BIO-G: si daño localizado en bordes + maleza/cultivos vecinos, subir riesgo.
+
+29) pear_thrips_regional
+Nombre UX: Trips del peral / daño de flor-fruto
+Dónde pesa más: brotación/floración, fruto joven.
+Qué lo favorece: primavera, flores, brotes tiernos, presión regional.
+Clave visual: daño en flores, russeting/cicatrices en fruto joven, tejido raspado.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad BIO-G: Media regional.
+Memoria: Baja-media.
+Lectura BIO-G: activar solo si región/historial o daño de flor-fruto compatible.
+
+30) fruit_fly_regional
+Nombre UX: Mosca de la fruta / riesgo regional
+Dónde pesa más: fruta madura, regiones donde exista presión/regulación.
+Qué lo favorece: fruta madura, fruta caída, huertos descuidados, presencia regional.
+Clave visual: oviposición, larvas en pulpa, fruta caída/blanda.
+Etapa: harvest_maturity.
+Prioridad BIO-G: Alta si zona/regulación lo amerita; baja si no aplica.
+Memoria: Media.
+Lectura BIO-G: mantener como riesgo regional; no activar global sin contexto.
+
+--------------------------------------------------------------------------------
+4.6 PLAGAS DE HOJA, BROTE Y MADERA
+--------------------------------------------------------------------------------
+
+31) spider_mites_complex
+Nombre UX: Ácaros / araña roja
+Dónde pesa más: verano, sequía, polvo, estrés hídrico, hojas.
+Qué lo favorece: calor, baja HR, polvo, déficit hídrico, reducción de depredadores, insecticidas no selectivos.
+Clave visual: punteado amarillo/bronceado, telaraña fina, hojas secas, defoliación.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta si causa defoliación antes de reservas.
+Lectura BIO-G: si calor + baja humedad + hoja bronceada, revisar envés y telaraña fina.
+
+32) pear_rust_mite
+Nombre UX: Ácaro de la roya del peral
+Dónde pesa más: hojas y fruto; puede causar russeting/bronceado.
+Qué lo favorece: brotes/hojas, clima favorable, bajo control biológico.
+Clave visual: bronceado/russeting en hojas/fruto, daño fino difícil de ver sin lupa.
+Etapa: budbreak, vegetative_growth, fruit_set, fruit_fill.
+Prioridad BIO-G: Media-alta para calidad.
+Memoria: Baja-media.
+Lectura BIO-G: si russeting fino sin roña clara, considerar ácaro de roya.
+
+33) pearleaf_blister_mite
+Nombre UX: Ácaro ampollador de hoja
+Dónde pesa más: yemas, hojas jóvenes, brotación.
+Qué lo favorece: adultos en yemas, primavera, falta de revisión en dormancia.
+Clave visual: ampollas/erupciones en hoja, manchas que cambian de verde a rojizo/café, deformación.
+Etapa: budbreak, vegetative_growth.
+Prioridad BIO-G: Media.
+Memoria: Baja-media.
+Lectura BIO-G: si hoja con ampollas, no confundir con hongo foliar.
+
+34) aphids_complex
+Nombre UX: Pulgones en peral
+Dónde pesa más: brotes tiernos, árboles jóvenes, exceso de vigor.
+Qué lo favorece: N alto, crecimiento tierno, baja presencia de enemigos naturales.
+Clave visual: colonias, hojas enrolladas, mielecilla, brotes deformados, hormigas.
+Etapa: budbreak, vegetative_growth, fruit_set.
+Prioridad BIO-G: Media.
+Memoria: Baja, salvo deformación fuerte o melaza.
+Lectura BIO-G: si brote tierno + hojas enrolladas + melaza, revisar pulgón pero también descartar psila.
+
+35) san_jose_scale
+Nombre UX: Escama de San José
+Dónde pesa más: madera, ramas, fruto.
+Qué lo favorece: árboles viejos, material infestado, poca revisión de madera.
+Clave visual: escamas circulares pequeñas en corteza/fruto, halo rojizo en fruto, ramas debilitadas.
+Etapa: dormancy, budbreak, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta.
+Memoria: Media-alta.
+Lectura BIO-G: revisar madera en reposo y fruto cerca de cosecha.
+
+36) italian_pear_scale
+Nombre UX: Escama italiana del peral / cochinilla de madera
+Dónde pesa más: tronco, ramas, madera.
+Qué lo favorece: árboles debilitados, poca revisión, madera vieja.
+Clave visual: costras/escamas en madera, debilitamiento, ramas secas.
+Etapa: dormancy, vegetative_growth, post_harvest.
+Prioridad BIO-G: Media regional.
+Memoria: Media.
+Lectura BIO-G: activar si hay escamas en madera y bajo vigor.
+
+37) pear_sawfly_pearslug
+Nombre UX: Babosa del peral / pearslug
+Dónde pesa más: hojas.
+Qué lo favorece: presencia regional, hojas tiernas/maduras, clima templado.
+Clave visual: larvas negras/verdosas viscosas tipo babosa, raspado de hoja, esqueletizado.
+Etapa: vegetative_growth, fruit_fill.
+Prioridad BIO-G: Media.
+Memoria: Media si defolia fuerte.
+Lectura BIO-G: si hoja raspada y larvas tipo babosa, clasificar plaga foliar.
+
+38) caterpillar_defoliators
+Nombre UX: Orugas defoliadoras
+Dónde pesa más: brotes, hojas, racimos.
+Qué lo favorece: brotación, malezas/hospederos, historial.
+Clave visual: mordidas, hojas pegadas, excremento, larvas visibles.
+Etapa: budbreak, vegetative_growth, flowering.
+Prioridad BIO-G: Media-alta.
+Memoria: Media si defolia.
+Lectura BIO-G: revisar hojas y racimos antes de que afecte flor/fruto.
+
+39) borers_wood_complex
+Nombre UX: Barrenadores de madera
+Dónde pesa más: tronco, ramas, árboles débiles o dañados.
+Qué lo favorece: heridas, estrés, madera debilitada.
+Clave visual: frass/aserrín, galerías, exudado, ramas que mueren.
+Etapa: vegetative_growth, post_harvest, dormancy.
+Prioridad BIO-G: Media.
+Memoria: Alta si compromete estructura.
+Lectura BIO-G: si frass en tronco + rama decae, no tratar como plaga foliar.
+
+
+================================================================================
+5. RIESGOS ABIÓTICOS Y FISIOLÓGICOS QUE DEBEN ENTRAR AL MOTOR
+================================================================================
+
+Formato:
+Riesgo | Qué lo dispara | Qué se observa | Momento sensible | Lectura BIO-G v1 | Prioridad
+
+1) drought_stress
+Nombre UX: Estrés hídrico
+Qué lo dispara: humedad baja, riego irregular, alta evapotranspiración, viento/calor, raíces limitadas.
+Qué se observa: hojas decaídas, menor calibre, caída de fruto, más sunburn/russeting/cork spot, menor retorno floral.
+Momento sensible: root_establishment, flowering, fruit_set, fruit_fill, post_harvest.
+Lectura BIO-G: alerta fuerte si humedad baja coincide con floración, cuajado, llenado o postcosecha.
+Prioridad: Muy alta.
+
+2) waterlogging_anoxia
+Nombre UX: Exceso de agua / anoxia
+Qué lo dispara: riego excesivo, lluvia, drenaje pobre, compactación, suelo pesado.
+Qué se observa: marchitez con suelo húmedo, hojas amarillas, raíz oscura, Phytophthora favorecida.
+Momento sensible: establecimiento y cualquier etapa con suelo saturado.
+Lectura BIO-G: “Marchitez con suelo húmedo no es falta de agua.” Revisar drenaje, cuello y raíces antes de regar más.
+Prioridad: Muy alta.
+
+3) salinity_ec_high
+Nombre UX: Salinidad / CE alta
+Qué lo dispara: agua salina, fertilización concentrada, lavado insuficiente, sequía/evaporación, suelo con sales.
+Qué se observa: bordes quemados, bajo vigor, hojas pequeñas, mal cuajado, raíz estresada, fruta chica.
+Momento sensible: establecimiento, cuajado, llenado.
+Lectura BIO-G: usar EC + humedad + etapa. No recomendar más fertilizante si CE está alta.
+Prioridad: Alta.
+
+4) soil_compaction_root_stress
+Nombre UX: Compactación / raíz sin aire
+Qué lo dispara: maquinaria, suelos arcillosos, baja materia orgánica, riego sobre suelo pesado.
+Qué se observa: bajo vigor, encharcamiento, raíces superficiales, respuesta pobre al riego/fertilización.
+Momento sensible: todo el ciclo, especialmente establecimiento.
+Lectura BIO-G: si resistance alta + humedad irregular + bajo vigor, subir riesgo raíz/suelo.
+Prioridad: Alta.
+
+5) heat_stress_fruit_fill
+Nombre UX: Estrés por calor
+Qué lo dispara: temperaturas altas prolongadas, radiación, baja HR, riego insuficiente.
+Qué se observa: caída, bajo calibre, sunburn, fruta menos firme, estrés de hoja, maduración irregular.
+Momento sensible: fruit_set, fruit_fill, harvest_maturity.
+Lectura BIO-G: si calor + humedad baja + etapa de fruto, alertar calidad/rendimiento.
+Prioridad: Alta.
+
+6) sunburn_sunscald
+Nombre UX: Golpe de sol / quemadura de fruto
+Qué lo dispara: radiación alta, calor, fruta expuesta por poda/defoliación/granizo/canopia abierta, estrés hídrico.
+Qué se observa: manchas claras, cafés o hundidas en lado expuesto; daño mayor en fruto expuesto.
+Momento sensible: fruit_fill, harvest_maturity.
+Lectura BIO-G: activar si calor/radiación + defoliación/canopia abierta + humedad baja.
+Prioridad: Alta para calidad.
+
+7) insufficient_chill_irregular_budbreak
+Nombre UX: Falta de frío / brotación irregular
+Qué lo dispara: invierno insuficiente para el perfil, zonas cálidas, perfil alto frío en zona baja, inviernos erráticos.
+Qué se observa: brotación irregular, floración extendida, bajo cuajado, cosecha dispareja.
+Momento sensible: dormancy, budbreak, flowering.
+Lectura BIO-G: contexto/modelo, no sensor v1. Cruzar perfil + zona + brotación irregular.
+Prioridad: Alta regional.
+
+8) poor_pollination_low_fruit_set
+Nombre UX: Mala polinización / bajo cuajado
+Qué lo dispara: falta de polinizador compatible, baja visita de abejas, lluvia/frío/viento durante floración, calor, helada, floración desfasada.
+Qué se observa: baja carga, caída de frutos pequeños, frutos deformes/asimétricos.
+Momento sensible: flowering, fruit_set.
+Lectura BIO-G: preguntar por abejas, otra variedad floreando y clima durante floración antes de culpar NPK.
+Prioridad: Muy alta para rendimiento.
+
+9) biennial_or_irregular_bearing
+Nombre UX: Alternancia / producción irregular
+Qué lo dispara: carga alta previa, helada, mala polinización, defoliación, estrés postcosecha, falta de raleo/manejo.
+Qué se observa: un año mucha fruta y otro poca, floración irregular, calibre bajo en año cargado.
+Momento sensible: fruit_set, fruit_fill, post_harvest, dormancy siguiente.
+Lectura BIO-G: guardar memoria de carga/estrés; no tratar como problema aislado de fertilizante.
+Prioridad: Media-alta.
+
+10) cork_spot_calcium_functional
+Nombre UX: Cork spot / calcio funcional / tejido corchoso
+Qué lo dispara: desequilibrio Ca funcional, riego irregular, vigor alto, baja carga, exceso de N/K, estrés hídrico, pH/raíz.
+Qué se observa: manchas hundidas/corchosas en pulpa o bajo piel; daño de calidad, a veces se nota después.
+Momento sensible: fruit_fill, harvest_maturity, post_harvest.
+Lectura BIO-G: tratar como balance agua-vigor-carga-Ca funcional; no recomendar calcio a ciegas.
+Prioridad: Alta para calidad.
+
+11) fruit_cracking_weather
+Nombre UX: Rajado de fruto
+Qué lo dispara: lluvias, cambios bruscos de humedad, riego irregular, piel sensible, fruta próxima a cosecha.
+Qué se observa: grietas, entrada de pudriciones, fruta no comercial.
+Momento sensible: fruit_fill, harvest_maturity.
+Lectura BIO-G: si rajado aparece tras lluvia/riego irregular, clasificar como estrés de piel/agua antes que hongo primario.
+Prioridad: Media-alta.
+
+12) russeting_weather_skin_disorder
+Nombre UX: Russeting / piel áspera o corchosa
+Qué lo dispara: humedad en flor/fruto joven, helada leve, fitotoxicidad, roña, ácaros, sensibilidad varietal.
+Qué se observa: piel áspera/corchosa, manchas pardas superficiales, depreciación visual.
+Momento sensible: flowering, fruit_set, fruit_fill.
+Lectura BIO-G: distinguir russeting climático/fisiológico de roña o ácaro.
+Prioridad: Alta para calidad visual.
+
+13) iron_chlorosis_high_ph
+Nombre UX: Clorosis férrica
+Qué lo dispara: pH alto/calizo, bicarbonatos, suelo frío/húmedo, raíz débil.
+Qué se observa: hojas nuevas amarillas con nervaduras verdes.
+Momento sensible: vegetative_growth.
+Lectura BIO-G: si pH alto + amarillamiento internerval en hojas nuevas, sugerir revisión de Fe/pH, no N.
+Prioridad: Media-alta.
+
+14) herbicide_phytotoxicity
+Nombre UX: Fitotoxicidad / deriva de herbicida
+Qué lo dispara: deriva, mezcla fuerte, aplicación con calor, residuos, aplicación reciente.
+Qué se observa: daño uniforme por borde/línea, deformaciones, quemado, patrón no biológico.
+Momento sensible: cualquier etapa.
+Lectura BIO-G: preguntar por aplicación reciente antes de asumir enfermedad.
+Prioridad: Alta como descarte.
+
+15) nutrient_excess_vigor
+Nombre UX: Exceso de vigor por N/agua/poda
+Qué lo dispara: exceso de N, riego alto, poda fuerte, baja carga.
+Qué se observa: brotes largos y tiernos, canopia cerrada, mayor psila, fire blight, mala luz, menor calidad.
+Momento sensible: vegetative_growth, flowering, fruit_fill.
+Lectura BIO-G: vínculo directo con guía fertilización. No empujar N si hay vigor alto.
+Prioridad: Alta.
+
+
+================================================================================
+6. PRIORIZACIÓN POR PERFIL BIO-G
+================================================================================
+
+Regla:
+El catálogo base es el mismo para todos los perfiles de pera. El perfil solo modifica sensibilidad, ventana relativa, confianza y mensajes. No se crea un catálogo totalmente separado por variedad.
+
+PR-SKIP / Pera general
+- Peso alto conservador: fire_blight, pear_psylla, pear_scab, codling_moth, poor_pollination_low_fruit_set, drought_stress, waterlogging_anoxia, storage_rot_complex.
+- Mensaje: “Como no sabemos la variedad, BIO-G usa alertas conservadoras.”
+
+PR-01 Bartlett / Williams
+- Sube: fire_blight, pear_psylla, pear_scab en primavera húmeda, codling_moth, storage_rot_complex, poor_pollination_low_fruit_set.
+- Nota: Bartlett/Williams es perfil base comercial; puede tener floración extendida, por lo que el riesgo de fire blight puede mantenerse más tiempo si hay flores abiertas.
+- Calidad: cuidar cosecha firme, golpes, pudriciones, maduración y almacenamiento.
+
+PR-02 Anjou / D'Anjou
+- Sube: storage_rot_complex, bulls_eye_rot_neofabraea, pear_psylla, codling_moth, pear_scab si región húmeda, poor_pollination_low_fruit_set.
+- Nota: al ser perfil de conservación/mercado extendido, los problemas de cosecha, heridas y almacenamiento pesan más.
+- Mensaje: “La calidad postcosecha puede cambiar aunque el fruto se vea sano al corte.”
+
+PR-03 Bosc
+- Sube: fire_blight como susceptible general, pear_psylla, russeting/skin_quality_context, codling_moth, sunburn_sunscald, pear_scab si húmedo.
+- Nota: la piel russet/marrón puede confundir daños visuales; distinguir rasgo varietal de roña, golpe, sunburn o pudrición.
+
+PR-04 Seckel / Comice
+- Sube: fire_blight, poor_pollination_low_fruit_set, storage_rot_complex, russeting/skin_quality_context, codling_moth.
+- Nota: perfil premium/nicho; daños pequeños de piel/fruto tienen mayor impacto comercial.
+- Mensaje: “En peras premium, calidad visual y firmeza pesan mucho.”
+
+PR-05 Kieffer / Rusticas
+- Sube: variabilidad de manejo, pear_scab/Fabraea en regiones húmedas, pear_psylla si hay brote vigoroso, fruit_cracking_weather, storage_rot_complex si se usa para proceso/mercado regional.
+- Baja relativa: puede tener rusticidad mayor frente a algunos problemas, pero no debe marcarse inmune.
+- Nota México: en estudios de pequeños productores de Veracruz se menciona presencia fuerte de Kieffer y bajo manejo de plagas/fertilización; por eso BIO-G debe conservar alertas simples y prácticas.
+
+Futuro PR-06 / Pera asiática o Nashi
+- No existe en v1.
+- Si usuario dice “pera asiática”, “nashi” o “pera manzana”, usar PR-SKIP con futureProfile=pear_asian.
+- No inventar perfiles sin Documento 01 actualizado.
+
+
+================================================================================
+7. MONITOREO Y DIAGNÓSTICO: PROTOCOLO MÍNIMO CONFIABLE
+================================================================================
+
+Frecuencia recomendada:
+- Reposo: 1 revisión estructural cada 2-4 semanas o después de helada, granizo o poda.
+- Brotación a caída de pétalos: 2 revisiones por semana si hay lluvia, humedad, fire blight, roña o psila.
+- Cuajado a llenado: 1-2 revisiones por semana; 2-3 si hay historial de psila/carpocapsa/ácaros.
+- Cosecha: revisar fruta, bordes, golpes, melaza/negrilla, pudriciones, picaduras y firmeza.
+- Postcosecha: revisar hoja, reservas, estrés hídrico, psila tardía, ácaros, cancros y defoliación temprana.
+
+Dónde revisar:
+- Orillas del huerto.
+- Zonas bajas/húmedas.
+- Zonas secas/calientes.
+- Árboles jóvenes y árboles que no arrancan.
+- Envés de hojas, brotes tiernos, espolones, flores, fruto pequeño, fruto expuesto al sol, cuello, tronco, heridas de poda y raíces sospechosas.
+- Árboles sanos, débiles, bordes y parches; no revisar solo árboles bonitos.
+
+Preguntas mínimas de diagnóstico:
+1. ¿En qué etapa visible está el árbol?
+2. ¿El problema aparece por parches, por línea, por borde o uniforme?
+3. ¿El suelo está seco, húmedo o saturado?
+4. ¿Hubo lluvia, granizo, helada, calor extremo o viento fuerte?
+5. ¿Hubo aplicaciones recientes?
+6. ¿Hay insectos visibles, huevos, excremento/frass, melaza, negrilla o telaraña?
+7. ¿El daño empezó en hoja nueva, hoja vieja, flor, fruto, tronco o raíz?
+8. ¿Hay otra variedad/polinizador floreando cerca?
+9. ¿Se repite cada año?
+10. ¿El árbol perdió hojas temprano el ciclo anterior?
+11. ¿La fruta se mancha en árbol o aparece el problema después de almacenamiento?
+12. ¿Hay historial de psila o fuego bacteriano en el huerto?
+
+
+================================================================================
+8. REGLAS PARA EL MOTOR BIO-G
+================================================================================
+
+Estas reglas traducen el documento a lógica de producto. No son diagnóstico definitivo; son disparadores de riesgo y mensajes de revisión.
+
+--------------------------------------------------------------------------------
+8.1 Reglas raíz/suelo
+--------------------------------------------------------------------------------
+
+Señal:
+soilMoisture alta + resistance alta + etapa establecimiento/vegetativo + bajo vigor o marchitez
+Aumenta riesgo:
+waterlogging_anoxia, phytophthora_root_crown_rot, root_crown_rot_complex
+Salida:
+“Riesgo de raíz por exceso de humedad o poca aireación. Revise cuello, raíces y drenaje antes de regar más.”
+Confianza:
+media si solo sensor; alta si hay marchitez con suelo húmedo.
+
+Señal:
+soilMoisture baja + temperatura alta + etapa flowering/fruit_set/fruit_fill/post_harvest
+Aumenta riesgo:
+drought_stress, poor_pollination_low_fruit_set, fruit_size_loss, sunburn_sunscald, cork_spot_calcium_functional
+Salida:
+“Estrés hídrico en etapa sensible. Puede afectar cuajado, calibre, calidad y reservas del siguiente ciclo.”
+
+Señal:
+EC alta + humedad irregular + bajo vigor
+Aumenta riesgo:
+salinity_ec_high, root_stress, cork_spot_calcium_functional
+Salida:
+“Condición compatible con estrés salino/osmótico. Evite empujar fertilización sin revisar agua, CE y drenaje.”
+
+--------------------------------------------------------------------------------
+8.2 Reglas floración
+--------------------------------------------------------------------------------
+
+Señal:
+phenologyStageId=flowering + lluvia/HR alta + temperatura templada-cálida + flores abiertas
+Aumenta riesgo:
+fire_blight
+Salida:
+“Floración con ambiente favorable a fuego bacteriano. Revise racimos florales, brotes tiernos y exudado; confirme si el daño avanza.”
+
+Señal:
+flowering + temperatura bajo cero o helada reportada
+Aumenta riesgo:
+frost_bloom_damage, poor_pollination_low_fruit_set
+Salida:
+“Riesgo de daño por helada en floración. Revise pistilos/centro de la flor y frutos recién cuajados.”
+
+Señal:
+flowering + lluvia/frío/viento + baja actividad de abejas o sin polinizador conocido
+Aumenta riesgo:
+poor_pollination_low_fruit_set
+Salida:
+“El cuajado puede bajar por clima o polinización, aunque NPK se vea correcto. Revise abejas y otra variedad compatible floreando cerca.”
+
+--------------------------------------------------------------------------------
+8.3 Reglas psila/melaza
+--------------------------------------------------------------------------------
+
+Señal:
+budbreak/vegetative_growth/fruit_fill + melaza pegajosa + hojas/fruto con negrilla
+Aumenta riesgo:
+pear_psylla, sooty_mold_honeydew_complex
+Salida:
+“Melaza y negrilla apuntan primero a insectos chupadores, especialmente psila del peral. Revise brotes, envés de hojas, ninfas y huevos.”
+
+Señal:
+historial de psila + vigor alto + brotes tiernos + primavera templada
+Aumenta riesgo:
+pear_psylla, excessive_vigor_psylla_risk
+Salida:
+“El vigor tierno puede favorecer psila. Revise brotes altos y hojas nuevas.”
+
+Señal:
+psila recurrente + decaimiento persistente
+Aumenta riesgo:
+pear_decline_phytoplasma_context
+Salida:
+“Decaimiento persistente con historial de psila amerita revisión técnica. BIO-G no confirma fitoplasma sin diagnóstico.”
+
+--------------------------------------------------------------------------------
+8.4 Reglas hoja/enfermedades
+--------------------------------------------------------------------------------
+
+Señal:
+budbreak/flowering/fruit_set + lluvia/mojado foliar/HR alta
+Aumenta riesgo:
+pear_scab, bacterial_blossom_blast, pear_rust
+Salida:
+“Ambiente favorable a manchas de primavera. Revise hojas jóvenes, pétalos y fruto pequeño.”
+
+Señal:
+vegetative_growth/fruit_fill + humedad alta + manchas negras/cafés + defoliación
+Aumenta riesgo:
+fabraea_leaf_spot_black_spot
+Salida:
+“Manchas foliares con defoliación pueden afectar reservas del siguiente ciclo. Revise si también hay manchas en fruto o ramillas.”
+
+Señal:
+hojas con manchas naranja/rojizas + juníperos/sabinos cercanos
+Aumenta riesgo:
+pear_rust
+Salida:
+“Manchas naranja pueden relacionarse con roya del peral. Revise envés de hojas y presencia de hospedero alternante.”
+
+Señal:
+fruit_fill/harvest_maturity + lluvia/HR alta + canopia cerrada
+Aumenta riesgo:
+storage_rot_complex, bulls_eye_rot_neofabraea, botrytis_gray_mold
+Salida:
+“Humedad cerca de cosecha eleva riesgo de pudriciones y problemas de almacenamiento.”
+
+--------------------------------------------------------------------------------
+8.5 Reglas plagas
+--------------------------------------------------------------------------------
+
+Señal:
+fruit_set/fruit_fill + daño con perforación/frass en fruto
+Aumenta riesgo:
+codling_moth
+Salida:
+“Daño compatible con palomilla/carpocapsa. Revise perforaciones, frass y galerías hacia semilla.”
+
+Señal:
+calor + baja HR + hojas punteadas/bronceadas
+Aumenta riesgo:
+spider_mites_complex
+Salida:
+“Condición favorable a ácaros. Revise envés de hojas y telaraña fina.”
+
+Señal:
+hojas con ampollas o russeting fino sin roña clara
+Aumenta riesgo:
+pearleaf_blister_mite, pear_rust_mite
+Salida:
+“El daño puede ser de ácaros específicos del peral. Revise con lupa y compare hojas/fruto.”
+
+Señal:
+fruto con picaduras/deformación en bordes del huerto + maleza/cultivos vecinos
+Aumenta riesgo:
+stink_bug_lygus_fruit_damage
+Salida:
+“Daño compatible con chinches/lygus. Revise bordes, maleza y tejido corchoso bajo piel.”
+
+--------------------------------------------------------------------------------
+8.6 Reglas fisiológicas/calidad
+--------------------------------------------------------------------------------
+
+Señal:
+fruit_fill/harvest_maturity + calor/radiación + baja humedad + fruta expuesta o defoliación
+Aumenta riesgo:
+sunburn_sunscald
+Salida:
+“Riesgo de golpe de sol en fruto expuesto. Revise lado soleado y zonas defoliadas.”
+
+Señal:
+fruit_fill/harvest_maturity + vigor alto + N alto/contexto + baja carga + riego irregular
+Aumenta riesgo:
+cork_spot_calcium_functional
+Salida:
+“Riesgo de tejido corchoso/calcio funcional. En v1 se lee como balance agua-vigor-carga; no corregir a ciegas.”
+
+Señal:
+hojas nuevas amarillas con nervadura verde + pH alto
+Aumenta riesgo:
+iron_chlorosis_high_ph
+Salida:
+“Amarillamiento compatible con clorosis por pH alto. Conviene confirmar con análisis antes de corregir.”
+
+Señal:
+patrón por línea/borde + aplicación reciente
+Aumenta riesgo:
+herbicide_phytotoxicity
+Salida:
+“El patrón puede ser fitotoxicidad o deriva. Revise aplicaciones recientes, bordes y dirección del viento antes de asumir enfermedad.”
+
+
+================================================================================
+9. QUÉ SÍ DEBERÍA QUEDAR DADO DE ALTA EN BIO-G
+================================================================================
+
+Grupo UX: raiz_suelo_madera
+Risk IDs:
+- phytophthora_root_crown_rot
+- root_crown_rot_complex
+- armillaria_root_rot
+- pear_replant_decline
+- canker_wood_decline_complex
+- european_canker_nectria
+- soil_anoxia_excess_moisture
+- soil_compaction_root_stress
+- rodent_girdling_damage
+- rootstock_incompatibility_decline_context
+
+Grupo UX: flor_brote_bacterias
+Risk IDs:
+- fire_blight
+- bacterial_blossom_blast
+- frost_bloom_damage
+- hail_wound_infection_risk
+- excessive_vigor_fire_blight_risk
+- blossom_weather_pollination_stress
+
+Grupo UX: psila_melaza_decaimiento
+Risk IDs:
+- pear_psylla
+- pear_decline_phytoplasma_context
+- sooty_mold_honeydew_complex
+- natural_enemy_disruption
+- excessive_vigor_psylla_risk
+
+Grupo UX: enfermedades_hoja_fruto
+Risk IDs:
+- pear_scab
+- fabraea_leaf_spot_black_spot
+- pear_rust
+- powdery_mildew_pear
+- botrytis_gray_mold
+- bulls_eye_rot_neofabraea
+- storage_rot_complex
+- alternaria_fruit_rot_context
+
+Grupo UX: plagas_fruto
+Risk IDs:
+- codling_moth
+- leafroller_fruit_scarring_complex
+- stink_bug_lygus_fruit_damage
+- pear_thrips_regional
+- fruit_fly_regional
+- birds_rodents_fruit_damage_small_orchard
+
+Grupo UX: plagas_hoja_madera
+Risk IDs:
+- spider_mites_complex
+- pear_rust_mite
+- pearleaf_blister_mite
+- aphids_complex
+- san_jose_scale
+- italian_pear_scale
+- pear_sawfly_pearslug
+- caterpillar_defoliators
+- borers_wood_complex
+
+Grupo UX: estres_fisiologico_calidad
+Risk IDs:
+- drought_stress
+- heat_stress_fruit_fill
+- sunburn_sunscald
+- waterlogging_anoxia
+- salinity_ec_high
+- insufficient_chill_irregular_budbreak
+- poor_pollination_low_fruit_set
+- biennial_or_irregular_bearing
+- cork_spot_calcium_functional
+- fruit_cracking_weather
+- russeting_weather_skin_disorder
+- iron_chlorosis_high_ph
+- herbicide_phytotoxicity
+- nutrient_excess_vigor
+
+
+================================================================================
+10. CAMPOS SUGERIDOS PARA CÓDIGO
+================================================================================
+
+Cada riesgo debería poder traducirse a una estructura tipo PlantHealthSyndrome o equivalente:
+
+{
+  cropKey: pear_tree,
+  riskId: string,
+  riskFamily: string,
+  commonName: string,
+  scientificName: string?,
+  preferredStages: List<TreeStageId>,
+  sensitiveStates: List<PerennialStateId>,
+  sensorTriggers: {
+    soilMoisture: low/optimal/high?,
+    soilTemp: low/optimal/high?,
+    ph: low/optimal/high?,
+    ec: low/optimal/high?,
+    resistance: low/optimal/high?,
+    n: low/optimal/high?,
+    p: low/optimal/high?,
+    k: low/optimal/high?
+  },
+  weatherTriggers: {
+    rain: bool?,
+    highHumidity: bool?,
+    frost: bool?,
+    heat: bool?,
+    hail: bool?,
+    wind: bool?,
+    leafWetness: bool? // modelo/contexto, no sensor v1 obligatorio
+  },
+  visualClues: List<String>,
+  questions: List<String>,
+  profileModifiers: Map<profileId, weight>,
+  memoryImpact: none/low/medium/high/veryHigh,
+  sourceConfidence: low/medium/high,
+  farmerMessage: string,
+  confirmationPrompt: string,
+  noDiagnosisWarning: true
+}
+
+Campos perennes que debe usar:
+- perennialStateId
+- phenologyStageId
+- perennialAnchorDate
+- perennialAnchorTypeId
+
+Campos que NO debe usar como eje:
+- sowingDate en árboles
+
+Métricas sensor permitidas v1:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Contexto/modelo permitido:
+- lluvia
+- helada
+- calor
+- HR
+- horas frío
+- GDD
+- historial de estrés
+- evento extremo
+- etapa visible
+- perfil/variedad
+- observación visual del usuario
+- polinizador/abejas como pregunta UX, no sensor
+
+
+================================================================================
+11. MATRIZ DE PESOS POR ETAPA
+================================================================================
+
+Escala:
+0.0 = no relevante
+0.3 = bajo
+0.5 = medio
+0.7 = alto
+1.0 = crítico
+
+planting_transplant:
+- phytophthora_root_crown_rot 1.0
+- root_crown_rot_complex 0.9
+- pear_replant_decline 0.9
+- waterlogging_anoxia 1.0
+- salinity_ec_high 0.8
+- soil_compaction_root_stress 0.9
+- rodent_girdling_damage 0.6
+
+root_establishment:
+- phytophthora_root_crown_rot 1.0
+- root_crown_rot_complex 1.0
+- drought_stress 0.9
+- waterlogging_anoxia 1.0
+- salinity_ec_high 0.8
+- soil_compaction_root_stress 0.8
+- pear_psylla 0.3
+
+juvenile_vegetative:
+- pear_psylla 0.9
+- fire_blight shoot risk 0.8
+- aphids_complex 0.6
+- spider_mites_complex 0.7
+- powdery_mildew_pear 0.7
+- pear_scab 0.6
+- nutrient_excess_vigor 0.8
+- canker_wood_decline_complex 0.6
+- drought_stress 0.8
+
+climacteric note:
+- La pera tiene maduración fisiológica/postcosecha particular. BIO-G v1 no debe inferir calidad de maduración por sensor de suelo; solo debe alertar estrés y riesgo de almacenamiento.
+
+dormancy:
+- pear_psylla overwintering adults 0.8
+- san_jose_scale 0.7
+- italian_pear_scale 0.6
+- canker_wood_decline_complex 0.8
+- rodent_girdling_damage 0.8
+- insufficient_chill_irregular_budbreak 1.0
+- cold_winter_injury 0.8
+- pear_scab inoculum/memory 0.5
+
+budbreak:
+- pear_psylla 1.0
+- pear_scab 0.9
+- powdery_mildew_pear 0.8
+- pearleaf_blister_mite 0.8
+- pear_rust_mite 0.7
+- aphids_complex 0.6
+- leafrollers 0.7
+- frost_bloom_damage 0.7
+
+vegetative_growth:
+- pear_psylla 1.0
+- spider_mites_complex 0.8
+- pear_rust_mite 0.7
+- fabraea_leaf_spot_black_spot 0.8
+- pear_scab 0.7
+- powdery_mildew_pear 0.7
+- fire_blight shoot risk 0.8
+- drought_stress 0.8
+- nutrient_excess_vigor 0.8
+- iron_chlorosis_high_ph 0.7
+
+flowering:
+- fire_blight 1.0
+- frost_bloom_damage 1.0
+- poor_pollination_low_fruit_set 1.0
+- bacterial_blossom_blast 0.8
+- pear_scab 0.8
+- pear_psylla 0.8
+- powdery_mildew_pear 0.6
+- hail_wound_infection_risk 0.9
+- drought_stress 0.8
+
+fruit_set:
+- poor_pollination_low_fruit_set 1.0
+- fire_blight 0.9
+- pear_psylla 1.0
+- codling_moth 1.0
+- pear_scab fruit infection 0.9
+- leafroller_fruit_scarring_complex 0.8
+- stink_bug_lygus_fruit_damage 0.7
+- drought_stress 0.9
+- salinity_ec_high 0.7
+
+fruit_fill:
+- pear_psylla 1.0
+- codling_moth 1.0
+- spider_mites_complex 0.9
+- pear_rust_mite 0.8
+- fabraea_leaf_spot_black_spot 0.8
+- pear_scab 0.7
+- sunburn_sunscald 0.8
+- cork_spot_calcium_functional 0.8
+- drought_stress 1.0
+- salinity_ec_high 0.8
+- stink_bug_lygus_fruit_damage 0.8
+
+harvest_maturity:
+- codling_moth 1.0
+- pear_psylla honeydew/sooty mold 0.9
+- storage_rot_complex 0.9
+- bulls_eye_rot_neofabraea 0.9
+- botrytis_gray_mold 0.7
+- sunburn_sunscald 0.8
+- fruit_cracking_weather 0.8
+- russeting_weather_skin_disorder 0.7
+- stink_bug_lygus_fruit_damage 0.8
+
+post_harvest:
+- pear_psylla 0.9
+- drought_stress 0.8
+- leaf_defoliation_memory 0.9
+- spider_mites_complex 0.7
+- fabraea_leaf_spot_black_spot 0.8
+- canker_wood_decline_complex 0.8
+- storage_rot_complex lot memory 0.7
+- nutrient_excess_or_deficit_memory 0.8
+
+unknown:
+- pear_psylla 0.7
+- fire_blight 0.6 if bloom/weather context exists
+- pear_scab 0.5 if wet weather
+- drought_stress 0.7 if sensor confirms
+- waterlogging_anoxia 0.7 if sensor confirms
+- codling_moth 0.5 if fruit visible
+- confidence: baja-media
+
+
+================================================================================
+12. LENGUAJE DE SALIDA RECOMENDADO PARA UX
+================================================================================
+
+Situación:
+Floración + lluvia/calor + riesgo de fuego bacteriano
+No decir:
+“Tiene fuego bacteriano.”
+Mejor:
+“Hay ambiente favorable para fuego bacteriano. Revise flores, brotes tiernos y presencia de exudado ámbar. Si avanza rápido, confirme con un técnico.”
+
+Situación:
+Melaza pegajosa + hojas/fruto negro
+No decir:
+“Es hongo negro.”
+Mejor:
+“La negrilla suele crecer sobre melaza. En peral, revise primero psila: brotes, envés de hojas, ninfas y huevos.”
+
+Situación:
+Marchitez con suelo mojado
+No decir:
+“Riegue más.”
+Mejor:
+“Marchitez con suelo húmedo puede indicar raíz con poco oxígeno o pudrición de cuello. Revise drenaje, cuello y raíces antes de aumentar riego.”
+
+Situación:
+Fruta con agujero y aserrín
+No decir:
+“Pudrición.”
+Mejor:
+“El daño se parece a palomilla/carpocapsa. Revise perforaciones, frass y galerías hacia las semillas.”
+
+Situación:
+Hojas con manchas negras después de lluvias
+No decir:
+“Hongo cualquiera.”
+Mejor:
+“Ambiente compatible con roña/moteado del peral o mancha foliar. Revise hojas jóvenes, fruto pequeño y si la mancha tiene aspecto aterciopelado.”
+
+Situación:
+Floreó pero no cuajó
+No decir:
+“Faltó fertilizante.”
+Mejor:
+“El bajo cuajado puede venir de helada, lluvia, viento, baja actividad de abejas o falta de polinizador compatible. BIO-G revisará clima y etapa antes de sugerir nutrición.”
+
+Situación:
+Fruta con piel corchosa/russeting
+No decir:
+“Es enfermedad.”
+Mejor:
+“La piel corchosa puede venir de clima, roña, ácaros, fitotoxicidad o sensibilidad varietal. Revise cuándo apareció y si hubo lluvia, helada o aplicación reciente.”
+
+Situación:
+Daño uniforme después de aplicación
+No decir:
+“Enfermedad.”
+Mejor:
+“El patrón puede ser fitotoxicidad o deriva. Revise aplicaciones recientes, bordes y dirección del viento.”
+
+Situación:
+Postcosecha con hojas dañadas o caída temprana
+No decir:
+“Ya no importa porque ya cosechó.”
+Mejor:
+“La postcosecha sigue activa. La pérdida temprana de hoja puede reducir reservas y afectar floración/carga del siguiente ciclo.”
+
+
+================================================================================
+13. MEMORIA MULTIANUAL BIO-G
+================================================================================
+
+Cada evento debe guardarse con:
+- riskId
+- fecha
+- etapa fenológica
+- estado perenne
+- perfil PR
+- severidad 0..1
+- duración estimada
+- órgano afectado
+- sensorSnapshot
+- weatherContext
+- visualConfirmationLevel
+- impactCurrentCycle
+- impactNextCycle
+- confidence
+
+Impacto por tipo:
+- fire_blight: impacto actual alto, impacto siguiente alto si hay cancro/madera.
+- pear_psylla: impacto actual medio-alto; impacto siguiente alto si hubo defoliación, negrilla, decaimiento o presión persistente.
+- pear_decline_phytoplasma_context: impacto persistente, requiere diagnóstico externo.
+- frost_bloom_damage: impacto actual muy alto; puede inducir baja carga y exceso de vigor.
+- poor_pollination_low_fruit_set: impacto actual alto; memoria útil para revisar polinizadores/abejas/cultivar.
+- drought_stress en flor/cuajado/llenado/postcosecha: impacto actual alto, impacto siguiente medio-alto.
+- defoliación por Fabraea/ácaros/roña: impacto actual medio-alto, impacto siguiente alto si ocurre antes de postcosecha.
+- phytophthora/root rot: impacto alto y persistente.
+- codling_moth: impacto actual alto; memoria de presión para siguiente año.
+- storage_rot_complex: impacto en comercialización; memoria para cosecha/manejo/lluvia pre-cosecha.
+- cork_spot/sunburn/russeting: impacto en calidad; memoria para ajustar agua/vigor/carga/sombra.
+- insufficient_chill: impacto anual/regional; útil para perfil y zona.
+
+Regla:
+Un árbol que sufrió estrés fuerte no debe volver a “óptimo” inmediatamente solo porque hoy los sensores estén bien. Debe conservar una penalización suave o una advertencia de recuperación según etapa.
+
+
+================================================================================
+14. DECISIÓN EDITORIAL PARA PRODUCTO
+================================================================================
+
+El peral debe tener un catálogo robusto, pero la UX no debe mostrar 50 problemas al usuario.
+La app debe agrupar en tarjetas:
+
+1. Raíz / suelo
+2. Floración / brotes
+3. Psila / melaza
+4. Hojas / manchas
+5. Fruto / calidad
+6. Plagas
+7. Clima / estrés
+8. Memoria del árbol
+
+Cada tarjeta debe mostrar:
+- “Qué lo favorece”
+- “Qué revisar”
+- “Qué tan urgente es”
+- “Por qué importa para este año”
+- “Si puede afectar el siguiente ciclo”
+
+BIO-G v1 no debe recomendar ingredientes activos.
+En el futuro, un modo Pro podría mostrar “consulte programa fitosanitario regional” o integrarse a IPM local, pero siempre con normatividad y asesoría.
+
+
+================================================================================
+15. PRUEBAS MÍNIMAS RECOMENDADAS
+================================================================================
+
+Test 1:
+pear_tree + flowering + rain/highHumidity + warm temperature => aumenta fire_blight y no diagnostica definitivo.
+
+Test 2:
+fruit_fill + melaza/sooty mold visual => prioriza pear_psylla/sooty_mold_honeydew_complex, no “hongo genérico”.
+
+Test 3:
+soilMoisture alta + resistance alta + marchitez => waterlogging_anoxia/root risk, no drought_stress.
+
+Test 4:
+soilMoisture baja + fruit_set => drought_stress y poor_pollination_low_fruit_set suben; mensaje habla de cuajado.
+
+Test 5:
+flowering + frost event => frost_bloom_damage y baja producción probable; no culpar NPK.
+
+Test 6:
+fruit_set + low bee activity + no pollinator known => poor_pollination_low_fruit_set con confianza media, no diagnóstico cerrado.
+
+Test 7:
+fruit_fill + hole/frass visual => codling_moth; mensaje pide revisar galerías/frass.
+
+Test 8:
+vegetative_growth + orange spots + juniperNearby=true => pear_rust.
+
+Test 9:
+vegetative_growth/post_harvest + leaf spots + defoliation => fabraea_leaf_spot_black_spot y memoryImpactNextCycle alto.
+
+Test 10:
+post_harvest + stress severe => no cerrar cultivo; guardar memoria.
+
+Test 11:
+PR-01 Bartlett + flowering + wet/warm => fire_blight modifier mayor que PR-SKIP default.
+
+Test 12:
+PR-03 Bosc + russet skin => no marcar automáticamente enfermedad; distinguir rasgo varietal vs daño.
+
+Test 13:
+PR-05 Kieffer + low management + humid region => subir pear_scab/Fabraea, pero no tratar Kieffer como inmune ni como perfil comercial intensivo.
+
+Test 14:
+unknown stage + sensor only => confianza baja-media y mensaje conservador.
+
+Test 15:
+Pera asiática/Nashi en input => no inventar PR-06; usar pr_skip/futureProfile=pear_asian.
+
+
+================================================================================
+16. FUENTES BASE Y TRAZABILIDAD
+================================================================================
+
+S1. BIO-G - 04_Riesgos_Cultivo_Sanidad_Estres_Memoria_BioG_Manzano_v1.txt
+Uso: molde editorial, familias UX, reglas de motor, memoria perenne y lenguaje sin diagnóstico definitivo.
+
+S2. BIO-G - 01_Ficha_Tecnica_Universal_Perfiles_BioG_Pera_PR_v1_refinado.txt
+Uso: perfiles PR, estados, etapas, aliases y arquitectura de pera.
+
+S3. BIO-G - 02_Perfil_SKIP_BioG_Pera_PR_SKIP_v1_refinado.txt
+Uso: comportamiento PR-SKIP, reglas conservadoras y migración.
+
+S4. UC IPM - Pear Pest Management Guidelines
+URL: https://ipm.ucanr.edu/agriculture/pear/
+Uso: lista oficial de invertebrados, enfermedades, year-round IPM, monitoreo por etapa, pear psylla, codling moth, mites, pear scab, fire blight, pear decline, Armillaria.
+
+S5. UC IPM - Pear Psylla
+URL: https://ipm.ucanr.edu/agriculture/pear/pear-psylla/
+Uso: pear psylla como una de las plagas más serias de pera; vector de pear decline; melaza, negrilla, daño a vigor, caída de hoja y productividad.
+
+S6. UC IPM - Fire Blight in Pear
+URL: https://ipm.ucanr.edu/agriculture/pear/fire-blight/
+Uso: síntomas, shepherd's crook, exudado ámbar, invasión de flores/brotes/fruto, clima cálido-húmedo, exceso de N/poda/riego.
+
+S7. UC Davis Fruit & Nut Research and Information Center - Pear Diseases & Disorders
+URL: https://fruitsandnuts.ucdavis.edu/pear-diseases-disorders
+Uso: fire blight y pear scab como enfermedades comunes; susceptibilidad de Bartlett/Starkrimson por floración extendida; blossom blast y oak root fungus regionales.
+
+S8. WSU Tree Fruit - Pear IPM
+URL: https://treefruit.wsu.edu/crop-protection/pear-ipm/
+Uso: enfoque IPM de pera centrado en balance intervención/biocontrol para pear psylla y mites; codling moth dentro del programa.
+
+S9. WSU Production Guide - Pear Programs
+URL: https://cpg.treefruit.wsu.edu/pear-programs/overview/
+Uso: fire blight durante flores abiertas con clima cálido y mojado; bull's eye rot/storage rots; manejo pre-cosecha y postcosecha.
+
+S10. Pacific Northwest Pest Management Handbook - Pear Fire Blight
+URL: https://pnwhandbooks.org/plantdisease/host-disease/pear-pyrus-spp-fire-blight
+Uso: susceptibilidad de cultivares importantes; síntomas en bloom; ooze; cankers; confusiones con Pseudomonas, Nectria, twig borer; pronóstico por temperatura/humedad/lluvia.
+
+S11. Pacific Northwest Pest Management Handbook - Pear Scab
+URL: https://pnwhandbooks.org/plantdisease/host-disease/pear-pyrus-spp-scab
+Uso: Venturia pyrina; inóculo en hojas/twigs; infección con hojas mojadas; síntomas en fruto/hoja; importancia de lluvia y bloom.
+
+S12. Ontario Crop IPM - Fabraea Leaf Spot on Pear
+URL: https://cropipm.omafra.gov.on.ca/en-ca/crops/pears/diseases/1881ff45-21f8-4968-a74f-6474b0647882?iid=26abe4b2-dfc1-4cbf-bbe5-27e195149ef6
+Uso: Fabraea ataca hojas, fruto y ramillas; manchas café-negras y defoliación.
+
+S13. ITACyl - Psila del peral
+URL: https://plagas.itacyl.es/psila
+Uso: psila como principal plaga del peral; 4-6 generaciones; actividad desde primavera; melaza, negrilla, deformación, defoliación y fitoplasma asociado al decaimiento.
+
+S14. Chapingo - Agronomía y ambiente de la pera (Pyrus communis L.) en la región central de Veracruz
+URL: https://revistas.chapingo.mx/geografia/article/view/r.rga.2013.50-51.04
+Uso: contexto mexicano; producción de pera con pequeños productores, escasez de información agronómica, bajo manejo de plagas/enfermedades y presencia de Kieffer.
+
+S15. UC IPM - Codling Moth
+URL: https://ipm.ucanr.edu/home-and-landscape/codling-moth/
+Uso: codling moth en manzanas, peras y nueces; frass, galerías, generaciones y monitoreo.
+
+S16. GrowingFruit forum - Pear disease and insect identification / pests and diseases for pears
+URLs:
+https://growingfruit.org/t/pear-disease-and-insect-identification/5903
+https://growingfruit.org/t/pests-and-diseases-for-pears-what-is-minor-and-what-is-major-for-a-no-spray-operation-in-the-mid-atlantic-area/76128
+Uso: lenguaje real de usuarios, confusión entre scab/psila/fire blight/daño climático; no usado para umbrales técnicos.
+
+S17. InfoJardín / foros de frutales
+Uso: lenguaje UX en español: “hojas negras”, “melaza”, “pera con gusano”, “fuego bacteriano”, “psila”, “moteado”. No usados para reglas duras.
+
+
+================================================================================
+17. CIERRE TÉCNICO
+================================================================================
+
+Este documento deja listo el módulo 04 de Pera para BIO-G:
+
+- Catálogo robusto de riesgos bióticos.
+- Catálogo de estrés abiótico/fisiológico.
+- Reglas de motor.
+- Priorización por etapa.
+- Modificadores por perfil PR.
+- Memoria perenne.
+- Lenguaje UX seguro.
+- Campos sugeridos para Plant Health.
+- Sin recetas ni ingredientes activos.
+
+Conclusión:
+La pera debe tratarse como árbol frutal perenne con un paquete sanitario propio.
+Comparte riesgos con manzano, pero su jerarquía en BIO-G debe priorizar psila del peral, fuego bacteriano, polinización/cuajado, roña/moteado, raíz/drenaje, calidad de piel/fruto, postcosecha y memoria multianual.
+
+La cosecha no cierra el cultivo.
+La postcosecha alimenta el siguiente ciclo.
+El riesgo no se diagnostica de forma cerrada: se estima, se explica y se confirma.

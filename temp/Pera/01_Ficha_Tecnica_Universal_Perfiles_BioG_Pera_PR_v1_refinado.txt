@@ -1,0 +1,1748 @@
+BIO-G
+01_FICHA_TECNICA_UNIVERSAL + PERFILES/VARIEDADES
+PERA / PERAL / PEAR TREE
+
+Archivo: 01_Ficha_Tecnica_Universal_Perfiles_BioG_Pera_PR_v1_refinado.txt
+Cultivo BIO-G: Pera / Peral
+cropId: crop_pear_tree
+prefix perfiles: PR
+Version: v1.0 texto cableable refinado con plantilla Manzano AP
+Estado: listo para pasar a Codex/Claude junto con SKIP, rendimiento, riesgos y fertilizacion.
+Formato: TXT interno para codigo. No es recomendacion agronomica local.
+
+================================================================================
+0. CORRECCIONES Y DECISIONES DE ESTA VERSION
+================================================================================
+
+0.1 Decision documental
+La Ficha Tecnica Universal y la Ficha de Perfiles/Variedades quedan en ESTE MISMO DOCUMENTO.
+No se crea un documento separado de variedades. Esto sigue el Estandar BIO-G para arboles
+perennes v1.5 y mantiene el patron validado en manzano: cultivo madre + perfiles + aliases +
+etapas + rangos base + UX + mapeo tecnico.
+
+0.2 Decision tecnica central
+En arboles, BIO-G NO debe usar sowingDate como eje principal.
+El eje correcto es:
+
+estado fisiologico del arbol
++ etapa/evento visible
++ ancla temporal
++ memoria del cultivo
+
+La variedad/perfil ajusta sensibilidad, frio, fechas relativas, cosecha relativa, rendimiento
+relativo, riesgo sanitario y textos. La variedad NO cambia la arquitectura fenologica.
+
+0.3 Que se corrigio respecto al borrador de pera recibido
+- Se cambio la estructura breve del borrador por documento madre completo, al mismo nivel
+  operativo que el documento de Manzano AP.
+- Se aterrizan IDs de codigo, aliases, estados, etapas, anclas y metricas permitidas.
+- Se separa mejor arbol joven/no productivo vs arbol productivo.
+- Se mantiene postcosecha como etapa activa de reservas, no como cierre.
+- Se agregan StageTargets base y StageWeights base para que Codex tenga un puente claro
+  hacia pear_tree_universal_profile.dart.
+- Se agregan reglas explicitas de AgroRange para evitar repetir el error de manzano:
+  lowMax NO es inicio del optimo; es frontera critica baja.
+- Se protege el contrato v1.5: fruit_fill NO es harvest_maturity; post_harvest NO es dormancy.
+- Se agregan perfiles PR con aliases, resolucion, confianza y migracion desde PR-SKIP.
+- Se agregan notas sobre polinizacion cruzada y autoincompatibilidad frecuente en peral.
+- Se agregan tests minimos recomendados para catalogo, runtime, targets y NPK/UI.
+
+0.4 Que NO se sobre-modela en v1
+- No se calcula requerimiento exacto de horas frio por huerto.
+- No se calcula GDD real por variedad.
+- No se fuerza compatibilidad polinizadora varietal como input obligatorio.
+- No se modela portainjerto como motor principal.
+- No se modela numero de frutos por arbol.
+- No se promete rendimiento ni calibres.
+- No se receta fertilizacion en kg/ha dentro de este documento.
+- No se diagnostican plagas/enfermedades de forma cerrada.
+- No se inventan sensores fuera de los permitidos:
+  soilMoisture, soilTemp, ph, ec, resistance, n, p, k.
+
+0.5 Nota critica para Pera
+La pera se parece agronomicamente al manzano por ser Rosaceae caducifolia, pero tiene
+diferencias que BIO-G debe recordar:
+- Muchos perales son autoincompatibles o tienen mejor produccion con polinizacion cruzada.
+- La floracion/cuajado es una ventana muy sensible a frio, lluvia, baja actividad de abejas
+  y compatibilidad varietal.
+- Fuego bacteriano puede ser un riesgo fuerte en perales, especialmente en floracion y brotes.
+- La pera europea suele cosecharse firme y puede completar maduracion fuera del arbol; esto
+  no debe confundirse con "ciclo cerrado".
+- Algunas peras de invierno requieren manejo postcosecha/frio para calidad comercial; BIO-G v1
+  lo trata como texto/contexto, no como motor.
+
+================================================================================
+1. PROPOSITO Y ALCANCE
+================================================================================
+
+Este documento define el cultivo madre Pera/Peral para BIO-G y sus perfiles PR oficiales.
+Sirve para que el codigo pueda crear:
+
+- pear_tree_catalog.dart
+- pear_tree_assets.dart
+- pear_tree_universal_profile.dart
+- pear_tree_crop_definition.dart
+- pear_tree_yield_reference.dart
+- pear_tree_syndromes.dart si Plant Health aplica
+- pear_tree_nutrition_modifier.dart si el motor usa modificadores por arbol/perfil
+- altas en CropKey / CropCatalog / crop_registry.dart
+- resolver de perfil
+- StageTargets base por etapa
+- StageWeights base por etapa
+- textos UX del wizard
+- aliases de variedad
+- reglas de migracion futura desde PR-SKIP a perfil especifico
+- tests equivalentes a manzano/perennes
+
+Alcance v1:
+- Huertos a cielo abierto.
+- Productores con arboles aislados, pequenos huertos o huertos comerciales.
+- Compatible con sensor de suelo BIO-G y contexto climatico externo.
+- Compatible con arboles recien plantados, juveniles, establecidos, productivos y usuario
+  que no sabe estado.
+- Pensado para Mexico y regiones templadas/altas o templadas-adaptadas donde se cultiva pera,
+  pero no cerrado a una zona. La validacion fina queda para region/asesor/analisis.
+
+Limitaciones:
+- No sustituye analisis de suelo, agua o tejido.
+- No sustituye recomendacion agronomica local.
+- No diagnostica plagas/enfermedades de forma cerrada.
+- No decide pesticidas ni dosis.
+- No promete rendimiento.
+- No valida compatibilidad polinizadora en v1.
+
+================================================================================
+2. IDENTIDAD UNIVERSAL DEL CULTIVO
+================================================================================
+
+Nombre comun:
+- Pera
+- Peral
+
+Nombre cientifico principal:
+- Pyrus communis L.
+
+Familia botanica:
+- Rosaceae
+
+Tipo:
+- Arbol frutal caducifolio
+- Perenne
+- C3
+- Cultivo de fruto
+- Frutal templado
+
+Organo objetivo:
+- FRUTO
+
+cropId BIO-G:
+- crop_pear_tree
+
+Alias legacy permitido:
+- pear_tree
+
+CropKey recomendado:
+- CropKey.pearTree
+  Nota: si el proyecto ya usa CropKey.pear_tree, respetar el nombre existente y no
+  renombrar sin migracion/test.
+
+Categoria:
+- tree
+
+profilePrefix:
+- PR
+
+Perfil generico obligatorio:
+- pr_skip
+
+Perfiles especificos oficiales v1:
+- pr_01_bartlett_williams
+- pr_02_anjou
+- pr_03_bosc
+- pr_04_seckel_comice
+- pr_05_kieffer_rustic
+
+Asset principal sugerido:
+- assets/icons/wizard/ic_pear_tree.png
+- assets/icons/wizard/ic_pear_tree_generic.png
+- assets/seeds/pear_tree/stage_*.png
+
+Nota:
+El cultivo madre NO representa una variedad comercial exacta. Representa la biologia base
+del peral. La variedad/perfil se resuelve despues.
+
+Nota sobre pera asiatica:
+- La pera asiatica / nashi suele pertenecer a otro grupo/especie comercial (frecuentemente
+  Pyrus pyrifolia o hibridos). En PR v1 NO se crea perfil oficial aparte para no mezclar
+  arquitectura sin investigacion dedicada.
+- Si el usuario escribe "pera asiatica", "nashi", "pera manzana" o "asian pear":
+  resolver a pr_skip con nota de baja confianza o marcar futureProfile=pear_asian,
+  sin romper app. Futuro PR-06 puede cubrirla.
+
+================================================================================
+3. CULTIVO ANUAL VS ARBOL PERENNE EN BIO-G
+================================================================================
+
+Tabla conceptual:
+
+Aspecto                         | Cultivo anual                         | Pera / arbol perenne
+--------------------------------|---------------------------------------|---------------------------------------------
+Eje temporal                    | siembra/trasplante                    | estado visible + ancla temporal + memoria
+Fin del ciclo                   | cosecha o fin de temporada            | la cosecha NO cierra la vida del arbol
+Edad                            | explica muchas etapas                 | ayuda, pero no debe ser input principal
+Variedad                        | puede cambiar calendario completo     | ajusta sensibilidad y fechas relativas
+Postcosecha                     | cierre/transicion                     | etapa activa de recuperacion y reservas
+Memoria                         | menor o de un ciclo                   | obligatoria; estres impacta ciclos futuros
+Rendimiento                     | plantas/ha o t/ha por ciclo           | kg/arbol + arboles/ha + estado productivo
+Usuario que no sabe             | perfil generico                       | PR-SKIP conservador y migrable
+Polinizacion                    | no siempre modelada                   | contexto critico en floracion/cuajado
+
+Regla BIO-G:
+La UX debe preguntar cosas visibles y practicas:
+- ¿Es un arbol recien plantado?
+- ¿Aun no produce?
+- ¿Ya produce esta temporada?
+- ¿Que se ve en el arbol ahorita?
+- ¿Hace cuanto empezo esa etapa?
+
+No debe obligar al productor a contestar:
+- GDD exactos
+- horas frio exactas
+- portainjerto exacto
+- compatibilidad polinizadora exacta
+- edad exacta si no la sabe
+- numero de frutos
+- variedad exacta si no la sabe
+
+================================================================================
+4. ARQUITECTURA BIO-G PARA PERA
+================================================================================
+
+Jerarquia:
+
+Cultivo madre:
+- Pera / crop_pear_tree
+
+Estado perenne UX:
+- newly_planted
+- juvenile_non_productive
+- established
+- productive_season
+- unknown
+
+Perfil/variedad:
+- pr_skip
+- pr_01_bartlett_williams
+- pr_02_anjou
+- pr_03_bosc
+- pr_04_seckel_comice
+- pr_05_kieffer_rustic
+
+Etapa fenologica visible:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Ancla temporal:
+- planting
+- stage_start
+- budbreak
+- flowering
+- harvest
+- post_harvest
+- manual_stage
+- unknown
+
+Metricas permitidas:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Regla de compatibilidad:
+- newly_planted puede usar planting_transplant o root_establishment.
+- juvenile_non_productive puede usar juvenile_vegetative, root_establishment o unknown.
+- established puede usar dormancy, budbreak, vegetative_growth o unknown.
+- productive_season puede usar todas las etapas productivas anuales.
+- unknown debe usar PR-SKIP o perfil elegido con confianza baja/media segun senales.
+
+================================================================================
+5. ESTADOS DEL ARBOL Y UX RECOMENDADA
+================================================================================
+
+5.1 Estados perennes permitidos
+
+ID: newly_planted
+Etiqueta UX:
+- Recien plantado
+Descripcion:
+- Arbol colocado recientemente en campo, trasplante o reposicion.
+Regla:
+- No producir.
+- Priorizar raiz, humedad estable, baja salinidad y baja compactacion.
+- Ancla preferida: planting.
+Confianza:
+- Alta si hay fecha de plantacion.
+- Media si solo hay etapa visible.
+
+ID: juvenile_non_productive
+Etiqueta UX:
+- Aun no produce
+Descripcion:
+- Arbol en crecimiento estructural. Puede tener hojas, ramas y vigor, pero todavia
+  no entra a produccion comercial o el usuario confirma que no produce.
+Regla:
+- No forzar floracion ni rendimiento.
+- Priorizar agua, suelo, raiz, estructura vegetativa y estres acumulado.
+- Ancla preferida: stage_start o manual_stage.
+Confianza:
+- Media.
+
+ID: established
+Etiqueta UX:
+- Arbol establecido
+Descripcion:
+- Arbol vivo, con estructura formada, pero el usuario no confirma produccion esta temporada.
+Regla:
+- Permitir ciclo anual si el usuario selecciona etapa visible.
+- No proyectar rendimiento alto si no hay confirmacion de carga.
+Confianza:
+- Media-baja si no hay etapa visible.
+
+ID: productive_season
+Etiqueta UX:
+- En produccion esta temporada
+Descripcion:
+- Arbol con ciclo productivo anual activo: brotacion, floracion, cuajado, fruto,
+  cosecha o postcosecha.
+Regla:
+- Usar etapa visible como eje principal.
+- Activar memoria de estres critica.
+- Permitir rendimiento aproximado en Documento 03.
+Confianza:
+- Media-alta si etapa visible y fecha de inicio existen.
+
+ID: unknown
+Etiqueta UX:
+- No lo se
+Descripcion:
+- Usuario no sabe estado.
+Regla:
+- No bloquear.
+- Usar PR-SKIP y preguntas visuales simples.
+- Alertas conservadoras.
+Confianza:
+- Baja al inicio; sube si hay sensor + etapa visible.
+
+5.2 Pregunta UX recomendada para estado
+
+Pregunta:
+"¿Como esta tu peral actualmente?"
+
+Opciones:
+1. Recien plantado
+2. Aun no produce
+3. Ya produce esta temporada
+4. Esta establecido, pero no se si va a producir
+5. No lo se
+
+Mapeo:
+- Recien plantado -> newly_planted
+- Aun no produce -> juvenile_non_productive
+- Ya produce esta temporada -> productive_season
+- Esta establecido... -> established
+- No lo se -> unknown
+
+5.3 Pregunta UX recomendada si YA PRODUCE
+
+Pregunta:
+"¿Que se ve en el arbol ahorita?"
+
+Opciones visibles:
+- Pelon / sin hojas -> dormancy
+- Brotando -> budbreak
+- Lleno de hojas -> vegetative_growth
+- En flor -> flowering
+- Tirando flor / frutito recien amarrado -> fruit_set
+- Fruto verde creciendo -> fruit_fill
+- Fruto madurando / listo para cortar -> harvest_maturity
+- Despues de cosecha -> post_harvest
+- No lo se -> unknown
+
+Pregunta dinamica posterior:
+"¿Hace cuanto empezo mas o menos esta etapa?"
+
+Anclas:
+- Brotando -> budbreak
+- En flor -> flowering
+- Fruto madurando/listo -> harvest
+- Despues de cosecha -> post_harvest
+- Otras -> stage_start / manual_stage
+
+5.4 Pregunta UX recomendada si AUN NO PRODUCE
+
+Pregunta:
+"¿Que describe mejor tu arbol?"
+
+Opciones:
+- Lo acabo de plantar -> planting_transplant
+- Esta echando raiz / agarrando -> root_establishment
+- Esta creciendo con hojas y ramas, pero no produce -> juvenile_vegetative
+- No lo se -> unknown
+
+En esta ruta, evitar preguntar "sin hojas / reposo" como criterio principal si no aporta.
+Un arbol juvenil puede estar sin hojas por temporada, pero eso no define produccion.
+
+================================================================================
+6. ETAPAS FENOLOGICAS BIO-G DE LA PERA
+================================================================================
+
+Tabla de etapas v1:
+
+ID: planting_transplant
+UX:
+- Plantacion / trasplante
+Aplica en:
+- newly_planted
+Ancla:
+- planting
+Descripcion:
+- El peral acaba de establecerse en campo.
+Prioridad BIO-G:
+- Evitar estres por trasplante, saturacion, salinidad y compactacion.
+No producir:
+- Si, bloquea produccion.
+Sensibilidad:
+- agua alta, suelo alto, EC alta, resistance alta.
+
+ID: root_establishment
+UX:
+- Establecimiento radicular
+Aplica en:
+- newly_planted, juvenile_non_productive
+Ancla:
+- stage_start o planting
+Descripcion:
+- Desarrollo de raices finas y recuperacion de trasplante.
+Duracion orientativa:
+- 0-8 meses despues de plantacion, variable por clima, suelo y manejo.
+Prioridad BIO-G:
+- Humedad estable, oxigeno en suelo, baja salinidad.
+No producir:
+- Si, bloquea produccion.
+
+ID: juvenile_vegetative
+UX:
+- Crecimiento juvenil
+Aplica en:
+- juvenile_non_productive
+Ancla:
+- stage_start / manual_stage
+Descripcion:
+- Construccion de estructura, ramas, hojas, raiz y reservas.
+Duracion orientativa:
+- Ano 1-3 en sistemas modernos; puede ser mas en arboles vigorosos, rusticos o manejo
+  extensivo.
+Prioridad BIO-G:
+- Vigor equilibrado, sanidad, agua, suelo.
+No producir:
+- Si, salvo floracion/fruta aislada sin valor comercial; BIO-G no proyecta rendimiento.
+
+ID: dormancy
+UX:
+- Reposo / pelon / sin hojas
+Aplica en:
+- established, productive_season
+Ancla:
+- stage_start / manual_stage
+Descripcion:
+- El arbol caducifolio esta en reposo invernal. Acumula frio y conserva reservas.
+Prioridad BIO-G:
+- No sobreinterpretar NPK; vigilar frio, heladas extremas, humedad excesiva y raices.
+Nota:
+- Horas frio son contexto climatico v2, no sensor BIO-G v1.
+
+ID: budbreak
+UX:
+- Brotacion
+Aplica en:
+- established, productive_season
+Ancla:
+- budbreak
+Descripcion:
+- Yemas salen de dormancia; aparecen puntas verdes, hojas y estructuras florales.
+Prioridad BIO-G:
+- Evitar frio tardio, estres hidrico, salinidad y exceso de N.
+
+ID: vegetative_growth
+UX:
+- Desarrollo vegetativo / lleno de hojas
+Aplica en:
+- established, productive_season
+Ancla:
+- stage_start
+Descripcion:
+- Expansion de hojas, brotes y soporte fotosintetico.
+Prioridad BIO-G:
+- Agua y nutricion moderada; no empujar vigor excesivo si hay fruta.
+Nota:
+- Exceso de vigor en pera puede elevar riesgo de fuego bacteriano y competir con fruta.
+
+ID: flowering
+UX:
+- Floracion
+Aplica en:
+- productive_season
+Ancla:
+- flowering
+Descripcion:
+- Etapa critica: flor abierta, polinizacion, riesgo de helada y fuego bacteriano.
+Prioridad BIO-G:
+- Temperatura estable, agua estable, evitar saturacion, estres y salinidad.
+Riesgo:
+- helada tardia, lluvia/frio en flor, calor, baja actividad de polinizadores, fuego bacteriano.
+
+ID: fruit_set
+UX:
+- Cuajado / amarre / frutito
+Aplica en:
+- productive_season
+Ancla:
+- stage_start o flowering
+Descripcion:
+- Despues de floracion/petalos, el fruto recien amarrado define carga potencial.
+Prioridad BIO-G:
+- Agua estable, evitar calor, salinidad y estres.
+Nota:
+- La polinizacion cruzada y clima durante floracion influyen en amarre.
+
+ID: fruit_fill
+UX:
+- Llenado / fruto verde creciendo
+Aplica en:
+- productive_season
+Ancla:
+- stage_start
+Descripcion:
+- Crecimiento de fruto, calibre, firmeza, calidad y acumulacion.
+Prioridad BIO-G:
+- Humedad estable, K/Ca/Mg en doc 05, evitar deficit y EC alta.
+Contrato v1.5:
+- NO usar copy de cosecha, madurez o "cerca de cosecha" aqui.
+- Copy permitido: llenado, calibre, fruto verde, firmeza, balance N-K-Ca/Mg.
+
+ID: harvest_maturity
+UX:
+- Maduracion / cosecha / fruto madurando
+Aplica en:
+- productive_season
+Ancla:
+- harvest
+Descripcion:
+- Fruto alcanza madurez comercial. En pera europea, muchas variedades se cosechan firmes
+  y terminan maduracion fuera del arbol.
+Prioridad BIO-G:
+- Evitar estres hidrico fuerte, golpe de sol, exceso de humedad y perdida de calidad.
+Contrato v1.5:
+- Aqui si puede hablar de madurez, cosecha, color, firmeza final, almacenamiento y calidad final.
+
+ID: post_harvest
+UX:
+- Postcosecha / despues de cosecha
+Aplica en:
+- productive_season, established
+Ancla:
+- post_harvest
+Descripcion:
+- Etapa activa de recuperacion, hoja funcional y reservas para siguiente ciclo.
+Prioridad BIO-G:
+- No apagar alertas; guardar estres; recuperacion hidrica/nutricional.
+Regla:
+- Cosecha/postcosecha NO cierran el cultivo.
+Contrato v1.5:
+- No tratar como dormancia pasiva ni como cultivo cerrado.
+
+ID: unknown
+UX:
+- No lo se
+Aplica en:
+- todos
+Ancla:
+- unknown
+Descripcion:
+- Estado fenologico no confirmado.
+Prioridad BIO-G:
+- Mantener app funcionando con confianza baja/media y alertas conservadoras.
+
+================================================================================
+7. TIEMPOS FISIOLOGICOS ORIENTATIVOS
+================================================================================
+
+Estos tiempos son para visualizacion, calendario aproximado y mensajes. No son promesas.
+
+7.1 Ventanas universales productivas
+- Dormancia/frio: invierno; depende de region, variedad y clima.
+- Brotacion -> floracion: 20-50 dias, segun frio acumulado, temperatura y perfil.
+- Floracion: 15-30 dias orientativos.
+- Floracion -> cuajado visible: 5-20 dias.
+- Polinizacion/cuajado: 7-14 dias criticos.
+- Llenado/crecimiento de fruto: 110-190 dias segun perfil, carga y clima.
+- Plena floracion -> cosecha: 120-210 dias segun variedad/perfil, clima y mercado.
+- Postcosecha: desde cosecha hasta senescencia/caida de hoja o inicio de dormancia.
+
+7.2 Entrada a produccion
+- Sistemas modernos/intensivos: puede iniciar ano 3-4 segun variedad/portainjerto/manejo.
+- Bartlett/Williams: entrada orientativa ano 3-4.
+- Anjou/Bosc/Comice/Seckel: entrada orientativa ano 4; plena ano 6+.
+- Kieffer/rusticas: entrada orientativa ano 4-5; plena ano 7+ en sistemas mas vigorosos.
+- Produccion plena depende de marco, portainjerto, poda, riego, nutricion, sanidad y polinizacion.
+
+BIO-G v1 no debe pedir edad exacta para resolver etapa.
+La edad puede ayudar en rendimiento, pero no debe mandar el motor fenologico.
+
+================================================================================
+8. RANGOS MEDIBLES BASE PARA BIO-G v1
+================================================================================
+
+IMPORTANTE:
+Los rangos son de monitoreo y score, no recetas. Ajustes finos de NPK van en Documento 05.
+
+8.1 Temperatura ambiente / contexto climatico
+- Activacion fisiologica orientativa: >7-10 °C.
+- Desarrollo general favorable: 15-28 °C.
+- Observacion por calor: >30-32 °C, especialmente en floracion/cuajado/llenado.
+- Estres termico: >32-35 °C segun humedad, viento, carga y etapa.
+- Riesgo de helada: cerca o bajo 0 °C.
+- En floracion, umbrales de dano por helada dependen de estado de yema, duracion y humedad.
+
+Uso en BIO-G:
+- Temperatura ambiente es contexto externo, no lectura del sensor de suelo.
+- soilTemp si puede influir en raiz/actividad.
+
+8.2 Temperatura de suelo / soilTemp
+- Baja actividad radicular: <7-8 °C.
+- Rango operativo general raiz: 8-25/26 °C.
+- Favorable aproximado: 12-22 °C.
+- Observacion: >26-28 °C en suelo superficial si se combina con baja humedad.
+- Alerta: temperaturas extremas + deficit hidrico.
+
+8.3 Humedad de suelo / soilMoisture
+Interpretacion preferida:
+- % de agua disponible o escala normalizada por textura.
+Si el sensor da porcentaje volumetrico, convertir a bandas relativas por suelo.
+
+Rangos base:
+- Bajo critico: <45% AW
+- Observacion baja: 45-55% AW
+- Operativo: 55-85% AW
+- Optimo conservador: 60-80/85% AW segun etapa
+- Exceso/saturacion: >90% AW o lectura persistentemente alta con mala aireacion
+
+Regla:
+- Pera tolera suelos mas humedos/arcillosos que varios frutales, pero no debe tratarse
+  como tolerante a encharcamiento permanente.
+- En etapas de floracion/cuajado/llenado, la estabilidad de agua pesa mucho.
+- En llenado, deficit sostenido reduce calibre y calidad.
+- En postcosecha, estres fuerte puede afectar reservas y siguiente ciclo.
+
+8.4 pH
+- Optimo BIO-G v1: 6.0-7.0
+- Aceptable amplio: 5.5-7.5
+- Observacion: 5.0-5.5 o 7.5-8.0
+- Alerta: <5.0 o >8.0, especialmente si hay sintomas o bloqueo nutricional.
+
+8.5 Conductividad electrica / ec
+Usar como alerta conservadora por sensibilidad a sales, no como diagnostico unico.
+
+- Seguro/normal: <1.0 dS/m
+- Observacion: 1.0-2.0 dS/m
+- Alerta inicial BIO-G: >2.0-2.5 dS/m
+- Alerta fuerte: >3.0 dS/m o tendencia ascendente + estres hidrico
+
+Nota:
+Referencias de salinidad suelen ubicar al grupo apple/pear como sensible con reducciones
+a partir de ECe alrededor de 2.5 dS/m. BIO-G usa alerta temprana conservadora.
+
+8.6 Resistencia/compactacion / resistance
+- Favorable: <1.0 MPa
+- Observacion: 1.0-2.0 MPa
+- Alerta: >2.0 MPa
+- Critico: >3.0 MPa
+
+Nota:
+2 MPa se usa como umbral general donde muchas raices ya no crecen bien. En peral el
+problema se agrava si coincide con baja humedad, suelo pesado, baja materia organica,
+mal drenaje o saturacion.
+
+8.7 NPK relativo
+No usar como dosis.
+
+N:
+- Bajo/moderado en dormancia.
+- Moderado en brotacion/vegetativo.
+- Evitar exceso en floracion/fruto: puede empujar vigor vegetativo, susceptibilidad y
+  calidad deficiente.
+- En postcosecha puede apoyar reservas solo si analisis/contexto lo justifica.
+
+P:
+- Importante en raiz, establecimiento, brotacion, energia y floracion.
+- Interpretar con pH y analisis de suelo.
+
+K:
+- Alto peso en llenado, calibre, firmeza/calidad y rendimiento.
+- Interpretar con Ca/Mg, carga, agua y salinidad.
+
+Ca/B/Mg:
+- No son sensores BIO-G v1, pero deben aparecer como contexto en copy NPK:
+  Ca para firmeza/desordenes de calidad; B para floracion/cuajado; Mg balance vegetativo.
+- No inventar metricas nuevas; solo mencionar como contexto o recomendacion de analisis.
+
+================================================================================
+9. STAGETARGETS BASE POR ETAPA
+================================================================================
+
+IMPORTANTE:
+Esta tabla es base documental para pear_tree_universal_profile.dart.
+El Documento 05 cierra los rangos finos por etapa y NPK.
+Codex debe convertir estos rangos a AgroRange respetando:
+
+AgroRange(
+  lowMax: frontera_critica_baja,
+  optimalMin: inicio_optimo,
+  optimalMax: fin_optimo,
+  highMin: frontera_critica_alta
+)
+
+NO usar lowMax == optimalMin ni optimalMax == highMin en suelo/ambiente sin justificacion
+documental y test.
+
+Formato conceptual:
+stageId | soilMoisture(AW%) | soilTemp(°C) | pH | EC dS/m | resistance MPa | N | P | K
+
+planting_transplant
+- soilMoisture optimo: 60-80 | critico bajo <45 | saturacion >90
+- soilTemp optimo: 10-24
+- pH optimo: 6.0-7.0 | aceptable 5.5-7.5
+- EC: <1.5 preferible, observacion 1.5-2.5, alerta >2.5
+- resistance: <1.5 preferible, alerta >2.0
+- N: bajo-moderado
+- P: medio-alto
+- K: medio
+- Nota: no quemar raiz, no saturar, no plantar en suelo compactado.
+
+root_establishment
+- soilMoisture optimo: 65-85 | critico bajo <45 | saturacion >90
+- soilTemp optimo: 10-24
+- pH: 6.0-7.0
+- EC: <1.5 preferible, alerta >2.5
+- resistance: <1.5 preferible, alerta >2.0
+- N: bajo-moderado
+- P: alto relativo
+- K: medio
+- Nota: raices finas y oxigeno mandan.
+
+juvenile_vegetative
+- soilMoisture optimo: 60-85
+- soilTemp optimo: 10-26
+- pH: 6.0-7.0
+- EC: <1.8 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: crecer estructura sin estres ni exceso de vigor blando.
+
+dormancy
+- soilMoisture optimo operativo: 45-70
+- soilTemp: estacional; no penalizar frio normal de invierno
+- pH: 6.0-7.5
+- EC: <2.0 preferible; alerta >2.5
+- resistance: no ponderar fuerte si suelo muy seco/frio
+- N: bajo
+- P: bajo
+- K: bajo
+- Nota: no sobreinterpretar NPK; frio es contexto externo.
+
+budbreak
+- soilMoisture optimo: 55-80
+- soilTemp optimo: 8-22
+- pH: 6.0-7.0
+- EC: <1.8 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: arranque sin frio tardio ni deficit.
+
+vegetative_growth
+- soilMoisture optimo: 55-80
+- soilTemp optimo: 10-26
+- pH: 6.0-7.0
+- EC: <2.0 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: vigilar exceso de vigor, especialmente con riesgo de fuego bacteriano.
+
+flowering
+- soilMoisture optimo: 60-80 estable
+- soilTemp optimo: 10-24
+- pH: 6.0-7.0
+- EC: <1.8 preferible, alerta >2.5
+- resistance: <2.0
+- N: bajo-medio
+- P: medio
+- K: medio
+- Nota: etapa critica; temperatura, agua, polinizacion y fuego bacteriano pesan mucho.
+
+fruit_set
+- soilMoisture optimo: 65-85 estable
+- soilTemp optimo: 12-26
+- pH: 6.0-7.0
+- EC: <1.8 preferible, alerta >2.5
+- resistance: <2.0
+- N: bajo-medio
+- P: medio
+- K: medio-alto
+- Nota: evitar aborto por estres hidrico/calor/salinidad.
+
+fruit_fill
+- soilMoisture optimo: 65-85
+- soilTemp optimo: 12-28
+- pH: 6.0-7.0
+- EC: <2.0 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio-bajo
+- P: medio
+- K: alto relativo
+- Nota: calibre, firmeza y calidad dependen de agua estable, K y balance con Ca/Mg.
+- Copy prohibido: "cerca de cosecha" si la etapa real es fruit_fill.
+
+harvest_maturity
+- soilMoisture optimo: 55-75
+- soilTemp optimo: 10-28
+- pH: 6.0-7.0
+- EC: <2.0 preferible, alerta >2.5
+- resistance: <2.0
+- N: bajo
+- P: bajo-medio
+- K: medio
+- Nota: madurez/cosecha, firmeza final, calidad, almacenamiento; evitar exceso vegetativo.
+
+post_harvest
+- soilMoisture optimo: 55-75
+- soilTemp optimo: 8-25
+- pH: 6.0-7.0
+- EC: <2.0 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio-bajo
+- P: medio
+- K: medio
+- Nota: etapa activa de reservas; impacta ciclo siguiente.
+
+unknown
+- soilMoisture optimo: 55-80
+- soilTemp optimo: 8-26
+- pH: 6.0-7.5
+- EC: <2.0 preferible, alerta >2.5
+- resistance: <2.0
+- N: medio
+- P: medio
+- K: medio
+- Nota: conservador; pedir etapa visible.
+
+================================================================================
+10. STAGEWEIGHTS BASE POR ETAPA
+================================================================================
+
+Escala: 0.0 a 1.0
+Componentes:
+- waterWeight
+- soilTempWeight
+- phWeight
+- ecWeight
+- resistanceWeight
+- nWeight
+- pWeight
+- kWeight
+
+Nota:
+Los pesos no tienen que sumar perfecto si el motor normaliza; se recomiendan como pesos
+relativos. Si el modelo existente exige suma 1.0, normalizar sin cambiar jerarquia.
+
+planting_transplant:
+- water 0.25
+- soilTemp 0.15
+- pH 0.12
+- EC 0.18
+- resistance 0.20
+- N 0.03
+- P 0.05
+- K 0.02
+
+root_establishment:
+- water 0.30
+- soilTemp 0.12
+- pH 0.10
+- EC 0.18
+- resistance 0.18
+- N 0.03
+- P 0.06
+- K 0.03
+
+juvenile_vegetative:
+- water 0.22
+- soilTemp 0.12
+- pH 0.10
+- EC 0.12
+- resistance 0.15
+- N 0.14
+- P 0.08
+- K 0.07
+
+dormancy:
+- water 0.15
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.05
+- P 0.05
+- K 0.05
+- contextoClimatico/frio: usar fuera de sensor si existe.
+
+budbreak:
+- water 0.22
+- soilTemp 0.18
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.12
+- P 0.08
+- K 0.08
+
+vegetative_growth:
+- water 0.22
+- soilTemp 0.12
+- pH 0.10
+- EC 0.10
+- resistance 0.12
+- N 0.17
+- P 0.08
+- K 0.09
+
+flowering:
+- water 0.26
+- soilTemp 0.20
+- pH 0.08
+- EC 0.14
+- resistance 0.08
+- N 0.05
+- P 0.09
+- K 0.10
+- climaHelada/polinizacion/fuegoBacteriano: contexto externo muy alto.
+
+fruit_set:
+- water 0.30
+- soilTemp 0.16
+- pH 0.08
+- EC 0.16
+- resistance 0.08
+- N 0.05
+- P 0.07
+- K 0.10
+
+fruit_fill:
+- water 0.28
+- soilTemp 0.12
+- pH 0.08
+- EC 0.13
+- resistance 0.08
+- N 0.07
+- P 0.06
+- K 0.18
+
+harvest_maturity:
+- water 0.22
+- soilTemp 0.14
+- pH 0.08
+- EC 0.12
+- resistance 0.08
+- N 0.05
+- P 0.05
+- K 0.12
+- calidad/sunburn/clima/almacenamiento: externo.
+
+post_harvest:
+- water 0.22
+- soilTemp 0.10
+- pH 0.10
+- EC 0.12
+- resistance 0.10
+- N 0.10
+- P 0.10
+- K 0.12
+
+unknown:
+- water 0.24
+- soilTemp 0.12
+- pH 0.10
+- EC 0.14
+- resistance 0.12
+- N 0.09
+- P 0.09
+- K 0.10
+
+================================================================================
+11. SENSIBILIDAD POR ETAPA
+================================================================================
+
+planting_transplant:
+- Deficit hidrico: muy alta
+- Exceso de humedad: alta
+- Salinidad: alta
+- Compactacion: muy alta
+- Helada/calor: media
+- Nutricion: media, pero no empujar N
+
+root_establishment:
+- Deficit hidrico: muy alta
+- Exceso: alta
+- Salinidad: alta
+- Compactacion: muy alta
+- Sanidad raiz/cuello: alta
+
+juvenile_vegetative:
+- Deficit: alta
+- N moderado: importante
+- Compactacion: alta
+- Exceso de vigor: observacion, puede elevar riesgo sanitario
+- Estres acumulado: alto para formacion futura
+
+dormancy:
+- Falta de frio: alta como contexto
+- Heladas extremas: media-alta
+- Agua: media
+- NPK: bajo peso
+
+budbreak:
+- Frio tardio: alta
+- Deficit hidrico: media
+- Exceso de N: media
+- Enfermedades tempranas: media
+
+vegetative_growth:
+- Agua: media
+- N: media-alta
+- Calor: media
+- Vigor excesivo: observacion
+- Fuego bacteriano en brotes jovenes: contexto de riesgo
+
+flowering:
+- Helada: muy alta
+- Deficit hidrico: muy alta
+- Calor seco: alta
+- Exceso de humedad/lluvia: alta
+- Mala polinizacion: muy alta
+- Fuego bacteriano: alta/muy alta segun clima
+- Salinidad: media-alta
+
+fruit_set:
+- Deficit hidrico: muy alta
+- Calor: alta
+- Salinidad: alta
+- Baja polinizacion previa: muy alta
+- Estres nutricional/Ca/B: media-alta
+- Carga excesiva: contexto rendimiento/sanidad
+
+fruit_fill:
+- Deficit hidrico: alta
+- Calor/golpe de sol: alta
+- K/Ca/Mg: alta
+- EC: alta
+- Granizo: alta como evento externo
+- Vigor excesivo por N: observacion
+
+harvest_maturity:
+- Golpe de sol: alta
+- Exceso de humedad: media-alta
+- Granizo: alta
+- Estrés hidrico: media-alta
+- Calidad/almacenamiento: contexto
+
+post_harvest:
+- Deficit hidrico: alta
+- Deficiencia nutricional: alta
+- Perdida temprana de hoja: alta
+- Estres sanitario persistente: alto
+- Impacto siguiente ciclo: alto
+
+================================================================================
+12. PERFILES / VARIEDADES OFICIALES BIO-G
+================================================================================
+
+Regla:
+Los perfiles son grupos UX/agronomicos. No son una ficha por cada clon o marca comercial.
+Los aliases ayudan a resolver nombres comunes.
+
+--------------------------------------------------------------------------------
+PR-SKIP / pr_skip
+--------------------------------------------------------------------------------
+
+label:
+- PR-SKIP · Pera general
+
+Uso:
+- Cuando el usuario no sabe variedad o quiere avanzar rapido.
+
+Tipo:
+- Generico, conservador, migrable.
+
+No se lista como variedad tecnica incompleta.
+El usuario debe ver:
+- "No se / Pera general"
+
+Detalle completo en Documento 02.
+
+--------------------------------------------------------------------------------
+PR-01 / pr_01_bartlett_williams
+--------------------------------------------------------------------------------
+
+label:
+- PR-01 · Bartlett / Williams
+
+Grupo:
+- Pera Bartlett, Williams o Williams Bon Chretien.
+
+Aliases:
+- Bartlett
+- Williams
+- Williams Bon Chretien
+- Bon Chretien
+- Pera Bartlett
+- Pera Williams
+- Pera de agua
+- Pera amarilla
+- Amarilla
+- Verano
+- Otra Bartlett
+- Otra Williams
+
+Tipo de fruto:
+- Pera europea clasica, verde-amarilla al madurar, aromatica, jugosa, fresco/proceso.
+
+Uso:
+- Fresco, conserva, mercado nacional, proceso segun calidad.
+
+Requerimiento de frio:
+- Medio-alto / alto segun region y genotipo.
+- En BIO-G v1 usar "medio-alto" con confianza media si no hay zona.
+
+Floracion relativa:
+- Temprana-media a media.
+
+Cosecha relativa:
+- Temprana-intermedia / verano.
+- Plena floracion -> cosecha: 120-170 dias orientativos.
+- Ventana visual MX: julio-septiembre segun altitud/region.
+
+Entrada a produccion:
+- Ano 3-4 orientativo.
+- Plena: ano 5+.
+
+Densidad orientativa:
+- Tradicional: 400-1200 arboles/ha.
+- Intensivo: 1200-2500 arboles/ha o mas segun sistema.
+- No usar para rendimiento sin Documento 03.
+
+Altura orientativa:
+- 3-6 m en manejo comun.
+- Mayor si portainjerto vigoroso o sistema tradicional.
+
+Sensibilidad particular:
+- Falta de frio y brotacion/floracion irregular.
+- Helada en floracion.
+- Lluvia/frio durante floracion y baja actividad de polinizadores.
+- Deficit hidrico en cuajado/llenado.
+- Fuego bacteriano.
+- Codling moth / gusano de la fruta en sistemas susceptibles.
+- Madurez/cosecha relativamente sensible a ventana.
+
+Rendimiento relativo:
+- Medio-alto si manejo, polinizacion y agua son buenos.
+- Medio en condiciones genericas.
+
+Ajuste permitido:
+- Fechas relativas tempranas/intermedias, sensibilidad a floracion/polinizacion,
+  rendimiento relativo y textos.
+- NO cambia etapas.
+
+--------------------------------------------------------------------------------
+PR-02 / pr_02_anjou
+--------------------------------------------------------------------------------
+
+label:
+- PR-02 · D'Anjou / Anjou
+
+Grupo:
+- D'Anjou, Anjou verde/roja y peras de invierno/alta conservacion.
+
+Aliases:
+- D'Anjou
+- Danjou
+- Anjou
+- Anjou verde
+- Anjou roja
+- Red Anjou
+- Green Anjou
+- Pera Anjou
+- Pera de invierno
+- Alta conservacion
+- Otra Anjou
+
+Tipo de fruto:
+- Pera europea de buena conservacion, fresco/almacenaje.
+
+Uso:
+- Fresco, almacenaje, mercado extendido.
+
+Requerimiento de frio:
+- Medio-alto / alto.
+- BIO-G v1 usa "alto" si no hay region.
+
+Floracion relativa:
+- Media.
+
+Cosecha relativa:
+- Intermedia-tardia.
+- Plena floracion -> cosecha: 140-200 dias orientativos.
+- Ventana visual MX: agosto-octubre segun zona.
+
+Entrada a produccion:
+- Ano 4 orientativo.
+- Plena: ano 6+.
+
+Densidad orientativa:
+- Tradicional: 400-1200 arboles/ha.
+- Intensivo: 1200-2500 arboles/ha o mas segun sistema.
+
+Altura:
+- 3-6 m en manejo comun.
+
+Sensibilidad particular:
+- Heladas tardias en floracion.
+- Baja actividad de polinizadores/compatibilidad.
+- Estrés hidrico en llenado.
+- Calidad/almacenamiento.
+- Cork spot/desordenes asociados a calcio como contexto tecnico.
+- Sanidad en condiciones humedas.
+
+Rendimiento relativo:
+- Medio.
+- Confianza media.
+
+Ajuste permitido:
+- Cosecha mas tardia, alta conservacion, textos de firmeza/calidad final.
+
+--------------------------------------------------------------------------------
+PR-03 / pr_03_bosc
+--------------------------------------------------------------------------------
+
+label:
+- PR-03 · Bosc
+
+Grupo:
+- Bosc, Beurre Bosc, Mantecosa Bosc.
+
+Aliases:
+- Bosc
+- Beurre Bosc
+- Beurré Bosc
+- Mantecosa Bosc
+- Pera Bosc
+- Café
+- Marron
+- Russet
+- Otra Bosc
+
+Tipo de fruto:
+- Pera europea firme, piel cafe/russet, buena para fresco/cocina/mercado selectivo.
+
+Uso:
+- Fresco, cocina, nicho comercial, almacenaje segun manejo.
+
+Requerimiento de frio:
+- Medio-alto / alto.
+
+Floracion relativa:
+- Media.
+
+Cosecha relativa:
+- Intermedia-tardia a tardia.
+- Plena floracion -> cosecha: 150-210 dias orientativos.
+- Ventana visual MX: agosto-noviembre segun altitud/region.
+
+Entrada a produccion:
+- Ano 4 orientativo.
+- Plena: ano 6+.
+
+Densidad orientativa:
+- Tradicional: 400-1200 arboles/ha.
+- Intensivo: 1200-2500 arboles/ha.
+
+Altura:
+- 3-6 m en manejo comun.
+
+Sensibilidad particular:
+- Fuego bacteriano: sensibilidad importante; algunas guias marcan Bosc como especialmente
+  susceptible bajo presion.
+- Heladas tardias.
+- Estrés hidrico en llenado.
+- Exceso de humedad/sanidad.
+- Calidad visual/russet como rasgo de mercado.
+
+Rendimiento relativo:
+- Medio.
+- Confianza media.
+
+Ajuste permitido:
+- Riesgo sanitario mayor, cosecha tardia, textos de firmeza/cocina/calidad.
+
+--------------------------------------------------------------------------------
+PR-04 / pr_04_seckel_comice
+--------------------------------------------------------------------------------
+
+label:
+- PR-04 · Seckel / Comice
+
+Grupo:
+- Peras dulces premium, nicho, calidad de mesa.
+
+Aliases:
+- Seckel
+- Comice
+- Doyenne du Comice
+- Doyenné du Comice
+- Pera Comice
+- Pera Seckel
+- Dulce
+- Premium
+- Pera de mesa premium
+- Otra dulce
+- Otra premium
+
+Tipo de fruto:
+- Dulce/aromatica, mesa premium, calibre/calidad y uniformidad relevantes.
+
+Uso:
+- Fresco premium, mercado local selectivo, nicho.
+
+Requerimiento de frio:
+- Medio-alto.
+- BIO-G v1 usa "medio-alto" con confianza media.
+
+Floracion relativa:
+- Media.
+
+Cosecha relativa:
+- Intermedia.
+- Plena floracion -> cosecha: 130-195 dias orientativos.
+- Ventana visual: agosto-octubre variable.
+
+Entrada a produccion:
+- Ano 4 orientativo.
+- Plena: ano 6+.
+
+Densidad orientativa:
+- Tradicional: 400-1200 arboles/ha.
+- Intensivo: 1200-2500 arboles/ha.
+
+Altura:
+- 3-6 m en manejo comun.
+
+Sensibilidad particular:
+- Baja polinizacion / lluvia en floracion.
+- Estrés hidrico en calibre.
+- Calidad/uniformidad.
+- Sanidad de flor/brote si clima favorece fuego bacteriano.
+- En Seckel puede asumirse algo menos susceptible a fuego bacteriano que otros grupos,
+  pero NO inmune.
+
+Rendimiento relativo:
+- Medio.
+- Puede tener confianza mas baja por mercado/nicho y variabilidad de manejo.
+
+Ajuste permitido:
+- Textos de calidad premium, uniformidad y polinizacion; no cambiar etapas.
+
+--------------------------------------------------------------------------------
+PR-05 / pr_05_kieffer_rustic
+--------------------------------------------------------------------------------
+
+label:
+- PR-05 · Kieffer / Rusticas
+
+Grupo:
+- Kieffer, peras hibridas/rusticas/regionales usadas para proceso o manejo menos intensivo.
+
+Aliases:
+- Kieffer
+- Kieffer hibrida
+- Pera Kieffer
+- Rustica
+- Rústica
+- Regional rustica
+- Para proceso
+- Industria
+- Conserva
+- Pera dura
+- Otra rustica
+- Otra rústica
+
+Tipo de fruto:
+- Variable, frecuentemente firme/rustico, proceso/mercado regional.
+
+Uso:
+- Industria, proceso, conserva, mercado regional, autoconsumo.
+
+Requerimiento de frio:
+- Medio a medio-alto segun material.
+- BIO-G v1 usa "medio" conservador, con confianza media-baja si no hay region.
+
+Floracion relativa:
+- Media.
+
+Cosecha relativa:
+- Intermedia-tardia a tardia.
+- Plena floracion -> cosecha: 150-220 dias orientativos.
+- Ventana visual: septiembre-noviembre variable.
+
+Entrada a produccion:
+- Ano 4-5 orientativo.
+- Plena: ano 7+ en sistemas vigorosos/tradicionales.
+
+Densidad orientativa:
+- 300-900 arboles/ha en huertos tradicionales frecuentes.
+- Puede ser mayor si sistema moderno, pero no asumir sin datos.
+
+Altura:
+- 4-7 m si vigor no se controla.
+
+Sensibilidad particular:
+- Estrés hidrico prolongado.
+- Exceso de humedad/sanidad.
+- Heladas tardias en floracion.
+- Calidad variable.
+- Menor precision por diversidad del grupo.
+
+Rendimiento relativo:
+- Medio-bajo a medio.
+- Confianza baja-media.
+
+Ajuste permitido:
+- Rendimiento conservador, vigor mayor, textos de proceso/rustico.
+
+================================================================================
+13. RESOLUCION DE ALIASES Y MIGRACION
+================================================================================
+
+Reglas:
+- Exact match o normalizado sin acentos debe mapear a profileId.
+- Si el usuario dice "pera", "peral" solamente -> pr_skip.
+- Si dice "Bartlett", "Williams", "pera de agua" -> pr_01_bartlett_williams.
+- Si dice "Anjou", "D'Anjou", "Anjou roja/verde" -> pr_02_anjou.
+- Si dice "Bosc", "Mantecosa Bosc", "Beurre Bosc" -> pr_03_bosc.
+- Si dice "Seckel", "Comice", "premium", "dulce" -> pr_04_seckel_comice.
+- Si dice "Kieffer", "rustica", "rústica", "para proceso" -> pr_05_kieffer_rustic.
+- Si dice "pera asiatica", "nashi", "pera manzana", "asian pear":
+  -> pr_skip con warning futureProfile=pear_asian o perfil futuro; no inventar PR-06 sin documento.
+- Si hay conflicto:
+  elegir el alias mas especifico sobre el generico.
+  ejemplo "pera amarilla Bartlett" -> pr_01_bartlett_williams.
+  ejemplo "pera amarilla no se" -> pr_skip o pr_01 con confianza baja-media segun UX.
+- Si el usuario estaba en PR-SKIP y luego elige perfil:
+  - conservar historial
+  - conservar perennialStateId
+  - conservar phenologyStageId
+  - conservar anchor date
+  - conservar memoria de estres
+  - solo actualizar profileId y confianza
+
+Confianza de resolver:
+- exact alias especifico: alta
+- nombre comercial comun: alta-media
+- color/uso generico: media-baja
+- "otra regional/rustica": baja-media
+- "no se": baja
+
+================================================================================
+14. POLINIZACION Y CARGA: NOTAS PARA BIO-G
+================================================================================
+
+Regla agronomica:
+Muchos perales son autoincompatibles o se comportan mejor con polinizacion cruzada.
+La compatibilidad varietal, sincronizacion de floracion, clima y actividad de polinizadores
+influyen directamente en cuajado.
+
+BIO-G v1:
+- No bloquear cultivo si usuario no sabe polinizador.
+- No obligar al usuario a seleccionar polinizador en onboarding.
+- En floracion/cuajado, si hay bajo cuajado y no hay estres ambiental evidente, sugerir:
+  "Revisa si hay otra variedad compatible floreando cerca y actividad de abejas/polinizadores."
+- No crear motor de compatibilidad varietal en v1.
+- Guardar como posible factor de rendimiento/diagnostico futuro.
+- En BIO-G PLUS se puede habilitar:
+  polinizador cercano, distancia, traslape de floracion, presencia de abejas, clima durante floracion.
+
+================================================================================
+15. ALERTAS UNIVERSALES DE PERA
+================================================================================
+
+Mensajes base:
+
+planting_transplant:
+- "El peral esta en una etapa delicada. Mantén humedad estable sin encharcar y revisa
+   que el suelo no este compactado."
+
+root_establishment:
+- "El peral esta formando raiz. El exceso de agua puede ser tan danino como la falta."
+
+juvenile_vegetative:
+- "El arbol aun esta construyendo estructura. BIO-G no proyectara produccion todavia."
+
+dormancy:
+- "El arbol esta en reposo. No es etapa para interpretar NPK como demanda alta."
+
+budbreak:
+- "La brotacion vuelve sensible al peral a frio tardio y cambios bruscos."
+
+vegetative_growth:
+- "El peral esta creciendo hojas y brotes. Busca vigor equilibrado, no exceso de crecimiento blando."
+
+flowering:
+- "Floracion es una etapa critica. Helada, lluvia, calor seco o baja actividad de polinizadores pueden afectar el amarre."
+
+fruit_set:
+- "El frutito recien amarrado es sensible a deficit hidrico, calor, salinidad y baja polinizacion previa."
+
+fruit_fill:
+- "En llenado, la estabilidad del agua pesa mucho para calibre, firmeza y calidad."
+
+harvest_maturity:
+- "El fruto esta en madurez/cosecha. En pera, la firmeza y el momento de corte son clave para calidad."
+
+post_harvest:
+- "La postcosecha no apaga el cultivo. El arbol recupera reservas para el siguiente ciclo."
+
+unknown:
+- "BIO-G puede seguir con datos generales, pero sera mas preciso si eliges lo que ves en el arbol."
+
+================================================================================
+16. ASSETS SUGERIDOS
+================================================================================
+
+Wizard / perfil:
+- ic_pear_tree.png
+- ic_pear_tree_generic.png
+- ic_pear_bartlett_williams.png
+- ic_pear_anjou.png
+- ic_pear_bosc.png
+- ic_pear_seckel_comice.png
+- ic_pear_kieffer_rustic.png
+
+Etapas:
+- pear_stage_planting_transplant.png
+- pear_stage_root_establishment.png
+- pear_stage_juvenile_vegetative.png
+- pear_stage_dormancy.png
+- pear_stage_budbreak.png
+- pear_stage_vegetative_growth.png
+- pear_stage_flowering.png
+- pear_stage_fruit_set.png
+- pear_stage_fruit_fill.png
+- pear_stage_harvest_maturity.png
+- pear_stage_post_harvest.png
+- pear_stage_unknown.png
+
+Regla:
+- Si aun no existen assets, usar placeholders seguros y no romper build.
+- Registrar rutas como opcionales si el sistema lo permite.
+- No hardcodear apple_tree assets en pear_tree.
+
+================================================================================
+17. MAPEO FUTURO A CODIGO
+================================================================================
+
+Archivos esperados:
+- lib/core/crops/pear_tree/pear_tree_catalog.dart
+- lib/core/crops/pear_tree/pear_tree_assets.dart
+- lib/core/crops/pear_tree/pear_tree_universal_profile.dart
+- lib/core/crops/pear_tree/pear_tree_crop_definition.dart
+- lib/core/crops/pear_tree/pear_tree_yield_reference.dart
+- lib/core/crops/pear_tree/pear_tree_syndromes.dart si Plant Health aplica
+- lib/core/crops/pear_tree/pear_tree_nutrition_modifier.dart si existe patron
+- alta en CropKey
+- alta en CropCatalog
+- alta en crop_registry.dart
+- tests/core/pear_tree/pear_tree_catalog_test.dart
+- tests/core/pear_tree/pear_tree_universal_profile_test.dart
+- tests/core/pear_tree/pear_tree_agro_score_engine_test.dart
+- tests/core/pear_tree/pear_tree_perennial_runtime_test.dart
+
+Campos minimos por perfil:
+- profileId
+- label
+- displayName
+- uxLabel
+- aliases
+- fruitType
+- chillRequirementClass
+- bloomRelative
+- harvestRelative
+- harvestWindowHint
+- regionHint
+- sensitivityModifiers
+- yieldRelative
+- isGeneric
+- defaultConfidence
+- migrationTargets
+
+IDs cerrados:
+- Estados: newly_planted, juvenile_non_productive, established, productive_season, unknown
+- Etapas: planting_transplant, root_establishment, juvenile_vegetative, dormancy,
+  budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, harvest_maturity,
+  post_harvest, unknown
+- Anclas: planting, stage_start, budbreak, flowering, harvest, post_harvest,
+  manual_stage, unknown
+- Metricas: soilMoisture, soilTemp, ph, ec, resistance, n, p, k
+
+Reglas no negociables para Codex/Claude:
+- No usar sowingDate como eje del arbol.
+- No cerrar cultivo en cosecha.
+- No borrar historial al migrar de SKIP a perfil especifico.
+- No crear un perfil por cada clon comercial.
+- No inventar sensores.
+- No cambiar logica anual.
+- No hardcodear "apple_tree" para pear_tree.
+- No usar fallback de rendimiento de manzano para pera.
+- No refactorizar global salvo que sea necesario para generalizar arboles y con tests.
+- Respetar contrato AgroRange v1.4/v1.5.
+- Respetar identidad de etapa en NPK/UI:
+  fruit_fill != harvest_maturity
+  post_harvest != dormancy
+
+================================================================================
+18. TESTS MINIMOS RECOMENDADOS
+================================================================================
+
+Catalog tests:
+- crop_pear_tree existe y es category tree.
+- pear_tree alias resuelve a crop_pear_tree.
+- pr_skip existe, isGeneric=true.
+- pr_01_bartlett_williams resuelve Bartlett/Williams/Pera de agua.
+- pr_02_anjou resuelve D'Anjou/Anjou/Red Anjou/Green Anjou.
+- pr_03_bosc resuelve Bosc/Mantecosa Bosc/Beurre Bosc.
+- pr_04_seckel_comice resuelve Seckel/Comice/Premium/Dulce.
+- pr_05_kieffer_rustic resuelve Kieffer/Rustica/Para proceso.
+- Pera asiatica/Nashi NO inventa PR-06; cae a pr_skip/futureProfile con baja confianza.
+
+Runtime tests:
+- Un arbol newly_planted no produce aunque el perfil sea Bartlett.
+- productive_season + flowering usa flowering como etapa critica.
+- post_harvest no cierra cultivo.
+- unknown no bloquea app y usa targets conservadores.
+- Migrar pr_skip -> pr_01_bartlett_williams conserva historial.
+- Pera no usa sowingDate como eje.
+
+Targets tests:
+- Ningun AgroRange de suelo/ambiente deja lowMax == optimalMin sin justificacion.
+- Ningun AgroRange de suelo/ambiente deja optimalMax == highMin sin justificacion.
+- flowering pondera agua/temperatura/EC por encima de N.
+- fruit_set pondera agua/EC/temperatura.
+- fruit_fill pondera K y agua.
+- dormancy reduce peso NPK.
+- root_establishment pondera resistance/EC/agua.
+- harvest_maturity + soilMoisture apenas debajo del optimo no marca critical.
+- fruit_fill + soilMoisture apenas debajo del optimo marca low/watch, no critical.
+
+NPK/UI tests v1.5:
+- fruit_fill + N alto/exceso NO contiene "cosecha", "cerca de cosecha", "madurez" ni
+  "maduracion" como identidad de etapa.
+- harvest_maturity + N alto/exceso SI puede hablar de madurez/cosecha/calidad final.
+- post_harvest conserva copy de reservas, no se apaga como fin de cultivo.
+- Dashboard/NPK screen usa primero AgroMetricEval del motor si existe.
+- Fallback visual recibe stageKey, targets, weights, pH, EC, soilMoisturePct, trend y perfil.
+
+================================================================================
+19. FUENTES CONSULTADAS
+================================================================================
+
+Fuentes BIO-G internas:
+1. Estandar_BIOG_Integracion_Arboles_Perennes_v1_5_con_addendum.pdf
+2. PERFIL UNIVERSAL BIO-G - PERA.pdf
+3. PERFIL SKIP BIO-G - PERA.pdf
+4. 01_Ficha_Tecnica_Universal_Perfiles_BioG_Manzano_AP_v1.txt
+5. 02_Perfil_SKIP_BioG_Manzano_AP_SKIP_v1.txt
+
+Fuentes tecnicas externas:
+6. University of Minnesota Extension. Growing pears in the home garden.
+   https://extension.umn.edu/fruit/growing-pears
+   Uso: perales similares a manzanos, polinizacion, entrada a produccion, fuego bacteriano.
+
+7. UC IPM. Pear - Home and Landscape.
+   https://ipm.ucanr.edu/home-and-landscape/pear/
+   Uso: perales caducifolios, frecuentemente self-sterile, requieren polinizacion cruzada,
+   mayor tolerancia relativa a suelos humedos.
+
+8. Oregon State University Extension. Growing tree fruits and nuts at home.
+   https://extension.oregonstate.edu/catalog/ec-819-growing-tree-fruits-nuts-home
+   Uso: peras, tolerancia relativa a suelos arcillosos/humedos, fuego bacteriano, cosecha
+   de peras europeas firmes vs peras asiaticas en arbol.
+
+9. Oregon State University Extension. Integrated Pest Management Strategic Plan for Pears.
+   https://extension.oregonstate.edu/sites/extd8/files/documents/em9310.pdf
+   Uso: fuego bacteriano en pera, susceptibilidad de cultivares, Bosc especialmente sensible,
+   condiciones de riesgo en floracion.
+
+10. UC IPM. Pear Pest Management Guidelines.
+    https://ipm.ucanr.edu/agriculture/pear/
+    Uso: riesgos sanitarios principales para Plant Health: codling moth, pear psylla, pear rust, etc.
+
+11. UC ANR. Deficit irrigation / tree fruit water stress reference.
+    https://ucanr.edu/?legacy-file=252587.pdf&legacy-file-path=sites%2Fucmgnapa%2Ffiles%2F
+    Uso: apple/pear toleran cierto estres hasta que fruto alcanza 1/3-1/2 de tamano; despues
+    requieren riego completo para tamano; evitar estres postcosecha excesivo.
+
+12. UNH Extension. Growing Pears in the Home Orchard.
+    https://extension.unh.edu/resource/growing-fruits-growing-pears-home-orchard-fact-sheet
+    Uso: pH recomendado 6.0-7.0 y manejo general.
+
+13. UNH Extension. Fertilizing Fruit Trees.
+    https://extension.unh.edu/resource/fertilizing-fruit-trees
+    Uso: fertilizar perales segun crecimiento y analisis de suelo; P/K/Mg segun prueba.
+
+14. NSW DPI. Apple and pear nutrition - Primefact.
+    https://www.dpi.nsw.gov.au/__data/assets/pdf_file/0004/41485/Apple_and_pear_nutrition_-_Primefact_85.pdf
+    Uso: nutrientes clave en manzana/pera: N, K, Ca, Zn, B y ocasional Mg.
+
+15. South Dakota State University Extension. Soil Penetration Resistance as a Soil Health Indicator.
+    https://extension.sdstate.edu/soil-penetration-resistance-soil-health-indicator
+    Uso: 2 MPa como umbral general donde se limita crecimiento de raices.
+
+16. USU Extension. Salinity and Plant Tolerance.
+    https://extension.usu.edu/irrigation/research/salinity-and-plant-tolerance
+    Uso: escala general de salinidad y lectura conservadora de ECe.

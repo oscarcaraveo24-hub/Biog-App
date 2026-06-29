@@ -1,5 +1,6 @@
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_types.dart';
+import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 
 class TreeStateIds {
@@ -395,7 +396,7 @@ String treeCropDisplayTitle(DeviceCropContext context) {
   if (stageId == TreeStageIds.unknown) {
     return '$cropName · Perfil general';
   }
-  return '$cropName · ${treeStageDisplayName(stageId)}';
+  return '$cropName · ${treeStageDisplayNameForCrop(context.cropId, stageId)}';
 }
 
 String treeStageDisplayName(String? phenologyStageId) {
@@ -416,6 +417,29 @@ String treeStageDisplayName(String? phenologyStageId) {
   };
 }
 
+/// Etiqueta de etapa con presentacion especifica por cultivo.
+///
+/// El nogal usa lenguaje nogalero (amarre de nuez, llenado de almendra, ruezno,
+/// reservas) SIN cambiar los StageIds globales. Cualquier otro arbol cae a
+/// [treeStageDisplayName] (generico), por lo que manzano/pera/durazno NO cambian.
+String treeStageDisplayNameForCrop(String? cropId, String? phenologyStageId) {
+  final stageId = normalizeTreeStageId(phenologyStageId);
+  if (CropCatalog.canonicalCropKey(cropId) == CropCatalog.walnutTreeCropId) {
+    return switch (stageId) {
+      TreeStageIds.dormancy => 'Pelón / en reposo',
+      TreeStageIds.budbreak => 'Brotación',
+      TreeStageIds.vegetativeGrowth => 'Con hoja / creciendo',
+      TreeStageIds.flowering => 'Floración / amentos',
+      TreeStageIds.fruitSet => 'Amarre de nuez',
+      TreeStageIds.fruitFill => 'Llenado de nuez / almendra',
+      TreeStageIds.harvestMaturity => 'Ruezno abriendo / cosecha',
+      TreeStageIds.postHarvest => 'Postcosecha / reservas',
+      _ => treeStageDisplayName(stageId),
+    };
+  }
+  return treeStageDisplayName(stageId);
+}
+
 String treeStateDisplayName(String? perennialStateId) {
   final stateId = normalizeTreeStateId(perennialStateId);
   return switch (stateId) {
@@ -428,21 +452,42 @@ String treeStateDisplayName(String? perennialStateId) {
   };
 }
 
-String treeProfileDisplayName(String? profileId) {
-  final profile = CropCatalog.profileByAny(
-    CropCatalog.appleTreeCropId,
-    profileId,
-  );
+/// Nombre UX corto del perfil/variedad de un \u00e1rbol.
+///
+/// Gen\u00e9rico por \u00e1rbol (est\u00e1ndar BIO-G: no hardcodear apple_tree antes del
+/// segundo \u00e1rbol). `cropId` resuelve el cat\u00e1logo correcto; si se omite, asume
+/// manzano por compatibilidad con llamadas previas. El perfil SKIP/general se
+/// muestra con el nombre humano del árbol, por ejemplo "Durazno general".
+String treeProfileDisplayName(String? profileId, {String? cropId}) {
+  final resolvedCropId = (cropId != null && cropId.trim().isNotEmpty)
+      ? CropCatalog.canonicalCropKey(cropId)
+      : CropCatalog.appleTreeCropId;
+  final profile = CropCatalog.profileByAny(resolvedCropId, profileId);
   final id = profile?.id ?? profileId?.trim().toLowerCase();
 
-  return switch (id) {
-    CropCatalog.appleTreeDefaultProfileId => 'Perfil general',
-    'ap_01_golden' => 'Golden',
-    'ap_02_red' => 'Red',
-    'ap_03_criolla_rayada' => 'Criolla / Rayada',
-    'ap_04_gala' => 'Gala',
-    'ap_05_low_chill' => 'Bajo requerimiento de fr\u00edo',
-    _ => profile?.label ?? 'Perfil general',
+  if (id == null || id.isEmpty) {
+    return _treeGenericProfileDisplayName(resolvedCropId);
+  }
+
+  final defaultProfileId = CropCatalog.cropById(resolvedCropId)?.defaultProfileId;
+  if (id == defaultProfileId || id.endsWith('_skip')) {
+    return _treeGenericProfileDisplayName(resolvedCropId);
+  }
+
+  return TreeProfilePresentation.displayLabel(
+    resolvedCropId,
+    id,
+    fallbackLabel: profile?.label ?? profileId,
+  );
+}
+
+String _treeGenericProfileDisplayName(String cropId) {
+  return switch (CropCatalog.canonicalCropKey(cropId)) {
+    CropCatalog.appleTreeCropId => 'Manzano general',
+    CropCatalog.pearTreeCropId => 'Pera general',
+    CropCatalog.peachTreeCropId => 'Durazno general',
+    CropCatalog.walnutTreeCropId => 'Nogal general',
+    _ => 'Perfil general',
   };
 }
 

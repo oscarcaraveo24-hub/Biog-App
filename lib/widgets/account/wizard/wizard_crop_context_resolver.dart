@@ -1,6 +1,7 @@
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
+import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/widgets/seeds/barley_profiles.dart';
 import 'package:bio_g/widgets/seeds/bean_profiles.dart';
@@ -77,7 +78,7 @@ class WizardCropContextResolver {
         ? null
         : _resolveExplicitProfileId(
             cropId: normalizedCropId,
-            varietyId: normalizedCropId == CropCatalog.appleTreeCropId
+            varietyId: isTreeCrop(cropId: normalizedCropId)
                 ? _normalizeNullable(varietyId)
                 : resolvedVarietyId,
             varietyAlias: rawVarietySelection,
@@ -192,11 +193,15 @@ class WizardCropContextResolver {
       return 'generic';
     }
 
-    if (cropId == CropCatalog.appleTreeCropId) {
+    if (isTreeCrop(cropId: cropId)) {
       final profile =
           CropCatalog.profileByAny(cropId, rawValue) ??
           CropCatalog.profileByAny(cropId, resolvedProfileId);
-      return profile?.label ?? rawValue;
+      return TreeProfilePresentation.displayLabel(
+        cropId,
+        profile?.id ?? resolvedProfileId,
+        fallbackLabel: profile?.label ?? rawValue,
+      );
     }
 
     if (resolvedVarietyId != null) {
@@ -222,7 +227,7 @@ class WizardCropContextResolver {
     required String? varietyId,
     required String? varietyAlias,
   }) {
-    if (cropId == CropCatalog.appleTreeCropId) {
+    if (isTreeCrop(cropId: cropId)) {
       final profile =
           CropCatalog.profileByAny(cropId, varietyId) ??
           CropCatalog.profileByAny(cropId, varietyAlias);

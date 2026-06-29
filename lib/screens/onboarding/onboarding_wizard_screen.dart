@@ -7,7 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
+import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
+import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
+import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/onboarding/onboarding_draft.dart';
 import 'package:bio_g/models/onboarding/onboarding_step.dart';
 import 'package:bio_g/screens/onboarding/steps/location_step.dart';
@@ -22,6 +26,7 @@ import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_pages.dart'
         TreeAnchorWizardOptionIds,
         TreeReproSignalOptionIds,
         treeAnchorDateForOption,
+        treeReproSignalIconPath,
         treeReproSignalIsUnknown,
         treeReproSignalVisibleStageId;
 import 'package:bio_g/screens/onboarding/steps/cultivation_scale_step.dart';
@@ -74,8 +79,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   bool get _isFirstStep => _currentStep == _steps.first;
   bool get _isLastStep => _currentStep == _steps.last;
   bool get _isTreeDraft =>
-      _draft.cropCategory == CropCatalog.treeCategoryId ||
-      _draft.cropId == CropCatalog.appleTreeCropId;
+      isTreeCrop(cropId: _draft.cropId, cropCategoryId: _draft.cropCategory);
   bool get _isTreeUnknownStageSelection =>
       _isTreeDraft &&
       (normalizeTreeProductionStatusId(_draft.treeProductionStatusId) ==
@@ -525,8 +529,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     if (cropId == null) return;
 
     // Árboles usan perfiles (AP-SKIP/AP-01..05), no variedades de semilla.
-    if (cropId == CropCatalog.appleTreeCropId) {
-      await _openAppleTreeProfileSelector();
+    if (isTreeCrop(cropId: cropId, cropCategoryId: _draft.cropCategory)) {
+      await _openTreeProfileSelector();
       return;
     }
 
@@ -658,25 +662,29 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     _animateToStep(OnboardingStep.cropStage);
   }
 
-  Future<void> _openAppleTreeProfileSelector() async {
-    final profiles = CropCatalog.profilesForCrop(
-      CropCatalog.appleTreeCropId,
-      enabledOnly: false,
-    );
+  Future<void> _openTreeProfileSelector() async {
+    final cropId = _draft.cropId;
+    if (cropId == null) return;
+
+    final profiles = CropCatalog.profilesForCrop(cropId, enabledOnly: false);
     if (profiles.isEmpty) return;
+    final defaultProfileId = CropCatalog.resolveProfileId(cropId: cropId);
+
+    // Perfil general/SKIP al final; pregunta humana de "variedad".
+    final orderedProfiles = TreeProfilePresentation.genericLast(profiles, cropId);
 
     final result = await showWizardSelectionSheet<String>(
       context: context,
-      title: '¿Qué tipo de manzano tienes?',
-      options: profiles
+      title: TreeProfilePresentation.varietyQuestion(cropId),
+      options: orderedProfiles
           .map(
             (profile) => WizardSheetOption<String>(
               value: profile.id,
-              title: _appleTreeProfileTitle(profile.id, profile.label),
-              subtitle: profile.id == CropCatalog.appleTreeDefaultProfileId
-                  ? 'Perfil general de manzano. Podrás precisarlo después.'
-                  : (profile.subtitle ?? 'Perfil de manzano disponible'),
-              iconPath: appleTreeProfileIcon(profile.id),
+              title: _treeProfileTitle(cropId, profile.id, profile.label),
+              subtitle: profile.id == defaultProfileId
+                  ? TreeProfilePresentation.genericOptionSubtitle
+                  : (profile.subtitle ?? 'Disponible'),
+              iconPath: _treeProfileIcon(cropId, profile.id),
               enabled: true,
             ),
           )
@@ -687,7 +695,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
     _updateDraft(
       _draft.copyWith(
-        // En árboles, "variedad" es el perfil de manzano (ap_skip/ap_01..05).
+        // En árboles, "variedad" es el perfil perenne (AP-*/PR-*).
         varietyId: result,
         varietyAlias: result,
         treeProductionStatusId: null,
@@ -701,23 +709,17 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     _animateToStep(OnboardingStep.cropStage);
   }
 
-  String _appleTreeProfileTitle(String profileId, String fallbackLabel) {
-    switch (profileId) {
-      case CropCatalog.appleTreeDefaultProfileId:
-        return 'No sé / Manzano general';
-      case 'ap_01_golden':
-        return 'Golden';
-      case 'ap_02_red':
-        return 'Red';
-      case 'ap_03_criolla_rayada':
-        return 'Criolla / Rayada';
-      case 'ap_04_gala':
-        return 'Gala';
-      case 'ap_05_low_chill':
-        return 'Bajo requerimiento de frío';
-      default:
-        return fallbackLabel;
-    }
+  String _treeProfileTitle(
+    String cropId,
+    String profileId,
+    String fallbackLabel,
+  ) {
+    // Lenguaje humano compartido (Manzano/Pera/futuros): sin códigos PR-/AP-.
+    return TreeProfilePresentation.displayLabel(
+      cropId,
+      profileId,
+      fallbackLabel: fallbackLabel,
+    );
   }
 
   void _onSelectStage(String value) {
@@ -870,7 +872,13 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     if (variety != null) return variety.label;
 
     final profile = CropCatalog.profileByAny(cropId, value);
-    if (profile != null) return profile.label;
+    if (profile != null) {
+      return TreeProfilePresentation.displayLabel(
+        cropId,
+        profile.id,
+        fallbackLabel: profile.label,
+      );
+    }
 
     return 'Seleccionar';
   }
@@ -942,8 +950,54 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return ConfigureSeedWizardAssets.cropGarlic;
       case CropCatalog.appleTreeCropId:
         return AppleTreeAssets.cropIcon;
+      case CropCatalog.pearTreeCropId:
+        return PearTreeAssets.cropIcon;
+      case CropCatalog.peachTreeCropId:
+        return PeachTreeAssets.cropIcon;
+      case CropCatalog.walnutTreeCropId:
+        return WalnutTreeAssets.cropIcon;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
+    }
+  }
+
+  String _treeProfileIcon(String cropId, String? profileId) {
+    switch (CropCatalog.canonicalCropKey(cropId)) {
+      case CropCatalog.appleTreeCropId:
+        return appleTreeProfileIcon(profileId);
+      case CropCatalog.pearTreeCropId:
+        return pearTreeProfileIcon(profileId);
+      case CropCatalog.peachTreeCropId:
+        return peachTreeProfileIcon(profileId);
+      case CropCatalog.walnutTreeCropId:
+        return walnutTreeProfileIcon(profileId);
+      default:
+        return _cropIconPath(cropId);
+    }
+  }
+
+  String _treeStageIcon(String? stageId) {
+    return ConfigureSeedWizardAssets.treeStageIconFor(stageId);
+  }
+
+  String _treeProductionStatusIcon(String statusId) {
+    return ConfigureSeedWizardAssets.treeProductionStatusIconFor(statusId);
+  }
+
+  String _treeReproSignalIcon(String signalId) {
+    return treeReproSignalIconPath(signalId);
+  }
+
+  String _treeAnchorIcon(String optionId, String fallbackIconPath) {
+    switch (optionId) {
+      case TreeAnchorWizardOptionIds.custom:
+        return fallbackIconPath;
+      case TreeAnchorWizardOptionIds.unknown:
+        return ConfigureSeedWizardAssets.treeUnknownState;
+      default:
+        return _isTreePlantingAnchor
+            ? ConfigureSeedWizardAssets.treeGrowingOnly
+            : ConfigureSeedWizardAssets.treeStageIconFor(_draft.stage);
     }
   }
 
@@ -1098,7 +1152,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             child: _wizardPill(
               iconPath: ConfigureSeedWizardAssets.categoryTree,
               title: 'Árbol',
-              subtitle: 'Manzano y otros frutales perennes',
+              subtitle: 'Manzano, pera y otros frutales perennes',
               selected: category == 'tree',
               enabled: true,
               onTap: () => _onSelectCategory('tree'),
@@ -1203,8 +1257,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             varietyId: selectedVariety?.id ?? _draft.varietyAlias,
             label: selectedVariety?.label ?? selectedVarietyLabel,
           )
-        : cropId == CropCatalog.appleTreeCropId
-        ? appleTreeProfileIcon(_draft.varietyId ?? _draft.varietyAlias)
+        : cropId != null &&
+              isTreeCrop(cropId: cropId, cropCategoryId: _draft.cropCategory)
+        ? _treeProfileIcon(cropId, _draft.varietyId ?? _draft.varietyAlias)
         : ConfigureSeedWizardAssets.variety;
 
     return CenteredWizardPage(
@@ -1233,7 +1288,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             delay: 40,
             child: Text(
               _draft.cropCategory == CropCatalog.treeCategoryId
-                  ? 'Selecciona el cultivo y el perfil de manzano.'
+                  ? 'Selecciona el cultivo y su perfil perenne.'
                   : 'Selecciona el cultivo y la variedad o perfil de semilla.',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -1258,7 +1313,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           StaggerIn(
             delay: 150,
             child: _selectionPill(
-              iconPath: _cropIconPathFromLabel(cropLabel),
+              iconPath: cropId == null
+                  ? ConfigureSeedWizardAssets.categoryGeneric
+                  : _cropIconPath(cropId),
               title: 'Cultivo',
               value: cropLabel,
               selected: cropId != null,
@@ -1275,8 +1332,12 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             delay: 205,
             child: _selectionPill(
               iconPath: selectedVarietyIconPath,
-              title: cropId == CropCatalog.appleTreeCropId
-                  ? 'Tipo de manzano'
+              title: cropId != null &&
+                      isTreeCrop(
+                        cropId: cropId,
+                        cropCategoryId: _draft.cropCategory,
+                      )
+                  ? 'Variedad'
                   : 'Variedad / perfil',
               value: selectedVarietyLabel,
               selected: _draft.varietyId != null || _draft.varietyAlias != null,
@@ -1379,21 +1440,21 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       title: 'Aún no produce',
       subtitle:
           'Para árboles recién plantados, jóvenes o que todavía no han dado fruta.',
-      iconPath: ConfigureSeedWizardAssets.appleTreeYoungNotFruiting,
+      iconPath: ConfigureSeedWizardAssets.treeYoungNotFruiting,
     ),
     _OnboardingTreeOptionData(
       id: TreeProductionStatusIds.productiveOrProduced,
       title: 'Ya produce o ya ha producido',
       subtitle:
           'Para árboles establecidos, aunque ahora estén sin hojas, en floración, con fruto o después de cosecha.',
-      iconPath: AppleTreeAssets.cropIcon,
+      iconPath: ConfigureSeedWizardAssets.categoryTree,
     ),
     _OnboardingTreeOptionData(
       id: TreeProductionStatusIds.unknown,
       title: 'No estoy seguro',
       subtitle:
           'BIO-G usará un perfil general y ajustará la interpretación con los sensores.',
-      iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+      iconPath: ConfigureSeedWizardAssets.treeUnknownState,
     ),
   ];
 
@@ -1409,31 +1470,31 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             id: TreeReproSignalOptionIds.growingOnly,
             title: 'No, solo está creciendo',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeGrowingOnly,
+            iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
           ),
           _OnboardingTreeOptionData(
             id: TreeReproSignalOptionIds.hasFlower,
             title: 'Sí, tiene flor',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeHasFlower,
+            iconPath: ConfigureSeedWizardAssets.treeHasFlower,
           ),
           _OnboardingTreeOptionData(
             id: TreeReproSignalOptionIds.hasFruitSet,
             title: 'Sí, tiene frutito chiquito',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeTinyFruit,
+            iconPath: ConfigureSeedWizardAssets.treeTinyFruit,
           ),
           _OnboardingTreeOptionData(
             id: TreeReproSignalOptionIds.hasFruitFill,
             title: 'Sí, fruto creciendo',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeFruitGrowing,
+            iconPath: ConfigureSeedWizardAssets.treeFruitGrowing,
           ),
           _OnboardingTreeOptionData(
             id: TreeReproSignalOptionIds.notSure,
             title: 'No estoy seguro',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+            iconPath: ConfigureSeedWizardAssets.treeUnknownState,
           ),
         ];
       case TreeProductionStatusIds.productiveOrProduced:
@@ -1442,55 +1503,55 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             id: TreeStageIds.dormancy,
             title: 'Sin hojas / en reposo',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeDormantLeafless,
+            iconPath: ConfigureSeedWizardAssets.treeDormantLeafless,
           ),
           _OnboardingTreeOptionData(
             id: TreeStageIds.budbreak,
             title: 'Brotando',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeBudding,
+            iconPath: ConfigureSeedWizardAssets.treeBudding,
           ),
           _OnboardingTreeOptionData(
             id: TreeStageIds.vegetativeGrowth,
             title: 'Con hojas en desarrollo',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeFullFoliage,
+            iconPath: ConfigureSeedWizardAssets.treeFullFoliage,
           ),
           _OnboardingTreeOptionData(
             id: TreeStageIds.flowering,
             title: 'En floración',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeFlowering,
+            iconPath: ConfigureSeedWizardAssets.treeFlowering,
           ),
           _OnboardingTreeOptionData(
             id: TreeStageIds.fruitSet,
             title: 'Fruto recién amarrado',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeFruitSetFlowerDrop,
+            iconPath: ConfigureSeedWizardAssets.treeFruitSetFlowerDrop,
           ),
           _OnboardingTreeOptionData(
             id: TreeStageIds.fruitFill,
             title: 'Fruto creciendo',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeGreenFruitGrowing,
+            iconPath: ConfigureSeedWizardAssets.treeGreenFruitGrowing,
           ),
           _OnboardingTreeOptionData(
             id: TreeStageIds.harvestMaturity,
             title: 'Fruto madurando / cosecha',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeReadyHarvest,
+            iconPath: ConfigureSeedWizardAssets.treeReadyHarvest,
           ),
           _OnboardingTreeOptionData(
             id: TreeStageIds.postHarvest,
             title: 'Después de cosecha',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeAfterHarvest,
+            iconPath: ConfigureSeedWizardAssets.treeAfterHarvest,
           ),
           _OnboardingTreeOptionData(
             id: TreeStageIds.unknown,
             title: 'No lo sé',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+            iconPath: ConfigureSeedWizardAssets.treeUnknownState,
           ),
         ];
       default:
@@ -1499,7 +1560,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             id: TreeStageIds.unknown,
             title: 'No lo sé',
             subtitle: '',
-            iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+            iconPath: ConfigureSeedWizardAssets.treeUnknownState,
           ),
         ];
     }
@@ -1520,31 +1581,31 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           id: TreeAnchorWizardOptionIds.plantedThisMonth,
           title: 'Este mes',
           subtitle: '',
-          iconPath: ConfigureSeedWizardAssets.stagePlanted,
+          iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
         ),
         _OnboardingTreeOptionData(
           id: TreeAnchorWizardOptionIds.plantedSixMonths,
           title: 'Hace unos 6 meses',
           subtitle: '',
-          iconPath: ConfigureSeedWizardAssets.stagePlanted,
+          iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
         ),
         _OnboardingTreeOptionData(
           id: TreeAnchorWizardOptionIds.plantedOneYear,
           title: 'Hace aproximadamente 1 año',
           subtitle: '',
-          iconPath: ConfigureSeedWizardAssets.stagePlanted,
+          iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
         ),
         _OnboardingTreeOptionData(
           id: TreeAnchorWizardOptionIds.plantedTwoYearsPlus,
           title: 'Hace más de 2 años',
           subtitle: '',
-          iconPath: AppleTreeAssets.cropIcon,
+          iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
         ),
         _OnboardingTreeOptionData(
           id: TreeAnchorWizardOptionIds.unknown,
           title: 'No lo recuerdo',
           subtitle: '',
-          iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+          iconPath: ConfigureSeedWizardAssets.treeUnknownState,
         ),
       ];
     }
@@ -1560,31 +1621,31 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         id: TreeAnchorWizardOptionIds.thisWeek,
         title: 'Hace pocos días',
         subtitle: '',
-        iconPath: ConfigureSeedWizardAssets.stagePlanted,
+        iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
       ),
       _OnboardingTreeOptionData(
         id: TreeAnchorWizardOptionIds.oneWeek,
         title: 'Hace una semana',
         subtitle: '',
-        iconPath: ConfigureSeedWizardAssets.stagePlanted,
+        iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
       ),
       _OnboardingTreeOptionData(
         id: TreeAnchorWizardOptionIds.twoWeeks,
         title: 'Hace dos semanas',
         subtitle: '',
-        iconPath: ConfigureSeedWizardAssets.stagePlanted,
+        iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
       ),
       _OnboardingTreeOptionData(
         id: TreeAnchorWizardOptionIds.oneMonth,
         title: 'Hace un mes',
         subtitle: '',
-        iconPath: ConfigureSeedWizardAssets.stagePlanted,
+        iconPath: ConfigureSeedWizardAssets.treeGrowingOnly,
       ),
       _OnboardingTreeOptionData(
         id: TreeAnchorWizardOptionIds.unknown,
         title: 'No lo recuerdo',
         subtitle: '',
-        iconPath: ConfigureSeedWizardAssets.appleTreeUnknownState,
+        iconPath: ConfigureSeedWizardAssets.treeUnknownState,
       ),
     ];
   }
@@ -1604,7 +1665,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         : _treeVisibleStageOptions(productionStatusId);
 
     final String title = showingProductionQuestion
-        ? '¿Tu manzano ya da fruta?'
+        ? '¿Tu árbol ya da fruta?'
         : (isNonProductive
               ? '¿Ahorita le ves flor o frutito?'
               : '¿Cómo se ve tu árbol hoy?');
@@ -1640,12 +1701,17 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                       ? _draft.treeAnchorOptionId == null &&
                             _reproSignalMatchesDraft(option.id)
                       : stage == option.id);
+            final iconPath = showingProductionQuestion
+                ? _treeProductionStatusIcon(option.id)
+                : (isNonProductive
+                      ? _treeReproSignalIcon(option.id)
+                      : _treeStageIcon(option.id));
             return Padding(
               padding: const EdgeInsets.only(bottom: 14),
               child: StaggerIn(
                 delay: 90 + (entry.key.clamp(0, 8)) * 40,
                 child: _wizardPill(
-                  iconPath: option.iconPath,
+                  iconPath: iconPath,
                   title: option.title,
                   subtitle: option.subtitle,
                   selected: selected,
@@ -1847,7 +1913,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               child: StaggerIn(
                 delay: 90 + entry.key * 40,
                 child: _wizardPill(
-                  iconPath: entry.value.iconPath,
+                  iconPath: _treeAnchorIcon(
+                    entry.value.id,
+                    entry.value.iconPath,
+                  ),
                   title: entry.value.title,
                   subtitle: entry.value.subtitle,
                   selected: _draft.treeAnchorOptionId == entry.value.id,
@@ -1902,8 +1971,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const WizardAssetIcon(
-                    assetPath: AppleTreeAssets.cropIcon,
+                  WizardAssetIcon(
+                    assetPath: _draft.cropId == null
+                        ? ConfigureSeedWizardAssets.categoryTree
+                        : _cropIconPath(_draft.cropId!),
                     slotWidth: 34,
                     slotHeight: 34,
                     imageWidth: 34,

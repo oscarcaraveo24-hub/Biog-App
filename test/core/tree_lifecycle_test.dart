@@ -6,6 +6,7 @@
 
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_types.dart';
+import 'package:bio_g/core/crops/peach_tree/peach_tree_catalog.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -386,9 +387,33 @@ void main() {
       final label = treeProfileDisplayName(
         CropCatalog.appleTreeDefaultProfileId,
       );
-      expect(label, 'Perfil general');
+      expect(label, 'Manzano general');
       expect(label.toLowerCase(), isNot(contains('descanso')));
       expect(label.toLowerCase(), isNot(contains('fallow')));
+    });
+
+    test('Durazno profile labels are human and never expose DZ codes', () {
+      expect(
+        treeProfileDisplayName(
+          kDzSkip,
+          cropId: CropCatalog.peachTreeCropId,
+        ),
+        'Durazno general',
+      );
+      expect(
+        treeProfileDisplayName(
+          kDz01CriolloRegional,
+          cropId: CropCatalog.peachTreeCropId,
+        ),
+        'Criollo / regional',
+      );
+      expect(
+        treeProfileDisplayName(
+          kDz03AmarilloComercial,
+          cropId: CropCatalog.peachTreeCropId,
+        ),
+        'Amarillo comercial',
+      );
     });
   });
 

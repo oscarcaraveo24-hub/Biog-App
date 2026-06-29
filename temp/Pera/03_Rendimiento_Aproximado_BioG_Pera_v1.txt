@@ -1,0 +1,1278 @@
+BIO-G
+03_RENDIMIENTO_APROXIMADO
+PERA / PERAL / PEAR TREE
+
+Archivo: 03_Rendimiento_Aproximado_BioG_Pera_v1.txt
+Cultivo BIO-G: Pera / Peral
+cropId: crop_pear_tree
+prefix perfiles: PR
+Versión: v1.0 texto cableable
+Estado: listo para pasar a Codex/Claude junto con Universal+Perfiles, SKIP, Riesgos y Fertilización.
+Formato: TXT interno para código. No es promesa de rendimiento ni recomendación agronómica local.
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+En pera, el rendimiento aproximado NO debe calcularse como cultivo anual.
+
+BIO-G debe calcularlo por varias rutas:
+
+1) kg por árbol
+2) árboles por hectárea
+3) toneladas por hectárea
+4) estado productivo del árbol
+5) perfil/variedad PR
+6) densidad/sistema de conducción
+7) manejo, riego, polinización y sanidad
+8) memoria de estrés del ciclo actual y ciclos anteriores
+9) confianza del dato
+
+Regla central:
+- Si el árbol es newly_planted o juvenile_non_productive, el rendimiento comercial debe ser 0.
+- Si el árbol está established pero el usuario no confirma carga/fruto, no proyectar rendimiento alto.
+- Si el árbol está en productive_season, usar etapa visible + perfil + densidad + manejo.
+- Si solo hay PR-SKIP, usar rangos conservadores.
+- En pera, polinización y cuajado pesan más que en muchos frutales: si no hay polinizador compatible o hubo clima malo en floración, bajar el rango.
+- Fuego bacteriano, psila, helada, lluvia en floración, déficit hídrico y postcosecha débil deben poder bajar la estimación vía memoria.
+- El resultado debe ser aproximado y en rango: bajo / esperado / alto.
+- Nunca decir “vas a producir X”; decir “producción estimada / rango aproximado”.
+
+Este documento está diseñado para alimentar:
+
+- pear_tree_yield_reference.dart
+- YieldReference por perfil PR
+- YieldProjection setup
+- cálculo kg/tree <-> t/ha
+- factores de ajuste por manejo, densidad, estado, riego, polinización, sanidad y memoria
+- textos UX farmer-friendly
+- tests de rendimiento perenne
+
+================================================================================
+0.1 LECTURA DEL CÓDIGO ACTUAL / MOTOR DE RENDIMIENTO EN EL ZIP
+================================================================================
+
+Se revisó la librería enviada en lib.zip.
+
+Hallazgos importantes:
+
+1. Hay dos capas de rendimiento para árboles.
+
+A) Capa mínima actual:
+- Archivo: lib/core/yield/tree_yield_reference_catalog.dart
+- Clase: TreeYieldReferenceCatalog
+- Modelo: kg/árbol bajo-alto × número de árboles.
+- No persiste densidad.
+- Usa TreeProductiveTier: young, firstProduction, full.
+- Actualmente está amarrado a manzano porque importa apple_tree_catalog.dart y sus referencias usan cropId kCropAppleTree + profileId kApSkip.
+- Su fallback busca AP-SKIP. Para pera debe generalizarse o agregarse soporte por cropId/profileId sin caer a manzano.
+
+B) Capa completa por árbol:
+- Archivo: lib/core/crops/apple_tree/apple_tree_yield_reference.dart
+- Modelo: completo y mucho más útil.
+- Trae:
+  - YieldRange bajo/esperado/alto
+  - AppleTreeYieldReference por perfil
+  - ProductionState
+  - ManagementLevel
+  - IrrigationLevel
+  - StressMemory
+  - DensitySystem
+  - resolveAppleTreeYield(...)
+  - conversión treesPerHaFromSpacing
+  - conversión kg/tree <-> t/ha
+  - bloqueo de rendimiento en estados no productivos
+  - cap de kg/árbol por densidad para evitar proyecciones absurdas
+  - notas UX y confianza
+
+Decisión para pera:
+- Este documento debe seguir la lógica completa de apple_tree_yield_reference.dart.
+- El archivo esperado es:
+  lib/core/crops/pear_tree/pear_tree_yield_reference.dart
+- En paralelo, si se quiere que la pantalla actual mínima funcione con pera, hay que generalizar TreeYieldReferenceCatalog para aceptar crop_pear_tree y pr_skip.
+- NO permitir que pera caiga al fallback de manzano.
+
+Regla para Codex:
+- Si implementa pear_tree_yield_reference.dart, debe usar constantes de pear_tree_catalog.dart:
+  kCropPearTree, kPrSkip, kPr01BartlettWilliams, kPr02Anjou, kPr03Bosc, kPr04SeckelComice, kPr05KiefferRustic.
+- Si toca TreeYieldReferenceCatalog, debe hacerlo de forma aditiva y testeada:
+  agregar referencias pear_tree_pr_skip_young / first / full, o generalizar fallback por cropId.
+- No refactorizar cultivos anuales.
+- No reemplazar el motor anual de t/ha.
+
+================================================================================
+1. BASE BIO-G QUE SE RESPETA
+================================================================================
+
+Documento 01 dejó cerrados los perfiles oficiales:
+
+- pr_skip
+- pr_01_bartlett_williams
+- pr_02_anjou
+- pr_03_bosc
+- pr_04_seckel_comice
+- pr_05_kieffer_rustic
+
+Documento 01 también define que en árboles el rendimiento se entiende como:
+
+kg/árbol + árboles/ha + estado productivo
+
+La variedad/perfil ajusta rendimiento relativo, fechas relativas, sensibilidad, destino de mercado,
+sanidad y textos, pero NO cambia la arquitectura fenológica.
+
+Etapas/estados que bloquean rendimiento:
+- newly_planted
+- juvenile_non_productive
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+
+Etapas/estados que permiten rendimiento aproximado:
+- productive_season
+- established con etapa productiva confirmada
+- flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest
+
+Etapa unknown:
+- usar confianza baja y rango conservador.
+
+Regla especial de pera:
+- flowering y fruit_set no significan rendimiento asegurado.
+- Puede haber floración alta y producción baja por falta de frío, helada, lluvia, baja actividad de abejas, incompatibilidad polinizadora o fuego bacteriano.
+- Si hay fruta visible en fruit_fill, la confianza sube.
+- Si ya está en harvest_maturity, la confianza sube más, pero calidad/comercialización todavía puede variar.
+- post_harvest NO cierra el cultivo; afecta reservas y potencial del ciclo siguiente.
+
+================================================================================
+2. METODOLOGÍA Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+La investigación se separó por tipo de evidencia.
+
+Alta confianza:
+- USDA/FAS GAIN y datos reportados con base SIAP/SADER.
+- Universidades / extensión: UC Davis, Washington State University, Oregon State University, University of Minnesota, WSU Tree Fruit.
+- Estudios de costos universitarios con supuestos de rendimiento explícitos.
+- Documentos BIO-G internos.
+
+Media confianza:
+- Guías técnicas regionales.
+- Notas técnicas de industria frutícola con fuente identificable.
+- Estudios de huertos específicos.
+
+Baja-media:
+- Sitios comerciales, viveros y páginas de variedades.
+- Medios locales que citan SIAP/SADER pero no muestran base completa.
+- Foros y discusiones de productores.
+
+Uso de foros:
+Los foros se revisan para entender cómo habla el usuario y qué problemas reales aparecen:
+- “peral no da fruto”
+- “tiene muchas flores pero no amarra”
+- “polinización de peral”
+- “pera de agua”
+- “peral viejo”
+- “Kieffer”
+- “pera criolla / rústica”
+- “no sé qué pera tengo”
+- “da un año sí y otro no”
+
+Pero los foros NO definen rangos técnicos, ni umbrales, ni promedios de rendimiento.
+
+================================================================================
+3. UNIDADES Y CONVERSIONES OFICIALES PARA BIO-G
+================================================================================
+
+Unidades internas recomendadas:
+- kg_per_tree
+- trees_per_hectare
+- ton_per_hectare
+- hectare_area
+- tree_count
+- production_state
+- profile_id
+- confidence
+
+Conversión principal:
+t/ha = (kg_por_arbol * arboles_por_ha) / 1000
+
+kg/árbol = (t/ha * 1000) / árboles_por_ha
+
+producción_total_kg = kg_por_arbol * número_de_árboles
+
+producción_total_t = producción_total_kg / 1000
+
+árboles/ha desde marco:
+treesPerHa = 10000 / (distancia_entre_filas_m * distancia_entre_árboles_m)
+
+Conversión de fuentes anglosajonas:
+- 1 acre = 0.404685642 ha
+- 1 lb = 0.45359237 kg
+- 1 short ton = 2000 lb = 907.18474 kg
+- En estudios de pera de Washington, 1 bin = 1100 lb.
+
+Ejemplos de conversión usados en este documento:
+
+UC Davis Green Bartlett:
+- 20 tons/acre = 44.8 t/ha
+- 23 tons/acre = 51.6 t/ha
+- 30 tons/acre = 67.3 t/ha
+
+WSU Bartlett/Anjou:
+- 38 bins/acre * 1100 lb/bin = 41,800 lb/acre = 46.9 t/ha
+- 19 bins/acre * 1100 lb/bin = 20,900 lb/acre = 23.4 t/ha
+- 57 bins/acre * 1100 lb/bin = 62,700 lb/acre = 70.3 t/ha
+- 558 trees/acre = 1,379 árboles/ha
+- 57 bins/acre a 1,379 árboles/ha = ~51 kg/árbol promedio de bloque
+
+México FAS/SIAP:
+- MY 2022/23: 27,374 MT / 3,559 ha = 7.69 t/ha
+- MY 2023/24: 27,919 MT / 3,598 ha = 7.76 t/ha
+- MY 2024/25 forecast: 27,000 MT / 3,617 ha = 7.46 t/ha
+
+================================================================================
+4. INVESTIGACIÓN CRUDA: DATOS QUE SÍ IMPORTAN
+================================================================================
+
+S1. México / SIAP / FAS USDA como contexto real
+
+USDA/FAS México reporta para pera fresca:
+- MY 2022/23: área cosechada 3,559 ha; producción 27,374 MT.
+- MY 2023/24: área cosechada 3,598 ha; producción 27,919 MT.
+- MY 2024/25 forecast: área cosechada 3,617 ha; producción 27,000 MT.
+- Alrededor de 85% del área plantada está bajo temporal/rainfed.
+- Michoacán y Puebla son los principales estados productores; en MY 2023/24 aportan 47% y 27% de la producción nacional respectivamente, seguidos por Morelos con 8%.
+- El consumo nacional está cubierto en gran parte por importaciones; en MY 2023/24 las importaciones se estiman cerca de 80% del consumo.
+- La variedad más consumida en México es Anjou, principalmente por importación.
+
+Cálculo BIO-G:
+- Rendimiento nacional promedio: ~7.5-7.8 t/ha.
+
+Lectura BIO-G:
+- Este valor NO es techo productivo. Es el contexto nacional real mezclado: temporal, huertos viejos, baja inversión, diferente manejo, diferentes estados y baja estandarización.
+- Para PR-SKIP en México, este dato es muy importante para no inflar rendimiento.
+- Para huerto tecnificado con riego, buena polinización y manejo, se pueden usar rangos más altos, pero solo con mayor confianza si el usuario aporta densidad/manejo.
+
+S2. México regional: Michoacán, Puebla, Morelos y Chihuahua
+
+Datos de medios que citan SADER/SIAP:
+- Michoacán reporta 7,215 t de producción anual de pera según datos 2022, detrás de Puebla con 12,287 t y encima de Morelos con 2,086 t.
+- El mismo reporte menciona 670 ha de pera en Michoacán en 2023.
+- En Chihuahua, un reporte local citó 10 ha entre Janos y Allende con 117.30 t, rendimiento de 11.73 t/ha; Allende con 6 ha y 105.3 t, rendimiento 17.55 t/ha.
+
+Lectura BIO-G:
+- Puebla/Michoacán/Morelos deben verse como contexto nacional de pera, no como manzano Chihuahua.
+- Chihuahua aparece con superficie pequeña; no usarlo como promedio nacional, pero sí como señal de que bajo manejo/localidad específica puede superar el promedio nacional.
+- En México, el default debe ser prudente: PR-SKIP no debe asumir rendimiento comercial alto.
+
+S3. UC Davis / Green Bartlett Sacramento River Delta
+
+UC Davis/UCCE 2023 para Green Bartlett:
+- Rendimientos típicos anuales de Green Bartlett se miden en tons/acre.
+- Rendimiento asumido: 23 tons/acre.
+- Rango típico: 20-30 tons/acre.
+- Madurez de rendimiento: año 10.
+- Separación de destino: fresh market 52%, processed 44%, off-grade 4%.
+
+Conversión BIO-G:
+- 23 tons/acre = 51.6 t/ha.
+- 20-30 tons/acre = 44.8-67.3 t/ha.
+
+Lectura BIO-G:
+- Bartlett/Williams bien manejada puede sostener 45-65 t/ha en sistemas comerciales maduros.
+- No usar este rango como default México.
+- Sirve para PR-01 Bartlett/Williams con manejo alto/tecnificado.
+- Madurez de rendimiento al año 10 es útil: pera puede tardar más que manzano en llegar a plena producción si no es sistema intensivo.
+- La separación por destino debe traducirse a BIO-G como producción total vs producción comercial/calidad, no como promesa de fruta vendible.
+
+S4. WSU / South Washington Fresh-Market Bartlett + Anjou pollenizer
+
+WSU 2022 para Bartlett fresh market:
+- Bloque de 10 acres; 9 acres productivos.
+- 2/3 del área a Bartlett y 1/3 a Anjou como polinizador.
+- Portainjerto OHxF 97.
+- Espaciado: 6 ft en hilera x 13 ft entre hileras.
+- Densidad: 558 árboles/acre = 1,379 árboles/ha.
+- Arquitectura: V trellis.
+- Rendimiento bruto esperado: 38 bins/acre Bartlett y 19 bins/acre Anjou.
+- Pack-out: 87.5%.
+- Año 7 representa producción plena.
+
+Conversión BIO-G:
+- Bartlett: 38 bins/acre = 46.9 t/ha.
+- Anjou: 19 bins/acre = 23.4 t/ha.
+- Bloque combinado: 57 bins/acre = 70.3 t/ha.
+- A 1,379 árboles/ha, el bloque combinado equivale a ~51 kg/árbol promedio.
+
+Lectura BIO-G:
+- Es una referencia fuerte para sistemas comerciales irrigados, con trellis, polinizador y packout.
+- Confirma que en pera la polinización no es detalle: la arquitectura del bloque ya reserva 1/3 del área a Anjou como polinizador.
+- Año 7 como plena producción aplica para ese sistema; otros sistemas pueden tardar más.
+- Para PR-01 Bartlett y PR-02 Anjou, esta fuente permite rangos altos si hay densidad, polinizador y manejo.
+- No usar 70 t/ha como default; debe ser alto/intensivo.
+
+S5. Alta densidad / Cornell / Terence Robinson
+
+Reporte de Fruit Growers News sobre Terence Robinson/Cornell:
+- La pera tradicional es lenta para entrar a producción.
+- Pears have relatively low mature yield compared to apples.
+- Retos mencionados: fruit set variable, fire blight, pear psylla y mercado.
+- Sistemas intensivos y alta densidad pueden aumentar rendimiento.
+- Tall spindle alrededor de 1,200 árboles/acre (~2,965 árboles/ha) se menciona como densidad alta pero manejable.
+- Super spindle supera 2,000 árboles/acre.
+- Rendimientos pueden alcanzar hasta 70 t/ha en alta densidad.
+- La densidad puede reducir tamaño de fruto.
+
+Lectura BIO-G:
+- Alta densidad puede subir t/ha, pero baja kg/árbol esperado.
+- Debe existir cap de kg/árbol por densidad, igual que en manzano.
+- Si treesPerHa > 2500, no permitir 70 kg/árbol porque produce t/ha absurdas.
+- 70 t/ha debe ser techo alto/intensivo, no default.
+
+S6. Polinización y cuajado
+
+WSU Tree Fruit indica:
+- Aunque Anjou y Bartlett son parcialmente autofértiles, deben tener polinización cruzada para producir cosechas pesadas y regulares.
+- Bartlett, Comice y Hardy pueden producir fruta partenocárpica.
+- Peras europeas y asiáticas pueden cruzarse si coinciden en floración.
+
+Foros y consultas de usuarios repiten:
+- “mi peral florece pero no da fruto”
+- “no sé si sea polinización”
+- “tenía un peral vecino y ya no”
+- dudas de compatibilidad entre variedades
+
+Lectura BIO-G:
+- pollinationModifier debe ser más importante en pera que en manzano.
+- Si pollinatorKnown = false o unknown y etapa = flowering/fruit_set, reducir rendimiento esperado.
+- Si hay fruta visible en fruit_fill, subir confianza porque el cuajado ya ocurrió.
+- No bloquear onboarding si usuario no sabe polinizador.
+
+S7. Fuego bacteriano y sanidad
+
+University of Minnesota Extension:
+- Pera se maneja parecido a manzana, pero puede ser menos problemática en insectos/enfermedades.
+- Fire blight es el principal reto sanitario.
+
+WSU Tree Fruit / MSU / OSU:
+- Fire blight infecta comúnmente durante bloom o semanas después de petal fall.
+- Puede progresar en brotes, ramas o árbol completo si es severo.
+- Alta humedad/lluvia y temperatura favorecen infección.
+
+Lectura BIO-G:
+- fireBlightModifier debe poder reducir rendimiento por caída de flores, muerte de brotes, daño en madera, pérdida de área foliar y poda sanitaria.
+- En PR-05 Kieffer/rústica puede haber más tolerancia relativa, pero no inmunidad.
+- PR-04 Seckel/Comice puede necesitar matiz por calidad/premium y sensibilidad.
+
+S8. Foros / lenguaje real del usuario
+
+Foros revisados:
+- InfoJardín: polinización de peral, peral que no da fruto, peral conferencia, dudas de polinización entre frutales.
+- Foros de jardinería y productores: preguntas sobre perales viejos, poda, falta de fruta, horas frío, polinizador.
+
+Uso BIO-G:
+- No usar para rangos técnicos.
+- Sí usar para UX:
+  - “Tiene flor pero no amarra”
+  - “No sé qué pera es”
+  - “Peral viejo”
+  - “Pera de agua”
+  - “Pera rústica”
+  - “No da fruto”
+  - “Da poquita”
+
+================================================================================
+5. SISTEMAS DE DENSIDAD PARA BIO-G
+================================================================================
+
+Densidad por marco:
+
+Sistema / etiqueta BIO-G              árboles/ha orientativos
+--------------------------------------------------------------
+aislado / traspatio                   1-50 árboles totales
+tradicional extensivo                 100-400 árboles/ha
+tradicional comercial                 400-700 árboles/ha
+semiintensivo                         700-1200 árboles/ha
+moderno medio                         1200-1800 árboles/ha
+alta densidad                         1800-3000 árboles/ha
+muy alta densidad / trellis intensivo 3000-4500+ árboles/ha
+
+Regla:
+- Si el usuario da marco, calcular treesPerHa.
+- Si da número de árboles y superficie, calcular treesPerHa.
+- Si da solo superficie, pedir árboles/ha o usar PR-SKIP con confianza baja.
+- Si da solo árboles aislados, calcular kg total, no t/ha.
+- Si treesPerHa > 2500, bajar kg/tree esperado y subir potencial t/ha solo con manejo alto.
+- Si treesPerHa < 500, subir kg/tree posible, pero t/ha puede ser bajo.
+
+Marcos comunes y conversión:
+- 8 x 6 m = 208 árboles/ha
+- 7 x 5 m = 286 árboles/ha
+- 6 x 5 m = 333 árboles/ha
+- 6 x 4 m = 417 árboles/ha
+- 5 x 4 m = 500 árboles/ha
+- 5 x 3 m = 667 árboles/ha
+- 4 x 3 m = 833 árboles/ha
+- 4 x 2.5 m = 1000 árboles/ha
+- 4 x 2 m = 1250 árboles/ha
+- 3.96 x 1.83 m aprox. (13 x 6 ft) = 1379 árboles/ha
+- 3.5 x 1.5 m = 1905 árboles/ha
+- 3 x 1.5 m = 2222 árboles/ha
+- 3 x 1.1 m = 3030 árboles/ha
+
+================================================================================
+6. ESTADOS PRODUCTIVOS Y RANGOS BASE
+================================================================================
+
+Estado BIO-G: no_productivo
+Aplica:
+- newly_planted
+- root_establishment
+- juvenile_non_productive
+- juvenile_vegetative
+Rendimiento:
+- 0 kg/árbol
+- 0 t/ha
+Confianza:
+- alta si usuario confirma que no produce.
+
+Estado BIO-G: primera_produccion
+Descripción:
+- Árbol empieza a dar fruta, pero todavía no debe exigirse rendimiento pleno.
+Rango general:
+- 2-8 kg/árbol en alta densidad temprana
+- 5-18 kg/árbol en árbol semi-vigoroso joven
+- 1-8 t/ha como rango común de entrada, según densidad
+Notas:
+- En pera, puede ser mejor no cargar demasiado temprano para formar estructura.
+- Si hay peral joven con flores/fruta, no convertirlo a producción plena.
+Confianza:
+- media si usuario confirma fruto.
+
+Estado BIO-G: produccion_joven
+Descripción:
+- Árbol ya produce, pero aún no estabiliza plena producción.
+Rango general:
+- 8-25 kg/árbol alta densidad
+- 15-45 kg/árbol sistemas semiintensivos/tradicionales
+- 5-30 t/ha
+Confianza:
+- media.
+
+Estado BIO-G: produccion_plena
+Descripción:
+- Árbol adulto o sistema moderno estabilizado.
+Rango general:
+- 15-30 kg/árbol en muy alta densidad
+- 30-70 kg/árbol en densidad media/semiintensiva
+- 60-120+ kg/árbol en árboles vigorosos aislados/tradicionales bien cargados
+- 7-15 t/ha contexto México temporal/promedio nacional
+- 15-35 t/ha comercial medio o regional con manejo aceptable
+- 35-55 t/ha comercial tecnificado
+- 55-70 t/ha alto/intensivo validado
+- >70 t/ha excepcional; no usar default sin fuente/manejo/densidad/polinización claros
+Confianza:
+- media-alta si hay densidad, etapa, perfil y manejo.
+
+Estado BIO-G: alternancia_o_descanso_productivo
+Descripción:
+- Árbol o huerto produce mucho un año y poco el siguiente.
+Rango:
+- 30-75% del esperado si la memoria indica fuerte carga previa o estrés.
+Confianza:
+- baja-media.
+Regla:
+- No culpar solo fertilización; cruzar raleo/carga previa, helada, baja polinización, sequía, fuego bacteriano, defoliación y postcosecha.
+
+================================================================================
+7. TABLA BASE POR PERFIL PR
+================================================================================
+
+PR-SKIP / pr_skip
+Uso:
+- Usuario no sabe variedad.
+- Usuario solo sabe que tiene “pera” o “peral”.
+Rendimiento relativo:
+- medio conservador.
+Rango base plena producción:
+- kg/árbol: 20-55
+- t/ha esperado México conservador: 6-25
+- t/ha alto: 25-35 si manejo/densidad/polinización son buenos.
+Confianza:
+- baja si solo hay cultivo.
+- media-baja si hay árboles/ha y estado productivo.
+Notas:
+- No asumir Bartlett.
+- No asumir Anjou.
+- No asumir alta densidad.
+- No asumir polinizador.
+- Este perfil debe estar más cerca del promedio nacional (~7.5 t/ha) que de UC/WSU si no hay datos de manejo.
+
+PR-01 Bartlett / Williams / pr_01_bartlett_williams
+Uso:
+- Bartlett, Williams, Williams Bon Chrétien, Pera de agua.
+Rendimiento relativo:
+- medio-alto si hay riego, polinización y manejo.
+Rango base plena producción:
+- kg/árbol: 25-85 en densidad media/tradicional
+- kg/árbol alta densidad: 15-35
+- t/ha esperado: 12-45
+- t/ha alto: 45-65
+- t/ha excepcional: 65-70 con sistema intensivo validado.
+Fuentes fuertes:
+- UC Davis Green Bartlett: 20-30 tons/acre = 44.8-67.3 t/ha; madurez año 10.
+- WSU Bartlett + Anjou: Bartlett 38 bins/acre = 46.9 t/ha, con Anjou como polinizador; bloque combinado ~70.3 t/ha.
+Confianza:
+- media-alta si el usuario identifica Bartlett/Williams y hay densidad/estado/riego.
+Ajustes:
+- bajar por falta de polinizador, helada, lluvia en floración, fuego bacteriano, sequía, baja sanidad, fruta off-grade o poda deficiente.
+- subir por riego estable, polinizador compatible, manejo de carga, buena sanidad y sistema trellis.
+
+PR-02 Anjou / D'Anjou / pr_02_anjou
+Uso:
+- D'Anjou, Anjou verde, Anjou roja, pera de invierno/almacenaje.
+Rendimiento relativo:
+- medio.
+Rango base plena producción:
+- kg/árbol: 20-75 en densidad media
+- kg/árbol alta densidad: 12-32
+- t/ha esperado: 10-35
+- t/ha alto: 35-55
+- t/ha excepcional: 55-65 con sistema intensivo validado.
+Datos clave:
+- FAS reporta que Anjou es la pera más consumida en México, principalmente por importación.
+- WSU usa Anjou como 33% del bloque polinizador para Bartlett; el rendimiento bruto esperado de Anjou en ese presupuesto es 19 bins/acre = 23.4 t/ha.
+Confianza:
+- media si hay identificación de Anjou y datos del huerto.
+- baja-media si solo se usa como “pera verde/importada” sin huerto claro.
+Ajustes:
+- subir si hay mercado/almacenaje y manejo de calidad.
+- bajar si no hay polinizador, hay baja floración, fire blight, helada o exceso de vigor.
+
+PR-03 Bosc / pr_03_bosc
+Uso:
+- Bosc, Beurre Bosc, Mantecosa Bosc.
+Rendimiento relativo:
+- medio.
+Rango base plena producción:
+- kg/árbol: 20-70
+- kg/árbol alta densidad: 12-30
+- t/ha esperado: 8-32
+- t/ha alto: 32-48
+- t/ha excepcional: 48-60 solo con sistema validado.
+Datos/contexto:
+- Bosc es variedad comercial reconocida en Oregon/PNW y mercados de nicho.
+- Fuentes de industria la describen como vigorosa/productiva, pero sensible a problemas como fire blight según material/ambiente.
+Confianza:
+- media-baja por menor base local mexicana.
+Ajustes:
+- bajar por falta de polinización, fire blight, helada y baja sanidad.
+- no subir demasiado por “premium”; premium es calidad/precio, no necesariamente t/ha.
+
+PR-04 Seckel / Comice / pr_04_seckel_comice
+Uso:
+- Seckel, Comice, Doyenné du Comice, dulces premium, nicho.
+Rendimiento relativo:
+- bajo-medio a medio.
+Rango base plena producción:
+- kg/árbol: 12-55
+- kg/árbol alta densidad: 8-25
+- t/ha esperado: 5-25
+- t/ha alto: 25-38
+- t/ha excepcional: 38-50 solo con material/sistema validado.
+Datos/contexto:
+- Comice/Seckel se tratan como grupo premium/nicho en BIO-G v1.
+- En perfiles de mercado, la calidad organoléptica pesa más que volumen.
+Confianza:
+- baja-media.
+Ajustes:
+- bajar por falta de polinizador, cuajado irregular, tamaño pequeño, baja uniformidad o sanidad.
+- subir solo si el usuario confirma carga, buena polinización y manejo de calidad.
+
+PR-05 Kieffer / Rústicas / pr_05_kieffer_rustic
+Uso:
+- Kieffer, pera rústica, híbrida, para proceso, regional, criolla si no hay otro perfil.
+Rendimiento relativo:
+- medio en sistemas rústicos; puede ser alto por árbol en árboles vigorosos, pero t/ha variable.
+Rango base plena producción:
+- kg/árbol: 25-90
+- kg/árbol alta densidad: 12-30
+- t/ha esperado: 7-30
+- t/ha alto: 30-45
+- t/ha excepcional: 45-55 con manejo y densidad clara.
+Datos/contexto:
+- Kieffer aparece como variedad rústica/proceso en los perfiles PR.
+- En huertos tradicionales puede haber árboles grandes con muchos kg/árbol, pero baja densidad y calidad variable.
+Confianza:
+- baja-media por heterogeneidad.
+Ajustes:
+- bajar por baja calidad, fruta para proceso, estrés hídrico, sanidad y alternancia.
+- subir si hay evidencia de carga real y buen manejo local.
+
+PR-FUTURO Pera asiática / Nashi
+Estado:
+- No está como perfil oficial v1.
+Uso:
+- Si usuario dice “pera asiática”, “nashi”, “pera manzana”, “Asian pear”, BIO-G v1 debe preguntar o mandar a pr_skip con futureProfile=pear_asian.
+Regla:
+- No crear pr_06_asian sin documento oficial.
+- No mezclar rendimiento de Pyrus pyrifolia con Pyrus communis europea.
+
+================================================================================
+8. MODELOS DE CÁLCULO RECOMENDADOS
+================================================================================
+
+MODELO A: cálculo por número de árboles
+Uso:
+- Productor pequeño o huerto sin superficie clara.
+Inputs:
+- profileId
+- productionState
+- treeCount
+- managementLevel
+- irrigationLevel
+- pollinatorKnown
+- stressMemory
+Output:
+- kg totales
+- rango bajo / esperado / alto
+
+Formula:
+kg_total_bajo = kgTreeLow * treeCount * modifiers
+kg_total_esperado = kgTreeExpected * treeCount * modifiers
+kg_total_alto = kgTreeHigh * treeCount * modifiers
+
+Ejemplo:
+- 100 árboles Bartlett en producción plena.
+- kg/árbol esperado conservador: 55.
+- 100 * 55 = 5500 kg = 5.5 t.
+
+MODELO B: cálculo por árboles/ha
+Uso:
+- Huerto comercial con densidad.
+Inputs:
+- kg/tree por perfil y estado
+- treesPerHa
+Formula:
+tHa = kgTree * treesPerHa / 1000
+
+Ejemplo:
+- 1379 árboles/ha * 51 kg/tree = 70.3 t/ha.
+
+MODELO C: cálculo por t/ha fuente-base
+Uso:
+- Cuando hay perfil y sistema, pero no kg/tree.
+Inputs:
+- profileId
+- densitySystem
+- productionState
+- managementLevel
+Output:
+- t/ha directo + conversión a kg/tree si hay treesPerHa.
+
+Ejemplo:
+- Bartlett Green UC Davis: 44.8-67.3 t/ha.
+- Si treesPerHa = 1200, kg/tree equivalente = 37-56 kg/tree.
+
+MODELO D: cálculo por superficie + árboles totales
+Uso:
+- Usuario dice “tengo 2 ha y 1000 árboles”.
+Formula:
+treesPerHa = treeCount / hectares
+Luego aplicar modelo B.
+
+Ejemplo:
+- 2 ha, 1000 árboles = 500 árboles/ha.
+- Kieffer plena, 60 kg/tree esperado = 30 t/ha.
+- producción total = 60 t.
+
+MODELO E: cálculo con memoria de estrés
+Uso:
+- BIO-G guardó helada, sequía, fuego bacteriano, granizo, baja polinización, defoliación, mala postcosecha o alternancia.
+Formula conceptual:
+yield = baseYield * profileModifier * productionStateModifier * densityModifier * managementModifier * irrigationModifier * pollinationModifier * healthModifier * stressModifier * confidenceModifier
+
+================================================================================
+9. MODIFICADORES RECOMENDADOS
+================================================================================
+
+productionStateModifier:
+- no_productivo: 0.00
+- primera_produccion: 0.08-0.28
+- produccion_joven: 0.30-0.70
+- produccion_plena: 0.80-1.10
+- alternancia_baja: 0.30-0.75
+- unknown: 0.35-0.80 según evidencia visual
+
+managementModifier:
+- bajo: 0.45-0.70
+- medio: 0.75-1.00
+- bueno: 1.00-1.15
+- alto/intensivo: 1.15-1.35
+- excepcional validado: 1.35-1.50
+
+irrigationModifier:
+- temporal / rainfed / estrés: 0.45-0.75
+- riego irregular: 0.70-0.90
+- riego estable: 0.95-1.10
+- fertirriego bien manejado: 1.05-1.20
+
+pollinationModifier:
+- polinizador compatible confirmado + abejas/actividad: 1.00-1.12
+- polinizador desconocido: 0.75-0.95
+- sin polinizador compatible o baja actividad en floración: 0.45-0.80
+- fruta visible en fruit_fill: mínimo 0.90 si el cuajado ya fue confirmado visualmente
+
+chillModifier:
+- frío suficiente / brotación uniforme: 1.00
+- frío dudoso: 0.80-0.95
+- falta de frío con brotación/floración irregular: 0.50-0.80
+
+fireBlightModifier:
+- sin señales: 1.00
+- señal leve localizada: 0.85-0.95
+- brotes/flores afectados moderadamente: 0.60-0.85
+- daño severo en floración/brotes/ramas: 0.20-0.60
+
+waterModifier:
+- humedad estable: 1.00
+- déficit leve fuera de etapa crítica: 0.90-0.98
+- déficit en fruit_set/fruit_fill: 0.65-0.90
+- déficit severo prolongado: 0.40-0.75
+- exceso/saturación persistente: 0.50-0.80 por raíz/sanidad
+
+stressModifier:
+- sin estrés relevante: 1.00
+- estrés leve vegetativo: 0.90-0.98
+- estrés medio en floración/cuajado: 0.60-0.85
+- helada fuerte en floración: 0.10-0.60
+- granizo fuerte: 0.10-0.60 según severidad
+- defoliación fuerte antes/postcosecha: 0.60-0.85 para ciclo actual o siguiente
+- alternancia fuerte registrada: 0.40-0.75
+
+qualityPackoutModifier:
+- fruta total ≠ fruta comercial.
+- BIO-G puede calcular:
+  1) producción biológica aproximada
+  2) producción comercial aproximada
+- Default v1 si no hay input:
+  - reportar producción total aproximada, no comercial.
+- Si se activa packout:
+  - packout bajo: 0.45-0.65
+  - packout medio: 0.65-0.80
+  - packout alto: 0.80-0.90
+
+================================================================================
+10. TABLAS CABLEABLES SUGERIDAS
+================================================================================
+
+10.1 YieldReference por perfil
+
+Formato conceptual:
+
+profileId | fullKgTreeLow | fullKgTreeExpected | fullKgTreeHigh | expectedTHaLow | expectedTHaHigh | confidence
+
+pr_skip
+- kg/tree full: 20 / 35 / 55
+- t/ha base: 6-25
+- high: 35
+- confidence: low_medium
+
+pr_01_bartlett_williams
+- kg/tree full: 25 / 55 / 85
+- kg/tree high density: 15 / 25 / 35
+- t/ha base: 12-45
+- high: 65
+- exceptional: 70
+- confidence: medium_high
+
+pr_02_anjou
+- kg/tree full: 20 / 45 / 75
+- kg/tree high density: 12 / 22 / 32
+- t/ha base: 10-35
+- high: 55
+- exceptional: 65
+- confidence: medium
+
+pr_03_bosc
+- kg/tree full: 20 / 45 / 70
+- kg/tree high density: 12 / 22 / 30
+- t/ha base: 8-32
+- high: 48
+- exceptional: 60
+- confidence: low_medium
+
+pr_04_seckel_comice
+- kg/tree full: 12 / 30 / 55
+- kg/tree high density: 8 / 18 / 25
+- t/ha base: 5-25
+- high: 38
+- exceptional: 50
+- confidence: low_medium
+
+pr_05_kieffer_rustic
+- kg/tree full: 25 / 50 / 90
+- kg/tree high density: 12 / 22 / 30
+- t/ha base: 7-30
+- high: 45
+- exceptional: 55
+- confidence: low_medium
+
+10.2 Yield by productive state
+
+state | multiplierLow | multiplierExpected | multiplierHigh
+
+newly_planted:
+- 0 / 0 / 0
+
+juvenile_non_productive:
+- 0 / 0 / 0
+
+first_bearing:
+- 0.05 / 0.15 / 0.28
+
+young_bearing:
+- 0.25 / 0.50 / 0.72
+
+full_bearing:
+- 0.75 / 1.00 / 1.15
+
+alternate_low_year:
+- 0.20 / 0.50 / 0.75
+
+unknown:
+- 0.30 / 0.55 / 0.85
+
+10.3 Densidad y kg/tree lógico
+
+Regla:
+Si el sistema es de alta densidad, kg/tree debe limitarse para no inflar t/ha.
+
+BIO-G debe impedir absurdos como:
+- 85 kg/árbol * 3000 árboles/ha = 255 t/ha.
+
+Sistema | treesPerHa | kg/tree cap esperado | nota
+
+backyard_orchard:
+- treeCount sin hectárea
+- cap: 140 kg/tree
+- reportar kg totales, no t/ha.
+
+traditional_extensive:
+- 100-400 árboles/ha
+- cap: 130 kg/tree
+- t/ha puede ser bajo aunque árbol cargue mucho.
+
+traditional_commercial:
+- 400-700 árboles/ha
+- cap: 100 kg/tree
+
+semi_intensive:
+- 700-1200 árboles/ha
+- cap: 85 kg/tree
+
+medium_modern:
+- 1200-1800 árboles/ha
+- cap: 60 kg/tree
+
+high_density:
+- 1800-3000 árboles/ha
+- cap: 38 kg/tree
+
+very_high_density:
+- 3000-4500+ árboles/ha
+- cap: 25 kg/tree default
+- solo subir si hay fuente local/intensiva.
+
+10.4 Referencias mínimas para la capa simple TreeYieldReferenceCatalog
+
+Si la pantalla actual usa TreeYieldReferenceCatalog antes de pear_tree_yield_reference.dart,
+agregar mínimo:
+
+pear_tree_pr_skip_young:
+- cropId: crop_pear_tree
+- profileId: pr_skip
+- tier: young
+- kgPerTreeLow: 3
+- kgPerTreeHigh: 12
+- confidence: modeled
+
+pear_tree_pr_skip_first:
+- cropId: crop_pear_tree
+- profileId: pr_skip
+- tier: firstProduction
+- kgPerTreeLow: 8
+- kgPerTreeHigh: 28
+- confidence: modeled
+
+pear_tree_pr_skip_full:
+- cropId: crop_pear_tree
+- profileId: pr_skip
+- tier: full
+- kgPerTreeLow: 25
+- kgPerTreeHigh: 70
+- confidence: modeled
+
+Pero la referencia completa debe vivir en pear_tree_yield_reference.dart.
+
+================================================================================
+11. PSEUDOCÓDIGO PARA CODEX / DART
+================================================================================
+
+class PearTreeYieldReference {
+  final String profileId;
+  final YieldRange fullKgPerTree;
+  final YieldRange expectedTonPerHa;
+  final double confidenceBase;
+  final List<String> notesEs;
+}
+
+class YieldRange {
+  final double low;
+  final double expected;
+  final double high;
+}
+
+enum PearProductionState {
+  nonProductive,
+  firstBearing,
+  youngBearing,
+  fullBearing,
+  alternateLowYear,
+  unknown,
+}
+
+enum PearManagementLevel { low, medium, good, high, exceptional }
+
+enum PearIrrigationLevel { rainfed, irregular, stable, fertigation }
+
+enum PearStressSeverity { none, mild, moderate, severe }
+
+class PearTreeStressMemory {
+  final PearStressSeverity floweringFrost;
+  final PearStressSeverity lowPollination;
+  final PearStressSeverity fruitSetWaterStress;
+  final PearStressSeverity fruitFillWaterStress;
+  final PearStressSeverity fireBlight;
+  final PearStressSeverity pearPsyllaPressure;
+  final PearStressSeverity hailDamage;
+  final PearStressSeverity alternateBearing;
+  final PearStressSeverity postHarvestReserveRisk;
+}
+
+class PearDensitySystem {
+  final String id;
+  final double kgPerTreeCap;
+}
+
+double treesPerHaFromSpacing(double rowM, double treeM) {
+  return 10000 / (rowM * treeM);
+}
+
+double tonHaFromKgTree(double kgTree, double treesPerHa) {
+  return (kgTree * treesPerHa) / 1000;
+}
+
+double kgTreeFromTonHa(double tonHa, double treesPerHa) {
+  return (tonHa * 1000) / treesPerHa;
+}
+
+PearTreeYieldProjection resolvePearTreeYield({
+  required String? profileId,
+  required String? perennialStateId,
+  required String? phenologyStageId,
+  double? treesPerHa,
+  double? hectares,
+  int? treeCount,
+  PearProductionState? productionState,
+  PearManagementLevel? managementLevel,
+  PearIrrigationLevel? irrigationLevel,
+  bool? pollinatorKnown,
+  bool? fruitVisible,
+  PearTreeStressMemory? stressMemory,
+}) {
+  // 1. Normalizar estado y etapa con tree_lifecycle.dart.
+  // 2. Resolver perfil PR; fallback correcto = pr_skip, NO ap_skip.
+  // 3. Bloquear rendimiento si state/stage es no productivo.
+  // 4. Inferir estado productivo si no se dio explícito.
+  // 5. Resolver densidad desde treesPerHa o treeCount/hectares.
+  // 6. Aplicar modifiers: estado + manejo + riego + polinización + estrés.
+  // 7. Aplicar cap de kg/tree por densidad.
+  // 8. Calcular kg/tree, t/ha y totalKg según datos disponibles.
+  // 9. Calcular confianza:
+  //    - baja si PR-SKIP
+  //    - baja si no hay densidad/treeCount
+  //    - sube si hay fruta visible
+  //    - baja si hay estrés o etapa unknown
+  // 10. Devolver notas UX.
+}
+
+Regla de bloqueo:
+if (perennialStateId == 'newly_planted' ||
+    perennialStateId == 'juvenile_non_productive' ||
+    phenologyStageId == 'planting_transplant' ||
+    phenologyStageId == 'root_establishment' ||
+    phenologyStageId == 'juvenile_vegetative') {
+  return YieldProjection.zero(...);
+}
+
+Regla de polinización:
+if (phenologyStageId == 'flowering' || phenologyStageId == 'fruit_set') {
+  if (pollinatorKnown == false) reduce yield strongly;
+  if (pollinatorKnown == null) reduce moderately;
+}
+
+Regla de fruta visible:
+if (phenologyStageId == 'fruit_fill' || phenologyStageId == 'harvest_maturity') {
+  fruitVisible = true;
+  confidence += 0.08;
+}
+
+================================================================================
+12. MENSAJES UX RECOMENDADOS
+================================================================================
+
+Escenario: árbol joven sin producción
+"No proyectamos cosecha todavía porque tu peral aún está en formación. En esta etapa importa más formar raíz, estructura y reservas."
+
+Escenario: PR-SKIP
+"Este cálculo usa un perfil general de pera. Puede mejorar si eliges Bartlett/Williams, Anjou, Bosc, Seckel/Comice o Kieffer/rústica."
+
+Escenario: falta de polinizador
+"El rendimiento aún es incierto. Muchos perales necesitan otra variedad compatible floreando cerca para amarrar bien."
+
+Escenario: floración/cuajado con riesgo
+"El árbol puede tener flor, pero todavía no hay cosecha asegurada. Helada, lluvia, baja actividad de abejas o mala polinización pueden cambiar mucho el resultado."
+
+Escenario: fruto verde / llenado
+"El cálculo ya tiene más confianza porque hay fruto visible. Aun así, calibre, caída, fuego bacteriano, granizo y estrés hídrico pueden mover el rango."
+
+Escenario: densidad alta
+"En alta densidad cada árbol puede cargar menos kg, pero la producción por hectárea puede ser mayor."
+
+Escenario: densidad baja/tradicional
+"En árboles más separados puede haber más kg por árbol, pero menos toneladas por hectárea."
+
+Escenario: postcosecha
+"La cosecha ya pasó, pero la postcosecha afecta el potencial del siguiente ciclo. BIO-G guardará estrés y recuperación del árbol."
+
+Escenario: fuego bacteriano
+"Si hubo fuego bacteriano o daño fuerte en floración/brotes, BIO-G bajará la estimación y guardará memoria para el siguiente ciclo."
+
+Escenario: alternancia
+"Tu peral puede estar en un año de baja carga. Un año de mucha fruta, mala polinización o estrés puede reducir el ciclo siguiente."
+
+================================================================================
+13. PRUEBAS MÍNIMAS RECOMENDADAS
+================================================================================
+
+Test 1:
+newly_planted + pr_01_bartlett_williams + treesPerHa 1000 => yield 0.
+
+Test 2:
+juvenile_non_productive + pr_02_anjou => yield 0.
+
+Test 3:
+productive_season + pr_01_bartlett_williams + treesPerHa 1000 + full_bearing =>
+expected approx 55 t/ha si kg/tree expected=55 y sin cap.
+
+Test 4:
+productive_season + pr_01_bartlett_williams + very_high_density 3000 trees/ha =>
+kg/tree cap debe limitar; no permitir 85 kg/tree * 3000 = 255 t/ha.
+
+Test 5:
+pr_skip sin treesPerHa ni treeCount =>
+debe devolver rango por árbol o pedir datos; confianza baja.
+
+Test 6:
+treeCount=100, pr_02_anjou, full_bearing =>
+kg total expected = anjouKgTreeExpected * 100 * modifiers.
+
+Test 7:
+stressMemory contiene helada severa en flowering =>
+yieldExpected debe reducirse fuertemente.
+
+Test 8:
+stressMemory contiene lowPollination severe en fruit_set =>
+yieldExpected debe reducirse y mensaje debe mencionar polinización/cuajado.
+
+Test 9:
+fruit_fill + fruitVisible=true debe tener mayor confianza que flowering.
+
+Test 10:
+post_harvest no debe cerrar cultivo ni borrar historial.
+
+Test 11:
+pr_04_seckel_comice debe tener confidence menor que pr_01_bartlett_williams.
+
+Test 12:
+input “pera asiática / nashi” no debe crear PR nuevo; debe quedar futureProfile o pr_skip.
+
+Test 13:
+TreeYieldReferenceCatalog no debe caer a ap_skip cuando cropId = crop_pear_tree.
+
+Test 14:
+pear_tree_yield_reference.dart debe usar kPrSkip como fallback, no kApSkip.
+
+Test 15:
+Si pollinatorKnown=false y stage=flowering/fruit_set, pollinationModifier debe bajar rendimiento aunque los sensores estén bien.
+
+================================================================================
+14. FUENTES Y TRAZABILIDAD
+================================================================================
+
+[S1] BIO-G - Estandar BIO-G para integración de árboles perennes v1.5 con addendum.
+Uso:
+- estructura de 5 documentos
+- rendimiento por kg/árbol + árboles/ha + estado productivo
+- no usar sowingDate
+- memoria multianual
+- contrato v1.5: no mezclar etapas para copy/UI/NPK.
+
+[S2] BIO-G - 01_Ficha_Tecnica_Universal_Perfiles_BioG_Pera_PR_v1_refinado.txt.
+Uso:
+- perfiles PR oficiales
+- aliases
+- estados y etapas
+- reglas de arquitectura BIO-G
+
+[S3] BIO-G - 02_Perfil_SKIP_BioG_Pera_PR_SKIP_v1_refinado.txt.
+Uso:
+- PR-SKIP conservador, migrable, no visible como incompleto.
+
+[S4] BIO-G - 03_Rendimiento_Aproximado_BioG_Manzano_v1.txt.
+Uso:
+- plantilla documental y lógica de cálculo: kg/árbol, árboles/ha, t/ha, densidad, manejo y memoria.
+
+[S5] Código BIO-G lib.zip.
+Archivos revisados:
+- lib/core/yield/tree_yield_reference_catalog.dart
+- lib/core/crops/apple_tree/apple_tree_yield_reference.dart
+Uso:
+- confirmar motor mínimo actual y motor completo de manzano.
+
+[S6] USDA/FAS GAIN. Fresh Deciduous Fruit Annual - Mexico, MX2024-0055.
+URL:
+https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Fresh+Deciduous+Fruit+Annual_Monterrey+ATO_Mexico_MX2024-0055
+Uso:
+- área plantada/cosechada, producción y consumo de pera en México.
+- 85% área rainfed.
+- Michoacán/Puebla/Morelos como principales productores.
+- Anjou como variedad más consumida en México.
+
+[S7] UC Davis / UCCE. 2023 Sample Costs to Produce Pears – Green Bartlett, Sacramento River Delta.
+URL:
+https://coststudyfiles.ucdavis.edu/2024/05/02/23PearsSV-4.23.24.pdf
+Uso:
+- Green Bartlett: 23 tons/acre asumidas; rango típico 20-30 tons/acre.
+- madurez de rendimiento en año 10.
+- separación fresh/process/off-grade.
+
+[S8] Washington State University Extension. 2022 Cost Estimates of Producing and Packing Fresh-Market Bartlett Pears in South Washington.
+URL:
+https://wpcdn.web.wsu.edu/wp-ecommerce/uploads/sites/2/product-3169-sku-FS034E.pdf
+Uso:
+- Bartlett + Anjou pollenizer.
+- 558 trees/acre; 6 x 13 ft; V trellis; OHxF 97.
+- 38 bins/acre Bartlett + 19 bins/acre Anjou; 1100 lb/bin; packout 87.5%.
+- plena producción año 7.
+
+[S9] Fruit Growers News / Terence Robinson, Cornell. High-density system can increase pear yields.
+URL:
+https://fruitgrowersnews.com/article/high-density-system-can-increase-pear-yields/
+Uso:
+- alta densidad en pera.
+- 1,200 trees/acre tall spindle.
+- rendimiento hasta 70 t/ha en alta densidad.
+- advertencia de menor tamaño de fruta al subir densidad.
+
+[S10] WSU Tree Fruit. Pollination – Pear.
+URL:
+https://treefruit.wsu.edu/web-article/pear-pollination/
+Uso:
+- Anjou y Bartlett parcialmente autofértiles, pero requieren polinización cruzada para cosechas pesadas y regulares.
+- compatibilidad general si coinciden floraciones.
+
+[S11] University of Minnesota Extension. Growing pears in the home garden.
+URL:
+https://extension.umn.edu/fruit/growing-pears
+Uso:
+- manejo general de pera.
+- fire blight como principal enfermedad desafiante en perales.
+
+[S12] WSU Tree Fruit. Fire Blight of Apple and Pear.
+URL:
+https://treefruit.wsu.edu/crop-protection/disease-management/fire-blight/
+Uso:
+- fire blight importante en pera/manzana.
+- infecciones en bloom y semanas siguientes a petal fall.
+
+[S13] Michigan State University IPM. Fire blight.
+URL:
+https://www.canr.msu.edu/ipm/diseases/fire_blight
+Uso:
+- síntomas y severidad de fire blight en pera/manzana.
+
+[S14] El Sol de Parral. Lidera municipio de Allende producción de pera a nivel estatal.
+URL:
+https://oem.com.mx/elsoldeparral/local/lidera-municipio-de-allende-produccion-de-pera-a-nivel-estatal-20512155
+Uso:
+- dato regional Chihuahua citado con SIAP: 10 ha, 117.30 t, 11.73 t/ha; Allende 17.55 t/ha.
+- baja/media confianza; contexto local, no base nacional.
+
+[S15] La Voz de Michoacán. Michoacán es el segundo estado productor de pera a nivel nacional.
+URL:
+https://www.lavozdemichoacan.com.mx/michoacan/michoacan-es-el-segundo-estado-productor-de-pera-a-nivel-nacional/
+Uso:
+- datos regionales citados de SADER/SIAP: Puebla, Michoacán, Morelos.
+- cosecha nacional junio-octubre según nota.
+
+[S16] InfoJardín. Polinización de peral.
+URL:
+https://www.infojardin.com/temas/frutas/Polinizacion-de-peral.htm
+Uso:
+- lenguaje real de usuario: peral que no da fruto, duda de polinización.
+- NO usado para rangos técnicos.
+
+[S17] Archivo InfoJardín. Peral de San Juan en terraza no da fruto.
+URL:
+https://archivo.infojardin.com/tema/peral-de-san-juan-tengo-en-la-terraza-y-no-da-fruto.184176/
+Uso:
+- señal UX de falta de polen/polinizador como duda común.
+- NO usado para rangos técnicos.
+
+================================================================================
+15. CIERRE TÉCNICO
+================================================================================
+
+El rendimiento aproximado de pera debe ser todavía más prudente que el de manzano.
+
+Razones:
+- México tiene rendimiento promedio nacional bajo (~7.5 t/ha) por temporal, baja inversión y huertos heterogéneos.
+- La pera tecnificada puede rendir 45-70 t/ha, pero eso requiere riego, densidad, polinización, sanidad y sistema.
+- La polinización puede ser el cuello de botella aunque la floración se vea bien.
+- Fuego bacteriano y estrés en floración/cuajado pueden derrumbar producción.
+- El usuario puede tener desde 1 peral de patio hasta un huerto intensivo con trellis.
+
+La forma correcta no es una sola tabla de t/ha. La forma correcta es:
+
+perfil PR
++ estado productivo
++ árboles/ha o número de árboles
++ densidad/sistema
++ kg/árbol
++ manejo/agua/sanidad/polinización
++ memoria de estrés
++ confianza
+
+BIO-G debe poder responder tanto a:
+- “Tengo 1 peral en el patio”
+como a:
+- “Tengo 2 ha con 1000 árboles”
+como a:
+- “Tengo Bartlett con Anjou de polinizador en trellis”
+
+sin romper la lógica perenne.
+
+La cosecha no cierra el cultivo.
+La postcosecha alimenta el siguiente ciclo.
+El rendimiento nunca se promete: se estima.
