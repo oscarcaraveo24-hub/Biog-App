@@ -1,0 +1,2168 @@
+[ENCABEZADO]
+BIO-G | Aguacate / Árbol de aguacate | Documentación técnica v1
+[/ENCABEZADO]
+
+BIO-G
+05. Guía de Fertilización NPK y Targets por Etapa - Aguacate / Árbol de aguacate
+Cultivo visible: Aguacate / Árbol de aguacate
+Nombre científico: Persea americana Mill.
+cropId canónico recomendado: crop_avocado_tree
+cropKey esperado: avocado_tree
+Aliases legacy/técnicos: avocado_tree, crop_avocado, avocado, avocados, aguacate, aguacates, palta, palto, persea, persea_americana, arbol_aguacate, árbol_aguacate, aguacatero
+profilePrefix: AG
+Perfil general obligatorio: ag_skip
+Perfiles oficiales v1 recomendados:
+- ag_skip — Aguacate general / No sé
+- ag_01_hass — Hass / exportación dominante
+- ag_02_mendez_carmen — Méndez / Carmen / Hass temprano / Hass-Méndez
+- ag_03_criollo_mexicano — Criollo / mexicano / regional
+- ag_04_fuerte_piel_verde — Fuerte / piel verde / tipo B / polinizador
+- ag_05_antillano_tropical — Antillano / tropical / costa / clima cálido
+- ag_06_tardio_lamb_reed — Tardío / Lamb Hass / Reed / especialidad
+Documento: 05 de 05 — Fertilización NPK / Targets por etapa / StageWeights / mensajes UX
+Versión: v1.1 reforzada con PDFs/notas del usuario, investigación externa, documentos AG 01-04, patrón BIO-G y revisión de código
+Formato: TXT técnico para Flutter/Dart, Codex, Claude Code y agentes IA
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+
+================================================================================
+0.0 ADDENDUM v1.1 — REFUERZO CON PDFs, NOTA DEL USUARIO Y GUÍAS COMERCIALES
+================================================================================
+
+Este addendum fortalece el Documento 05 de Aguacate con nueva información aportada por el usuario y con PDFs técnicos/comerciales revisados:
+- 172-Fertilizacion-nitrogenada-aguacate.pdf / Fertilab.
+- AlfonsoJose2008.pdf / Manual técnico del cultivo de aguacate Hass / FHIA.
+- nutricion-3.pdf / INIAP Ecuador, Nutrición del cultivo de aguacate.
+- guianutricional-aguacate.pdf / Yara, Guía de nutrición para exportación Aguacate Hass.
+- BVE19039653e.pdf / IICA-MAG Frutal ES, Guía técnica del cultivo del aguacate.
+- Nota del usuario con programa tipo Haifa/Nutri Haitech, fórmulas comerciales, fases fenológicas, extracción por 20 t, edad del árbol y correcciones foliares.
+
+Este addendum tiene prioridad si hay conflicto con el cuerpo v1, pero NO convierte BIO-G en una receta de fertilizante.
+La regla no cambia:
+- El sensor NPK mide lectura relativa del suelo.
+- La hoja confirma absorción.
+- El suelo/agua/raíz/EC/pH/compactación/sanidad definen si el fertilizante sirve.
+- Las dosis comerciales quedan sólo como contexto técnico avanzado, no como salida simple al productor.
+
+--------------------------------------------------------------------------------
+0.0.1 DECISIONES QUE SE REFUERZAN
+--------------------------------------------------------------------------------
+
+1) Mantener NpkCaps v1:
+   - N = 120.0
+   - P = 95.0
+   - K = 200.0
+
+Motivo:
+La nueva evidencia refuerza que N y K son muy importantes en aguacate, pero también confirma que el árbol es sensible a salinidad, cloruros, raíz asfixiada, exceso de N y desbalance Ca/Mg/B/Zn. Por eso no se suben los caps. Se refuerza el lenguaje y las guardas.
+
+2) Nitrógeno:
+- La nota Fertilab reporta cerca de 2.9 kg N/t de fruta y alrededor de 4.07 kg N/t si se incluye fruta + crecimiento anual + hojas.
+- Para rendimientos de 10, 20 y 30 t/ha, con eficiencia de 65% en riego localizado, Fertilab cita dosis de referencia de 80, 125.2 y 170 kg N/ha.
+- BIO-G NO mostrará esas dosis en modo simple.
+- BIO-G sí usará esa información para entender que N depende de rendimiento objetivo, edad, eficiencia, riego, suelo, portainjerto y etapa.
+- N bajo real puede dar hoja pálida, hoja pequeña, defoliación, fruta chica y caída prematura.
+- N alto o mal sincronizado empuja vegetativo, puede bajar cuaja, contaminar por nitratos y empeorar desbalance con Ca/K/Mg.
+
+3) Fósforo:
+- P pesa fuerte en raíz, establecimiento, prefloración y energía metabólica.
+- Las guías comerciales tipo Haifa/Yara enfatizan P desde recuperación/prefloración hasta floración, pero BIO-G debe traducirlo como prioridad relativa por etapa, no como fórmula 12-43-12 automática.
+- En adulto con P de suelo/foliar adecuado, FHIA recomienda mantenimiento y no sobreaplicar P por calendario.
+- P se interpreta con pH, caliza, humedad, raíz y compactación.
+
+4) Potasio:
+- K domina llenado, calibre, materia seca, calidad, manejo del agua y tolerancia a estrés.
+- La nota del usuario y las guías comerciales ubican fórmulas altas en K durante amarre/llenado y precosecha.
+- BIO-G debe subir K fuerte en fruit_fill y mantenerlo relevante en harvest_maturity.
+- Pero K alto en plena floración o muy temprano puede ser tratado con cautela. La nota Haifa advierte evitar fertilización alta en K hasta alrededor de 60 días después de plena floración por posible efecto sobre abejas/atracción floral. BIO-G no debe convertir esa frase en regla universal, pero sí debe impedir que `flowering` marque K máximo como prioridad absoluta.
+- K con fuente clorurada es delicado. INIAP y Yara refuerzan que el aguacate es sensible a cloruros. BIO-G debe advertir si hay K alto + EC alta + quemado de borde + agua con cloruros/sodio.
+
+5) Calcio:
+- Ca no es sensor v1, pero es contexto obligatorio en flowering/fruit_set/fruit_fill/harvest_maturity.
+- La nota Haifa recomienda más Ca que K en las primeras fases de desarrollo del fruto y evitar N amoniacal por interferencia con absorción de Ca.
+- Yara asocia Ca en cuajado/llenado con estabilidad de tejidos, menor aborto y mejor poscosecha.
+- BIO-G debe decir: “El sensor no mide calcio; si hay fruta caída, mala firmeza, poscosecha débil o alta carga, confirma Ca con análisis foliar/suelo/agua.”
+
+6) Boro y Zinc:
+- B y Zn se refuerzan como críticos en prefloración, floración y cuajado.
+- Yara y la nota del usuario asocian Zn/Mg/B con brotación, floración, polen, tubo polínico, amarre y cuajado.
+- INIAP indica que en zonas productoras se reportan deficiencias frecuentes de N y Zn, y que aplicaciones foliares de N, quelato de B y quelato de Zn han incrementado producción en diagnóstico específico.
+- BIO-G no recomienda B/Zn a ciegas por riesgo de toxicidad o sobredosificación; sólo lo menciona como contexto y pide análisis.
+
+7) Magnesio, azufre y hierro:
+- Mg se vuelve contexto fuerte para clorofila, fotosíntesis, carbohidratos, eficiencia de N y calidad.
+- S aparece como parte de programas de recuperación/mantenimiento y acompaña fuentes tipo sulfato.
+- Fe se menciona en correcciones foliares por clorosis internerval/hoja amarilla, pero en aguacate con pH alto/raíz dañada no se debe resolver como “falta de N”.
+
+8) Raíz superficial y zona de aplicación:
+- Haifa destaca que el sistema radicular efectivo suele estar en los 30 cm superiores.
+- FHIA/IICA indican que la mayor parte de raíces finas/activas está en la zona de goteo y que no se deben herir raíces porque eso facilita patógenos.
+- BIO-G debe usar esto en mensajes: “Aplica donde está la raíz activa y sin romperla; no sirve tirar fertilizante donde el árbol no lo puede tomar.”
+
+9) Salinidad, cloruros y KCl:
+- INIAP advierte que el aguacate es susceptible al exceso de cloruros y no recomienda usar sólo muriato de potasio/KCl; sugiere alternar con sulfato de potasio.
+- Yara reporta una comparación comercial donde planes con menor contenido de cloruros mejoraron producción/calibres y redujeron pérdida de peso en simulación de viaje. BIO-G usa esto como evidencia comercial de cautela con cloruros, no como garantía universal.
+- El motor debe bloquear recomendaciones agresivas de N/K/P si EC está alta o si hay señales de salinidad.
+
+10) Materia orgánica:
+- INIAP sugiere reforzar abono orgánico bien descompuesto cuando MO <3% en establecimiento.
+- IICA/MAG refuerza que la materia orgánica mejora estructura, conserva humedad y facilita asimilación.
+- BIO-G debe diferenciar materia orgánica madura/compost estable de estiércol fresco o materiales salinos que pueden quemar raíz.
+
+--------------------------------------------------------------------------------
+0.0.2 TRADUCCIÓN DE PROGRAMAS COMERCIALES A LÓGICA BIO-G
+--------------------------------------------------------------------------------
+
+La información del usuario y de las guías Haifa/Yara incluye fórmulas como:
+- 12-43-12 + micros en prefloración/floración.
+- 20-5-30 y 10-10-43 en amarre/llenado/precosecha.
+- 20-5-30 y 10-10-43 en fertirriego o suelo como ejemplos comerciales.
+- 18-46-0, Sulpomag, sulfato de potasio, calcio, magnesio, boro, zinc y hierro.
+
+Regla BIO-G:
+- No mostrar marcas.
+- No recomendar fórmulas comerciales.
+- No mostrar dosis por defecto.
+- No decir “aplica 12-43-12” o “aplica 10-10-43”.
+- Sí traducir a prioridades:
+  * prefloración/budbreak: P alto funcional + Zn/B/Mg contexto + N moderado.
+  * flowering: P funcional + N bajo-moderado + K moderado + B/Zn/Ca contexto.
+  * fruit_set temprano: agua, baja EC, Ca/B/Zn contexto, N bajo-moderado; K sube pero no al máximo.
+  * fruit_fill: K máximo funcional + agua estable + baja salinidad + Mg/Ca contexto.
+  * harvest_maturity: K/calidad, evitar N alto tardío, vigilar EC/cloruros y poscosecha.
+  * post_harvest: N/K/P/Mg/S para recuperación si raíz, agua y EC están bien.
+
+Mensaje visible recomendado:
+“Las tablas comerciales sirven como guía técnica, no como receta. En BIO-G primero revisa etapa, raíz, agua, EC, pH, suelo y análisis. Luego se decide si conviene N, P, K o micronutrientes.”
+
+--------------------------------------------------------------------------------
+0.0.3 AJUSTES DIRECTOS A STAGETARGETS v1.1
+--------------------------------------------------------------------------------
+
+Si Codex implementa v1.1, usar estos ajustes sobre la tabla v1.
+El objetivo es reflejar mejor la nueva información: P fuerte antes de flor, K moderado en floración/cuajado temprano, K máximo en llenado, N fuerte en recuperación y cuidado con N amoniacal/Ca.
+
+[TABLA]
+StageId | Ajuste v1.1 | Motivo
+budbreak | Prel 18 / 44 / 70 / 88; Krel 18 / 40 / 64 / 86 | Brotación/prefloración prepara flor; P energía, Zn/B/Mg contexto; K aún no máximo.
+vegetative_growth | Nrel 20 / 42 / 66 / 84; Prel 15 / 36 / 60 / 84; Krel 22 / 48 / 72 / 92 | Recuperar hoja y brote sin perder balance; K no se apaga.
+flowering | Nrel 8 / 20 / 38 / 62; Prel 20 / 45 / 68 / 88; Krel 24 / 45 / 68 / 88 | Floración necesita energía y micros; N/K no deben dominar sobre agua, polinización, Ca/B/Zn y clima.
+fruit_set | Nrel 10 / 22 / 42 / 65; Prel 16 / 36 / 58 / 82; Krel 32 / 56 / 80 / 94 | Amarre temprano: K sube, pero Ca/B/Zn/agua/EC mandan; evitar empujar N amoniacal.
+fruit_fill | Nrel 14 / 28 / 50 / 70; Prel 10 / 28 / 50 / 76; Krel 45 / 70 / 94 / 99 | Llenado/calibre/materia seca: K máximo funcional si EC baja y agua estable.
+harvest_maturity | Nrel 6 / 16 / 34 / 58; Prel 8 / 24 / 45 / 74; Krel 36 / 60 / 84 / 96 | Precosecha: K/calidad; N alto tarde baja confianza por brote/calidad/poscosecha.
+post_harvest | Nrel 24 / 50 / 74 / 92; Prel 18 / 42 / 66 / 88; Krel 32 / 56 / 82 / 94 | Recuperación: reponer reservas y raíz si no hay EC alta, anoxia o raíz dañada.
+[/TABLA]
+
+No cambiar estos puntos:
+- NpkCaps se quedan N 120 / P 95 / K 200.
+- EC reproductiva sigue estricta.
+- No usar lowMax == optimalMin ni optimalMax == highMin.
+- No convertir fórmulas comerciales en StageTargets.
+
+--------------------------------------------------------------------------------
+0.0.4 EXTRACCIÓN Y DOSIS: SOLO MODO AVANZADO
+--------------------------------------------------------------------------------
+
+BIO-G puede guardar estas referencias para coherencia técnica, modo avanzado y futuros cálculos, pero NO debe mostrarlas como receta simple:
+
+A) Fertilab / Martínez et al. 2014:
+- 2.9 kg N/t de fruta.
+- Aproximadamente 4.07 kg N/t si se incluye fruta + crecimiento anual + hojas.
+- Requerimiento neto y dosis de N con 65% de eficiencia vía riego localizado:
+  * 10 t/ha: 53.3 kg N neto; 80 kg N/ha aplicado.
+  * 20 t/ha: 81.4 kg N neto; 125.2 kg N/ha aplicado.
+  * 30 t/ha: 110.3 kg N neto; 170 kg N/ha aplicado.
+
+B) Nota comercial Haifa aportada por usuario:
+- Extracción por 20 t de fruta cosechada:
+  * N: 51 kg
+  * P2O5: 22 kg
+  * K2O: 94 kg
+  * MgO: 5.9 kg
+  * CaO: 1.7 kg
+  * S: 6.9 kg
+  * Fe: 0.12 kg
+  * B: 0.08 kg
+  * Zn: 0.08 kg
+  * Cu: 0.04 kg
+  * Mn: 0.02 kg
+- Equivalente aproximado por tonelada de fruta:
+  * N: 2.55 kg/t
+  * P2O5: 1.10 kg/t
+  * K2O: 4.70 kg/t
+  * MgO: 0.295 kg/t
+  * CaO: 0.085 kg/t
+  * S: 0.345 kg/t
+
+C) FHIA / Avilán et al.:
+Extracción en g/t de fruto fresco por país muestra variación fuerte:
+- N: 1,380 a 3,152 g/t
+- P: 301 a 736 g/t
+- K: 2,027 a 4,530 g/t
+- Ca: 79 a 547 g/t
+- Mg: 46 a 474 g/t
+Lectura BIO-G: K y N son fuertes, pero la demanda real cambia por país, suelo, variedad, edad, rendimiento y si se considera biomasa/poda/hoja además de fruta.
+
+D) Conversión para modo técnico:
+- P2O5 a P = P2O5 x 0.4364
+- P a P2O5 = P x 2.291
+- K2O a K = K2O x 0.8301
+- K a K2O = K x 1.205
+- CaO a Ca = CaO x 0.7147
+- Ca a CaO = Ca x 1.399
+- MgO a Mg = MgO x 0.6031
+- Mg a MgO = Mg x 1.658
+
+Regla BIO-G:
+La extracción NO es dosis. La dosis depende de análisis, eficiencia, fuente, agua, textura, pH, EC, materia orgánica, rendimiento esperado, portainjerto, edad, poda, fruta caída, lixiviación y sistema de riego.
+
+--------------------------------------------------------------------------------
+0.0.5 EDAD DEL ÁRBOL: REFERENCIA, NO MOTOR PRINCIPAL
+--------------------------------------------------------------------------------
+
+Las fuentes aportan tablas por edad, pero BIO-G no debe convertir edad en eje principal. Edad sólo orienta; manda la etapa visible y el estado fisiológico.
+
+Referencias observadas:
+- FHIA: 1-4 años: 100-300 g N, 200-450 g P2O5, 100-450 g K2O por árbol/año; 5-8 años: 301-680 g N, 451-900 g P2O5, 451-900 g K2O; >8 años: 681-1400 g N, 901-1100 g P2O5, 901-1400 g K2O, según productividad.
+- IICA/MAG: tabla por edad con N/P2O5/K2O desde 30-40 g N en año 1 hasta 500-750 g N en árboles >14 años, con P y K en rangos paralelos.
+- INIAP: tabla de mantenimiento por edad 1-8 años con N y K creciendo hasta 1600 g/árbol/año y P2O5 hasta 700 g/árbol/año, bajo sus condiciones.
+- Nota del usuario: ejemplos en urea/superfosfato/sulfato potásico por edad, divididos en 3-4 aplicaciones.
+
+Regla de implementación:
+- Guardar tablas sólo como `advancedReference` o comentario documental.
+- No mostrar dosis a productor simple.
+- No usar edad para saltarse etapa.
+- No usar estas tablas si EC alta, raíz dañada, pH extremo, agua salina o huerto sin análisis.
+- Si no hay análisis, BIO-G puede decir: “Usa una guía conservadora por edad sólo como punto de partida y valida con suelo/foliar.”
+
+--------------------------------------------------------------------------------
+0.0.6 RANGOS FOLIARES INTEGRADOS v1.1
+--------------------------------------------------------------------------------
+
+NO mezclar foliar con sensor NPK.
+Foliar = absorción real.
+Sensor = lectura relativa del suelo.
+Agua/suelo/raíz = disponibilidad.
+
+Rangos integrados para hojas maduras de referencia, ajustables por protocolo local:
+
+[TABLA]
+Elemento | Rango foliar base BIO-G v1.1 | Rango amplio visto | Lectura BIO-G
+N (%) | 1.6-2.2 | Hass puede manejar alto funcional; exceso >2.2 según fuente | Hoja/vigor; exceso puede bajar cuaja y empujar vegetativo.
+P (%) | 0.08-0.25 | bajo <0.05, alto >0.30 | Raíz/energía/prefloración; revisar pH.
+K (%) | 0.75-2.0 | bajo <0.35, alto >3.0 | Llenado, calibre, calidad; cuidado antagonismo Ca/Mg.
+Ca (%) | 1.0-3.0 | bajo <0.5, alto >4.0 | Tejidos, cuajado, firmeza, poscosecha; no sensor v1.
+Mg (%) | 0.25-0.80 | bajo <0.15, alto >1.0 | Clorofila/fotosíntesis; antagonismo con K/Ca.
+S (%) | 0.20-0.60 | bajo <0.05, alto >1.0 | Proteína/eficiencia N; útil en recuperación.
+B (ppm) | 50-100 | bajo <20, alto >100 | Flor, polen, tubo polínico; margen estrecho.
+Zn (ppm) | 30-150 | bajo <10, alto >150 | Brote/hoja/floración; pH alto bloquea.
+Fe (ppm) | 50-200 | bajo <40, alto >200 | Clorosis; pH/raíz antes que N.
+Cu (ppm) | 5-15 | bajo <4, alto >25 | Lignificación/sanidad; exceso por cobres posible.
+Mn (ppm) | 30-500 | bajo <15, alto >500 | pH/acidez; vigilar toxicidad.
+Cl (%) | 0.07-0.25 | alto >0.25 | Salinidad/cloruros; alerta fuerte en aguacate.
+Na (%) | <0.25 | alto >0.25 | Sodicidad/agua; no confundir con deficiencia NPK.
+[/TABLA]
+
+Reglas foliares:
+- N bajo + hoja pálida + brote débil + sin EC/pH/raíz problema = posible N real.
+- N alto + floración débil/cuaja baja = no celebrar N.
+- K bajo + fruit_fill + EC baja + humedad estable = alerta real de calibre/calidad.
+- K alto + Ca/Mg bajos + desórdenes/poscosecha = posible antagonismo.
+- B bajo en floración/cuajado = contexto fuerte; no dosis automática.
+- Zn bajo + hoja pequeña/deforme/entrenudos cortos = contexto fuerte.
+- Fe bajo o clorosis internerval con pH alto = disponibilidad/pH/raíz, no N directo.
+- Cl/Na altos = bloquear fertilización agresiva y hablar de agua/sales.
+
+--------------------------------------------------------------------------------
+0.0.7 FERTIRRIGACIÓN, FUENTES Y SALES
+--------------------------------------------------------------------------------
+
+Modo simple:
+- No mostrar fuentes.
+- No mostrar marcas.
+- No mostrar dosis.
+- Mostrar prioridad y riesgo.
+
+Modo técnico futuro:
+- Permitir definir fuente de K: KCl, K2SO4, KNO3, SOP, tiosulfatos, etc.
+- Registrar aporte de cloruro, nitrato, amonio, sulfato, calcio, magnesio, boro y zinc.
+- Registrar EC del agua y del bulbo húmedo.
+- Registrar si hay portainjerto tolerante/sensible a salinidad.
+
+Guardas:
+- Si EC >= 1.5 en floración/cuajado/raíz: bajar confianza.
+- Si EC >= 2.0: bloquear recomendación agresiva de N/K/P.
+- Si hay quemado de borde + K alto + EC alta: sospechar sales/cloruros antes que “falta de K”.
+- Si el usuario usa KCl/muriato como fuente única: advertir cautela por cloruros y sugerir revisar análisis de agua/suelo.
+- Si hay suelo saturado: no recomendar fertirriego/fertilizante hasta recuperar oxígeno.
+- Si hay pH alto/caliza: P, Fe, Zn, Mn y B pueden estar bloqueados aunque el sensor marque presencia.
+
+--------------------------------------------------------------------------------
+0.0.8 MENSAJES UX NUEVOS v1.1
+--------------------------------------------------------------------------------
+
+- “En aguacate, la raíz manda. Si está encharcado o salino, más fertilizante puede empeorar el árbol.”
+- “El N ayuda a hoja y recuperación, pero pasado de la raya se va a puro brote y puede bajar cuaja.”
+- “Para prefloración, no basta NPK: fósforo, zinc, boro y magnesio ayudan, pero se confirman con análisis.”
+- “En plena floración no conviene empujar K fuerte como si ya estuviera llenando fruta; primero cuaja.”
+- “En amarre temprano, calcio, boro, zinc, agua estable y baja salinidad pesan muchísimo.”
+- “En llenado sí: el potasio pesa fuerte para calibre, materia seca y calidad, pero sólo si la EC está baja.”
+- “Si usas fuentes con cloruro y ves borde quemado, revisa sales antes de meter más potasio.”
+- “La hoja amarilla entre nervaduras puede ser hierro, zinc, magnesio, pH o raíz; no siempre es nitrógeno.”
+- “El boro ayuda al amarre, pero no se aplica a ciegas: poco falta, mucho quema.”
+- “La postcosecha no es descanso muerto: ahí se recupera la hoja, la raíz y la siguiente floración.”
+- “Las tablas por edad son guía de arranque, no receta. Ajusta con suelo, hoja, agua, edad y carga real.”
+- “El sensor ve una zona del suelo; el análisis foliar dice si el aguacate realmente lo tomó.”
+
+--------------------------------------------------------------------------------
+0.0.9 TESTS NUEVOS v1.1
+--------------------------------------------------------------------------------
+
+1) avocado_preflower_phosphorus_context_test
+Caso: budbreak/prefloración, P bajo, EC baja, pH ok.
+Esperado: advertir P/energía/prefloración; mencionar Zn/B/Mg como contexto; no recomendar fórmula 12-43-12.
+
+2) avocado_flowering_high_k_caution_test
+Caso: flowering, K alto, floración activa, abejas/polinización como contexto.
+Esperado: no celebrar K máximo; decir que en floración mandan agua, clima, polinización, P funcional y micros; K fuerte va más a llenado.
+
+3) avocado_fruit_set_calcium_context_test
+Caso: fruit_set, caída de frutito, N medio, K medio, EC baja.
+Esperado: hablar de agua/temperatura/polinización/Ca/B/Zn; no culpar sólo NPK.
+
+4) avocado_ammoniacal_n_calcium_guard_test
+Caso: fruit_set, usuario reporta fuente amoniacal fuerte y síntomas de baja firmeza/caída.
+Esperado: advertir que N amoniacal puede interferir con Ca en manejo técnico; pedir asesoría/análisis.
+
+5) avocado_fruit_fill_k_low_ec_ok_test
+Caso: fruit_fill, K bajo, humedad óptima, EC baja, pH ok.
+Esperado: alerta K/calibre/calidad/materia seca; pedir confirmación foliar/suelo; sin dosis.
+
+6) avocado_fruit_fill_k_low_ec_high_test
+Caso: fruit_fill, K bajo, EC 2.1.
+Esperado: sales/absorción primero; bloquear recomendación agresiva de K.
+
+7) avocado_kcl_chloride_guard_test
+Caso: usuario reporta uso único de KCl/muriato, EC sube y hoja con borde quemado.
+Esperado: advertir cloruros/salinidad; sugerir revisar agua/suelo; no recomendar más K.
+
+8) avocado_n_per_ton_reference_not_recipe_test
+Caso: modo avanzado pregunta por N/t.
+Esperado: mostrar 2.9 kg N/t como referencia y 4.07 kg N/t integral con explicación; nunca como dosis final sin eficiencia/análisis.
+
+9) avocado_age_table_reference_only_test
+Caso: usuario sin análisis pide dosis por edad.
+Esperado: permitir orientación general conservadora, pero advertir que no reemplaza análisis y que el motor simple no entrega receta cerrada.
+
+10) avocado_foliar_zn_b_context_test
+Caso: flowering, bajo amarre, foliar Zn/B bajos.
+Esperado: Zn/B contexto fuerte; no dosis automática.
+
+11) avocado_iron_chlorosis_high_ph_test
+Caso: vegetative_growth, hoja amarilla internerval, pH 8.0, N medio.
+Esperado: hablar Fe/Zn/Mn/pH/raíz; no marcar N bajo automático.
+
+12) avocado_postharvest_recovery_npk_test
+Caso: post_harvest, N/P/K bajos, EC baja, humedad ok.
+Esperado: recuperación/reservas; subir prioridad N/P/K/Mg/S como contexto; no receta.
+
+--------------------------------------------------------------------------------
+0.0.10 NO HACER EN CÓDIGO v1.1
+--------------------------------------------------------------------------------
+
+- No mostrar marcas Haifa/Yara/Poly Feed/Nitrobor/Safe K/Multi-K/Magnisal al productor simple.
+- No recomendar 12-43-12, 20-5-30, 10-10-43, 18-46-0, KCl, SOP, nitrato de calcio, boro, zinc, hierro o cualquier fuente como receta automática.
+- No convertir 2.9 kg N/t o 4.07 kg N/t en dosis directa.
+- No usar extracción por fruta como único cálculo; considerar crecimiento anual, hojas, poda, fruta caída y eficiencia.
+- No ignorar Ca/B/Zn/Mg/S sólo porque el sensor mide NPK.
+- No simular Ca/B/Zn/Mg/S/Fe/Cl/Na desde el sensor NPK.
+- No celebrar K alto si EC alta o si hay cloruros.
+- No celebrar N alto en floración/cuajado/madurez.
+- No meter fertilizante agresivo con suelo saturado, raíz dañada o Phytophthora probable.
+- No aplicar tablas por edad como verdad universal.
+- No mezclar P con P2O5 ni K con K2O sin conversión.
+- No poner `lowMax == optimalMin` ni `optimalMax == highMin` en StageTargets.
+
+================================================================================
+0.0.11 FIN DEL ADDENDUM v1.1 — CUERPO BASE v1 CONSERVADO ABAJO
+================================================================================
+
+================================================================================
+IMPORTANTE
+================================================================================
+
+Este documento NO es receta local, NO sustituye análisis de suelo, agua, tejido/foliar,
+asesoría regional, laboratorio, portainjerto, historial de huerto, sanidad vegetal ni
+normatividad de exportación. En BIO-G v1 la lectura NPK es una interpretación relativa
+del sensor por etapa; no debe convertirse en dosis comercial cerrada.
+
+El sensor BIO-G v1 mide o estima:
+- humedad de suelo;
+- temperatura de suelo;
+- pH;
+- EC/salinidad eléctrica;
+- resistencia/compactación;
+- N relativo;
+- P relativo;
+- K relativo.
+
+El sensor BIO-G v1 NO mide:
+- calcio;
+- magnesio;
+- azufre;
+- boro;
+- zinc;
+- hierro;
+- manganeso;
+- cobre;
+- cloruro;
+- sodio;
+- boro tóxico en agua;
+- materia seca;
+- aceite;
+- calibre;
+- firmeza;
+- madurez comercial;
+- Phytophthora;
+- raíces blancas activas;
+- flor femenina/masculina;
+- abejas/polinización real.
+
+Regla maestra:
+El sensor ve una parte del suelo.
+La hoja y otros tejidos dicen lo que el árbol tomó.
+El agua, la raíz, el oxígeno, el pH, la EC, los cloruros/sodio/boro, la compactación,
+la sanidad y la etapa deciden si el nutriente sirve.
+
+Mensaje rector farmer-friendly:
+"En aguacate no se trata de echar más fertilizante. Primero hay que ver si la raíz puede respirar y tomarlo: drenaje, agua pareja, sales bajas, pH manejable y raíz viva. Si la raíz está mal o hay salinidad, el sensor puede marcar NPK, pero el árbol no lo aprovecha. El N ayuda a hoja y recuperación; el P ayuda raíz/energía; el K pesa fuerte en fruta y calidad. Pero en floración y cuajado también mandan Ca, B, Zn, Mg, clima, abejas y memoria del ciclo pasado."
+
+================================================================================
+0. DECISIONES EJECUTIVAS
+================================================================================
+
+0.1. Enfoque correcto
+---------------------
+
+Aguacate BIO-G se modela como árbol frutal perenne subtropical/tropical, siempreverde,
+sin dormancia verdadera, con raíz superficial/fina muy sensible, alternancia productiva,
+floración A/B, cuajado frágil y fuerte dependencia de memoria fisiológica.
+
+No modelar como:
+- cultivo anual;
+- cítrico;
+- mango;
+- manzano/nogal caducifolio;
+- tabla genérica de NPK;
+- programa comercial por kg/ha;
+- receta de fertirriego;
+- simple multiplicador de rendimiento.
+
+En aguacate, el motor NPK debe ser prudente porque:
+1. El árbol es muy sensible a falta de oxígeno en raíz.
+2. El exceso de humedad puede ser peor que un déficit moderado.
+3. La salinidad, cloruros, sodio y boro bloquean o dañan antes de que NPK ayude.
+4. La floración es abundante pero el cuajado real es bajo.
+5. Mucho N puede empujar brote y sombra si la etapa pide flor/fruto.
+6. K es fuerte para fruto, calibre, calidad y relación hídrica, pero con EC alta no se debe empujar fertilizante.
+7. Ca, B, Zn, Mg y S son críticos como contexto, pero el sensor no los mide.
+8. Postcosecha es ventana de recuperación y define el siguiente ciclo.
+
+0.2. NpkCaps recomendados para Aguacate
+---------------------------------------
+
+NpkCaps recomendados para `npk_caps.dart`:
+- N = 120.0
+- P = 95.0
+- K = 200.0
+
+Justificación:
+
+N = 120.0
+- El aguacate necesita N para hoja, brote, clorofila, crecimiento, floración funcional,
+  retención inicial y recuperación postcosecha.
+- Hass suele manejar rangos foliares de N más altos que Fuerte; en fuentes UC/UCR,
+  Hass se interpreta cerca de 2.0-2.2 % y Fuerte alrededor de 1.6-2.0 %.
+- Pero N alto o mal sincronizado puede favorecer crecimiento vegetativo, sombra, flush
+  fuera de ventana, caída de flor/fruto, calidad irregular, salinidad por exceso de sales
+  y desbalance con Ca/K/Mg.
+- Cap 120 deja margen para N funcional sin acercarlo a limón/cítrico continuo ni pistache.
+
+P = 95.0
+- P pesa en raíz, energía, establecimiento, prefloración/floración y recuperación de raíz.
+- En árbol adulto no debe dominar todo el ciclo.
+- P puede estar bloqueado por pH, caliza, baja raíz, frío o compactación.
+- Si el foliar/suelo ya tiene P suficiente, no empujar P por reflejo.
+- Cap 95 coincide con otros árboles donde P es importante pero no protagonista adulto.
+
+K = 200.0
+- K es protagonista en fruta: llenado, tamaño, calidad, transporte de azúcares, regulación hídrica,
+  turgencia, tolerancia a estrés y cosecha.
+- Investigaciones de Hass reportan alta concentración de K en fruta y respuesta cuando P/K se
+  sincronizan con etapas adecuadas.
+- Aguacate no es cítrico de corte continuo, pero el fruto tiene demanda fuerte de K y puede permanecer
+  meses en árbol.
+- Cap 200 permite que `fruit_set`, `fruit_fill` y `harvest_maturity` traten K alto funcional como posible
+  alto útil, no como exceso automático.
+- No subir a 210/220 en v1 porque aguacate es muy sensible a sales y K puede competir con Ca/Mg.
+
+Código sugerido para `npk_caps.dart`:
+
+```dart
+case 'avocado_tree':
+case 'crop_avocado_tree':
+case 'avocado':
+case 'aguacate':
+case 'palta':
+case 'palto':
+case 'persea_americana':
+  return 120.0; // N
+
+case 'avocado_tree':
+case 'crop_avocado_tree':
+case 'avocado':
+case 'aguacate':
+case 'palta':
+case 'palto':
+case 'persea_americana':
+  return 95.0; // P
+
+case 'avocado_tree':
+case 'crop_avocado_tree':
+case 'avocado':
+case 'aguacate':
+case 'palta':
+case 'palto':
+case 'persea_americana':
+  return 200.0; // K
+```
+
+Comentario recomendado en código:
+"Aguacate: N es importante para hoja/recuperación pero se castiga si se desincroniza con flor/cuajado; P pesa en raíz y floración pero no domina adulto; K es fuerte en fruto/calidad. Cap NO es dosis, sólo normaliza lectura cruda del sensor. EC/cloruros/sodio/boro y raíz pueden bloquear cualquier NPK."
+
+0.3. Prioridad absoluta: raíz, oxígeno, agua, EC y pH antes que NPK
+-------------------------------------------------------------------
+
+Regla de interpretación:
+Si ocurre cualquiera de estos casos, BIO-G debe bajar confianza de recomendación NPK y hablar primero de raíz/suelo/agua:
+- EC alta;
+- suelo saturado;
+- humedad muy alta por varios días;
+- drenaje pobre;
+- resistencia/compactación alta;
+- pH extremo;
+- síntomas de raíz dañada;
+- árbol triste con suelo mojado;
+- quemado de punta/margen compatible con sales/cloruros;
+- historial de Phytophthora/tristeza;
+- agua de riego con sales/cloruros/sodio/boro;
+- aplicación reciente fuerte de fertilizante, gallinaza, composta salina o estiércol fresco;
+- defoliación o golpe de calor/frío.
+
+Mensaje UX:
+"Antes de subir fertilizante, revisa raíz, drenaje y sales. En aguacate, si la raíz no respira o hay salinidad, más NPK puede empeorar el problema."
+
+0.4. No usar calendario fijo
+----------------------------
+
+No hardcodear meses como regla universal. Las fuentes de California, Florida, México, Colombia,
+Perú, Chile, Israel o Australia no tienen el mismo calendario. BIO-G debe traducir todo a etapa visible.
+
+Ejemplo:
+- Lovatt/UC muestra respuesta de Hass cuando N, P y K se sincronizan con etapas fenológicas y con
+  cosecha actual, floración actual y siguiente ciclo.
+- México tiene floraciones normal, marceña, loca y perfiles como Méndez/Carmen con ventanas distintas.
+- Florida/Antillano/Tropical tiene clima y fenología diferentes.
+
+Por eso BIO-G usa:
+StageId + estado perenne + perfil + ancla + sensores + memoria.
+
+0.5. Superposición de ciclos en aguacate
+----------------------------------------
+
+En aguacate pueden convivir:
+- fruta madura del ciclo anterior;
+- floración del ciclo actual;
+- brote vegetativo;
+- raíz activa;
+- fruta pequeña recién cuajada;
+- postcosecha parcial por múltiples cortes.
+
+El motor v1 debe elegir una etapa dominante para targets, pero no borrar contexto.
+
+Regla:
+- Si domina flor/panícula/abejas: flowering.
+- Si domina frutito recién amarrado/caída inicial: fruit_set.
+- Si domina fruta creciendo/calibre: fruit_fill.
+- Si domina corte/madurez fisiológica: harvest_maturity.
+- Si se acaba de cosechar y busca recuperación: post_harvest.
+- Si hay mezcla de fruta vieja y flor nueva, priorizar el evento que el usuario está monitoreando y bajar confianza si no hay claridad.
+
+0.6. Regla sobre dosis comerciales
+----------------------------------
+
+Este documento puede incluir cifras de investigación y rangos foliares como trazabilidad, pero BIO-G simple NO debe mostrar:
+- kg/ha;
+- kg/árbol;
+- gramos por árbol;
+- fórmulas comerciales;
+- marcas;
+- número de aplicaciones;
+- recetas de fertirriego;
+- fuentes específicas como KNO3, MAP, SOP, KCl, yeso, boro, zinc, calcio, quelatos, fosfitos;
+- recomendaciones de gallinaza/estiércol/composta sin análisis.
+
+BIO-G simple sí debe mostrar:
+- prioridad por etapa;
+- lectura de riesgo;
+- advertencia de bloqueo por EC/pH/raíz;
+- "confirma con análisis foliar/suelo/agua";
+- "no empujar N en esta etapa";
+- "K pesa en llenado";
+- "Ca/B/Zn/Mg son contexto avanzado";
+- "agua y raíz primero".
+
+================================================================================
+1. BASE TÉCNICA Y CRITERIO DE CONFIANZA
+================================================================================
+
+1.1. Fuentes principales revisadas
+----------------------------------
+
+Alta confianza:
+- Estándar BIO-G para integración de árboles perennes v1.5 con addendum.
+- Documentos BIO-G Aguacate AG 01, 02, 03 y 04 ya generados.
+- Revisión de lib.zip: StageTargets, AgroRange, StageWeights, NpkCaps,
+  TreeAgroScoreEngine, NutrientRecommendationEngine, perfiles de limón/naranjo/manzano/nogal/pistache/pera/durazno.
+- UC ANR / UC Riverside / UC Cooperative Extension: fertilización de aguacate,
+  rangos foliares, N/P/K, salinidad, hoja de muestreo, root rot y manejo de agua.
+- UF/IFAS Extension: fertilización de árboles jóvenes y productivos, mezcla NPK/Mg,
+  aumento de potasa en árboles en producción, hierro en suelos alcalinos, riego en floración/fruto.
+- UC IPM: Phytophthora root rot, agua de calidad, salinidad, boro, cloruro y sodio.
+- Scielo / INIFAP / México: fertilización sitio-específico en Hass, nutrición química/orgánica,
+  deficiencias foliares de N/P/K/Fe/Zn/B, remoción de nutrimentos en Méndez y Hass.
+- HortScience / USDA / UC Riverside: salinidad y rootstocks, daño por cloruros/sodio, EC y rendimiento.
+
+Media-alta:
+- AvocadoSource / California Avocado Society / Lovatt Research / artículos de extensión.
+- SENA Colombia y guías técnicas latinoamericanas para manejo de Ca/B/Zn en floración.
+- Revisiones de nutrición vegetal del aguacate en Australia/Nueva Zelanda/Israel/Chile/Colombia/Perú.
+
+Media:
+- Intagri, notas técnicas comerciales, asociaciones de productores, guías de casas fertilizantes.
+  Uso permitido: patrones de etapa y lenguaje, nunca receta visible.
+
+Baja-media:
+- Foros, Reddit, Houzz, Garden.org, Facebook, grupos de productores y comentarios de huerto.
+  Uso permitido SOLO para UX y preguntas reales del agricultor, por ejemplo:
+  - "se me queman las puntas";
+  - "está verde pero no crece";
+  - "le eché fertilizante y se puso peor";
+  - "tiene agua pero está triste";
+  - "tira flor";
+  - "tira aguacatitos";
+  - "cargó mucho y ahora no floreó";
+  - "floreó pero no amarró";
+  - "el fruto se quedó chico";
+  - "la hoja vieja se cae con puntas cafés";
+  - "se puso amarillo con tierra mojada".
+  No usar foros para fijar umbrales, dosis, diagnósticos o productos.
+
+1.2. Conclusiones fuertes
+-------------------------
+
+1. Aguacate no se fertiliza igual en establecimiento, floración, cuajado, llenado,
+   madurez y postcosecha.
+2. La raíz fina y superficial cambia todo: drenaje, oxígeno, EC y compactación pueden
+   pesar más que NPK.
+3. La salinidad en aguacate no es detalle secundario: puede reducir crecimiento, raíz,
+   fotosíntesis, calibre, rendimiento y longevidad.
+4. EC del sensor no distingue cloruro, sodio ni boro; por eso EC alta baja confianza y
+   pide análisis de agua/suelo.
+5. N es necesario, pero N alto o tarde puede empujar brote, sombra, alternancia y caída.
+6. P pesa en raíz/energía/floración, pero adulto no debe recibir P por reflejo si análisis
+   no lo justifica.
+7. K es protagonista desde cuajado hasta llenado/madurez, pero K alto con Ca/Mg bajos,
+   salinidad o raíz dañada puede empeorar desbalances.
+8. Ca, B, Zn, Mg y S son importantes: floración, polen, tubo polínico, cuajado, firmeza,
+   raíz, fotosíntesis, vida de anaquel, piel y calidad. No son sensores v1.
+9. En México se han usado programas regionales como 200-200-100, 200-200-300 o dosis
+   sitio-específicas, pero no se deben extrapolar sin suelo/hoja/agua/huerto.
+10. La fertilización sitio-específica ha mejorado productividad y tamaño de fruto en Hass;
+    sin embargo, N+K solos no siempre mejoran producción/tamaño si faltan P/Zn/B/S u otros
+    factores del huerto.
+11. Méndez/Carmen merece atención propia: su época de floración/remoción puede diferir de Hass,
+    y la remoción de nutrientes cambia por región y floración.
+12. Postcosecha no es final: es etapa de raíz, hoja, recuperación de reservas y preparación del
+    siguiente evento floral.
+
+================================================================================
+2. ALCANCE DEL DOCUMENTO
+================================================================================
+
+Este documento alimenta:
+- `avocado_tree_universal_profile.dart`
+- `avocado_tree_crop_definition.dart`
+- `avocado_tree_agro_score_engine.dart`
+- `avocado_tree_nutrition_modifier.dart`
+- `tree_agro_score_engine.dart` vía delegación genérica
+- `resolveTargets(...)`
+- `resolveStageWeights(...)`
+- `evaluateTelemetry(...)`
+- `AgroScore` por etapa
+- `AgroMetricEval` para N/P/K
+- `NpkCaps`
+- `NutrientRecommendationEngine`
+- `FertilizationPlanner`
+- Dashboard/NPK screen
+- Quick report
+- Tests de regresión
+
+No alimenta directamente:
+- dosis comerciales cerradas;
+- marcas de fertilizante;
+- recetas kg/ha visibles;
+- reguladores o inductores;
+- fosfitos/fungicidas;
+- diagnóstico sanitario definitivo;
+- materia seca o aceite como sensor v1;
+- promesa de rendimiento;
+- exportabilidad;
+- selección obligatoria de polinizador.
+
+Estados perennes permitidos:
+- newly_planted
+- juvenile_non_productive
+- established
+- productive_season
+- unknown
+
+StageIds permitidos:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Métricas sensor v1 permitidas:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Contexto avanzado NO sensor v1:
+- Ca, Mg, S, B, Zn, Fe, Mn, Cu;
+- Cl, Na, Boro en agua;
+- materia orgánica;
+- textura;
+- drenaje;
+- rootstock;
+- Phytophthora;
+- raíz blanca activa;
+- tipo floral A/B;
+- polinizadores;
+- materia seca;
+- aceite;
+- tamaño/calibre;
+- dry matter;
+- floración loca/normal/marceña;
+- clorosis férrica;
+- hojas de muestreo;
+- análisis de agua;
+- historial de alternancia;
+- estrés del ciclo pasado.
+
+================================================================================
+3. CONTRATO AGRO-RANGE Y STAGETARGETS
+================================================================================
+
+3.1. Semántica obligatoria
+--------------------------
+
+AgroRange(
+  lowMax: criticalLowBoundary,
+  optimalMin: optimalStart,
+  optimalMax: optimalEnd,
+  highMin: criticalHighBoundary,
+)
+
+- `lowMax` NO es inicio del óptimo.
+- `lowMax` es frontera entre crítico bajo y bajo/observación.
+- `optimalMin` es inicio de óptimo.
+- `optimalMax` es fin de óptimo.
+- `highMin` es frontera antes de crítico alto/exceso.
+
+Queda prohibido dejar:
+- lowMax == optimalMin;
+- optimalMax == highMin;
+
+salvo justificación documental y test.
+
+3.2. EC y resistance
+--------------------
+
+EC y resistance son métricas de exceso/bloqueo.
+No existe "deficiencia de EC baja" ni "deficiencia de compactación baja".
+
+Para EC y resistance se permite usar `lowMax: -0.01` como placeholder seguro.
+
+Ejemplo:
+AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 0.9, highMin: 1.5)
+
+3.3. Humedad en aguacate
+------------------------
+
+En aguacate, el rango óptimo debe ser más estrecho que en árboles más tolerantes a saturación.
+- Déficit en floración/cuajado/llenado puede tirar flor/fruto.
+- Exceso de humedad puede asfixiar raíz, disparar Phytophthora y bloquear absorción.
+- No celebrar humedad alta.
+
+3.4. pH en aguacate
+-------------------
+
+Rango preferente operativo:
+- pH óptimo BIO-G: 5.6-6.8, con tolerancia vigilada hacia 7.2 según suelo/portainjerto.
+- pH <5.0: riesgo de acidez, Al/Mn, Ca/Mg/K y raíz.
+- pH >7.5: riesgo de bloqueo Fe/Zn/Mn/P/B y clorosis, especialmente en suelos calizos.
+
+3.5. Temperatura de suelo
+-------------------------
+
+Aguacate es subtropical/tropical.
+- Baja actividad con suelo frío.
+- Óptimo general de raíz/actividad: 18-28 °C.
+- Calor >32-34 °C aumenta estrés; con baja humedad y floración/cuajado puede tumbar flor/fruto.
+- Heladas o frío fuerte no se resuelven con NPK.
+
+================================================================================
+4. CONSTANTES BASE RECOMENDADAS
+================================================================================
+
+4.1. pH
+-------
+
+```dart
+class AvocadoTreeUniversalProfile {
+  const AvocadoTreeUniversalProfile._();
+
+  static const AgroRange phActive = AgroRange(
+    lowMax: 5.0,
+    optimalMin: 5.6,
+    optimalMax: 6.8,
+    highMin: 7.6,
+  );
+
+  static const AgroRange phBase = AgroRange(
+    lowMax: 5.0,
+    optimalMin: 5.5,
+    optimalMax: 7.0,
+    highMin: 7.8,
+  );
+}
+```
+
+Uso:
+- phActive: root_establishment, flowering, fruit_set, fruit_fill.
+- phBase: planting, juvenile, dormancy, budbreak, vegetative_growth, harvest_maturity, post_harvest, unknown.
+
+4.2. EC
+-------
+
+Rangos operativos BIO-G:
+- 0.0-0.8 dS/m: favorable en etapas delicadas.
+- 0.0-1.0 dS/m: aceptable en etapas no críticas.
+- 1.2-1.5 dS/m: vigilancia según etapa, agua, textura y rootstock.
+- >=1.5 dS/m en floración/cuajado/raíz: alerta fuerte.
+- >=2.0 dS/m: bloqueo/estrés salino probable; no recomendar fertilización agresiva.
+- >=2.5 dS/m: alerta crítica de salinidad/absorción en aguacate.
+
+BIO-G debe recordar:
+EC del sensor no distingue si el problema es fertilizante, cloruro, sodio, boro, agua salina o acumulación por mala lixiviación.
+
+4.3. Resistance / compactación
+------------------------------
+
+Rangos operativos:
+- 0.0-1.4: favorable.
+- 1.4-1.8: observación.
+- 1.8-2.2: alta compactación o restricción.
+- >2.2: crítica para raíz fina en aguacate.
+
+Aguacate no tolera bien raíz comprimida con baja aireación.
+
+4.4. Humedad
+------------
+
+Rango general:
+- <40: déficit crítico en etapas activas.
+- 40-55: observación baja.
+- 58-82: óptimo general según etapa.
+- 82-88: observación alta.
+- >88-90: saturación/oxígeno bajo, muy riesgoso si se sostiene.
+
+Etapas críticas:
+- flowering y fruit_set: no permitir bajo 50 como normal.
+- root_establishment: no permitir saturación alta como normal.
+- fruit_fill: humedad baja + K bajo = primero agua/absorción, después K.
+- dormancy/reposo funcional: no sobrerregar; mantener árbol sin estrés severo.
+
+================================================================================
+5. STAGETARGETS v1 — TABLA MAESTRA
+================================================================================
+
+Todas las escalas Nrel/Prel/Krel son relativas 0..100 y se convierten con `NpkCaps`.
+No son kg/ha ni dosis.
+
+[TABLA]
+StageId | soilMoisture | soilTemp | pH | EC | resistance | Nrel | Prel | Krel
+planting_transplant | 45 / 60 / 78 / 86 | 10 / 18 / 28 / 34 | 5.0 / 5.5 / 7.0 / 7.8 | -0.01 / 0.0 / 0.8 / 1.4 | -0.01 / 0.0 / 1.4 / 2.0 | 6 / 16 / 32 / 60 | 18 / 48 / 72 / 90 | 12 / 30 / 55 / 82
+root_establishment | 48 / 62 / 80 / 87 | 10 / 18 / 28 / 34 | 5.0 / 5.6 / 6.8 / 7.6 | -0.01 / 0.0 / 0.8 / 1.4 | -0.01 / 0.0 / 1.4 / 2.0 | 8 / 18 / 38 / 65 | 20 / 52 / 75 / 90 | 14 / 35 / 58 / 84
+juvenile_vegetative | 42 / 58 / 82 / 90 | 10 / 18 / 30 / 35 | 5.0 / 5.5 / 7.0 / 7.8 | -0.01 / 0.0 / 1.0 / 1.6 | -0.01 / 0.0 / 1.5 / 2.1 | 18 / 38 / 65 / 85 | 16 / 40 / 65 / 88 | 16 / 38 / 62 / 86
+dormancy | 35 / 50 / 72 / 84 | 8 / 14 / 26 / 32 | 5.0 / 5.5 / 7.0 / 7.8 | -0.01 / 0.0 / 0.9 / 1.5 | -0.01 / 0.0 / 1.6 / 2.2 | 5 / 12 / 28 / 55 | 14 / 35 / 58 / 82 | 20 / 45 / 68 / 88
+budbreak | 42 / 58 / 78 / 86 | 10 / 18 / 30 / 35 | 5.0 / 5.5 / 7.0 / 7.8 | -0.01 / 0.0 / 0.9 / 1.5 | -0.01 / 0.0 / 1.5 / 2.1 | 16 / 34 / 58 / 80 | 16 / 38 / 62 / 84 | 18 / 42 / 66 / 88
+vegetative_growth | 42 / 58 / 82 / 90 | 10 / 18 / 30 / 35 | 5.0 / 5.5 / 7.0 / 7.8 | -0.01 / 0.0 / 1.0 / 1.6 | -0.01 / 0.0 / 1.5 / 2.1 | 18 / 38 / 62 / 82 | 14 / 34 / 58 / 82 | 20 / 45 / 68 / 90
+flowering | 50 / 62 / 78 / 86 | 12 / 18 / 28 / 33 | 5.0 / 5.6 / 6.8 / 7.6 | -0.01 / 0.0 / 0.9 / 1.5 | -0.01 / 0.0 / 1.4 / 2.0 | 10 / 22 / 42 / 66 | 18 / 42 / 65 / 86 | 28 / 55 / 80 / 94
+fruit_set | 52 / 64 / 80 / 88 | 12 / 18 / 28 / 33 | 5.0 / 5.6 / 6.8 / 7.6 | -0.01 / 0.0 / 0.9 / 1.5 | -0.01 / 0.0 / 1.4 / 2.0 | 10 / 22 / 45 / 68 | 15 / 35 / 58 / 82 | 36 / 62 / 86 / 98
+fruit_fill | 50 / 65 / 82 / 90 | 12 / 18 / 30 / 34 | 5.0 / 5.6 / 6.8 / 7.6 | -0.01 / 0.0 / 1.0 / 1.6 | -0.01 / 0.0 / 1.5 / 2.1 | 14 / 28 / 52 / 72 | 10 / 28 / 50 / 78 | 42 / 68 / 92 / 99
+harvest_maturity | 42 / 58 / 78 / 88 | 10 / 16 / 30 / 35 | 5.0 / 5.5 / 7.0 / 7.8 | -0.01 / 0.0 / 1.0 / 1.7 | -0.01 / 0.0 / 1.6 / 2.2 | 8 / 18 / 38 / 62 | 8 / 24 / 45 / 75 | 34 / 58 / 82 / 96
+post_harvest | 42 / 58 / 82 / 90 | 10 / 18 / 30 / 35 | 5.0 / 5.5 / 7.0 / 7.8 | -0.01 / 0.0 / 1.0 / 1.7 | -0.01 / 0.0 / 1.5 / 2.1 | 20 / 45 / 70 / 90 | 16 / 38 / 62 / 85 | 28 / 52 / 76 / 92
+unknown | 42 / 58 / 80 / 88 | 10 / 17 / 29 / 35 | 5.0 / 5.5 / 7.0 / 7.8 | -0.01 / 0.0 / 1.0 / 1.6 | -0.01 / 0.0 / 1.5 / 2.1 | 10 / 25 / 50 / 75 | 12 / 32 / 58 / 82 | 20 / 45 / 70 / 90
+[/TABLA]
+
+5.1. Lectura de filas clave
+---------------------------
+
+planting_transplant
+- Raíz nueva y cepellón sensible.
+- P domina por raíz/arranque.
+- N bajo para no quemar ni empujar brote tierno sin raíz.
+- EC muy estricta.
+- Humedad estable, nunca saturación.
+
+root_establishment
+- Etapa más delicada para supervivencia.
+- P fuerte, N bajo-moderado, K de apoyo.
+- EC/resistance/humedad pesan más que NPK.
+- Si humedad alta + resistencia alta + EC alta: no recomendar fertilizante.
+
+juvenile_vegetative
+- N más permisivo para formar copa, pero con raíz viva y agua estable.
+- P y K funcionales, no exagerados.
+- No penalizar por falta de flor/fruto.
+
+dormancy
+- En aguacate significa reposo funcional / baja brotación / preparación.
+- N bajo. N alto puede mandar el árbol a brote vegetativo si se busca flor.
+- K/reservas y salud de hoja pesan.
+- No recomendar estrés hídrico como receta.
+
+budbreak
+- Brote nuevo necesita N, pero no debe desbalancearse si viene floración.
+- Vigilar trips, ácaros, salinidad y brote blando.
+- Si usuario buscaba flor y sólo hay brote + N alto: observación de exceso vegetativo.
+
+vegetative_growth
+- Construir hoja funcional y reservas.
+- N importante, K moderado, P bajo-moderado.
+- Si N alto + sombra/copa cerrada + no floración: riesgo de vigor excesivo.
+
+flowering
+- Etapa crítica.
+- N moderado, P funcional, K alto; Ca/B/Zn fuertes como contexto.
+- Agua/temperatura/polinización/raíz pesan antes que NPK.
+- No culpar caída floral sólo a NPK.
+
+fruit_set
+- Etapa más frágil.
+- K fuerte, N moderado-bajo, P funcional.
+- Ca/B/Zn contextuales para cuajado y retención.
+- Humedad baja, calor, salinidad o raíz dañada bloquean recomendación de fertilizante.
+
+fruit_fill
+- K máximo.
+- Agua estable y hoja funcional mandan calibre.
+- N bajo-moderado para sostener hoja sin empujar vegetativo.
+- P bajo-moderado; no sobrerreaccionar a P bajo si raíz/hoja/K están bien.
+- EC alta bloquea K agresivo.
+
+harvest_maturity
+- No empujar N tarde por reflejo.
+- K sostiene calidad, pero salinidad/agua/raíz mandan.
+- En Hass puede haber fruta en árbol y nuevo ciclo; si hay mezcla, bajar confianza.
+- Madurez comercial requiere materia seca/aceite, no NPK.
+
+post_harvest
+- Ventana de recuperación.
+- N/K suben para hoja, brote, raíz y reservas si EC/agua/raíz están bien.
+- P medio para raíz/energía si análisis lo justifica.
+- Memoria de carga pesada, defoliación, calor, salinidad o Phytophthora afecta el siguiente ciclo.
+
+unknown
+- Fallback conservador.
+- No recomendar fino.
+- Pedir etapa visible.
+
+================================================================================
+6. STAGEWEIGHTS v1 — PESOS POR ETAPA
+================================================================================
+
+Los pesos son proporciones internas para AgroScore. No son dosis.
+Suma recomendada por etapa ≈ 1.00.
+
+[TABLA]
+StageId | moisture | soilTemp | pH | EC | resistance | N | P | K | Lectura
+planting_transplant | 0.25 | 0.12 | 0.12 | 0.18 | 0.18 | 0.04 | 0.08 | 0.03 | Raíz nueva; sales/drenaje mandan
+root_establishment | 0.26 | 0.12 | 0.12 | 0.18 | 0.18 | 0.04 | 0.07 | 0.03 | Supervivencia y raíz fina
+juvenile_vegetative | 0.20 | 0.10 | 0.12 | 0.14 | 0.14 | 0.14 | 0.08 | 0.08 | Formación de copa sin quemar raíz
+dormancy | 0.18 | 0.10 | 0.12 | 0.16 | 0.12 | 0.08 | 0.10 | 0.14 | Reposo funcional; evitar N alto
+budbreak | 0.20 | 0.10 | 0.12 | 0.15 | 0.12 | 0.14 | 0.08 | 0.09 | Flush/brote; balance vegetativo
+vegetative_growth | 0.20 | 0.10 | 0.12 | 0.14 | 0.12 | 0.16 | 0.06 | 0.10 | Hoja y reservas
+flowering | 0.24 | 0.14 | 0.10 | 0.14 | 0.10 | 0.07 | 0.08 | 0.13 | Floración; clima/agua antes que NPK
+fruit_set | 0.26 | 0.13 | 0.10 | 0.15 | 0.10 | 0.06 | 0.06 | 0.14 | Cuajado; K + agua + sales
+fruit_fill | 0.24 | 0.10 | 0.10 | 0.14 | 0.10 | 0.08 | 0.04 | 0.20 | Calibre; K máximo
+harvest_maturity | 0.18 | 0.08 | 0.10 | 0.14 | 0.10 | 0.06 | 0.04 | 0.18 | Calidad/corte; evitar N tarde
+post_harvest | 0.22 | 0.10 | 0.12 | 0.15 | 0.12 | 0.13 | 0.06 | 0.10 | Recuperación y reservas
+unknown | 0.22 | 0.10 | 0.12 | 0.16 | 0.14 | 0.08 | 0.06 | 0.10 | Conservador; pedir etapa
+[/TABLA]
+
+6.1. Justificación
+------------------
+
+- En establecimiento, humedad/EC/resistance pesan más que nutrientes porque la raíz puede morir por anoxia/sales aunque NPK se vea bien.
+- En flowering y fruit_set, humedad, temperatura, EC y K pesan fuerte; NPK no debe explicar todo.
+- En fruit_fill, K se vuelve el nutriente dominante, pero no debe superar el peso combinado agua/EC/raíz.
+- En harvest_maturity, K mantiene calidad, pero N se mantiene bajo por riesgo de brote/calidad/desbalance.
+- En post_harvest, N y K suben porque el árbol debe recuperar hoja, raíz y reservas.
+
+================================================================================
+7. PRIORIDAD NPK POR ETAPA + MENSAJE UX
+================================================================================
+
+[TABLA]
+StageId | N priority | P priority | K priority | Dominante | Mensaje UX corto
+planting_transplant | 0.25 | 0.75 | 0.35 | P | Raíz primero; no quemar con sales
+root_establishment | 0.30 | 0.78 | 0.40 | P | Raíz fina, oxígeno y P funcional
+juvenile_vegetative | 0.70 | 0.45 | 0.50 | N | Formar copa sin exceso
+dormancy | 0.20 | 0.45 | 0.60 | K | Reposo funcional; no empujar N
+budbreak | 0.65 | 0.50 | 0.55 | N | Brote nuevo con balance
+vegetative_growth | 0.78 | 0.35 | 0.55 | N | Hoja/reservas, no puro vigor
+flowering | 0.40 | 0.65 | 0.75 | K | Flor necesita agua, P/K y micros
+fruit_set | 0.42 | 0.50 | 0.88 | K | Cuajado frágil; K + agua + baja EC
+fruit_fill | 0.48 | 0.32 | 0.95 | K | K domina calibre/calidad
+harvest_maturity | 0.25 | 0.20 | 0.78 | K | Cuidado con N tarde; calidad
+post_harvest | 0.80 | 0.45 | 0.70 | N | Recuperar hoja, raíz y reservas
+unknown | 0.45 | 0.40 | 0.60 | K | Perfil conservador; falta etapa
+[/TABLA]
+
+7.1. Mensajes extendidos por etapa
+----------------------------------
+
+planting_transplant:
+"Aguacate recién plantado: primero raíz y drenaje. El P ayuda al arranque, pero si hay sales o suelo saturado puedes quemar raíz. N bajo, agua pareja y baja EC."
+
+root_establishment:
+"La raíz del aguacate es fina y delicada. Si el suelo está mojado o compacto, no metas fertilizante fuerte: revisa oxígeno, drenaje y salinidad."
+
+juvenile_vegetative:
+"En formación sí ocupa N para copa y hoja, pero no a costa de raíz. Mucho N con poca raíz o sales altas puede dejar el árbol bonito de hoja y débil de abajo."
+
+dormancy:
+"Esto no es dormancia de árbol pelón; es reposo funcional. Si buscas flor, no empujes N sin razón porque puede irse a brote. Mantén hoja madura, agua sin estrés severo y baja salinidad."
+
+budbreak:
+"Brote nuevo necesita N, pero si el árbol debía florear y se fue a puro brote, revisa N alto, calor, poda, agua y reservas."
+
+vegetative_growth:
+"Aquí N ayuda a hoja y reservas. Pero en aguacate la hoja no sirve si tapa luz, trae sales o no hay raíz activa. Balancea N con K, pH y EC."
+
+flowering:
+"Floración no se arregla sólo con fertilizante. Agua pareja, temperatura, polinizadores, P/K funcionales y contexto de Ca/B/Zn pesan mucho. Si se cae flor, revisa clima y raíz antes de NPK."
+
+fruit_set:
+"El amarre es la etapa más delicada. K pesa, pero si hay humedad baja, calor, EC alta o raíz dañada, primero corrige absorción. Ca/B/Zn importan como contexto, no los inventa el sensor."
+
+fruit_fill:
+"En llenado, K manda para calibre y calidad. Pero K con sales altas o raíz asfixiada no entra bien. Agua estable y hoja sana antes de empujar fertilizante."
+
+harvest_maturity:
+"Cerca del corte no conviene empujar N por reflejo. Mantén calidad y no confundas NPK con materia seca/madurez comercial. K ayuda, pero la raíz y EC siguen mandando."
+
+post_harvest:
+"La postcosecha no es descanso muerto. El árbol recupera hoja, raíz y reservas para la próxima floración. N y K pueden pesar, sólo si agua, raíz y EC están bien."
+
+unknown:
+"No sé la etapa. BIO-G lee conservador: dime si hay brote, flor, frutito, fruto creciendo, listo para corte o ya cosechado para afinar NPK."
+
+================================================================================
+8. REGLAS DE INTERPRETACIÓN N / P / K
+================================================================================
+
+8.1. Nitrógeno
+--------------
+
+Funciones BIO-G:
+- hoja;
+- clorofila;
+- brote;
+- fotosíntesis;
+- reservas;
+- recuperación postcosecha;
+- crecimiento de raíces/tejidos;
+- soporte indirecto a floración y cuajado.
+
+No confundir:
+- N alto no significa más aguacate.
+- N alto en reposo/inducción puede empujar vegetativo.
+- N alto con EC alta puede ser salinidad/fertilización excesiva.
+- N alto con Ca bajo puede afectar calidad y vida de anaquel.
+- N bajo con raíz dañada no se arregla metiendo más N de inmediato.
+
+Lectura por etapa:
+- planting/root: bajo-moderado.
+- juvenile/vegetative: más permisivo.
+- dormancy/prefloración: bajo; cuidado con brote.
+- flowering/fruit_set: moderado, no dominante.
+- fruit_fill: bajo-moderado.
+- harvest_maturity: bajo.
+- post_harvest: alto funcional si raíz/agua/EC están bien.
+
+Mensajes de exceso N:
+- "El N está alto para esta etapa; puede empujar brote en vez de flor/fruto."
+- "No uses N para corregir caída de flor si hay calor, salinidad, raíz dañada o baja polinización."
+- "En aguacate, N tarde puede mover el árbol a vigor y bajar calidad/retención."
+
+8.2. Fósforo
+------------
+
+Funciones BIO-G:
+- raíz;
+- energía;
+- arranque;
+- prefloración/floración;
+- crecimiento radicular;
+- metabolismo.
+
+Reglas:
+- P pesa más en establecimiento, raíz y floración.
+- P no domina adulto durante todo el ciclo.
+- P bajo en harvest_maturity no debe tumbar score si agua, K, hoja y raíz están bien.
+- P alto con pH alto no se celebra; puede estar bloqueado o acumulado.
+- Si foliar P está adecuado o alto, no recomendar P por reflejo.
+
+Mensajes:
+- "P ayuda raíz y energía, pero en aguacate adulto no se aplica a ciegas. Confirma con suelo/hoja y pH."
+- "Con pH alto, P puede estar presente pero no disponible; revisa Fe/Zn/Mn y raíz."
+
+8.3. Potasio
+------------
+
+Funciones BIO-G:
+- cuajado/retención;
+- llenado;
+- calibre;
+- calidad;
+- transporte de azúcares;
+- regulación de agua/estomas;
+- tolerancia a estrés;
+- madurez/cosecha.
+
+Reglas:
+- K sube desde flowering y domina fruit_set/fruit_fill.
+- K bajo en fruit_fill con humedad óptima, EC baja y pH correcto = alerta real.
+- K bajo con humedad baja = agua/absorción primero.
+- K bajo con EC alta = sales/raíz primero.
+- K alto con Ca/Mg bajos o desórdenes de fruta = posible antagonismo/desbalance.
+- No recomendar KCl en modo simple ni fuentes con cloruro/sales si no hay diagnóstico local.
+
+Mensajes:
+- "En llenado, K pesa para tamaño y calidad, pero con sales altas no conviene empujar fertilizante."
+- "K bajo no siempre significa echar potasio: si falta agua o hay EC alta, el árbol no lo toma bien."
+
+================================================================================
+9. CONTEXTO AVANZADO NO SENSOR: Ca / Mg / S / B / Zn / Fe / Mn / Cl / Na
+================================================================================
+
+9.1. Calcio (Ca)
+----------------
+
+Importancia:
+- pared celular;
+- raíz fina;
+- integridad de tejidos;
+- calidad/vida de anaquel;
+- tolerancia a estrés;
+- posible relación con menor predisposición de raíz a problemas.
+
+Reglas BIO-G:
+- No simular Ca con sensor NPK.
+- Ca bajo + N alto = alerta de calidad/poscosecha.
+- Ca bajo + K alto = posible competencia catiónica.
+- Ca depende de raíz joven, flujo de agua y humedad funcional.
+- Foliar Ca no siempre corrige fruta si la raíz/agua no acompaña.
+
+Mensaje:
+"El calcio no lo mide el sensor, pero en aguacate puede pegar en raíz, firmeza y poscosecha. Confirma con análisis, no lo inventes desde NPK."
+
+9.2. Magnesio (Mg)
+------------------
+
+Importancia:
+- clorofila;
+- fotosíntesis;
+- carbohidratos;
+- uso de N;
+- balance con K/Ca.
+
+Reglas:
+- Mg bajo puede parecer N bajo por clorosis.
+- K alto puede competir con Mg.
+- Suelos ácidos, arenosos o con lixiviación pueden tener Mg bajo.
+- No simular Mg con NPK.
+
+Mensaje:
+"Si la hoja vieja amarillea y K/Ca están altos, no asumas N; puede haber Mg o raíz."
+
+9.3. Azufre (S)
+---------------
+
+Importancia:
+- aminoácidos;
+- proteínas;
+- eficiencia de N;
+- calidad;
+- metabolismo.
+
+Reglas:
+- S bajo fue reportado como frecuente en algunos huertos mexicanos.
+- No simular S con NPK.
+- Materia orgánica y suelo influyen.
+
+9.4. Boro (B)
+-------------
+
+Importancia:
+- floración;
+- polen;
+- tubo polínico;
+- cuajado;
+- crecimiento de tejido joven;
+- deformaciones y retención.
+
+Reglas:
+- B bajo puede afectar amarre.
+- B alto es tóxico; margen estrecho.
+- No recomendar B a ciegas.
+- En Hass/Nayarit se reportan deficiencias comunes y tejidos alternativos pueden diagnosticar mejor que hoja.
+- En agua/suelo, B alto también es riesgo de toxicidad/salinidad.
+
+Mensaje:
+"El boro puede pegar fuerte en flor y cuajado, pero tiene margen estrecho. No se recomienda a ciegas; se confirma con análisis."
+
+9.5. Zinc (Zn)
+--------------
+
+Importancia:
+- brote;
+- hoja;
+- entrenudos;
+- floración;
+- calidad;
+- crecimiento.
+
+Reglas:
+- Zn bajo es frecuente en algunas regiones.
+- pH alto lo bloquea.
+- Foliar o suelo dependen de diagnóstico.
+- No simular Zn con NPK.
+
+9.6. Hierro y manganeso (Fe/Mn)
+-------------------------------
+
+Reglas:
+- pH alto / suelos calizos disparan clorosis férrica.
+- Hoja amarilla con nervaduras verdes no es N automático.
+- En suelos alcalinos UF/IFAS recomienda atención a hierro quelatado, pero BIO-G simple no prescribe fuente.
+
+9.7. Cloruro y sodio (Cl/Na)
+----------------------------
+
+Reglas:
+- Aguacate es muy sensible a cloruros y sodio.
+- Quemado de punta/margen, defoliación y bajo vigor pueden venir de Cl/Na.
+- EC alta no dice cuál sal es.
+- Hoja y agua son clave.
+
+Mensaje:
+"Si hay puntas cafés y EC alta, no lo trates como falta de fertilizante. Puede ser cloruro/sodio/sales."
+
+================================================================================
+10. GUARDAS / BLOQUEOS DEL MOTOR
+================================================================================
+
+10.1. Guardas por EC
+--------------------
+
+Si EC >= 1.5 en root_establishment, flowering o fruit_set:
+- bajar confianza NPK;
+- añadir mensaje de salinidad/absorción;
+- no recomendar fertilización agresiva;
+- priorizar agua/calidad de agua/drenaje/análisis.
+
+Si EC >= 2.0 en cualquier etapa activa:
+- bloquear recomendaciones fuertes de N/P/K;
+- marcar sales/absorción primero;
+- sugerir revisar agua, lixiviación, drenaje y raíz;
+- no celebrar K o N altos.
+
+Si EC >= 2.5:
+- alerta crítica de salinidad;
+- score baja fuerte;
+- "fertilizar más puede empeorar".
+
+10.2. Guardas por humedad alta
+------------------------------
+
+Si soilMoisture >= highMin:
+- en aguacate, no decir "mucha agua = bueno";
+- hablar de oxígeno/raíz/Phytophthora;
+- bloquear NPK agresivo si la etapa es root_establishment, flowering, fruit_set o fruit_fill.
+
+Si humedad alta + resistencia alta:
+- riesgo de anoxia/compactación.
+
+Si humedad alta + árbol triste:
+- mensaje de raíz antes que fertilizante.
+
+10.3. Guardas por humedad baja
+------------------------------
+
+Si soilMoisture < optimalMin en flowering/fruit_set:
+- alertar riesgo de aborto/caída;
+- no recomendar NPK primero;
+- "agua pareja antes que fertilizante".
+
+Si soilMoisture baja + K bajo en fruit_fill:
+- no empujar K como primera lectura;
+- priorizar agua/absorción.
+
+10.4. Guardas por pH
+--------------------
+
+Si pH > 7.6:
+- hablar de bloqueo Fe/Zn/Mn/P/B;
+- no celebrar P alto;
+- no diagnosticar N bajo por clorosis.
+
+Si pH < 5.0:
+- hablar de acidez, Ca/Mg/K, raíz y toxicidad potencial;
+- no recomendar N/K fuerte sin análisis.
+
+10.5. Guardas por resistencia/compactación
+------------------------------------------
+
+Si resistance >= 2.0:
+- raíz limitada;
+- absorción limitada;
+- baja confianza de NPK;
+- no recomendar fertilizante fuerte.
+
+10.6. Guardas por etapa reproductiva
+------------------------------------
+
+flowering:
+- N alto = observación por vigor/caída/sombra.
+- K bajo = alerta si agua/EC/pH ok.
+- P bajo = observación por floración/energía si pH ok.
+- B/Zn/Ca contextuales, no sensor.
+
+fruit_set:
+- K bajo fuerte si agua/EC/pH ok.
+- EC alta o humedad baja cancela recomendación agresiva de K.
+- N alto puede bajar confianza por caída/vegetativo.
+
+fruit_fill:
+- K domina.
+- N alto no se celebra.
+- P bajo no tumba solo.
+
+harvest_maturity:
+- N alto tarde = alerta/observación.
+- K funcional = bien si EC baja.
+- Materia seca no se predice con NPK.
+
+10.7. Guardas por perfil
+------------------------
+
+ag_01_hass:
+- N foliar óptimo puede ser más alto que Fuerte, pero sensor N alto tarde no se celebra.
+- Muy sensible a salinidad/cloruros si rootstock sensible.
+- K fuerte en llenado/calibre.
+
+ag_02_mendez_carmen:
+- Puede tener ventanas de floración/cosecha distintas.
+- No copiar calendario Hass.
+- Remoción puede ser más alta en algunos elementos y región; mantener K/N fuertes y pedir análisis.
+
+ag_03_criollo_mexicano:
+- Mayor rusticidad aparente no significa fertilización alta.
+- Usualmente más variable; usar confianza conservadora.
+
+ag_04_fuerte_piel_verde:
+- Tipo B; posible polinizador.
+- N excesivo puede ser más vegetativo; mantener N más conservador en prefloración.
+
+ag_05_antillano_tropical:
+- Mayor tolerancia tropical pero riesgo de humedad/raíz.
+- En clima cálido/lluvioso, EC puede no ser único problema: anoxia/Phytophthora.
+
+ag_06_tardio_lamb_reed:
+- Llenado largo; K y agua sostenidos.
+- Riesgo de estrés acumulado y alternancia.
+- No empujar N tarde.
+
+================================================================================
+11. FERTIRRIEGO / FOLIAR / FUENTES — TRADUCCIÓN A BIO-G
+================================================================================
+
+11.1. Modo simple
+-----------------
+
+No mostrar:
+- fuentes;
+- marcas;
+- dosis;
+- kg/ha;
+- conversiones;
+- número de aplicaciones.
+
+Mostrar:
+- prioridad;
+- etapa;
+- riesgo;
+- bloqueo por EC/pH/raíz;
+- pedir análisis.
+
+11.2. Modo técnico futuro
+-------------------------
+
+Campos útiles:
+- tipo de riego: temporal, microaspersión, goteo, fertirriego, manual;
+- calidad de agua: EC, Cl, Na, B, bicarbonatos, SAR/RAS;
+- textura;
+- materia orgánica;
+- pH;
+- CEC/CIC;
+- Ca/Mg/K intercambiables;
+- P disponible;
+- rootstock;
+- edad;
+- densidad;
+- rendimiento histórico;
+- carga visible;
+- análisis foliar;
+- análisis de fruto o tejido alternativo si existe.
+
+11.3. Conversiones necesarias si se implementa modo técnico
+----------------------------------------------------------
+
+P2O5 a P = P2O5 x 0.4364
+P a P2O5 = P x 2.291
+K2O a K = K2O x 0.8301
+K a K2O = K x 1.205
+
+No mezclar N/P/K elemental con P2O5/K2O sin conversión documentada.
+
+11.4. Fuente fertilizante y salinidad
+-------------------------------------
+
+BIO-G simple no prescribe fuente.
+Pero en modo técnico se debe registrar:
+- fuente con cloruro;
+- fertilizantes con alto índice salino;
+- gallinaza/estiércol/composta con sales;
+- aplicaciones recientes;
+- fertilización concentrada cerca del tronco;
+- fertirriego mal calibrado;
+- precipitados/obstrucción;
+- separación de calcio con fosfatos/sulfatos;
+- lavado/lixiviación si aplica y si el suelo drena.
+
+Mensaje simple:
+"Si la EC está alta, no asumas que falta fertilizante. Puede haber sales acumuladas por agua, fuente, estiércol o mal drenaje."
+
+================================================================================
+12. ANÁLISIS FOLIAR / SUELO / AGUA
+================================================================================
+
+12.1. Regla BIO-G
+-----------------
+
+Sensor NPK = lectura relativa de suelo.
+Foliar = lo que el árbol realmente tomó.
+Suelo = disponibilidad y reserva.
+Agua = sales, bicarbonatos, cloruros, sodio, boro.
+Raíz = capacidad de absorción.
+
+Ninguno por sí solo explica todo.
+
+12.2. Rangos foliares base integrados
+-------------------------------------
+
+Usar como referencia técnica, no como verdad absoluta para todas las regiones.
+
+[TABLA]
+Elemento | Rango foliar base BIO-G | Rango amplio visto | Uso BIO-G
+N (%) | Hass 2.0-2.2; general 1.6-2.2 | Fuerte 1.6-2.0; Hass mínimo cercano a 2.0 y posible alto >2.2-2.3 | Hoja/vigor/recuperación; exceso puede dar vigor y bajar calidad/flor.
+P (%) | 0.10-0.25 | Fuerte 0.08-0.25; otros 0.10-0.25 | Raíz/energía/flor; interpretar con pH.
+K (%) | 0.75-2.0 | Algunas guías 0.75-1.5; alto >2.0 | Fruto, llenado, calidad; antagonismo Ca/Mg.
+Ca (%) | 1.0-3.0 | 1.0-3.0/3.5 según fuente | Raíz, estructura, poscosecha, calidad.
+Mg (%) | 0.25-0.80 | 0.25-0.80 | Fotosíntesis, clorofila, uso de N.
+S (%) | 0.20-0.60 | 0.20-0.60 | Proteínas, eficiencia N; reportado bajo en algunos huertos.
+B (ppm) | 50-100 | <50 bajo; >100 alto/tóxico según fuente | Flor, polen, cuajado; margen estrecho.
+Zn (ppm) | 30-150 | <20-30 bajo; >150 alto | Brote, hoja, flor; pH alto lo bloquea.
+Mn (ppm) | 30-500 | >500 alto | pH/acidez; cuidado con toxicidad.
+Fe (ppm) | 50-200 | <50 bajo; >200 alto | Clorosis férrica; pH alto/raíz.
+Cu (ppm) | 5-15 | >15 alto | Sanidad/lignificación; exceso posible.
+Cl (%) | ideal bajo; alerta si alto | UCR muestra >0.25 como indicador de atención | Salinidad/cloruros; tip burn.
+Na (%) | ideal bajo; alerta si alto | UCR muestra >0.25 como indicador de atención | Salinidad/sodicidad.
+[/TABLA]
+
+12.3. Muestreo foliar
+---------------------
+
+Referencias comunes:
+- Hojas maduras recientes, no en flush activo.
+- Ramas no fructificantes y sin flush.
+- Altura accesible, varios cuadrantes.
+- Muestreo anual en ventana regional comparable.
+- En California/UCR se menciona muestreo en otoño; en México se usan hojas de edad definida
+  según flujo vegetativo y etapa local.
+
+Regla BIO-G:
+No diagnosticar con una hoja cualquiera.
+Registrar:
+- fecha;
+- edad de hoja;
+- si la rama tenía fruto;
+- cuadrante;
+- variedad;
+- etapa;
+- último fertilizante;
+- lluvia/riego;
+- condición de raíz/sales.
+
+12.4. Tejidos alternativos
+--------------------------
+
+En aguacate Hass, algunas investigaciones mexicanas muestran que foliar no siempre refleja
+bien respuesta a Zn/B; tejidos de inflorescencia, raquis, pedúnculo/pedicelo o fruto pueden
+ser más sensibles para ciertos nutrientes.
+
+BIO-G v1 no necesita implementarlo, pero debe dejar contexto:
+- Si hay bajo cuajado + sospecha de B/Zn, sugerir análisis especializado, no sensor NPK.
+
+12.5. Análisis de agua
+----------------------
+
+Debe incluir idealmente:
+- EC;
+- pH;
+- bicarbonatos;
+- cloruros;
+- sodio;
+- boro;
+- SAR/RAS;
+- dureza/calcio/magnesio.
+
+Regla:
+Si el agua trae salinidad/cloruros/sodio/boro, el programa NPK cambia. No extrapolar.
+
+================================================================================
+13. EXTRACCIÓN Y REMOCIÓN NUTRIMENTAL — SOLO MODO AVANZADO
+================================================================================
+
+Estas cifras sirven para coherencia técnica, no para receta visible.
+La dosis depende de suelo, agua, foliar, eficiencia, pérdidas, edad, densidad,
+rootstock, poda, rendimiento objetivo, materia orgánica, pH, EC y manejo.
+
+13.1. Fruto de aguacate Hass / México
+-------------------------------------
+
+En literatura mexicana se reporta para Hass en Michoacán, floración principal,
+remoción aproximada por tonelada de fruto:
+- N: 2.4 kg/t
+- P: 0.5 kg/t
+- K: 3.3 kg/t
+- Ca: 0.1 kg/t
+- Mg: 0.26 kg/t
+- S: 0.2 kg/t
+- Fe: 6.4 g/t
+- Cu: 3.3 g/t
+- Mn: 1.6 g/t
+- Zn: 3.9 g/t
+- B: 8.0 g/t
+
+Lectura BIO-G:
+- K y N pesan fuerte en fruta.
+- La remoción cambia por clima, región, cultivar y época de floración.
+- No usar una sola extracción para todos los perfiles.
+
+13.2. Méndez
+------------
+
+Méndez puede remover más N/K/Ca/B que Hass en algunos contextos y regiones.
+La época de floración modifica la remoción.
+
+Regla BIO-G:
+- Mantener `ag_02_mendez_carmen` separado de Hass.
+- No copiar calendario ni demanda sin matiz.
+- En modo simple, usar las mismas prioridades base pero subir advertencias de análisis y memoria.
+
+13.3. Sitio específico
+----------------------
+
+Investigación mexicana en Hass de Nayarit mostró que la fertilización sitio-específica
+puede mejorar producción y tamaño de fruto, y que N+K solos no siempre bastan si falta
+P/Zn/B/S u otro factor del huerto.
+
+Regla BIO-G:
+- No decir "N+K = listo".
+- No decir "más fertilizante = más fruto".
+- Pedir suelo + hoja + agua + carga + etapa.
+
+================================================================================
+14. REGLAS POR PERFIL AG
+================================================================================
+
+14.1. ag_skip — Aguacate general / No sé
+----------------------------------------
+
+- Usar targets base.
+- Confianza media-baja si no hay etapa.
+- No asumir Hass.
+- No asumir temporal/riego/exportación.
+- No asumir rootstock ni tolerancia salina.
+- Ser conservador con EC y N.
+- Pedir realidad visible.
+
+Mensaje:
+"Este es aguacate general. Si eliges Hass, Méndez, Criollo, Fuerte, Antillano o Tardío, BIO-G ajusta sensibilidad sin borrar historial."
+
+14.2. ag_01_hass — Hass
+-----------------------
+
+Ajustes:
+- Mantener N foliar objetivo más alto que Fuerte en contexto avanzado, pero no subir N sensor por defecto.
+- K fuerte en fruit_fill/harvest_maturity.
+- Salinidad/cloruros muy importantes.
+- Ca/B/Zn como contexto para calidad, floración y cuajado.
+- Alternancia fuerte.
+
+NutritionModifier sugerido:
+- lateNitrogenExcessPenaltyFactor: 0.82 en fruit_fill/harvest_maturity.
+- EC guard fuerte en flowering/fruit_set/fruit_fill.
+
+14.3. ag_02_mendez_carmen — Méndez / Carmen
+-------------------------------------------
+
+Ajustes:
+- Tratar como tipo Hass temprano/fuera de temporada, no como Hass idéntico.
+- Demanda/remoción puede ser alta según región.
+- K/N fuertes por fruta, pero etapa/ancla mandan.
+- B/Zn/Ca como contexto fuerte en floración y cuajado.
+
+Regla:
+Si hay floración fuera de ventana convencional, no cambiar StageId; usar stage visible.
+
+14.4. ag_03_criollo_mexicano
+----------------------------
+
+Ajustes:
+- Más variable y regional.
+- No inflar N/K por rusticidad.
+- P/K/N conservadores.
+- Si es de semilla/no injertado, bajar precisión.
+- Sensible a sales según rootstock/raza; no asumir tolerancia.
+
+14.5. ag_04_fuerte_piel_verde
+-----------------------------
+
+Ajustes:
+- Tipo B; puede funcionar como polinizador.
+- N más conservador en reposo/floración porque Fuerte puede ser más vegetativo.
+- K fuerte en fruto pero no tanto como Hass intensivo.
+- Mantener pH/EC estrictos.
+
+14.6. ag_05_antillano_tropical
+------------------------------
+
+Ajustes:
+- Puede tolerar mejor calor/humedad que mexicano/guatemalteco, pero raíz sigue siendo delicada.
+- En climas lluviosos, bajar confianza por exceso de humedad y Phytophthora.
+- pH/caliza/Fe pueden ser distintos según región tropical.
+- No copiar targets de Florida como receta para México.
+
+14.7. ag_06_tardio_lamb_reed
+----------------------------
+
+Ajustes:
+- Llenado largo; K/agua sostenidos.
+- Riesgo de estrés acumulado.
+- No empujar N tarde.
+- Alternancia y carga deben pesar.
+
+================================================================================
+15. CÓDIGO SUGERIDO: ESTRUCTURA DE `avocado_tree_universal_profile.dart`
+================================================================================
+
+15.1. Clases esperadas
+----------------------
+
+```dart
+class AvocadoTreeUniversalProfile {
+  const AvocadoTreeUniversalProfile._();
+
+  static const AgroRange phActive = AgroRange(
+    lowMax: 5.0,
+    optimalMin: 5.6,
+    optimalMax: 6.8,
+    highMin: 7.6,
+  );
+
+  static const AgroRange phBase = AgroRange(
+    lowMax: 5.0,
+    optimalMin: 5.5,
+    optimalMax: 7.0,
+    highMin: 7.8,
+  );
+}
+
+class AvocadoTreeStageNutrition {
+  const AvocadoTreeStageNutrition({
+    required this.stageId,
+    required this.nPriority01,
+    required this.pPriority01,
+    required this.kPriority01,
+    required this.confidence,
+    required this.careNoteEs,
+  });
+
+  final String stageId;
+  final double nPriority01;
+  final double pPriority01;
+  final double kPriority01;
+  final String confidence;
+  final String careNoteEs;
+
+  AgroMetricKey get dominantNutrient {
+    if (kPriority01 >= nPriority01 && kPriority01 >= pPriority01) return AgroMetricKey.k;
+    if (nPriority01 >= pPriority01) return AgroMetricKey.n;
+    return AgroMetricKey.p;
+  }
+}
+
+class _AvocadoStageProfile {
+  const _AvocadoStageProfile({
+    required this.moisture,
+    required this.soilTemp,
+    required this.ph,
+    required this.ec,
+    required this.resistance,
+    required this.nRel,
+    required this.pRel,
+    required this.kRel,
+    required this.nPriority,
+    required this.pPriority,
+    required this.kPriority,
+    required this.wMoisture,
+    required this.wSoilTemp,
+    required this.wPh,
+    required this.wEc,
+    required this.wResistance,
+    required this.wN,
+    required this.wP,
+    required this.wK,
+    required this.confidence,
+    required this.careNoteEs,
+    required this.uxGuidanceEs,
+    required this.nWindowEs,
+    required this.pWindowEs,
+    required this.kWindowEs,
+  });
+
+  final AgroRange moisture;
+  final AgroRange soilTemp;
+  final AgroRange ph;
+  final AgroRange ec;
+  final AgroRange resistance;
+  final AgroRange nRel;
+  final AgroRange pRel;
+  final AgroRange kRel;
+  final double nPriority;
+  final double pPriority;
+  final double kPriority;
+  final double wMoisture;
+  final double wSoilTemp;
+  final double wPh;
+  final double wEc;
+  final double wResistance;
+  final double wN;
+  final double wP;
+  final double wK;
+  final String confidence;
+  final String careNoteEs;
+  final String uxGuidanceEs;
+  final String nWindowEs;
+  final String pWindowEs;
+  final String kWindowEs;
+}
+```
+
+15.2. Resolveres esperados
+--------------------------
+
+```dart
+StageTargets resolveAvocadoTreeTargets(String stageId) { ... }
+StageWeights resolveAvocadoTreeStageWeights(String stageId) { ... }
+AvocadoTreeStageNutrition resolveAvocadoTreeNutritionPriorities(String stageId) { ... }
+```
+
+15.3. Default seguro
+--------------------
+
+Si stageId es unknown o inválido:
+- usar unknown;
+- confianza low/medium;
+- mensaje de pedir etapa;
+- no recomendar fino.
+
+================================================================================
+16. CÓDIGO SUGERIDO: NUTRITION MODIFIER
+================================================================================
+
+`avocado_tree_nutrition_modifier.dart` debe ser propio, no copia de mango/cítrico.
+
+Reglas principales:
+
+```dart
+class AvocadoTreeNutritionModifier extends TreeNutritionModifier {
+  const AvocadoTreeNutritionModifier();
+
+  @override
+  double lateNitrogenExcessPenaltyFactor(String stageId) {
+    switch (stageId) {
+      case TreeStageIds.flowering:
+        return 0.88;
+      case TreeStageIds.fruitSet:
+        return 0.82;
+      case TreeStageIds.fruitFill:
+        return 0.80;
+      case TreeStageIds.harvestMaturity:
+        return 0.78;
+      default:
+        return 1.0;
+    }
+  }
+}
+```
+
+Si el contrato del modifier actual permite mensajes o ajustes por perfil:
+- penalizar N alto más en Fuerte/prefloración;
+- mantener Hass con tolerancia foliar mayor pero sin celebrar N alto tardío;
+- penalizar EC alta en root/flowering/fruit_set;
+- agregar mensaje de "agua/raíz/EC antes que NPK".
+
+================================================================================
+17. FERTILIZATION PLANNER — REGLAS DE COPY
+================================================================================
+
+17.1. Si N bajo
+---------------
+
+No decir automáticamente:
+"Aplica nitrógeno".
+
+Decir según etapa:
+- root/planting: "N bajo, pero raíz primero. Si la raíz no está establecida o la EC está alta, no metas N fuerte."
+- vegetative/post_harvest: "N puede ayudar a hoja/recuperación si agua, raíz y EC están bien. Confirma con análisis."
+- flowering/fruit_set: "N bajo puede limitar vigor, pero no culpes sólo N: revisar agua, temperatura, polinización y raíz."
+- harvest_maturity: "No conviene empujar N cerca de corte sin diagnóstico."
+
+17.2. Si N alto
+---------------
+
+Mensajes:
+- "N alto para esta etapa; puede empujar brote y no flor/fruto."
+- "Con EC alta, N alto también puede ser acumulación de sales."
+- "En madurez/llenado, N alto baja confianza por calidad y desbalance."
+
+17.3. Si P bajo
+---------------
+
+Mensajes:
+- "P bajo pesa más en raíz/establecimiento/floración. Revisa pH porque puede estar bloqueado."
+- "En cosecha, P bajo no siempre es prioridad si K, agua y hoja están bien."
+
+17.4. Si P alto
+---------------
+
+Mensajes:
+- "P alto no siempre es bueno: con pH alto puede bloquear micros o estar acumulado. No agregar P sin análisis."
+
+17.5. Si K bajo
+---------------
+
+Mensajes:
+- fruit_set/fruit_fill: "K bajo puede pegar en amarre, calibre y calidad, pero primero revisa agua estable y EC."
+- moisture baja: "Agua primero; el árbol no toma K si está en estrés hídrico."
+- EC alta: "Sales primero; no empujar K agresivo."
+
+17.6. Si K alto
+---------------
+
+Mensajes:
+- "K alto puede ser útil en llenado, pero si hay Ca/Mg bajos, EC alta o desórdenes de fruto, puede ser desbalance."
+
+================================================================================
+18. MENSAJES UX FARMER-FRIENDLY
+================================================================================
+
+- "En aguacate, la raíz manda. Si la raíz no respira, el fertilizante no entra."
+- "Un árbol verde no siempre está bien: puede estar sufriendo de raíz o sales."
+- "Puntas cafés no siempre son falta de nutriente; muchas veces son sales, cloruro, sodio o riego mal manejado."
+- "No metas más fertilizante si la EC está alta. Primero revisa agua, drenaje y sales."
+- "El aguacate tira mucha flor de forma natural, pero si coincide con calor, sequía, sales o raíz dañada, ya es alerta."
+- "Mucha flor no significa mucha cosecha. Lo importante es que amarre y sostenga el frutito."
+- "En cuajado, agua pareja y baja salinidad valen más que subir NPK a ciegas."
+- "En llenado, el K pesa mucho para calibre y calidad, pero no sirve si hay falta de agua o raíces dañadas."
+- "El calcio, boro y zinc no los mide el sensor, pero sí pueden pegar en flor, cuajado y poscosecha."
+- "El pH alto puede bloquear hierro, zinc, manganeso y fósforo. Hoja amarilla no siempre es falta de nitrógeno."
+- "Postcosecha no es descanso muerto: ahí el aguacate recupera reservas para la siguiente floración."
+- "Si cargó mucho este año, el siguiente puede venir bajo si no recupera hoja, raíz y reservas."
+- "No uses una tabla de otra región como receta: aguacate cambia por agua, suelo, altitud, variedad, portainjerto y clima."
+- "Si tienes Méndez/Carmen, no copies exactamente el calendario de Hass; la etapa visible manda."
+
+================================================================================
+19. TESTS MÍNIMOS DE REGRESIÓN
+================================================================================
+
+19.1. Contrato AgroRange
+------------------------
+
+1) avocado_ranges_no_equal_boundaries_test
+Caso: revisar todos los StageTargets de suelo/ambiente.
+Esperado: lowMax != optimalMin y optimalMax != highMin, excepto EC/resistance con lowMax placeholder documentado.
+
+2) avocado_moisture_observation_not_critical_test
+Caso: fruit_fill soilMoisture 62, óptimo inicia 65.
+Esperado: low/watch, no critical.
+
+3) avocado_harvest_moisture_55_not_critical_test
+Caso: harvest_maturity soilMoisture 55.
+Esperado: observación baja o cerca de óptimo, no crítico.
+
+4) avocado_saturation_high_not_deficit_test
+Caso: root_establishment soilMoisture 89.
+Esperado: high/saturation, no déficit.
+
+19.2. NPK caps
+--------------
+
+5) avocado_npk_caps_test
+Esperado:
+- N avocado_tree = 120
+- P avocado_tree = 95
+- K avocado_tree = 200
+- aliases crop_avocado_tree, aguacate, palta resuelven igual.
+
+19.3. EC / salinidad
+--------------------
+
+6) avocado_ec_high_blocks_k_recommendation_test
+Caso: fruit_fill, K bajo, EC 2.1.
+Esperado: sales/absorción primero; no recomendar K agresivo.
+
+7) avocado_ec_high_flowering_test
+Caso: flowering, EC 1.8, N/P/K medios.
+Esperado: alerta de salinidad/cuajado; bajar confianza de NPK.
+
+8) avocado_tip_burn_ec_context_test
+Caso: EC alta + etapa vegetative + nota de puntas cafés.
+Esperado: mensaje de sales/cloruros/sodio; no falta simple de N.
+
+19.4. Humedad / raíz
+--------------------
+
+9) avocado_wet_soil_sad_tree_root_first_test
+Caso: soilMoisture 90, resistance 2.1, N bajo.
+Esperado: raíz/drenaje/oxígeno primero; no N agresivo.
+
+10) avocado_flowering_low_moisture_test
+Caso: flowering soilMoisture 48.
+Esperado: alerta de aborto floral/agua; no NPK primero.
+
+11) avocado_fruit_set_low_moisture_low_k_test
+Caso: fruit_set, humedad baja, K bajo.
+Esperado: agua/absorción antes que K.
+
+19.5. N por etapa
+-----------------
+
+12) avocado_high_n_dormancy_no_flower_test
+Caso: dormancy, N alto, usuario reporta puro brote.
+Esperado: advertir exceso vegetativo; no celebrar N.
+
+13) avocado_high_n_harvest_test
+Caso: harvest_maturity, N alto, K medio.
+Esperado: observación por N tarde/calidad; no recomendar N.
+
+14) avocado_postharvest_n_low_root_ok_test
+Caso: post_harvest, N bajo, humedad/EC/pH ok.
+Esperado: N como prioridad de recuperación; pedir análisis, no dosis.
+
+19.6. K por etapa
+-----------------
+
+15) avocado_k_fruit_fill_good_soil_test
+Caso: fruit_fill, K bajo, humedad óptima, EC baja, pH ok.
+Esperado: alerta K/calibre/calidad; pedir confirmación foliar/suelo.
+
+16) avocado_k_high_ca_context_test
+Caso: fruit_fill, K alto, reporte Ca bajo foliar.
+Esperado: posible antagonismo/desbalance; no celebrar K.
+
+19.7. pH y micros
+-----------------
+
+17) avocado_high_ph_yellow_leaf_test
+Caso: pH 8.0, hoja amarilla, N medio.
+Esperado: hablar de Fe/Zn/Mn/P bloqueo; no N automático.
+
+18) avocado_boron_low_flowering_context_test
+Caso: flowering, cuajado bajo, foliar B bajo.
+Esperado: B contexto; no dosis automática.
+
+19) avocado_zinc_low_context_test
+Caso: budbreak/flowering, entrenudos cortos, foliar Zn bajo.
+Esperado: Zn contexto; no simular con sensor.
+
+19.8. Perfil y etapa
+--------------------
+
+20) avocado_mendez_not_hass_calendar_test
+Caso: ag_02_mendez_carmen + flowering fuera de calendario Hass.
+Esperado: aceptar etapa visible; no corregir por calendario.
+
+21) avocado_skip_unknown_stage_test
+Caso: ag_skip + unknown + NPK cualquiera.
+Esperado: lectura conservadora y pedir etapa.
+
+22) avocado_fuerte_high_n_flowering_test
+Caso: ag_04_fuerte_piel_verde + flowering + N alto.
+Esperado: advertencia de vigor/vegetativo más fuerte.
+
+================================================================================
+20. NO HACER EN CÓDIGO
+================================================================================
+
+- No crear StageIds nuevos para floración A/B, flor loca, marceña, normal, raíz activa, etc.
+- No usar sowingDate como eje de árbol adulto.
+- No convertir NPK en dosis kg/ha visible.
+- No recomendar fuentes, marcas o productos.
+- No recomendar boro, zinc, calcio, quelatos, yeso, ácido, fosfitos ni KCl a ciegas.
+- No simular Ca/Mg/B/Zn/Fe/Mn/S/Cl/Na con sensor NPK.
+- No celebrar EC alta como si fuera fertilidad.
+- No interpretar quemado de punta como falta simple de N.
+- No recomendar fertilizante fuerte con raíz sospechosa.
+- No recomendar fertilizante fuerte con suelo saturado.
+- No recomendar K agresivo si EC >= 2.0.
+- No recomendar N fuerte en harvest_maturity.
+- No tratar post_harvest como fin del cultivo.
+- No borrar memoria al migrar de ag_skip a perfil específico.
+- No copiar calendario de California/Florida/Michoacán/Jalisco para todos.
+- No decir que mucha flor garantiza cosecha.
+- No usar foros/redes para umbrales técnicos.
+- No diagnosticar Phytophthora desde NPK.
+- No ignorar análisis de agua en aguacate.
+- No mezclar P con P2O5 ni K con K2O sin conversión.
+
+================================================================================
+21. RESUMEN EJECUTIVO PARA CODEX / CLAUDE
+================================================================================
+
+Implementar Aguacate NPK así:
+
+1. Crear `avocado_tree_universal_profile.dart` con targets y weights de este documento.
+2. Crear `avocado_tree_agro_score_engine.dart` delegando a `TreeAgroScoreEngine`.
+3. Crear `avocado_tree_nutrition_modifier.dart` propio.
+4. Agregar caps en `npk_caps.dart`:
+   - N 120.0
+   - P 95.0
+   - K 200.0
+5. Mantener StageIds cerrados.
+6. Mantener AgroRange limpio: lowMax != optimalMin; optimalMax != highMin.
+7. EC/resistance usan lowMax -0.01 como placeholder de métrica de exceso.
+8. Priorizar raíz/agua/EC/pH/resistance antes que NPK.
+9. K domina fruit_set, fruit_fill y harvest_maturity.
+10. N domina vegetative_growth y post_harvest, pero se castiga en dormancy/flowering/fruit_set/harvest.
+11. P domina planting/root y ayuda flowering, pero no domina adulto.
+12. Ca/B/Zn/Mg/S/Fe/Mn/Cl/Na son contexto avanzado, no sensores.
+13. Agregar tests mínimos de regresión.
+14. No mostrar dosis/marcas/fuentes en modo simple.
+15. No copiar agronomía de mango/cítricos.
+
+================================================================================
+22. FUENTES Y TRAZABILIDAD
+================================================================================
+
+Fuentes internas BIO-G:
+- Estandar_BIOG_Integracion_Arboles_Perennes_v1_5_con_addendum.pdf.
+- 01_Ficha_Tecnica_Universal_BioG_Aguacate_AG_v1_Reforzada.txt.
+- 02_Perfil_SKIP_BioG_Aguacate_AG_SKIP_v1_Reforzado.txt.
+- 03_Rendimiento_Aproximado_BioG_Aguacate_AG_v1_Reforzado.txt.
+- 04_Riesgos_Cultivo_Sanidad_Estres_Memoria_BioG_Aguacate_AG_v1_Reforzado.txt.
+- lib.zip revisado: tree_agro_score_engine.dart, npk_caps.dart, universal profiles de árboles, nutrient_recommendation_engine.dart, fertilization_planner.dart.
+
+Fuentes externas principales:
+- UC Riverside / UC ANR: Suggested Range of Nutrients for Leaf Analysis.
+- UC ANR: Avocado Fertilization / leaf interpretation ranges / N timing / Lovatt research.
+- UC ANR: Avocado Production in California, root rot, salinity, irrigation water quality.
+- UC IPM: Phytophthora Root Rot / avocado.
+- UF/IFAS: Avocado Growing in the Florida Home Landscape.
+- Scielo México: Fertilización de sitio específico en Hass Nayarit.
+- Scielo México: Nutrición química y orgánica en Hass Guerrero.
+- Scielo México: Análisis de suelo, foliar y agua para aguacatero.
+- Scielo México: Tejidos alternativos para Zn/B en Hass.
+- Scielo México: Remoción de nutrimentos por fruto de Méndez.
+- USDA/ARS + HortScience: salinidad y rootstocks de aguacate.
+- California Avocado Society / AvocadoSource: salinity management, nutrient research, fertilization background.
+- SENA Colombia: conceptos de fertilización para aguacate Hass, usado como contraste latinoamericano.
+- Intagri y fuentes comerciales: usadas sólo para contraste/copy, no como umbrales duros.
+- Foros/redes: Reddit, Garden.org, Houzz, Facebook, comentarios de productores; usados sólo para lenguaje UX.
+
+================================================================================
+23. CIERRE
+================================================================================
+
+Este documento es la fuente BIO-G v1 para el motor NPK de Aguacate.
+La idea central es sencilla:
+
+En aguacate, NPK nunca va primero si raíz, agua, EC, pH o compactación están mal.
+N ayuda al árbol, pero puede romper balance si se desincroniza.
+P ayuda raíz/energía/floración, pero no se aplica por reflejo en adulto.
+K pesa fuerte en cuajado, llenado, calibre y calidad, pero con sales altas no entra bien.
+Ca, Mg, S, B, Zn y Fe son críticos de contexto, pero no sensores.
+Postcosecha prepara el siguiente ciclo.
+La memoria de estrés importa.
+La etapa visible manda.

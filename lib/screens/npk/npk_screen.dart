@@ -58,7 +58,56 @@ class NpkScreen extends StatelessWidget {
         crop == 'walnuttree' ||
         crop == 'nogal' ||
         crop == 'pecan' ||
-        crop == 'nuez';
+        crop == 'nuez' ||
+        crop == 'pistachio_tree' ||
+        crop == 'crop_pistachio_tree' ||
+        crop == 'pistachio' ||
+        crop == 'pistachiotree' ||
+        crop == 'pistache' ||
+        crop == 'pistacho' ||
+        crop == 'pistachero' ||
+        crop == 'orange_tree' ||
+        crop == 'crop_orange_tree' ||
+        crop == 'orange' ||
+        crop == 'orangetree' ||
+        crop == 'naranjo' ||
+        crop == 'naranja' ||
+        crop == 'lemon_tree' ||
+        crop == 'crop_lemon_tree' ||
+        crop == 'lemontree' ||
+        crop == 'lime_tree' ||
+        crop == 'crop_lime_tree' ||
+        crop == 'lemon' ||
+        crop == 'lime' ||
+        crop == 'limon' ||
+        crop == 'limón' ||
+        crop == 'limonero' ||
+        crop == 'lima' ||
+        crop == 'mango_tree' ||
+        crop == 'crop_mango_tree' ||
+        crop == 'mangotree' ||
+        crop == 'crop_mango' ||
+        crop == 'mango' ||
+        crop == 'mangos' ||
+        crop == 'mangifera' ||
+        crop == 'mangifera_indica' ||
+        crop == 'arbol_mango' ||
+        crop == 'árbol_mango' ||
+        crop == 'avocado_tree' ||
+        crop == 'crop_avocado_tree' ||
+        crop == 'avocadotree' ||
+        crop == 'crop_avocado' ||
+        crop == 'avocado' ||
+        crop == 'avocados' ||
+        crop == 'aguacate' ||
+        crop == 'aguacates' ||
+        crop == 'aguacatero' ||
+        crop == 'palta' ||
+        crop == 'palto' ||
+        crop == 'persea' ||
+        crop == 'persea_americana' ||
+        crop == 'arbol_aguacate' ||
+        crop == 'árbol_aguacate';
   }
 
   double? _trendPctFromSeries(List<double> series) {

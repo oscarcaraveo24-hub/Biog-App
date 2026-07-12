@@ -1,0 +1,2053 @@
+# 03_RENDIMIENTO_APROXIMADO_BIOG_PISTACHE_PS_V1_REFORZADO
+
+BIO-G | Documento 03 oficial para arbol perenne
+Cultivo: Pistache / Pistacho
+Nombre cientifico: Pistacia vera L.
+CropId recomendado: crop_pistachio_tree
+Alias legacy sugerido: pistachio_tree
+Prefijo de perfiles: PS
+Perfil general: ps_skip
+Version: v1 reforzada
+Uso: documento fuente para `pistachio_tree_yield_reference.dart` y alta minima en `TreeYieldReferenceCatalog`.
+
+IMPORTANTE:
+Este documento NO promete rendimiento.
+No sustituye analisis de suelo, agua, tejido, clima, asesor agronomico regional ni validacion comercial.
+BIO-G v1 debe orientar con rangos aproximados, confianza y advertencias. No debe vender certeza.
+
+===============================================================================
+0. DECISIONES EJECUTIVAS Y CORRECCIONES
+===============================================================================
+
+0.1. Enfoque correcto
+
+Este documento modela rendimiento de PISTACHE COMERCIAL, no un frutal generico de nuez.
+
+Para BIO-G v1, "Pistache" significa principalmente Pistacia vera L. en sistema de huerto a cielo abierto, con arboles hembra y macho, polinizacion por viento, reposo invernal, alternancia productiva y produccion de pistache seco con cascara.
+
+El modelo se calibra con:
+- datos universitarios y extension de California/UC Davis/UC ANR;
+- referencias de Nuevo Mexico y zonas aridas comparables;
+- contexto mexicano, especialmente Chihuahua, donde el cultivo existe pero sigue siendo pequeno frente a California/Iran;
+- el patron tecnico ya usado por BIO-G en Manzano, Pera, Durazno y Nogal.
+
+0.2. Unidad principal
+
+La unidad principal de rendimiento debe ser:
+
+- kg de pistache seco con cascara por arbol promedio del huerto
+- toneladas de pistache seco con cascara por hectarea
+- kg totales de pistache seco con cascara si el usuario captura numero de arboles
+
+Aclaracion clave:
+En pistache existen arboles macho y hembra. Los machos no producen pistache comercial, pero son indispensables para polinizar. En BIO-G v1, cuando el usuario captura "numero de arboles", normalmente no sabra separar machos y hembras. Por seguridad, los kg/arbol de este documento representan un ARBOL PROMEDIO DEL HUERTO, ya considerando de forma conservadora la presencia de 8-12% de machos.
+
+Modo avanzado futuro:
+- Si el usuario captura hembras y machos por separado, se puede estimar con:
+  femaleTreeCount = totalTreeCount * femaleRatio
+  totalKg = kgPerFemaleTree * femaleTreeCount
+- Pero v1 debe evitar sobreestimar si el usuario solo dice "tengo 300 arboles".
+
+0.3. Producto comercial
+
+El producto principal es pistache seco con cascara, no fruto fresco.
+El rendimiento puede expresarse como:
+- total dry in-shell yield;
+- split in-shell;
+- closed shell;
+- shelling stock;
+- payable/edible yield.
+
+BIO-G v1 usara como salida principal:
+- kg seco con cascara / arbol
+- t/ha seco con cascara
+
+La calidad comercial puede aparecer como contexto:
+- porcentaje de frutos abiertos / split;
+- porcentaje cerrado / closed shell;
+- blanks / vanos;
+- insect damage;
+- manchas;
+- aflatoxina;
+- navel orangeworm;
+- perdida por cosecha tardia.
+
+No se calcula precio ni ingreso por defecto.
+
+0.4. No prometer cosecha
+
+La proyeccion BIO-G siempre debe salir como rango:
+
+- bajo
+- esperado
+- alto
+- confianza
+
+Nunca decir:
+"vas a producir X"
+
+Decir:
+"produccion estimada / rango aproximado"
+
+El rendimiento real se puede mover fuerte por:
+- frio invernal insuficiente;
+- lluvia/humedad o viento inadecuado en floracion;
+- sincronía macho-hembra;
+- helada;
+- alternancia;
+- carga del ciclo anterior;
+- estres hidrico;
+- salinidad;
+- Verticillium/Phytophthora/Botryosphaeria/Alternaria;
+- navel orangeworm;
+- chinches/leaf-footed bugs;
+- portainjerto;
+- edad real;
+- poda, luz y mecanizacion;
+- cosecha tardia;
+- manejo de postcosecha y reservas.
+
+0.5. Diferencia contra nogal
+
+Pistache y nogal son arboles de nuez, pero NO deben modelarse igual.
+
+Nogal:
+- arbol monoico con flor masculina/femenina en el mismo arbol;
+- cultivares Tipo I/II por dicogamia;
+- producto: nuez pecana con cascara;
+- el polinizador es cultivar compatible, pero cada arbol productivo puede tener estructuras masculinas y femeninas.
+
+Pistache:
+- arbol dioico: macho y hembra separados;
+- si falta macho, no hay produccion comercial normal;
+- polinizacion por viento;
+- Kerman normalmente usa Peters; Golden Hills/Lost Hills usan Randy u otros machos tempranos;
+- el porcentaje de split/open, blank y closed shell pesa muchisimo en valor comercial;
+- alternancia es muy fuerte y documentada.
+
+Por eso, en pistache la variable "polinizadorKnown" y "maleRatioStatus" debe pesar mas que en durazno/pera/manzano y de forma diferente al nogal.
+
+0.6. Regla BIO-G no negociable
+
+No usar sowingDate como eje de rendimiento.
+El rendimiento se estima por:
+
+kg/arbol base del perfil
+x estado productivo
+x densidad
+x manejo
+x riego/agua
+x polinizacion macho-hembra
+x memoria de estres
+x calidad/cosecha si aplica
+
+La cosecha no cierra el cultivo.
+Postcosecha sigue activa porque define reservas y alternancia del siguiente ciclo.
+
+0.7. Relacion con el motor actual
+
+El zip revisado muestra dos capas existentes para arboles:
+
+A) Capa minima global:
+`core/yield/tree_yield_reference_catalog.dart`
+- Usa `TreeYieldReference`.
+- Estima kg totales = kg/arbol x numero de arboles.
+- Trabaja por `TreeProductiveTier`.
+- No persiste densidad ni modifica Supabase.
+- Sirve para pantalla simple.
+
+B) Capa completa por arbol:
+`core/crops/apple_tree/apple_tree_yield_reference.dart`
+`core/crops/pear_tree/pear_tree_yield_reference.dart`
+`core/crops/peach_tree/peach_tree_yield_reference.dart`
+`core/crops/walnut_tree/walnut_tree_yield_reference.dart`
+
+Cada archivo completo usa:
+- `YieldRange(low, expected, high)`
+- `fullKgPerTree`
+- `expectedTonPerHa`
+- `ProductionState`
+- `ManagementLevel`
+- `IrrigationLevel`
+- `StressMemory`
+- `DensitySystem`
+- conversiones `treesPerHaFromSpacing`, `tonHaFromKgTree`, `kgTreeFromTonHa`
+- resolver tipo `resolve[Tree]Yield(...)`
+
+Para Pistache, se recomienda replicar esa arquitectura con:
+
+`core/crops/pistachio_tree/pistachio_tree_yield_reference.dart`
+
+Tambien se debe agregar soporte minimo en:
+
+`core/yield/tree_yield_reference_catalog.dart`
+
+y soporte completo en:
+
+`screens/yield/yield_projection_setup_screen.dart`
+
+sin romper el fallback de otros arboles.
+
+===============================================================================
+1. OBJETIVO DEL DOCUMENTO
+===============================================================================
+
+Este documento define la referencia de rendimiento aproximado para Pistache en BIO-G.
+Debe permitir que Codex/Claude implementen una proyeccion conservadora, cableable y coherente con el motor actual de arboles perennes.
+
+Debe responder:
+
+- Cuanto puede producir un pistachero por arbol promedio del huerto segun estado productivo.
+- Cuanto puede producir una hectarea segun densidad, manejo, agua y alternancia.
+- Como afecta el perfil PS:
+  - Kerman/Peters
+  - Golden Hills/Randy
+  - Lost Hills/Randy
+  - Sirora/compatible
+  - Larnaka/Mateur bajo-frio relativo
+  - PS-SKIP general
+- Como castigar rendimiento por falta de macho, mala sincronía, frio insuficiente, lluvia en floracion, helada, deficit hidrico, salinidad, navel orangeworm, alternancia y baja postcosecha.
+- Como conservar memoria multianual sin convertirla en diagnostico cerrado.
+
+No debe responder:
+
+- Precio del pistache.
+- Rentabilidad financiera completa.
+- Contrato de compra o procesamiento.
+- Receta exacta de fertilizacion.
+- Numero exacto de frutos por arbol.
+- Porcentaje garantizado de split/open.
+- Prediccion comercial garantizada.
+
+===============================================================================
+2. BASE AGRONOMICA DE REFERENCIA
+===============================================================================
+
+2.1. Referencias fuertes usadas
+
+Las fuentes revisadas muestran que el rendimiento del pistache se mueve en rangos amplios.
+
+Puntos de anclaje para BIO-G:
+
+A) UC Davis / UC Cooperative Extension / Agricultural Issues Center, 2020.
+Estudio de costos de pistache en el sur del Valle de San Joaquin bajo riego de bajo volumen.
+El estudio usa un huerto con espaciamiento 17 x 20 ft, equivalente a 128 arboles/acre o aprox. 316 arboles/ha.
+Tambien documenta que el pistache es alternante: ano alto seguido por ano bajo, con rendimiento economico usual desde el ano 6 y alternancia marcada alrededor de anos 9-10.
+
+Tabla anual de rendimiento total seco con cascara:
+- Ano 6: 600 lb/ac = aprox. 672 kg/ha = 0.67 t/ha
+- Ano 7: 1,300 lb/ac = aprox. 1,457 kg/ha = 1.46 t/ha
+- Ano 8: 2,200 lb/ac = aprox. 2,466 kg/ha = 2.47 t/ha
+- Ano 9+: 2,800 lb/ac = aprox. 3,138 kg/ha = 3.14 t/ha
+
+Con 316 arboles/ha, esos valores equivalen aprox. a:
+- Ano 6: 2.1 kg/arbol promedio del huerto
+- Ano 7: 4.6 kg/arbol promedio del huerto
+- Ano 8: 7.8 kg/arbol promedio del huerto
+- Ano 9+: 9.9 kg/arbol promedio del huerto
+
+Lectura BIO-G:
+- Un pistache comercial bueno puede rondar 3 t/ha como expectativa adulta conservadora bajo riego y manejo.
+- No usar 3 t/ha como default si el usuario no sabe edad, densidad, agua ni polinizador.
+- "kg/arbol" en pistache debe verse bajo frente a manzano/nogal porque hay mas densidad y machos no productivos.
+- El rendimiento por hectarea importa mas que kg/arbol aislado.
+
+B) UC/California Agriculture 2020, Kallsen et al.
+Los cultivares Golden Hills y Lost Hills tienden a tener mayor porcentaje de in-shell split que Kerman. Kerman puede tener mas closed-shell/no split y blank nuts. Lost Hills mostro menor alternancia en un ensayo.
+Lectura BIO-G:
+- Golden Hills y Lost Hills pueden recibir mejor rendimiento relativo y mejor calidad de split que Kerman si hay polinizador correcto.
+- Kerman sigue siendo estandar tradicional, pero no debe recibir el mejor rating de split.
+- Lost Hills puede tener modificador de alternancia ligeramente mejor.
+- La salida no debe ser solo kg: calidad/split/blank debe aparecer en notas.
+
+C) American Pistachio Growers / Tootelian 2023.
+Proyecciones de rendimiento de California usan:
+- 6th year: 600 lb/ac
+- 7th year: 1,300 lb/ac
+- 8th year: 2,200 lb/ac
+- 9th/10th year ON: 3,080 lb/ac
+- 11+ ON: 3,392 lb/ac
+- 11+ OFF: 2,208 lb/ac
+Tambien reportan que, historicamente, la diferencia entre anos ON y OFF es fuerte y que agua, densidad, clima y otros factores afectan rendimiento.
+Lectura BIO-G:
+- El modelo de estado productivo debe diferenciar firstBearing, youngBearing, fullBearing y alternateLowYear.
+- Un ano bajo de alternancia no siempre es cero: puede ser 60-70% del ano alto en huertos adultos, pero eventos severos de floracion/polinizacion pueden hundir mucho mas.
+- Para full bearing, 2.5 a 3.8 t/ha puede ser rango comercial razonable en condiciones tipo California.
+
+D) UC Davis Fruit & Nut Research / UC ANR.
+El pistache se produce sobre portainjertos como UCB I, Pioneer Gold I, Atlantica y otros. Kerman en UCB I ha mostrado mayores rendimientos tempranos que Kerman en Pioneer Gold I en ensayos; UCB I es ampliamente usado y tolerante a salinidad/Verticillium.
+Lectura BIO-G:
+- Portainjerto afecta rendimiento, salinidad y enfermedad, pero BIO-G v1 no debe pedirlo como obligatorio.
+- Si el usuario no sabe portainjerto, no bloquear; bajar confianza.
+- Portainjerto queda para modo avanzado.
+
+E) New Mexico State University / Dona Ana Extension.
+Material tecnico de Nuevo Mexico presenta pistache como cultivo dioico: machos y hembras en plantas separadas, necesario plantar machos para polinizacion. Tambien lista Kerman, Lost Hills, Golden Hills, Peters, Randy y otros.
+Lectura BIO-G:
+- En rendimiento, un huerto sin macho compatible no debe estimarse como huerto completo.
+- La presencia de macho y sincronía floral debe pesar fuerte.
+- Si el usuario no sabe, SKIP conserva el calculo, pero baja confianza en flowering/fruit_set.
+
+F) Heart of the Desert / Eagle Ranch, Nuevo Mexico.
+Referencia de campo no universitaria pero util para lenguaje y escala de productor pequeno: aprox. 120 arboles/acre, produccion desde 4-5 anos, buena produccion 8-10 anos, plena madurez 15-20 anos y hasta 20 lb/arbol adulto.
+Lectura BIO-G:
+- Sirve como contraste de kg/arbol para huertos menos intensivos.
+- No debe usarse como fuente primaria para t/ha comercial.
+- "Hasta 20 lb/arbol" = 9.1 kg/arbol, muy parecido al rango adulto UC de 9-10 kg/arbol promedio del huerto.
+
+G) CIAD / Mexico.
+En Mexico el pistache se ha explotado poco; Chihuahua aparece como principal productor nacional reportado, con 98.64% de la produccion nacional en 2021 y 99.87 t.
+Lectura BIO-G:
+- Mexico/Chihuahua no debe calibrarse como si ya fuera California.
+- Para PS-SKIP en Mexico usar confianza media-baja y rangos conservadores.
+- Si el usuario esta en Chihuahua y tiene manejo/regadio/huerto tecnificado, se puede acercar a rangos tipo suroeste de EUA, pero no asumirlo.
+
+H) UACH / Revista Bioagro 2020, Lopez, Chihuahua.
+Estudio economico-financiero del cultivo del pistache en Lopez, Chihuahua, menciona desarrollo de huertos en Meoqui, Ojinaga, Casas Grandes, Salaices y Delicias y el potencial del cultivo por adaptacion a falta de agua y necesidad de frio.
+Lectura BIO-G:
+- El cultivo tiene sentido regional en Chihuahua, pero requiere datos de sitio.
+- Los valores de California no deben copiarse sin bajar confianza por variedad, polinizador y manejo local.
+
+2.2. Decision BIO-G de rango base por hectarea
+
+Para BIO-G v1, el rendimiento de pistache debe quedar calibrado asi, en pistache seco con cascara:
+
+- No productivo: 0 t/ha
+- Inicio economico / primera produccion: 0.3 a 1.0 t/ha
+- Produccion joven: 1.0 a 2.5 t/ha
+- Produccion adulta conservadora: 2.0 a 3.2 t/ha
+- Buen manejo / riego estable / buena sincronía: 3.0 a 3.8 t/ha
+- Alto / ano ON / cultivar moderno bien manejado: 3.8 a 4.5 t/ha
+- Excepcional experimental o ano muy alto: >4.5 t/ha solo como alerta de sobrecarga/alternancia/calidad, no como promesa permanente
+
+2.3. Regla de no sobreestimar
+
+Si BIO-G no conoce:
+- densidad;
+- numero de arboles;
+- estado productivo;
+- perfil;
+- presencia de machos;
+- etapa;
+- agua/riego;
+- memoria de alternancia;
+
+entonces debe usar PS-SKIP conservador.
+No debe mostrar 3.5-4 t/ha como default.
+
+===============================================================================
+3. ENTRADAS MINIMAS PARA BIO-G
+===============================================================================
+
+3.1. Entradas recomendadas para pantalla simple
+
+- Cultivo: Pistache
+- Perfil: ps_skip o PS-01 a PS-05
+- Estado perenne: newly_planted, juvenile_non_productive, established, productive_season, unknown
+- Etapa fenologica: planting_transplant, root_establishment, juvenile_vegetative, dormancy, budbreak, flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest, unknown
+- Numero de arboles, si el usuario lo sabe
+
+3.2. Entradas recomendadas para calculo completo
+
+- Hectareas
+- Arboles por hectarea o marco de plantacion
+- Numero total de arboles
+- Perfil PS
+- Estado productivo
+- Nivel de manejo
+- Nivel de riego
+- Estado de macho/polinizador
+- Proporcion macho:hembra si el usuario la sabe
+- Memoria de estres
+- Si el conteo de arboles incluye machos o solo hembras
+
+3.3. Entradas opcionales futuras
+
+- Porcentaje de split/open
+- Porcentaje de closed shell
+- Porcentaje de blanks/vanos
+- Porcentaje de insect damage
+- Payable/edible yield
+- Peso de nuez seca al 5-7% humedad
+- Portainjerto
+- Edad real del huerto
+- Vigor / crecimiento de brote
+- Carga previa ON/OFF
+- Cosecha mecanica o manual
+- Historial de navel orangeworm, aflatoxina o cosecha tardia
+
+Estas entradas futuras no deben bloquear v1.
+
+===============================================================================
+4. UNIDADES Y CONVERSIONES OFICIALES PARA BIO-G
+===============================================================================
+
+4.1. Conversiones principales
+
+1 acre = 0.404685642 ha
+1 lb = 0.45359237 kg
+
+kg/ha = lb/ac * 0.45359237 / 0.404685642
+t/ha = kg/ha / 1000
+
+arboles/ha = 10000 / (distanciaEntreHileras_m * distanciaEntreArboles_m)
+
+tonHa = (kgPorArbol * arbolesPorHa) / 1000
+
+kgPorArbol = (tonHa * 1000) / arbolesPorHa
+
+produccion_total_kg = kgPorArbol * numero_de_arboles
+
+4.2. Conversiones de anclaje UC Davis 2020
+
+- 600 lb/ac = 672 kg/ha = 0.67 t/ha
+- 1,300 lb/ac = 1,457 kg/ha = 1.46 t/ha
+- 2,200 lb/ac = 2,466 kg/ha = 2.47 t/ha
+- 2,800 lb/ac = 3,138 kg/ha = 3.14 t/ha
+- 3,392 lb/ac = 3,802 kg/ha = 3.80 t/ha
+
+Con 316 arboles/ha:
+- 0.67 t/ha = 2.1 kg/arbol promedio del huerto
+- 1.46 t/ha = 4.6 kg/arbol promedio del huerto
+- 2.47 t/ha = 7.8 kg/arbol promedio del huerto
+- 3.14 t/ha = 9.9 kg/arbol promedio del huerto
+- 3.80 t/ha = 12.0 kg/arbol promedio del huerto
+
+4.3. Payable yield vs total yield
+
+UC Davis separa total yield en:
+- split in-shell;
+- shelling stock;
+- closed shell.
+
+Para un ejemplo de Golden Hills:
+- total yield = 100%
+- split in-shell = 85%
+- shelling stock = 5%
+- closed shell = 10%
+- payable yield = 90% del total, al considerar split in-shell y kernel recuperable.
+
+Decisión BIO-G:
+- v1 normal NO calcula payable yield.
+- v1 puede mostrar nota de calidad:
+  "No todo kg cosechado vale igual. En pistache importan frutos abiertos, vanos, cerrados, manchados e insecto."
+- modo avanzado futuro puede agregar:
+  payableKg = totalKg * payablePct
+
+===============================================================================
+5. ESTADOS PRODUCTIVOS PARA RENDIMIENTO
+===============================================================================
+
+El estado productivo es propio del rendimiento. No debe inventar nuevos TreeStateIds globales. Puede existir como enum local en `pistachio_tree_yield_reference.dart`.
+
+Tabla recomendada:
+
+| Estado rendimiento | Descripcion BIO-G | Salida |
+|---|---|---|
+| nonProductive | Recien plantado, establecimiento o juvenil sin cosecha comercial | 0 kg/arbol |
+| firstBearing | Primeras cosechas economicas o arbol que apenas empieza a dar | 5-35% del potencial adulto |
+| youngBearing | Produccion joven, arbol aun creciendo | 35-90% del potencial adulto |
+| fullBearing | Produccion adulta o plena | 70-120% del potencial adulto |
+| alternateLowYear | Ano bajo por alternancia/carga previa/reservas bajas | 35-85% del potencial adulto |
+| unknown | El usuario no sabe; estimar conservador | 25-85% del potencial adulto |
+
+5.1. Multiplicadores sugeridos para codigo
+
+```dart
+({double low, double expected, double high}) _productionStateFactors(
+  PistachioProductionState state,
+) {
+  return switch (state) {
+    PistachioProductionState.nonProductive => (low: 0, expected: 0, high: 0),
+    PistachioProductionState.firstBearing => (
+      low: 0.08,
+      expected: 0.20,
+      high: 0.35,
+    ),
+    PistachioProductionState.youngBearing => (
+      low: 0.35,
+      expected: 0.65,
+      high: 0.90,
+    ),
+    PistachioProductionState.fullBearing => (
+      low: 0.70,
+      expected: 1.00,
+      high: 1.20,
+    ),
+    PistachioProductionState.alternateLowYear => (
+      low: 0.35,
+      expected: 0.60,
+      high: 0.85,
+    ),
+    PistachioProductionState.unknown => (
+      low: 0.25,
+      expected: 0.55,
+      high: 0.85,
+    ),
+  };
+}
+```
+
+5.2. Inferencia desde estado perenne
+
+- newly_planted => nonProductive
+- juvenile_non_productive => nonProductive
+- established => unknown o firstBearing si el usuario reporta que ya produce poco
+- productive_season + flowering => unknown hasta confirmar amarre
+- productive_season + fruit_set => youngBearing si hay cuajado visible
+- productive_season + fruit_fill/harvest_maturity/post_harvest => fullBearing por defecto, salvo si el usuario marca alternancia baja
+- unknown => unknown
+
+5.3. Etapas que bloquean rendimiento
+
+Si la etapa es:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+
+BIO-G proyecta 0 kg/arbol, con mensaje:
+
+"Todavia no proyectamos cosecha. En pistache joven importa mas formar raiz, estructura, macho/hembra correcto, luz y reservas que forzar produccion."
+
+5.4. Edad orientativa, NO motor principal
+
+- Primeras nueces: ano 4-6 segun perfil/manejo.
+- Rendimiento economico: comunmente desde ano 6.
+- Buena produccion: ano 8-10.
+- Plena madurez: puede estabilizarse mas tarde, ano 10-15+.
+- Alternancia fuerte: se vuelve notable en anos 8-10+.
+
+BIO-G no debe pedir edad exacta para resolver etapa. La edad ayuda en rendimiento si el usuario la sabe, pero el motor se centra en estado visible, carga y etapa.
+
+===============================================================================
+6. DENSIDAD Y MARCO DE PLANTACION
+===============================================================================
+
+6.1. Formula
+
+`arbolesPorHa = 10000 / (distanciaEntreHileras_m * distanciaEntreArboles_m)`
+
+`tonHa = (kgPorArbol * arbolesPorHa) / 1000`
+
+`kgPorArbol = (tonHa * 1000) / arbolesPorHa`
+
+6.2. Densidades orientativas
+
+| Marco aproximado | Arboles/ha aprox. | Lectura BIO-G |
+|---|---:|---|
+| 8 x 7 m | 179 | Extensivo / amplio |
+| 7 x 7 m | 204 | Tradicional amplio |
+| 7 x 6 m | 238 | Tradicional comercial |
+| 6 x 6 m | 278 | Comercial medio |
+| 6 x 5 m | 333 | Comercial comun / similar a 17 x 20 ft |
+| 5.5 x 5 m | 364 | Medio-intensivo |
+| 5 x 5 m | 400 | Intensivo moderado |
+| 5 x 4 m | 500 | Alta densidad / requiere manejo |
+| 4 x 4 m | 625 | Muy alta densidad; riesgo de sombra/mecanizacion |
+
+UC Davis 2020 usa 17 x 20 ft, equivalente a 128 arboles/acre o aprox. 316 arboles/ha.
+
+6.3. Machos dentro de la densidad
+
+En pistache, la densidad total puede incluir machos. Una referencia comun es 1 macho por 8-10 hembras o 8-12% de machos.
+
+Regla BIO-G:
+- Si el usuario no sabe separar machos y hembras, tratar treeCount como total de arboles.
+- El kg/arbol de la tabla principal ya debe ser conservador e incluir dilucion de machos.
+- Si el usuario sabe que el conteo es solo de hembras, modo avanzado puede usar +8% a +12% sobre kg/arbol o calcular femaleTreeCount aparte.
+
+6.4. Sistemas de densidad sugeridos para codigo
+
+```dart
+class PistachioDensitySystem {
+  const PistachioDensitySystem(this.id, this.kgPerTreeCap);
+
+  final String id;
+  final double kgPerTreeCap;
+
+  static const PistachioDensitySystem extensive = PistachioDensitySystem(
+    'extensive_or_wide_spacing',
+    24,
+  );
+  static const PistachioDensitySystem traditionalCommercial =
+      PistachioDensitySystem('traditional_commercial', 18);
+  static const PistachioDensitySystem standardCaliforniaLike =
+      PistachioDensitySystem('standard_300_350_trees_ha', 14);
+  static const PistachioDensitySystem mediumHighDensity =
+      PistachioDensitySystem('medium_high_density', 11);
+  static const PistachioDensitySystem highDensityManaged =
+      PistachioDensitySystem('high_density_managed', 9);
+
+  static PistachioDensitySystem fromTreesPerHa(double treesPerHa) {
+    if (treesPerHa < 220) return extensive;
+    if (treesPerHa < 300) return traditionalCommercial;
+    if (treesPerHa < 380) return standardCaliforniaLike;
+    if (treesPerHa < 520) return mediumHighDensity;
+    return highDensityManaged;
+  }
+}
+```
+
+6.5. Por que se usan caps
+
+Un arbol en marco amplio puede dar mas kg por arbol. Pero al subir densidad:
+- hay mas competencia de luz;
+- hay mas sombra;
+- hay mas necesidad de poda/mecanizacion;
+- la produccion individual baja;
+- hay machos improductivos dentro del conteo.
+
+El cap evita que 500-600 arboles/ha multipliquen kg/arbol como si cada arbol fuera aislado.
+
+===============================================================================
+7. REFERENCIA BASE POR PERFIL PS
+===============================================================================
+
+Todos los rangos son aproximados para pistache seco con cascara.
+`fullKgPerTree` representa un arbol promedio del huerto adulto con condiciones productivas razonables, antes de aplicar estado, manejo, agua, polinizacion, estres y densidad. Ya es conservador porque incluye dilucion por machos en un huerto normal.
+
+| Perfil | Label | kg/arbol adulto bajo | kg/arbol esperado | kg/arbol alto | t/ha bajo | t/ha esperado | t/ha alto | Confianza |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| ps_skip | PS-SKIP - Pistache general | 4 | 9 | 18 | 0.8 | 1.8 | 3.0 | 0.44 |
+| ps_01_kerman_peters | PS-01 - Kerman/Peters | 5 | 10 | 20 | 1.0 | 2.5 | 3.6 | 0.70 |
+| ps_02_golden_hills_randy | PS-02 - Golden Hills/Randy | 6 | 12 | 22 | 1.2 | 2.8 | 4.0 | 0.74 |
+| ps_03_lost_hills_randy | PS-03 - Lost Hills/Randy | 6 | 12 | 23 | 1.3 | 2.8 | 4.1 | 0.72 |
+| ps_04_sirora_compatible | PS-04 - Sirora/compatible | 4 | 9 | 18 | 0.8 | 2.0 | 3.2 | 0.48 |
+| ps_05_larnaka_mateur_low_chill | PS-05 - Larnaka/Mateur bajo-frio relativo | 3.5 | 8 | 16 | 0.7 | 1.8 | 3.0 | 0.45 |
+
+7.1. Lectura por perfil
+
+PS-SKIP
+- Perfil general.
+- No asume Kerman, Golden Hills, Lost Hills, Sirora, Larnaka/Mateur, macho compatible, portainjerto, densidad ni riego.
+- Debe dar confianza media-baja.
+- No debe proyectar rendimiento alto sin arboles/ha, estado productivo y etapa.
+
+PS-01 Kerman/Peters
+- Kerman es el estandar tradicional en California.
+- Peters es el polinizador clasico para Kerman.
+- Kerman puede requerir mas frio y tiene mayor riesgo de closed shell/blanks frente a cultivares modernos.
+- Buen perfil de referencia si hay frio suficiente y macho Peters bien sincronizado.
+- Rendimiento relativo: medio-alto, no maximo.
+
+PS-02 Golden Hills/Randy
+- Cultivar UC moderno, mas temprano que Kerman.
+- Suele tener mejor porcentaje de split/open y buen potencial de rendimiento.
+- Randy es polinizador fuerte para Golden Hills/Lost Hills.
+- Riesgo: sincronía floral si se usa macho incorrecto; tambien vigilar B/salinidad segun sitio.
+- Rendimiento relativo: alto.
+
+PS-03 Lost Hills/Randy
+- Cultivar UC moderno, nuez grande, buen split y menor alternancia en ensayos.
+- Puede tener muy buen potencial, pero la calidad/cierre depende de sitio y cosecha.
+- Randy o polinizador temprano compatible es clave.
+- Rendimiento relativo: alto, con mejor ajuste de alternancia que Kerman.
+
+PS-04 Sirora/compatible
+- Perfil intermedio/adaptable.
+- Menor evidencia local publica para Mexico frente a Kerman/GH/LH.
+- Usar confianza media-baja.
+- No prometer rendimiento alto sin validacion local.
+- Rendimiento relativo: medio.
+
+PS-05 Larnaka/Mateur bajo-frio relativo
+- Perfil mediterraneo/temprano usado cuando se busca menor requerimiento de frio relativo.
+- "Bajo-frio" no significa sin frio. Sigue necesitando dormancia.
+- Puede tener ventana temprana y adaptacion distinta, pero el mercado/calidad puede variar.
+- Usar confianza media-baja y fuerte dependencia de polinizador.
+- Rendimiento relativo: medio a medio-bajo en BIO-G v1 por prudencia.
+
+7.2. Regla para PS-06 regional Chihuahua
+
+No crear PS-06 oficial en v1 si aun no hay paquete varietal local suficientemente documentado.
+Puede quedar como futuro:
+
+- ps_06_regional_chihuahua
+
+Mientras tanto:
+- aliases regionales caen a ps_skip o al perfil varietal si se identifica.
+- si el productor dice "pistache de Chihuahua pero no se variedad", usar ps_skip.
+- si dice Kerman/Golden/Lost/Sirora/Larnaka/Mateur, resolver perfil especifico.
+
+===============================================================================
+8. MODIFICADORES DE MANEJO
+===============================================================================
+
+8.1. Nivel de manejo
+
+```dart
+enum PistachioManagementLevel { low, medium, good, high, exceptional }
+
+double _managementFactor(PistachioManagementLevel? level) => switch (level) {
+  null => 1.0,
+  PistachioManagementLevel.low => 0.55,
+  PistachioManagementLevel.medium => 0.85,
+  PistachioManagementLevel.good => 1.05,
+  PistachioManagementLevel.high => 1.18,
+  PistachioManagementLevel.exceptional => 1.30,
+};
+```
+
+Lectura:
+- low: poca poda, riego irregular, poca sanidad, polinizacion dudosa.
+- medium: manejo estandar, riego aceptable, sanidad basica.
+- good: poda/luz, riego estable, cosecha a tiempo, control sanitario.
+- high: fertirriego, monitoreo, buena sincronía, sanidad, cosecha rapida.
+- exceptional: solo para huertos tecnificados con datos. No default.
+
+8.2. Nivel de riego
+
+```dart
+enum PistachioIrrigationLevel {
+  rainfed,
+  irregular,
+  stable,
+  regulatedDeficit,
+  fertigation,
+}
+
+double _irrigationFactor(PistachioIrrigationLevel? level) => switch (level) {
+  null => 1.0,
+  PistachioIrrigationLevel.rainfed => 0.38,
+  PistachioIrrigationLevel.irregular => 0.68,
+  PistachioIrrigationLevel.stable => 1.00,
+  PistachioIrrigationLevel.regulatedDeficit => 0.95,
+  PistachioIrrigationLevel.fertigation => 1.10,
+};
+```
+
+Lectura:
+- Pistache tolera sequia mejor que muchos frutales, pero eso no significa que llene bien sin agua.
+- Deficit hidrico fuerte en fruit_fill baja tamaño, split, calidad y retorno floral.
+- Riego estable no debe confundirse con saturacion.
+- EC alta + poca agua puede disparar estres osmotico.
+
+8.3. Factor de polinizacion
+
+En pistache, polinizacion es cuello de botella central.
+
+```dart
+enum PistachioPollinationStatus {
+  unknown,
+  compatibleMalePresent,
+  malePresentButMismatchRisk,
+  lowMaleRatio,
+  noMaleKnown,
+}
+
+double _pollinationFactor(PistachioPollinationStatus? status) => switch (status) {
+  null || PistachioPollinationStatus.unknown => 1.0,
+  PistachioPollinationStatus.compatibleMalePresent => 1.08,
+  PistachioPollinationStatus.malePresentButMismatchRisk => 0.75,
+  PistachioPollinationStatus.lowMaleRatio => 0.70,
+  PistachioPollinationStatus.noMaleKnown => 0.35,
+};
+```
+
+Reglas:
+- Si no se sabe, no destruir el rendimiento automaticamente; bajar confianza.
+- Si se confirma que no hay macho, castigar fuerte.
+- Si hay macho pero no coincide floracion, castigar medio/alto.
+- Kerman/Peters y Golden/Lost/Randy deben tener notas por perfil.
+
+8.4. Factor de alternancia
+
+El pistache alterna de forma natural. No todo ano bajo significa enfermedad.
+
+```dart
+enum PistachioBearingCycle { unknown, onYear, offYear, balanced }
+
+double _bearingCycleFactor(PistachioBearingCycle? cycle) => switch (cycle) {
+  null || PistachioBearingCycle.unknown => 1.0,
+  PistachioBearingCycle.onYear => 1.10,
+  PistachioBearingCycle.offYear => 0.68,
+  PistachioBearingCycle.balanced => 1.0,
+};
+```
+
+Regla:
+- ON year sube potencial, pero puede subir riesgo de baja calidad, blanks, ramas cargadas y postcosecha debil.
+- OFF year baja carga esperada, pero no necesariamente indica arbol enfermo.
+- Lost Hills puede tener nota de alternancia menor, pero no eliminarla.
+
+===============================================================================
+9. MEMORIA DE ESTRES Y FACTORES DE CASTIGO
+===============================================================================
+
+9.1. Severidad
+
+```dart
+enum PistachioStressSeverity { none, mild, moderate, severe }
+```
+
+9.2. Memoria recomendada
+
+```dart
+class PistachioTreeStressMemory {
+  const PistachioTreeStressMemory({
+    this.insufficientWinterChill = PistachioStressSeverity.none,
+    this.floweringFrost = PistachioStressSeverity.none,
+    this.bloomRainOrHumidity = PistachioStressSeverity.none,
+    this.pollinationMismatch = PistachioStressSeverity.none,
+    this.fruitSetDrop = PistachioStressSeverity.none,
+    this.fruitFillWaterStress = PistachioStressSeverity.none,
+    this.salinityOrBoronStress = PistachioStressSeverity.none,
+    this.heatStress = PistachioStressSeverity.none,
+    this.navelOrangewormOrInsectDamage = PistachioStressSeverity.none,
+    this.alternateBearing = PistachioStressSeverity.none,
+    this.postHarvestReserveRisk = PistachioStressSeverity.none,
+  });
+
+  final PistachioStressSeverity insufficientWinterChill;
+  final PistachioStressSeverity floweringFrost;
+  final PistachioStressSeverity bloomRainOrHumidity;
+  final PistachioStressSeverity pollinationMismatch;
+  final PistachioStressSeverity fruitSetDrop;
+  final PistachioStressSeverity fruitFillWaterStress;
+  final PistachioStressSeverity salinityOrBoronStress;
+  final PistachioStressSeverity heatStress;
+  final PistachioStressSeverity navelOrangewormOrInsectDamage;
+  final PistachioStressSeverity alternateBearing;
+  final PistachioStressSeverity postHarvestReserveRisk;
+}
+```
+
+9.3. Factor combinado
+
+No multiplicar todos los estreses, porque eso puede hundir el rendimiento de forma exagerada. Igual que nogal, usar el peor factor como cuello de botella y aplicar reglas duras para eventos que realmente destruyen carga.
+
+```dart
+double get yieldFactor01 {
+  double factorFor(PistachioStressSeverity s) => switch (s) {
+    PistachioStressSeverity.none => 1.0,
+    PistachioStressSeverity.mild => 0.88,
+    PistachioStressSeverity.moderate => 0.65,
+    PistachioStressSeverity.severe => 0.35,
+  };
+
+  final factors = <double>[
+    factorFor(insufficientWinterChill),
+    factorFor(floweringFrost),
+    factorFor(bloomRainOrHumidity),
+    factorFor(pollinationMismatch),
+    factorFor(fruitSetDrop),
+    factorFor(fruitFillWaterStress),
+    factorFor(salinityOrBoronStress),
+    factorFor(heatStress),
+    factorFor(navelOrangewormOrInsectDamage),
+    factorFor(alternateBearing),
+    factorFor(postHarvestReserveRisk),
+  ];
+
+  double worst = factors.reduce((a, b) => a < b ? a : b);
+
+  final hardHits = <PistachioStressSeverity>[
+    floweringFrost,
+    bloomRainOrHumidity,
+    pollinationMismatch,
+    navelOrangewormOrInsectDamage,
+  ];
+
+  if (hardHits.any((s) => s == PistachioStressSeverity.severe) && worst > 0.25) {
+    worst = 0.25;
+  }
+
+  return worst;
+}
+```
+
+9.4. Memoria por etapa
+
+| Etapa | Estres | Impacto rendimiento |
+|---|---|---|
+| dormancy | frio insuficiente | brotacion/floracion irregular, baja sincronía |
+| budbreak | brotacion irregular | baja uniformidad de ciclo |
+| flowering | helada, lluvia, alta HR, viento malo | baja polinizacion y cuajado |
+| fruit_set | aborto, mala fecundacion | menos carga |
+| fruit_fill | deficit hidrico, salinidad, calor | menos tamaño, split, calidad |
+| harvest_maturity | cosecha tardia, NOW, aflatoxina | baja rendimiento comercial/payable |
+| post_harvest | defoliacion, agua baja, carga alta | alternancia y baja reserva siguiente ciclo |
+
+===============================================================================
+10. CALCULO RECOMENDADO
+===============================================================================
+
+10.1. Flujo conceptual
+
+1. Normalizar cropId y profileId.
+2. Resolver referencia de perfil:
+   - profileId especifico si existe.
+   - ps_skip si no existe.
+3. Normalizar estado perenne y etapa.
+4. Bloquear rendimiento si es arbol no productivo.
+5. Inferir productionState si no viene explicito.
+6. Calcular densidad:
+   - treesPerHa directo;
+   - o treeCount/hectares;
+   - o marco de plantacion.
+7. Calcular factores:
+   - estado productivo;
+   - manejo;
+   - riego;
+   - polinizacion;
+   - alternancia;
+   - memoria de estres.
+8. Calcular kg/arbol.
+9. Aplicar cap por densidad.
+10. Convertir a t/ha si hay densidad.
+11. Calcular total kg si hay treeCount.
+12. Ajustar confianza.
+13. Agregar notas UX.
+
+10.2. Formula
+
+kgTree = fullKgPerTree
+  x productionStateFactor
+  x managementFactor
+  x irrigationFactor
+  x pollinationFactor
+  x bearingCycleFactor
+  x stressFactor
+
+si density != null:
+  kgTree = kgTree.cappedAt(PistachioDensitySystem.fromTreesPerHa(density).kgPerTreeCap)
+
+tonHa = kgTree * treesPerHa / 1000
+
+totalKg = kgTree * treeCount
+
+10.3. Confianza
+
+Base:
+- PS-SKIP: 0.44
+- Kerman/Peters: 0.70
+- Golden Hills/Randy: 0.74
+- Lost Hills/Randy: 0.72
+- Sirora/compatible: 0.48
+- Larnaka/Mateur: 0.45
+
+Ajustes:
+- sin densidad ni treeCount: -0.15
+- productionState unknown: -0.10
+- stage unknown: -0.05
+- pollinationStatus unknown en flowering/fruit_set: -0.08
+- stressMemory con estres: -0.10
+- perfil de baja evidencia regional: cap 0.58
+- si hay perfil + densidad + etapa + riego + polinizador: +0.08
+- clamp final: 0.05 a 0.95
+
+10.4. Ejemplos
+
+Ejemplo A:
+300 arboles/ha, PS-02 Golden Hills/Randy, fullBearing, riego estable, manejo good.
+Base expected kg/arbol = 12.
+Factor estado = 1.0.
+Manejo good = 1.05.
+Riego stable = 1.0.
+Polinizacion compatible = 1.08.
+kg/arbol esperado = 13.6.
+Cap para 300 arboles/ha = 14.
+t/ha = 13.6 * 300 / 1000 = 4.08 t/ha.
+Nota: alto; revisar sobrecarga, split, blanks, cosecha y alternancia.
+
+Ejemplo B:
+316 arboles/ha, PS-SKIP, youngBearing, riego irregular.
+Base expected kg/arbol = 9.
+Estado young expected = 0.65.
+Riego irregular = 0.68.
+kg/arbol expected = 3.98.
+t/ha = 1.26.
+Nota: perfil general, produccion joven, confianza baja-media.
+
+Ejemplo C:
+Huerto Kerman/Peters en flowering, no sabe macho.
+No destruir calculo, pero confidence baja y agregar nota:
+"En pistache la polinizacion depende de macho compatible y viento. Si no hay Peters/Famoso u otro macho sincronizado, el amarre puede caer fuerte."
+
+Ejemplo D:
+Pistache joven en root_establishment.
+Rendimiento = 0.
+Mensaje:
+"Todavia no proyectamos cosecha: el pistache esta formando raiz/estructura. Primero que agarre, crezca y tenga macho-hembra correcto."
+
+===============================================================================
+11. SALIDA UX RECOMENDADA
+===============================================================================
+
+11.1. Etiquetas
+
+- "Rendimiento aproximado de pistache seco con cascara"
+- "kg estimados"
+- "t/ha estimadas"
+- "confianza baja/media/alta"
+- "rango bajo - esperado - alto"
+
+11.2. Mensajes por contexto
+
+PS-SKIP:
+"Este calculo usa un perfil general de pistache. Si sabes si es Kerman, Golden Hills, Lost Hills, Sirora o Larnaka/Mateur, la estimacion mejora."
+
+Sin densidad:
+"Sin arboles/ha o marco de plantacion no conviene hablar de t/ha. Captura numero de arboles o distancia entre arboles e hileras."
+
+Sin macho conocido:
+"En pistache no basta que el arbol este sano: si falta macho compatible o no coincide la floracion, el cuajado baja fuerte."
+
+First bearing:
+"Es normal que el pistache tarde en entrar. En primeras cosechas pesa mas formar arbol y equilibrar carga que exigir produccion alta."
+
+Full bearing:
+"En produccion plena, el rango depende mucho de agua, alternancia, split, plagas y cosecha a tiempo."
+
+Alternate low:
+"Un ano bajo puede ser alternancia normal, sobre todo despues de un ano cargado. Revisa reservas y postcosecha antes de culpar solo al fertilizante."
+
+High projection:
+"Proyeccion alta: revisa carga, split/open, blanks y alternancia. Mas kg no siempre significa mas calidad."
+
+Navel orangeworm / daño:
+"Si hay daño de gusano, momias o aflatoxina, el kg cosechado puede no ser kg vendible."
+
+Postcosecha:
+"El pistache no termina al cosechar. Si el arbol queda agotado o pierde hoja temprano, el siguiente ciclo puede bajar."
+
+11.3. Lenguaje farmer-friendly
+
+Usar:
+- pistache
+- arbol macho / arbol hembra
+- amarre
+- cuajado
+- llenado
+- cascara abierta
+- pistache cerrado
+- vano
+- grano
+- alternancia
+- ano cargado / ano bajo
+- cosecha a tiempo
+- momias
+- gusano/naranja del ombligo si se adapta a nombre regional
+- calidad vendible
+
+Evitar:
+- "diagnostico definitivo"
+- "produccion garantizada"
+- "sin macho no pasa nada"
+- "mas nitrogeno = mas pistache"
+- "cosecha cerrada, cultivo terminado"
+
+===============================================================================
+12. REFERENCIA MINIMA PARA TreeYieldReferenceCatalog
+===============================================================================
+
+La pantalla simple actual usa `TreeYieldReferenceCatalog` con kg/arbol por tier.
+Para pistache se recomienda agregar entradas conservadoras por PS-SKIP:
+
+```dart
+// Pistache (doc 03): tabla minima por tier para la pantalla simple
+// (kg de pistache seco con cascara por arbol promedio del huerto; incluye
+// dilucion conservadora por machos cuando el usuario captura arboles totales).
+'pistachio_tree_ps_skip_young': TreeYieldReference(
+  id: 'pistachio_tree_ps_skip_young',
+  cropId: kCropPistachioTree,
+  profileId: kPsSkip,
+  tier: TreeProductiveTier.young,
+  kgPerTreeLow: 0.5,
+  kgPerTreeHigh: 4,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (pistache, sin historial)',
+),
+'pistachio_tree_ps_skip_first': TreeYieldReference(
+  id: 'pistachio_tree_ps_skip_first',
+  cropId: kCropPistachioTree,
+  profileId: kPsSkip,
+  tier: TreeProductiveTier.firstProduction,
+  kgPerTreeLow: 2,
+  kgPerTreeHigh: 8,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (pistache, sin historial)',
+),
+'pistachio_tree_ps_skip_full': TreeYieldReference(
+  id: 'pistachio_tree_ps_skip_full',
+  cropId: kCropPistachioTree,
+  profileId: kPsSkip,
+  tier: TreeProductiveTier.full,
+  kgPerTreeLow: 6,
+  kgPerTreeHigh: 18,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (pistache, sin historial)',
+),
+```
+
+Agregar en `_skipProfileForCrop`:
+
+```dart
+case kCropPistachioTree:
+  return kPsSkip;
+```
+
+12.1. Por que la tabla minima es mas conservadora
+
+La capa minima no sabe:
+- si hay macho;
+- si el conteo incluye machos;
+- si el arbol es Kerman/GH/LH/Sirora;
+- si hay riego;
+- si hay alternancia;
+- si hay densidad;
+- si hay problema de split/closed/blanks.
+
+Por eso usa rangos bajos. La referencia completa vive en `pistachio_tree_yield_reference.dart`.
+
+===============================================================================
+13. ARCHIVO COMPLETO SUGERIDO PARA `pistachio_tree_yield_reference.dart`
+===============================================================================
+
+Este bloque NO es obligatorio copiar literal, pero deja a Codex/Claude la arquitectura esperada.
+
+```dart
+/// Rendimiento aproximado del Pistache (doc 03 oficial).
+///
+/// Reglas no negociables:
+/// - El rendimiento de pistache NO se calcula como cultivo anual: se estima por
+///   kg de pistache seco con cascara/arbol promedio del huerto + arboles/ha +
+///   estado productivo + perfil + densidad + manejo + riego + polinizacion
+///   macho-hembra + alternancia + memoria de estres + confianza.
+/// - Es APROXIMADO y en rango (bajo / esperado / alto). Nunca es promesa.
+/// - Estados no productivos y etapas de establecimiento proyectan 0.
+/// - `post_harvest` NO cierra el cultivo ni borra historial.
+/// - La salida principal es kg de pistache seco con cascara/arbol y t/ha.
+/// - En pistache hay machos y hembras. Si el usuario no separa conteo, los
+///   kg/arbol son conservadores e incluyen dilucion de machos.
+/// - El fallback de perfil es SIEMPRE PS-SKIP de pistache.
+library;
+
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_catalog.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
+
+class YieldRange {
+  const YieldRange(this.low, this.expected, this.high);
+
+  final double low;
+  final double expected;
+  final double high;
+
+  YieldRange scale(double factor) =>
+      YieldRange(low * factor, expected * factor, high * factor);
+
+  YieldRange scaleEach(double fLow, double fExp, double fHigh) =>
+      YieldRange(low * fLow, expected * fExp, high * fHigh);
+
+  YieldRange cappedAt(double cap) => YieldRange(
+        low > cap ? cap : low,
+        expected > cap ? cap : expected,
+        high > cap ? cap : high,
+      );
+
+  static const YieldRange zero = YieldRange(0, 0, 0);
+}
+
+class PistachioTreeYieldReference {
+  const PistachioTreeYieldReference({
+    required this.profileId,
+    required this.fullKgPerTree,
+    required this.expectedTonPerHa,
+    required this.confidenceBase,
+    this.splitPct = const YieldRange(65, 80, 88),
+    this.notesEs = const <String>[],
+  });
+
+  final String profileId;
+  final YieldRange fullKgPerTree;
+  final YieldRange expectedTonPerHa;
+  final double confidenceBase;
+
+  /// Porcentaje orientativo de frutos abiertos/split. Contexto de calidad.
+  /// NO entra al calculo principal de kg.
+  final YieldRange splitPct;
+  final List<String> notesEs;
+}
+
+enum PistachioProductionState {
+  nonProductive,
+  firstBearing,
+  youngBearing,
+  fullBearing,
+  alternateLowYear,
+  unknown,
+}
+
+enum PistachioManagementLevel { low, medium, good, high, exceptional }
+
+enum PistachioIrrigationLevel {
+  rainfed,
+  irregular,
+  stable,
+  regulatedDeficit,
+  fertigation,
+}
+
+enum PistachioPollinationStatus {
+  unknown,
+  compatibleMalePresent,
+  malePresentButMismatchRisk,
+  lowMaleRatio,
+  noMaleKnown,
+}
+
+enum PistachioBearingCycle { unknown, onYear, offYear, balanced }
+
+enum PistachioStressSeverity { none, mild, moderate, severe }
+
+class PistachioTreeStressMemory {
+  const PistachioTreeStressMemory({
+    this.insufficientWinterChill = PistachioStressSeverity.none,
+    this.floweringFrost = PistachioStressSeverity.none,
+    this.bloomRainOrHumidity = PistachioStressSeverity.none,
+    this.pollinationMismatch = PistachioStressSeverity.none,
+    this.fruitSetDrop = PistachioStressSeverity.none,
+    this.fruitFillWaterStress = PistachioStressSeverity.none,
+    this.salinityOrBoronStress = PistachioStressSeverity.none,
+    this.heatStress = PistachioStressSeverity.none,
+    this.navelOrangewormOrInsectDamage = PistachioStressSeverity.none,
+    this.alternateBearing = PistachioStressSeverity.none,
+    this.postHarvestReserveRisk = PistachioStressSeverity.none,
+  });
+
+  final PistachioStressSeverity insufficientWinterChill;
+  final PistachioStressSeverity floweringFrost;
+  final PistachioStressSeverity bloomRainOrHumidity;
+  final PistachioStressSeverity pollinationMismatch;
+  final PistachioStressSeverity fruitSetDrop;
+  final PistachioStressSeverity fruitFillWaterStress;
+  final PistachioStressSeverity salinityOrBoronStress;
+  final PistachioStressSeverity heatStress;
+  final PistachioStressSeverity navelOrangewormOrInsectDamage;
+  final PistachioStressSeverity alternateBearing;
+  final PistachioStressSeverity postHarvestReserveRisk;
+
+  bool get hasAnyStress =>
+      insufficientWinterChill != PistachioStressSeverity.none ||
+      floweringFrost != PistachioStressSeverity.none ||
+      bloomRainOrHumidity != PistachioStressSeverity.none ||
+      pollinationMismatch != PistachioStressSeverity.none ||
+      fruitSetDrop != PistachioStressSeverity.none ||
+      fruitFillWaterStress != PistachioStressSeverity.none ||
+      salinityOrBoronStress != PistachioStressSeverity.none ||
+      heatStress != PistachioStressSeverity.none ||
+      navelOrangewormOrInsectDamage != PistachioStressSeverity.none ||
+      alternateBearing != PistachioStressSeverity.none ||
+      postHarvestReserveRisk != PistachioStressSeverity.none;
+
+  double get yieldFactor01 {
+    double factorFor(PistachioStressSeverity s) => switch (s) {
+          PistachioStressSeverity.none => 1.0,
+          PistachioStressSeverity.mild => 0.88,
+          PistachioStressSeverity.moderate => 0.65,
+          PistachioStressSeverity.severe => 0.35,
+        };
+
+    final factors = <double>[
+      factorFor(insufficientWinterChill),
+      factorFor(floweringFrost),
+      factorFor(bloomRainOrHumidity),
+      factorFor(pollinationMismatch),
+      factorFor(fruitSetDrop),
+      factorFor(fruitFillWaterStress),
+      factorFor(salinityOrBoronStress),
+      factorFor(heatStress),
+      factorFor(navelOrangewormOrInsectDamage),
+      factorFor(alternateBearing),
+      factorFor(postHarvestReserveRisk),
+    ];
+
+    double worst = factors.reduce((a, b) => a < b ? a : b);
+
+    final hardHits = <PistachioStressSeverity>[
+      floweringFrost,
+      bloomRainOrHumidity,
+      pollinationMismatch,
+      navelOrangewormOrInsectDamage,
+    ];
+    if (hardHits.any((s) => s == PistachioStressSeverity.severe) &&
+        worst > 0.25) {
+      worst = 0.25;
+    }
+    return worst;
+  }
+}
+
+class PistachioDensitySystem {
+  const PistachioDensitySystem(this.id, this.kgPerTreeCap);
+
+  final String id;
+  final double kgPerTreeCap;
+
+  static const PistachioDensitySystem extensive =
+      PistachioDensitySystem('extensive_or_wide_spacing', 24);
+  static const PistachioDensitySystem traditionalCommercial =
+      PistachioDensitySystem('traditional_commercial', 18);
+  static const PistachioDensitySystem standardCaliforniaLike =
+      PistachioDensitySystem('standard_300_350_trees_ha', 14);
+  static const PistachioDensitySystem mediumHighDensity =
+      PistachioDensitySystem('medium_high_density', 11);
+  static const PistachioDensitySystem highDensityManaged =
+      PistachioDensitySystem('high_density_managed', 9);
+
+  static PistachioDensitySystem fromTreesPerHa(double treesPerHa) {
+    if (treesPerHa < 220) return extensive;
+    if (treesPerHa < 300) return traditionalCommercial;
+    if (treesPerHa < 380) return standardCaliforniaLike;
+    if (treesPerHa < 520) return mediumHighDensity;
+    return highDensityManaged;
+  }
+}
+
+class PistachioTreeYieldProjection {
+  const PistachioTreeYieldProjection({
+    required this.isProductive,
+    required this.profileId,
+    required this.productionState,
+    required this.confidence01,
+    this.kgPerTree,
+    this.tonPerHa,
+    this.totalKg,
+    this.splitPct,
+    this.notesEs = const <String>[],
+  });
+
+  final bool isProductive;
+  final String profileId;
+  final PistachioProductionState productionState;
+  final double confidence01;
+  final YieldRange? kgPerTree;
+  final YieldRange? tonPerHa;
+  final YieldRange? totalKg;
+
+  /// Contexto de calidad: frutos abiertos/split.
+  final YieldRange? splitPct;
+  final List<String> notesEs;
+
+  factory PistachioTreeYieldProjection.zero({
+    required String profileId,
+    required double confidence,
+    List<String> notesEs = const <String>[],
+  }) =>
+      PistachioTreeYieldProjection(
+        isProductive: false,
+        profileId: profileId,
+        productionState: PistachioProductionState.nonProductive,
+        confidence01: confidence,
+        kgPerTree: YieldRange.zero,
+        notesEs: notesEs,
+      );
+}
+
+const Map<String, PistachioTreeYieldReference>
+pistachioYieldReferenceByProfile = <String, PistachioTreeYieldReference>{
+  kPsSkip: PistachioTreeYieldReference(
+    profileId: kPsSkip,
+    fullKgPerTree: YieldRange(4, 9, 18),
+    expectedTonPerHa: YieldRange(0.8, 1.8, 3.0),
+    confidenceBase: 0.44,
+    splitPct: YieldRange(60, 75, 85),
+    notesEs: <String>[
+      'Perfil general: no asume variedad, macho compatible, portainjerto, riego '
+          'ni densidad. No sobreestimar si el usuario solo sabe que es pistache.',
+    ],
+  ),
+  kPs01KermanPeters: PistachioTreeYieldReference(
+    profileId: kPs01KermanPeters,
+    fullKgPerTree: YieldRange(5, 10, 20),
+    expectedTonPerHa: YieldRange(1.0, 2.5, 3.6),
+    confidenceBase: 0.70,
+    splitPct: YieldRange(60, 75, 84),
+    notesEs: <String>[
+      'Kerman/Peters: estandar tradicional. Buen rendimiento si hay frio y '
+          'sincronia; mas riesgo de cerrado/blanks que Golden Hills/Lost Hills.',
+    ],
+  ),
+  kPs02GoldenHillsRandy: PistachioTreeYieldReference(
+    profileId: kPs02GoldenHillsRandy,
+    fullKgPerTree: YieldRange(6, 12, 22),
+    expectedTonPerHa: YieldRange(1.2, 2.8, 4.0),
+    confidenceBase: 0.74,
+    splitPct: YieldRange(70, 82, 90),
+    notesEs: <String>[
+      'Golden Hills/Randy: cultivar moderno temprano, alto potencial y buen '
+          'porcentaje de split si el polinizador coincide.',
+    ],
+  ),
+  kPs03LostHillsRandy: PistachioTreeYieldReference(
+    profileId: kPs03LostHillsRandy,
+    fullKgPerTree: YieldRange(6, 12, 23),
+    expectedTonPerHa: YieldRange(1.3, 2.8, 4.1),
+    confidenceBase: 0.72,
+    splitPct: YieldRange(70, 82, 90),
+    notesEs: <String>[
+      'Lost Hills/Randy: nuez grande, buen split y menor alternancia reportada '
+          'en ensayos; revisar loose shells/handling y sitio.',
+    ],
+  ),
+  kPs04SiroraCompatible: PistachioTreeYieldReference(
+    profileId: kPs04SiroraCompatible,
+    fullKgPerTree: YieldRange(4, 9, 18),
+    expectedTonPerHa: YieldRange(0.8, 2.0, 3.2),
+    confidenceBase: 0.48,
+    splitPct: YieldRange(62, 76, 86),
+    notesEs: <String>[
+      'Sirora/compatible: perfil adaptable con evidencia local variable; no '
+          'prometer rendimiento alto sin validacion de zona y macho.',
+    ],
+  ),
+  kPs05LarnakaMateurLowChill: PistachioTreeYieldReference(
+    profileId: kPs05LarnakaMateurLowChill,
+    fullKgPerTree: YieldRange(3.5, 8, 16),
+    expectedTonPerHa: YieldRange(0.7, 1.8, 3.0),
+    confidenceBase: 0.45,
+    splitPct: YieldRange(58, 72, 84),
+    notesEs: <String>[
+      'Larnaka/Mateur bajo-frio relativo: usar donde Kerman no ajusta por frio, '
+          'pero no asumir que no requiere dormancia ni polinizador compatible.',
+    ],
+  ),
+};
+
+double treesPerHaFromSpacing(double rowM, double treeM) {
+  if (rowM <= 0 || treeM <= 0) return 0;
+  return 10000 / (rowM * treeM);
+}
+
+double tonHaFromKgTree(double kgTree, double treesPerHa) =>
+    (kgTree * treesPerHa) / 1000;
+
+double kgTreeFromTonHa(double tonHa, double treesPerHa) {
+  if (treesPerHa <= 0) return 0;
+  return (tonHa * 1000) / treesPerHa;
+}
+
+String? _normalizePistachioProfileId(String? profileId) {
+  final id = profileId?.trim().toLowerCase();
+  if (id == null || id.isEmpty) return id;
+  if (id == 'ps_01_kerman') return kPs01KermanPeters;
+  if (id == 'ps_02_golden_hills' || id == 'ps_02_golden') {
+    return kPs02GoldenHillsRandy;
+  }
+  if (id == 'ps_03_lost_hills' || id == 'ps_03_lost') {
+    return kPs03LostHillsRandy;
+  }
+  if (id == 'ps_04_sirora') return kPs04SiroraCompatible;
+  if (id == 'ps_05_larnaka_mateur' ||
+      id == 'ps_05_low_chill' ||
+      id == 'ps_05_mediterraneo') {
+    return kPs05LarnakaMateurLowChill;
+  }
+  return id;
+}
+
+({double low, double expected, double high}) _productionStateFactors(
+  PistachioProductionState state,
+) {
+  return switch (state) {
+    PistachioProductionState.nonProductive => (low: 0, expected: 0, high: 0),
+    PistachioProductionState.firstBearing => (
+        low: 0.08,
+        expected: 0.20,
+        high: 0.35,
+      ),
+    PistachioProductionState.youngBearing => (
+        low: 0.35,
+        expected: 0.65,
+        high: 0.90,
+      ),
+    PistachioProductionState.fullBearing => (
+        low: 0.70,
+        expected: 1.00,
+        high: 1.20,
+      ),
+    PistachioProductionState.alternateLowYear => (
+        low: 0.35,
+        expected: 0.60,
+        high: 0.85,
+      ),
+    PistachioProductionState.unknown => (
+        low: 0.25,
+        expected: 0.55,
+        high: 0.85,
+      ),
+  };
+}
+
+double _managementFactor(PistachioManagementLevel? level) => switch (level) {
+      null => 1.0,
+      PistachioManagementLevel.low => 0.55,
+      PistachioManagementLevel.medium => 0.85,
+      PistachioManagementLevel.good => 1.05,
+      PistachioManagementLevel.high => 1.18,
+      PistachioManagementLevel.exceptional => 1.30,
+    };
+
+double _irrigationFactor(PistachioIrrigationLevel? level) => switch (level) {
+      null => 1.0,
+      PistachioIrrigationLevel.rainfed => 0.38,
+      PistachioIrrigationLevel.irregular => 0.68,
+      PistachioIrrigationLevel.stable => 1.00,
+      PistachioIrrigationLevel.regulatedDeficit => 0.95,
+      PistachioIrrigationLevel.fertigation => 1.10,
+    };
+
+double _pollinationFactor(PistachioPollinationStatus? status) => switch (status) {
+      null || PistachioPollinationStatus.unknown => 1.0,
+      PistachioPollinationStatus.compatibleMalePresent => 1.08,
+      PistachioPollinationStatus.malePresentButMismatchRisk => 0.75,
+      PistachioPollinationStatus.lowMaleRatio => 0.70,
+      PistachioPollinationStatus.noMaleKnown => 0.35,
+    };
+
+double _bearingCycleFactor(PistachioBearingCycle? cycle) => switch (cycle) {
+      null || PistachioBearingCycle.unknown => 1.0,
+      PistachioBearingCycle.onYear => 1.10,
+      PistachioBearingCycle.offYear => 0.68,
+      PistachioBearingCycle.balanced => 1.0,
+    };
+
+PistachioProductionState _inferProductionState({
+  required String stateId,
+  required String stageId,
+  PistachioProductionState? explicit,
+}) {
+  if (explicit != null) return explicit;
+  if (stateId == TreeStateIds.newlyPlanted ||
+      stateId == TreeStateIds.juvenileNonProductive) {
+    return PistachioProductionState.nonProductive;
+  }
+  if (stateId == TreeStateIds.productiveSeason) {
+    return switch (stageId) {
+      TreeStageIds.flowering => PistachioProductionState.unknown,
+      TreeStageIds.fruitSet => PistachioProductionState.youngBearing,
+      TreeStageIds.fruitFill ||
+      TreeStageIds.harvestMaturity ||
+      TreeStageIds.postHarvest => PistachioProductionState.fullBearing,
+      _ => PistachioProductionState.unknown,
+    };
+  }
+  return PistachioProductionState.unknown;
+}
+
+bool _blocksYield(String stateId, String stageId) {
+  if (stateId == TreeStateIds.newlyPlanted ||
+      stateId == TreeStateIds.juvenileNonProductive) {
+    return true;
+  }
+  return stageId == TreeStageIds.plantingTransplant ||
+      stageId == TreeStageIds.rootEstablishment ||
+      stageId == TreeStageIds.juvenileVegetative;
+}
+
+PistachioTreeYieldProjection resolvePistachioTreeYield({
+  required String? profileId,
+  required String? perennialStateId,
+  required String? phenologyStageId,
+  double? treesPerHa,
+  double? hectares,
+  int? treeCount,
+  PistachioProductionState? productionState,
+  PistachioManagementLevel? managementLevel,
+  PistachioIrrigationLevel? irrigationLevel,
+  PistachioPollinationStatus? pollinationStatus,
+  PistachioBearingCycle? bearingCycle,
+  PistachioTreeStressMemory? stressMemory,
+}) {
+  final stateId = normalizeTreeStateId(perennialStateId);
+  final stageId = normalizeTreeStageId(phenologyStageId);
+  final ref =
+      pistachioYieldReferenceByProfile[_normalizePistachioProfileId(profileId)] ??
+      pistachioYieldReferenceByProfile[kPsSkip]!;
+
+  if (_blocksYield(stateId, stageId)) {
+    return PistachioTreeYieldProjection.zero(
+      profileId: ref.profileId,
+      confidence: 0.85,
+      notesEs: const <String>[
+        'Todavia no proyectamos cosecha: el pistache esta en formacion. Importa '
+            'mas formar raiz, estructura, luz, macho/hembra correcto y reservas.',
+      ],
+    );
+  }
+
+  final state = _inferProductionState(
+    stateId: stateId,
+    stageId: stageId,
+    explicit: productionState,
+  );
+  if (state == PistachioProductionState.nonProductive) {
+    return PistachioTreeYieldProjection.zero(
+      profileId: ref.profileId,
+      confidence: 0.85,
+    );
+  }
+
+  final density =
+      treesPerHa ??
+      ((treeCount != null && hectares != null && hectares > 0)
+          ? treeCount / hectares
+          : null);
+
+  final sf = _productionStateFactors(state);
+  final mgmt = _managementFactor(managementLevel);
+  final irr = _irrigationFactor(irrigationLevel);
+  final poll = _pollinationFactor(pollinationStatus);
+  final alt = _bearingCycleFactor(bearingCycle);
+  final stress = stressMemory?.yieldFactor01 ?? 1.0;
+  final commonFactor = mgmt * irr * poll * alt * stress;
+
+  YieldRange kgTree = ref.fullKgPerTree
+      .scaleEach(sf.low, sf.expected, sf.high)
+      .scale(commonFactor);
+
+  if (density != null) {
+    kgTree = kgTree.cappedAt(
+      PistachioDensitySystem.fromTreesPerHa(density).kgPerTreeCap,
+    );
+  }
+
+  final tonHa = density == null
+      ? null
+      : YieldRange(
+          tonHaFromKgTree(kgTree.low, density),
+          tonHaFromKgTree(kgTree.expected, density),
+          tonHaFromKgTree(kgTree.high, density),
+        );
+
+  final totalKg = treeCount == null ? null : kgTree.scale(treeCount.toDouble());
+
+  double confidence = ref.confidenceBase;
+  if (density == null) confidence -= 0.15;
+  if (state == PistachioProductionState.unknown) confidence -= 0.10;
+  if (stageId == TreeStageIds.unknown) confidence -= 0.05;
+  if (stressMemory != null && stressMemory.hasAnyStress) confidence -= 0.10;
+  if (pollinationStatus == null ||
+      pollinationStatus == PistachioPollinationStatus.unknown) {
+    if (stageId == TreeStageIds.flowering || stageId == TreeStageIds.fruitSet) {
+      confidence -= 0.08;
+    }
+  }
+  if ((ref.profileId == kPs04SiroraCompatible ||
+          ref.profileId == kPs05LarnakaMateurLowChill) &&
+      confidence > 0.58) {
+    confidence = 0.58;
+  }
+  if (density != null &&
+      stageId != TreeStageIds.unknown &&
+      pollinationStatus == PistachioPollinationStatus.compatibleMalePresent) {
+    confidence += 0.08;
+  }
+  confidence = confidence.clamp(0.05, 0.95);
+
+  final notes = <String>[...ref.notesEs];
+  if (ref.profileId == kPsSkip) {
+    notes.add(
+      'Este calculo usa un perfil general de pistache. Mejora si eliges Kerman, '
+      'Golden Hills, Lost Hills, Sirora o Larnaka/Mateur.',
+    );
+  }
+  if (density == null) {
+    notes.add(
+      'Sin densidad ni numero de arboles no estimamos t/ha con buena confianza; '
+      'indica arboles/ha o marco de plantacion.',
+    );
+  }
+  if (pollinationStatus == PistachioPollinationStatus.noMaleKnown ||
+      pollinationStatus == PistachioPollinationStatus.lowMaleRatio ||
+      pollinationStatus == PistachioPollinationStatus.malePresentButMismatchRisk) {
+    notes.add(
+      'En pistache la polinizacion macho-hembra por viento es central. Si falta '
+      'macho compatible o no coincide la floracion, el amarre puede caer fuerte.',
+    );
+  }
+  if (bearingCycle == PistachioBearingCycle.offYear) {
+    notes.add(
+      'Ajuste por ano bajo de alternancia. En pistache un ano bajo puede ser normal '
+      'despues de un ano cargado, pero conviene revisar reservas y postcosecha.',
+    );
+  }
+  if (stress < 1.0) {
+    notes.add(
+      'Ajustamos a la baja por memoria de estres. Frio insuficiente, lluvia en '
+      'floracion, agua, salinidad, insecto y postcosecha pueden mover mucho la cosecha.',
+    );
+  }
+  if (tonHa != null && tonHa.expected > 4.0) {
+    notes.add(
+      'Proyeccion alta: revisar split/open, blanks, cosecha a tiempo, plagas y '
+      'alternancia. Mas kg no siempre significa mas calidad vendible.',
+    );
+  }
+
+  return PistachioTreeYieldProjection(
+    isProductive: true,
+    profileId: ref.profileId,
+    productionState: state,
+    confidence01: confidence,
+    kgPerTree: kgTree,
+    tonPerHa: tonHa,
+    totalKg: totalKg,
+    splitPct: ref.splitPct,
+    notesEs: notes,
+  );
+}
+```
+
+===============================================================================
+14. CAMBIOS NECESARIOS EN `yield_projection_setup_screen.dart`
+===============================================================================
+
+El archivo actual ya tiene manejo especial para:
+- pear_tree
+- peach_tree
+- walnut_tree
+
+Pistache debe entrar igual que nogal, antes del fallback `TreeYieldReferenceCatalog`.
+
+Agregar import:
+
+```dart
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_yield_reference.dart';
+```
+
+Agregar bloque:
+
+```dart
+if (cropId == CropCatalog.pistachioTreeCropId) {
+  final projection = resolvePistachioTreeYield(
+    profileId: ctx.profileId,
+    perennialStateId: ctx.perennialStateId,
+    phenologyStageId: ctx.phenologyStageId,
+    treesPerHa: treesPerHa,
+    hectares: hectares,
+    treeCount: treeCount,
+  );
+  _setPistachioTreeProjection(projection, area);
+  return;
+}
+```
+
+Crear setter equivalente a `_setWalnutTreeProjection`, con labels:
+
+- yieldNoun:
+  "rendimiento aproximado de pistache seco con cascara"
+
+- totalUnitLabel:
+  "kg"
+
+- yieldUnitLabel:
+  "t/ha" si area es ha
+
+- si solo m2:
+  "kg/m2"
+
+No mezclar pistache con "fruta fresca".
+
+===============================================================================
+15. TESTS RECOMENDADOS
+===============================================================================
+
+15.1. Tests de no productivo
+
+pistachio_yield_newly_planted_zero_test
+Input:
+- state newly_planted
+- stage planting_transplant
+- treeCount 300
+Esperado:
+- isProductive false
+- kgPerTree zero
+- mensaje de formacion/raiz
+- no t/ha comercial
+
+pistachio_yield_juvenile_zero_test
+Input:
+- state juvenile_non_productive
+- stage juvenile_vegetative
+Esperado:
+- 0 rendimiento comercial
+
+15.2. Tests de conversion
+
+pistachio_trees_per_ha_spacing_test
+Input:
+- rowM 6
+- treeM 5
+Esperado:
+- 333.33 arboles/ha aprox.
+
+pistachio_tonha_conversion_test
+Input:
+- kgTree 10
+- treesPerHa 316
+Esperado:
+- 3.16 t/ha
+
+15.3. Tests de perfiles
+
+pistachio_skip_conservative_test
+Input:
+- ps_skip
+- fullBearing
+- treesPerHa 316
+Esperado:
+- expected tonHa alrededor de 2.8 si sin factores; no mas de 3.5 sin high factors.
+
+pistachio_golden_hills_higher_than_kerman_quality_test
+Input:
+- ps_02 vs ps_01
+Esperado:
+- Golden Hills tiene splitPct expected mayor que Kerman.
+
+pistachio_lost_hills_alternate_note_test
+Input:
+- ps_03_lost_hills_randy
+Esperado:
+- notas mencionan menor alternancia reportada, sin eliminar alternancia.
+
+15.4. Tests de polinizacion
+
+pistachio_no_male_penalty_test
+Input:
+- ps_01_kerman_peters
+- productive_season
+- flowering/fruit_set
+- pollinationStatus noMaleKnown
+Esperado:
+- yieldFactor baja fuerte
+- nota de macho compatible
+- confidence baja
+
+pistachio_unknown_pollinator_not_zero_test
+Input:
+- pollinationStatus unknown
+Esperado:
+- no destruir rendimiento automaticamente
+- bajar confidence en flowering/fruit_set
+
+15.5. Tests de alternancia
+
+pistachio_off_year_lower_than_full_test
+Input:
+- fullBearing vs alternateLowYear
+Esperado:
+- alternateLowYear expected menor
+- notas mencionan ano bajo/alternancia
+
+pistachio_on_year_high_projection_warning_test
+Input:
+- Golden Hills, high management, fertigation, onYear, treesPerHa 316
+Esperado:
+- posible proyeccion alta
+- nota de sobrecarga/split/blanks/alternancia
+
+15.6. Tests de densidad
+
+pistachio_high_density_cap_test
+Input:
+- profile Golden Hills
+- treesPerHa 600
+- fullBearing
+Esperado:
+- kgPerTree cappedAt highDensityManaged
+- t/ha no se dispara absurdamente
+
+15.7. Tests de fallbacks
+
+pistachio_profile_alias_migration_test
+Input:
+- ps_02_golden_hills
+Esperado:
+- resuelve a ps_02_golden_hills_randy
+
+pistachio_unknown_profile_falls_to_ps_skip_test
+Input:
+- "pistache_regional"
+Esperado:
+- ps_skip
+- no cae a ap_skip, ng_skip, pr_skip ni dz_skip
+
+15.8. Tests de contrato perenne
+
+pistachio_post_harvest_not_closed_test
+Input:
+- productive_season
+- post_harvest
+Esperado:
+- permite calculo si fue temporada productiva
+- nota de reservas
+- no cerrar cultivo
+
+===============================================================================
+16. ERRORES QUE CODEX/CLAUDE DEBEN EVITAR
+===============================================================================
+
+1. No usar `sowingDate`.
+2. No meter precio o rentabilidad en rendimiento v1.
+3. No calcular fruto fresco.
+4. No multiplicar kg/arbol hembra por arboles totales si hay machos sin ajuste.
+5. No asumir que todos los arboles producen.
+6. No usar Kerman como default si el usuario no sabe variedad.
+7. No asumir macho compatible si el usuario no sabe: mantener calculo, pero bajar confianza.
+8. No convertir bajo-frio en "sin frio".
+9. No tratar postcosecha como cierre del cultivo.
+10. No confundir fruit_fill con harvest_maturity.
+11. No prometer 4 t/ha como normal para Mexico.
+12. No ignorar alternancia: en pistache es central.
+13. No copiar rangos de nogal.
+14. No interpretar mas kg como mas calidad: split/open, blanks, closed shell y daño importan.
+15. No usar fuentes comerciales como umbral tecnico duro.
+
+===============================================================================
+17. FUENTES Y USO EN BIO-G
+===============================================================================
+
+[S1] UC Davis / UC Cooperative Extension / Agricultural Issues Center.
+Titulo:
+- Sample Costs to Establish and Produce Pistachios, Low-Volume Irrigation, San Joaquin Valley South, 2020.
+URL:
+https://coststudyfiles.ucdavis.edu/uploads/cs_public/e4/bd/e4bd9353-25a1-4258-b5b1-42a203bc09ad/2020pistachiosjvsouth.pdf
+Uso:
+- espaciamiento 17 x 20 ft;
+- 128 arboles/acre;
+- rendimiento year 6/7/8/9+;
+- alternancia;
+- total yield vs payable yield;
+- condiciones de suelo drenado y EC;
+- costos NO usados para BIO-G v1.
+
+[S2] UC Davis Cost & Return Studies.
+Titulo:
+- Pistachios current studies.
+URL:
+https://coststudies.ucdavis.edu/current/commodities/pistachios
+Uso:
+- fuente oficial del estudio de costos 2020.
+
+[S3] California Agriculture / UC ANR / Kallsen et al. 2020.
+Titulo:
+- UC pistachio cultivars show improved nut quality and are ready for harvest earlier than Kerman.
+URL:
+https://californiaagriculture.org/article/108680-uc-pistachio-cultivars-show-improved-nut-quality-and-are-ready-for-harvest-earlier-than-kerman.pdf
+Uso:
+- Golden Hills y Lost Hills con mayor porcentaje de in-shell split que Kerman;
+- Kerman con mayor closed-shell/blanks;
+- Lost Hills con menor alternancia en ensayo;
+- calidad no debe reducirse a kg.
+
+[S4] UC Davis Fruit & Nut Research and Information Center.
+Titulo:
+- Pistachio Climate & Cultivars.
+URL:
+https://fruitsandnuts.ucdavis.edu/climate-cultivars
+Uso:
+- Kerman/rootstocks;
+- UCB I vs Pioneer Gold I;
+- tolerancia relativa a salinidad y Verticillium;
+- Randy, Peters y sincronía.
+
+[S5] New Mexico State University / Dona Ana Extension.
+Titulo:
+- Pistachios: A Sustainable Alternative to Pecans?
+URL:
+https://donaanaextension.nmsu.edu/documents/pistachios24.pdf
+Uso:
+- pistache dioico;
+- necesidad de machos;
+- lista de cultivares Kerman, Lost Hills, Golden Hills;
+- machos Peters/Randy/Famoso/Tejon;
+- plagas de calidad como navel orangeworm;
+- referencia regional arida.
+
+[S6] American Pistachio Growers / Tootelian Company 2023.
+Titulo:
+- Projected Pistachio Production Report 2023 through 2031.
+URL:
+https://americanpistachios.org/sites/default/files/inline-files/ProjectedPistachioProductionReport_09182023.pdf
+Uso:
+- rendimiento por edad 6/7/8/9/10/11+;
+- diferencia ON/OFF;
+- promedio lb/ac;
+- factores de agua/densidad/clima como advertencia.
+
+[S7] CIAD.
+Titulo:
+- Ruezno de pistache: un tesoro oculto y desconocido de compuestos bioactivos.
+URL:
+https://www.ciad.mx/ruezno-de-pistache-un-tesoro-oculto-y-desconocido-de-compuestos-bioactivos/
+Uso:
+- contexto Mexico/Chihuahua;
+- cultivo aun pequeno;
+- Chihuahua como principal productor en 2021.
+
+[S8] UACH / Bioagro.
+Titulo:
+- Analisis financiero y economico del cultivo del pistache en el Municipio de Lopez, Chihuahua.
+URL:
+https://revistabioagro.mx/index.php/revista/article/view/175
+Uso:
+- contexto de Chihuahua;
+- municipios con huertos/potencial;
+- cultivo rustico/adaptado a zonas aridas;
+- datos economicos NO usados para recomendaciones de rentabilidad en BIO-G v1.
+
+[S9] Heart of the Desert / Eagle Ranch.
+Titulo:
+- Our Pistachio Groves.
+URL:
+https://www.heartofthedesert.com/pistachio-groves/
+Uso:
+- lenguaje de productor;
+- 120 arboles/acre;
+- produccion desde 4-5 anos;
+- buena produccion 8-10 anos;
+- hasta 20 lb/arbol adulto.
+Precaucion:
+- fuente comercial; no usar como umbral tecnico primario.
+
+[S10] Foros y experiencia de productores.
+Uso:
+- lenguaje real:
+  "pistache cerrado", "no abre", "no lleno", "se quedo vano", "no hubo macho", "no polinizo", "un ano carga y otro no".
+- No se usaron foros para fijar rangos duros.
+
+===============================================================================
+18. CIERRE TECNICO
+===============================================================================
+
+El rendimiento aproximado de pistache debe ser prudente.
+
+La forma correcta no es una sola tabla de t/ha.
+La forma correcta es:
+
+perfil PS
++ estado productivo
++ arboles/ha o numero de arboles
++ densidad
++ kg/arbol promedio del huerto
++ manejo
++ agua/riego
++ macho/polinizacion
++ alternancia
++ memoria de estres
++ confianza
++ nota de calidad/split
+
+BIO-G debe poder responder tanto a:
+- "Tengo 1 pistache en el patio"
+como a:
+- "Tengo 2 ha con 300 arboles/ha"
+como a:
+- "Tengo Golden Hills con Randy y riego por goteo"
+
+sin romper la logica perenne.
+
+La cosecha no cierra el cultivo.
+Postcosecha alimenta el siguiente ciclo.
+El rendimiento nunca se promete: se estima.

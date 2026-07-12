@@ -1,0 +1,1839 @@
+BIO-G
+
+04_RIESGOS_CULTIVO_SANIDAD_ESTRES_MEMORIA_BIOG_PISTACHE_PS_v1_REFORZADO
+Cultivo: Pistache / Pistacho
+cropId sugerido: crop_pistachio_tree
+CropKey sugerido: pistachioTree / pistachio_tree
+Perfil base: PS-SKIP + PS-01 Kerman/Peters + PS-02 Golden Hills/Randy + PS-03 Lost Hills/Randy + PS-04 Sirora/compatible + PS-05 Larnaka/Mateur bajo-frio relativo
+Nombre cientifico: Pistacia vera L.
+
+Documento tecnico interno BIO-G.
+No sustituye diagnostico de campo, laboratorio, asesoria fitosanitaria local, analisis de suelo/agua/tejido ni normatividad vigente.
+BIO-G v1 no debe convertirse en recetario de plaguicidas: alerta, orienta revision, prioriza riesgo, guarda memoria y recomienda confirmar.
+
+Version: v1.0 reforzada
+Fecha: Junio 2026
+Modulo: Riesgos del Cultivo / Plant Health / Sanidad / Estres / Memoria perenne
+Enfoque de producto: alertas farmer-friendly, cableables a motor, agrupadas por familia de riesgo, sin dosis ni ingredientes activos.
+Formato: TXT tecnico para Flutter/Dart y agentes de IA.
+
+Fuentes base revisadas:
+- Base entregada por usuario: Perfil Universal BIO-G Pistache.
+- Base entregada por usuario: Perfil SKIP BIO-G Pistache.
+- Documentos BIO-G de Manzano y Nogal, especialmente Documento 04 de Riesgos/Sanidad/Memoria.
+- Estandar BIO-G para integracion de arboles perennes v1.5/v1.4.
+- UC IPM Pistachio Pest Management Guidelines.
+- UC ANR / UC Davis Pistachio Research, Climate & Cultivars y Pistachio Production Manual.
+- New Mexico State University, Growing Pistachios in New Mexico.
+- University of Arizona Cooperative Extension, soil-borne diseases / Verticillium / Phytophthora in pistachio.
+- California Agriculture / UC Extension / West Coast Nut / grower publications para lenguaje de campo y novedades recientes.
+- Foros y redes de productores: usados solo para lenguaje UX, problemas frecuentes y aliases; NO para umbrales duros.
+
+================================================================================
+0. DECISION EJECUTIVA
+================================================================================
+
+El pistache NO debe modelarse como nogal con otro nombre.
+Es un arbol frutal perenne caducifolio de nuez/semilla, dioico, con machos y hembras separados, polinizacion por viento, alta dependencia de frio invernal, sensibilidad a sincronía floral, alternancia fuerte, riesgo comercial por nuez vacia/blank, nuez cerrada/non-split, apertura temprana, navel orangeworm, mohos/aflatoxina y memoria multianual.
+
+En BIO-G, el riesgo sanitario del pistache se concentra en nueve frentes:
+
+1. Raiz, cuello, suelo, salinidad y madera:
+   Phytophthora root/crown rot, Verticillium wilt, Macrophomina crown/root rot, cotton root rot/Phymatotrichopsis donde aplique, anoxia por exceso de agua, compactacion, salinidad/boro/cloruros, nematodos, rootstock/sitio, heridas de tronco, cancros y decaimiento.
+
+2. Dormancia, frio, brotacion y arranque:
+   deficit de frio, brotacion irregular, bajo acumulado de reservas, helada de yema/brote, daño por frio de portainjerto/copa, madera inmadura y fallas de arranque.
+
+3. Floracion, macho/hembra y polinizacion:
+   falta de macho, macho incorrecto, baja sincronía floral, poco viento, viento extremo, lluvia/humedad durante floracion, polvo en floracion, baja viabilidad de polen, bajo frio, helada, boro como contexto y aborto temprano.
+
+4. Cuajado, blanks y fisiologia del fruto:
+   pistache vacio/blank, parthenocarpy, stenospermy/aborto de embrion, bajo cuajado, caida temprana, nut drop, carga alta/baja, reservas y alternancia.
+
+5. Plagas directas de pistache y calidad:
+   navel orangeworm, chinches/leaf-footed bugs/stink bugs, small plant bugs, citrus flat mite, mealybugs, aves/roedores, daño de kernel, frass, webbing, shell staining, adherencia de hull y daño vendible.
+
+6. Enfermedades de hoja, panícula, brote, fruto y hull:
+   Botryosphaeria panicle and shoot blight, Alternaria late blight, Botrytis blossom/shoot blight, Septoria leaf spot, fruit molds, Aspergillus flavus/parasiticus, aflatoxina, cankers y complejos de manchas de hoja/fruto.
+
+7. Plagas chupadoras, acaros, melaza y defoliacion:
+   Gill's mealybug, cotton aphid en arboles jovenes, citricola scale/soft scales donde aplique, citrus flat mite, spider mites y complejos de hoja que reducen fotosintesis y reservas.
+
+8. Estres abiotico, calidad y fisiopatias:
+   salinidad, deficit hidrico, exceso de agua, calor, golpe de sol, bajo frio, alta HR, cierre de shell/non-split, early split, shell staining, baja apertura, mala separacion de hull, toxicidad por B/Cl/Na, pH alto y bloqueos micronutrimentales.
+
+9. Cosecha, postcosecha y memoria de lote:
+   mummies, retraso de cosecha, cosecha con Alternaria/NOW, aflatoxina, equipo contaminado con mealybugs, nueces en suelo, procesamiento/grade sheet, hoja postcosecha, reservas, alternancia y riesgo del siguiente ciclo.
+
+Regla v1:
+BIO-G debe decir: “esto lo favorece”, “revise aqui”, “se parece a”, “confirme si avanza”.
+BIO-G NO debe decir: “diagnostico definitivo” ni “aplique X producto”.
+BIO-G debe cruzar etapa fenologica + sensores + clima + historial + clave visual.
+BIO-G debe bajar la confianza si solo hay sensor y no hay observacion visual.
+BIO-G debe guardar memoria si el evento afecta cuajado, llenado, split/open, mummies, aflatoxina o alternancia.
+
+Regla editorial especifica del pistache:
+No hablar solamente de “fruto”. Hablar como productor pistachero:
+- pistache
+- nuez
+- grano/kernel
+- pistache abierto / split
+- pistache cerrado / non-split
+- pistache vano/vacio / blank
+- cascarilla / hull
+- shell/cascara
+- manchado de cascara
+- mummies
+- macho/hembra
+- polen por viento
+- amarre/cuajado
+- alternancia / ano cargado / ano bajo
+
+================================================================================
+1. METODOLOGIA Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+Este documento toma como molde editorial los documentos BIO-G 04 de Manzano y Nogal:
+- decision ejecutiva;
+- familias UX;
+- catalogo maestro de riesgos;
+- riesgos bióticos y abioticos;
+- reglas de motor;
+- matriz por etapa;
+- lenguaje farmer-friendly;
+- memoria multianual;
+- seccion de traduccion a codigo.
+
+No copia la sanidad de manzano ni nogal. Pistache tiene su propia jerarquia:
+- macho/hembra pesa mas que en casi todos los otros arboles;
+- navel orangeworm y aflatoxina son riesgos comerciales centrales;
+- Alternaria/Botryosphaeria/NOW se conectan con humedad, cosecha y mummies;
+- rootstock modifica Verticillium, salinidad, frio y Phytophthora;
+- blanks y non-splits son fisiopatias comerciales claves, no simples “frutos malos”.
+
+Criterio de fuentes:
+- Alta confianza: UC IPM, UC ANR, UC Davis, NMSU, University of Arizona, publicaciones academicas y extension.
+- Media-alta: documentos tecnicos regionales, crop profiles, West Coast Nut si cita asesores UC/UCCE, California Agriculture.
+- Media: guias comerciales o de viveros si coinciden con fuentes universitarias.
+- Baja-media: foros, Facebook, Reddit, paginas de productores y lenguaje informal; usados solo para UX/aliases, no para umbrales duros.
+
+Uso de foros/productores:
+Los foros y redes sirven para detectar como habla el usuario real:
+- “mi pistache no da”
+- “florea pero no amarra”
+- “no tengo macho”
+- “no se si es macho o hembra”
+- “pistache vacio”
+- “no abre la cascara”
+- “se quedo cerrado”
+- “tiene gusano”
+- “tiene telaraña y aserrin dentro”
+- “se mancho la cascara”
+- “hoja con manchas negras”
+- “se secaron racimos”
+- “se secaron ramas”
+- “tiene algodoncillo/melaza”
+- “un ano carga y otro no”
+
+No se usan foros para fijar thresholds, plagas regionales ni decisiones agronomicas duras.
+
+================================================================================
+2. RELACION CON EL MOTOR ACTUAL BIO-G
+================================================================================
+
+El zip revisado muestra que Plant Health ya existe con esta arquitectura:
+
+- `plant_health_models.dart`
+  Define `PlantHealthSyndrome`, `PlantHealthDiagnosis`, `PlantHealthSeverity`, `PlantHealthUrgency`, `PlantHealthInput` y `VarietyModifier`.
+
+- `plant_health_registry.dart`
+  Registra por cultivo: manzano, pera, durazno, nogal y cultivos anuales. Pistache todavia no aparece.
+
+- `plant_health_ids.dart`
+  Define organos, sintomas y señales. Ya existen señales genericas utiles: `waterlogging`, `roots_dark_rot`, `frost_event`, `insufficient_chill`, `no_pollinator_nearby`, `high_ph_calcareous`, `sticky_honeydew`, `sooty_mold`, `mites_webbing`, `frass_present`, `leaf_edge_burn`, `recent_stress`, `spring_wet_foliage`, etc. Para pistache conviene agregar algunas señales especificas.
+
+- `plant_health_stage_bucket.dart`
+  Usa buckets genericos:
+  seedling, vegetativeEarly, vegetativeMid, vegetativeLate, reproductiveEarly, reproductiveMid, grainFill, lateSeason.
+
+- `plant_health_stage_adapter.dart`
+  Convierte etapas del arbol a buckets. El Documento 04 debe respetar esa traduccion y no crear nuevos StageIds.
+
+- `catalog/walnut_tree_syndromes.dart`
+  Ya trae el patron que mas se parece a pistache: raiz/suelo, floracion/polinizacion, zinc/clorosis, pulgones/acaros, plagas directas de nuez/ruezno, shuck/madurez y memoria. Pistache debe copiar la arquitectura, NO los riesgos.
+
+Archivos esperados para alta de pistache:
+
+- `lib/core/plant_health/catalog/pistachio_tree_syndromes.dart`
+- agregar import en `plant_health_registry.dart`
+- agregar case:
+
+```dart
+case CropCatalog.pistachioTreeCropId:
+  return pistachioTreeSyndromes;
+```
+
+IDs sugeridos nuevos en `PlantHealthIds`:
+
+Organos:
+- reutilizar `organLeaf`, `organRoot`, `organCrown`, `organFruit`, `organFlower`, `organWholePlant`, `organStem`.
+- No crear `organNut` si no es estrictamente necesario; para v1 usar `organFruit`.
+
+Sintomas nuevos sugeridos:
+- `symptomPistachioNutFrass = 'pistachio_nut_frass'`
+- `symptomHullLesionsStaining = 'hull_lesions_staining'`
+- `symptomBlankClosedNuts = 'blank_closed_nuts'`
+- `symptomPistachioMummyNuts = 'pistachio_mummy_nuts'`
+- `symptomPanicleShootBlight = 'panicle_shoot_blight'`
+- `symptomBranchFlaggingScorch = 'branch_flagging_scorch'`
+- `symptomMealybugHoneydewHull = 'mealybug_honeydew_hull'`
+
+Señales nuevas sugeridas:
+- `signalEarlySplit = 'early_split'`
+- `signalMummyNuts = 'mummy_nuts'`
+- `signalPinholeNutEntrance = 'pinhole_nut_entrance'`
+- `signalHullSplit = 'hull_split'`
+- `signalHullStaining = 'hull_staining'`
+- `signalBlackSporesRubOff = 'black_spores_rub_off'`
+- `signalMaleFemaleAsynchrony = 'male_female_asynchrony'`
+- `signalRainDuringBloom = 'rain_during_bloom'`
+- `signalLowWindDuringBloom = 'low_wind_during_bloom'`
+- `signalDustDuringBloom = 'dust_during_bloom'`
+- `signalBlankNuts = 'blank_nuts'`
+- `signalClosedShells = 'closed_shells'`
+- `signalMealybugClusters = 'mealybug_clusters'`
+- `signalCrownGumming = 'crown_gumming'`
+- `signalOneSidedScaffoldWilt = 'one_sided_scaffold_wilt'`
+
+Si Codex quiere evitar ampliar IDs en el primer patch, puede mapear temporalmente:
+- blank/closed -> `symptomFruitDeformation`
+- NOW -> `symptomFruitTunnelFrass` + `signalFrassPresent`
+- Alternaria/BOT -> `symptomNecroticFoliarSpots` + `signalSpringWetFoliage` / `signalHumidWindow`
+- salinidad -> `symptomLeafEdgeBurn` + `signalSalinityLoad`
+- falta macho -> `symptomFlowerAbortion` + `signalNoPollinatorNearby`
+
+Recomendacion tecnica:
+Agregar IDs especificos de pistache desde el inicio para no contaminar nogal/manzano ni forzar UI rara.
+
+================================================================================
+3. RESUMEN EJECUTIVO PARA PRODUCTO
+================================================================================
+
+El riesgo del pistache cambia mucho segun etapa.
+
+- Recién plantado / establecimiento:
+  Pesa raiz, cuello, drenaje, Phytophthora, Verticillium si el suelo tiene historial, Macrophomina/crown rot, cotton root rot regional, salinidad, compactacion, pH alto, nematodos, calidad de portainjerto y daño de tronco/injerto.
+
+- Juvenil no productivo:
+  Pesa estructura, crecimiento sano, salinidad, riego sin saturar, cold hardiness del portainjerto, Cotton aphid en arboles recien injertados, mealybugs si hay material/maquinaria, Verticillium por sitio, nutricion sin exceso de N tardio y proteccion de tronco.
+
+- Dormancia:
+  Pesa frio acumulado, yemas, madera, mummies, NOW invernante, cancros/Botryosphaeria, poda/saneamiento, limpieza de mummies del arbol/suelo, equipo y memoria del ciclo anterior.
+
+- Brotacion:
+  Pesa frio suficiente, uniformidad de brotacion, helada tardia, vigor inicial, Verticillium/flagging, daño de yemas, raiz activa, suelo frio o saturado.
+
+- Floracion:
+  Etapa critica. Pesa macho/hembra, sincronía floral, viento, lluvia, polvo, helada, alta HR, baja viabilidad de polen, poco frio, macho incorrecto, falta de polinizador y boro como contexto. BIO-G no debe culpar NPK si el problema real fue polinizacion/clima.
+
+- Cuajado / fruit_set:
+  Pesa fecundacion real, aborto temprano, blanks por fallas de fertilizacion, plant bugs/chinches tempranas, salinidad, humedad estable, viento/clima de floracion y carga inicial.
+
+- Llenado / fruit_fill:
+  Etapa critica para kernel/grano. Pesa agua funcional, K, hoja sana, salinidad, calor, Alternaria, Botryosphaeria, citrus flat mite, chinches, blanks durante llenado, non-splits futuros, early split y riesgo futuro de NOW.
+
+- Madurez / harvest_maturity:
+  Pesa split/open, hull slip, navel orangeworm, fruit molds/aflatoxina, Alternaria en hull, Botryosphaeria, mummies, mealybugs, equipo contaminado, cosecha tardia, segunda sacudida, manchado y calidad vendible.
+
+- Postcosecha:
+  No se apaga el cultivo. Pesa saneamiento, mummies, NOW invernante, Botryosphaeria/Alternaria para el siguiente ciclo, mealybug, grado de defoliacion, reservas, salinidad, riego postcosecha con hoja activa y memoria de alternancia.
+
+Errores que el motor debe evitar:
+
+1. Ver baja cosecha y culpar NPK si no habia macho compatible.
+2. Ver pistache vacio y culpar solo agua si hubo mala polinizacion/frio/polvo.
+3. Ver pistache cerrado y tratarlo como plaga si el problema fue llenado/kernel o cosecha.
+4. Ver hoja con manchas negras y asumir una sola enfermedad sin separar Alternaria vs Botryosphaeria.
+5. Ver marchitez con suelo húmedo y recomendar mas riego.
+6. Celebrar EC alta porque “pistache aguanta sales”.
+7. Ignorar NOW hasta cosecha; el riesgo arranca con early split/hull split y mummies.
+8. Tratar postcosecha como cultivo cerrado.
+9. Usar manzano/nogal para diagnosticar pistache.
+10. Decir “sin macho no pasa nada”.
+
+================================================================================
+4. FAMILIAS UX DEL MODULO RIESGOS PISTACHE
+================================================================================
+
+Familia UX 1: Raiz, cuello, suelo, salinidad y madera
+Objetivo: proteger vida del arbol, raiz funcional, longevidad del huerto y capacidad de absorcion.
+Entradas principales:
+- phytophthora_root_crown_rot
+- verticillium_wilt_pistachio
+- macrophomina_crown_root_rot
+- cotton_root_rot_regional
+- root_crown_rot_anoxia_complex
+- soil_compaction_root_stress
+- salinity_boron_chloride_root_stress
+- nematode_root_stress_context
+- crown_gall_context
+- rootstock_site_mismatch
+- trunk_canker_gumming_decline
+
+Familia UX 2: Dormancia, brotacion, frio y arranque
+Objetivo: proteger uniformidad de brotacion, madera, yemas y salida correcta del invierno.
+Entradas principales:
+- insufficient_chill_irregular_budbreak
+- winter_injury_rootstock_cold_damage
+- frost_budbreak_shoot_damage
+- delayed_budbreak_low_reserves
+- late_fall_growth_freeze_risk
+
+Familia UX 3: Floracion, macho/hembra, viento y polinizacion
+Objetivo: proteger amarre real y evitar que el usuario culpe fertilizante cuando falta polen/clima.
+Entradas principales:
+- no_compatible_male_pollinizer
+- male_female_bloom_asynchrony
+- rain_humidity_bloom_pollination_stress
+- low_wind_or_high_wind_pollination_risk
+- dust_herbicide_residue_bloom_stigma_damage
+- frost_flower_damage
+- boron_context_pollen_tube_ovule
+
+Familia UX 4: Cuajado, blanks, non-splits y fisiologia de nuez
+Objetivo: explicar pistache vacio/cerrado sin convertirlo todo en plaga o fertilizante.
+Entradas principales:
+- blank_nuts_pollination_failure
+- blank_nuts_kernel_fill_failure
+- non_split_closed_shell_context
+- early_split_context
+- excessive_crop_load_alternate_bearing
+- low_reserve_fruit_set_context
+- premature_nut_drop_context
+
+Familia UX 5: Plagas directas de pistache y calidad comercial
+Objetivo: proteger kernel, split/open, shell, hull y calidad vendible.
+Entradas principales:
+- navel_orangeworm
+- early_split_navel_orangeworm_risk
+- stink_bug_leaf_footed_bug_kernel_spot
+- small_plant_bug_epicarp_lesion
+- citrus_flat_mite_hull_damage
+- mealybug_hull_honeydew_shell_staining
+- birds_rodents_nut_loss
+
+Familia UX 6: Enfermedades de hoja, panícula, brote, fruto y hull
+Objetivo: proteger hoja funcional, panículas, shoots, hull, shell staining y reducir inoculo.
+Entradas principales:
+- botryosphaeria_panicle_shoot_blight
+- alternaria_late_blight
+- botrytis_blossom_shoot_blight
+- septoria_leaf_spot_context
+- fruit_molds_aflatoxin_context
+- aspergillus_aflatoxin_context
+- shoot_canker_dieback_complex
+
+Familia UX 7: Plagas de hoja, chupadores, acaros y vectores
+Objetivo: proteger fotosintesis, reservas y reducir diseminacion por equipo.
+Entradas principales:
+- cotton_aphid_young_trees
+- gills_mealybug
+- citricola_scale_soft_scale_context
+- spider_mites_complex
+- citrus_flat_mite_foliar_hull
+- beneficial_disruption_flare
+
+Familia UX 8: Estres abiotico, suelo y calidad
+Objetivo: leer problemas que parecen plaga/enfermedad pero nacen de agua, salinidad, pH, raiz, calor o carga.
+Entradas principales:
+- drought_stress_kernel_fill
+- waterlogging_anoxia
+- salinity_ec_high
+- boron_toxicity_context
+- chloride_sodium_toxicity_context
+- heat_stress_sunburn_hull
+- poor_drainage_saline_sodic_site
+- high_ph_micronutrient_block_context
+- nitrogen_excess_low_crop_vigor
+
+Familia UX 9: Cosecha, postcosecha, mummies y memoria de lote
+Objetivo: proteger calidad final, reducir NOW/aflatoxina y guardar aprendizaje del ciclo.
+Entradas principales:
+- delayed_harvest_now_aflatoxin_risk
+- mummy_nuts_overwintering_now
+- wet_harvest_mold_risk
+- mealybug_equipment_spread
+- harvest_equipment_sanitation_context
+- grade_sheet_next_year_memory
+- post_harvest_leaf_loss_reserve_risk
+- alternate_bearing_memory
+
+================================================================================
+5. CATALOGO MAESTRO DE RIESGOS BIOTICOS Y ABIOTICOS
+================================================================================
+
+Formato:
+Riesgo | Donde pesa mas | Que lo favorece | Clave visual | Etapa | Prioridad BIO-G | Memoria | Lectura BIO-G
+
+--------------------------------------------------------------------------------
+5.1 RAIZ, CUELLO, SUELO, SALINIDAD Y MADERA
+--------------------------------------------------------------------------------
+
+1) phytophthora_root_crown_rot
+Nombre UX: Pudricion de raiz/cuello por exceso de humedad
+Nombre tecnico: Phytophthora spp. en pistache
+Donde pesa mas: arboles jovenes, 3ra/4ta hoja, suelos pesados, zonas bajas, hardpan, salinidad/sodicidad, riegos largos y corona mojada.
+Que lo favorece: suelo saturado, drenaje pobre, riego excesivo, fuentes de agua superficial contaminadas, emisores cerca del tronco, compactacion, sales y plantas estresadas.
+Clave visual: bajo vigor, hojas cloroticas, defoliacion, cancro basal bajo la linea del suelo, goma clara/crema en tronco/corona, muerte rapida en calor de verano.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative, vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Critica.
+Memoria: Muy alta; puede matar arbol y dejar sitio de riesgo.
+Lectura BIO-G: si soilMoisture alta + resistance alta + zona baja + bajo vigor/marchitez, no recomendar mas riego. Revisar cuello/raiz/drenaje. Pedir confirmacion local.
+
+2) verticillium_wilt_pistachio
+Nombre UX: Verticilosis / marchitez por Verticillium
+Nombre tecnico: Verticillium dahliae
+Donde pesa mas: suelos con historial de algodon, solanaceas u hospederos; portainjertos susceptibles; primavera tardia/verano.
+Que lo favorece: inoculo de suelo, plantas susceptibles, material de vivero contaminado, herramientas/suelo, estres.
+Clave visual: secamiento rapido de una rama principal o del arbol; parches amarillos/quemados entre nervaduras; thin leaf decline; copa rala con hojas en mechones al final de ramas; madera con decoloracion vascular.
+Etapa: budbreak, vegetative_growth, fruit_set, fruit_fill.
+Prioridad BIO-G: Muy alta si hay historial del sitio.
+Memoria: Muy alta; enfermedad de sitio y longevidad.
+Lectura BIO-G: si aparece marchitez unilateral/por scaffolds y no cuadra con falta de agua, sugerir revisar Verticillium y rootstock. No diagnosticar solo por sensor.
+
+3) macrophomina_crown_root_rot
+Nombre UX: Pudricion seca de cuello/raiz por calor y estres
+Nombre tecnico: Macrophomina phaseolina
+Donde pesa mas: veranos calientes, suelos secos/salinos, arboles jovenes o estresados, corona/rootstock.
+Que lo favorece: calor, deficit hidrico, salinidad, suelo pobre, raiz debilitada.
+Clave visual: marchitez, declinacion con corona afectada, pudricion seca/oscura, muerte de arboles en calor.
+Etapa: root_establishment, juvenile_vegetative, vegetative_growth, fruit_fill.
+Prioridad BIO-G: Alta-media regional.
+Memoria: Alta.
+Lectura BIO-G: si hay calor + sequia/sales + declinacion de corona, no meterlo todo en Phytophthora; separar pudricion por exceso de agua vs pudricion seca por estres.
+
+4) cotton_root_rot_regional
+Nombre UX: Pudricion algodonosa / pudricion texana de raiz
+Nombre tecnico: Phymatotrichopsis omnivora / Phymatotrichum omnivorum
+Donde pesa mas: zonas aridas/semiaridas con suelos alcalinos/calizos y historial de esta enfermedad; Nuevo Mexico, Texas, norte de Mexico donde exista.
+Que lo favorece: suelos calizos, verano caliente, focos infectados, historial de algodón/alfalfa/pecan/grape/hospederos, baja materia organica.
+Clave visual: arbol que se seca rapido, hojas que quedan pegadas, muerte por manchones, raiz comprometida.
+Etapa: vegetative_growth, fruit_fill, post_harvest; visible en verano.
+Prioridad BIO-G: Muy alta donde exista historial, baja si no existe en la zona.
+Memoria: Muy alta; riesgo de sitio.
+Lectura BIO-G: no hacerlo universal. En Chihuahua/NM/TX puede ser contexto. Si arbol muere rapido por focos con suelo calizo, sugerir confirmar raiz/corona con sanidad local.
+
+5) root_crown_rot_anoxia_complex
+Nombre UX: Raiz asfixiada / raiz sin aire
+Donde pesa mas: establecimiento, suelos pesados, encharcamiento, riego largo, compactacion.
+Que lo favorece: humedad persistente alta, baja infiltracion, resistencia alta, sales, mal manejo de riego.
+Clave visual: marchitez con suelo humedo, hojas amarillas, raiz oscura, bajo vigor, respuesta mala a fertilizante.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative, vegetative_growth, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: “Marchitez con suelo humedo no es falta de agua”. Revisar oxigeno, drenaje, raiz y EC.
+
+6) soil_compaction_root_stress
+Nombre UX: Compactacion / suelo cerrado
+Donde pesa mas: huertos con maquinaria, suelos arcillosos, calles compactadas, plantaciones nuevas.
+Que lo favorece: transito sobre suelo humedo, poca materia organica, capas endurecidas, riego pesado, salinidad/sodio.
+Clave visual: arboles bajos por linea/mancha, encharcamiento, raices superficiales, suelo duro, bajo crecimiento.
+Etapa: todas, especialmente root_establishment y fruit_fill.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: resistance alta + humedad irregular + bajo vigor = riesgo suelo/raiz antes de NPK.
+
+7) salinity_boron_chloride_root_stress
+Nombre UX: Sales / boro / cloruros pegando en raiz y hoja
+Donde pesa mas: regiones aridas, agua salina, suelos con mal drenaje, calor, riego insuficiente de lavado.
+Que lo favorece: EC alta, Na/Cl/B altos, fertirriego concentrado, baja infiltracion, sequia, pozo/agua salina.
+Clave visual: bordes de hoja quemados, hoja chica, bajo vigor, pistache chico, mal llenado, sintomas de sequia aunque se riegue.
+Etapa: root_establishment, vegetative_growth, fruit_set, fruit_fill, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: pistache tolera mas sales que otros frutales, pero no es inmune. EC alta bloquea recomendaciones agresivas de fertilizacion.
+
+8) nematode_root_stress_context
+Nombre UX: Nematodos / raiz limitada
+Donde pesa mas: suelos arenosos, replantes, historial de nematodos, portainjertos susceptibles.
+Que lo favorece: sitio infestado, raices estresadas, manejo de suelo pobre.
+Clave visual: bajo vigor crónico, parches, raices con lesiones/agallas segun especie, respuesta pobre a agua/NPK.
+Etapa: root_establishment, juvenile_vegetative, vegetative_growth.
+Prioridad BIO-G: Media.
+Memoria: Alta si se confirma.
+Lectura BIO-G: no diagnosticar sin muestra. Si persiste bajo vigor y sensor no explica, sugerir analisis.
+
+9) rootstock_site_mismatch
+Nombre UX: Portainjerto no ajustado al sitio
+Donde pesa mas: establecimiento y anos jovenes.
+Que lo favorece: frio fuerte con portainjerto sensible, salinidad con rootstock menos tolerante, historial de Verticillium, Phytophthora, suelo calizo.
+Clave visual: fallas de crecimiento, daño invernal, declinacion por focos o baja productividad relativa.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative, budbreak.
+Prioridad BIO-G: Media-alta como contexto.
+Memoria: Muy alta porque viene de plantacion.
+Lectura BIO-G: BIO-G v1 no debe pedir portainjerto obligatorio, pero si lo conoce puede ajustar riesgo de Verticillium, salinidad, frio y Phytophthora.
+
+10) trunk_canker_gumming_decline
+Nombre UX: Cancros, goma y decaimiento de tronco/ramas
+Donde pesa mas: heridas, poda, granizo, estres, madera debilitada, Phytophthora/cancros.
+Que lo favorece: heridas, exceso de humedad, calor/estres, madera dañada, herramientas.
+Clave visual: goma, corteza hundida, ramas secas, cancro, muerte regresiva.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest, dormancy.
+Prioridad BIO-G: Alta si hay gumming/cancro.
+Memoria: Alta.
+Lectura BIO-G: separar goma por Phytophthora/corona de goma por herida/cancro. No tratar como hoja amarilla.
+
+--------------------------------------------------------------------------------
+5.2 DORMANCIA, BROTACION, FRIO Y ARRANQUE
+--------------------------------------------------------------------------------
+
+11) insufficient_chill_irregular_budbreak
+Nombre UX: Falta de frio / brotacion dispareja
+Donde pesa mas: dormancia, budbreak, flowering.
+Que lo favorece: invierno calido o erratico, perfil de alto frio como Kerman, zona no adaptada, calor invernal.
+Clave visual: brotacion tardia, hojas deformes o disparejas, floracion extendida, bajo amarre, macho/hembra desincronizados.
+Etapa: dormancy, budbreak, flowering, fruit_set.
+Prioridad BIO-G: Critica en floracion/cuajado.
+Memoria: Alta; afecta carga y alternancia.
+Lectura BIO-G: baja carga con bajo frio probable no es problema de NPK. Pedir revisar horas frio/modelo climatico y perfil.
+
+12) winter_injury_rootstock_cold_damage
+Nombre UX: Daño de frio invernal / portainjerto sensible
+Donde pesa mas: inviernos duros, portainjertos menos resistentes al frio, arbol joven, madera inmadura.
+Que lo favorece: crecimiento tardio en otoño, N tardio, mala entrada a dormancia, heladas fuertes, portainjerto no adaptado.
+Clave visual: brotacion parcial, ramas que no despiertan, corteza dañada, muerte regresiva.
+Etapa: dormancy, budbreak, vegetative_growth.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Alta.
+Lectura BIO-G: si hubo helada fuerte y el arbol brota por partes, no asumir raiz o fertilizante sin revisar madera/portainjerto.
+
+13) frost_budbreak_shoot_damage
+Nombre UX: Helada en brotacion / brote tierno quemado
+Donde pesa mas: budbreak y flowering.
+Que lo favorece: brotacion temprana, zonas bajas, aire frio, perfil temprano, primavera inestable.
+Clave visual: brotes negros/cafes, yemas dañadas, flores negras, hojas tiernas quemadas.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: si hubo helada, baja confianza de cuajado y rendimiento. No empujar N fuerte por baja carga sin revisar vigor.
+
+14) delayed_budbreak_low_reserves
+Nombre UX: Arranque flojo por reservas bajas
+Donde pesa mas: budbreak y flowering.
+Que lo favorece: ano anterior cargado, defoliacion postcosecha, salinidad, sequia, postcosecha seca, NOW/Alternaria/BOT severos, baja hoja funcional.
+Clave visual: brotacion debil, flor pobre, poco crecimiento, arbol “cansado”.
+Etapa: budbreak, flowering, vegetative_growth.
+Prioridad BIO-G: Alta como memoria.
+Memoria: Muy alta.
+Lectura BIO-G: guardar carga alta/defoliacion/estres postcosecha. El arbol no arranca solo con N si no hay raiz/agua/reservas.
+
+15) late_fall_growth_freeze_risk
+Nombre UX: Crecimiento tarde / madera inmadura
+Donde pesa mas: post_harvest, otoño, dormancia.
+Que lo favorece: N tardio, riego excesivo tarde, portainjerto vigoroso, clima calido de otoño, jovenes.
+Clave visual: brotes verdes tarde, hoja retenida, daño por frio despues.
+Etapa: post_harvest, dormancy.
+Prioridad BIO-G: Media.
+Memoria: Media-alta.
+Lectura BIO-G: si hay N alto tarde + frio futuro, advertir riesgo de madera inmadura/daño de invierno.
+
+--------------------------------------------------------------------------------
+5.3 FLORACION, MACHO/HEMBRA, VIENTO Y POLINIZACION
+--------------------------------------------------------------------------------
+
+16) no_compatible_male_pollinizer
+Nombre UX: Falta de macho compatible
+Donde pesa mas: flowering y fruit_set.
+Que lo favorece: un solo arbol, huerto casero sin macho, macho joven que no suelta polen, macho muy lejos, polinizador equivocado.
+Clave visual: hembra florece, pero hay poco o nada de pistache; no se observan machos soltando polen; año tras año no amarra.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Critica.
+Memoria: Alta.
+Lectura BIO-G: si el usuario no sabe macho/hembra, bajar confianza. Si confirma que no hay macho, no prometer cosecha. No culpar NPK primero.
+
+17) male_female_bloom_asynchrony
+Nombre UX: Macho y hembra no coincidieron
+Donde pesa mas: flowering.
+Que lo favorece: bajo frio, perfiles no compatibles, Kerman/Peters fuera de sincronía, Golden/Lost sin Randy/Tejon adecuado, clima erratico.
+Clave visual: macho soltó polen antes/despues de flor hembra; floracion larga; amarre irregular.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Critica.
+Memoria: Alta.
+Lectura BIO-G: “el pistache no se amarra por decreto; se amarra cuando macho, hembra, viento y clima coinciden”.
+
+18) rain_humidity_bloom_pollination_stress
+Nombre UX: Lluvia o humedad alta en floracion
+Donde pesa mas: flowering.
+Que lo favorece: lluvia, alta humedad, rocío persistente, bajo viento, clima frio-humedo, flor mojada.
+Clave visual: floracion presente pero bajo amarre; posible enfermedad posterior en brotes/paniculas.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: baja polinizacion por clima, no necesariamente deficiencia. Registrar evento para rendimiento.
+
+19) low_wind_or_high_wind_pollination_risk
+Nombre UX: Viento malo para polinizacion
+Donde pesa mas: flowering.
+Que lo favorece: aire totalmente quieto, cortinas/barreras, polvo, o viento fuerte desecante.
+Clave visual: flor hembra receptiva con poco polen efectivo; amarre bajo por zonas.
+Etapa: flowering.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: pistache es de viento. Abejas no resuelven falta de polen compatible.
+
+20) dust_herbicide_residue_bloom_stigma_damage
+Nombre UX: Polvo/herbicida durante floracion
+Donde pesa mas: flowering.
+Que lo favorece: labores con polvo, caminos secos, maquinaria, aplicaciones/herbicida o residuos llevados por viento en flor.
+Clave visual: floracion con baja fecundacion; amarre muy bajo aunque existia macho.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta si causo aborto/blank.
+Lectura BIO-G: si el usuario reporta labores polvosas durante bloom, elevar riesgo de polinizacion fallida.
+
+21) frost_flower_damage
+Nombre UX: Helada en floracion
+Donde pesa mas: flowering, fruit_set.
+Que lo favorece: perfil temprano, zonas bajas, brotacion temprana, primavera fria.
+Clave visual: flores negras/cafes, pistachito recien cuajado se cae, daño por bloque/zona baja.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Critica.
+Memoria: Alta.
+Lectura BIO-G: helada mata potencial. No intentar “corregir” con fertilizante si el tejido ya se daño.
+
+22) boron_context_pollen_tube_ovule
+Nombre UX: Boro como contexto de polen/ovulo
+Donde pesa mas: flowering, fruit_set.
+Que lo favorece: niveles foliares bajos confirmados, suelo/agua con desbalance, historial de blanks.
+Clave visual: mal cuajado/blanks sin causa clara y con polinizacion aparente.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Media; nunca receta directa.
+Memoria: Media.
+Lectura BIO-G: BIO-G v1 no mide B. Mencionar solo como contexto avanzado y pedir analisis foliar/asesoria.
+
+--------------------------------------------------------------------------------
+5.4 CUAJADO, BLANKS, NON-SPLITS Y FISIOLOGIA DE NUEZ
+--------------------------------------------------------------------------------
+
+23) blank_nuts_pollination_failure
+Nombre UX: Pistache vacio por mala fecundacion
+Donde pesa mas: fruit_set y primeras semanas posteriores a floracion.
+Que lo favorece: macho ausente, mala sincronía, bajo frio, polvo, lluvia, mala viabilidad de polen, boro bajo como contexto.
+Clave visual: pistache que se formó por fuera pero queda vacio; poca carga real; muchos vanos.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: blank no siempre es falta de agua. Puede venir desde polinizacion/fertilizacion.
+
+24) blank_nuts_kernel_fill_failure
+Nombre UX: Pistache vacio por falla de llenado del grano
+Donde pesa mas: fruit_fill.
+Que lo favorece: deficit hidrico, salinidad, carga alta, reservas bajas, alternancia, calor, mala hoja, K/agua funcionales bajos.
+Clave visual: cascara formada, kernel no llena o se queda pequeño; porcentaje alto de vanos en cosecha.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: si durante fruit_fill hubo agua baja/EC alta/calor, elevar riesgo de blanks de llenado.
+
+25) non_split_closed_shell_context
+Nombre UX: Pistache cerrado / no abrió
+Donde pesa mas: fruit_fill y harvest_maturity.
+Que lo favorece: kernel pequeño, llenado pobre, cosecha/tiempo, genetica/perfil, agua insuficiente en ventanas criticas, salinidad, carga/reservas.
+Clave visual: pistache con cascara cerrada; grano puede estar pequeño; baja apertura.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta por calidad.
+Memoria: Media-alta.
+Lectura BIO-G: cerrado no es siempre plaga. Relacionar con kernel fill, agua, split y perfil.
+
+26) early_split_context
+Nombre UX: Apertura temprana / early split
+Donde pesa mas: preharvest, harvest_maturity.
+Que lo favorece: estres hidrico en shell growth, condiciones de fruto, perfil/rootstock, calor, manejo de riego.
+Clave visual: pistaches que abren antes de la ventana normal, a veces con hull expuesto.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Muy alta porque abre puerta a NOW y mohos.
+Memoria: Alta.
+Lectura BIO-G: early split no es “ya esta lista toda la cosecha”. Es alerta de NOW/aflatoxina.
+
+27) excessive_crop_load_alternate_bearing
+Nombre UX: Alternancia / año cargado que cobra el siguiente
+Donde pesa mas: fruit_fill, harvest_maturity, post_harvest, siguiente budbreak.
+Que lo favorece: carga alta, reservas limitadas, defoliacion, agua baja, postcosecha debil.
+Clave visual: un año carga mucho y al siguiente poco; brotes con muchas nueces pierden yemas/retorno floral.
+Etapa: fruit_fill, post_harvest, dormancy, budbreak.
+Prioridad BIO-G: Muy alta.
+Memoria: Muy alta.
+Lectura BIO-G: guardar ON/OFF. No diagnosticar año bajo como enfermedad automáticamente.
+
+28) premature_nut_drop_context
+Nombre UX: Caida temprana de pistache
+Donde pesa mas: fruit_set, fruit_fill.
+Que lo favorece: mala fecundacion, chinches/plant bugs, estres hidrico, salinidad, calor, abortos naturales, baja reservas.
+Clave visual: pistaches pequeños caen; algunos negros/perforados/manchados; patron por racimo/zona.
+Etapa: fruit_set, fruit_fill.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: pedir abrir frutos caidos y revisar perforacion/mancha/semilla antes de asumir aborto fisiologico.
+
+--------------------------------------------------------------------------------
+5.5 PLAGAS DIRECTAS DE PISTACHE Y CALIDAD COMERCIAL
+--------------------------------------------------------------------------------
+
+29) navel_orangeworm
+Nombre UX: Gusano de la naranja del ombligo / navel orangeworm
+Nombre tecnico: Amyelois transitella
+Donde pesa mas: desde hull split/early split hasta cosecha; mummies en postcosecha/dormancia.
+Que lo favorece: mummies, cosecha tardia, early split, hull split, huertos con NOW, almendros/nogales/figs cerca, mala sanidad, frutos remanentes.
+Clave visual: agujerito tipo alfiler, telaraña/webbing, frass, kernel comido, mohos, pistache sucio/manchado.
+Etapa: fruit_fill, harvest_maturity, post_harvest, dormancy.
+Prioridad BIO-G: Critica por calidad/aflatoxina.
+Memoria: Muy alta; mummies sostienen siguiente ciclo.
+Lectura BIO-G: si hay hull split + frass/webbing/mummies, alertar fuerte. No esperar a que sea “cosecha final”.
+
+30) early_split_navel_orangeworm_risk
+Nombre UX: Early split con riesgo de NOW
+Donde pesa mas: preharvest.
+Que lo favorece: estres de agua en mayo/shell growth, deficits, clima, perfil/rootstock, presencia de NOW.
+Clave visual: pistaches que abren temprano, antes de madurez general.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: early split + NOW = riesgo de mohos/aflatoxina. Registrar lote para cosecha/monitoreo.
+
+31) stink_bug_leaf_footed_bug_kernel_spot
+Nombre UX: Chinche / leaf-footed bug / daño de kernel
+Donde pesa mas: desde bloom/fruit_set hasta harvest; midseason critico para kernel spot.
+Que lo favorece: maleza/hospederos, bordes, presion regional, clima, ausencia de monitoreo.
+Clave visual: lesion externa/epicarp lesion temprano, fruto negro y caída, puntos/necrosis en kernel, manchas internas.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta.
+Memoria: Media.
+Lectura BIO-G: si hay caída de frutos negros o kernel con manchas puntuales, no asumir solo hongo/NPK.
+
+32) small_plant_bug_epicarp_lesion
+Nombre UX: Plant bugs pequeños / lesion de epicarpio
+Donde pesa mas: temprano, bloom a fruit_set.
+Que lo favorece: maleza/hospederos, floracion/cuaje, presencia de insectos verdaderos.
+Clave visual: lesiones hundidas/acuosas en fruto joven; frutos negros y caída temprana.
+Etapa: flowering, fruit_set, fruit_fill temprano.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: early season fruit blackening/drop puede ser insecto, no solo aborto fisiologico.
+
+33) citrus_flat_mite_hull_damage
+Nombre UX: Acaro plano / daño en hull
+Nombre tecnico: Brevipalpus lewisi
+Donde pesa mas: junio-agosto, preharvest, climas calientes.
+Que lo favorece: calor, polvo, poblaciones altas, daño no detectado.
+Clave visual: manchas/cicatrices en hull, pistaches que se arrugan y permanecen en el arbol; puede parecer Botryosphaeria.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta.
+Memoria: Media; mummies/daño pueden favorecer NOW.
+Lectura BIO-G: si el daño parece BOT pero hay acaros/bronzeado/cicatriz, pedir revisar con lupa.
+
+34) mealybug_hull_honeydew_shell_staining
+Nombre UX: Cochinilla harinosa / Gill's mealybug / melaza en hull
+Donde pesa mas: preharvest, harvest, post_harvest, equipo de cosecha.
+Que lo favorece: focos infestados, equipo contaminado, movimiento de maquinaria, hormigas, canopia densa.
+Clave visual: masas algodonosas, melaza, fumagina/negrilla, hull pegajoso, shell staining, adherencia de cascarilla.
+Etapa: fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta en zonas con presencia.
+Memoria: Alta por propagacion de lote/equipo.
+Lectura BIO-G: si hay algodoncillo/melaza en racimos o ramas, marcar foco. Equipo puede mover infestacion.
+
+35) birds_rodents_nut_loss
+Nombre UX: Aves/roedores comiendo pistache
+Donde pesa mas: madurez/cosecha.
+Que lo favorece: fruta madura, bordes, cosecha retrasada, fuentes de refugio.
+Clave visual: cascaras rotas, frutos mordidos, perdida por bordes.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Baja-media.
+Lectura BIO-G: separar perdida por fauna de NOW o caída natural.
+
+--------------------------------------------------------------------------------
+5.6 ENFERMEDADES DE HOJA, PANICULA, BROTE, FRUTO Y HULL
+--------------------------------------------------------------------------------
+
+36) botryosphaeria_panicle_shoot_blight
+Nombre UX: Botryosphaeria / tizón de panícula y brote
+Nombre tecnico: Botryosphaeria dothidea y Botryosphaeriaceae
+Donde pesa mas: floracion a verano; brotes, paniculas, racimos, madera; huertos con humedad/rociadores.
+Que lo favorece: alta HR, lluvia o agua en canopia, temperaturas calidas, riego por aspersion/micro que moja copa, cankers, mummies/inoculo.
+Clave visual: brotes/paniculas secas, shoot strikes, cankers, racimos marchitos, lesiones que no manchan el dedo como Alternaria.
+Etapa: flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest, dormancy.
+Prioridad BIO-G: Muy alta donde hay historial.
+Memoria: Muy alta; se acumula si se deja varios años.
+Lectura BIO-G: si hay historial, cankers o paniculas secas, guardar memoria y recomendar revisar poda/saneamiento/agua en canopia. No diagnosticar por mancha sola.
+
+37) alternaria_late_blight
+Nombre UX: Alternaria tardia / manchas negras en hoja y hull
+Nombre tecnico: Alternaria alternata, A. arborescens, A. tenuissima, Stemphylium spp.
+Donde pesa mas: verano tardio a cosecha; huertos humedos, poca ventilacion, riego por aspersion/flood/micro en zonas bajas.
+Que lo favorece: alta humedad, rocio, canopia cerrada, mala infiltracion, zonas bajas, fruit-bearing shoots.
+Clave visual: lesiones negras angulares o circulares en hojas; esporas negras que manchan el dedo al frotar; lesiones negras con halo rojizo en hull; defoliacion; shell staining.
+Etapa: fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Muy alta en humedad/historial.
+Memoria: Alta por defoliacion e inoculo.
+Lectura BIO-G: si mancha negra se frota y ensucia el dedo, subir Alternaria. Si no, comparar BOT. No tratar toda mancha como igual.
+
+38) botrytis_blossom_shoot_blight
+Nombre UX: Botrytis en flor/brote
+Nombre tecnico: Botrytis cinerea
+Donde pesa mas: floracion humeda, brotes tiernos.
+Que lo favorece: clima fresco-humedo, lluvia, canopia mojada, floracion extendida.
+Clave visual: flor/brote con moho gris, tizones, necrosis humeda.
+Etapa: flowering, fruit_set, vegetative_growth.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Media.
+Lectura BIO-G: separar de helada y Botryosphaeria; pedir humedad/moho gris y patrón.
+
+39) septoria_leaf_spot_context
+Nombre UX: Mancha foliar tipo Septoria
+Donde pesa mas: regiones humedas o temporadas con mojado foliar.
+Que lo favorece: humedad, lluvia, canopia densa, hoja mojada.
+Clave visual: manchas foliares con posible defoliacion.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Media si defolia.
+Lectura BIO-G: mantener como diferencial, no top diagnosis en zonas secas sin humedad.
+
+40) fruit_molds_aflatoxin_context
+Nombre UX: Mohos del fruto / riesgo de aflatoxina
+Nombre tecnico: Aspergillus flavus, A. parasiticus y otros mohos
+Donde pesa mas: early split, hull split, NOW, cosecha retrasada, preharvest.
+Que lo favorece: NOW, early split, shell damage, humedad, frutos dañados, cosecha tardia, mummies.
+Clave visual: kernel mohoso, manchas, daño de gusano, fruta abierta/dañada.
+Etapa: fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Critica comercial.
+Memoria: Muy alta.
+Lectura BIO-G: NOW + moho/aflatoxina es riesgo de mercado. BIO-G no diagnostica aflatoxina; sugiere confirmar con proceso/laboratorio.
+
+41) shoot_canker_dieback_complex
+Nombre UX: Cancros y muerte regresiva de brotes
+Donde pesa mas: madera joven, heridas, granizo, poda, Botryosphaeria.
+Que lo favorece: heridas, humedad, estres, canopia densa, inoculo.
+Clave visual: brotes secos, cankers, muerte regresiva, ramas flagging.
+Etapa: vegetative_growth, fruit_fill, post_harvest, dormancy.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: si hay shoot strikes repetidos, guardar como historial de lote y no verlo como evento aislado.
+
+--------------------------------------------------------------------------------
+5.7 PLAGAS DE HOJA, CHUPADORES, ACAROS Y VECTORES
+--------------------------------------------------------------------------------
+
+42) cotton_aphid_young_trees
+Nombre UX: Pulgon en pistache joven
+Donde pesa mas: arboles jovenes / newly budded trees.
+Que lo favorece: brotes tiernos, vigor, clima favorable, baja fauna benefica.
+Clave visual: colonias de pulgones, melaza, hojas pegajosas, brotes tiernos afectados.
+Etapa: root_establishment, juvenile_vegetative, vegetative_growth.
+Prioridad BIO-G: Media.
+Memoria: Baja-media salvo defoliacion.
+Lectura BIO-G: en adultos no ponerlo como principal salvo evidencia. En jovenes, revisar brotes.
+
+43) gills_mealybug
+Nombre UX: Gill's mealybug / cochinilla harinosa
+Donde pesa mas: racimos, hull, cosecha, maquinaria.
+Que lo favorece: focos previos, equipo contaminado, hormigas, canopia densa.
+Clave visual: masas blancas algodonosas, melaza, fumagina, calidad baja, shell staining.
+Etapa: fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta donde existe.
+Memoria: Alta por diseminacion.
+Lectura BIO-G: limpiar equipo y marcar focos como accion de sanidad; no recetar producto.
+
+44) citricola_scale_soft_scale_context
+Nombre UX: Escamas / cochinillas blandas
+Donde pesa mas: ramas/hojas, canopia, huertos con melaza/fumagina.
+Que lo favorece: baja fauna benefica, polvo, mal equilibrio, hormigas.
+Clave visual: escamas adheridas, melaza, negrilla, baja hoja funcional.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Media si defolia o debilita.
+Lectura BIO-G: si hay negrilla, revisar chupadores antes de decir “hongo”.
+
+45) spider_mites_complex
+Nombre UX: Araña roja / acaros
+Donde pesa mas: verano caliente, seco y polvoso.
+Que lo favorece: calor, polvo, baja humedad, tratamientos que eliminan enemigos naturales, estres hidrico.
+Clave visual: punteado, bronceado, telaraña fina, defoliacion.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Media-alta si defolia durante/post llenado.
+Lectura BIO-G: defoliacion en llenado o postcosecha afecta reservas; guardar memoria.
+
+46) beneficial_disruption_flare
+Nombre UX: Brote de plaga por romper equilibrio de enemigos naturales
+Donde pesa mas: pulgones, acaros, mealybugs, escamas.
+Que lo favorece: aplicaciones fuertes no selectivas, polvo, sequia, poca biodiversidad, hormigas.
+Clave visual: plaga secundaria explota despues de manejo reciente.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Media.
+Lectura BIO-G: si el usuario reporta plaga justo despues de “limpiar todo”, registrar como posible flare. No recomendar repetir sin confirmar.
+
+--------------------------------------------------------------------------------
+5.8 ESTRES ABIOTICO, SUELO Y CALIDAD
+--------------------------------------------------------------------------------
+
+47) drought_stress_kernel_fill
+Nombre UX: Falta de agua en llenado del grano
+Donde pesa mas: fruit_fill y preharvest.
+Que lo favorece: riego irregular, calor, EC alta, compactacion, baja capacidad de retencion, carga alta.
+Clave visual: grano chico, pistache vano, baja apertura, hoja estresada, caida, cierre de estomas.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: en llenado, agua funcional pesa mas que fertilizante. EC alta puede hacer sequia fisiologica.
+
+48) waterlogging_anoxia
+Nombre UX: Exceso de agua / raiz sin oxigeno
+Donde pesa mas: establecimiento y despues de riegos/lluvias pesadas.
+Que lo favorece: suelos pesados, riego largo, compactacion, zonas bajas.
+Clave visual: marchitez con suelo humedo, hojas amarillas, bajo vigor, raiz oscura.
+Etapa: root_establishment, vegetative_growth, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: no confundir con sequia; mas agua puede empeorar.
+
+49) heat_stress_sunburn_hull
+Nombre UX: Calor fuerte / asoleado
+Donde pesa mas: fruit_fill, harvest_maturity.
+Que lo favorece: olas de calor, baja humedad, suelo seco, poca sombra foliar, desbalance de carga.
+Clave visual: daño en lado expuesto, hoja quemada, estrés de racimos, baja calidad.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: cruzar temperatura, humedad, carga y hoja antes de culpar enfermedad.
+
+50) high_ph_micronutrient_block_context
+Nombre UX: pH alto bloqueando nutrientes
+Donde pesa mas: brotacion, vegetativo, floracion.
+Que lo favorece: suelo calizo, pH >8, baja materia organica, anoxia.
+Clave visual: clorosis, bajo vigor, hojas chicas, respuesta pobre a fertilizante.
+Etapa: budbreak, vegetative_growth, flowering.
+Prioridad BIO-G: Alta como contexto.
+Memoria: Media.
+Lectura BIO-G: no decir solo “falta N/P/K”. Hablar de disponibilidad y analisis.
+
+51) nitrogen_excess_low_crop_vigor
+Nombre UX: Mucho nitrógeno con poca carga
+Donde pesa mas: vegetative_growth, fruit_set, fruit_fill.
+Que lo favorece: baja carga por mala polinizacion/helada, N alto, agua alta, poda fuerte.
+Clave visual: mucho follaje, poca fruta, sombra, brote blando, madera tarde.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: si no hubo cuajado por polinizacion, mas N puede irse a puro vigor. Mensaje directo al agricultor.
+
+--------------------------------------------------------------------------------
+5.9 COSECHA, POSTCOSECHA, MUMMIES Y MEMORIA DE LOTE
+--------------------------------------------------------------------------------
+
+52) delayed_harvest_now_aflatoxin_risk
+Nombre UX: Cosecha tardia con riesgo de gusano/moho
+Donde pesa mas: harvest_maturity.
+Que lo favorece: retraso, segunda sacudida, alta presion de NOW, Alternaria, early split, equipo tardio.
+Clave visual: mas NOW, frass, moho, shell staining, grade sheet peor.
+Etapa: harvest_maturity.
+Prioridad BIO-G: Critica.
+Memoria: Alta.
+Lectura BIO-G: cosechar tarde para ganar mas split puede costar NOW/manchado. Guardar evento.
+
+53) mummy_nuts_overwintering_now
+Nombre UX: Mummies / pistaches quedados en arbol o suelo
+Donde pesa mas: post_harvest, dormancy.
+Que lo favorece: mala cosecha, segunda sacudida pobre, frutos en horquetas, suelo sin limpieza, racimos secos.
+Clave visual: pistaches secos pegados en arbol/suelo, frutos remanentes con kernel.
+Etapa: post_harvest, dormancy.
+Prioridad BIO-G: Muy alta para NOW.
+Memoria: Muy alta.
+Lectura BIO-G: mummies son memoria viva de plaga. Saneamiento reduce riesgo siguiente ciclo.
+
+54) wet_harvest_mold_risk
+Nombre UX: Cosecha mojada / riesgo de moho y calidad
+Donde pesa mas: harvest_maturity, post_harvest.
+Que lo favorece: lluvia, suelo mojado, hull lesionado, retraso, mal secado/proceso.
+Clave visual: fruta sucia/mojada, moho, manchado, lotes con olor o baja calidad.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: no es solo kg; calidad vendible puede caer.
+
+55) mealybug_equipment_spread
+Nombre UX: Equipo moviendo cochinilla
+Donde pesa mas: harvest, post_harvest.
+Que lo favorece: cosecha en lotes infestados, equipo sin lavar, cuadrillas que pasan de focos a lotes limpios.
+Clave visual: aparicion de mealybug por zonas/equipos, melaza/algodoncillo.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta regional.
+Memoria: Alta.
+Lectura BIO-G: pedir limpiar/lavar equipo antes de moverlo de lote infestado a limpio; sin recetar producto.
+
+56) grade_sheet_next_year_memory
+Nombre UX: Hoja de calidad / grade sheet como memoria
+Donde pesa mas: post_harvest.
+Que lo favorece: procesamiento que reporta closed, blank, insect damage, staining, shelling stock.
+Clave visual: resultados de planta/proceso.
+Etapa: post_harvest.
+Prioridad BIO-G: Alta para mejora.
+Memoria: Muy alta.
+Lectura BIO-G: usar datos de calidad para ajustar riesgos del siguiente ciclo: NOW, blanks, closed, Alternaria, cosecha tardia, agua.
+
+57) post_harvest_leaf_loss_reserve_risk
+Nombre UX: Perdio hoja temprano despues de cosecha
+Donde pesa mas: post_harvest.
+Que lo favorece: Alternaria, Botryosphaeria, acaros, salinidad, sequia, cosecha pesada, helada temprana.
+Clave visual: defoliacion temprana, arbol agotado, hoja bronceada/negra, poco vigor siguiente primavera.
+Etapa: post_harvest, dormancy, budbreak.
+Prioridad BIO-G: Muy alta como memoria.
+Memoria: Muy alta.
+Lectura BIO-G: postcosecha no es descanso; es preparacion del siguiente ciclo. Guardar reserva en riesgo.
+
+================================================================================
+6. MATRIZ DE RIESGO POR ETAPA BIO-G
+================================================================================
+
+StageId: planting_transplant
+Riesgos dominantes:
+- Phytophthora / anoxia
+- salinidad
+- compactacion
+- rootstock-site mismatch
+- cold damage en zonas frias
+- nematodos/contexto de sitio
+Prioridad BIO-G:
+- raiz, humedad, EC, drenaje, resistencia.
+Mensaje UX:
+“Todavia no estamos hablando de cosecha. Que agarre bien la raiz; si se queda mojado o salino, el arbol lo paga años.”
+
+StageId: root_establishment
+Riesgos dominantes:
+- raiz sin aire
+- Phytophthora
+- Macrophomina si calor/sequia
+- Verticillium/cotton root rot si sitio tiene historial
+- sales/boro/cloruros
+- compactacion
+Mensaje UX:
+“Si el pistache se ve triste con suelo mojado, no le metas mas agua a ciegas. Revisa raiz, drenaje y sales.”
+
+StageId: juvenile_vegetative
+Riesgos dominantes:
+- salinidad
+- riego irregular
+- rootstock frio/sitio
+- pulgon/cochinilla/acaros
+- exceso de N tardio
+- daño de tronco
+Mensaje UX:
+“En arbol joven se forma estructura. No le exijas pistache; exige raiz, tronco sano y crecimiento parejo.”
+
+StageId: dormancy
+Riesgos dominantes:
+- frio insuficiente
+- mummies/NOW
+- Botryosphaeria cankers
+- poda/saneamiento
+- daño de roedores/tronco
+- memoria de carga/defoliacion
+Mensaje UX:
+“El pistache dormido no esta apagado. Ahi se juega el frio, la sanidad de mummies y la memoria para el siguiente ciclo.”
+
+StageId: budbreak
+Riesgos dominantes:
+- bajo frio/brotacion dispareja
+- helada tardia
+- Verticillium/branch flagging
+- raiz fria/saturada
+- reservas bajas
+Mensaje UX:
+“Si brota disparejo, no culpes primero al fertilizante: revisa frio, raiz, madera y carga del año pasado.”
+
+StageId: vegetative_growth
+Riesgos dominantes:
+- acaros/cochinilla/pulgon
+- salinidad/hoja quemada
+- Botryosphaeria temprano
+- exceso de N con baja carga
+- compactacion/agua
+Mensaje UX:
+“Mucho verde sin pistache no siempre es bueno. Si no amarró, el exceso de N puede irse a puro follaje.”
+
+StageId: flowering
+Riesgos dominantes:
+- falta de macho
+- macho/hembra no sincronizados
+- lluvia/HR
+- viento malo
+- polvo/herbicida
+- helada
+- bajo frio
+- Botrytis/Botryosphaeria si humedad
+Mensaje UX:
+“En pistache la flor no se amarra sola: necesita macho, hembra, viento y clima decente. Si eso falló, no es NPK.”
+
+StageId: fruit_set
+Riesgos dominantes:
+- baja fecundacion
+- blanks tempranos
+- plant bugs/chinches
+- caida natural vs daño
+- salinidad/agua
+Mensaje UX:
+“Si el pistachito cae chico, abre algunos y revisa: puede ser polinizacion, aborto o insecto. No adivines.”
+
+StageId: fruit_fill
+Riesgos dominantes:
+- deficit hidrico
+- EC alta
+- K/agua funcional
+- blank por llenado
+- non-split futuro
+- early split
+- citrus flat mite
+- Alternaria
+- Botryosphaeria
+- chinches
+Mensaje UX:
+“Aqui se forma el grano. Si falta agua o hay sales, se paga en kernel, pistache vano, cerrado o mala apertura.”
+
+StageId: harvest_maturity
+Riesgos dominantes:
+- NOW
+- aflatoxina/fruit molds
+- Alternaria en hull
+- Botryosphaeria
+- mealybug
+- cosecha tardia
+- shell staining
+- closed/blank/split quality
+Mensaje UX:
+“Ahora sí importa abierto, cerrado, vano, manchado y gusano. Mas tiempo en el arbol puede subir split, pero tambien sube NOW y manchado.”
+
+StageId: post_harvest
+Riesgos dominantes:
+- mummies
+- NOW invernante
+- Botryosphaeria/Alternaria memoria
+- mealybug/equipo
+- defoliacion temprana
+- reservas bajas
+- salinidad/sequia con hoja activa
+Mensaje UX:
+“No cierres el ciclo al cosechar. Si quedan mummies o el arbol pierde hoja temprano, el siguiente año te lo cobra.”
+
+StageId: unknown
+Riesgos dominantes:
+- usar PS-SKIP conservador
+- pedir etapa visible
+- no diagnosticar
+Mensaje UX:
+“Dime qué se ve: flor, pistachito, racimo verde, pistache abriendo, hoja con manchas, o árbol recién plantado. Con eso BIO-G afina.”
+
+================================================================================
+7. REGLAS DE MOTOR PARA PLANT HEALTH
+================================================================================
+
+7.1. Regla de confianza
+
+Subir confianza cuando:
+- hay etapa visible;
+- hay organo afectado claro;
+- hay clave visual fuerte: frass, mummies, male/female missing, black spores rub off, gumming, early split;
+- hay clima que favorece el riesgo;
+- hay historial/memoria consistente;
+- hay dato de grade sheet.
+
+Bajar confianza cuando:
+- solo hay sensor;
+- stage = unknown;
+- profile = ps_skip y no sabe macho/hembra;
+- no hay observacion visual;
+- el sintoma puede ser biótico o abiotico;
+- la region no coincide con plaga/enfermedad;
+- se esta intentando diagnosticar aflatoxina sin laboratorio.
+
+7.2. Regla de humedad/raiz
+
+Si soilMoisture alta + bajo vigor/marchitez:
+- no recomendar mas riego;
+- evaluar Phytophthora/anoxia/root stress;
+- si hay gumming en corona, subir Phytophthora/crown rot;
+- si hay calor/sequia/sales, separar Macrophomina.
+
+7.3. Regla de salinidad
+
+Si EC alta:
+- subir `salinity_boron_chloride_root_stress`;
+- bajar confianza de NPK;
+- si fruit_fill, subir riesgo de blanks/non-splits/low split;
+- si leaf_edge_burn, no asumir K bajo;
+- si soilMoisture baja + EC alta, marcar sequia fisiologica.
+
+7.4. Regla de floracion macho/hembra
+
+Si stage = flowering o fruit_set y:
+- no hay macho conocido;
+- `signalNoPollinatorNearby`;
+- `signalMaleFemaleAsynchrony`;
+- bajo frio;
+- lluvia/humedad/poco viento/polvo;
+
+entonces:
+- subir riesgo de mala polinizacion;
+- bajar confianza de rendimiento;
+- NO culpar NPK primero;
+- en PS-SKIP mostrar mensaje conservador.
+
+7.5. Regla de blank / vano
+
+Si el usuario reporta “pistache vacio”:
+- revisar si el evento viene desde floracion/cuajado: macho, sincronía, polvo, boro como contexto;
+- revisar si viene desde fruit_fill: agua, EC, calor, carga, reservas;
+- no diagnosticar con una sola causa.
+
+7.6. Regla de pistache cerrado / non-split
+
+Si hay muchos cerrados:
+- cruzar perfil, agua en llenado, salinidad, kernel fill, carga y cosecha;
+- no tratarlo automaticamente como plaga;
+- si hay NOW/frass, ya es otra alerta.
+
+7.7. Regla de NOW
+
+Si hay hull split/early split + frass/webbing/pinhole/mummies:
+- NOW debe subir a severidad alta/critica;
+- agregar riesgo de fruit molds/aflatoxina;
+- agregar memoria de postcosecha y mummies.
+
+7.8. Regla Alternaria vs Botryosphaeria
+
+Si hay manchas negras en hoja/hull y humedad alta:
+- si al frotar lesion negra ensucia el dedo, Alternaria sube;
+- si hay paniculas/brotes secos, cankers y strikes, Botryosphaeria sube;
+- si ambas señales existen tarde, pueden coexistir y requiere confirmacion.
+
+7.9. Regla postcosecha
+
+Postcosecha no apaga el modulo.
+Debe monitorear:
+- mummies;
+- sanidad de madera;
+- defoliacion;
+- mealybug/equipo;
+- reservas;
+- salinidad/agua si hoja activa;
+- grade sheet.
+
+7.10. Regla de severidad
+
+Critico:
+- Phytophthora con muerte rapida/gumming;
+- Verticillium/cotton root rot sospechado en sitio;
+- no macho compatible en flowering/fruit_set;
+- NOW con frass/webbing en harvest;
+- fruit molds/aflatoxina probable;
+- defoliacion severa antes/postcosecha.
+
+Alta:
+- Alternaria severa;
+- Botryosphaeria;
+- salinidad con sintomas;
+- blanks/non-splits altos;
+- chinches/plant bugs con daño de kernel;
+- mealybug en cosecha/equipo.
+
+Media:
+- plagas foliares sin defoliacion;
+- daño abiotico leve;
+- incertidumbre sin clave visual.
+
+Baja:
+- observacion preventiva, sin avance ni organo comercial afectado.
+
+================================================================================
+8. VARIETY MODIFIERS POR PERFIL PS
+================================================================================
+
+PS-SKIP
+- Baja confianza si no hay macho/hembra.
+- Riesgo conservador de bajo frio, polinizacion y blanks.
+- No asumir Kerman.
+
+PS-01 Kerman/Peters
+- Subir riesgo de bajo frio y desincronía Kerman/Peters si invierno insuficiente.
+- Subir riesgo de blanks/cerrados frente a cultivares modernos si hay estres.
+- NOW/Alternaria/BOT normales por etapa, no inferiores.
+- Mensaje: Kerman es tradicional, pero no perdona bajo frio ni polinizacion mala.
+
+PS-02 Golden Hills/Randy
+- Subir sensibilidad a Alternaria si hay alta HR/historial, porque puede mostrar sintomas mas temprano en algunas observaciones de campo.
+- Mejor potencial de split/open que Kerman si el sistema va bien.
+- Requiere Randy/Tejon u otro macho temprano compatible segun zona.
+- Mensaje: temprano y productivo no significa libre de Alternaria ni de macho compatible.
+
+PS-03 Lost Hills/Randy
+- Similar a Golden en necesidad de macho temprano.
+- Buen potencial de split y calibre, pero vigilar carga, agua, calidad y cosecha.
+- Alternancia puede ser menor que Kerman en ensayos, pero NO eliminarla.
+
+PS-04 Sirora/compatible
+- Confianza media por menor evidencia local publica.
+- No hardcodear macho.
+- Riesgo de polinizador compatible y validacion regional.
+
+PS-05 Larnaka/Mateur bajo-frio relativo
+- Reducir riesgo relativo de bajo frio contra Kerman, pero no a cero.
+- Subir riesgo de helada tardia si brota/florea temprano.
+- No llamarlo tropical.
+
+================================================================================
+9. SINDROMES MINIMOS SUGERIDOS PARA `pistachio_tree_syndromes.dart`
+================================================================================
+
+La app no necesita cargar 57 riesgos como 57 PlantHealthSyndrome desde el primer patch.
+Recomendacion v1: crear 10-12 sindromes de alto valor, cada uno con diferenciales internos.
+
+Sindromes minimos v1:
+
+1. pistachio_root_crown_rot_01
+Label: Decaimiento con suelo humedo, goma en corona o arbol que se seca por focos
+Diagnosticos:
+- phytophthora_root_crown_rot
+- root_crown_rot_anoxia
+- macrophomina_crown_root_rot
+- salinity_compaction_root_stress
+
+2. pistachio_verticillium_cotton_root_01
+Label: Rama/scaffold que se seca o arbol que muere rapido por focos
+Diagnosticos:
+- verticillium_wilt_pistachio
+- cotton_root_rot_regional
+- rootstock_site_mismatch
+
+3. pistachio_bloom_pollination_01
+Label: Floreo pero amarró poco, o no se sabe si hay macho compatible
+Diagnosticos:
+- no_compatible_male_pollinizer
+- male_female_bloom_asynchrony
+- rain_humidity_bloom_pollination_stress
+- frost_flower_damage
+- dust_herbicide_residue_bloom_stigma_damage
+
+4. pistachio_blank_closed_nuts_01
+Label: Pistache vacio, cerrado o bajo porcentaje de apertura
+Diagnosticos:
+- blank_nuts_pollination_failure
+- blank_nuts_kernel_fill_failure
+- non_split_closed_shell_context
+- drought_salinity_kernel_fill
+
+5. pistachio_navel_orangeworm_01
+Label: Pistache con agujerito, telaraña/frass o mummies
+Diagnosticos:
+- navel_orangeworm
+- early_split_navel_orangeworm_risk
+- fruit_molds_aflatoxin_context
+- mummy_nuts_overwintering_now
+
+6. pistachio_plant_bugs_kernel_spot_01
+Label: Pistache negro/caído temprano o kernel con manchas por picadura
+Diagnosticos:
+- stink_bug_leaf_footed_bug_kernel_spot
+- small_plant_bug_epicarp_lesion
+- premature_nut_drop_context
+
+7. pistachio_alternaria_botryosphaeria_01
+Label: Manchas negras, defoliacion, paniculas o brotes secos
+Diagnosticos:
+- alternaria_late_blight
+- botryosphaeria_panicle_shoot_blight
+- botrytis_blossom_shoot_blight
+- septoria_leaf_spot_context
+
+8. pistachio_mealybug_mites_honeydew_01
+Label: Algodoncillo, melaza, negrilla, acaros o daño de hull
+Diagnosticos:
+- gills_mealybug
+- citrus_flat_mite_hull_damage
+- spider_mites_complex
+- cotton_aphid_young_trees
+
+9. pistachio_salinity_water_stress_quality_01
+Label: Borde quemado, hoja estresada, llenado pobre o salinidad alta
+Diagnosticos:
+- salinity_boron_chloride_root_stress
+- drought_stress_kernel_fill
+- waterlogging_anoxia
+- high_ph_micronutrient_block_context
+
+10. pistachio_harvest_postharvest_memory_01
+Label: Cosecha tardia, mummies, manchado o memoria para el siguiente ciclo
+Diagnosticos:
+- delayed_harvest_now_aflatoxin_risk
+- mummy_nuts_overwintering_now
+- wet_harvest_mold_risk
+- post_harvest_leaf_loss_reserve_risk
+- grade_sheet_next_year_memory
+
+11. pistachio_alternate_bearing_reserves_01
+Label: Un año carga y otro no, o arbol agotado despues de cosecha
+Diagnosticos:
+- excessive_crop_load_alternate_bearing
+- delayed_budbreak_low_reserves
+- post_harvest_leaf_loss_reserve_risk
+
+12. pistachio_cold_chill_budbreak_01
+Label: Brotacion/floracion dispareja, daño por frio o bajo frio
+Diagnosticos:
+- insufficient_chill_irregular_budbreak
+- winter_injury_rootstock_cold_damage
+- frost_budbreak_shoot_damage
+
+================================================================================
+10. ESQUELETO DE CODIGO SUGERIDO
+================================================================================
+
+Archivo:
+`lib/core/plant_health/catalog/pistachio_tree_syndromes.dart`
+
+```dart
+import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_catalog.dart';
+import 'package:bio_g/core/plant_health/plant_health_ids.dart';
+import 'package:bio_g/core/plant_health/plant_health_models.dart';
+import 'package:bio_g/core/plant_health/plant_health_stage_bucket.dart';
+
+const Set<PlantHealthStageBucket> _establishmentStages = <PlantHealthStageBucket>{
+  PlantHealthStageBucket.seedling,
+  PlantHealthStageBucket.vegetativeEarly,
+  PlantHealthStageBucket.vegetativeMid,
+};
+
+const Set<PlantHealthStageBucket> _bloomStages = <PlantHealthStageBucket>{
+  PlantHealthStageBucket.reproductiveEarly,
+  PlantHealthStageBucket.reproductiveMid,
+};
+
+const Set<PlantHealthStageBucket> _nutStages = <PlantHealthStageBucket>{
+  PlantHealthStageBucket.reproductiveMid,
+  PlantHealthStageBucket.grainFill,
+  PlantHealthStageBucket.lateSeason,
+};
+
+const Set<PlantHealthStageBucket> _foliarStages = <PlantHealthStageBucket>{
+  PlantHealthStageBucket.vegetativeEarly,
+  PlantHealthStageBucket.vegetativeMid,
+  PlantHealthStageBucket.vegetativeLate,
+  PlantHealthStageBucket.reproductiveMid,
+  PlantHealthStageBucket.grainFill,
+  PlantHealthStageBucket.lateSeason,
+};
+
+const Set<PlantHealthStageBucket> _harvestMemoryStages = <PlantHealthStageBucket>{
+  PlantHealthStageBucket.grainFill,
+  PlantHealthStageBucket.lateSeason,
+};
+
+const String _disclaimer =
+    'Orientacion de riesgo, no diagnostico definitivo. BIO-G sugiere revisar, '
+    'comparar y confirmar en campo o con asesoria/sanidad local si el daño '
+    'avanza. No prescribe plaguicidas ni ingredientes activos.';
+
+const List<String> _baseActions = <String>[
+  'Marca el foco por arbol, hilera o borde y revisa si avanza en 24-72 horas.',
+  'Cruza sintoma con etapa, clima reciente, riego, EC y observacion visual.',
+  'Registra fotos, etapa visible y resultado de cosecha: en pistache la memoria '
+      'afecta cuajado, llenado, apertura y alternancia.',
+];
+
+const List<String> _rootActions = <String>[
+  'Revisa cuello, raiz, drenaje y EC antes de regar mas.',
+  'Marchitez con suelo humedo NO es falta de agua: separa Phytophthora/anoxia '
+      'de sequia o salinidad.',
+  'Si hay goma en corona o muerte rapida en calor, confirma con asesoria local.',
+];
+
+const List<String> _bloomActions = <String>[
+  'Revisa si hay arbol macho soltando polen y hembra receptiva al mismo tiempo.',
+  'Si hubo lluvia, polvo, helada o poco viento durante floracion, baja confianza '
+      'del amarre antes de culpar NPK.',
+  'En pistache, floracion no significa cosecha: macho, hembra, viento y clima '
+      'tienen que coincidir.',
+];
+
+const List<String> _nutActions = <String>[
+  'Abre varios pistaches: revisa kernel, cerrado/vacio, agujerito, frass, '
+      'telarana o moho.',
+  'Separa pistache vano/cerrado de daño de gusano o chinche.',
+  'Guarda el evento para alternancia, riego y cosecha del siguiente ciclo.',
+];
+
+VarietyModifier _psModifier({
+  required Set<String> profiles,
+  required String diagnosisId,
+  required int delta,
+  required String rationale,
+}) => VarietyModifier(
+      cropId: CropCatalog.pistachioTreeCropId,
+      varietyIds: profiles,
+      diagnosisIds: <String>{diagnosisId},
+      scoreDelta: delta,
+      rationaleEs: rationale,
+      isProxy: true,
+    );
+
+final List<PlantHealthSyndrome> pistachioTreeSyndromes = <PlantHealthSyndrome>[
+  PlantHealthSyndrome(
+    id: 'pistachio_root_crown_rot_01',
+    cropId: CropCatalog.pistachioTreeCropId,
+    labelEs: 'Decaimiento con suelo humedo, goma en corona o raiz comprometida',
+    stages: _establishmentStages,
+    organIds: <String>{
+      PlantHealthIds.organRoot,
+      PlantHealthIds.organCrown,
+      PlantHealthIds.organWholePlant,
+    },
+    primarySymptomId: PlantHealthIds.symptomRootRotWilt,
+    strongSignals: <String>{
+      PlantHealthIds.signalWaterlogging,
+      PlantHealthIds.signalRootsDarkRot,
+    },
+    weakSignals: <String>{
+      PlantHealthIds.signalSalinityLoad,
+      PlantHealthIds.signalHighPhCalcareous,
+      PlantHealthIds.signalRecentStress,
+    },
+    probableDiagnoses: const <PlantHealthDiagnosis>[
+      PlantHealthDiagnosis(
+        id: 'phytophthora_root_crown_rot',
+        labelEs: 'Phytophthora / pudricion de raiz y corona',
+        scientificName: 'Phytophthora spp.',
+        type: 'oomycete_root_disease',
+        summaryEs:
+            'Favorecida por sobre-riego, suelo saturado, drenaje pobre y corona '
+            'mojada. Puede causar clorosis, bajo vigor, goma en corona y muerte '
+            'rapida en calor. No recomiendes mas riego sin revisar raiz/cuello.',
+        confirmatorySignalIds: <String>{PlantHealthIds.signalWaterlogging},
+      ),
+      PlantHealthDiagnosis(
+        id: 'root_crown_rot_anoxia',
+        labelEs: 'Raiz asfixiada / anoxia por exceso de humedad',
+        type: 'abiotic_root_stress',
+        summaryEs:
+            'Marchitez con suelo humedo, compactacion o drenaje pobre. La raiz '
+            'puede estar sin aire aunque el sensor marque agua alta.',
+      ),
+      PlantHealthDiagnosis(
+        id: 'salinity_compaction_root_stress',
+        labelEs: 'Sales/compactacion limitando raiz',
+        type: 'abiotic_soil',
+        summaryEs:
+            'EC alta, resistencia alta o sodicidad reducen absorcion. Antes de '
+            'subir fertilizacion, revisar agua, sales, drenaje y suelo.',
+      ),
+    ],
+    confirmationChecksEs: <String>[
+      '¿La marchitez ocurre con suelo humedo o despues de riegos largos?',
+      'Revisa corona/cuello: ¿hay goma, cancro o tejido oscuro bajo corteza?',
+      'Cruza humedad, EC, compactacion y zona baja antes de culpar NPK.',
+    ],
+    severity: PlantHealthSeverity.critical,
+    urgency: PlantHealthUrgency.review24h,
+    baseActionsEs: <String>[..._rootActions, ..._baseActions],
+    disclaimerEs: _disclaimer,
+    favorsHighHumidity: true,
+    favorsRecentStress: true,
+  ),
+
+  PlantHealthSyndrome(
+    id: 'pistachio_bloom_pollination_01',
+    cropId: CropCatalog.pistachioTreeCropId,
+    labelEs: 'Floreo pero amarró poco, o no se confirma macho compatible',
+    stages: _bloomStages,
+    organIds: <String>{PlantHealthIds.organFlower},
+    primarySymptomId: PlantHealthIds.symptomFlowerAbortion,
+    strongSignals: <String>{
+      PlantHealthIds.signalNoPollinatorNearby,
+      PlantHealthIds.signalInsufficientChill,
+      PlantHealthIds.signalFrostEvent,
+    },
+    weakSignals: <String>{
+      PlantHealthIds.signalColdExposure,
+      PlantHealthIds.signalRecentStress,
+    },
+    probableDiagnoses: const <PlantHealthDiagnosis>[
+      PlantHealthDiagnosis(
+        id: 'no_compatible_male_pollinizer',
+        labelEs: 'Falta de macho compatible / polen insuficiente',
+        type: 'abiotic_pollination',
+        summaryEs:
+            'Pistache es dioico: la hembra necesita polen de macho compatible. '
+            'Si no hay macho o no coincide la floracion, no prometas cosecha.',
+        confirmatorySignalIds: <String>{PlantHealthIds.signalNoPollinatorNearby},
+      ),
+      PlantHealthDiagnosis(
+        id: 'male_female_bloom_asynchrony',
+        labelEs: 'Desincronia macho-hembra por bajo frio o perfil incorrecto',
+        type: 'abiotic_pollination',
+        summaryEs:
+            'Bajo frio o macho equivocado puede dejar flor hembra sin polen en '
+            'su ventana receptiva. No culpar primero a NPK.',
+      ),
+      PlantHealthDiagnosis(
+        id: 'frost_or_rain_bloom_damage',
+        labelEs: 'Helada, lluvia, humedad o polvo afectando floracion',
+        type: 'abiotic_weather',
+        summaryEs:
+            'Floracion con helada, lluvia, HR alta, poco viento o polvo puede '
+            'bajar cuajado y aumentar blanks.',
+        confirmatorySignalIds: <String>{PlantHealthIds.signalFrostEvent},
+      ),
+    ],
+    confirmationChecksEs: <String>[
+      '¿Hay arbol macho cerca y soltando polen al mismo tiempo que la hembra?',
+      '¿Hubo helada, lluvia, polvo, viento bajo o bajo frio durante floracion?',
+      'Si es PS-SKIP, pregunta si el usuario sabe macho/hembra antes de proyectar.',
+    ],
+    severity: PlantHealthSeverity.critical,
+    urgency: PlantHealthUrgency.sameDay,
+    baseActionsEs: <String>[..._bloomActions, ..._baseActions],
+    disclaimerEs: _disclaimer,
+    varietyModifiers: <VarietyModifier>[
+      _psModifier(
+        profiles: <String>{kPs01KermanPeters},
+        diagnosisId: 'male_female_bloom_asynchrony',
+        delta: 10,
+        rationale: 'Kerman/Peters puede desincronizarse en años de bajo frio.',
+      ),
+    ],
+  ),
+
+  PlantHealthSyndrome(
+    id: 'pistachio_navel_orangeworm_01',
+    cropId: CropCatalog.pistachioTreeCropId,
+    labelEs: 'Pistache con agujerito, telaraña/frass, moho o mummies',
+    stages: _nutStages,
+    organIds: <String>{PlantHealthIds.organFruit},
+    primarySymptomId: PlantHealthIds.symptomFruitTunnelFrass,
+    strongSignals: <String>{
+      PlantHealthIds.signalFrassPresent,
+    },
+    weakSignals: <String>{
+      PlantHealthIds.signalRecentStress,
+    },
+    probableDiagnoses: const <PlantHealthDiagnosis>[
+      PlantHealthDiagnosis(
+        id: 'navel_orangeworm',
+        labelEs: 'Navel orangeworm / gusano en pistache',
+        scientificName: 'Amyelois transitella',
+        type: 'insect',
+        summaryEs:
+            'Entra desde split/early split. Busca agujerito, frass, telarana, '
+            'kernel comido y mummies. Puede abrir puerta a mohos/aflatoxina.',
+        confirmatorySignalIds: <String>{PlantHealthIds.signalFrassPresent},
+      ),
+      PlantHealthDiagnosis(
+        id: 'fruit_molds_aflatoxin_context',
+        labelEs: 'Mohos del fruto / riesgo de aflatoxina',
+        type: 'quality_safety_context',
+        summaryEs:
+            'NOW y frutos dañados aumentan riesgo de mohos. BIO-G no diagnostica '
+            'aflatoxina; debe pedir confirmacion por proceso/laboratorio.',
+      ),
+      PlantHealthDiagnosis(
+        id: 'mummy_nuts_overwintering_now',
+        labelEs: 'Mummies sosteniendo la plaga al siguiente ciclo',
+        type: 'sanitation_memory',
+        summaryEs:
+            'Pistaches remanentes en arbol/suelo pueden sostener NOW. Guardar '
+            'memoria y recomendar saneamiento sin recetar quimicos.',
+      ),
+    ],
+    confirmationChecksEs: <String>[
+      'Abre pistaches sospechosos: ¿hay frass, telarana, larva o kernel comido?',
+      '¿Hay early split, cosecha retrasada o mummies del ciclo anterior?',
+      'Si hay moho/manchado, registrar riesgo de calidad y confirmar con planta.',
+    ],
+    severity: PlantHealthSeverity.critical,
+    urgency: PlantHealthUrgency.review24h,
+    baseActionsEs: <String>[..._nutActions, ..._baseActions],
+    disclaimerEs: _disclaimer,
+    favorsRecentStress: true,
+  ),
+];
+```
+
+Nota:
+El bloque anterior es esqueleto; Codex puede compactarlo y agregar los demas sindromes minimos. No ejecutar analisis/formato global salvo que el usuario lo pida.
+
+================================================================================
+11. TESTS MINIMOS RECOMENDADOS
+================================================================================
+
+1) pistachio_plant_health_registry_supported_test
+Input: crop_pistachio_tree
+Esperado: PlantHealthRegistry.catalogForCrop devuelve lista no vacia.
+
+2) pistachio_root_crown_rot_waterlogging_test
+Input: organ root/crown, symptomRootRotWilt, signalWaterlogging, stage seedling
+Esperado: top diagnosis phytophthora/root_crown_rot_anoxia; mensaje “no regar mas a ciegas”.
+
+3) pistachio_flowering_no_male_test
+Input: organ flower, symptomFlowerAbortion, signalNoPollinatorNearby, stage reproductiveEarly, profile ps_skip
+Esperado: no_compatible_male_pollinizer alto; confidence baja si PS-SKIP; no culpar NPK.
+
+4) pistachio_kerman_low_chill_asynchrony_modifier_test
+Input: profile ps_01_kerman_peters, signalInsufficientChill, flowering
+Esperado: modifier aumenta male_female_bloom_asynchrony.
+
+5) pistachio_now_frass_test
+Input: fruit, symptomFruitTunnelFrass, signalFrassPresent, lateSeason
+Esperado: navel_orangeworm top; nota de aflatoxina/mummies.
+
+6) pistachio_blank_closed_not_single_cause_test
+Input: symptomBlankClosedNuts, no frass, fruit_fill, EC alta
+Esperado: blank/kernel-fill/salinity, NO NOW como top.
+
+7) pistachio_alternaria_black_spores_test
+Input: necrotic foliar/hull lesions + blackSporesRubOff + humidWindow
+Esperado: alternaria_late_blight top.
+
+8) pistachio_botryosphaeria_panicle_blight_test
+Input: panicle/shoot blight + canker + highHumidity
+Esperado: botryosphaeria_panicle_shoot_blight top.
+
+9) pistachio_mealybug_equipment_memory_test
+Input: honeydew/sooty + mealybugClusters + harvest/postharvest
+Esperado: gills_mealybug + equipment spread note.
+
+10) pistachio_post_harvest_not_off_test
+Input: lateSeason/post_harvest + mummyNuts
+Esperado: syndrome active; no empty catalog; memoria para siguiente ciclo.
+
+11) pistachio_salinity_edge_burn_test
+Input: leaf_edge_burn + salinityLoad + fruit_fill
+Esperado: salinity root/water stress; no diagnosticar K bajo solo.
+
+12) pistachio_no_pesticide_prescription_test
+Cualquier resultado
+Esperado: no contiene ingredientes activos, marcas, dosis ni “aplique X”.
+
+================================================================================
+12. ERRORES QUE CODEX/CLAUDE DEBEN EVITAR
+================================================================================
+
+1. No copiar `walnutTreeSyndromes` cambiando palabras.
+2. No diagnosticar “falta de fertilizante” cuando el problema es macho/hembra.
+3. No diagnosticar NOW sin frass/agujero/webbing/early split/mummies.
+4. No ignorar aflatoxina como contexto de calidad cuando hay NOW/moho.
+5. No decir que pistache tolera sales y ya; EC alta sigue siendo riesgo.
+6. No crear StageIds nuevos para blanks, early split o kernel fill.
+7. No meter recomendaciones de plaguicidas, ingredientes activos ni dosis.
+8. No hacer universal una plaga regional sin contexto.
+9. No apagar postcosecha.
+10. No usar fruit_fill como harvest_maturity.
+11. No asumir que PS-SKIP tiene macho compatible.
+12. No asumir que Kerman es default.
+13. No confundir Alternaria con Botryosphaeria sin claves visuales.
+14. No culpar sequia si el suelo esta saturado.
+15. No prometer que saneamiento resuelve todo; solo reduce riesgo.
+16. No usar fuentes de foros para umbrales.
+17. No forzar portainjerto como input obligatorio.
+18. No borrar historial al migrar de PS-SKIP a perfil especifico.
+19. No clasificar pistache vacio como una sola causa.
+20. No poner “calidad perfecta” por kg alto.
+
+================================================================================
+13. FUENTES Y TRAZABILIDAD
+================================================================================
+
+[S1] UC IPM Pistachio Pest Management Guidelines.
+URL: https://ipm.ucanr.edu/agriculture/pistachio/
+Uso: estructura general year-round IPM, plagas, enfermedades y etapas.
+
+[S2] UC IPM Phytophthora Root and Crown Rot, Pistachio.
+URL: https://ipm.ucanr.edu/agriculture/pistachio/phytophthora-root-and-crown-rot/
+Uso: sintomas, gumming, saturacion, manejo de agua, suelos mal drenados.
+
+[S3] UC IPM Botryosphaeria Panicle and Shoot Blight, Pistachio.
+URL: https://ipm.ucanr.edu/agriculture/pistachio/botryosphaeria-panicle-and-shoot-blight/
+Uso: humedad, temperaturas, paniculas/brotes, cankers, poda, mummies y memoria.
+
+[S4] UC IPM Alternaria Late Blight, Pistachio.
+URL: https://ipm.ucanr.edu/agriculture/pistachio/alternaria-late-blight/
+Uso: lesiones negras, esporas que manchan dedo, hull lesions, defoliacion, shell staining.
+
+[S5] UC IPM Navel Orangeworm, Pistachio.
+URL: https://ipm.ucanr.edu/agriculture/pistachio/navel-orangeworm/
+Uso: NOW, frass/webbing, mummies, early harvest, aflatoxina, saneamiento.
+
+[S6] UC IPM Harvest, Pistachio.
+URL: https://ipm.ucanr.edu/agriculture/pistachio/harvest/
+Uso: cosecha con Alternaria/NOW, retraso, aflatoxina, equipo/mealybug, memoria del programa.
+
+[S7] NMSU, Growing Pistachios in New Mexico.
+URL: https://pubs.nmsu.edu/_circulars/CR532/index.html
+Uso: clima, macho/hembra, Kerman/Peters, rootstocks, Verticillium, cotton root rot, NOW, stink bugs, mites.
+
+[S8] UC ANR / UC Davis, Pistachio Climate & Cultivars.
+URL: https://ucanr.edu/site/california-pistachio-research/climate-cultivars
+Uso: especie, rootstocks, UCB I, PG I, Verticillium, salinidad y frio.
+
+[S9] UC ANR / Ferguson, The pistachio tree; botany and physiology and factors that affect yield.
+URL: https://ucanr.edu/sites/default/files/2011-02/73683.pdf
+Uso: fenologia, polinizacion, blanks, non-splits, alternate bearing, shell splitting, irrigation y NOW tradeoff.
+
+[S10] UC IPM Leaffooted Bugs, Pistachio.
+URL: https://ipm.ucanr.edu/agriculture/pistachio/leaffooted-bugs/
+Uso: epicarp lesion, kernel spot, daño temprano y midseason.
+
+[S11] UC IPM Mealybugs, Pistachio.
+URL: https://ipm.ucanr.edu/agriculture/pistachio/mealybugs/
+Uso: monitoreo postcosecha, focos y riesgo por equipo.
+
+[S12] UC IPM Verticillium Wilt, Pistachio.
+URL: https://ipm.ucanr.edu/agriculture/pistachio/verticillium-wilt/
+Uso: scaffold/whole tree desiccation, chlorosis/scorch, thin leaf decline.
+
+[S13] UC IPM Fruit Molds, Pistachio.
+URL: https://ipm.ucanr.edu/agriculture/pistachio/fruit-molds/
+Uso: A. flavus/parasiticus, early shell split, NOW y aflatoxina.
+
+[S14] CDFA Integrated Pest Control - Navel Orangeworm Program.
+URL: https://www.cdfa.ca.gov/plant/ipc/nowp/
+Uso: relacion NOW-aflatoxina y enfoque regional de monitoreo/saneamiento.
+
+[S15] West Coast Nut / UCCE advisors: Pistachio Pollination is a Complex Process, 2026.
+URL: https://www.wcngg.com/2026/03/19/pistachio-pollination-is-a-complex-process/
+Uso: lenguaje reciente de campo, polinizacion compleja, bajo frio, dust, Famoso/Tejon/Randy, blanks.
+Precaucion: fuente de industria; usar con respaldo de extension.
+
+[S16] Foros/redes/productores.
+Uso: lenguaje UX y dudas reales.
+Precaucion: no usar para umbrales, diagnosticos ni prioridades duras.
+
+================================================================================
+14. CIERRE TECNICO
+================================================================================
+
+El Documento 04 de Pistache queda listo para alimentar:
+- `pistachio_tree_syndromes.dart`
+- `PlantHealthRegistry`
+- `PlantHealthIds` con nuevos sintomas/señales especificos
+- reglas de severidad/urgencia
+- mensajes UX farmer-friendly
+- memoria multianual
+- pruebas de regresion de sanidad
+
+La regla central es simple:
+Pistache no se lee solo por hoja ni solo por NPK.
+Se lee por etapa + macho/hembra + clima + agua/sales + kernel + split/open + mummies + memoria.
+
+BIO-G debe escuchar al arbol y hablar como productor:
+“floreó pero no amarró”, “no había macho”, “se quedó vano”, “se quedó cerrado”, “le entró gusano”, “se manchó la cascara”, “quedaron mummies”, “un año carga y otro no”.
+
+Y debe cerrar siempre con prudencia:
+orientar, revisar, confirmar y guardar memoria.

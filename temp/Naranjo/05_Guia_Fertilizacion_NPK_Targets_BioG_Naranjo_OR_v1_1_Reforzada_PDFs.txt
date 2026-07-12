@@ -1,0 +1,2701 @@
+[ENCABEZADO]
+BIO-G | Naranjo | Documentacion tecnica v1
+[/ENCABEZADO]
+
+BIO-G
+05. Guia de Fertilizacion NPK y Targets por Etapa - Naranjo
+Cultivo: Naranjo / Naranja dulce / Sweet orange
+Nombre cientifico: Citrus sinensis (L.) Osbeck
+cropId: crop_orange_tree
+cropKey esperado: orange_tree
+profilePrefix: OR
+Perfil general: or_skip
+Version: v1.1 reforzada con PDFs anexos y notas del usuario
+Formato: TXT tecnico para Flutter/Dart
+Estado: listo para revision agronomica, auditoria tecnica y traduccion a codigo; v1.1 refuerza nutricion, foliar, salinidad y reglas N/K/P
+
+IMPORTANTE
+Este documento NO es una receta agronomica local.
+No sustituye analisis de suelo, agua, tejido/foliar, asesoria regional ni normatividad.
+BIO-G v1 debe orientar, ponderar riesgo, mejorar lectura de sensores y pedir confirmacion.
+No debe prometer rendimiento, no debe indicar dosis comerciales cerradas y no debe sustituir
+un plan de fertirriego construido con laboratorio, analisis foliar, analisis de agua, historial
+de rendimiento, salinidad, portainjerto y asesoria local.
+
+
+================================================================================
+0.0 ADDENDUM v1.1 — REFUERZO CON PDFs Y NOTAS NUEVAS DEL USUARIO
+================================================================================
+
+Este addendum fortalece el Documento 05 con dos fuentes anexas entregadas por el usuario y con
+la nota larga de investigacion sobre fertilizacion de citricos. Si hay duda de interpretacion,
+estas reglas v1.1 tienen prioridad sobre el cuerpo v1, SIN cambiar el contrato BIO-G:
+
+- StageIds cerrados se conservan.
+- NPK del sensor sigue siendo lectura relativa, NO dosis.
+- Las dosis kg/ha, kg/arbol, P2O5 y K2O quedan solo para modo avanzado/documentacion.
+- No se muestran recetas cerradas al productor en modo simple.
+- Agua, EC/salinidad, pH, raiz, compactacion y etapa se revisan antes de NPK.
+- Analisis foliar y analisis de suelo/agua siguen siendo la fuente real de diagnostico.
+
+Fuentes nuevas incorporadas:
+
+A) nutricion-y-fertilizacion-de-la-naranja.pdf — Informaciones Agronomicas No. 40,
+   E. Molina, Centro de Investigaciones Agronomicas, Universidad de Costa Rica.
+   Aporta:
+   - raiz citrica superficial y con limitada absorcion por bajo numero de pelos radicales;
+   - necesidad de suelos ligeros, buen drenaje y aireacion;
+   - rango optimo de pH 5.5-6.0 como referencia UCR, pero tolerancia amplia 4-9 si no hay sales/sodio;
+   - absorcion de nutrientes todo el ano, mas acentuada en floracion y formacion de fruta;
+   - N y K son los nutrientes mas importantes en fruto; cerca de 30% del N total y 70% del K de la planta pueden localizarse en fruto;
+   - remocion por tonelada de naranja fresca: aprox. 1.18-1.90 kg N, 0.17-0.30 kg P, 1.50-2.33 kg K, segun autor/condicion;
+   - para 40 t/ha, referencia de remocion: 60 kg N, 12.3 kg P, 96 kg K, 25.6 kg Ca, 11.6 kg Mg y 4.8 kg S por hectarea;
+   - relacion aproximada de extraccion en fruto N:P2O5:K2O = 2:1:4;
+   - N tiene mayor absorcion/translocacion poco antes y durante floracion/cuaje;
+   - K aumenta exigencia al termino de floracion y durante maduracion, y mejora tamano, sabor, color y sanidad;
+   - P tiene bajo requerimiento en naranja adulta; la respuesta a P suele ser escasa, pero pesa en raiz, floracion y cuaje;
+   - Zn, B, Fe, Mn, Mg, Ca y Cu deben manejarse como contexto avanzado, no como sensores v1.
+
+B) 0187-7380-rfm-44-01-59.pdf — Revista Fitotecnia Mexicana 2021,
+   Fertilizacion integral en naranjo Marrs con sintomas de VTC y HLB.
+   Aporta:
+   - en Mexico, Veracruz es estado citricola clave y se reporta rendimiento promedio cercano a 15 t/ha, con caidas a 10 t/ha en Marrs bajo presion sanitaria/ambiental;
+   - HLB/VTC, pH alto, nutrimentos bajos, falta de humedad y temperaturas altas limitan produccion;
+   - CLas/HLB y VTC alteran floema, raices, transporte de nutrimentos y calidad/rendimiento;
+   - fertilizacion basada en analisis de suelo y hoja, con objetivo de 25 t/ha, uso formula 100 N - 22 P2O5 - 195 K2O - 30 MgO;
+   - se trabajo con 400 arboles/ha, dos aplicaciones al suelo y aplicaciones foliares con Zn, B, Fe, Mn y Cu durante brotacion vegetativa/floral hasta amarre inicial;
+   - la fertilizacion quimica o combinada con composta + foliar favorecio floracion y numero de frutos;
+   - aun asi, el rendimiento real fue muy bajo (5-12 kg/arbol) por sequia atipica, VTC y HLB;
+   - conclusion directa para BIO-G: fertilizar no rescata el rendimiento si agua, sanidad vascular/raiz y estres estan mal.
+
+C) Nota de investigacion entregada por usuario sobre como fertilizar citricos.
+   Aporta, con uso prudente:
+   - requerimientos anuales orientativos para naranjo: N 120-200 kg/ha, P 30-45 kg/ha, K 60-150 kg/ha;
+   - practicas comunes de tres aplicaciones: final de invierno/inicio de brotacion, formacion de fruto, crecimiento rapido de fruto;
+   - durante formacion de fruto se evita N pesado porque puede favorecer crecimiento vegetativo y afectar cuajado;
+   - en crecimiento/maduracion de fruto se refuerza K, Ca y Mg para calibre, cascara y calidad;
+   - fertilizacion foliar puede ser rapida para Fe, Mg, B, Cu, Zn y Mn en etapas criticas;
+   - pH debe revisarse al menos una vez por ano;
+   - comentarios de productores preguntan por frecuencia en goteo, hojas amarillas, fruto pequeno, rajado, piel gruesa, falta de maduracion, Fe/P/Mg/Ca/B. Esto se usa para UX y preguntas de diagnostico, no para umbrales duros.
+
+================================================================================
+0.0.1 DECISIONES v1.1 QUE TIENEN PRIORIDAD
+================================================================================
+
+1) El motor debe reforzar K mas que antes, pero sin ignorar agua y salinidad.
+   La informacion nueva confirma que la naranja remueve mucho K, que K se concentra
+   fuertemente en fruta y que su relacion de extraccion contra P2O5 es alta. Para BIO-G:
+   - K debe ser el nutriente de mayor prioridad en fruit_set, fruit_fill y harvest_maturity.
+   - K bajo en fruit_fill es alerta fuerte solo si humedad, EC, pH y raiz permiten absorcion.
+   - K bajo + humedad baja = primero agua.
+   - K bajo + EC alta = primero salinidad/raiz.
+   - K bajo + Ca/Mg/Na alto contextual = posible antagonismo, no solo falta de K.
+   - K alto + EC alta = riesgo de sales/fertilizante acumulado.
+
+2) N sigue siendo protagonista, pero no debe empujar puro follaje.
+   N es muy importante poco antes y durante floracion/cuaje, y tambien para hoja y produccion.
+   Pero la investigacion y la nota del usuario coinciden en que N pesado en etapa de formacion
+   de fruto puede causar exceso vegetativo y afectar cuajado/calidad.
+   Para BIO-G:
+   - N fuerte en budbreak y vegetative_growth.
+   - N moderado en flowering y fruit_set.
+   - N medio-bajo en fruit_fill salvo baja hoja/vigor o carga alta confirmada.
+   - N bajo con floracion/cuaje y agua/EC/pH correctos = observacion fuerte.
+   - N alto con baja carga = riesgo de follaje y cascara, no premio.
+   - N alto con EC alta = sales/acumulacion, no nutricion excelente.
+
+3) P debe bajar en prioridad adulta fuera de etapas sensibles.
+   Las fuentes nuevas recalcan que naranja adulta tiene respuesta baja a P si el suelo ya tiene historial de P.
+   Para BIO-G:
+   - P alto en plantacion, root_establishment, budbreak temprano, flowering y fruit_set.
+   - P bajo en harvest_maturity no debe tumbar score si agua/K/hoja/calidad estan bien.
+   - P alto + pH alto + Zn/Fe bajo contextual = advertencia de bloqueo/desbalance.
+   - P se maneja por suelo/foliar y correcciones de fondo, no por urgencia de sensor v1.
+
+4) Ca, Mg, Fe, Zn, Mn, B y Cu ganan presencia como CONTEXTO.
+   No son sensores v1, pero son claves en citricos.
+   - Ca: raiz, pared celular, cuajado, calidad, uniformidad, rajado/cascara.
+   - Mg: clorofila, fotosintesis, transporte de carbohidratos, maduracion; sintomas cerca de ramas con carga.
+   - Fe: clorosis ferrica comun en suelos calcarios, humedad excesiva o portainjertos sensibles.
+   - Zn: deficiencia comun, hoja chica, roseta, brotes cortos, baja calidad/rendimiento.
+   - Mn: moteado/clorosis en hojas jovenes, comun en suelos alcalinos/arenosos.
+   - B: polen, tubo polinico, cuajado, pared celular; margen entre deficiencia y toxicidad es estrecho.
+   - Cu: metabolismo N/carbohidratos, lignificacion; exceso puede inducir problemas de raiz/Fe.
+   Regla: mencionar, pedir analisis y observacion visual; no simular dosis ni diagnostico cerrado.
+
+5) Salinidad debe ser mas agresiva como bloqueo.
+   La informacion nueva confirma sensibilidad de citricos a sales, Cl y Na.
+   Umbrales reportados varian: algunas fuentes colocan alerta cerca de 1.7 dS/m y otras mencionan
+   reducciones desde 1.4 dS/m, con pendiente aproximada 13-16% por cada 1 dS/m adicional.
+   Para BIO-G, usando sensor de campo y no laboratorio:
+   - EC optimalMax debe ser conservador: 1.1-1.4 segun etapa.
+   - En flowering, fruit_set y fruit_fill, EC >1.7-2.0 ya debe sentirse como alerta fuerte.
+   - EC alta + borde quemado/hoja vieja quemada = posible salinidad/Cl, no solo K/Mg.
+   - Na/Cl no son sensores v1, pero quedan como contexto avanzado.
+   - Evitar mensajes que celebren K alto si la EC esta alta.
+   - Evitar asumir KCl como fuente segura en ambientes salinos, suelos de pH alto, drenaje bajo o agua salina.
+
+6) Fertilizacion por rendimiento esperado es mejor que por edad sola.
+   La UCR explica dos alternativas: dosis por edad o por rendimiento. BIO-G debe preferir rendimiento/estado/carga
+   porque evita sobreestimar en arboles de misma edad pero distinta produccion.
+   En modo avanzado:
+   - rendimiento esperado, kg/arbol, t/ha y arboles/ha pueden modular prioridad N/K.
+   - carga alta + K bajo/agua baja = alerta fuerte de calibre/calidad.
+   - carga baja + N alto = riesgo de puro follaje.
+
+7) Fertilizacion organica/composta es util, pero lenta.
+   El estudio mexicano muestra valor de composta combinada, pero tambien que la mineralizacion puede no coincidir
+   con el pico de demanda. BIO-G debe decir:
+   - organico ayuda suelo/MO/raiz;
+   - no siempre corrige una demanda inmediata de floracion/cuaje;
+   - si hay urgencia, foliar/manejo tecnico puede ser mas rapido, pero siempre con asesoria.
+
+8) HLB/VTC/sequia bajan confianza del NPK.
+   El estudio mexicano confirma que aunque la nutricion mejore floracion/frutos iniciales, HLB/VTC y sequia pueden dejar
+   rendimientos de 5-12 kg/arbol. BIO-G debe evitar vender NPK como solucion magica.
+   Si hay sintomas HLB/VTC, sequia o raiz dañada:
+   - bajar confidence;
+   - hablar de sanidad vascular/raiz y agua;
+   - no decir "aplica NPK y se corrige".
+
+================================================================================
+0.0.2 RANGOS FOLIARES v1.1 — MODO AVANZADO, NO SENSOR NPK
+================================================================================
+
+NO mezclar foliar con sensor NPK.
+Foliar = lo que el arbol absorbio.
+Suelo = oferta/disponibilidad.
+Sensor NPK = lectura rapida relativa, dependiente de calibracion.
+
+Rango UCR para diagnostico foliar en naranja:
+
+[TABLA]
+Columnas: Elemento | Deficiente | Bajo | Optimo | Alto | Exceso | Uso BIO-G
+Fila 1:
+- Elemento: N (%)
+- Deficiente: <=2.2
+- Bajo: 2.2-2.3
+- Optimo: 2.4-2.6
+- Alto: 2.7-2.8
+- Exceso: >2.8
+- Uso BIO-G: Hoja, floracion, cuaje; exceso puede bajar calidad y empujar follaje
+Fila 2:
+- Elemento: P (%)
+- Deficiente: <=0.09
+- Bajo: 0.09-0.11
+- Optimo: 0.12-0.15
+- Alto: 0.17-0.29
+- Exceso: >=0.30
+- Uso BIO-G: Raiz, floracion; P adulto no domina todo el ciclo
+Fila 3:
+- Elemento: K (%)
+- Deficiente: <=0.40
+- Bajo: 0.40-0.70
+- Optimo: 0.70-1.10
+- Alto: 1.10-2.00
+- Exceso: >=2.40
+- Uso BIO-G: Calibre, jugo, calidad; interpretar con carga, agua, EC, Ca/Mg/Na
+Fila 4:
+- Elemento: Ca (%)
+- Deficiente: <=1.50
+- Bajo: 1.50-2.90
+- Optimo: 3.00-5.50
+- Alto: 5.60-5.90
+- Exceso: >=7.00
+- Uso BIO-G: Raiz, pared celular, rajado/calidad; no sensor v1
+Fila 5:
+- Elemento: Mg (%)
+- Deficiente: <=0.15
+- Bajo: 0.15-0.25
+- Optimo: 0.26-0.60
+- Alto: 0.70-1.10
+- Exceso: >=1.20
+- Uso BIO-G: Clorofila y hojas con carga; antagonismo K/Ca/Mg
+Fila 6:
+- Elemento: S (%)
+- Deficiente: <=0.14
+- Bajo: 0.14-0.19
+- Optimo: 0.20-0.30
+- Alto: 0.40-0.50
+- Exceso: >0.50
+- Uso BIO-G: Proteina/metabolismo; puede confundirse con N en hoja joven
+Fila 7:
+- Elemento: B (mg/kg)
+- Deficiente: <=21
+- Bajo: 21-30
+- Optimo: 31-100
+- Alto: 101-260
+- Exceso: >260
+- Uso BIO-G: Polen/cuajado/calidad; margen estrecho, no recomendar a ciegas
+Fila 8:
+- Elemento: Fe (mg/kg)
+- Deficiente: <=35
+- Bajo: 35-59
+- Optimo: 60-100
+- Alto: 130-200
+- Exceso: >=250
+- Uso BIO-G: Clorosis en hoja joven; pH alto/humedad/portainjerto
+Fila 9:
+- Elemento: Mn (mg/kg)
+- Deficiente: <=16
+- Bajo: 16-24
+- Optimo: 25-200
+- Alto: 300-500
+- Exceso: >=1000
+- Uso BIO-G: Moteado/clorosis; suelos alcalinos o acidos segun toxicidad
+Fila 10:
+- Elemento: Zn (mg/kg)
+- Deficiente: <=16
+- Bajo: 16-24
+- Optimo: 25-100
+- Alto: 110-200
+- Exceso: >=300
+- Uso BIO-G: Hoja chica/roseta, brote corto; clave en citricos
+Fila 11:
+- Elemento: Cu (mg/kg)
+- Deficiente: <=3.6
+- Bajo: 3.6-4.9
+- Optimo: 5-15
+- Alto: 17-22
+- Exceso: >=100
+- Uso BIO-G: Brotes, lignificacion; exceso de Cu puede afectar raiz/Fe
+[/TABLA]
+
+Rangos Florida citados en la nota del usuario para hojas de brotes primaverales:
+- Navel N: bien 2.20-2.60%; Valencia N: bien 2.10-2.40%.
+- P Navel/Valencia: bien 0.11-0.16%.
+- K Navel: bien 0.70-1.70%; Valencia: bien 0.90-1.80%.
+Decision BIO-G:
+- Usar UCR como tabla principal para naranja latinoamericana en el documento interno.
+- Usar Florida como referencia comparativa, especialmente para Valencia/Navel.
+- Si las tablas difieren, no alertar por una sola muestra; comparar con edad, variedad, brote muestreado,
+  carga, portainjerto, suelo, agua, fecha y rendimiento.
+
+Muestreo foliar sugerido para modo avanzado:
+- Lotes uniformes de 2.5 a 5 ha.
+- Hojas a mitad de copa, cuatro puntos cardinales.
+- Tercera o cuarta hoja desde el apice de rama terminal sin fruta, en 20-30 arboles.
+- Si se muestrean ramas con fruto, usar tabla especifica porque cambia concentracion.
+- Epoca UCR: inicio de floracion.
+- Otras regiones pueden usar hojas de brotes primaverales de 4-6 meses; BIO-G debe guardar protocolo/region.
+
+================================================================================
+0.0.3 EXTRACCION Y DOSIS — SOLO MODO AVANZADO / NO RECETA
+================================================================================
+
+Estas cifras NO se deben mostrar como recomendacion automatica en modo productor simple.
+Sirven para calibracion tecnica y coherencia de mensajes.
+
+Extraccion por tonelada de naranja fresca:
+
+[TABLA]
+Columnas: Fuente/lectura | N | P | K | Ca | Mg | S | Comentario
+Fila 1:
+- Fuente/lectura: Rango bibliografico UCR
+- N: 1.18-1.90 kg/t
+- P: 0.17-0.25 kg/t
+- K: 1.50-2.03 kg/t
+- Ca: 0.45-0.95 kg/t
+- Mg: 0.13-0.19 kg/t
+- S: 0.11-0.14 kg/t
+- Comentario: Variacion por autor, variedad, clima y suelo
+Fila 2:
+- Fuente/lectura: Valencia San Carlos, Costa Rica
+- N: 1.49 kg/t
+- P: 0.30 kg/t
+- K: 2.33 kg/t
+- Ca: 0.64 kg/t
+- Mg: 0.29 kg/t
+- S: 0.12 kg/t
+- Comentario: Confirma K alto en fruta
+Fila 3:
+- Fuente/lectura: Referencia convertida 40 t/ha
+- N: 60 kg/ha
+- P: 12.3 kg/ha
+- K: 96 kg/ha
+- Ca: 25.6 kg/ha
+- Mg: 11.6 kg/ha
+- S: 4.8 kg/ha
+- Comentario: Remocion en fruto, no dosis total; eficiencia y suelo cambian programa
+[/TABLA]
+
+Relaciones utiles:
+- N:P2O5:K2O aproximado en fruta = 2:1:4.
+- K es el nutriente que mas sale con la fruta en terminos de K/K2O.
+- El motor debe asociar alta carga y alta cosecha con mayor presion de K y recuperacion postcosecha.
+
+Referencias de dosis anuales encontradas:
+
+[TABLA]
+Columnas: Contexto | N | P2O5/P | K2O/K | MgO | Uso BIO-G
+Fila 1:
+- Contexto: Nota general citricos entregada por usuario
+- N: 120-200 kg/ha
+- P2O5/P: 30-45 kg/ha indicado como P en la nota
+- K2O/K: 60-150 kg/ha indicado como K en la nota
+- MgO: No especificado
+- Uso BIO-G: Referencia comercial/general, no target automatico
+Fila 2:
+- Contexto: UCR naranja en produccion, sugerencia general
+- N: 150-200 kg/ha
+- P2O5/P: 25-50 kg P2O5/ha
+- K2O/K: 150-200 kg K2O/ha
+- MgO: 20-40 kg/ha
+- Uso BIO-G: Modo avanzado por rendimiento/suelo/foliar
+Fila 3:
+- Contexto: Mexico Marrs, objetivo 25 t/ha con analisis
+- N: 100 kg/ha
+- P2O5/P: 22 kg P2O5/ha
+- K2O/K: 195 kg K2O/ha
+- MgO: 30 kg/ha
+- Uso BIO-G: Caso con HLB/VTC, 400 arboles/ha, suelo/hoja y objetivo especifico
+Fila 4:
+- Contexto: Ensayo UCR Valencia
+- N: Mejor respuesta a 150 kg N/ha en ese ensayo
+- P2O5/P: Base de 50 kg P2O5/ha
+- K2O/K: Mejor respuesta a 150 kg K2O/ha en ese ensayo
+- MgO: No aplica
+- Uso BIO-G: Refuerza optimo tecnico, no dosis universal
+[/TABLA]
+
+Regla de programacion por etapa para modo avanzado:
+- Brote/prefloracion: N moderado-alto + P/K balanceados; micronutrientes si hay analisis/sintomas.
+- Floracion: N moderado, P/K funcionales, B/Ca/Zn/Fe/Mn como contexto; evitar sales.
+- Cuajado: K sube, N moderado, evitar N pesado; agua estable y EC baja.
+- Crecimiento rapido/llenado: K protagonista; N medio; Ca/Mg contexto para cascara/rajado/calidad.
+- Madurez: K/Ca/Mg contexto; N tarde con cuidado por color, cascara, brotes y calidad.
+- Postcosecha: recuperacion si hay hoja activa, humedad estable y baja EC.
+
+================================================================================
+0.0.4 AJUSTES DIRECTOS RECOMENDADOS AL MOTOR BIO-G v1.1
+================================================================================
+
+A) NpkCaps
+Mantener por ahora:
+- N cap: 120.0
+- P cap: 95.0
+- K cap: 200.0
+
+Motivo:
+- Los caps no son dosis.
+- K alto en fruta ya esta representado con cap 200 y kPriority alto en fruit_fill.
+- N es protagonista, pero un cap mas alto podria hacer que el dashboard celebre lecturas altas que en realidad son riesgo de vigor/calidad.
+- P no debe subir porque la respuesta a P en adulto suele ser baja fuera de etapas de raiz/floracion.
+
+Opcion futura con calibracion local:
+- N cap override: 130.0 en huertas adultas de alta productividad y sensor calibrado.
+- K cap override: 210.0 en Valencia/tropical con carga alta y sensor calibrado.
+No activar sin validacion contra suelo/foliar.
+
+B) StageTargets
+No es obligatorio rehacer toda la tabla v1.
+Ajustes conceptuales:
+- En fruit_fill, mantener K rel optimo 70-90 y kPriority 0.90.
+- En fruit_set, mantener K optimo 60-82 y evitar N optimo demasiado alto.
+- En flowering, N optimo debe ser medio, no alto; P/K pesan por floracion/cuaje.
+- En harvest_maturity, N high debe generar observacion por color/calidad/cascara.
+- En post_harvest, permitir N/K moderados solo con hoja activa y EC baja.
+
+C) EC/salinidad
+Ajustar mensajes:
+- EC >1.4 en etapas reproductivas = observacion fuerte.
+- EC >1.7 en flowering/fruit_set/fruit_fill = riesgo claro.
+- EC >2.0 en fruit_fill = bloquear recomendacion agresiva de N/K/P.
+- No usar EC baja como deficiencia.
+
+D) evaluateTelemetry
+Antes de cualquier mensaje NPK, revisar:
+1. stage;
+2. perennialState;
+3. soilMoisture;
+4. EC;
+5. pH;
+6. resistance;
+7. soilTemp;
+8. healthContext HLB/VTC/Phytophthora si existe;
+9. cropLoadStatus o rendimiento esperado si existe;
+10. leafActive;
+11. nRel/pRel/kRel.
+
+E) Mensajes nuevos para UX
+- "El naranjo saca mucho potasio en la fruta. Si viene cargado y el K esta bajo, se puede pegar en calibre, jugo y calidad. Pero primero revisa agua y sales."
+- "N alto no siempre es bueno. Si hay poca fruta, se puede ir a puro follaje y cascara, no a rendimiento."
+- "El fosforo ayuda a raiz y floracion, pero en arbol adulto no suele ser el nutriente que manda todo el ciclo. Confirma con suelo/foliar."
+- "Si la hoja nueva sale amarilla con nervaduras verdes, no culpes solo al nitrogeno. En citricos puede ser Fe, Zn o Mn bloqueados por pH, humedad o raiz."
+- "Boro y calcio pueden ayudar al cuaje/calidad, pero no se aplican a ciegas: el margen de boro entre falta y toxicidad es estrecho."
+- "Con sales altas, el sensor puede marcar nutrientes presentes, pero el arbol no los toma bien. Primero salinidad, drenaje y humedad."
+- "Si hay HLB/VTC o raiz dañada, fertilizar puede ayudar a sostener el arbol, pero no corrige solo el problema."
+
+F) Preguntas de diagnostico farmer-friendly
+- "¿Las hojas amarillas son parejas en todo el arbol o por ramas/manchones?"
+- "¿La hoja nueva sale amarilla con nervadura verde?"
+- "¿El fruto se esta quedando chico, se raja o trae cascara muy gruesa?"
+- "¿Hay mucha flor pero poco amarre?"
+- "¿El arbol trae mucha hoja y poca fruta?"
+- "¿El agua de riego deja sales o costra blanca?"
+- "¿El huerto tiene HLB, psilido o tristeza confirmada cerca?"
+- "¿El suelo se encharca o se pone duro?"
+
+================================================================================
+0.0.5 TESTS NUEVOS RECOMENDADOS v1.1
+================================================================================
+
+1) orange_fruit_fill_k_low_water_ok_test
+Caso: stage fruit_fill, K bajo, humedad optima, EC baja, pH ok.
+Esperado: alerta de K/calibre/jugo/calidad; no receta dosis; sugiere confirmar con foliar/suelo.
+
+2) orange_fruit_fill_k_low_water_low_test
+Caso: stage fruit_fill, K bajo, humedad baja.
+Esperado: priorizar agua/absorcion; no decir primero "falta potasio".
+
+3) orange_high_ec_blocks_k_test
+Caso: fruit_fill, K bajo/medio, EC alta o critica.
+Esperado: bloqueo salinidad; mensaje de sales/agua/drenaje antes de NPK.
+
+4) orange_flowering_n_high_low_load_test
+Caso: flowering/fruit_set, N alto, carga baja o cuajado pobre.
+Esperado: advertir vigor/follaje y posible afectacion de cuajado; no premio por N alto.
+
+5) orange_adult_low_p_not_destructive_test
+Caso: harvest_maturity, P bajo, agua/K/hoja correctos.
+Esperado: observacion baja o planeacion; no critical destructivo.
+
+6) orange_young_root_p_priority_test
+Caso: root_establishment, P bajo, EC baja, humedad correcta.
+Esperado: P aparece como prioridad raiz, pero sin receta cerrada.
+
+7) orange_fe_zn_mn_context_test
+Caso: pH alto, hoja nueva amarilla con nervadura verde, N normal.
+Esperado: mensaje de Fe/Zn/Mn/pH/raiz; no diagnosticar N bajo.
+
+8) orange_boron_precaution_test
+Caso: flowering/fruit_set con baja cuaja y usuario pregunta por boro.
+Esperado: mencionar B como contexto de polen/cuaje, pero advertir margen estrecho y pedir analisis.
+
+9) orange_hlb_vtc_low_confidence_test
+Caso: sintomas HLB/VTC + NPK medio/alto + bajo rendimiento.
+Esperado: bajar confianza; explicar sanidad vascular/raiz/agua; no vender NPK como solucion.
+
+10) orange_salt_leaf_burn_not_k_deficiency_test
+Caso: borde de hoja quemado, EC alta, K normal.
+Esperado: salinidad/Cl/Na primero; no deficiencia K.
+
+11) orange_post_harvest_leaf_active_test
+Caso: post_harvest, hoja activa, EC baja, humedad estable, N/K moderado.
+Esperado: mensaje de reservas/recuperacion.
+
+12) orange_post_harvest_leaf_inactive_test
+Caso: post_harvest, hoja caida o baja actividad, soilTemp baja.
+Esperado: no empujar N tardio; planear con analisis.
+
+================================================================================
+0.0.6 NO HACER EN CODIGO v1.1
+================================================================================
+
+- No convertir 120-200 kg N/ha, 150-200 kg K2O/ha o formulas comerciales en recomendaciones visibles.
+- No mostrar marcas, productos, dosis foliares comerciales ni calendarios fijos en modo simple.
+- No usar P2O5/K2O como si fueran P/K elementales sin convertir y documentar.
+- No diagnosticar HLB, VTC, Fe, Zn, B, Mn, Cu, Mg o Ca solo con sensor NPK.
+- No recomendar boro a ciegas: deficiencia y toxicidad estan cerca.
+- No decir "aplica K" si EC alta, humedad baja o raiz/compactacion limitan absorcion.
+- No celebrar N alto en fruit_set, fruit_fill o harvest_maturity si carga es baja o calidad esta en riesgo.
+- No tratar pH alto como detalle menor: en citricos dispara Fe/Zn/Mn/P y clorosis.
+- No confundir fruit_fill con cosecha.
+- No cerrar el cultivo en cosecha: postcosecha con hoja activa sigue siendo etapa viva.
+- No asumir que fertilizacion organica corrige demanda inmediata de floracion/cuajado.
+- No usar foros/comentarios como umbrales; usarlos solo como lenguaje UX y preguntas.
+
+================================================================================
+0.0.7 CUERPO BASE v1 — CONSERVADO ABAJO
+================================================================================
+
+El cuerpo v1 se conserva porque ya estaba alineado al contrato BIO-G. Las reglas v1.1 anteriores
+refuerzan y corrigen la interpretacion si existe conflicto.
+
+
+================================================================================
+0. DECISION EJECUTIVA
+================================================================================
+
+La guia NPK del Naranjo es el documento mas importante para el motor BIO-G porque
+convierte la lectura cruda del sensor en una lectura agronomica por etapa.
+
+En naranja dulce, el motor debe entender ocho verdades:
+
+1) El naranjo es siempreverde.
+   No tiene dormancia verdadera como manzano, pera, durazno o nogal. Si se usa
+   TreeStageIds.dormancy, debe leerse como reposo relativo, baja actividad,
+   prefloracion o arbol sin etapa visible. No como arbol muerto, suelo en descanso
+   o cultivo cerrado.
+
+2) N y K son protagonistas, pero no de la misma forma.
+   - N sostiene brotacion, hoja, floracion, cuajado, recuperacion y rendimiento.
+   - K sostiene calibre, jugo, calidad, movimiento de azucares, tolerancia a estres,
+     madurez y vida de fruta.
+   - En floracion/cuajado N ayuda, pero N alto puede irse a puro follaje.
+   - En llenado/madurez K gana mas peso que N.
+
+3) P es importante, pero no debe dominar todo el ciclo adulto.
+   P pesa fuerte en plantacion, raiz, energia, prefloracion, floracion y cuajado.
+   En arbol adulto con suelo ya corregido, P debe confirmarse con suelo/foliar; no se
+   debe convertir P bajo del sensor en alerta destructiva fuera de etapa sensible.
+
+4) Agua, salinidad, pH, compactacion y raiz mandan antes que NPK.
+   Un naranjo con NPK aparentemente bien puede tirar flor o fruto si falla la humedad,
+   si la EC esta alta, si el pH bloquea Fe/Zn/Mn, si hay raiz asfixiada o si el suelo
+   esta compactado.
+
+5) La salinidad es un bloqueo central.
+   Los citricos son sensibles a sales. EC alta reduce absorcion de agua y nutrientes,
+   agrava Phytophthora/gomosis, quema borde de hoja, reduce calibre y puede parecer
+   deficiencia de K, Mg o agua. En BIO-G, EC no tiene "deficiencia baja"; EC es metrica
+   de exceso/salinidad.
+
+6) HLB y raiz cambian la lectura nutricional.
+   El HLB no es sensor v1 ni diagnostico automatico. Pero si hay contexto HLB, raiz
+   baja, clorosis sectorizada o psilido, el motor debe bajar confianza NPK y pedir
+   confirmacion, porque muchos sintomas se parecen a deficiencias de Zn, Mn, Fe, Mg,
+   K o N.
+
+7) Analisis foliar manda para modo avanzado.
+   La lectura de sensor NPK del suelo NO sustituye analisis foliar. En citricos el
+   analisis foliar permite ver lo que el arbol realmente absorbio. BIO-G v1 puede usar
+   foliar como contexto avanzado futuro, no como requisito de onboarding.
+
+8) Postcosecha no apaga el cultivo.
+   Si hay hoja activa y temperatura funcional, el arbol recupera reservas, sostiene
+   raiz y prepara la siguiente brotacion/floracion. La cosecha no cierra la vida del
+   naranjo.
+
+Regla BIO-G para Naranjo:
+AGUA + RAIZ + SALINIDAD + pH + ETAPA + HOJA ACTIVA + CARGA DE FRUTO mandan antes que NPK.
+
+Mensaje rector para productor:
+"En naranjo no se trata de echar mas fertilizante. Primero hay que ver si el arbol
+puede tomarlo: humedad, sales, pH, raiz y etapa. Luego si: N para hoja y brote, P para
+raiz/floracion y K para calibre, jugo y calidad."
+
+================================================================================
+0.1 CAMBIOS IMPORTANTES RESPECTO A LOS DOCUMENTOS 01-04
+================================================================================
+
+1) Se confirma el cultivo madre:
+   - cropId: crop_orange_tree
+   - legacy alias: orange_tree
+   - prefix: or
+   - perfil general: or_skip
+
+2) Se conserva el paquete de perfiles OR, pero para codigo se recomienda normalizar asi:
+   - or_skip
+   - or_01_valencia
+   - or_02_navel
+   - or_03_temprano
+   - or_04_criollo_regional
+   - or_05_tropical_calido
+
+   Aliases de compatibilidad desde documentos 01/03:
+   - or_01_valencia_tardia, or_01_valencia_late, or_01_tardia => or_01_valencia
+   - or_02_navel_mesa, or_02_ombligo, or_02_washington_navel => or_02_navel
+   - or_03_temprano_hamlin_pineapple, or_03_hamlin, or_03_pineapple => or_03_temprano
+   - or_04_criollo_regional, or_04_criolla, or_04_regional => or_04_criollo_regional
+   - or_05_tropical_calido, or_05_tropical, or_05_clima_calido => or_05_tropical_calido
+
+3) Los StageIds NO cambian.
+   No crear nuevos StageIds para:
+   - flower_induction
+   - petal_fall
+   - june_drop
+   - cell_division
+   - cell_enlargement
+   - color_break
+   - regreening
+   - brix_acidity
+
+   Esas son subfases, tags UX o contexto avanzado dentro de los StageIds existentes.
+
+4) fruit_fill NO es cosecha.
+   En fruit_fill el copy debe hablar de crecimiento de fruto, calibre, jugo, division/expansion celular,
+   K, agua, salinidad y calidad. No debe hablar de corte, color final o madurez comercial.
+
+5) harvest_maturity SI puede hablar de madurez, color, cosecha, Brix/acidez como contexto y calidad final.
+
+6) En Naranjo, N alto tarde es riesgo de calidad.
+   Puede retrasar color, generar cascara gruesa/rugosa, favorecer brotes tiernos, afectar calidad externa y
+   aumentar problemas si el arbol trae baja carga.
+
+7) En Naranjo, K bajo en llenado pesa fuerte.
+   K bajo o bloqueado por falta de humedad, Ca/Mg/Na alto, salinidad o pH/raiz puede bajar calibre,
+   jugo, calidad y resistencia a estres.
+
+================================================================================
+0.2 LECTURA DEL CODIGO ACTUAL BIO-G
+================================================================================
+
+El zip revisado muestra que BIO-G ya tiene una arquitectura madura para arboles perennes:
+
+- lib/core/agro/tree_agro_score_engine.dart
+- lib/core/agro/tree_nutrition_modifier.dart
+- lib/core/agro/npk_caps.dart
+- lib/core/agro/nutrient_recommendation_engine.dart
+- lib/core/crops/[tree]/[tree]_universal_profile.dart
+- lib/core/crops/[tree]/[tree]_crop_definition.dart
+- lib/core/yield/tree_yield_reference_catalog.dart
+- lib/core/plant_health/plant_health_stage_adapter.dart
+
+El patron moderno de Nogal/Pistache/Pera/Durazno usa:
+
+- StageTargets por etapa.
+- StageWeights por etapa.
+- nPriority, pPriority, kPriority en escala 0..1.
+- N/P/K relativos en escala 0..100, normalizados por NpkCaps.
+- NutritionModifier por perfil para matices, sin cambiar la estructura fenologica.
+- Mensajes farmer-friendly, no recetas.
+- Contrato AgroRange v1.5: lowMax es frontera critica baja, no inicio del optimo.
+
+Para Naranjo se recomienda crear:
+
+lib/core/crops/orange_tree/orange_tree_universal_profile.dart
+lib/core/crops/orange_tree/orange_tree_crop_definition.dart
+lib/core/agro/orange_tree_agro_score_engine.dart
+lib/core/agro/orange_tree_nutrition_modifier.dart
+
+================================================================================
+0.3 NPK CAPS RECOMENDADOS PARA NARANJO
+================================================================================
+
+NpkCaps NO son dosis.
+NpkCaps solo normalizan la lectura cruda del sensor NPK a una escala relativa util para el motor.
+
+Decision recomendada:
+
+[TABLA]
+Columnas: Nutriente | Cap recomendado | Justificacion BIO-G
+Fila 1:
+- Nutriente: N
+- Cap recomendado: 120.0
+- Justificacion BIO-G: N es protagonista de citricos, pero exceso de N reduce calidad, genera follaje, retrasa color y puede agravar cascara gruesa. Cap 120 permite lectura util sin inflar N como hortaliza de alta demanda.
+Fila 2:
+- Nutriente: P
+- Cap recomendado: 95.0
+- Justificacion BIO-G: P pesa en raiz/arranque/floracion, pero en arbol adulto no debe dominar todo el ciclo. Cap 95 coincide con otros arboles de P moderado.
+Fila 3:
+- Nutriente: K
+- Cap recomendado: 200.0
+- Justificacion BIO-G: K es protagonista de calibre, jugo, calidad, agua y madurez. Debe ser mayor que manzano/pera y cercano a hortalizas/frutales de alto K, pero menor que pistache.
+[/TABLA]
+
+Codigo esperado en NpkCaps:
+
+```dart
+case 'orange_tree':
+case 'crop_orange_tree':
+case 'orange':
+case 'naranjo':
+case 'naranja':
+  return 120.0; // N
+
+case 'orange_tree':
+case 'crop_orange_tree':
+case 'orange':
+case 'naranjo':
+case 'naranja':
+  return 95.0; // P
+
+case 'orange_tree':
+case 'crop_orange_tree':
+case 'orange':
+case 'naranjo':
+case 'naranja':
+  return 200.0; // K
+```
+
+Nota: si despues BIO-G calibra sensores especificamente para regiones citricolas mexicanas, se puede permitir override avanzado:
+- N cap 125
+- P cap 100
+- K cap 210
+Pero v1 debe salir conservador.
+
+================================================================================
+1. ALCANCE DEL DOCUMENTO
+================================================================================
+
+Este documento alimenta:
+
+- orange_tree_universal_profile.dart
+- orange_tree_crop_definition.dart
+- orange_tree_agro_score_engine.dart
+- orange_tree_nutrition_modifier.dart
+- tree_agro_score_engine.dart via delegacion generica
+- resolveTargets(...)
+- resolveStageWeights(...)
+- evaluateTelemetry(...)
+- AgroScore por etapa
+- AgroMetricEval para N/P/K
+- dashboard y NPK screen
+- NutrientRecommendationEngine
+- NpkCaps
+- planner nutricional v1/v2
+- memoria nutricional del naranjo futura
+
+No alimenta directamente:
+- dosis cerradas por fertilizante;
+- marcas comerciales;
+- fuentes comerciales de N/P/K;
+- programas regionales obligatorios;
+- aplicacion sin analisis;
+- diagnostico HLB;
+- pesticidas;
+- Brix/acidez como sensor v1;
+- micronutrientes simulados desde NPK;
+- promesa de rendimiento.
+
+Estados perennes permitidos:
+- newly_planted
+- juvenile_non_productive
+- established
+- productive_season
+- unknown
+
+Etapas arbol permitidas:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Metricas sensor v1 permitidas:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Contexto avanzado NO sensor v1:
+- HLB / dragón amarillo
+- psilido asiatico
+- Fe, Zn, Mn, B, Cu, Ca, Mg, S, Cl, Na
+- SAR / sodio intercambiable
+- bicarbonatos / caliza
+- materia organica
+- textura
+- drenaje
+- salinidad del agua
+- portainjerto
+- calidad externa
+- Brix/acidez
+- caida fisiologica
+- carga de fruto
+- calibre
+- color break
+- regreening
+- numero de cortes
+- historial de rendimiento
+
+================================================================================
+2. FUENTES Y CRITERIO DE CONFIANZA
+================================================================================
+
+Alta confianza:
+- UF/IFAS Florida Citrus Production Guide 2025-2026: Nutrition Management for Citrus Trees.
+- UF/IFAS Macronutrient Deficiencies in Citrus: Nitrogen, Phosphorus, and Potassium.
+- UF/IFAS Potassium for Citrus Trees.
+- UC IPM / UC ANR: fertilizacion de citricos, timing de N y riesgos de exceso.
+- University of Arizona Cooperative Extension: irrigacion de citricos y sintomas de estres hidrico.
+- NSW DPI Citrus nutrition: analisis foliar, rangos nutrimentales y manejo por tendencias.
+- Scielo/Colegio de Postgraduados Tabasco: programa de fertilizacion sustentable para citricos en Tabasco, Mexico.
+- Scielo/Terra Latinoamericana: metodos de interpretacion de analisis nutrimental en naranja Valencia.
+
+Media-alta:
+- Guias tecnicas regionales y documentos mexicanos de citricultura cuando coinciden con fuentes universitarias.
+- Literatura de fertirrigacion citrica usada para patron de fraccionamiento, no para dosis visibles.
+
+Media:
+- Fuentes comerciales de nutricion vegetal usadas solo para contrastar fisiologia general y lenguaje de productor, nunca para hardcodear marcas o dosis.
+
+Baja-media:
+- Foros, Reddit y grupos de productores/jardineria usados solo para UX y confusiones reales:
+  "hojas amarillas", "se cae la fruta", "tiene mucho follaje y poca naranja", "no cuaja",
+  "se raja la naranja", "hoja con nervaduras verdes", "le eche fertilizante y se quemo",
+  "agua salada", "no pinta", "cascara gruesa".
+  No se usaron foros para fijar umbrales tecnicos.
+
+Conclusiones fuertes de las fuentes:
+
+- El analisis foliar es la herramienta mas confiable para ajustar fertilizacion en citricos.
+- N debe manejarse por edad, rendimiento esperado, salud del arbol y analisis foliar.
+- P se decide con suelo + foliar; no es rutina en todos los casos adultos.
+- K debe subir en etapas de division/expansion celular, llenado y madurez, especialmente para fruta fresca.
+- K bajo puede venir de falta de K, exceso de Ca/Mg/Na, suelo calcareo, falta de humedad o exceso relativo de N.
+- N alto tarde puede afectar calidad, color y cascara.
+- pH, salinidad y agua pueden hacer que el sensor NPK lea algo que el arbol no puede aprovechar.
+- En Mexico, las condiciones de suelo cambian mucho: zonas acidas pueden necesitar encalado/Ca/Mg; zonas alcalinas/calcareas pueden bloquear Fe/Zn/Mn/P.
+
+================================================================================
+3. PRINCIPIOS AGRONOMICOS PARA BIO-G EN NARANJO
+================================================================================
+
+3.1 Suelo primero
+
+Antes de interpretar N/P/K, BIO-G debe revisar:
+
+1. Etapa visible.
+2. Estado perenne.
+3. Humedad del suelo.
+4. EC/salinidad.
+5. pH.
+6. Resistencia/compactacion.
+7. Temperatura de suelo.
+8. Carga de fruto si existe.
+9. Hoja activa / flush.
+10. Historial de HLB/psilido/raiz.
+11. N/P/K relativo.
+12. Memoria de floracion, cuajado, caida, salinidad, defoliacion y postcosecha.
+
+Si NPK aparece bajo/alto pero hay problema de raiz, agua, pH o sales, el mensaje debe cambiar de:
+"falta fertilizante"
+a:
+"posible baja absorcion / disponibilidad limitada / revisar raiz, agua, sales y pH".
+
+Mensaje base:
+"Puede haber nutrientes en el suelo, pero el naranjo tal vez no los esta tomando. Primero revisa humedad, sales, pH, compactacion y raiz."
+
+3.2 Agua siempre
+
+En naranjo, agua estable es critica para:
+- transporte de nutrientes;
+- brotacion;
+- floracion;
+- cuajado;
+- expansion celular;
+- calibre;
+- jugo;
+- evitar rajado;
+- evitar caida de fruta;
+- sostener hoja activa;
+- disminuir estres salino;
+- recuperacion postcosecha.
+
+Reglas:
+- Si soilMoisture esta baja en flowering, fruit_set o fruit_fill, penalizar agua antes que NPK.
+- Si soilMoisture esta baja en fruit_fill, hablar de calibre, jugo y caida, no solo de "sed".
+- Si soilMoisture esta alta/saturada, no recomendar mas riego ni fertilizacion fuerte.
+- Si EC alta + humedad baja, subir alerta de estres osmotico.
+- Si K bajo + humedad baja, priorizar agua antes de K.
+- Si hay rajado de fruto + humedad irregular, registrar memoria de riego irregular.
+
+3.3 Salinidad / EC
+
+La EC es un bloqueador fuerte en naranjo.
+
+Reglas:
+- EC baja no es deficiencia.
+- EC alta bloquea recomendaciones agresivas de NPK.
+- EC alta + N alto o K alto = posible acumulacion de fertilizante/sales.
+- EC alta + fruit_set = riesgo de caida de fruto y cuajado debil.
+- EC alta + fruit_fill = riesgo de calibre bajo, jugo bajo y hoja quemada.
+- EC alta + root_establishment = riesgo alto de raiz joven.
+- EC alta + sintomas de borde quemado = no culpar K inmediatamente; revisar sales/Cl/Na/agua.
+- Si EC es critica, el dashboard debe decir "sales/agua/drenaje" antes que "aplicar NPK".
+
+3.4 pH, caliza y acidez
+
+BIO-G debe manejar dos mundos:
+
+A) Suelos acidos tropicales/subtropicales:
+- P puede fijarse.
+- Ca/Mg pueden estar bajos.
+- Puede haber toxicidad por Al/Mn si acidez es fuerte.
+- El encalado/Ca/Mg es modo avanzado, no recomendacion automatica.
+
+B) Suelos alcalinos/calcareos:
+- Fe/Zn/Mn/P pueden estar presentes pero no disponibles.
+- La hoja amarilla con nervadura verde puede ser Fe/Mn/Zn, no falta de N.
+- P alto o pH alto puede intensificar desbalances de micronutrientes.
+
+Rango operativo BIO-G v1:
+- Preferente general: pH 5.8-7.3.
+- Aceptable vigilado: 5.5-7.5.
+- Alerta por acidez: <5.0.
+- Alerta por alcalinidad/bloqueo: >7.8-8.0.
+
+3.5 Nitrogeno
+
+Funciones:
+- brotacion / flush;
+- hoja activa;
+- fotosintesis;
+- floracion;
+- cuajado;
+- crecimiento vegetativo;
+- rendimiento;
+- recuperacion postcosecha;
+- sostener arboles debilitados si agua/raiz funcionan.
+
+Riesgos:
+- exceso de brotes vegetativos;
+- sombreo;
+- cascara gruesa/rugosa;
+- retraso de color;
+- fruta de menor calidad externa;
+- mayor sensibilidad a ciertas plagas/brotes tiernos;
+- mayor necesidad de K;
+- mas sales si la fertilizacion se acumula;
+- no mejora fruta si el limitante real es agua, K, raiz, HLB, salinidad o pH.
+
+Reglas:
+- N bajo en budbreak/vegetative_growth pesa fuerte si agua/EC/pH/resistance estan bien.
+- N bajo en flowering/fruit_set puede afectar amarre, pero primero revisar agua, temperatura y arbol.
+- N bajo en fruit_fill pesa menos que K/agua, salvo arbol defoliado o muy bajo vigor.
+- N alto en fruit_fill/harvest_maturity es observacion de calidad, no "excelente".
+- N alto + baja carga = puro follaje; advertir.
+- N alto + EC alta = sales/fertilizante acumulado; pausar.
+- N normal/alto + hoja amarilla con nervadura verde = revisar Fe/Zn/Mn/pH/raiz, no aplicar mas N.
+- N tardio debe evitarse si empuja brotes tiernos o retrasa maduracion/color.
+
+3.6 Fosforo
+
+Funciones:
+- raiz;
+- energia;
+- establecimiento;
+- prefloracion;
+- floracion;
+- cuajado;
+- metabolismo temprano.
+
+Reglas:
+- P pesa fuerte en planting_transplant/root_establishment.
+- P pesa medio-alto en flowering.
+- P pesa moderado en fruit_set.
+- P bajo en fruit_fill/harvest_maturity NO debe tumbar score si agua/K/hoja estan bien.
+- P alto no se celebra: puede reflejar acumulacion o desbalance con Zn/Fe/Cu.
+- P en suelos acidos puede fijarse; en suelos calcareos puede disminuir disponibilidad.
+- P se corrige con suelo + foliar, no con lectura rapida aislada.
+
+3.7 Potasio
+
+Funciones:
+- regulacion hidrica;
+- estomas;
+- fotosintesis;
+- transporte de azucares;
+- calibre;
+- jugo;
+- calidad interna;
+- madurez;
+- tolerancia a sequia/calor;
+- firmeza y calidad postcosecha.
+
+Reglas:
+- K sube desde flowering/fruit_set.
+- K es maximo en fruit_fill.
+- K sigue importante en harvest_maturity por calidad final.
+- K bajo + humedad correcta + EC baja en fruit_fill = alerta fuerte de calibre/jugo/calidad.
+- K bajo + humedad baja = priorizar agua antes de K.
+- K bajo + N alto = desbalance: mucho follaje y poca calidad.
+- K alto + EC alta = posible salinidad/acumulacion.
+- K alto + Mg/Ca bajo o sintomas = advertir antagonismo.
+- En suelos calcareos/salinos/fino-texturizados, K aplicado al suelo puede ser lento o poco efectivo; modo simple no receta, modo avanzado pide confirmacion.
+
+3.8 Calcio, magnesio, zinc, manganeso, hierro, boro y cloro como contexto
+
+BIO-G v1 no mide estos elementos, pero el motor debe mencionarlos cuando el contexto lo pida.
+
+Ca:
+- estructura, pared celular, raiz, calidad, rajado y balance con Na/Mg/K.
+- No simular Ca desde NPK.
+
+Mg:
+- clorofila, fotosintesis, hoja vieja amarilla, balance con K/Ca.
+- En zonas acidas puede ser deficiencia frecuente.
+
+Zn y Mn:
+- muy comunes en citricos.
+- hoja chica, brote corto, moteado o clorosis pueden confundirse con N.
+- aplicaciones foliares son contexto avanzado, no dosis v1.
+
+Fe:
+- clorosis en hoja joven, nervadura verde, pH alto/caliza/raiz saturada.
+- No corregir con N si el patron visual es Fe.
+
+B:
+- floracion/cuajado, pero estrecha frontera entre suficiencia y toxicidad.
+- No recomendar B sin analisis.
+
+Cl/Na:
+- salinidad/toxicidad; borde quemado y defoliacion.
+- EC no separa Cl/Na, pero alerta.
+
+3.9 HLB / psilido / sanidad y nutricion
+
+El HLB puede generar sintomas que parecen deficiencias nutrimentales.
+BIO-G no diagnostica HLB desde NPK.
+
+Reglas:
+- HLB/psilido reportado + clorosis = bajar confianza NPK.
+- HLB/raiz debil + N/K bajos = hablar de absorcion y sanidad, no solo "aplicar".
+- HLB no se resuelve con fertilizante; nutricion balanceada solo ayuda a sostener vigor dentro de manejo integrado.
+- Sintomas asimetricos en hoja, sectores del arbol, fruta chica/deforme o amargor/seeds abortadas deben ir a Plant Health.
+
+================================================================================
+4. MAPEO FENOLOGICO CITRICO A STAGE IDS BIO-G
+================================================================================
+
+[TABLA]
+Columnas: Realidad citrica | StageId BIO-G | Regla UX
+Fila 1:
+- Realidad citrica: Arbol recien plantado
+- StageId BIO-G: planting_transplant
+- Regla UX: Raiz, humedad, salinidad baja, no produccion.
+Fila 2:
+- Realidad citrica: Raiz estableciendose
+- StageId BIO-G: root_establishment
+- Regla UX: Drenaje, raiz fina, no quemar con sales.
+Fila 3:
+- Realidad citrica: Arbol joven sin produccion comercial
+- StageId BIO-G: juvenile_vegetative
+- Regla UX: Formacion de copa, raiz y vigor controlado.
+Fila 4:
+- Realidad citrica: Baja actividad / sin flor ni fruto visible
+- StageId BIO-G: dormancy
+- Regla UX: Reposo relativo, no arbol pelon.
+Fila 5:
+- Realidad citrica: Brote nuevo / flush
+- StageId BIO-G: budbreak
+- Regla UX: Hoja nueva, N/Zn/Mn/Fe contexto, plagas de brote.
+Fila 6:
+- Realidad citrica: Hoja y brote activos
+- StageId BIO-G: vegetative_growth
+- Regla UX: Construir hoja sin empujar puro follaje.
+Fila 7:
+- Realidad citrica: Floracion
+- StageId BIO-G: flowering
+- Regla UX: Agua, temperatura, P/K, N moderado; etapa critica.
+Fila 8:
+- Realidad citrica: Caida de petalos / cuajado / amarre
+- StageId BIO-G: fruit_set
+- Regla UX: Agua estable, K sube, EC baja, caida fisiologica vs estres.
+Fila 9:
+- Realidad citrica: Division/expansion celular / crecimiento de fruto / llenado de jugo
+- StageId BIO-G: fruit_fill
+- Regla UX: K y agua mandan; no copy de cosecha.
+Fila 10:
+- Realidad citrica: Cambio de color / madurez / cosecha
+- StageId BIO-G: harvest_maturity
+- Regla UX: Calidad final, color, madurez, evitar N tardio.
+Fila 11:
+- Realidad citrica: Despues de cosecha con hoja activa
+- StageId BIO-G: post_harvest
+- Regla UX: Reservas, recuperacion, siguiente floracion.
+Fila 12:
+- Realidad citrica: Usuario no identifica etapa
+- StageId BIO-G: unknown
+- Regla UX: Fallback conservador y preguntar realidad visible.
+[/TABLA]
+
+================================================================================
+5. ESCALA INTERNA BIO-G PARA N/P/K RELATIVO
+================================================================================
+
+La lectura cruda del sensor NPK se normaliza con NpkCaps:
+
+nRel = clamp(rawN / 120.0 * 100, 0, 100)
+pRel = clamp(rawP / 95.0 * 100, 0, 100)
+kRel = clamp(rawK / 200.0 * 100, 0, 100)
+
+Los rangos N/P/K de StageTargets en este documento estan en escala relativa 0..100.
+No significan kg/ha, lb/ac ni ppm universales de laboratorio.
+
+Semantica obligatoria AgroRange:
+
+AgroRange(
+  lowMax: fronteraCriticaBaja,
+  optimalMin: inicioOptimo,
+  optimalMax: finOptimo,
+  highMin: fronteraCriticaAlta,
+)
+
+- lowMax NO es inicio del optimo.
+- optimalMin SI es inicio del optimo.
+- optimalMax SI es fin del optimo.
+- highMin SI es frontera de exceso critico.
+- No usar lowMax == optimalMin.
+- No usar optimalMax == highMin.
+
+================================================================================
+6. STAGE TARGETS OFICIALES NARANJO v1
+================================================================================
+
+Formato de cada rango:
+lowMax / optimalMin / optimalMax / highMin
+
+[TABLA]
+Columnas: StageId | Label UX | soilMoisture | soilTemp | pH | EC | resistance | N rel | P rel | K rel | nP | pP | kP | Nota
+Fila 1:
+- StageId: planting_transplant
+- Label UX: Plantacion / trasplante
+- soilMoisture: 45 / 60 / 80 / 88
+- soilTemp: 10 / 16 / 28 / 34
+- pH: 5.0 / 5.8 / 7.2 / 8.0
+- EC: -0.01 / 0.0 / 1.1 / 1.7
+- resistance: -0.01 / 0.0 / 1.5 / 2.1
+- N rel: 8 / 18 / 35 / 70
+- P rel: 20 / 55 / 78 / 92
+- K rel: 15 / 35 / 58 / 85
+- nPriority: 0.25
+- pPriority: 0.75
+- kPriority: 0.38
+- Nota: Raiz joven, evitar quemadura y sales
+Fila 2:
+- StageId: root_establishment
+- Label UX: Establecimiento radicular
+- soilMoisture: 45 / 60 / 82 / 90
+- soilTemp: 10 / 16 / 28 / 34
+- pH: 5.0 / 5.8 / 7.2 / 8.0
+- EC: -0.01 / 0.0 / 1.1 / 1.8
+- resistance: -0.01 / 0.0 / 1.5 / 2.1
+- N rel: 10 / 22 / 42 / 75
+- P rel: 20 / 55 / 78 / 92
+- K rel: 15 / 38 / 60 / 86
+- nPriority: 0.32
+- pPriority: 0.78
+- kPriority: 0.42
+- Nota: Raiz fina activa; suelo manda antes que NPK
+Fila 3:
+- StageId: juvenile_vegetative
+- Label UX: Crecimiento juvenil
+- soilMoisture: 40 / 55 / 80 / 90
+- soilTemp: 10 / 16 / 30 / 36
+- pH: 5.0 / 5.7 / 7.4 / 8.2
+- EC: -0.01 / 0.0 / 1.3 / 2.0
+- resistance: -0.01 / 0.0 / 1.7 / 2.3
+- N rel: 25 / 55 / 75 / 90
+- P rel: 15 / 35 / 58 / 85
+- K rel: 22 / 45 / 70 / 90
+- nPriority: 0.72
+- pPriority: 0.42
+- kPriority: 0.55
+- Nota: Formar copa y raiz sin empujar madera blanda
+Fila 4:
+- StageId: dormancy
+- Label UX: Reposo relativo / baja actividad
+- soilMoisture: 35 / 50 / 75 / 88
+- soilTemp: 5 / 10 / 24 / 32
+- pH: 5.0 / 5.6 / 7.5 / 8.3
+- EC: -0.01 / 0.0 / 1.4 / 2.2
+- resistance: -0.01 / 0.0 / 1.8 / 2.5
+- N rel: 0 / 8 / 25 / 60
+- P rel: 0 / 8 / 25 / 65
+- K rel: 0 / 10 / 30 / 70
+- nPriority: 0.18
+- pPriority: 0.18
+- kPriority: 0.22
+- Nota: No pintar como arbol pelon; no sobrerreaccionar a NPK
+Fila 5:
+- StageId: budbreak
+- Label UX: Brotacion / flush
+- soilMoisture: 45 / 60 / 82 / 90
+- soilTemp: 10 / 16 / 30 / 36
+- pH: 5.0 / 5.7 / 7.3 / 8.2
+- EC: -0.01 / 0.0 / 1.3 / 2.1
+- resistance: -0.01 / 0.0 / 1.7 / 2.3
+- N rel: 25 / 55 / 75 / 90
+- P rel: 15 / 38 / 62 / 86
+- K rel: 20 / 45 / 68 / 90
+- nPriority: 0.72
+- pPriority: 0.48
+- kPriority: 0.58
+- Nota: Hoja nueva, micronutrientes y N moderado-alto
+Fila 6:
+- StageId: vegetative_growth
+- Label UX: Crecimiento vegetativo
+- soilMoisture: 42 / 58 / 82 / 90
+- soilTemp: 10 / 17 / 32 / 38
+- pH: 5.0 / 5.7 / 7.4 / 8.2
+- EC: -0.01 / 0.0 / 1.4 / 2.2
+- resistance: -0.01 / 0.0 / 1.8 / 2.4
+- N rel: 28 / 55 / 78 / 92
+- P rel: 12 / 32 / 55 / 85
+- K rel: 25 / 50 / 75 / 92
+- nPriority: 0.75
+- pPriority: 0.35
+- kPriority: 0.62
+- Nota: Construir hoja funcional; evitar puro follaje
+Fila 7:
+- StageId: flowering
+- Label UX: Floracion
+- soilMoisture: 50 / 65 / 85 / 92
+- soilTemp: 12 / 18 / 30 / 35
+- pH: 5.0 / 5.8 / 7.3 / 8.1
+- EC: -0.01 / 0.0 / 1.3 / 2.0
+- resistance: -0.01 / 0.0 / 1.7 / 2.3
+- N rel: 18 / 38 / 60 / 82
+- P rel: 18 / 45 / 68 / 88
+- K rel: 25 / 50 / 75 / 90
+- nPriority: 0.48
+- pPriority: 0.62
+- kPriority: 0.65
+- Nota: Etapa critica: agua, temperatura, P/K y N sin exceso
+Fila 8:
+- StageId: fruit_set
+- Label UX: Cuajado / amarre
+- soilMoisture: 50 / 65 / 85 / 92
+- soilTemp: 12 / 18 / 31 / 36
+- pH: 5.0 / 5.8 / 7.3 / 8.1
+- EC: -0.01 / 0.0 / 1.3 / 2.0
+- resistance: -0.01 / 0.0 / 1.7 / 2.3
+- N rel: 20 / 40 / 62 / 84
+- P rel: 15 / 35 / 60 / 85
+- K rel: 32 / 60 / 82 / 94
+- nPriority: 0.52
+- pPriority: 0.48
+- kPriority: 0.78
+- Nota: Evitar caida por estres; K empieza a mandar
+Fila 9:
+- StageId: fruit_fill
+- Label UX: Crecimiento / llenado de fruto
+- soilMoisture: 50 / 65 / 88 / 93
+- soilTemp: 12 / 18 / 32 / 38
+- pH: 5.0 / 5.8 / 7.3 / 8.1
+- EC: -0.01 / 0.0 / 1.2 / 1.9
+- resistance: -0.01 / 0.0 / 1.8 / 2.4
+- N rel: 15 / 35 / 58 / 82
+- P rel: 10 / 25 / 48 / 78
+- K rel: 40 / 70 / 90 / 96
+- nPriority: 0.45
+- pPriority: 0.30
+- kPriority: 0.90
+- Nota: Calibre, jugo, K, agua estable y salinidad baja
+Fila 10:
+- StageId: harvest_maturity
+- Label UX: Madurez / color / cosecha
+- soilMoisture: 45 / 58 / 82 / 90
+- soilTemp: 10 / 16 / 30 / 36
+- pH: 5.0 / 5.8 / 7.4 / 8.2
+- EC: -0.01 / 0.0 / 1.4 / 2.2
+- resistance: -0.01 / 0.0 / 1.9 / 2.5
+- N rel: 8 / 20 / 45 / 70
+- P rel: 5 / 18 / 40 / 70
+- K rel: 25 / 55 / 78 / 92
+- nPriority: 0.25
+- pPriority: 0.20
+- kPriority: 0.68
+- Nota: Calidad final; no empujar N tarde
+Fila 11:
+- StageId: post_harvest
+- Label UX: Postcosecha / recuperacion
+- soilMoisture: 40 / 55 / 82 / 90
+- soilTemp: 8 / 14 / 30 / 36
+- pH: 5.0 / 5.7 / 7.4 / 8.2
+- EC: -0.01 / 0.0 / 1.4 / 2.2
+- resistance: -0.01 / 0.0 / 1.8 / 2.4
+- N rel: 15 / 35 / 60 / 82
+- P rel: 8 / 22 / 45 / 75
+- K rel: 20 / 45 / 68 / 88
+- nPriority: 0.55
+- pPriority: 0.30
+- kPriority: 0.60
+- Nota: Hoja activa, reservas y preparacion del siguiente ciclo
+Fila 12:
+- StageId: unknown
+- Label UX: No lo se
+- soilMoisture: 45 / 60 / 85 / 92
+- soilTemp: 10 / 16 / 30 / 36
+- pH: 5.0 / 5.7 / 7.4 / 8.2
+- EC: -0.01 / 0.0 / 1.4 / 2.2
+- resistance: -0.01 / 0.0 / 1.8 / 2.4
+- N rel: 15 / 35 / 60 / 85
+- P rel: 10 / 30 / 55 / 82
+- K rel: 20 / 45 / 70 / 90
+- nPriority: 0.45
+- pPriority: 0.40
+- kPriority: 0.55
+- Nota: Fallback conservador; pedir etapa visible
+[/TABLA]
+
+Notas por metrica:
+
+soilMoisture:
+- Valores apenas debajo de optimalMin son observacion, no critico.
+- En flowering, fruit_set y fruit_fill el rango optimo sube porque el arbol no perdona estres.
+- Saturacion tambien es riesgo: Phytophthora, gomosis, anoxia, baja absorcion de N.
+
+soilTemp:
+- Naranjo funciona mejor con suelo templado.
+- Suelo frio reduce absorcion, pero no debe matar el score si el arbol esta en reposo relativo.
+- Calor extremo mas humedad baja eleva riesgo de caida, fruto chico y cierre estomatico.
+
+pH:
+- Se permite rango amplio porque Mexico tiene suelos acidos y alcalinos.
+- pH alto reduce Fe/Zn/Mn/P.
+- pH bajo fuerte puede limitar raiz, Ca/Mg y favorecer toxicidades.
+
+EC:
+- EC es high-side metric. lowMax negativo es placeholder seguro.
+- EC alta bloquea recomendaciones NPK agresivas.
+- EC debe pesar mas en raiz, cuajado y llenado.
+
+resistance:
+- Compactacion alta reduce raiz fina, absorcion, aireacion y eficiencia del riego.
+- Si resistance es alta + humedad alta, pensar anoxia/raiz.
+- Si resistance es alta + humedad baja, pensar agua no llega a raiz funcional.
+
+================================================================================
+7. STAGE WEIGHTS OFICIALES NARANJO v1
+================================================================================
+
+[TABLA]
+Columnas: StageId | moisture | soilTemp | resistance | pH | EC | N | P | K | Lectura
+Fila 1:
+- StageId: planting_transplant
+- moisture: 0.26
+- soilTemp: 0.14
+- resistance: 0.16
+- pH: 0.12
+- EC: 0.16
+- N: 0.04
+- P: 0.08
+- K: 0.04
+- Lectura: Raiz joven, evitar quemadura y sales
+Fila 2:
+- StageId: root_establishment
+- moisture: 0.27
+- soilTemp: 0.13
+- resistance: 0.16
+- pH: 0.12
+- EC: 0.17
+- N: 0.05
+- P: 0.08
+- K: 0.02
+- Lectura: Raiz fina activa; suelo manda antes que NPK
+Fila 3:
+- StageId: juvenile_vegetative
+- moisture: 0.24
+- soilTemp: 0.13
+- resistance: 0.12
+- pH: 0.10
+- EC: 0.15
+- N: 0.13
+- P: 0.07
+- K: 0.06
+- Lectura: Formar copa y raiz sin empujar madera blanda
+Fila 4:
+- StageId: dormancy
+- moisture: 0.22
+- soilTemp: 0.12
+- resistance: 0.12
+- pH: 0.12
+- EC: 0.16
+- N: 0.06
+- P: 0.05
+- K: 0.05
+- Lectura: No pintar como arbol pelon; no sobrerreaccionar a NPK
+Fila 5:
+- StageId: budbreak
+- moisture: 0.24
+- soilTemp: 0.14
+- resistance: 0.11
+- pH: 0.11
+- EC: 0.14
+- N: 0.12
+- P: 0.07
+- K: 0.07
+- Lectura: Hoja nueva, micronutrientes y N moderado-alto
+Fila 6:
+- StageId: vegetative_growth
+- moisture: 0.24
+- soilTemp: 0.14
+- resistance: 0.11
+- pH: 0.10
+- EC: 0.14
+- N: 0.14
+- P: 0.05
+- K: 0.08
+- Lectura: Construir hoja funcional; evitar puro follaje
+Fila 7:
+- StageId: flowering
+- moisture: 0.30
+- soilTemp: 0.15
+- resistance: 0.09
+- pH: 0.10
+- EC: 0.14
+- N: 0.08
+- P: 0.08
+- K: 0.06
+- Lectura: Etapa critica: agua, temperatura, P/K y N sin exceso
+Fila 8:
+- StageId: fruit_set
+- moisture: 0.30
+- soilTemp: 0.14
+- resistance: 0.10
+- pH: 0.09
+- EC: 0.16
+- N: 0.08
+- P: 0.06
+- K: 0.07
+- Lectura: Evitar caida por estres; K empieza a mandar
+Fila 9:
+- StageId: fruit_fill
+- moisture: 0.30
+- soilTemp: 0.14
+- resistance: 0.10
+- pH: 0.09
+- EC: 0.17
+- N: 0.05
+- P: 0.04
+- K: 0.11
+- Lectura: Calibre, jugo, K, agua estable y salinidad baja
+Fila 10:
+- StageId: harvest_maturity
+- moisture: 0.25
+- soilTemp: 0.12
+- resistance: 0.10
+- pH: 0.10
+- EC: 0.17
+- N: 0.05
+- P: 0.04
+- K: 0.07
+- Lectura: Calidad final; no empujar N tarde
+Fila 11:
+- StageId: post_harvest
+- moisture: 0.25
+- soilTemp: 0.12
+- resistance: 0.11
+- pH: 0.11
+- EC: 0.16
+- N: 0.10
+- P: 0.05
+- K: 0.10
+- Lectura: Hoja activa, reservas y preparacion del siguiente ciclo
+Fila 12:
+- StageId: unknown
+- moisture: 0.25
+- soilTemp: 0.13
+- resistance: 0.12
+- pH: 0.11
+- EC: 0.15
+- N: 0.08
+- P: 0.06
+- K: 0.10
+- Lectura: Fallback conservador; pedir etapa visible
+[/TABLA]
+
+Lectura de pesos:
+- moisture y EC son muy fuertes en floracion, cuajado y llenado.
+- K sube en fruit_set, fruit_fill y harvest_maturity.
+- N sube en budbreak, vegetative_growth y post_harvest con hoja activa.
+- P pesa en plantacion, raiz, floracion y cuajado.
+- Dormancy/repo relativo tiene pesos conservadores para no sobrerreaccionar.
+
+================================================================================
+8. GUIAS UX POR ETAPA Y NUTRIENTE
+================================================================================
+
+8.1 Plantacion / trasplante
+
+N:
+- Prioridad baja-moderada.
+- No quemar raiz nueva.
+- Si N bajo pero humedad/EC/raiz estan mal, hablar de establecimiento, no de fertilizar.
+
+P:
+- Prioridad alta.
+- Raiz y energia inicial.
+- Corregir con analisis/preparacion del sitio, no con urgencia ciega.
+
+K:
+- Prioridad media-baja.
+- Balance hidrico y raiz.
+
+Mensaje UX:
+"El naranjo acaba de entrar al suelo. Ahorita no se trata de forzar fruta ni puro N: primero raiz, humedad pareja, baja salinidad y suelo sin compactacion."
+
+8.2 Establecimiento radicular
+
+N:
+- Moderado.
+- Ayuda a brote si la raiz ya esta funcionando.
+
+P:
+- Alto.
+- Raiz fina, energia, establecimiento.
+
+K:
+- Medio.
+- Agua y tolerancia.
+
+Mensaje UX:
+"Si la raiz no esta trabajando, el fertilizante no se aprovecha. Revisa humedad, sales y compactacion antes de subir NPK."
+
+8.3 Crecimiento juvenil
+
+N:
+- Alto controlado.
+- Formar copa y hoja.
+- Evitar brotes tiernos excesivos si ya viene tarde o con sales.
+
+P:
+- Medio.
+- Raiz y estructura.
+
+K:
+- Medio-alto.
+- Vigor balanceado y tolerancia a estres.
+
+Mensaje UX:
+"En arbol joven buscas copa y raiz, no fruta. N ayuda, pero si te pasas haces madera tierna y problemas de manejo."
+
+8.4 Reposo relativo / baja actividad
+
+N:
+- Bajo.
+- No empujar si el arbol esta en baja actividad.
+
+P:
+- Bajo.
+- Planeacion/analisis.
+
+K:
+- Bajo-moderado.
+- Mantener reservas si hay hoja activa, sin sobrerreaccionar.
+
+Mensaje UX:
+"El naranjo puede seguir verde, pero si no hay brote, flor ni fruto activo, BIO-G baja la presion de NPK y cuida suelo/raiz."
+
+8.5 Brotacion / flush
+
+N:
+- Alto.
+- Hoja nueva y crecimiento.
+
+P:
+- Medio.
+- Energia y raiz.
+
+K:
+- Medio-alto.
+- Turgencia y funcionamiento de hoja.
+
+Contexto:
+- Zn, Mn y Fe importan mucho, especialmente con pH alto o brotes cloroticos.
+
+Mensaje UX:
+"Va entrando brote nuevo. N ayuda a hoja, pero si hay hojas chicas o clorosis con nervadura verde, no culpes solo N: revisa Fe/Zn/Mn y pH."
+
+8.6 Crecimiento vegetativo
+
+N:
+- Alto controlado.
+- Construye hoja funcional.
+
+P:
+- Medio-bajo.
+- No protagonista adulto salvo deficiencia.
+
+K:
+- Medio-alto.
+- Balance con agua y hoja.
+
+Mensaje UX:
+"Buen follaje es necesario, pero no queremos puro follaje. Si N esta alto y la carga de fruta es baja, cuidado: el arbol se puede ir a hoja."
+
+8.7 Floracion
+
+N:
+- Medio.
+- Ni hambre ni exceso.
+
+P:
+- Medio-alto.
+- Energia y floracion.
+
+K:
+- Medio-alto.
+- Agua, estomas y soporte para cuajado.
+
+Mensaje UX:
+"Floracion es etapa delicada. Aqui manda humedad estable, temperatura y balance. N alto no arregla una floracion estresada."
+
+8.8 Cuajado / amarre
+
+N:
+- Medio.
+- Sostener hoja y fruto pequeno.
+
+P:
+- Medio.
+- Energia, amarre inicial.
+
+K:
+- Alto.
+- Comienza a pesar fuerte por division celular y retencion de fruto.
+
+Mensaje UX:
+"En cuajado se define mucha fruta. Si falta agua o hay sales, la naranja tira fruto aunque el NPK no se vea tan mal."
+
+8.9 Crecimiento / llenado de fruto
+
+N:
+- Medio-bajo a medio.
+- Mantener hoja sin empujar vegetativo excesivo.
+
+P:
+- Bajo-moderado.
+- No protagonista.
+
+K:
+- Muy alto.
+- Calibre, jugo, calidad y tolerancia a calor/sequia.
+
+Mensaje UX:
+"En llenado manda K con agua estable. Si el K sale bajo pero el suelo esta seco o salino, primero corrige agua/sales; si no, el arbol no lo aprovecha."
+
+8.10 Madurez / cosecha
+
+N:
+- Bajo-moderado.
+- Exceso tarde puede retrasar color/calidad y dar cascara gruesa.
+
+P:
+- Bajo.
+- No protagonista.
+
+K:
+- Medio-alto.
+- Calidad final, jugo, firmeza y madurez.
+
+Mensaje UX:
+"Ya estas cerca de calidad final. No empujes N tarde si no hace falta; cuida color, calibre, jugo y cosecha."
+
+8.11 Postcosecha / recuperacion
+
+N:
+- Medio si hay hoja activa.
+- Bajo si ya viene frio/baja actividad.
+
+P:
+- Bajo-medio.
+- Raiz y recuperacion.
+
+K:
+- Medio-alto.
+- Reservas, hoja activa y recuperacion.
+
+Mensaje UX:
+"Despues de cosecha el naranjo no se apaga. Si trae hoja activa, esta recuperando reservas para la siguiente floracion."
+
+================================================================================
+9. REGLAS DE BLOQUEO ANTES DE RECOMENDAR NPK
+================================================================================
+
+BIO-G debe revisar bloqueos antes de interpretar NPK como deficiencia real.
+
+[TABLA]
+Columnas: Bloqueo | Condicion | Que debe hacer BIO-G
+Fila 1:
+- Bloqueo: Humedad critica baja
+- Condicion: soilMoisture debajo de lowMax
+- Que debe hacer BIO-G: Priorizar agua. No decir "aplica N/K" como primera respuesta.
+Fila 2:
+- Bloqueo: Saturacion
+- Condicion: soilMoisture por encima de highMin
+- Que debe hacer BIO-G: Alertar anoxia/Phytophthora/raiz. No mas riego ni fertilizante fuerte.
+Fila 3:
+- Bloqueo: EC alta
+- Condicion: EC por encima de optimalMax o highMin
+- Que debe hacer BIO-G: Hablar de sales, agua, drenaje y acumulacion. Pausar NPK agresivo.
+Fila 4:
+- Bloqueo: pH alto
+- Condicion: pH >7.8 o sintomas Fe/Zn/Mn
+- Que debe hacer BIO-G: No culpar N primero. Mencionar disponibilidad de micronutrientes.
+Fila 5:
+- Bloqueo: pH bajo fuerte
+- Condicion: pH <5.0
+- Que debe hacer BIO-G: Alertar acidez, Ca/Mg/Al/Mn como contexto. No subir N ciegamente.
+Fila 6:
+- Bloqueo: Compactacion
+- Condicion: resistance alta
+- Que debe hacer BIO-G: Raiz limitada y absorcion pobre antes de fertilizar.
+Fila 7:
+- Bloqueo: Suelo frio
+- Condicion: soilTemp debajo de optimalMin en etapa activa
+- Que debe hacer BIO-G: Absorcion lenta. No sobrecorregir NPK.
+Fila 8:
+- Bloqueo: HLB/raiz debil
+- Condicion: HLB reportado, clorosis asimetrica, psilido o decaimiento
+- Que debe hacer BIO-G: Bajar confianza NPK y pedir confirmacion sanitaria.
+Fila 9:
+- Bloqueo: Baja carga de fruto
+- Condicion: cropLoadStatus=low + N alto
+- Que debe hacer BIO-G: Advertir vigor/follaje excesivo.
+Fila 10:
+- Bloqueo: K bajo con humedad baja
+- Condicion: K bajo + soilMoisture baja
+- Que debe hacer BIO-G: Priorizar agua, no solo K.
+[/TABLA]
+
+================================================================================
+10. REGLAS DE EXCESO Y DEFICIENCIA POR NUTRIENTE
+================================================================================
+
+10.1 Nitrogeno
+
+Deficiencia probable si:
+- N bajo sostenido;
+- etapa budbreak/vegetative_growth/flowering;
+- humedad correcta;
+- EC baja;
+- pH funcional;
+- resistance baja;
+- hoja vieja amarillenta generalizada;
+- bajo vigor general.
+
+No llamar deficiencia de N si:
+- hay pH alto + hoja joven con nervaduras verdes;
+- hay suelo saturado;
+- hay EC alta;
+- hay HLB sospechoso;
+- hay defoliacion por plaga;
+- hay raiz dañada;
+- hay Mg/Zn/Mn/Fe probable.
+
+Exceso/riesgo de N si:
+- N alto en fruit_fill/harvest_maturity;
+- N alto + baja carga;
+- N alto + EC alta;
+- N alto + crecimiento vegetativo excesivo;
+- N alto + retraso de color / cascara gruesa.
+
+Copy UX:
+"Hay N alto para esta etapa. En naranjo eso puede irse a puro follaje, retrasar color o afectar calidad si la fruta ya esta llenando o madurando. Revisa carga, agua, sales y K antes de empujar mas."
+
+10.2 Fosforo
+
+Deficiencia probable si:
+- P bajo en plantacion/raiz/floracion;
+- suelo/foliar confirman;
+- crecimiento radicular debil;
+- floracion/cuajado debil sin otro bloqueo.
+
+No sobrerreaccionar si:
+- P bajo en harvest_maturity;
+- P bajo aislado con pH extremo;
+- P bajo pero K/agua/hoja estan bien y no hay sintomas.
+
+Exceso/riesgo de P si:
+- P alto sostenido;
+- pH alto/caliza;
+- sintomas de Zn/Fe/Cu;
+- historial de aplicaciones fosfatadas.
+
+Copy UX:
+"El P ayuda mas al arranque, raiz y floracion. En arbol adulto, no conviene subirlo a ciegas: confirma con suelo/foliar, sobre todo si el pH puede bloquearlo."
+
+10.3 Potasio
+
+Deficiencia probable si:
+- K bajo en fruit_set/fruit_fill;
+- humedad correcta;
+- EC baja;
+- pH funcional;
+- hoja funcional suficiente;
+- fruto chico, jugo bajo, rajado o caida.
+
+No llamar deficiencia directa si:
+- humedad baja;
+- EC alta;
+- Ca/Mg/Na alto probable;
+- suelo calcareo o compactado;
+- raiz limitada.
+
+Exceso/riesgo de K si:
+- K alto + EC alta;
+- K alto + Mg/Ca bajo probable;
+- K alto + baja N/P y desarrollo lento;
+- K alto en reposo relativo sin demanda.
+
+Copy UX:
+"K es clave para calibre y jugo, pero si hay sales o falta de agua, el arbol no lo aprovecha bien. Primero corrige disponibilidad."
+
+================================================================================
+11. MODIFICADORES POR PERFIL OR
+================================================================================
+
+Los perfiles no cambian la arquitectura fenologica ni StageIds. Solo ajustan presion, sensibilidad y copy.
+
+[TABLA]
+Columnas: Perfil | Grupo nutricional | Ajustes recomendados
+Fila 1:
+- Perfil: or_skip
+- Grupo nutricional: generic
+- Ajustes recomendados: Conservador. No asumir destino mesa/jugo. K y N medios. Confianza media-baja.
+Fila 2:
+- Perfil: or_01_valencia
+- Grupo nutricional: valenciaJuiceLate
+- Ajustes recomendados: Ciclo largo. K sostenido en fruit_fill y harvest_maturity. N tarde con cuidado por color/calidad. Postcosecha importante.
+Fila 3:
+- Perfil: or_02_navel
+- Grupo nutricional: navelFreshQuality
+- Ajustes recomendados: Calidad externa alta. Penalizar mas N alto tarde; K/Ca/Mg contexto para calidad, rajado y cascara.
+Fila 4:
+- Perfil: or_03_temprano
+- Grupo nutricional: earlyOrange
+- Ajustes recomendados: Ventana corta. Exceso N tarde penaliza mas. K temprano en fruit_set/fruit_fill.
+Fila 5:
+- Perfil: or_04_criollo_regional
+- Grupo nutricional: regionalRustic
+- Ajustes recomendados: Menor confianza. No sobreactuar con desviaciones pequeñas. Vigilar salinidad, raiz y manejo irregular.
+Fila 6:
+- Perfil: or_05_tropical_calido
+- Grupo nutricional: tropicalWarm
+- Ajustes recomendados: Mayor riesgo de multiples floraciones, calor, caida y humedad. Agua/EC pesan mas; N no debe empujar brotes todo el año sin carga.
+[/TABLA]
+
+Reglas de penalizacion por perfil:
+- Navel: lateNitrogenExcessPenaltyFactor 0.82 en fruit_fill/harvest_maturity.
+- Valencia: 0.88 por ciclo largo y calidad/jugo.
+- Temprano: 0.84 por ventana corta y madurez temprana.
+- Tropical: 0.88 por calor/multiple flush.
+- Criollo: 0.94 para no castigar de mas sin datos.
+- SKIP: 0.92.
+
+================================================================================
+12. NUTRITION MODIFIER ESPERADO PARA CODIGO
+================================================================================
+
+Archivo sugerido:
+lib/core/agro/orange_tree_nutrition_modifier.dart
+
+Objetivo:
+- Ajustar presion por perfil.
+- Ajustar penalizacion por N tarde.
+- Ajustar copy practico por perfil.
+- NO cambiar StageIds ni targets base.
+
+Pseudocodigo:
+
+```dart
+enum OrangeTreeNutritionGroup {
+  generic,
+  valenciaJuiceLate,
+  navelFreshQuality,
+  earlyOrange,
+  regionalRustic,
+  tropicalWarm,
+}
+
+class OrangeTreeNutritionModifier implements TreeNutritionModifier {
+  const OrangeTreeNutritionModifier({
+    required this.profileId,
+    required this.group,
+    required this.labelEs,
+    required this.summaryEs,
+  });
+
+  final String profileId;
+  final OrangeTreeNutritionGroup group;
+  final String labelEs;
+  final String summaryEs;
+
+  bool get isGeneric => group == OrangeTreeNutritionGroup.generic;
+
+  bool get isFreshQualitySensitive =>
+      group == OrangeTreeNutritionGroup.navelFreshQuality ||
+      group == OrangeTreeNutritionGroup.earlyOrange;
+
+  @override
+  double adjustStagePressure(
+    double base, {
+    required AgroMetricKey nutrient,
+    required String? stageKey,
+  }) {
+    final stage = normalizeTreeStageId(stageKey);
+    final isRootOrFlower =
+        stage == TreeStageIds.plantingTransplant ||
+        stage == TreeStageIds.rootEstablishment ||
+        stage == TreeStageIds.flowering;
+    final isFruitK =
+        stage == TreeStageIds.fruitSet ||
+        stage == TreeStageIds.fruitFill ||
+        stage == TreeStageIds.harvestMaturity;
+    final isLateN =
+        stage == TreeStageIds.fruitFill ||
+        stage == TreeStageIds.harvestMaturity;
+
+    switch (nutrient) {
+      case AgroMetricKey.p:
+        return (base + (isRootOrFlower ? 0.04 : 0.0)).clamp(0.0, 1.0);
+      case AgroMetricKey.k:
+        return (base + (isFruitK ? 0.08 : 0.0)).clamp(0.0, 1.0);
+      case AgroMetricKey.n:
+        return (base + (isLateN ? -0.04 : 0.0)).clamp(0.0, 1.0);
+      default:
+        return base;
+    }
+  }
+
+  @override
+  double lateNitrogenExcessPenaltyFactor(String? stageKey) {
+    final stage = normalizeTreeStageId(stageKey);
+    final isLate = stage == TreeStageIds.fruitFill ||
+        stage == TreeStageIds.harvestMaturity;
+    if (!isLate) return 1.0;
+    return switch (group) {
+      OrangeTreeNutritionGroup.navelFreshQuality => 0.82,
+      OrangeTreeNutritionGroup.earlyOrange => 0.84,
+      OrangeTreeNutritionGroup.valenciaJuiceLate => 0.88,
+      OrangeTreeNutritionGroup.tropicalWarm => 0.88,
+      OrangeTreeNutritionGroup.generic => 0.92,
+      OrangeTreeNutritionGroup.regionalRustic => 0.94,
+    };
+  }
+}
+```
+
+================================================================================
+13. DART SKELETON PARA orange_tree_universal_profile.dart
+================================================================================
+
+Este bloque es guia para Codex/Claude. No pegar sin adaptar nombres exactos de TreeStageIds.
+
+```dart
+class OrangeTreeUniversalProfile {
+  const OrangeTreeUniversalProfile._();
+
+  static const AgroRange phActive = AgroRange(
+    lowMax: 5.0,
+    optimalMin: 5.8,
+    optimalMax: 7.3,
+    highMin: 8.1,
+  );
+
+  static const AgroRange phBase = AgroRange(
+    lowMax: 5.0,
+    optimalMin: 5.7,
+    optimalMax: 7.4,
+    highMin: 8.2,
+  );
+}
+
+class OrangeTreeStageNutrition {
+  const OrangeTreeStageNutrition({
+    required this.stageId,
+    required this.nPriority,
+    required this.pPriority,
+    required this.kPriority,
+    required this.nWindowEs,
+    required this.pWindowEs,
+    required this.kWindowEs,
+    required this.careNoteEs,
+  });
+
+  final String stageId;
+  final double nPriority;
+  final double pPriority;
+  final double kPriority;
+  final String nWindowEs;
+  final String pWindowEs;
+  final String kWindowEs;
+  final String careNoteEs;
+}
+```
+
+Targets conceptuales:
+
+```dart
+const _orangeStageProfiles = <String, _OrangeStageProfile>{
+  TreeStageIds.plantingTransplant: _OrangeStageProfile( // planting_transplant
+    stageId: 'planting_transplant',
+    moisture: AgroRange(lowMax: 45, optimalMin: 60, optimalMax: 80, highMin: 88),
+    soilTemp: AgroRange(lowMax: 10, optimalMin: 16, optimalMax: 28, highMin: 34),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.8, optimalMax: 7.2, highMin: 8.0),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.1, highMin: 1.7),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.1),
+    nRel: AgroRange(lowMax: 8, optimalMin: 18, optimalMax: 35, highMin: 70),
+    pRel: AgroRange(lowMax: 20, optimalMin: 55, optimalMax: 78, highMin: 92),
+    kRel: AgroRange(lowMax: 15, optimalMin: 35, optimalMax: 58, highMin: 85),
+    nPriority: 0.25,
+    pPriority: 0.75,
+    kPriority: 0.38,
+    wMoisture: 0.26,
+    wSoilTemp: 0.14,
+    wResistance: 0.16,
+    wPh: 0.12,
+    wEc: 0.16,
+    wN: 0.04,
+    wP: 0.08,
+    wK: 0.04,
+    careNoteEs: 'Raiz joven, evitar quemadura y sales',
+    uxGuidanceEs: '',
+  ),
+  TreeStageIds.rootEstablishment: _OrangeStageProfile( // root_establishment
+    stageId: 'root_establishment',
+    moisture: AgroRange(lowMax: 45, optimalMin: 60, optimalMax: 82, highMin: 90),
+    soilTemp: AgroRange(lowMax: 10, optimalMin: 16, optimalMax: 28, highMin: 34),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.8, optimalMax: 7.2, highMin: 8.0),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.1, highMin: 1.8),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.5, highMin: 2.1),
+    nRel: AgroRange(lowMax: 10, optimalMin: 22, optimalMax: 42, highMin: 75),
+    pRel: AgroRange(lowMax: 20, optimalMin: 55, optimalMax: 78, highMin: 92),
+    kRel: AgroRange(lowMax: 15, optimalMin: 38, optimalMax: 60, highMin: 86),
+    nPriority: 0.32,
+    pPriority: 0.78,
+    kPriority: 0.42,
+    wMoisture: 0.27,
+    wSoilTemp: 0.13,
+    wResistance: 0.16,
+    wPh: 0.12,
+    wEc: 0.17,
+    wN: 0.05,
+    wP: 0.08,
+    wK: 0.02,
+    careNoteEs: 'Raiz fina activa; suelo manda antes que NPK',
+    uxGuidanceEs: '',
+  ),
+  TreeStageIds.juvenileVegetative: _OrangeStageProfile( // juvenile_vegetative
+    stageId: 'juvenile_vegetative',
+    moisture: AgroRange(lowMax: 40, optimalMin: 55, optimalMax: 80, highMin: 90),
+    soilTemp: AgroRange(lowMax: 10, optimalMin: 16, optimalMax: 30, highMin: 36),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.7, optimalMax: 7.4, highMin: 8.2),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.3, highMin: 2.0),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.3),
+    nRel: AgroRange(lowMax: 25, optimalMin: 55, optimalMax: 75, highMin: 90),
+    pRel: AgroRange(lowMax: 15, optimalMin: 35, optimalMax: 58, highMin: 85),
+    kRel: AgroRange(lowMax: 22, optimalMin: 45, optimalMax: 70, highMin: 90),
+    nPriority: 0.72,
+    pPriority: 0.42,
+    kPriority: 0.55,
+    wMoisture: 0.24,
+    wSoilTemp: 0.13,
+    wResistance: 0.12,
+    wPh: 0.10,
+    wEc: 0.15,
+    wN: 0.13,
+    wP: 0.07,
+    wK: 0.06,
+    careNoteEs: 'Formar copa y raiz sin empujar madera blanda',
+    uxGuidanceEs: '',
+  ),
+  TreeStageIds.dormancy: _OrangeStageProfile( // dormancy
+    stageId: 'dormancy',
+    moisture: AgroRange(lowMax: 35, optimalMin: 50, optimalMax: 75, highMin: 88),
+    soilTemp: AgroRange(lowMax: 5, optimalMin: 10, optimalMax: 24, highMin: 32),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.6, optimalMax: 7.5, highMin: 8.3),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.4, highMin: 2.2),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.5),
+    nRel: AgroRange(lowMax: 0, optimalMin: 8, optimalMax: 25, highMin: 60),
+    pRel: AgroRange(lowMax: 0, optimalMin: 8, optimalMax: 25, highMin: 65),
+    kRel: AgroRange(lowMax: 0, optimalMin: 10, optimalMax: 30, highMin: 70),
+    nPriority: 0.18,
+    pPriority: 0.18,
+    kPriority: 0.22,
+    wMoisture: 0.22,
+    wSoilTemp: 0.12,
+    wResistance: 0.12,
+    wPh: 0.12,
+    wEc: 0.16,
+    wN: 0.06,
+    wP: 0.05,
+    wK: 0.05,
+    careNoteEs: 'No pintar como arbol pelon; no sobrerreaccionar a NPK',
+    uxGuidanceEs: '',
+  ),
+  TreeStageIds.budbreak: _OrangeStageProfile( // budbreak
+    stageId: 'budbreak',
+    moisture: AgroRange(lowMax: 45, optimalMin: 60, optimalMax: 82, highMin: 90),
+    soilTemp: AgroRange(lowMax: 10, optimalMin: 16, optimalMax: 30, highMin: 36),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.7, optimalMax: 7.3, highMin: 8.2),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.3, highMin: 2.1),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.3),
+    nRel: AgroRange(lowMax: 25, optimalMin: 55, optimalMax: 75, highMin: 90),
+    pRel: AgroRange(lowMax: 15, optimalMin: 38, optimalMax: 62, highMin: 86),
+    kRel: AgroRange(lowMax: 20, optimalMin: 45, optimalMax: 68, highMin: 90),
+    nPriority: 0.72,
+    pPriority: 0.48,
+    kPriority: 0.58,
+    wMoisture: 0.24,
+    wSoilTemp: 0.14,
+    wResistance: 0.11,
+    wPh: 0.11,
+    wEc: 0.14,
+    wN: 0.12,
+    wP: 0.07,
+    wK: 0.07,
+    careNoteEs: 'Hoja nueva, micronutrientes y N moderado-alto',
+    uxGuidanceEs: '',
+  ),
+  TreeStageIds.vegetativeGrowth: _OrangeStageProfile( // vegetative_growth
+    stageId: 'vegetative_growth',
+    moisture: AgroRange(lowMax: 42, optimalMin: 58, optimalMax: 82, highMin: 90),
+    soilTemp: AgroRange(lowMax: 10, optimalMin: 17, optimalMax: 32, highMin: 38),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.7, optimalMax: 7.4, highMin: 8.2),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.4, highMin: 2.2),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.4),
+    nRel: AgroRange(lowMax: 28, optimalMin: 55, optimalMax: 78, highMin: 92),
+    pRel: AgroRange(lowMax: 12, optimalMin: 32, optimalMax: 55, highMin: 85),
+    kRel: AgroRange(lowMax: 25, optimalMin: 50, optimalMax: 75, highMin: 92),
+    nPriority: 0.75,
+    pPriority: 0.35,
+    kPriority: 0.62,
+    wMoisture: 0.24,
+    wSoilTemp: 0.14,
+    wResistance: 0.11,
+    wPh: 0.10,
+    wEc: 0.14,
+    wN: 0.14,
+    wP: 0.05,
+    wK: 0.08,
+    careNoteEs: 'Construir hoja funcional; evitar puro follaje',
+    uxGuidanceEs: '',
+  ),
+  TreeStageIds.flowering: _OrangeStageProfile( // flowering
+    stageId: 'flowering',
+    moisture: AgroRange(lowMax: 50, optimalMin: 65, optimalMax: 85, highMin: 92),
+    soilTemp: AgroRange(lowMax: 12, optimalMin: 18, optimalMax: 30, highMin: 35),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.8, optimalMax: 7.3, highMin: 8.1),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.3, highMin: 2.0),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.3),
+    nRel: AgroRange(lowMax: 18, optimalMin: 38, optimalMax: 60, highMin: 82),
+    pRel: AgroRange(lowMax: 18, optimalMin: 45, optimalMax: 68, highMin: 88),
+    kRel: AgroRange(lowMax: 25, optimalMin: 50, optimalMax: 75, highMin: 90),
+    nPriority: 0.48,
+    pPriority: 0.62,
+    kPriority: 0.65,
+    wMoisture: 0.30,
+    wSoilTemp: 0.15,
+    wResistance: 0.09,
+    wPh: 0.10,
+    wEc: 0.14,
+    wN: 0.08,
+    wP: 0.08,
+    wK: 0.06,
+    careNoteEs: 'Etapa critica: agua, temperatura, P/K y N sin exceso',
+    uxGuidanceEs: '',
+  ),
+  TreeStageIds.fruitSet: _OrangeStageProfile( // fruit_set
+    stageId: 'fruit_set',
+    moisture: AgroRange(lowMax: 50, optimalMin: 65, optimalMax: 85, highMin: 92),
+    soilTemp: AgroRange(lowMax: 12, optimalMin: 18, optimalMax: 31, highMin: 36),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.8, optimalMax: 7.3, highMin: 8.1),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.3, highMin: 2.0),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.7, highMin: 2.3),
+    nRel: AgroRange(lowMax: 20, optimalMin: 40, optimalMax: 62, highMin: 84),
+    pRel: AgroRange(lowMax: 15, optimalMin: 35, optimalMax: 60, highMin: 85),
+    kRel: AgroRange(lowMax: 32, optimalMin: 60, optimalMax: 82, highMin: 94),
+    nPriority: 0.52,
+    pPriority: 0.48,
+    kPriority: 0.78,
+    wMoisture: 0.30,
+    wSoilTemp: 0.14,
+    wResistance: 0.10,
+    wPh: 0.09,
+    wEc: 0.16,
+    wN: 0.08,
+    wP: 0.06,
+    wK: 0.07,
+    careNoteEs: 'Evitar caida por estres; K empieza a mandar',
+    uxGuidanceEs: '',
+  ),
+  TreeStageIds.fruitFill: _OrangeStageProfile( // fruit_fill
+    stageId: 'fruit_fill',
+    moisture: AgroRange(lowMax: 50, optimalMin: 65, optimalMax: 88, highMin: 93),
+    soilTemp: AgroRange(lowMax: 12, optimalMin: 18, optimalMax: 32, highMin: 38),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.8, optimalMax: 7.3, highMin: 8.1),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.2, highMin: 1.9),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.4),
+    nRel: AgroRange(lowMax: 15, optimalMin: 35, optimalMax: 58, highMin: 82),
+    pRel: AgroRange(lowMax: 10, optimalMin: 25, optimalMax: 48, highMin: 78),
+    kRel: AgroRange(lowMax: 40, optimalMin: 70, optimalMax: 90, highMin: 96),
+    nPriority: 0.45,
+    pPriority: 0.30,
+    kPriority: 0.90,
+    wMoisture: 0.30,
+    wSoilTemp: 0.14,
+    wResistance: 0.10,
+    wPh: 0.09,
+    wEc: 0.17,
+    wN: 0.05,
+    wP: 0.04,
+    wK: 0.11,
+    careNoteEs: 'Calibre, jugo, K, agua estable y salinidad baja',
+    uxGuidanceEs: '',
+  ),
+  TreeStageIds.harvestMaturity: _OrangeStageProfile( // harvest_maturity
+    stageId: 'harvest_maturity',
+    moisture: AgroRange(lowMax: 45, optimalMin: 58, optimalMax: 82, highMin: 90),
+    soilTemp: AgroRange(lowMax: 10, optimalMin: 16, optimalMax: 30, highMin: 36),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.8, optimalMax: 7.4, highMin: 8.2),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.4, highMin: 2.2),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.9, highMin: 2.5),
+    nRel: AgroRange(lowMax: 8, optimalMin: 20, optimalMax: 45, highMin: 70),
+    pRel: AgroRange(lowMax: 5, optimalMin: 18, optimalMax: 40, highMin: 70),
+    kRel: AgroRange(lowMax: 25, optimalMin: 55, optimalMax: 78, highMin: 92),
+    nPriority: 0.25,
+    pPriority: 0.20,
+    kPriority: 0.68,
+    wMoisture: 0.25,
+    wSoilTemp: 0.12,
+    wResistance: 0.10,
+    wPh: 0.10,
+    wEc: 0.17,
+    wN: 0.05,
+    wP: 0.04,
+    wK: 0.07,
+    careNoteEs: 'Calidad final; no empujar N tarde',
+    uxGuidanceEs: '',
+  ),
+  TreeStageIds.postHarvest: _OrangeStageProfile( // post_harvest
+    stageId: 'post_harvest',
+    moisture: AgroRange(lowMax: 40, optimalMin: 55, optimalMax: 82, highMin: 90),
+    soilTemp: AgroRange(lowMax: 8, optimalMin: 14, optimalMax: 30, highMin: 36),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.7, optimalMax: 7.4, highMin: 8.2),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.4, highMin: 2.2),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.4),
+    nRel: AgroRange(lowMax: 15, optimalMin: 35, optimalMax: 60, highMin: 82),
+    pRel: AgroRange(lowMax: 8, optimalMin: 22, optimalMax: 45, highMin: 75),
+    kRel: AgroRange(lowMax: 20, optimalMin: 45, optimalMax: 68, highMin: 88),
+    nPriority: 0.55,
+    pPriority: 0.30,
+    kPriority: 0.60,
+    wMoisture: 0.25,
+    wSoilTemp: 0.12,
+    wResistance: 0.11,
+    wPh: 0.11,
+    wEc: 0.16,
+    wN: 0.10,
+    wP: 0.05,
+    wK: 0.10,
+    careNoteEs: 'Hoja activa, reservas y preparacion del siguiente ciclo',
+    uxGuidanceEs: '',
+  ),
+  TreeStageIds.unknown: _OrangeStageProfile( // unknown
+    stageId: 'unknown',
+    moisture: AgroRange(lowMax: 45, optimalMin: 60, optimalMax: 85, highMin: 92),
+    soilTemp: AgroRange(lowMax: 10, optimalMin: 16, optimalMax: 30, highMin: 36),
+    ph: AgroRange(lowMax: 5.0, optimalMin: 5.7, optimalMax: 7.4, highMin: 8.2),
+    ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.4, highMin: 2.2),
+    resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.8, highMin: 2.4),
+    nRel: AgroRange(lowMax: 15, optimalMin: 35, optimalMax: 60, highMin: 85),
+    pRel: AgroRange(lowMax: 10, optimalMin: 30, optimalMax: 55, highMin: 82),
+    kRel: AgroRange(lowMax: 20, optimalMin: 45, optimalMax: 70, highMin: 90),
+    nPriority: 0.45,
+    pPriority: 0.40,
+    kPriority: 0.55,
+    wMoisture: 0.25,
+    wSoilTemp: 0.13,
+    wResistance: 0.12,
+    wPh: 0.11,
+    wEc: 0.15,
+    wN: 0.08,
+    wP: 0.06,
+    wK: 0.10,
+    careNoteEs: 'Fallback conservador; pedir etapa visible',
+    uxGuidanceEs: '',
+  ),
+};
+```
+
+Nota para Codex:
+- Verificar que los nombres TreeStageIds coincidan con los constants reales del proyecto.
+- El mapa anterior incluye stageId string para auditoria documental.
+- Los pesos deben convertirse a StageWeights.
+- Los rangos N/P/K relativos deben mapear a StageTargets.nIndex/pIndex/kIndex.
+- N/P/K priorities deben mapear a StageTargets.nPriority/pPriority/kPriority.
+
+================================================================================
+14. MENSAJES FARMER-FRIENDLY PARA NPK SCREEN
+================================================================================
+
+Generales:
+- "No le eches a ciegas. Primero mira si el naranjo puede tomar el fertilizante: humedad, sales, pH y raiz."
+- "NPK no trabaja solo. En naranjo, agua y sales pueden mandar mas que el numero del sensor."
+- "Si el suelo esta salino, fertilizar mas puede empeorar el problema."
+- "Si la hoja amarilla trae nervaduras verdes, puede ser Fe/Zn/Mn por pH o raiz, no solo nitrogeno."
+- "Si hay HLB o psilido, la lectura NPK baja de confianza: confirma sanidad."
+
+N bajo:
+- "El N esta bajo para esta etapa, pero revisa agua, sales y raiz antes de aplicar. Si el arbol no absorbe, el fertilizante no rinde."
+
+N alto:
+- "N alto no siempre es buena noticia. Puede irse a puro follaje, retrasar color o afectar cascara si la fruta ya esta llenando."
+
+P bajo:
+- "P ayuda mas en raiz, arranque y floracion. En arbol adulto, confirma con analisis antes de corregir fuerte."
+
+P alto:
+- "P alto puede ser acumulacion y puede desbalancear micronutrientes. No lo celebres sin revisar pH y foliar."
+
+K bajo:
+- "K bajo en llenado pega directo a calibre, jugo y calidad. Pero si falta agua o hay sales, primero hay que corregir eso."
+
+K alto:
+- "K alto con EC alta puede ser acumulacion de sales. Revisa agua, drenaje y balance con Mg/Ca."
+
+Floracion:
+- "Floracion es delicada. Humedad estable y temperatura pesan mas que subir N a lo loco."
+
+Cuajado:
+- "En cuajado se cae lo que el arbol no puede sostener. Si hay calor, viento, agua irregular o sales, la caida aumenta."
+
+Llenado:
+- "En llenado manda K con agua estable. Aqui se juega calibre, jugo y calidad."
+
+Madurez:
+- "Cerca de cosecha, cuidado con N alto: puede mover color, cascara y calidad."
+
+Postcosecha:
+- "La cosecha no apaga el naranjo. Si tiene hoja activa, esta cargando reservas para el siguiente ciclo."
+
+================================================================================
+15. MODO AVANZADO: ANALISIS FOLIAR, SUELO Y AGUA
+================================================================================
+
+15.1 Analisis foliar
+
+No mezclar estos valores con sensor NPK de suelo.
+Foliar = lo que el arbol absorbio.
+Suelo = oferta/disponibilidad potencial.
+Sensor NPK = lectura rapida relativa.
+
+Rangos foliares de referencia para citricos / naranja dulce:
+
+[TABLA]
+Columnas: Elemento | Bajo/deficiente | Optimo o satisfactorio | Alto/exceso | Regla BIO-G
+Fila 1:
+- Elemento: N
+- Bajo/deficiente: <2.2-2.4 %
+- Optimo o satisfactorio: 2.4/2.5-2.7 %
+- Alto/exceso: >3.0 %
+- Regla BIO-G: En fruta fresca conviene evitar irse alto; N alto tarde baja calidad.
+Fila 2:
+- Elemento: P
+- Bajo/deficiente: <0.10-0.11 %
+- Optimo o satisfactorio: 0.12-0.16 %
+- Alto/exceso: >0.30 %
+- Regla BIO-G: P se interpreta con suelo + foliar; no aplicar por costumbre.
+Fila 3:
+- Elemento: K
+- Bajo/deficiente: <0.7 %
+- Optimo o satisfactorio: 1.2-1.7 % segun fuente; 0.70-1.30 satisfactorio en otra escala
+- Alto/exceso: >2.0-2.4 %
+- Regla BIO-G: K bajo en fruta pesa fuerte; K alto puede ser lujo/desbalance.
+Fila 4:
+- Elemento: Ca
+- Bajo/deficiente: <1.5-1.6 %
+- Optimo o satisfactorio: 3.0-4.9 % o 3.0-5.5 % segun fuente
+- Alto/exceso: >7.0 %
+- Regla BIO-G: Contexto de calidad/suelo; no sensor v1.
+Fila 5:
+- Elemento: Mg
+- Bajo/deficiente: <0.20 %
+- Optimo o satisfactorio: 0.30-0.49/0.69 %
+- Alto/exceso: >0.70-1.0 %
+- Regla BIO-G: Deficiencia comun; puede confundirse con N.
+Fila 6:
+- Elemento: Zn
+- Bajo/deficiente: <18-24 ppm
+- Optimo o satisfactorio: 25-100 ppm
+- Alto/exceso: >200-300 ppm
+- Regla BIO-G: Contexto fuerte en brotacion/hoja nueva.
+Fila 7:
+- Elemento: Mn
+- Bajo/deficiente: <18-24 ppm
+- Optimo o satisfactorio: 25-100 ppm
+- Alto/exceso: >300 ppm
+- Regla BIO-G: Deficiencia comun; toxicidad en pH muy bajo.
+Fila 8:
+- Elemento: Fe
+- Bajo/deficiente: <35-59 ppm
+- Optimo o satisfactorio: 60-120 ppm
+- Alto/exceso: >200 ppm
+- Regla BIO-G: Clorosis por pH/raiz, no N.
+Fila 9:
+- Elemento: B
+- Bajo/deficiente: <20-35 ppm
+- Optimo o satisfactorio: 36-100/129 ppm
+- Alto/exceso: >200-260 ppm
+- Regla BIO-G: No recomendar boro sin analisis.
+Fila 10:
+- Elemento: Cl / Na
+- Bajo/deficiente: No aplica
+- Optimo o satisfactorio: Cl bajo; Na bajo
+- Alto/exceso: Cl >0.7-1.0 %, Na >0.25 %
+- Regla BIO-G: Toxicidad/salinidad; usar como contexto avanzado.
+[/TABLA]
+
+15.2 Muestreo foliar recomendado
+
+- Usar hojas de brote de primavera de 4-6 meses, segun region y protocolo.
+- Evitar hojas recientemente asperjadas con micronutrientes o fungicidas que contengan Cu/Zn/Mn.
+- Muestrear por lote uniforme, variedad, edad, portainjerto, suelo y condicion.
+- No mezclar arboles enfermos con arboles sanos.
+- Comparar tendencias por varios años, no sobrerreaccionar a una sola muestra.
+
+15.3 Suelo
+
+- pH, MO, P, K, Ca, Mg, Na, CE, textura y drenaje importan.
+- P de suelo es util; N y K pueden ser moviles o variables segun metodo/region.
+- pH 5.5-6.5 evita muchas deficiencias en algunas guias, pero BIO-G usa rango operativo mas amplio por diversidad de Mexico.
+- En suelos acidos de Tabasco se han documentado problemas de P/K/Ca/Mg/Zn/Mn y necesidad de programas locales.
+- En suelos calcareos, K, Fe, Zn, Mn y P pueden aparecer bloqueados.
+
+15.4 Agua
+
+- Analizar EC, TDS, Na, Cl, B, bicarbonatos y SAR cuando exista modo avanzado.
+- Si agua salina + suelo pesado + riego irregular, no empujar N/K a ciegas.
+- Si hay borde quemado y EC alta, pensar Cl/Na/sales antes que "falta de K".
+
+================================================================================
+16. FERTILIZACION: REFERENCIAS DE DOSIS SOLO PARA CALIBRACION INTERNA
+================================================================================
+
+ESTA SECCION NO SE MUESTRA AL PRODUCTOR EN MODO SIMPLE.
+Sirve para calibrar coherencia del motor, no para recomendar kg/ha.
+
+Referencias orientativas encontradas:
+
+- UF/IFAS: naranjos maduros pueden requerir rangos anuales de N alrededor de 125-240 lb/ac segun edad, rendimiento, salud y analisis foliar.
+- UF/IFAS: para bearing trees, K2O puede manejarse igual o por encima de N segun etapa; en etapas de division/expansion/maduracion se requiere mas K relativo.
+- Scielo Tabasco: para naranja Valencia en subunidades de suelo acidas, se propusieron formulas N-P2O5-K2O como 115-46-120, 138-46-180, 138-46-150, 115-46-180 y 115-46-150 kg/ha, dependientes del suelo.
+- Fuentes regionales/comerciales de alto rendimiento hablan de 200-100-180 kg/ha para 40-50 t/ha, pero BIO-G no debe adoptar eso como default.
+
+Decision BIO-G:
+- No mostrar dosis por defecto.
+- No convertir una fuente regional en receta universal.
+- Usar dosis solo para validar que los caps no sean absurdos.
+- El motor normal habla de prioridad, balance, bloqueo y confirmacion.
+- El modo avanzado podria calcular con rendimiento esperado, laboratorio y eficiencia, pero eso queda fuera de v1 simple.
+
+================================================================================
+17. CASOS DE PRUEBA RECOMENDADOS
+================================================================================
+
+1) orange_fruit_fill_k_low_water_ok_test
+Caso:
+stage=fruit_fill, K bajo, humedad optima, EC baja, pH funcional.
+Esperado:
+K alerta fuerte por calibre/jugo/calidad. No hablar de cosecha.
+
+2) orange_fruit_fill_k_low_water_low_test
+Caso:
+stage=fruit_fill, K bajo, soilMoisture debajo de optimalMin.
+Esperado:
+priorizar agua; K queda como posible limitante secundario. Mensaje: primero humedad.
+
+3) orange_high_ec_blocks_npk_test
+Caso:
+stage=fruit_set o fruit_fill, EC alta, N/K bajos o altos.
+Esperado:
+mensaje de sales/agua/drenaje; bloquear fertilizacion agresiva.
+
+4) orange_flowering_n_high_test
+Caso:
+stage=flowering, N alto, humedad correcta.
+Esperado:
+observacion de exceso vegetativo; no celebrar N alto. Hablar de balance y cuajado.
+
+5) orange_harvest_high_n_quality_test
+Caso:
+stage=harvest_maturity, N alto, K normal.
+Esperado:
+alerta de calidad/color/cascara; no sugerir mas N.
+
+6) orange_budbreak_ph_high_chlorosis_test
+Caso:
+stage=budbreak, pH alto, N normal/alto, hoja joven amarilla con nervadura verde.
+Esperado:
+mensaje Fe/Zn/Mn/pH; no diagnosticar falta de N.
+
+7) orange_root_establishment_high_ec_test
+Caso:
+stage=root_establishment, EC alta, humedad alta.
+Esperado:
+alerta raiz/sales/anoxia; no fertilizar.
+
+8) orange_dormancy_relative_no_dead_tree_test
+Caso:
+stage=dormancy, soilTemp bajo moderado, NPK bajos.
+Esperado:
+no pintar como arbol muerto ni exigir NPK; lenguaje "reposo relativo".
+
+9) orange_post_harvest_leaf_active_test
+Caso:
+stage=post_harvest, hoja activa, humedad buena, EC baja, N/K moderados.
+Esperado:
+mensaje de reservas/recuperacion; no cerrar cultivo.
+
+10) orange_skip_unknown_stage_conservative_test
+Caso:
+profile=or_skip, stage=unknown.
+Esperado:
+fallback conservador, pedir etapa visible, no dosis.
+
+11) orange_low_crop_high_n_test
+Caso:
+stage=vegetative_growth/fruit_set, cropLoadStatus=low, N alto.
+Esperado:
+advertir puro follaje/sombra; bajar presion de N.
+
+12) orange_hlb_context_npk_low_confidence_test
+Caso:
+HLB context true, clorosis, NPK irregular.
+Esperado:
+bajar confianza; mandar a Plant Health; no prometer que fertilizacion corrige HLB.
+
+13) orange_k_high_ec_high_test
+Caso:
+K alto + EC alta en fruit_fill.
+Esperado:
+possibleExcess/reviewAccumulation por salinidad/acumulacion; no decir "K excelente".
+
+14) orange_p_low_harvest_not_critical_test
+Caso:
+stage=harvest_maturity, P bajo leve, agua/K correctos.
+Esperado:
+observacion, no critical destructivo.
+
+15) orange_navel_late_n_penalty_test
+Caso:
+profile=or_02_navel, stage=harvest_maturity, N alto.
+Esperado:
+penalizacion mayor por calidad externa.
+
+16) orange_valencia_long_cycle_postharvest_test
+Caso:
+profile=or_01_valencia, stage=post_harvest, arbol con hoja activa despues de cosecha.
+Esperado:
+copy de recuperacion/reservas; N/K moderados con salinidad baja.
+
+17) orange_tropical_multiple_flush_test
+Caso:
+profile=or_05_tropical_calido, vegetative_growth repetido, N alto, baja carga.
+Esperado:
+advertir brote continuo sin fruta y estres por calor/agua.
+
+18) orange_agro_range_semantics_test
+Caso:
+fruit_fill soilMoisture 64 cuando optimalMin=65.
+Esperado:
+low/watch/observacion, no critical.
+
+19) orange_saturation_test
+Caso:
+root_establishment soilMoisture 93.
+Esperado:
+saturacion/anoxia/Phytophthora, no "agua optima".
+
+20) orange_just_above_optimal_k_test
+Caso:
+fruit_fill K 91 con optimalMax=90 y highMin=96.
+Esperado:
+high/watch, no excess critical.
+
+================================================================================
+18. NO HACER EN CODIGO
+================================================================================
+
+- No usar sowingDate como eje del naranjo.
+- No crear StageIds nuevos para induccion floral, color break, june drop o Brix.
+- No usar dormancy como arbol pelon.
+- No cerrar el cultivo en cosecha.
+- No diagnosticar HLB desde NPK.
+- No simular Fe/Zn/Mn/Mg/Ca/B desde NPK.
+- No recomendar boro sin analisis.
+- No recomendar KCl/muriato si hay contexto de Cl/salinidad/agua salina sin advertencia.
+- No decir "N alto = perfecto" en llenado o cosecha.
+- No decir "K bajo = aplica K" si humedad o EC estan mal.
+- No interpretar P bajo como urgencia en cosecha.
+- No confundir K bajo por falta real con K bloqueado por humedad, Ca/Mg/Na, caliza o raiz.
+- No mostrar kg/ha en modo simple.
+- No copiar manzano/nogal como si naranjo fuera caducifolio.
+- No permitir rangos pegados lowMax == optimalMin u optimalMax == highMin.
+- No permitir que valores apenas fuera de optimo tumben el score como criticos.
+
+================================================================================
+19. REFERENCIAS CONSULTADAS Y USO EN BIO-G
+================================================================================
+
+[TABLA]
+Columnas: Fuente | Confianza | Uso dentro de BIO-G
+Fila 1:
+- Fuente: UF/IFAS Florida Citrus Production Guide 2025-2026 - Nutrition Management for Citrus Trees
+- Confianza: Muy alta
+- Uso dentro de BIO-G: N/K, analisis foliar, N por edad/rendimiento, pH, P por suelo+foliar, K por etapa, HLB/nutricion.
+Fila 2:
+- Fuente: UF/IFAS - Macronutrient Deficiencies in Citrus: Nitrogen, Phosphorus and Potassium
+- Confianza: Muy alta
+- Uso dentro de BIO-G: sintomas N/P/K, antagonismos N-K, K por humedad/caliza, P por pH.
+Fila 3:
+- Fuente: UF/IFAS - Potassium for Citrus Trees
+- Confianza: Alta
+- Uso dentro de BIO-G: K en calidad, deficiencia, correccion, antagonismos y riesgo de K bloqueado.
+Fila 4:
+- Fuente: UC IPM / UC ANR - Fertilizing Citrus
+- Confianza: Alta
+- Uso dentro de BIO-G: nitrogeno en citricos, timing prefloracion, evitar fertilizacion tardia por calidad/color/cascara.
+Fila 5:
+- Fuente: University of Arizona Cooperative Extension - Irrigating Citrus Trees
+- Confianza: Alta
+- Uso dentro de BIO-G: agua como transporte de nutrientes, sintomas de estres hidrico, caida de flor/fruto, profundidad de riego.
+Fila 6:
+- Fuente: University of Arizona Cooperative Extension - Diagnosing Home Citrus Problems
+- Confianza: Alta
+- Uso dentro de BIO-G: caida de fruto por calor/sequia/N bajo, rajado por riego/fertilizacion irregular, cascara gruesa por exceso de N.
+Fila 7:
+- Fuente: NSW DPI - Citrus Nutrition
+- Confianza: Alta
+- Uso dentro de BIO-G: rangos foliares, muestreo, uso de tendencias, P omitible si hay reserva, N alto baja calidad.
+Fila 8:
+- Fuente: Scielo Mexico / Colegio de Postgraduados - Programa de fertilizacion sustentable para citricos en Tabasco
+- Confianza: Alta regional
+- Uso dentro de BIO-G: realidad mexicana, dosis N-P2O5-K2O por suelo, P/K/Ca/Mg/Zn/Mn como limitantes, modelo por suelo y potencial.
+Fila 9:
+- Fuente: Scielo Mexico / Terra Latinoamericana - Metodos de interpretacion del analisis nutrimental en naranja Valencia
+- Confianza: Alta regional
+- Uso dentro de BIO-G: importancia de diagnostico integral, Mg/Zn/Mn, necesidad de interpretar con mas de un metodo.
+Fila 10:
+- Fuente: Foros/Reddit/grupos de productores y jardineria citrica
+- Confianza: Baja para tecnica; util para UX
+- Uso dentro de BIO-G: lenguaje real de usuario: hoja amarilla, fruta que se cae, poca fruta, cascara gruesa, hojas con nervadura verde, sobrefertilizacion, agua salada.
+[/TABLA]
+
+================================================================================
+20. RESUMEN FINAL PARA CODEX / CLAUDE
+================================================================================
+
+Implementar Naranjo como arbol perenne siempreverde.
+No usar sowingDate.
+No crear StageIds nuevos.
+No diagnosticar HLB.
+No hacer recetas de fertilizante.
+
+Agregar:
+- orange_tree_universal_profile.dart
+- orange_tree_crop_definition.dart
+- orange_tree_agro_score_engine.dart
+- orange_tree_nutrition_modifier.dart
+- NpkCaps para orange_tree/crop_orange_tree/naranjo/naranja
+- Tests de rangos AgroRange y NPK por etapa.
+
+Caps:
+- N = 120.0
+- P = 95.0
+- K = 200.0
+
+Regla de oro:
+En Naranjo, BIO-G primero lee agua, sales, pH, raiz y etapa.
+Luego interpreta N, P y K.
+N ayuda a hoja/brote/floracion, P a raiz/floracion y K a calibre/jugo/calidad.
+Si hay sales, pH extremo, raiz mala o HLB, bajar confianza y no vender fertilizante como solucion unica.
+
+FIN DEL DOCUMENTO 05.

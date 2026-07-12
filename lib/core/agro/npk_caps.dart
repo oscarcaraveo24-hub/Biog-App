@@ -110,6 +110,82 @@ class NpkCaps {
           case 'pecan':
           case 'nuez':
             return 120.0;
+          // Pistache (perenne, nuez, dioico). Doc 05 §0.12/§5 fija cap N=130: N
+          // es protagonista (hoja, area foliar, reservas, llenado), pero el
+          // exceso da puro vigor, sales y desbalance. Cap NO es dosis; solo
+          // normaliza la lectura cruda.
+          case 'pistachio_tree':
+          case 'crop_pistachio_tree':
+          case 'pistache':
+          case 'pistacho':
+          case 'pistachio':
+          case 'pistachero':
+            return 130.0;
+          // Naranjo (perenne, cítrico siempreverde). Doc 05 §0.3 fija cap N=120:
+          // N es protagonista en cítricos (hoja, brote, floración, soporte),
+          // pero el exceso da follaje, cáscara gruesa, retraso de color y
+          // desbalance con K. Cap NO es dosis; solo normaliza la lectura cruda.
+          case 'orange_tree':
+          case 'crop_orange_tree':
+          case 'orange':
+          case 'naranjo':
+          case 'naranja':
+            return 120.0;
+          // Limón (perenne, cítrico siempreverde). Doc 05 §0.0.1/§2 fija cap
+          // N=130: producción frecuente (brotación/floración/corte) exige N para
+          // hoja, brote y recuperación; se sube sobre naranjo, pero se evita
+          // inflar (N alto empuja brote tierno, baja calidad y desbalance con
+          // K). Cap NO es dosis; solo normaliza la lectura cruda.
+          case 'lemon_tree':
+          case 'crop_lemon_tree':
+          case 'lime_tree':
+          case 'crop_lime_tree':
+          case 'lemon':
+          case 'lime':
+          case 'limon':
+          case 'limón':
+          case 'limonero':
+          case 'lima':
+            return 130.0;
+          // Mango (perenne, tropical/subtropical siempreverde). Doc 05 §0.0.2/§2
+          // fija cap N=115: el mango necesita N para hoja, brote, floración
+          // funcional, cuajado y recuperación postcosecha, pero el exceso o mala
+          // sincronización favorece flush vegetativo e inhibe floración (queda
+          // por debajo de cítricos y apenas arriba de durazno). Cap NO es dosis;
+          // solo normaliza la lectura cruda.
+          case 'mango_tree':
+          case 'crop_mango_tree':
+          case 'crop_mango':
+          case 'mango':
+          case 'mangos':
+          case 'mangifera':
+          case 'mangifera_indica':
+          case 'arbol_mango':
+          case 'árbol_mango':
+            return 115.0;
+          // Aguacate (perenne, subtropical/tropical siempreverde). Doc 05 §0.2/
+          // §2 fija cap N=120: el aguacate necesita N para hoja, brote, clorofila,
+          // floración funcional, retención inicial y recuperación postcosecha,
+          // pero el exceso o mala sincronización empuja vegetativo, compite con
+          // flor/fruto, baja calidad y desbalancea Ca/K/Mg. Cap NO es dosis; solo
+          // normaliza la lectura cruda. EC/cloruros/sodio/boro y raíz pueden
+          // bloquear cualquier NPK.
+          case 'avocado_tree':
+          case 'crop_avocado_tree':
+          case 'crop_avocado':
+          case 'avocado':
+          case 'avocados':
+          case 'aguacate':
+          case 'aguacates':
+          case 'palta':
+          case 'palto':
+          case 'persea':
+          case 'persea_americana':
+          case 'arbol_aguacate':
+          case 'árbol_aguacate':
+          case 'arbol de aguacate':
+          case 'árbol de aguacate':
+            return 120.0;
           default:
             return 120.0;
         }
@@ -190,6 +266,73 @@ class NpkCaps {
           case 'nogal':
           case 'pecan':
           case 'nuez':
+            return 95.0;
+          // Pistache: P no es protagonista adulto; deficiencias son menos
+          // comunes y su disponibilidad depende de pH/caliza. Doc 05 §0.12/§5
+          // fija cap P=95 (P moderado, no inflado).
+          case 'pistachio_tree':
+          case 'crop_pistachio_tree':
+          case 'pistache':
+          case 'pistacho':
+          case 'pistachio':
+          case 'pistachero':
+            return 95.0;
+          // Naranjo: P pesa en raíz/establecimiento/floración, pero en árbol
+          // adulto no domina el ciclo; en suelo calizo el problema suele ser
+          // disponibilidad por pH, no falta total. Doc 05 §0.3 fija cap P=95.
+          case 'orange_tree':
+          case 'crop_orange_tree':
+          case 'orange':
+          case 'naranjo':
+          case 'naranja':
+            return 95.0;
+          // Limón: P pesa en raíz/establecimiento/floración, pero en árbol
+          // adulto no domina; en suelo calizo el problema suele ser
+          // disponibilidad por pH. Doc 05 §0.0.1/§2 fija cap P=95.
+          case 'lemon_tree':
+          case 'crop_lemon_tree':
+          case 'lime_tree':
+          case 'crop_lime_tree':
+          case 'lemon':
+          case 'lime':
+          case 'limon':
+          case 'limón':
+          case 'limonero':
+          case 'lima':
+            return 95.0;
+          // Mango: P pesa en raíz/establecimiento/energía e inducción/floración,
+          // pero en árbol adulto no domina (menor que N/K/Ca en extracción); en
+          // suelo calizo el problema suele ser disponibilidad por pH. Doc 05
+          // §0.0.2/§2 fija cap P=95 (coherente con los demás árboles).
+          case 'mango_tree':
+          case 'crop_mango_tree':
+          case 'crop_mango':
+          case 'mango':
+          case 'mangos':
+          case 'mangifera':
+          case 'mangifera_indica':
+          case 'arbol_mango':
+          case 'árbol_mango':
+            return 95.0;
+          // Aguacate: P pesa en raíz/establecimiento/energía y prefloración/
+          // floración, pero en árbol adulto NO domina; en suelo calizo el
+          // problema suele ser disponibilidad por pH. Doc 05 §0.2/§2 fija cap
+          // P=95 (coherente con los demás árboles).
+          case 'avocado_tree':
+          case 'crop_avocado_tree':
+          case 'crop_avocado':
+          case 'avocado':
+          case 'avocados':
+          case 'aguacate':
+          case 'aguacates':
+          case 'palta':
+          case 'palto':
+          case 'persea':
+          case 'persea_americana':
+          case 'arbol_aguacate':
+          case 'árbol_aguacate':
+          case 'arbol de aguacate':
+          case 'árbol de aguacate':
             return 95.0;
           default:
             return 80.0;
@@ -281,6 +424,78 @@ class NpkCaps {
           case 'pecan':
           case 'nuez':
             return 180.0;
+          // Pistache: K es el protagonista (kernel, llenado, split/open,
+          // calidad, agua y alternancia). Estudios UC reportan alta demanda y
+          // respuesta a K. Doc 05 §0.12/§5 fija cap K=220 (mas alto del paquete
+          // de arboles) para no penalizar lecturas funcionales en fruit_fill.
+          case 'pistachio_tree':
+          case 'crop_pistachio_tree':
+          case 'pistache':
+          case 'pistacho':
+          case 'pistachio':
+          case 'pistachero':
+            return 220.0;
+          // Naranjo: K es protagonista del fruto cítrico (calibre, jugo,
+          // calidad, agua, madurez). El K se concentra fuerte en la fruta
+          // (relación de extracción N:P2O5:K2O ≈ 2:1:4). Doc 05 §0.3 fija cap
+          // K=200: alto (como tomate/cebolla), pero menor que pistache.
+          case 'orange_tree':
+          case 'crop_orange_tree':
+          case 'orange':
+          case 'naranjo':
+          case 'naranja':
+            return 200.0;
+          // Limón: K es protagonista del fruto cítrico (amarre, calibre, jugo,
+          // calidad, agua, madurez) y la producción continua/remoción por
+          // cosecha justifican cap mayor que naranjo. Doc 05 §0.0.1/§2 fija cap
+          // K=210 (más alto que naranjo, sin llegar a pistache).
+          case 'lemon_tree':
+          case 'crop_lemon_tree':
+          case 'lime_tree':
+          case 'crop_lime_tree':
+          case 'lemon':
+          case 'lime':
+          case 'limon':
+          case 'limón':
+          case 'limonero':
+          case 'lima':
+            return 210.0;
+          // Mango: K es protagonista de cuajado, llenado, tamaño, sabor, color y
+          // calidad. Doc 05 §0.0.2/§2 fija cap K=190: alto (más que durazno/nogal
+          // 180), pero menor que cítricos porque el mango NO tiene corte continuo;
+          // evita marcar como exceso lecturas funcionales de fruit_fill.
+          case 'mango_tree':
+          case 'crop_mango_tree':
+          case 'crop_mango':
+          case 'mango':
+          case 'mangos':
+          case 'mangifera':
+          case 'mangifera_indica':
+          case 'arbol_mango':
+          case 'árbol_mango':
+            return 190.0;
+          // Aguacate: K es protagonista de cuajado, llenado, calibre, materia
+          // seca, calidad y balance hídrico; el fruto puede permanecer meses en
+          // árbol. Doc 05 §0.2/§2 fija cap K=200 (como naranjo, por debajo de
+          // limón 210): NO se sube más porque el aguacate es muy sensible a
+          // sales y K puede competir con Ca/Mg. Evita marcar como exceso lecturas
+          // funcionales de fruit_fill.
+          case 'avocado_tree':
+          case 'crop_avocado_tree':
+          case 'crop_avocado':
+          case 'avocado':
+          case 'avocados':
+          case 'aguacate':
+          case 'aguacates':
+          case 'palta':
+          case 'palto':
+          case 'persea':
+          case 'persea_americana':
+          case 'arbol_aguacate':
+          case 'árbol_aguacate':
+          case 'arbol de aguacate':
+          case 'árbol de aguacate':
+            return 200.0;
           default:
             return 140.0;
         }

@@ -1,0 +1,1273 @@
+[ENCABEZADO]
+BIO-G | Aguacate / Arbol de aguacate | Documentacion tecnica v1
+[/ENCABEZADO]
+
+BIO-G
+03. Rendimiento Aproximado BIO-G - Aguacate / Arbol de aguacate
+Cultivo visible: Aguacate / Arbol de aguacate
+cropId canonico recomendado: crop_avocado_tree
+cropKey esperado: avocado_tree
+Aliases compatibles: aguacate, aguacates, avocado, avocados, avocado_tree, crop_avocado, persea, persea_americana, arbol_aguacate, arbol_de_aguacate, árbol_aguacate, árbol_de_aguacate, palta, palto
+profilePrefix: AG
+Perfil general obligatorio: ag_skip
+Perfiles oficiales v1 recomendados:
+- ag_skip — Aguacate general / No se.
+- ag_01_hass — Hass / exportacion dominante.
+- ag_02_mendez_carmen — Mendez / Carmen / Hass temprano / Hass-Mendez.
+- ag_03_criollo_mexicano — Criollo / mexicano / regional.
+- ag_04_fuerte_piel_verde — Fuerte / piel verde / tipo B / polinizador.
+- ag_05_antillano_tropical — Antillano / tropical / costa / clima calido.
+- ag_06_tardio_lamb_reed — Tardio / Lamb Hass / Reed / especialidad.
+Version: v1 reforzada
+Uso: documento fuente para `avocado_tree_yield_reference.dart`, pantalla de rendimiento aproximado, alta minima en `TreeYieldReferenceCatalog` y prompts de Codex/Claude Code.
+Formato: TXT tecnico para Flutter/Dart, Codex, Claude Code y agentes IA.
+Estado: listo para revision agronomica, auditoria tecnica y traduccion a codigo.
+
+IMPORTANTE
+Este documento NO es promesa de cosecha, NO estima precio, NO reemplaza historial real del productor, analisis de suelo/agua/foliar, asesoría tecnica local, normatividad de exportacion ni diagnostico fitosanitario. BIO-G debe entregar rangos bajo / esperado / alto, confianza y notas.
+
+En aguacate, el rendimiento cambia fuertemente por variedad/perfil, portainjerto, edad productiva, densidad, poda, floracion A/B, polinizacion, clima de floracion, caida fisiologica, alternancia, riego, salinidad/cloruros/sodio/boro, sanidad de raiz, Phytophthora, hoja funcional, calibre, calidad de corte y memoria de estres.
+
+================================================================================
+0. DECISIONES EJECUTIVAS Y CORRECCIONES
+================================================================================
+
+0.1. Enfoque correcto
+Este documento modela rendimiento de AGUACATE / ARBOL DE AGUACATE como arbol frutal perenne subtropical/tropical, siempreverde, sin dormancia verdadera, con floracion y cuajado fragiles, alternancia productiva y raiz muy sensible.
+
+No modela aguacate como:
+- cultivo anual;
+- citrico;
+- mango;
+- nogal caducifolio;
+- hortaliza;
+- simple tabla de t/ha por superficie.
+
+Aguacate tiene fisiologia propia:
+- raiz superficial/fina y necesidad alta de oxigeno;
+- sensibilidad alta a exceso de humedad y drenaje pobre;
+- sensibilidad alta a salinidad, cloruros, sodio y boro;
+- floracion tipo A/B con sincronia dependiente de temperatura;
+- muchisimas flores, pero retencion final baja;
+- alternancia productiva marcada;
+- fruta que puede permanecer en el arbol y madura para consumo despues del corte;
+- postcosecha viva que define reservas, brote, floracion y carga futura.
+
+0.2. Correccion de cropId
+El cropId canonico recomendado es `crop_avocado_tree`.
+Regla de compatibilidad:
+- crop_avocado_tree = canonico recomendado.
+- avocado_tree = cropKey esperado / legacy tecnico.
+- aguacate, aguacates, avocado, avocados, palta, palto, persea_americana, arbol_aguacate, árbol_aguacate = aliases compatibles.
+- Los profileIds AG no cambian aunque se agreguen aliases regionales.
+
+0.3. Unidad principal
+La salida principal de rendimiento debe ser:
+- kg de aguacate fresco por arbol;
+- toneladas de aguacate fresco por hectarea;
+- kg totales de aguacate fresco si el usuario captura numero de arboles.
+
+La salida NO debe ser:
+- numero exacto de frutos;
+- cajas, bins, rejas, pallets o empaques;
+- precio o rentabilidad;
+- porcentaje exacto de exportacion;
+- materia seca, aceite, color, firmeza, calibre o Brix como rendimiento;
+- promesa de corte comercial;
+- receta de anillado, estres hidrico, reguladores, fosfitos o productos.
+
+BIO-G puede mostrar porcentaje comercializable como contexto, pero no debe confundir kg biologicos con fruta vendible/exportable. En aguacate se puede cargar mucho kg y aun perder valor por fruta chica, golpe de sol, roña, trips, antracnosis, madurez mal calculada, fruta sobremadura en arbol, pedunculo, daño mecanico o baja materia seca.
+
+0.4. Motor real de la libreria BIO-G revisada
+La libreria revisada muestra dos capas de rendimiento para arboles:
+
+A) Capa minima global:
+`lib/core/yield/tree_yield_reference_catalog.dart`
+- Usa `TreeYieldReference`.
+- Estima kg totales = kg/arbol x numero de arboles.
+- Trabaja por `TreeProductiveTier`.
+- Es conservadora y sirve como fallback/pantalla simple.
+- No calcula t/ha fino si no hay densidad o marco de plantacion.
+
+B) Capa completa por arbol:
+`lib/core/crops/[tree]/[tree]_yield_reference.dart`
+- Usa `YieldRange(low, expected, high)`.
+- Usa `fullKgPerTree` por perfil.
+- Convierte con `treesPerHaFromSpacing`, `tonHaFromKgTree`, `kgTreeFromTonHa`.
+- Maneja estado productivo, manejo, riego, polinizacion/floracion/cuajado, carga visible, calidad comercial, memoria de estres y confianza.
+- Limón/Naranjo/Manzano/Nogal/Pistache/Durazno/Pera usan este patron.
+
+Correccion a la intuicion del usuario:
+Si, el motor completo se apoya mucho en arboles/ha, pero el eje mas limpio es:
+
+kg de aguacate fresco por arbol x arboles por hectarea = toneladas por hectarea
+
+La pantalla simple puede calcular kg totales con numero de arboles. La pantalla completa debe usar densidad o marco de plantacion para evitar inflar t/ha.
+
+0.5. Regla no negociable BIO-G
+No usar `sowingDate` como eje de rendimiento de Aguacate.
+
+El eje correcto es:
+estado perenne + etapa visible + perfil AG + densidad + manejo + riego + raiz/salinidad + floracion/polinizacion/cuajado + carga visible + calidad comercial + memoria de estres.
+
+La cosecha no cierra el cultivo. En aguacate, postcosecha define raiz, brote vegetativo, hoja madura, reservas, retorno floral y alternancia del siguiente ciclo.
+
+0.6. Decision de calibracion v1
+BIO-G v1 debe ser conservador:
+- Si el usuario solo dice “aguacate”, usar `ag_skip` conservador.
+- Si no hay densidad o numero de arboles, no prometer t/ha fino.
+- Si no hay estado productivo ni carga visible, bajar confianza.
+- Si hay raiz sospechosa, encharque, Phytophthora, salinidad, cloruros, sodio, boro alto, calor/frio en floracion, baja actividad de abejas, mala floracion, caida fuerte de frutito o alternancia baja, bajar rendimiento aunque NPK salga “bien”.
+- Resultados >18 t/ha deben etiquetarse como huerta buena/tecnificada o año fuerte, no como default.
+- Resultados >25 t/ha deben requerir perfil especifico, densidad real, manejo alto, riego estable, sanidad de raiz y carga confirmada.
+- Resultados >30 t/ha solo deben aparecer como potencial intensivo/validado localmente, no expectativa normal.
+- Resultados >40 t/ha deben tratarse como sobresalientes/experimentales y requerir historial local.
+
+0.7. Decision sobre floracion A/B, polinizadores y abejas
+El motor puede registrar compatibilidad floral y polinizacion como contexto de rendimiento:
+- tipo A / tipo B;
+- variedad B cercana a Hass;
+- actividad de abejas/polinizadores;
+- clima de floracion;
+- sincronizacion afectada por temperatura;
+- floracion principal vs floracion loca/off-bloom.
+
+Pero BIO-G NO debe ordenar plantar polinizadores, mover colmenas, aplicar productos o podar/anillar como receta. Debe hablar como orientacion:
+“Si hay mucha flor y poco fruto, revisa polinizacion, clima, agua, raiz y caida inicial antes de culpar al fertilizante.”
+
+================================================================================
+1. OBJETIVO DEL DOCUMENTO
+================================================================================
+
+Este documento debe permitir implementar `avocado_tree_yield_reference.dart` y alimentar la pantalla de rendimiento aproximado.
+
+Debe responder:
+- Cuanto puede producir un aguacate por arbol segun perfil y estado productivo.
+- Cuanto puede producir una hectarea segun densidad/marco de plantacion.
+- Como ajustar por riego, manejo, raiz, salinidad, polinizacion, floracion/cuajado, carga visible, calidad comercial y memoria de estres.
+- Como tratar Hass, Mendez/Carmen, Criollo/Mexicano, Fuerte, Antillano/Tropical y Tardio/Lamb/Reed.
+- Como evitar sobreestimacion en alta densidad.
+- Como reflejar alternancia: año cargado / año bajo.
+- Como mantener una salida honesta para productor: rango, confianza y advertencias.
+
+No debe responder:
+- Precio de venta.
+- Rentabilidad completa.
+- Dosis de fertilizacion.
+- Numero exacto de frutos.
+- Recomendaciones de anillado, estres hidrico, reguladores o fosfitos.
+- Diagnostico sanitario definitivo.
+- Prediccion de exportacion garantizada.
+- Garantia de calibre, materia seca, aceite, color o calidad poscosecha.
+
+================================================================================
+2. BASE AGRONOMICA Y CRITERIO DE CONFIANZA
+================================================================================
+
+2.1. Fuentes de alta confianza usadas para calibracion
+
+A) BIO-G interno:
+- Estandar BIO-G para integracion de arboles perennes v1.5 con addendum.
+- Documento 01 BIO-G Aguacate AG v1 Reforzado.
+- Documento 02 Perfil SKIP BIO-G Aguacate AG v1 Reforzado.
+- Documento 03 de Mango MG como patron de rendimiento por kg/arbol, t/ha, densidad, manejo, riego, carga, calidad y memoria.
+- Revision de `lib.zip`, especialmente `tree_yield_reference_catalog.dart`, `yield_projection_engine_proposed.dart`, `apple_tree_yield_reference.dart`, `lemon_tree_yield_reference.dart`, `orange_tree_yield_reference.dart`, `walnut_tree_yield_reference.dart`, `pistachio_tree_yield_reference.dart` y `yield_projection_setup_screen.dart`.
+
+B) Mexico / estadistica / industria:
+- SIAP/SADER: anuarios de cierre agricola y estadisticas nacionales. El rendimiento agregado nacional de aguacate en anos recientes ronda ~10-11 t/ha, con variacion fuerte por estado, riego, temporal, edad, manejo y variedad.
+- SIAP-SADER 2015-2019: promedio nacional 9.9-10.8 t/ha; 2019 ~10.7 t/ha; Michoacan ~10.8, Jalisco ~11.8, Estado de Mexico ~13.2, Yucatan ~24.8 t/ha en su contexto regional.
+- SENASICA/SIAP reportes de riesgo fitosanitario: promedio 2010-2021 cercano a 10.8 t/ha; riego ~11.0 y temporal ~9.7 t/ha en promedio, con Jalisco/EdoMex/Michoacan alrededor de 11-12 t/ha para 2021.
+- Hass Avocado Board / Country Profile Mexico 2025: densidades tradicionales 150-200 arboles/ha; rendimientos tradicionales de temporal alrededor de 8.5-9.5 t/ha; huertos con mas tecnologia/riego 15-18 t/ha; densidades mayores posibles en sistemas tecnificados.
+
+C) Universidades y extension internacional:
+- UF/IFAS Florida: arboles injertados inician produccion a los 3-4 años; arboles maduros promedio 50-75 kg/arbol en paisaje domestico, con mejor produccion bajo buen manejo; menos de 1% de flores termina en fruta; algunos cultivares son alternantes.
+- UF/IFAS Florida comercial: rendimientos satisfactorios de 11,000-19,500 lb/ac bajo suelos bien drenados y sin inundacion, con ~87-100 arboles/ac, dependiendo de variedad.
+- UC ANR / California: Hass, Fuerte, Reed, Lamb Hass y otros difieren por tipo floral, temporada, alternancia y retencion. Hass es tipo A; Fuerte es tipo B; Reed y Lamb Hass son tipo A y tardios.
+- UC ANR / California Avocado: la fruta de aguacate esta madura antes del corte, pero no lista para comer; debe ablandar fuera del arbol; Hass puede permanecer mas tiempo en arbol que variedades como Bacon.
+- UC Riverside Avocado Variety Collection: Hass, Fuerte, Lamb Hass, Reed, GEM, etc. con tipo floral, peso de fruto, color, temporada y notas de alternancia/consistencia.
+- UC/California Avocado Commission: datos de Hass muestran gran variabilidad entre arboles, alternancia y necesidad de no modelar un numero unico por arbol.
+- Estudios de alta densidad California/San Diego: altas densidades pueden subir t/ha temprano, pero reducen kg/arbol; por eso son obligatorios caps por densidad.
+
+D) Investigacion aplicada Mexico / Jalisco / Mendez:
+- Scielo / Agrociencia: `Mendez` en sur de Jalisco muestra dos flujos vegetativos, floraciones de verano e invierno, madurez en julio y septiembre-octubre segun floracion, caida de fruto de 55.4-61.8% en el periodo observado y necesidad de manejo propio, no simple copia de Hass.
+- Investigacion mexicana reciente en Hass/Jalisco/Andosoles y fertilidad de suelo: el rendimiento se calcula por t/ha a partir de rendimiento por arbol y numero de cortes; refuerza que el motor BIO-G debe nacer de kg/arbol + densidad + cortes/historial.
+
+E) Foros, productores, grupos y redes sociales:
+Uso permitido SOLO para lenguaje UX y preguntas reales del agricultor. NO se usan para fijar umbrales duros.
+Frases detectadas/útiles:
+- “floreo mucho pero no cuajo nada”
+- “se cayo todo el frutito”
+- “el año pasado cargo y este año nada”
+- “se quedo en pura hoja”
+- “se esta muriendo aunque lo riego”
+- “las puntas se queman”
+- “se pone triste con el suelo mojado”
+- “se queda fruta chica”
+- “el Hass no agarro flor loca”
+- “el Mendez se adelanta pero tambien tira fruta”
+- “se me cae en junio”
+- “se mancha la cascara”
+- “el Fuerte da un año si y otro no”
+- “tengo mucha flor y abejas, pero no amarra”
+
+Regla: foros/redes ayudan al copy farmer-friendly, no al calculo.
+
+2.2. Lectura critica de datos encontrados
+
+Los datos de rendimiento de aguacate varian demasiado para usar un numero unico.
+
+Ejemplos que afectan la calibracion:
+- Datos agregados de Mexico rondan 10-11 t/ha, pero mezclan riego/temporal, edad, densidad, Hass/otros, huertos viejos, Jalisco/Michoacan/EdoMex/Yucatan, manejo, altitud y sanidad.
+- Un arbol adulto puede producir 50-75 kg/arbol como promedio conservador en extension, pero con buen manejo y copa grande puede superar 100 kg/arbol.
+- En huertos de baja densidad, kg/arbol puede ser alto, pero t/ha no se dispara.
+- En alta densidad, t/ha puede subir, pero kg/arbol debe bajar por competencia, sombra, poda y menor volumen de copa.
+- Menos de 1% de flores llega a fruta; por eso floracion abundante no debe traducirse directo a cosecha.
+- Fuerte, Reed, Lamb Hass, Hass, Mendez y Antillanos no tienen el mismo comportamiento de ventana, alternancia, peso de fruto, calidad ni mercado.
+- Mendez/Carmen puede adelantar ventana o producir floraciones fuera de temporada, pero eso no significa automaticamente mas kg anuales.
+- Antillano/Tropical puede tener frutos grandes y kg/arbol altos, pero no debe confundirse con Hass exportacion ni calidad/vida poscosecha.
+- Reed puede ser mas consistente en algunos contextos, pero es nicho/regional y no debe usarse como default para todo Mexico.
+
+Conclusion BIO-G:
+El motor debe calcular por kg/arbol y arboles/ha, con caps por densidad y factores de etapa/manejo/memoria. La salida debe ser rango + confianza + notas, no promesa.
+
+================================================================================
+3. DECISION BIO-G DE RANGOS BASE t/ha
+================================================================================
+
+3.1. Rangos generales para BIO-G v1
+
+[TABLA]
+Sistema/estado | Rango t/ha BIO-G | Lectura
+Huerto no productivo / recien plantado | 0 | No proyectar cosecha comercial
+Primeras cosechas | 0.3-4 | Depende de injerto, vigor, raiz, riego y cuajado
+Joven productivo | 2-10 | Arbol aun construye copa/raiz; alternancia fuerte
+SKIP conservador | 3-16 | Usuario no sabe perfil; no prometer alto
+Promedio nacional/agregado Mexico | 9-12 | Referencia realista amplia, no potencial de huerta cuidada
+Tradicional temporal / manejo basico | 6-11 | Densidad baja/media, lluvia y manejo variable
+Tradicional irrigado / manejo medio | 10-16 | Huerta funcional con riego y sanidad aceptable
+Comercial bueno con riego/poda | 14-22 | Perfil claro, manejo ordenado, buen cuajado, raiz sana
+Año cargado / buen manejo | 18-28 | Posible con carga confirmada, riego, sanidad y densidad funcional
+Alta densidad/intensivo validado | 22-32 | Solo con poda, luz, riego, fertirriego, raiz y baja salinidad
+Sobresaliente / experimental | >32-40 | No default; requiere historial local, densidad real y validacion tecnica
+[/TABLA]
+
+3.2. Regla de no sobreestimar
+Si BIO-G no conoce perfil, densidad, estado productivo, riego, floracion/cuajado, carga visible y sanidad de raiz, usar `ag_skip` conservador. No mostrar 20-30 t/ha como expectativa por defecto.
+
+3.3. Interpretacion de alto rendimiento
+- >15 t/ha: buen resultado para muchos sistemas mexicanos.
+- >20 t/ha: alto; pedir confirmar densidad, riego, poda, raiz, salinidad y carga.
+- >25 t/ha: muy alto; requiere manejo alto, carga confirmada y baja memoria de estres.
+- >30 t/ha: intensivo/validado localmente; no mostrar sin historial.
+- >40 t/ha: sobresaliente/experimental; no expectativa normal BIO-G v1.
+
+================================================================================
+4. DECISION BIO-G DE RANGOS BASE kg/ARBOL
+================================================================================
+
+Todos los rangos son fruta fresca total por arbol adulto antes de aplicar estado, manejo, riego, raiz/salinidad, polinizacion/floracion/cuajado, carga, estres y densidad.
+
+[TABLA]
+Perfil | Label | kg/arbol adulto bajo | kg/arbol esperado | kg/arbol alto | t/ha bajo | t/ha esperado | t/ha alto | Confianza base
+ag_skip | AG-SKIP - Aguacate general | 15 | 40 | 75 | 3.5 | 9.5 | 16 | 0.42
+ag_01_hass | AG-01 - Hass | 25 | 55 | 100 | 7 | 14 | 24 | 0.68
+ag_02_mendez_carmen | AG-02 - Mendez / Carmen / Hass temprano | 22 | 55 | 95 | 8 | 15 | 24 | 0.58
+ag_03_criollo_mexicano | AG-03 - Criollo / mexicano / regional | 12 | 35 | 85 | 2.5 | 7.5 | 16 | 0.38
+ag_04_fuerte_piel_verde | AG-04 - Fuerte / piel verde | 18 | 42 | 80 | 4.5 | 10 | 18 | 0.50
+ag_05_antillano_tropical | AG-05 - Antillano / tropical | 30 | 70 | 130 | 7 | 15 | 26 | 0.50
+ag_06_tardio_lamb_reed | AG-06 - Tardio / Lamb Hass / Reed | 25 | 60 | 110 | 7 | 16 | 27 | 0.54
+[/TABLA]
+
+4.1. Lectura por perfil
+
+AG-SKIP
+- Conservador.
+- No asume Hass, Mendez, Criollo, Fuerte, Antillano, Lamb Hass ni Reed.
+- No asume tipo floral A/B, portainjerto, densidad, riego, poda, tecnificacion ni destino comercial.
+- Util para onboarding rapido.
+- No promete floracion ni cuajado.
+
+AG-01 Hass
+- Perfil dominante de exportacion en Mexico.
+- Fruto mediano, piel rugosa, cambia a negro al madurar, buena vida comercial.
+- Buen potencial si hay riego, raiz sana, baja salinidad, poda/luz, manejo de carga y sanidad.
+- Alternancia marcada: año cargado puede bajar el siguiente.
+- No convertir “Hass exportacion” en toneladas altas por default; exportacion es calidad/mercado, no garantia de kg.
+
+AG-02 Mendez / Carmen / Hass temprano
+- Perfil Hass-like temprano o con floraciones/cosechas fuera de temporada.
+- Importante en Jalisco y zonas con ventana temprana.
+- Puede tener fruta de verano/temprana y oportunidad comercial, pero flor loca/off-bloom puede tirar fruta.
+- Manejo no debe copiar Hass al 100%; fenologia puede diferir.
+- Rango similar a Hass, con confianza menor por menor trazabilidad publica y variacion regional.
+
+AG-03 Criollo / mexicano / regional
+- Muy heterogeneo: semilla/franco, arbol viejo, patio, huerto local, mercado regional.
+- Puede haber arboles grandes con kg/arbol altos, pero densidad baja, calidad heterogenea y alternancia variable.
+- No asumir exportacion, calibre uniforme ni ventana comercial.
+- Confianza baja salvo historial local.
+
+AG-04 Fuerte / piel verde
+- Tipo B, historico, piel verde, posible funcion de polinizador para Hass.
+- Puede producir bien, pero es conocido por alternancia/inconsistencia en algunas regiones.
+- No tratarlo como “solo polinizador” si el productor lo cosecha; si se usa dentro de Hass, el rendimiento debe separarse por perfil o manejarse como mezcla.
+- Rango moderado con notas de polinizacion y alternancia.
+
+AG-05 Antillano / tropical
+- Grupo tropical/costa, fruta grande y piel verde, mercado local/regional.
+- Puede dar kg/arbol alto por peso de fruto, pero no equivale a Hass exportacion.
+- Sensible a drenaje, antracnosis/roña, calidad externa y manejo poscosecha.
+- En zonas tropicales con lluvia, sanidad y raiz mandan fuerte.
+
+AG-06 Tardio / Lamb Hass / Reed / especialidad
+- Agrupa tardios y especialidad: Lamb Hass, Reed, tipo tardio/regional.
+- Reed suele ser fruta grande, piel verde y puede ser mas consistente en algunos contextos; Lamb Hass es Hass-like tardio.
+- Puede tener ventana extendida y buen potencial, pero requiere manejo de carga, corte y mercado.
+- No mostrar alto sin densidad real, carga visible y historial.
+
+================================================================================
+5. ENTRADAS MINIMAS PARA BIO-G
+================================================================================
+
+5.1. Pantalla simple
+- Cultivo: Aguacate / Arbol de aguacate.
+- Perfil: ag_skip o AG-01..AG-06.
+- Estado perenne: newly_planted, juvenile_non_productive, established, productive_season, unknown.
+- Etapa visible: planting_transplant, root_establishment, juvenile_vegetative, dormancy, budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest, unknown.
+- Numero de arboles, si el usuario lo sabe.
+
+5.2. Calculo completo
+- Hectareas.
+- Arboles por hectarea o marco de plantacion.
+- Numero total de arboles.
+- Perfil AG.
+- Estado productivo.
+- Manejo/cuidado.
+- Riego.
+- Drenaje/raiz/salinidad.
+- Tipo floral/polinizador/abejas si existe.
+- Floracion/cuajado.
+- Carga visible.
+- Calidad comercial.
+- Memoria de estres.
+
+5.3. Entradas futuras opcionales
+- Edad exacta.
+- Portainjerto.
+- Si es injertado o de semilla.
+- Porcentaje de arboles faltantes.
+- Porcentaje de copa viva.
+- Relacion Hass/polinizadores.
+- Colmenas o actividad de abejas.
+- Historial de cosecha por corte.
+- Historial de alternancia.
+- Materia seca / aceite.
+- Calibre.
+- Peso promedio de fruto.
+- Porcentaje exportable/primera/segunda.
+- Numero de cortes.
+- Meses de cosecha.
+- Analisis foliar/suelo/agua.
+- Cloruros, sodio, boro en agua/suelo/hoja.
+- Phytophthora confirmada o sospecha.
+- Daño por trips, acaros, roña, antracnosis.
+
+No bloquear v1 por no tener estas entradas.
+
+================================================================================
+6. ESTADOS PRODUCTIVOS PARA RENDIMIENTO
+================================================================================
+
+El estado productivo es local del motor de rendimiento. No inventar nuevos TreeStateIds globales.
+
+[TABLA]
+Estado rendimiento | Descripcion BIO-G | Salida
+nonProductive | Recién plantado, raiz, juvenil sin cosecha comercial | 0 kg/arbol
+firstBearing | Primeras cosechas ligeras | 5-35% del potencial adulto
+youngBearing | Arbol joven en produccion creciente | 20-85% del potencial adulto
+fullBearing | Produccion plena o adulta | 65-120% del potencial adulto
+floweringButNoSet | Floracion sin cuajado confirmado | 8-55% del potencial adulto
+lowSetOrDropYear | Floro, pero cuajo mal o tiro frutito | 8-60% del potencial adulto
+alternateBearingHighYear | Año cargado / on-year | 85-140% del potencial adulto; posible menor calibre/calidad
+alternateBearingLowYear | Año bajo / off-year | 5-55% del potencial adulto
+rootDeclineOrSalinityYear | Raiz dañada / Phytophthora / sales fuertes | 5-50% del potencial adulto
+oldDeclining | Arbol viejo/declinante | 20-85% del potencial adulto
+unknown | Usuario no sabe | 20-80% del potencial adulto
+[/TABLA]
+
+6.1. Multiplicadores sugeridos
+
+```dart
+enum AvocadoProductionState {
+  nonProductive,
+  firstBearing,
+  youngBearing,
+  fullBearing,
+  floweringButNoSet,
+  lowSetOrDropYear,
+  alternateBearingHighYear,
+  alternateBearingLowYear,
+  rootDeclineOrSalinityYear,
+  oldDeclining,
+  unknown,
+}
+
+({double low, double expected, double high}) _productionStateFactors(
+  AvocadoProductionState state,
+) {
+  return switch (state) {
+    AvocadoProductionState.nonProductive => (low: 0, expected: 0, high: 0),
+    AvocadoProductionState.firstBearing => (low: 0.05, expected: 0.18, high: 0.35),
+    AvocadoProductionState.youngBearing => (low: 0.20, expected: 0.50, high: 0.85),
+    AvocadoProductionState.fullBearing => (low: 0.65, expected: 1.00, high: 1.20),
+    AvocadoProductionState.floweringButNoSet => (low: 0.08, expected: 0.28, high: 0.55),
+    AvocadoProductionState.lowSetOrDropYear => (low: 0.08, expected: 0.32, high: 0.60),
+    AvocadoProductionState.alternateBearingHighYear => (low: 0.85, expected: 1.12, high: 1.40),
+    AvocadoProductionState.alternateBearingLowYear => (low: 0.05, expected: 0.25, high: 0.55),
+    AvocadoProductionState.rootDeclineOrSalinityYear => (low: 0.05, expected: 0.22, high: 0.50),
+    AvocadoProductionState.oldDeclining => (low: 0.20, expected: 0.50, high: 0.85),
+    AvocadoProductionState.unknown => (low: 0.20, expected: 0.50, high: 0.80),
+  };
+}
+```
+
+6.2. Inferencia desde estado perenne
+- newly_planted => nonProductive.
+- juvenile_non_productive => nonProductive.
+- established + unknown stage => unknown.
+- established + flowering => floweringButNoSet o unknown si no hay cuajado/carga.
+- established + fruit_set => lowSetOrDropYear o youngBearing si arbol joven.
+- productive_season + flowering => floweringButNoSet si no hay fruta confirmada.
+- productive_season + fruit_set => lowSetOrDropYear o youngBearing.
+- productive_season + fruit_fill/harvest_maturity => fullBearing por defecto conservador.
+- post_harvest => fullBearing si hay historial de cosecha; unknown si no hay carga/cosecha registrada.
+- unknown => unknown.
+
+6.3. Etapas que bloquean rendimiento
+Si la etapa es:
+- planting_transplant;
+- root_establishment;
+- juvenile_vegetative;
+
+o si el estado es newly_planted / juvenile_non_productive, BIO-G proyecta 0 kg/arbol.
+
+Mensaje:
+“Todavia no proyectamos cosecha fuerte. En aguacate joven primero importa raiz sana, drenaje, copa, hoja y estructura. Forzar carga temprano puede cansar el arbol.”
+
+6.4. Edad orientativa
+No usar edad como motor principal, pero puede orientar:
+- 0-1 años: establecimiento, normalmente 0 comercial.
+- 2-3 años: posible primera cosecha ligera si es injertado y bien manejado.
+- 3-4 años: entrada a produccion en injertados; aun variable.
+- 4-6 años: produccion joven creciente.
+- 6+ años: puede considerarse huerta madura segun densidad, poda, copa, raiz y manejo.
+- 10+ años: puede seguir plena o declinar segun luz, poda, raiz, Phytophthora, salinidad, sanidad y alternancia.
+- Semilla/franco: puede tardar 5-13 años o mas en producir; no asumir igual que injertado.
+
+================================================================================
+7. DENSIDAD Y MARCO DE PLANTACION
+================================================================================
+
+7.1. Formulas
+
+`arbolesPorHa = 10000 / (distanciaEntreHileras_m * distanciaEntreArboles_m)`
+
+`tonHa = (kgPorArbol * arbolesPorHa) / 1000`
+
+`kgPorArbol = (tonHa * 1000) / arbolesPorHa`
+
+7.2. Densidades orientativas
+
+[TABLA]
+Marco | Arboles/ha aprox. | Lectura BIO-G
+10 x 10 m | 100 | Tradicional amplio / huerto viejo / arbol grande
+9 x 9 m | 123 | Tradicional amplio
+8 x 8 m | 156 | Tradicional, frecuente en huertos amplios
+8 x 6 m | 208 | Tradicional-comercial moderado
+7 x 7 m | 204 | Tradicional moderado
+7 x 5 m | 286 | Comercial intermedio
+6 x 6 m | 278 | Comercial intermedio
+6 x 5 m | 333 | Comercial intermedio-intensivo
+5 x 5 m | 400 | Intensivo moderado con poda/luz
+5 x 4 m | 500 | Alta densidad manejada
+4 x 4 m | 625 | Alta densidad fuerte
+4 x 3 m | 833 | Alta densidad muy fuerte
+3.5 x 3.5 m | 816 | Alta densidad fuerte
+3 x 3 m | 1111 | Muy alta densidad; exige sistema de copa
+3 x 2 m | 1667 | Ultra alta densidad/experimental; no default BIO-G v1
+[/TABLA]
+
+7.3. Caps por densidad
+La densidad no solo multiplica. A mayor densidad, cada arbol tiene menos espacio, luz y volumen de copa. En aguacate, ademas se intensifica competencia por agua, raiz, oxigeno, poda y manejo de sombra. El motor debe capear kg/arbol para no inflar t/ha.
+
+```dart
+class AvocadoDensitySystem {
+  const AvocadoDensitySystem(this.id, this.kgPerTreeCap);
+
+  final String id;
+  final double kgPerTreeCap;
+
+  static const AvocadoDensitySystem extensive = AvocadoDensitySystem(
+    'extensive_or_old_spacing_under_180_trees_ha',
+    145,
+  );
+  static const AvocadoDensitySystem traditional = AvocadoDensitySystem(
+    'traditional_180_300_trees_ha',
+    110,
+  );
+  static const AvocadoDensitySystem commercialModerate = AvocadoDensitySystem(
+    'commercial_300_500_trees_ha',
+    82,
+  );
+  static const AvocadoDensitySystem highDensityManaged = AvocadoDensitySystem(
+    'high_density_500_800_trees_ha',
+    55,
+  );
+  static const AvocadoDensitySystem veryHighDensityManaged = AvocadoDensitySystem(
+    'very_high_density_800_1200_trees_ha',
+    36,
+  );
+  static const AvocadoDensitySystem ultraHighDensity = AvocadoDensitySystem(
+    'ultra_high_density_over_1200_trees_ha',
+    26,
+  );
+
+  static AvocadoDensitySystem fromTreesPerHa(double treesPerHa) {
+    if (treesPerHa < 180) return extensive;
+    if (treesPerHa < 300) return traditional;
+    if (treesPerHa < 500) return commercialModerate;
+    if (treesPerHa < 800) return highDensityManaged;
+    if (treesPerHa < 1200) return veryHighDensityManaged;
+    return ultraHighDensity;
+  }
+}
+```
+
+7.4. Justificacion de caps
+Ejemplo sin cap:
+- Antillano alto: 130 kg/arbol x 1111 arboles/ha = 144 t/ha.
+Eso no es expectativa razonable de BIO-G v1.
+
+Con cap muy alta densidad:
+- cap 36 kg/arbol x 1111 arboles/ha = 40 t/ha.
+Sigue siendo alto y solo debe aparecer con manejo intensivo/historial.
+
+Con cap ultra alta densidad:
+- cap 26 kg/arbol x 1667 arboles/ha = 43 t/ha.
+Esto solo debe aparecer como potencial intensivo/experimental, nunca como default.
+
+Regla de mensaje:
+“En alta densidad no puedes multiplicar cada arbol como si estuviera solo. Hay mas arboles por hectarea, pero cada copa carga menos y exige poda, luz, riego, raiz sana y baja salinidad.”
+
+================================================================================
+8. MODIFICADORES DE MANEJO
+================================================================================
+
+8.1. Manejo
+
+```dart
+enum AvocadoManagementLevel { low, medium, good, high, exceptional }
+
+double _managementFactor(AvocadoManagementLevel? level) => switch (level) {
+  null => 1.0,
+  AvocadoManagementLevel.low => 0.55,
+  AvocadoManagementLevel.medium => 0.85,
+  AvocadoManagementLevel.good => 1.05,
+  AvocadoManagementLevel.high => 1.18,
+  AvocadoManagementLevel.exceptional => 1.28,
+};
+```
+
+Lectura:
+- low: poca poda, riego irregular, sanidad reactiva, raiz sin monitoreo, salinidad no medida, alternancia fuerte.
+- medium: manejo funcional promedio.
+- good: poda/luz, riego, nutricion, sanidad y cosecha ordenadas.
+- high: monitoreo, riego/fertirriego, analisis foliar/suelo/agua, raiz y salinidad vigiladas, manejo de carga.
+- exceptional: solo con datos confiables; no default.
+
+8.2. Porcentaje de cuidado
+100% cuidado = manejo correcto para el potencial base. No significa maximo teorico.
+
+```dart
+double _carePercentFactor(double? carePercent) {
+  if (carePercent == null) return 1.0;
+  final p = carePercent.clamp(0, 130).toDouble();
+  if (p <= 30) return 0.35;
+  if (p <= 50) return 0.55;
+  if (p <= 70) return 0.74;
+  if (p <= 90) return 0.90;
+  if (p <= 105) return 1.00;
+  if (p <= 115) return 1.10;
+  if (p <= 125) return 1.18;
+  return 1.24;
+}
+```
+
+Si existen `managementLevel` y `carePercent`, no multiplicar ambos agresivamente. Usar `carePercent` como principal o tomar el menor.
+
+8.3. Riego y drenaje
+
+```dart
+enum AvocadoIrrigationLevel {
+  rainfedHumid,
+  rainfedDry,
+  irregular,
+  stable,
+  microSprinkler,
+  fertigation,
+  waterloggingRisk,
+  salinityAwareManaged,
+}
+
+double _irrigationFactor(AvocadoIrrigationLevel? level) => switch (level) {
+  null => 1.0,
+  AvocadoIrrigationLevel.rainfedHumid => 0.78,
+  AvocadoIrrigationLevel.rainfedDry => 0.48,
+  AvocadoIrrigationLevel.irregular => 0.65,
+  AvocadoIrrigationLevel.stable => 1.03,
+  AvocadoIrrigationLevel.microSprinkler => 1.08,
+  AvocadoIrrigationLevel.fertigation => 1.12,
+  AvocadoIrrigationLevel.waterloggingRisk => 0.45,
+  AvocadoIrrigationLevel.salinityAwareManaged => 0.98,
+};
+```
+
+Regla aguacate:
+El riego no debe premiar exceso de agua. En aguacate, saturacion sostenida, drenaje pobre o raiz sin oxigeno puede bajar rendimiento mas que una lectura moderadamente seca fuera de etapa critica.
+
+================================================================================
+9. FLORACION, POLINIZACION, CUAJADO, CARGA Y ALTERNANCIA
+================================================================================
+
+9.1. Calidad de floracion/cuajado/polinizacion
+
+```dart
+enum AvocadoBloomSetStatus {
+  unknown,
+  inductionLikely,
+  goodBloomGoodSet,
+  heavyBloomPoorSet,
+  weakBloom,
+  fruitSetConfirmed,
+  heatColdRainSetLoss,
+  salinityRootSetLoss,
+  typeABMismatchOrLowBeeActivity,
+  offBloomMendezManaged,
+  offBloomDrop,
+  noFloweringLikely,
+}
+
+double _bloomSetFactor(AvocadoBloomSetStatus? status) => switch (status) {
+  null || AvocadoBloomSetStatus.unknown => 1.0,
+  AvocadoBloomSetStatus.inductionLikely => 1.02,
+  AvocadoBloomSetStatus.goodBloomGoodSet => 1.08,
+  AvocadoBloomSetStatus.fruitSetConfirmed => 1.05,
+  AvocadoBloomSetStatus.offBloomMendezManaged => 1.00,
+  AvocadoBloomSetStatus.heavyBloomPoorSet => 0.55,
+  AvocadoBloomSetStatus.weakBloom => 0.58,
+  AvocadoBloomSetStatus.typeABMismatchOrLowBeeActivity => 0.68,
+  AvocadoBloomSetStatus.heatColdRainSetLoss => 0.45,
+  AvocadoBloomSetStatus.salinityRootSetLoss => 0.40,
+  AvocadoBloomSetStatus.offBloomDrop => 0.50,
+  AvocadoBloomSetStatus.noFloweringLikely => 0.20,
+};
+```
+
+9.2. Polinizacion especifica A/B
+
+```dart
+enum AvocadoPollinationStatus {
+  unknown,
+  selfOnlyButNormal,
+  compatibleTypeBNearby,
+  compatibleTypeANearby,
+  lowBeeActivity,
+  weatherMismatch,
+  noCompatibleKnown,
+}
+
+double _pollinationFactor(AvocadoPollinationStatus? status) => switch (status) {
+  null || AvocadoPollinationStatus.unknown => 1.0,
+  AvocadoPollinationStatus.selfOnlyButNormal => 0.95,
+  AvocadoPollinationStatus.compatibleTypeBNearby => 1.06,
+  AvocadoPollinationStatus.compatibleTypeANearby => 1.04,
+  AvocadoPollinationStatus.lowBeeActivity => 0.75,
+  AvocadoPollinationStatus.weatherMismatch => 0.65,
+  AvocadoPollinationStatus.noCompatibleKnown => 0.88,
+};
+```
+
+Regla:
+- Hass/Mendez/Lamb/Reed son tipo A.
+- Fuerte es tipo B.
+- Antillano y criollo varian; no asumir.
+- La presencia de compatible ayuda solo si coincide floracion y hay polinizadores.
+- No usar polinizador como multiplicador enorme. El cuello de botella incluye temperatura, agua, raiz y carga.
+
+9.3. Carga visible
+
+```dart
+enum AvocadoCropLoadStatus { noneVisible, light, balanced, heavy, veryHeavy, unknown }
+
+double _cropLoadFactor(AvocadoCropLoadStatus? status) => switch (status) {
+  null || AvocadoCropLoadStatus.unknown => 1.0,
+  AvocadoCropLoadStatus.noneVisible => 0.12,
+  AvocadoCropLoadStatus.light => 0.45,
+  AvocadoCropLoadStatus.balanced => 1.0,
+  AvocadoCropLoadStatus.heavy => 1.08,
+  AvocadoCropLoadStatus.veryHeavy => 1.12,
+};
+```
+
+Carga heavy/veryHeavy puede subir kg biologicos pero bajar calibre, uniformidad, retorno floral y reservas para el siguiente ciclo. No premiar sin revisar calidad y memoria de alternancia.
+
+9.4. Calidad comercial
+
+```dart
+enum AvocadoCommercialQualityRisk { none, mild, moderate, severe }
+
+double _commercialQualityFactor(AvocadoCommercialQualityRisk? risk) => switch (risk) {
+  null || AvocadoCommercialQualityRisk.none => 1.0,
+  AvocadoCommercialQualityRisk.mild => 0.92,
+  AvocadoCommercialQualityRisk.moderate => 0.76,
+  AvocadoCommercialQualityRisk.severe => 0.55,
+};
+```
+
+Esta funcion debe afectar porcentaje comercializable y notas, NO borrar kg biologicos.
+
+9.5. Porcentaje comercializable orientativo
+
+[TABLA]
+Perfil | Comercializable bajo | Esperado | Alto | Lectura
+ag_skip | 40 | 62 | 78 | General conservador
+ag_01_hass | 55 | 75 | 90 | Exportacion si hay calibre/sanidad/madurez
+ag_02_mendez_carmen | 52 | 72 | 88 | Similar Hass, pero ventana/floracion variable
+ag_03_criollo_mexicano | 30 | 55 | 75 | Mercado local, heterogeneo
+ag_04_fuerte_piel_verde | 42 | 62 | 80 | Piel verde, mercado variable
+ag_05_antillano_tropical | 40 | 62 | 80 | Fruto grande/local; calidad externa sensible
+ag_06_tardio_lamb_reed | 52 | 72 | 88 | Especialidad/tardio; requiere corte/calidad
+[/TABLA]
+
+================================================================================
+10. MEMORIA DE ESTRES
+================================================================================
+
+10.1. Severidad
+
+```dart
+enum AvocadoStressSeverity { none, mild, moderate, severe }
+```
+
+10.2. Memoria sugerida
+
+```dart
+class AvocadoTreeStressMemory {
+  const AvocadoTreeStressMemory({
+    this.floweringHeatOrCold = AvocadoStressSeverity.none,
+    this.bloomRainOrWind = AvocadoStressSeverity.none,
+    this.lowBeeActivity = AvocadoStressSeverity.none,
+    this.fruitSetDrop = AvocadoStressSeverity.none,
+    this.fruitFillWaterStress = AvocadoStressSeverity.none,
+    this.waterloggingOrPoorDrainage = AvocadoStressSeverity.none,
+    this.phytophthoraOrRootDecline = AvocadoStressSeverity.none,
+    this.salinityChlorideSodiumBoron = AvocadoStressSeverity.none,
+    this.heatSunburnStress = AvocadoStressSeverity.none,
+    this.thripsMiteScabAnthracnoseDamage = AvocadoStressSeverity.none,
+    this.alternateBearing = AvocadoStressSeverity.none,
+    this.heavyCropReserveDepletion = AvocadoStressSeverity.none,
+    this.postHarvestReserveRisk = AvocadoStressSeverity.none,
+  });
+
+  final AvocadoStressSeverity floweringHeatOrCold;
+  final AvocadoStressSeverity bloomRainOrWind;
+  final AvocadoStressSeverity lowBeeActivity;
+  final AvocadoStressSeverity fruitSetDrop;
+  final AvocadoStressSeverity fruitFillWaterStress;
+  final AvocadoStressSeverity waterloggingOrPoorDrainage;
+  final AvocadoStressSeverity phytophthoraOrRootDecline;
+  final AvocadoStressSeverity salinityChlorideSodiumBoron;
+  final AvocadoStressSeverity heatSunburnStress;
+  final AvocadoStressSeverity thripsMiteScabAnthracnoseDamage;
+  final AvocadoStressSeverity alternateBearing;
+  final AvocadoStressSeverity heavyCropReserveDepletion;
+  final AvocadoStressSeverity postHarvestReserveRisk;
+}
+```
+
+10.3. Factor de memoria recomendado
+Usar el peor factor, no multiplicar todos los estreses entre si para no destruir score repetidamente.
+
+```dart
+double _stressFactor(AvocadoStressSeverity s) => switch (s) {
+  AvocadoStressSeverity.none => 1.0,
+  AvocadoStressSeverity.mild => 0.88,
+  AvocadoStressSeverity.moderate => 0.65,
+  AvocadoStressSeverity.severe => 0.35,
+};
+```
+
+Hard caps:
+- Phytophthora/raiz severa => factor max 0.30.
+- Encharque severo en raiz => factor max 0.35.
+- Salinidad/cloruros/boro severos en floracion/cuajado/llenado => factor max 0.40.
+- Caida de fruta severa => factor max 0.35.
+- Off-year fuerte => factor max 0.50.
+
+================================================================================
+11. PATRON DE CODIGO SUGERIDO
+================================================================================
+
+11.1. Constantes esperadas
+
+```dart
+const String kCropAvocadoTree = 'crop_avocado_tree';
+const String kAvocadoTreeLegacyId = 'avocado_tree';
+const String kAgSkip = 'ag_skip';
+const String kAg01Hass = 'ag_01_hass';
+const String kAg02MendezCarmen = 'ag_02_mendez_carmen';
+const String kAg03CriolloMexicano = 'ag_03_criollo_mexicano';
+const String kAg04FuertePielVerde = 'ag_04_fuerte_piel_verde';
+const String kAg05AntillanoTropical = 'ag_05_antillano_tropical';
+const String kAg06TardioLambReed = 'ag_06_tardio_lamb_reed';
+```
+
+11.2. Referencias por perfil
+
+```dart
+const Map<String, AvocadoTreeYieldReference> avocadoYieldReferenceByProfile =
+    <String, AvocadoTreeYieldReference>{
+  kAgSkip: AvocadoTreeYieldReference(
+    profileId: kAgSkip,
+    fullKgPerTree: YieldRange(15, 40, 75),
+    expectedTonPerHa: YieldRange(3.5, 9.5, 16),
+    confidenceBase: 0.42,
+    commercialFruitPct: YieldRange(40, 62, 78),
+    notesEs: <String>[
+      'Perfil general: no asume Hass, Mendez, Fuerte, criollo, antillano, tipo floral, portainjerto, densidad, riego ni manejo tecnico. No sobreestimar.',
+    ],
+  ),
+  kAg01Hass: AvocadoTreeYieldReference(
+    profileId: kAg01Hass,
+    fullKgPerTree: YieldRange(25, 55, 100),
+    expectedTonPerHa: YieldRange(7, 14, 24),
+    confidenceBase: 0.68,
+    commercialFruitPct: YieldRange(55, 75, 90),
+    notesEs: <String>[
+      'Hass: potencial bueno con raiz sana, riego estable, baja salinidad, poda/luz y carga confirmada. Vigilar alternancia, calibre y madurez de corte.',
+    ],
+  ),
+  kAg02MendezCarmen: AvocadoTreeYieldReference(
+    profileId: kAg02MendezCarmen,
+    fullKgPerTree: YieldRange(22, 55, 95),
+    expectedTonPerHa: YieldRange(8, 15, 24),
+    confidenceBase: 0.58,
+    commercialFruitPct: YieldRange(52, 72, 88),
+    notesEs: <String>[
+      'Mendez/Carmen: ventana temprana/off-bloom; no asumir mas kg que Hass por ser temprano. La floracion fuera de temporada puede tirar fruta si clima/agua/raiz fallan.',
+    ],
+  ),
+  kAg03CriolloMexicano: AvocadoTreeYieldReference(
+    profileId: kAg03CriolloMexicano,
+    fullKgPerTree: YieldRange(12, 35, 85),
+    expectedTonPerHa: YieldRange(2.5, 7.5, 16),
+    confidenceBase: 0.38,
+    commercialFruitPct: YieldRange(30, 55, 75),
+    notesEs: <String>[
+      'Criollo/mexicano: muy heterogeneo; puede haber arboles grandes, pero calidad, densidad, ventana y alternancia varian mucho. Confianza baja sin historial.',
+    ],
+  ),
+  kAg04FuertePielVerde: AvocadoTreeYieldReference(
+    profileId: kAg04FuertePielVerde,
+    fullKgPerTree: YieldRange(18, 42, 80),
+    expectedTonPerHa: YieldRange(4.5, 10, 18),
+    confidenceBase: 0.50,
+    commercialFruitPct: YieldRange(42, 62, 80),
+    notesEs: <String>[
+      'Fuerte/piel verde: tipo B y posible polinizador de Hass; puede alternar o ser inconsistente. No tratarlo como Hass negro de exportacion.',
+    ],
+  ),
+  kAg05AntillanoTropical: AvocadoTreeYieldReference(
+    profileId: kAg05AntillanoTropical,
+    fullKgPerTree: YieldRange(30, 70, 130),
+    expectedTonPerHa: YieldRange(7, 15, 26),
+    confidenceBase: 0.50,
+    commercialFruitPct: YieldRange(40, 62, 80),
+    notesEs: <String>[
+      'Antillano/tropical: fruto grande puede subir kg/arbol, pero no equivale a Hass exportacion. Vigilar drenaje, antracnosis/roña, calidad externa y poscosecha.',
+    ],
+  ),
+  kAg06TardioLambReed: AvocadoTreeYieldReference(
+    profileId: kAg06TardioLambReed,
+    fullKgPerTree: YieldRange(25, 60, 110),
+    expectedTonPerHa: YieldRange(7, 16, 27),
+    confidenceBase: 0.54,
+    commercialFruitPct: YieldRange(52, 72, 88),
+    notesEs: <String>[
+      'Tardio/Lamb Hass/Reed: ventana extendida y potencial bueno, pero no default. Requiere corte correcto, carga confirmada, luz/poda y mercado.',
+    ],
+  ),
+};
+```
+
+11.3. Normalizacion de perfil
+
+```dart
+String _normalizeAvocadoProfileId(String? profileId) {
+  final value = profileId?.trim().toLowerCase();
+  return switch (value) {
+    null || '' => kAgSkip,
+    'ag-skip' || 'ag_general' || 'avocado' || 'aguacate' || 'palta' => kAgSkip,
+    'ag_01' || 'ag-01' || 'hass' || 'aguacate_hass' => kAg01Hass,
+    'ag_02' || 'ag-02' || 'mendez' || 'méndez' || 'carmen' || 'hass_mendez' || 'hass-mendez' => kAg02MendezCarmen,
+    'ag_03' || 'ag-03' || 'criollo' || 'mexicano' || 'regional' || 'nacional' => kAg03CriolloMexicano,
+    'ag_04' || 'ag-04' || 'fuerte' || 'piel_verde' || 'green_skin' => kAg04FuertePielVerde,
+    'ag_05' || 'ag-05' || 'antillano' || 'tropical' || 'costa' || 'west_indian' => kAg05AntillanoTropical,
+    'ag_06' || 'ag-06' || 'lamb_hass' || 'lamb' || 'reed' || 'tardio' || 'tardío' => kAg06TardioLambReed,
+    _ => value,
+  };
+}
+```
+
+================================================================================
+12. CAPA MINIMA GLOBAL TreeYieldReferenceCatalog
+================================================================================
+
+Agregar referencias minimas conservadoras para pantalla simple:
+
+```dart
+// Aguacate (doc 03): tabla minima por tier para la pantalla simple (kg de
+// aguacate fresco/arbol). La referencia agronomica completa vive en
+// avocado_tree_yield_reference.dart.
+'avocado_tree_ag_skip_young': TreeYieldReference(
+  id: 'avocado_tree_ag_skip_young',
+  cropId: kCropAvocadoTree,
+  profileId: kAgSkip,
+  tier: TreeProductiveTier.young,
+  kgPerTreeLow: 2,
+  kgPerTreeHigh: 10,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (aguacate, sin historial)',
+),
+'avocado_tree_ag_skip_first': TreeYieldReference(
+  id: 'avocado_tree_ag_skip_first',
+  cropId: kCropAvocadoTree,
+  profileId: kAgSkip,
+  tier: TreeProductiveTier.firstProduction,
+  kgPerTreeLow: 6,
+  kgPerTreeHigh: 25,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (aguacate, sin historial)',
+),
+'avocado_tree_ag_skip_full': TreeYieldReference(
+  id: 'avocado_tree_ag_skip_full',
+  cropId: kCropAvocadoTree,
+  profileId: kAgSkip,
+  tier: TreeProductiveTier.full,
+  kgPerTreeLow: 18,
+  kgPerTreeHigh: 75,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (aguacate, sin historial)',
+),
+```
+
+Actualizar `_skipProfileForCrop`:
+```dart
+case kCropAvocadoTree:
+  return kAgSkip;
+```
+
+================================================================================
+13. PASOS DEL CALCULO COMPLETO
+================================================================================
+
+13.1. Funcion esperada
+
+```dart
+AvocadoTreeYieldProjection resolveAvocadoTreeYield({
+  String? profileId,
+  String? stateId,
+  String? stageId,
+  int? treeCount,
+  double? hectares,
+  double? treesPerHa,
+  AvocadoProductionState? productionState,
+  AvocadoManagementLevel? managementLevel,
+  double? carePercent,
+  AvocadoIrrigationLevel? irrigationLevel,
+  AvocadoBloomSetStatus? bloomSetStatus,
+  AvocadoPollinationStatus? pollinationStatus,
+  AvocadoCropLoadStatus? cropLoadStatus,
+  AvocadoCommercialQualityRisk? commercialQualityRisk,
+  AvocadoTreeStressMemory? stressMemory,
+})
+```
+
+13.2. Pasos del calculo
+
+1. Normalizar stateId y stageId con helpers de `tree_lifecycle.dart`.
+2. Resolver perfil por `_normalizeAvocadoProfileId(profileId)`; fallback `kAgSkip`.
+3. Si etapa/estado bloquea rendimiento, devolver cero con nota.
+4. Inferir estado productivo si no viene explicito.
+5. Determinar densidad:
+   - usar `treesPerHa` si existe;
+   - si no, `treeCount / hectares` si ambos existen;
+   - si no hay densidad, calcular solo kg/arbol y bajar confianza.
+6. Aplicar factores:
+   - produccion;
+   - manejo/cuidado;
+   - riego/drenaje;
+   - floracion/cuajado;
+   - polinizacion A/B;
+   - carga visible;
+   - memoria de estres.
+7. Aplicar cap por densidad.
+8. Convertir a t/ha.
+9. Calcular kg totales si hay numero de arboles.
+10. Ajustar porcentaje comercializable por riesgo de calidad.
+11. Calcular confianza.
+12. Agregar notas farmer-friendly.
+
+13.3. Reglas de confianza
+
+Base:
+- usar `confidenceBase` del perfil.
+
+Bajar confianza:
+- sin densidad: -0.15.
+- estado productivo unknown: -0.10.
+- stage unknown: -0.05.
+- flowering/fruit_set sin bloomSetStatus: -0.06.
+- flowering/fruit_set sin pollinationStatus: -0.05.
+- fruit_fill sin riego informado: -0.05.
+- perfil SKIP: cap maximo 0.60 salvo historial real.
+- Mendez/Carmen sin region/historial: cap maximo 0.68.
+- Criollo/regional sin historial: cap maximo 0.55.
+- memoria de estres presente: -0.10.
+- raiz/Phytophthora/salinidad severa: -0.15.
+- calidad comercial severa: -0.05.
+- alta densidad sin management high/exceptional: -0.10.
+
+Subir confianza:
+- densidad + etapa visible + carga balanced/heavy: +0.05.
+- perfil especifico + riego estable + carga visible: +0.05.
+- historial de cosecha del productor: +0.05 futuro.
+- analisis foliar/suelo/agua + baja salinidad: +0.05 futuro.
+
+Clamp:
+- minimo 0.05.
+- maximo 0.95.
+- `ag_skip` maximo 0.60.
+- alta densidad sin historial maximo 0.70.
+
+================================================================================
+14. MENSAJES UX FARMER-FRIENDLY
+================================================================================
+
+14.1. Mensajes por situacion
+
+Sin densidad:
+“Te puedo dar kg por arbol, pero para toneladas por hectarea necesito arboles/ha o marco de plantacion.”
+
+Arbol joven:
+“Todavia no proyectamos cosecha fuerte. En aguacate joven primero va raiz, drenaje, copa y hoja sana.”
+
+SKIP:
+“Este calculo usa Aguacate general. Si luego eliges Hass, Mendez, Criollo, Fuerte, Antillano o Tardio, BIO-G recalcula sin borrar historial.”
+
+Floracion abundante:
+“En aguacate, mucha flor no significa mucha cosecha. Menos de una fraccion pequena llega a fruto; revisa cuajado, clima, abejas, agua y raiz.”
+
+Fruta chica / poco calibre:
+“Puede haber kg, pero si falta agua estable, hoja funcional o raiz sana, el calibre se cae. Primero revisa humedad, sales y carga.”
+
+Suelo mojado y arbol triste:
+“En aguacate, suelo mojado no siempre es bueno. Si la raiz no respira, el arbol puede tirar flor/fruto aunque el sensor marque nutrientes.”
+
+Salinidad:
+“Con sales altas no conviene empujar mas fertilizante. Primero revisa agua, drenaje, raiz, cloruros, sodio y boro.”
+
+Año cargado:
+“Si el arbol viene muy cargado, los kg suben, pero puede bajar calibre y pegar al siguiente ciclo si no recupera reservas.”
+
+Año bajo:
+“El aguacate puede alternar. Un año bajo despues de mucha carga o estres no siempre se arregla con fertilizante.”
+
+Mendez/Carmen:
+“Mendez/Carmen puede adelantar ventana, pero la floracion fuera de temporada no garantiza cosecha; si tira frutito, baja el rendimiento.”
+
+Fuerte:
+“Fuerte puede ayudar como tipo B/piel verde, pero tambien puede ser irregular. No lo calcules igual que Hass si el lote trae mezcla.”
+
+Antillano/Tropical:
+“Fruto grande puede subir kg por arbol, pero no significa exportacion tipo Hass. Cuida drenaje, sanidad y calidad externa.”
+
+================================================================================
+15. CASOS MINIMOS DE PRUEBA
+================================================================================
+
+1) avocado_non_productive_zero_test
+Caso: newly_planted + planting_transplant.
+Esperado: 0 kg/arbol; nota raiz/drenaje/copa.
+
+2) avocado_skip_full_no_density_test
+Caso: ag_skip + productive_season + harvest_maturity + sin density.
+Esperado: kg/arbol si, t/ha null, confianza baja.
+
+3) avocado_hass_standard_density_test
+Caso: ag_01_hass + fullBearing + 250 arboles/ha + riego estable.
+Esperado: t/ha razonable, no >30 default.
+
+4) avocado_high_density_cap_test
+Caso: ag_01_hass high + 1111 arboles/ha.
+Esperado: cap kg/arbol; no multiplicar 100 kg x 1111.
+
+5) avocado_mendez_off_bloom_drop_test
+Caso: ag_02_mendez_carmen + offBloomDrop.
+Esperado: baja rendimiento; nota floracion fuera de temporada no garantiza carga.
+
+6) avocado_heavy_bloom_poor_set_test
+Caso: flowering + heavyBloomPoorSet.
+Esperado: bajar rendimiento; mensaje “flor no es cosecha”.
+
+7) avocado_low_bee_activity_test
+Caso: flowering + lowBeeActivity.
+Esperado: bajar confianza y rendimiento; no recetar colmenas, solo orientar.
+
+8) avocado_salinity_root_set_loss_test
+Caso: fruit_set + EC alta/salinidad memoria.
+Esperado: raiz/sales primero; bajar rendimiento aunque NPK este bien.
+
+9) avocado_waterlogging_root_decline_test
+Caso: suelo mojado + raiz/Phytophthora severa.
+Esperado: factor fuerte a la baja; mensaje drenaje/raiz.
+
+10) avocado_alternate_high_year_test
+Caso: alternateBearingHighYear + heavy crop.
+Esperado: kg sube, nota calibre/reservas/siguiente ciclo.
+
+11) avocado_alternate_low_year_test
+Caso: alternateBearingLowYear + postHarvestReserveRisk previous severe.
+Esperado: bajar rendimiento; mensaje alternancia.
+
+12) avocado_fuerte_pollinizer_mix_test
+Caso: lote Hass con Fuerte como polinizador capturado como mezcla.
+Esperado: no asumir todo Hass; pedir perfil o mezcla.
+
+13) avocado_commercial_quality_severe_test
+Caso: harvest_maturity + commercialQualityRisk severe.
+Esperado: kg biologicos no se borran, pero % comercializable baja.
+
+14) avocado_total_kg_tree_count_test
+Caso: kg/arbol calculado + treeCount 100.
+Esperado: totalKg = kg/arbol x 100.
+
+15) avocado_high_projection_warning_test
+Caso: tonHa.expected > 20.
+Esperado: nota de huerta buena/tecnificada.
+
+16) avocado_extreme_projection_warning_test
+Caso: tonHa.expected > 30.
+Esperado: nota de intensivo/validado localmente.
+
+17) avocado_skip_confidence_cap_test
+Caso: ag_skip con datos muy buenos.
+Esperado: confianza no pasa de 0.60 salvo historial real.
+
+================================================================================
+16. NO HACER EN CODIGO
+================================================================================
+
+- No usar `sowingDate` como eje del rendimiento.
+- No copiar mango_tree_yield_reference.dart cambiando “mango” por “aguacate” sin adaptar fisiologia.
+- No copiar lemon_tree_yield_reference.dart ni orange_tree_yield_reference.dart como si aguacate fuera citrico.
+- No crear nuevos TreeStateIds globales.
+- No crear StageIds nuevos como floral_induction, flower_type_a, flower_type_b, june_drop, dry_matter, on_tree_storage, off_year o export_maturity.
+- No calcular por numero exacto de aguacates como salida principal.
+- No prometer cuajado porque hubo mucha flor.
+- No ignorar que menos de 1% de flores llega a fruto.
+- No ignorar alternancia.
+- No ignorar postcosecha.
+- No ignorar raiz/drenaje/Phytophthora.
+- No ignorar salinidad, cloruros, sodio y boro.
+- No recomendar fertilizante agresivo con EC alta o raiz dañada.
+- No multiplicar kg/arbol alto por densidad alta sin cap.
+- No mostrar >25-30 t/ha como default.
+- No tratar Mendez/Carmen como “Hass normal” si hay floracion/cosecha fuera de temporada.
+- No tratar Antillano/Tropical como Hass exportacion.
+- No borrar historial al migrar de ag_skip a perfil especifico.
+
+================================================================================
+17. RESUMEN EJECUTIVO PARA CODEX / CLAUDE
+================================================================================
+
+Crear `lib/core/crops/avocado_tree/avocado_tree_yield_reference.dart` siguiendo el patron de arboles existentes.
+
+Estructura minima:
+- `YieldRange`.
+- `AvocadoTreeYieldReference`.
+- `AvocadoProductionState`.
+- `AvocadoManagementLevel`.
+- `AvocadoIrrigationLevel`.
+- `AvocadoBloomSetStatus`.
+- `AvocadoPollinationStatus`.
+- `AvocadoCropLoadStatus`.
+- `AvocadoCommercialQualityRisk`.
+- `AvocadoStressSeverity`.
+- `AvocadoTreeStressMemory`.
+- `AvocadoDensitySystem`.
+- `AvocadoTreeYieldProjection`.
+- `avocadoYieldReferenceByProfile`.
+- `treesPerHaFromSpacing`.
+- `tonHaFromKgTree`.
+- `kgTreeFromTonHa`.
+- `_normalizeAvocadoProfileId`.
+- `_blocksYield`.
+- `_inferProductionState`.
+- `_productionStateFactors`.
+- `_managementFactor`.
+- `_carePercentFactor`.
+- `_irrigationFactor`.
+- `_bloomSetFactor`.
+- `_pollinationFactor`.
+- `_cropLoadFactor`.
+- `resolveAvocadoTreeYield`.
+
+Agregar capa simple en `TreeYieldReferenceCatalog`:
+- `avocado_tree_ag_skip_young` 2-10 kg/arbol.
+- `avocado_tree_ag_skip_first` 6-25 kg/arbol.
+- `avocado_tree_ag_skip_full` 18-75 kg/arbol.
+- fallback `kCropAvocadoTree => kAgSkip`.
+
+Regla central:
+kg/arbol x arboles/ha = t/ha, siempre con cap por densidad.
+
+================================================================================
+18. FUENTES CONSULTADAS / TRAZABILIDAD
+================================================================================
+
+Fuentes internas BIO-G:
+- Estandar BIO-G para Integracion de Arboles Perennes v1.5 con addendum.
+- 01_Ficha_Tecnica_Universal_BioG_Aguacate_AG_v1_Reforzada.txt.
+- 02_Perfil_SKIP_BioG_Aguacate_AG_SKIP_v1_Reforzado.txt.
+- 03_Rendimiento_Aproximado_BioG_Mango_MG_v1_Reforzado.txt.
+- Revision de lib.zip: `tree_yield_reference_catalog.dart`, `yield_projection_engine_proposed.dart`, `apple_tree_yield_reference.dart`, `lemon_tree_yield_reference.dart`, `orange_tree_yield_reference.dart`, `walnut_tree_yield_reference.dart`, `pistachio_tree_yield_reference.dart`.
+
+Fuentes externas principales:
+- SIAP/SADER, Anuario Estadistico de la Produccion Agricola / Cierre agricola.
+- SIAP-SADER, Cierre de la produccion 2015-2019 Aguacate.
+- SENASICA/SIAP, impacto economico potencial de Xyleborus glabratus / Raffaelea lauricola en aguacate Michoacan.
+- Hass Avocado Board, Country Profile Mexico 2025.
+- UF/IFAS, Avocado Growing in the Florida Home Landscape.
+- UF/IFAS, Establishment Cost of Avocados in South Florida.
+- UC ANR, Avocado Flowering and Pollination.
+- UC ANR Ventura County, When to pick avocados.
+- UC Riverside, Avocado Variety Collection.
+- California Avocado Commission / Lovatt / Garner / UCR, Alternate Bearing of Hass Avocado.
+- Scielo / Agrociencia, Phenology of Mendez avocado in southern Jalisco, Mexico.
+- Estudios y reportes de alta densidad de aguacate California/San Diego.
+- Foros, redes y grupos de productores usados solo para lenguaje UX, no para umbrales.
+
+================================================================================
+FIN DEL DOCUMENTO 03
+================================================================================

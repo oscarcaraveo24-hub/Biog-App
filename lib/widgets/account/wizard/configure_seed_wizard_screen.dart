@@ -9,6 +9,11 @@ import 'package:bio_g/core/crops/maize/maize_catalog.dart';
 import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_assets.dart';
+import 'package:bio_g/core/crops/orange_tree/orange_tree_assets.dart';
+import 'package:bio_g/core/crops/lemon_tree/lemon_tree_assets.dart';
+import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
+import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -1468,6 +1473,16 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return PeachTreeAssets.cropIcon;
       case CropCatalog.walnutTreeCropId:
         return WalnutTreeAssets.cropIcon;
+      case CropCatalog.pistachioTreeCropId:
+        return PistachioTreeAssets.cropIcon;
+      case CropCatalog.orangeTreeCropId:
+        return OrangeTreeAssets.cropIcon;
+      case CropCatalog.lemonTreeCropId:
+        return LemonTreeAssets.cropIcon;
+      case CropCatalog.mangoTreeCropId:
+        return MangoTreeAssets.cropIcon;
+      case CropCatalog.avocadoTreeCropId:
+        return AvocadoTreeAssets.cropIcon;
       default:
         return _genericCropIconPath;
     }
@@ -1483,6 +1498,16 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return PeachTreeAssets.cropIcon;
       case CropCatalog.walnutTreeCropId:
         return WalnutTreeAssets.cropIcon;
+      case CropCatalog.pistachioTreeCropId:
+        return PistachioTreeAssets.cropIcon;
+      case CropCatalog.orangeTreeCropId:
+        return OrangeTreeAssets.cropIcon;
+      case CropCatalog.lemonTreeCropId:
+        return LemonTreeAssets.cropIcon;
+      case CropCatalog.mangoTreeCropId:
+        return MangoTreeAssets.cropIcon;
+      case CropCatalog.avocadoTreeCropId:
+        return AvocadoTreeAssets.cropIcon;
       default:
         return ConfigureSeedWizardAssets.categoryTree;
     }
@@ -1498,6 +1523,16 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return peachTreeProfileIcon(profileId);
       case CropCatalog.walnutTreeCropId:
         return walnutTreeProfileIcon(profileId);
+      case CropCatalog.pistachioTreeCropId:
+        return pistachioTreeProfileIcon(profileId);
+      case CropCatalog.orangeTreeCropId:
+        return orangeTreeProfileIcon(profileId);
+      case CropCatalog.lemonTreeCropId:
+        return lemonTreeProfileIcon(profileId);
+      case CropCatalog.mangoTreeCropId:
+        return mangoTreeProfileIcon(profileId);
+      case CropCatalog.avocadoTreeCropId:
+        return avocadoTreeProfileIcon(profileId);
       default:
         return _treeCropIcon(cropId);
     }

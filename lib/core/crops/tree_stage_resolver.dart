@@ -4,6 +4,11 @@ import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_assets.dart';
+import 'package:bio_g/core/crops/orange_tree/orange_tree_assets.dart';
+import 'package:bio_g/core/crops/lemon_tree/lemon_tree_assets.dart';
+import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
+import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 
@@ -75,6 +80,21 @@ class PerennialStageResolver {
     }
     if (canonicalCropId == CropCatalog.walnutTreeCropId) {
       return walnutTreeStageImageOrNeutral(stageId);
+    }
+    if (canonicalCropId == CropCatalog.pistachioTreeCropId) {
+      return pistachioTreeStageImageOrNeutral(stageId);
+    }
+    if (canonicalCropId == CropCatalog.orangeTreeCropId) {
+      return orangeTreeStageImageOrNeutral(stageId);
+    }
+    if (canonicalCropId == CropCatalog.lemonTreeCropId) {
+      return lemonTreeStageImageOrNeutral(stageId);
+    }
+    if (canonicalCropId == CropCatalog.mangoTreeCropId) {
+      return mangoTreeStageImageOrNeutral(stageId);
+    }
+    if (canonicalCropId == CropCatalog.avocadoTreeCropId) {
+      return avocadoTreeStageImageOrNeutral(stageId);
     }
     return 'assets/icons/wizard/ic_tree.png';
   }

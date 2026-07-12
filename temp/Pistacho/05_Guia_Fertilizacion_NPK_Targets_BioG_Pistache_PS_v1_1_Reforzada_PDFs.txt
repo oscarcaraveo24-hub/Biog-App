@@ -1,0 +1,2503 @@
+BIO-G
+05_GUIA_FERTILIZACION_NPK_TARGETS_BIOG_PISTACHE_PS_V1_1_REFORZADA_PDFS
+Cultivo: Pistache / Pistacho / Pistachio tree
+Nombre científico: Pistacia vera L.
+cropId esperado: crop_pistachio_tree
+cropKey esperado: pistachio_tree
+profilePrefix: PS
+Documento: 05 de 05 — Fertilización NPK, StageTargets, StageWeights y motor NPK por etapa
+Versión: v1.1 reforzada con PDFs CIAG/Factor Humus/Visual + Herogra + investigación universitaria + revisión del motor BIO-G
+Formato: TXT técnico cableable para Flutter/Dart
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+IMPORTANTE:
+Este documento NO es una receta agronómica local.
+No sustituye análisis de suelo, agua, tejido/foliar, asesoría regional ni normatividad.
+BIO-G v1 debe orientar, ponderar riesgo, mejorar lectura de sensores y pedir confirmación.
+No debe prometer rendimiento, no debe indicar dosis comerciales cerradas y no debe sustituir un plan de fertirriego construido con laboratorio, análisis foliar, agua de riego y asesoría local.
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+La guía NPK del pistache es una de las piezas más importantes de BIO-G porque el cultivo no responde a fertilizante como una hortaliza anual. Pistache es un árbol perenne, caducifolio, dioico, alternante, de raíz profunda, con alta memoria fisiológica, muy dependiente de frío invernal, polinización macho-hembra y demanda fuerte de agua + K durante llenado.
+
+Para BIO-G v1, la fertilización del pistache debe modelarse así:
+
+1) Prioridades relativas N-P-K por etapa fisiológica.
+2) Targets medibles del sensor:
+   - soilMoisture
+   - soilTemp
+   - ph
+   - ec
+   - resistance
+   - n
+   - p
+   - k
+3) Mensajes UX seguros, humanos y accionables.
+4) Confianza variable según etapa, perfil, sensor, estado del árbol, macho/polinizador y existencia de análisis.
+5) Memoria multianual: frío, floración, cuajado, llenado, salinidad, defoliación y postcosecha afectan el siguiente ciclo.
+6) Regla “agua/raíz/salinidad primero”: no empujar NPK si humedad, EC, pH, temperatura de suelo o compactación están mal.
+7) Regla “carga manda”: en año ON el árbol demanda más N/K; en año OFF o con baja carga no se debe empujar igual.
+8) Regla “no todo kg vale igual”: NPK debe ayudar a llenado, split/open, kernel y calidad, no sólo a follaje.
+
+Regla más importante:
+- MÁS N NO ES MÁS PISTACHE.
+- MÁS K NO ES AUTOMÁTICAMENTE MÁS GRANO.
+- P casi nunca debe ser protagonista en adulto sin análisis.
+- B/Zn/Cu/Ca/Mg/Na/Cl son contexto crítico, pero NO sensores obligatorios BIO-G v1.
+- Si EC está alta, el motor debe bajar confianza en cualquier recomendación nutrimental.
+
+================================================================================
+0.1. BASES USADAS
+================================================================================
+
+A) Documentos BIO-G internos usados:
+- Estandar BIO-G para integración de árboles perennes v1.5 con addendum.
+- 01_Ficha_Tecnica_Universal_BioG_Pistache_PS_v1_Reforzada.
+- 02_Perfil_SKIP_BioG_Pistache_PS_SKIP_v1_Reforzado.
+- 03_Rendimiento_Aproximado_BioG_Pistache_v1_Reforzado.
+- 04_Riesgos_Cultivo_Sanidad_Estres_Memoria_BioG_Pistache_v1_Reforzado.
+- 05_Guia_Fertilizacion_NPK_Targets_BioG_Nogal_NG_v1_2_Reforzada_PDFs.
+- 05_Guia_Fertilizacion_NPK_Targets_BioG_Manzano_v1_1_mejorado.
+
+B) Código BIO-G revisado:
+- lib/core/agro/tree_agro_score_engine.dart
+- lib/core/agro/tree_nutrition_modifier.dart
+- lib/core/agro/nutrient_recommendation_engine.dart
+- lib/core/agro/nutrient_target_range_resolver.dart
+- lib/core/agro/npk_caps.dart
+- lib/core/agro/walnut_tree_nutrition_modifier.dart
+- lib/core/agro/walnut_tree_agro_score_engine.dart
+- lib/core/crops/walnut_tree/walnut_tree_universal_profile.dart
+- lib/core/crops/pear_tree/pear_tree_universal_profile.dart
+- lib/core/crops/peach_tree/peach_tree_universal_profile.dart
+- lib/core/crops/apple_tree/apple_tree_universal_profile.dart
+
+C) Fuentes técnicas externas fuertes:
+- UC ANR / California Pistachio Research — Nutrients & Fertilization.
+- UC Davis Fruit & Nut Research Information Center — Pistachio nutrients/fertilization.
+- CDFA FREP — California Fertilization Guidelines: Pistachio.
+- CIAG El Chaparrillo / IRIAF 2023 — Fertilización y riego del pistacho.
+- Factor Humus — Guía práctica de nuevas plantaciones y abonado del pistacho.
+- VisualNacert 2025 — Fertilizantes más usados en almendro y pistacho (uso UX/comercial, no como fuente de dosis).
+- Herogra Fertilizantes / Antonio Martín 2022 — La fertilización del pistacho (uso como síntesis comercial, no receta).
+- UC ANR / Craig Kallsen — Diagnosing and correcting nutrient deficiencies in pistachio.
+- Zeng, Brown et al. — Potassium Fertilization Affects Soil K, Leaf K Concentration, and Nut Yield and Quality of Mature Pistachio Trees.
+- Rosecrance, Weinbaum, Brown — N/P/K uptake and root growth in mature alternate-bearing pistachio.
+- UC ANR Phoebe Gordon — Micronutrients and Phosphorus Management in Pistachio.
+- UC ANR / Lovatt & Beede — Foliar Fertilization Strategies for Pistachios.
+- SJV Trees and Vines / UCCE — Pistachio Nitrogen Nutrition, Postharvest Nutrition of Nut Crops.
+- West Coast Nut — artículos de extensión/industria con citas a UC/UCCE para lenguaje de productor, salinidad y 4R.
+
+D) Foros/productores:
+Se revisan sólo para lenguaje UX y dudas reales: “pistache no abre”, “pistache vano”, “no llenó”, “puro follaje”, “hoja quemada por las orillas”, “se ve regado pero se estresa”, “no sé si hay macho”, “un año carga y otro no”.
+NO se usan foros para fijar umbrales técnicos.
+
+================================================================================
+0.2. CAMBIOS PRINCIPALES v1.1 — REFORZADA CON PDFs CIAG / FACTOR HUMUS / HEROGRA / VISUAL
+================================================================================
+
+Esta versión v1.1 fortalece el Documento 05 con los PDFs anexos y el bloque técnico
+aportado por el usuario. Estos ajustes TIENEN PRIORIDAD sobre la v1.0 si Codex/Claude
+encuentra una contradicción.
+
+Fuentes anexas usadas en esta versión:
+A) Guia-practica-de-nuevas-plantaciones-y-abonado-del-pistacho-Convencional-y-ecologico.pdf
+   - Fuente comercial/técnica. Útil para fenología, necesidades del cultivo, suelo, portainjertos,
+     B/Zn y lenguaje de plantación. No usar marcas ni programas de producto como receta.
+B) CIAG_pistacheros2023_abonoRiego.pdf — "Fertilización y riego del pistacho",
+   Esaú Martínez Burgos, IRIAF / CIAG El Chaparrillo, 2023.
+   - Fuente técnica fuerte para principios, suelo, salinidad, N/P/K, análisis foliar, fertirrigación,
+     riego deficitario controlado y plan real de abonado.
+C) GUIA-FERTILIZANTES-PISTACHO-Y-ALMENDRO-1.pdf — VisualNacert 2025.
+   - Fuente comercial/divulgativa. Usar sólo para UX, tipos de suelo, mensajes de monitoreo
+     y recordatorio de que las dosis/frecuencia dependen de análisis foliar y suelo.
+D) Texto Herogra / Antonio Martín 2022 entregado por el usuario.
+   - Fuente comercial con síntesis de California Fertilization Guidelines. Usar sólo como
+     refuerzo de distribución fenológica y extracciones, no como receta ni marcas.
+
+0.2.1. Decisión más importante añadida
+--------------------------------------
+La fertilización del pistache debe basarse en:
+- análisis de suelo;
+- análisis de agua;
+- análisis foliar;
+- etapa fenológica visible;
+- carga ON/OFF;
+- riego/secano;
+- salinidad/CE/pH/compactación;
+- producción esperada;
+- historial y reservas.
+
+BIO-G NO debe convertir una lectura de sensor NPK en plan de abonado cerrado.
+BIO-G debe decir: "el sensor orienta; el plan fino se valida con análisis".
+
+Mensaje UX obligatorio:
+"El pistache no se fertiliza a ciegas. Si vas a mover fuerte N, P o K, primero confirma suelo, agua y hoja. El sensor te da tendencia; el análisis te da decisión."
+
+0.2.2. Análisis de suelo, agua y hoja — nueva prioridad de motor
+----------------------------------------------------------------
+El PDF CIAG establece que antes de programar fertilización se deben conocer factores
+externos del suelo, plantación y normativa: profundidad, textura, pH, reservas de nutrientes,
+marco, portainjerto, calidad/cantidad de agua, edad y producción.
+
+Preplantación:
+- análisis de suelos para definir abonado de fondo P/K, materia orgánica y enmiendas;
+- textura e infiltración; en pistacho se señala como referencia >6-8 mm/hora;
+- pH, materia orgánica, CE, CIC, macro/micronutrientes, carbonatos/caliza activa;
+- revisar Verticillium, Phytophthora o nemátodos si hay sospecha;
+- revisar horizontes compactados, apelmazamiento y nivel freático;
+- análisis de agua: CE, SAR/RAS, nitratos/nutrientes disueltos y dureza/Fe si hay goteo.
+
+Plantación establecida:
+- análisis foliar como mejor método de diagnóstico del estado nutricional;
+- muestreo de 1/2 de julio a 1/2 de agosto en pistacho;
+- hojas extendidas del tercio medio del brote, por la mañana y sin contaminantes;
+- comparar resultados a lo largo del tiempo y por zonas de distinta producción;
+- repetir al menos cada 4-5 años y mantener base de datos;
+- en producción tecnificada, hacerlo anualmente o cuando el historial/síntomas lo justifiquen.
+
+Regla BIO-G:
+- Sin análisis foliar, la confianza de "deficiencia/exceso nutricional" nunca debe ser alta.
+- Si existe análisis foliar reciente, elevar confianza y permitir recomendaciones más concretas.
+- Si no existe análisis, el copy debe decir "revisar/confirmar", no "aplicar".
+
+Campos futuros:
+- hasRecentSoilAnalysis
+- hasRecentWaterAnalysis
+- hasRecentLeafAnalysis
+- lastLeafAnalysisDate
+- leafAnalysisWindowOk
+- waterEc
+- waterSar
+- soilOrganicMatter
+- calciumCarbonates
+- activeLime
+- infiltrationRateMmH
+- compactedHorizonKnown
+
+0.2.3. Suelo y salinidad — ajustes directos
+-------------------------------------------
+CIAG y la guía práctica coinciden en que el pistache necesita:
+- drenaje perfecto;
+- textura equilibrada;
+- suelo sin apelmazamiento;
+- preferencia por pH neutro o básico;
+- atención fuerte a suelos calizos, alcalinos, arcillosos o compactados.
+
+La guía práctica indica:
+- el pistacho prefiere suelos de textura media, franco o franco-arenosos;
+- suelos con más de 35% de arcilla fructifican peor y pueden ocasionar asfixia radicular;
+- el pH puede moverse entre 6 y 8;
+- a mayor profundidad efectiva, mejor producción y durabilidad.
+
+CIAG indica salinidad:
+- los patrones de pistacho son muy tolerantes al exceso de sales en términos relativos;
+- se reduce producción con suelos salinos CEe > 4.5 dS/m;
+- aguas salobres CE > 4-8 dS/m;
+- suelos sódicos PSI > 15.
+
+Decisión BIO-G:
+- Mantener mensaje de tolerancia relativa: pistache aguanta más sales que muchos frutales.
+- NO convertir tolerancia en permiso para fertilizar más.
+- Si ec sensor sube, bajar confianza NPK y elevar alerta por estrés osmótico.
+- Si EC alta + humedad baja: "sequía fisiológica aunque se riegue".
+- Si EC alta + N/K alto: "posible acumulación de sales/fertilizante".
+
+Ajuste de rangos de EC en motor:
+- <2.0 dS/m: zona baja/preferente.
+- 2.0-3.5 dS/m: observación.
+- 3.5-4.5 dS/m: alerta moderada, especialmente en plantación/llenado.
+- >4.5 dS/m: alerta fuerte por posible reducción de producción si se aproxima a CEe real.
+- >6.0 dS/m o tendencia ascendente + estrés visual: crítico.
+Nota:
+El sensor EC de campo no equivale siempre a CEe de laboratorio. Por eso no diagnosticar
+solo por sensor.
+
+0.2.4. pH, caliza y bloqueo de micronutrientes
+----------------------------------------------
+CIAG muestra que el pH controla disponibilidad de nutrientes. La guía práctica y el texto
+del usuario refuerzan que el pistacho tolera suelos calizos, pero el pH alto puede bloquear
+Fe, Zn, Cu, Mn, P y otros elementos.
+
+Reglas BIO-G:
+- pH 6.5-7.8: funcional para pistache.
+- pH 7.8-8.2: aceptable en calizo, pero activar contexto de Fe/Zn/P.
+- pH >8.2: observación alta.
+- pH >8.5: alerta fuerte de bloqueo/disponibilidad.
+- pH <6.0: observación por acidez relativa para pistache.
+
+Mensajes UX:
+- "Puede haber nutriente en el suelo, pero con pH alto no siempre está disponible."
+- "Si ves clorosis amarilla con nervaduras verdes en suelo calizo, no lo leas como falta de N: revisa hierro/zinc y pH."
+- "En suelos calizos, el sensor NPK puede marcar nutriente, pero la raíz no lo toma igual."
+
+0.2.5. Nitrógeno — distribución fenológica reforzada
+----------------------------------------------------
+Hechos incorporados:
+- N es motor de crecimiento, rendimiento y absorción de otros nutrientes.
+- CIAG reporta extracción aproximada de 25 kg N por tonelada de cosecha seca.
+- CIAG propone aplicar en primavera y fase de llenado; no a finales de verano.
+- CIAG: primeros años 20-35 kg N/ha; después 50 kg N/ha + 30 kg N/t de fruto como
+  referencia conceptual, ajustando suelo/agua/manejo.
+- CIAG: en años ON aumenta consumo de N 40-100% durante llenado.
+- CIAG: en años OFF se almacena en tejidos de reserva y se puede reducir en 1/3 frente
+  a ON.
+- CIAG: plantación adulta media 60-90 kg N/t de fruto; en secano poco profundo 40-50 kg/t.
+- Herogra/Brown-Siddiqui: en años ON aplicar al menos 80% durante crecimiento activo
+  hasta inicio de apertura; distribución conceptual 20% después de desborre, 30% desarrollo
+  de fruto, 30% llenado de grano y 20% maduración/inicio de postcosecha si hojas activas.
+- Herogra/Brown-Siddiqui: en años OFF, 50% del N antes de endurecimiento de cáscara y
+  el resto en julio/agosto; evitar N tardío desde septiembre por crecimiento vegetativo y
+  riesgo de retrasar latencia/heladas.
+
+Decisión BIO-G:
+- En v1, estos datos NO se muestran como receta.
+- Se usan para ponderar StageWeights y mensajes.
+- N alto no se celebra si hay baja carga, EC alta, humedad crítica o etapa tardía.
+- N en postcosecha sólo como contexto si hoja activa, raíz activa, soilTemp funcional y
+  no hay EC alta; si no, no accionable.
+- No empujar N a finales de verano/otoño si puede retrasar latencia, especialmente en
+  árbol joven o baja carga.
+
+Ajuste StageWeights de N:
+- budbreak: N medio-alto, pero revisar reservas; antes de hoja, poca absorción real.
+- vegetative_growth: N medio-alto si crecimiento útil, no vigor blando.
+- flowering: N medio, no protagonista; polinización/clima primero.
+- fruit_set: N medio, acompañando amarre.
+- fruit_fill: N medio-alto si hay carga ON y agua/EC bien; nunca igual que K.
+- harvest_maturity: N bajo-medio; exceso penaliza.
+- post_harvest: N bajo-medio condicionado a hoja activa y no tardío.
+
+0.2.6. Fósforo — no protagonista, pero no olvidarlo
+---------------------------------------------------
+Hechos incorporados:
+- CIAG: el P tiene papel clave en transporte de energía, rendimiento, calidad y tamaño del fruto.
+- CIAG: primeros años puede bastar el abonado de fondo.
+- CIAG: necesidades de plantación media: 6-15 kg P/t de fruto/año.
+- CIAG: en secano poco profundo: 4-10 kg P/año.
+- Para convertir P a P2O5, multiplicar por 2.3.
+- Herogra/Brown-Siddiqui: aprox. 7 kg P2O5/ha por tonelada de pistacho con cáscara procesado,
+  más extracción para órganos no reproductivos; ejemplo 120 árboles/ha -> +3.6 kg/ha.
+- Herogra: en año ON sólo una fracción pequeña de P se absorbe en primavera, gran parte durante
+  llenado; en OFF la proporción de primavera aumenta.
+
+Decisión BIO-G:
+- P no se recomienda por costumbre en adulto.
+- P bajo pesa fuerte en plantación, raíz, brotación, floración y primeras fases de desarrollo.
+- En adulto productivo, P se interpreta con pH, análisis de suelo/foliar y producción esperada.
+- P bajo + pH alto puede ser bloqueo, no falta real.
+- P alto + pH alto + síntomas de Zn/Fe = posible antagonismo/bloqueo, no corregir a ciegas.
+
+Ajuste StageWeights:
+- planting_transplant/root_establishment: P alto relativo.
+- budbreak/flowering: P medio-alto.
+- fruit_set: P medio.
+- fruit_fill: P medio-bajo; no dominar.
+- harvest/postharvest: P bajo-medio.
+
+0.2.7. Potasio — protagonista del llenado, split y calidad
+----------------------------------------------------------
+Hechos incorporados:
+- CIAG: K participa en enzimas y estomas, eleva resistencia al frío/sequía/estrés,
+  mejora calidad del fruto y porcentaje de abiertos.
+- CIAG advierte peligro de bloqueo con Ca y Mg.
+- CIAG: síntomas primero en hojas viejas, crecimiento lento y hojas pequeñas.
+- CIAG: demanda muy elevada durante llenado; en fertirrigación varias veces en mayo,
+  junio y julio.
+- CIAG: plantación media 30 kg K en año OFF a 75 kg K en año ON; secano poco profundo
+  20-30 kg K/año; K a K2O se multiplica por 1.2.
+- Herogra/Brown-Siddiqui: extracción aproximada de 64 kg K2O/ha por tonelada de producción;
+  en ON/OFF más del 90% de K se absorbe durante llenado; Beede recomienda 40% mayo,
+  40% junio y 20% julio como reparto conceptual.
+
+Decisión BIO-G:
+- K es el nutriente NPK con mayor peso en fruit_fill.
+- K alto sólo es bueno si EC, humedad, pH, Mg/Ca y carga están coherentes.
+- K alto + EC alta = riesgo salino.
+- K alto + síntomas Ca/Mg = posible antagonismo.
+- K bajo + alta carga + fruit_fill = alerta real de llenado/calidad, pero revisar agua primero.
+- K bajo + humedad crítica = mensaje de agua/raíz antes que fertilización.
+
+Ajuste StageWeights:
+- fruit_set: K medio-alto.
+- fruit_fill: K muy alto/protagonista.
+- harvest_maturity: K medio-alto, calidad final pero no exceso.
+- post_harvest: K medio si hoja activa y reservas; no si EC alta.
+
+0.2.8. Boro, Zinc, Cobre, Hierro y Calcio — contexto obligatorio
+----------------------------------------------------------------
+Boro:
+- La guía práctica remarca B porque aumenta cuajado, porcentaje de abiertos y disminuye frutos vacíos.
+- CIAG: B influye en floración, cuajado y porcentaje de abiertos; también advierte toxicidad.
+- Herogra/texto usuario: B en brotación/floración y nuevamente alrededor de llenado/postcosecha como
+  contexto, siempre con análisis.
+
+Reglas:
+- B no es sensor v1.
+- No recomendar B automáticamente; en zonas semiáridas puede haber toxicidad.
+- Activar contexto B en dormancia tardía/budbreak/flowering/fruit_set.
+- Si hay mala floración/cuajado, revisar primero macho/hembra, frío, viento, lluvia y helada; luego B/análisis.
+
+Zinc y Cobre:
+- CIAG: deficiencias en suelos alcalinos, sobre todo jóvenes; mejor vía foliar en primavera.
+- Guia práctica y Visual: Zn útil en brotación uniforme y suelo calizo.
+- Regla: Zn/Cu son contexto, no sensores. Activar con pH alto, hojas pequeñas, entrenudos cortos, brotes débiles.
+
+Hierro:
+- CIAG: influye en peso final; deficiencias en suelos calcáreos; clorosis férrica.
+- Texto usuario: uso de quelatos de hierro es común para evitar clorosis férrica.
+- Regla BIO-G: si clorosis internerval + pH alto/caliza, no culpar NPK; mostrar "posible Fe bloqueado".
+
+Calcio:
+- CIAG: estimula crecimiento.
+- Visual/usuario: calcio aparece como apoyo de calidad/estructura y complemento en engorde.
+- Regla BIO-G: Ca no es NPK v1. Mencionarlo como contexto de pared/estructura/estrés y posible antagonismo con K/Mg,
+  pero no inventar medición ni recomendación de Ca.
+
+0.2.9. Fertirrigación, secano y compatibilidad de fertilizantes
+---------------------------------------------------------------
+Fertirrigación:
+- CIAG indica controlar pH y CE en la disolución nutritiva.
+- Evitar pH de solución nutritiva <5 y >6.5 por disponibilidad/daño potencial.
+- No mezclar fertilizantes cálcicos o con Mg con sulfatos o fosfatos.
+- En riego por goteo, fraccionar dosis pequeñas durante campaña.
+- Herogra separa secano/regadío y recomienda adaptar distribución por fase.
+
+Secano:
+- En secano, priorizar humedad disponible y lluvia de primavera.
+- No pedir respuesta rápida de fertilización si no hay agua para mover nutrientes.
+- Fertilización de fondo/primavera depende de lluvia y suelo.
+- En secano pobre, CIAG da referencias menores por tonelada y menos intensivas; BIO-G debe bajar confianza y
+  no usar calendario de California tecnificado como default.
+
+Regadío:
+- Fraccionar N/K según fenología.
+- Controlar EC de solución y de bulbo.
+- Si agua aporta nitratos u otros nutrientes, descontar en modo avanzado.
+- Si agua es salina, no interpretar K/N alto como automáticamente disponible.
+
+Reglas de motor:
+- `irrigationSystem == drip` aumenta confianza de fraccionamiento.
+- `irrigationSystem == rainfed` baja confianza y bloquea recomendaciones fuertes si soilMoisture está baja.
+- `waterNitrateKnown` puede reducir necesidad aparente de N.
+- `waterEcHigh` baja confianza NPK.
+- `fertigationSolutionPhOutOfRange` genera warning, no dosis.
+
+0.2.10. Riego como parte del motor NPK
+-------------------------------------
+Aunque este documento es NPK, CIAG deja claro que riego y fertilización no se separan en pistache:
+- el riego mejora calidad del fruto;
+- puede aumentar producciones hasta 3x o 4x respecto a secano;
+- disminuye periodo improductivo;
+- pero también favorece hongos si se maneja mal;
+- plantación adulta media interior peninsular: 3000-4000 m3/ha/año como referencia;
+- lo ideal son riegos frecuentes y con poca dotación, superficie mojada amplia y profundidad menor a 1 m;
+- aplicar dotaciones extra para lavado de sales;
+- usar sondas/mapas de humedad en sistemas avanzados;
+- riego deficitario controlado por fases:
+  Fase I: floración - máximo tamaño de fruto.
+  Fase II: máximo fruto - crecimiento del grano.
+  Fase III: crecimiento de grano - recolección.
+
+Decisión BIO-G:
+- Agua manda sobre NPK.
+- Si soilMoisture está mal, cualquier recomendación NPK baja confianza.
+- Fruit_fill/kernel growth exige humedad funcional; K sin agua no llena pistache.
+- EC alta puede necesitar estrategia de lavado; la app no debe responder sólo "fertiliza".
+
+0.2.11. Programas comerciales y marcas — uso permitido y prohibido
+------------------------------------------------------------------
+Las guías Factor Humus, Herogra y VisualNacert incluyen marcas, productos y programas.
+Para BIO-G:
+- NO hardcodear marcas.
+- NO copiar programas comerciales como recomendación visible.
+- NO usar dosis comerciales de productos como regla universal.
+- SÍ usar los documentos para:
+  - lenguaje de fases;
+  - importancia de análisis;
+  - N/P/K por etapa;
+  - tipos de suelo;
+  - recordatorio de B/Zn/Fe/Ca/Mg;
+  - diferencia secano/regadío;
+  - necesidad de fraccionar fertirriego;
+  - UX de bloqueo por pH/salinidad.
+
+0.2.12. Overrides concretos para el motor
+-----------------------------------------
+A) NpkCaps:
+Mantener v1.0 como default seguro:
+- N cap: 130.0
+- P cap: 95.0
+- K cap: 220.0
+
+No subir caps por dosis kg/ha. Cap NO es dosis; sólo normaliza lectura del sensor.
+
+B) StageTargets:
+Mantener contrato AgroRange v1.5.
+Ajustes de énfasis:
+- flowering: subir contexto B/Zn/Fe y bajar peso de NPK duro si macho/hembra/clima están dudosos.
+- fruit_set: P/K medio-alto, N moderado, B contexto.
+- fruit_fill: K protagonista; N acompañante sólo con carga y agua; P bajo-medio.
+- harvest_maturity: K medio-alto pero vigilar EC; N bajo.
+- post_harvest: reservas y hoja activa; evitar N tardío si entra septiembre/latencia o riesgo de madera inmadura.
+
+C) StageWeights:
+- Agregar `boronContextWeight` fuerte en budbreak/flowering/fruit_set.
+- Agregar `zincCopperContextWeight` fuerte en budbreak/vegetative_growth/young trees.
+- Agregar `ironChlorosisContextWeight` si pH alto/caliza.
+- Agregar `waterNpkCouplingWeight` muy fuerte en fruit_set/fruit_fill.
+- Agregar `salinityNpkBlockWeight` muy fuerte en root_establishment/fruit_fill.
+- Agregar `onOffBearingNutritionWeight` fuerte en fruit_fill/post_harvest.
+
+D) evaluateTelemetry:
+Antes de sugerir subir N/P/K, revisar en este orden:
+1. etapa visible;
+2. estado perenne;
+3. carga ON/OFF;
+4. macho/hembra y cuajado si etapa flowering/fruit_set;
+5. soilMoisture;
+6. ec/salinidad;
+7. pH y posible bloqueo;
+8. resistance/compactación;
+9. soilTemp;
+10. n/p/k relativo;
+11. análisis foliar/suelo/agua si existen;
+12. edad/juvenil/adulto;
+13. secano/regadío;
+14. memoria de postcosecha y alternancia.
+
+E) NutrientRecommendationEngine:
+- Si `hasRecentLeafAnalysis == false`, no usar palabras de certeza: "deficiencia confirmada".
+- Si `ec.status.isHighOrCritical`, bloquear sugerencias de aumentar N/K y hablar de sales/raíz.
+- Si `ph > 8.2`, hablar de bloqueo de Fe/Zn/P y no sólo falta de N/P.
+- Si `soilMoisture.isCriticalLow`, priorizar agua antes que fertilizante.
+- Si `soilMoisture.isCriticalHigh`, priorizar aireación/drenaje antes que fertilizante.
+- Si `cropLoadStatus == low` y N alto, advertir vigor inútil.
+- Si `cropLoadStatus == high` y K bajo en fruit_fill, alertar llenado/calidad.
+- Si `bearingCycle == offYear`, no empujar N igual que año ON; usar reservas y crecimiento vegetativo controlado.
+- Si `dateContext >= September` o `lateSeasonRisk == true`, evitar N tardío salvo asesoría y hoja activa; advertir riesgo de latencia/helada.
+
+0.2.13. Mensajes UX nuevos obligatorios
+---------------------------------------
+General:
+"El pistache se fertiliza con análisis, no con ganas. El sensor ayuda a ver tendencia, pero suelo, agua y hoja mandan."
+
+Suelo/agua:
+"Antes de subir NPK, revisa si la raíz puede trabajar: humedad, sales, pH y compactación."
+
+pH alto:
+"En suelo calizo puede haber nutriente, pero no estar disponible. Si ves clorosis, revisa hierro/zinc y análisis foliar."
+
+EC alta:
+"El pistache aguanta más sales que otros frutales, pero si la CE sube, el llenado y la raíz lo pagan."
+
+N:
+"Más nitrógeno no es más pistache. Si hay poca carga o ya va tarde la temporada, puede irse a puro follaje."
+
+K:
+"El potasio pesa fuerte en llenado y calidad, pero con salinidad alta puede sumar estrés."
+
+P:
+"El fósforo ayuda a raíz y energía, pero en adulto no se aplica por costumbre; se confirma con suelo/hoja."
+
+B:
+"El boro ayuda a floración, cuajado y abiertos, pero también puede ser tóxico. No lo muevas fuerte sin análisis."
+
+Zn/Cu/Fe:
+"En suelos alcalinos, zinc, cobre y hierro pueden bloquearse. Si el árbol se ve amarillo o con hojas chicas, confirma con análisis."
+
+Secano:
+"En secano, el fertilizante sólo trabaja si hay humedad para moverlo. Si el suelo está seco, primero manda el agua."
+
+Fertirriego:
+"En goteo, mejor poco y fraccionado que un golpe fuerte. Revisa CE y pH de la solución."
+
+Postcosecha:
+"Postcosecha no es apagar el árbol. Si la hoja sigue activa, el árbol todavía arma reservas para el próximo año."
+
+================================================================================
+0.3. TABLA v1.1 — REPARTO CONCEPTUAL NPK POR FASE
+================================================================================
+
+NO ES RECETA. Es reparto conceptual para mensajes, StageWeights y modo avanzado.
+
+Fase BIO-G | Fenología pistachera | N | P | K | Micros/contexto | Regla
+---|---|---|---|---|---|---
+dormancy | parada invernal | bajo | bajo/planificación | bajo/planificación | B/Fe/Zn según análisis | planear, no empujar NPK por sensor
+budbreak | yemas hinchadas/desborre | medio-alto | medio | medio | B/Zn/Cu/Fe | reservas + arranque; poca absorción antes de hoja
+flowering | floración | medio | medio | medio | B fuerte, Zn/Cu/Fe contexto | macho/hembra/clima primero; NPK no arregla falta de polen
+fruit_set | cuajado | medio | medio-alto | medio-alto | B contexto | amarre; agua y salinidad mandan
+fruit_fill | crecimiento fruto/grano | medio-alto si ON | medio | muy alto | Ca/Mg/Fe/Zn contexto | K protagonista; N acompaña carga; no cosecha
+harvest_maturity | madurez/recolección | bajo | bajo | medio-alto | calidad y EC | evitar N tardío; vigilar salinidad
+post_harvest | postcosecha con hoja activa | bajo-medio condicional | bajo-medio | medio | reservas | sólo si hoja/raíz activas y no tarde/EC alta
+
+================================================================================
+0.4. NUEVOS TESTS v1.1 RECOMENDADOS
+================================================================================
+
+21) pistachio_analysis_required_for_strong_npk_advice_test
+Input: no soil/water/leaf analysis + N/P/K readings abnormal.
+Esperado: mensaje "confirmar con análisis", no recomendación cerrada.
+
+22) pistachio_ciag_leaf_sampling_window_test
+Input: hasRecentLeafAnalysis false + July/August context.
+Esperado: sugerir análisis foliar 1/2 julio a 1/2 agosto.
+
+23) pistachio_salinity_threshold_ciag_test
+Input: ec approximates >4.5 dS/m + fruit_fill.
+Esperado: alerta fuerte por sales; bloquear subir K/N.
+
+24) pistachio_high_ph_iron_zinc_block_test
+Input: pH >8.2 + clorosis reportada + N normal.
+Esperado: no decir falta N; mencionar Fe/Zn/P bloqueo.
+
+25) pistachio_k_mg_ca_antagonism_test
+Input: K high + EC high or Ca/Mg symptoms.
+Esperado: advertencia antagonismo/salinidad; no celebrar K alto.
+
+26) pistachio_late_nitrogen_warning_test
+Input: harvest_maturity/post_harvest lateSeasonRisk true + N high/action request.
+Esperado: advertir vigor tardío, retraso de latencia, riesgo helada; no empujar N.
+
+27) pistachio_on_year_nut_fill_k_priority_test
+Input: onYear + fruit_fill + K low + water ok + EC ok.
+Esperado: K priority muy alta, mensaje de llenado/grano/abiertos.
+
+28) pistachio_off_year_not_same_n_test
+Input: offYear + low cropLoad + N high.
+Esperado: no tratar como año ON; advertir reservas/vigor controlado.
+
+29) pistachio_rainfed_blocks_aggressive_fertility_test
+Input: rainfed + soilMoisture low + P/K low.
+Esperado: prioridad humedad/lluvia; no "aplica fertilizante" directo.
+
+30) pistachio_fertigation_solution_ph_warning_test
+Input: fertigationSolutionPh <5 or >6.5.
+Esperado: warning por solución nutritiva; no cambiar StageTargets de suelo.
+================================================================================
+1. CONTRATO BIO-G QUE ESTE DOCUMENTO RESPETA
+================================================================================
+
+1.1. StageIds cerrados
+
+No crear nuevas etapas. Usar sólo:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Subventanas internas permitidas, SIN crear StageIds:
+- spring flush
+- 50% leaf expansion
+- bloom
+- fruit set
+- shell expansion
+- shell hardening
+- embryo/kernel fill
+- split/opening
+- postharvest reserve window
+
+1.2. Métricas cerradas
+
+Usar sólo:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+No inventar sensores:
+- zinc
+- boron
+- copper
+- calcium
+- magnesium
+- sodium
+- chlorine
+- leafN
+- leafK
+- chill
+- VPD
+- GDD
+
+Estos pueden aparecer como contexto o modo avanzado, no como lecturas obligatorias del dispositivo v1.
+
+1.3. Contrato AgroRange v1.5
+
+AgroRange conserva esta semántica:
+- lowMax = frontera crítica baja, NO inicio del óptimo.
+- optimalMin = inicio del rango óptimo.
+- optimalMax = fin del rango óptimo.
+- highMin = frontera crítica alta/exceso real.
+
+Queda prohibido:
+- lowMax == optimalMin sin justificación y test.
+- optimalMax == highMin sin justificación y test.
+- hacer que un valor apenas fuera del óptimo se clasifique como crítico.
+
+Para EC y resistance:
+- son métricas high-only.
+- usar lowMax: -0.01 y optimalMin: 0.0 como placeholder documentado.
+- el motor ya interpreta exceso por encima de optimalMax/highMin.
+
+1.4. Contrato etapa/NPK/copy/UI v1.5
+
+No mezclar etapas:
+- fruit_fill = crecimiento de pistache, shell, endurecimiento, kernel/grano, llenado, split futuro.
+- harvest_maturity = madurez, hull slip, pistache abriendo, cosecha.
+- post_harvest = reservas, hoja activa, siguiente ciclo.
+
+Error prohibido:
+No usar una rama `isLate` que junte fruit_fill + harvest_maturity si el copy dice “cosecha” o “madurez”.
+
+1.5. No usar sowingDate
+
+Pistache no gira alrededor de sowingDate. Se usa:
+- estado perenne;
+- etapa visible;
+- ancla temporal;
+- memoria de estrés;
+- perfil PS;
+- polinización macho-hembra como contexto.
+
+================================================================================
+2. PRINCIPIOS AGRONÓMICOS DEL PISTACHE PARA BIO-G
+================================================================================
+
+2.1. N y K son los protagonistas, pero el suelo manda
+
+En pistache, N y K son los nutrientes principales del programa NPK. El árbol demanda ambos de forma marcada y su consumo se relaciona con carga, alternancia y llenado.
+
+PERO:
+- N presente en el sensor no significa N disponible.
+- K alto en el sensor no significa K entrando al árbol.
+- Si la raíz está seca, saturada, fría, compactada o con EC alta, el árbol no aprovecha bien.
+- Si pH es alto/calizo, P/Zn/Fe/Cu pueden estar bloqueados aunque “existan” en suelo.
+
+Mensaje base BIO-G:
+“Puede haber nutriente en el suelo, pero si la raíz está peleando con sales, compactación o agua mal puesta, el pistache no lo aprovecha.”
+
+2.2. La carga ON/OFF cambia la demanda
+
+El pistache alterna. En año ON la demanda de N y K durante llenado aumenta. En año OFF parte de los nutrientes se va a madera/raíz/reservas, no a kernel.
+
+Regla BIO-G:
+- ON year + fruit_fill + K bajo = alerta fuerte.
+- ON year + fruit_fill + N bajo = alerta moderada/alta según agua/EC.
+- OFF year + N alto = cuidado con puro follaje.
+- OFF year + K alto + EC alta = riesgo de sales/desbalance.
+
+2.3. La absorción más importante ocurre durante llenado
+
+Fuentes UC/Tree Physiology reportan que gran parte de la absorción de N/P/K ocurre durante nut fill. En año ON, la absorción de N y K puede subir fuerte respecto a año OFF, y el destino principal es el desarrollo del embrión/kernel.
+
+Regla BIO-G:
+- fruit_fill es la ventana más pesada para K y muy importante para N.
+- fruit_set también necesita agua estable, K y P/N balanceado.
+- harvest_maturity no debe empujar N; debe cuidar calidad y no agravar sales.
+- post_harvest puede hablar de reservas, pero no convertirlo en receta automática de N.
+
+2.4. Leaf analysis es más confiable que sensor NPK para decisión fina
+
+Las guías de UC/CDFA usan análisis foliar de primavera y verano. El sensor BIO-G es lectura rápida de suelo, útil para tendencia y contexto; no reemplaza foliar.
+
+Regla BIO-G:
+- Si el sensor marca N bajo, pero el suelo está frío/seco/salino, hablar de absorción.
+- Si sensor marca P bajo en suelo calizo, hablar de disponibilidad y foliar/análisis, no de “aplicar P”.
+- Si sensor marca K bajo en fruit_fill y humedad/EC están bien, subir prioridad.
+- Si se dispone de foliar, el modo avanzado debe elevar confianza.
+
+2.5. P no debe sobrerrecomendarse
+
+UC/UCCE indica que las respuestas a fósforo aplicado en pistache han sido limitadas o raras; deficiencias documentadas en California son poco comunes y deben abordarse con análisis foliar.
+
+Regla BIO-G:
+- P pesa en plantación, raíz, brotación y floración.
+- P no domina en fruit_fill ni harvest_maturity.
+- P bajo con pH alto puede ser bloqueo, no falta real.
+- P alto o histórico de corrales/estiércol puede afectar disponibilidad de micronutrientes; no aplicar por costumbre.
+
+2.6. B/Zn/Cu son clave, pero no sensores v1
+
+Boro, zinc y cobre aparecen repetidamente como micronutrientes importantes en pistache. Boro es especialmente delicado: puede ser requerido y también tóxico. Zinc y cobre suelen limitarse en suelos alcalinos/calizos.
+
+Regla BIO-G:
+- Mostrar B/Zn/Cu como contexto en budbreak, flowering, fruit_set y early leaf expansion.
+- No inventar valor de B/Zn/Cu desde N/P/K.
+- No sugerir dosis cerradas.
+- Pedir foliar/lab si hay síntomas, baja floración, hoja chica, brotes deformes, mala cuaja o historial de toxicidad.
+
+2.7. Salinidad no es amiga; pistache sólo la aguanta mejor
+
+Pistache tolera salinidad más que muchos frutales, pero EC alta sigue siendo problema. Sodio, cloro y boro pueden acumularse en hojas y afectar rendimiento/calidad.
+
+Regla BIO-G:
+- EC alta bloquea recomendaciones fuertes de fertilización.
+- EC alta + humedad baja = sequía fisiológica.
+- EC alta + K/N alto = posible acumulación de sales/fertilizante.
+- hoja quemada de orillas no debe leerse automáticamente como K bajo; revisar Cl/Na/B/salinidad.
+
+================================================================================
+3. CAPAS DEL MODELO BIO-G
+================================================================================
+
+3.1. Capa A — Motor BIO-G v1
+
+Datos permitidos:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n/p/k relativos
+- etapa
+- estado perenne
+- perfil PS
+- historial de estrés
+
+Salida:
+- AgroScore
+- subíndices agua/temperatura/suelo/nutrición
+- alerts farmer-friendly
+- confidence
+- practicalRecommendationEs
+- suggestedAlertKeys
+
+3.2. Capa B — Modo avanzado con análisis
+
+Datos opcionales:
+- análisis de suelo;
+- análisis de agua;
+- análisis foliar primavera/verano;
+- textura;
+- materia orgánica;
+- carbonatos/caliza;
+- sistema de riego;
+- producción esperada;
+- árboles/ha;
+- portainjerto;
+- edad/vigor;
+- carga ON/OFF;
+- proporción macho-hembra;
+- split/open/blank/closed-shell.
+
+Salida:
+- mayor confianza;
+- sugerencias de consulta técnica;
+- rangos de referencia;
+- comparación plurianual.
+
+3.3. Capa C — Contexto no sensor v1
+
+Variables que BIO-G debe mencionar pero NO medir como obligatorias:
+- B
+- Zn
+- Cu
+- Ca
+- Mg
+- Mn
+- Fe
+- Na
+- Cl
+- materia orgánica
+- CEC
+- agua de riego
+- nitrate-N en agua
+- rootstock
+- chill
+- bloom weather
+- crop load
+- leaf analysis
+- postharvest leaf status
+
+================================================================================
+4. ESCALA INTERNA BIO-G PARA N/P/K RELATIVO
+================================================================================
+
+Los sensores NPK económicos pueden entregar lecturas relativas o ppm no calibrados por especie. BIO-G v1 normaliza N, P y K a escala 0.00–1.00 en documento, y 0–100 en código.
+
+Escala conceptual:
+- 0.00–0.20 = muy bajo
+- 0.20–0.35 = bajo
+- 0.35–0.50 = bajo-moderado
+- 0.50–0.65 = suficiente/moderado
+- 0.65–0.80 = alto útil según etapa
+- 0.80–1.00 = alto / posible exceso según etapa
+
+En código, StageTargets usa nIndex/pIndex/kIndex de 0 a 100.
+NutrientTargetRangeResolver convierte el índice a ppm comparables usando NpkCaps.
+
+================================================================================
+5. NpkCaps RECOMENDADOS PARA PISTACHE
+================================================================================
+
+Los caps NO son dosis. Sólo normalizan la lectura cruda para que el gauge N/P/K y el motor de prioridades no clasifiquen de forma absurda.
+
+Recomendación BIO-G v1:
+
+- N cap: 130.0
+- P cap: 95.0
+- K cap: 220.0
+
+Justificación:
+- N: pistache tiene alta demanda y manejo anual importante, pero el exceso genera puro vigor, sales, desbalance y contaminación. Cap 130 evita marcar como exceso una lectura funcional en etapas vegetativas/llenado, pero deja espacio para exceso real.
+- P: P no es protagonista adulto; deficiencias son menos comunes y su disponibilidad depende mucho de pH/suelo. Cap 95 mantiene P moderado y no lo infla.
+- K: K es protagonista del pistache: kernel, llenado, split/open, calidad, agua y alternancia. Estudios UC reportan alta demanda y respuestas a K en huertos productivos. Cap 220 evita penalizar lecturas funcionales de K en fruit_set/fruit_fill.
+
+Agregar en `lib/core/agro/npk_caps.dart`:
+
+```dart
+// Pistache (perenne, nuez). N y K son protagonistas; P rara vez domina adulto.
+// Cap NO es dosis: solo normaliza lectura cruda del sensor para el motor NPK.
+case 'pistachio_tree':
+case 'crop_pistachio_tree':
+case 'pistache':
+case 'pistacho':
+case 'pistachio':
+case 'pistachio_tree_ps':
+  return 130.0; // para N
+```
+
+En rama P:
+```dart
+case 'pistachio_tree':
+case 'crop_pistachio_tree':
+case 'pistache':
+case 'pistacho':
+case 'pistachio':
+  return 95.0;
+```
+
+En rama K:
+```dart
+case 'pistachio_tree':
+case 'crop_pistachio_tree':
+case 'pistache':
+case 'pistacho':
+case 'pistachio':
+  return 220.0;
+```
+
+================================================================================
+6. RANGOS FOLIARES DE REFERENCIA — MODO AVANZADO
+================================================================================
+
+NO mezclar estos valores con el sensor NPK de suelo.
+Foliar = lo que el árbol absorbió.
+Suelo = oferta/disponibilidad potencial.
+Sensor NPK = lectura rápida relativa.
+
+6.1. Referencia clásica UC / Beede para hojas de julio-agosto
+
+Tabla foliar orientativa para pistache maduro:
+
+- N: crítico 1.8%; sugerido 2.2–2.5%
+- P: crítico 0.14%; sugerido 0.14–0.17%
+- K: crítico 1.6%; sugerido 1.8–2.0%
+- Ca: crítico 1.3% (?); sugerido 1.3–4.0%
+- Mg: crítico 0.6% (?); sugerido 0.6–1.2%
+- Cl: sugerido 0.1–0.3%; valores altos son salinidad/toxicidad, no fertilidad
+- Mn: crítico 30 ppm; sugerido 20/30–80 ppm según fuente
+- B: crítico 90 ppm; sugerido 150–250 ppm
+- Zn: crítico 7 ppm; sugerido 10–15 ppm
+- Cu: crítico 4 ppm; sugerido 6–10 ppm
+
+6.2. Referencia complementaria en presentación UC/UCCE
+
+Algunas presentaciones de manejo reportan rangos algo más altos o ajustes:
+- N: 2.5–2.9%
+- K: 1.8–2.2%
+- B: 120–250 ppm
+- Cl: <0.2% o 0.1–0.3% según tabla/fuente
+- Mg: investigaciones recientes pueden sugerir critical más bajo que 0.6% en algunos casos.
+
+Decisión BIO-G:
+- Usar rango UC clásico como base visible.
+- No alarmar si una fuente actualizada difiere levemente.
+- Si hay foliar + rendimiento bueno + hoja sana, subir confianza aunque la lectura esté en borde.
+- Si hay foliar bajo + estrés visual + etapa sensible, subir alerta.
+
+6.3. Muestreo foliar recomendado
+
+Primavera:
+- 30–45 días después de full bloom.
+- Hojas de ramas expuestas no fructíferas.
+- 10 hojas por árbol.
+- 18 árboles o más por bloque.
+- 6–7 pies de altura, alrededor de la copa.
+- Sirve para usar modelos de predicción N/K de verano.
+
+Verano:
+- late July through August.
+- foliolos/hojas plenamente expandidas, subterminales, no fructíferas.
+- 10–20 árboles por bloque.
+- 4–10 hojas por árbol.
+- No muestrear hojas que recibieron aplicaciones foliares del nutriente a interpretar.
+
+Mensaje BIO-G:
+“Para afinar pistache de verdad, el foliar pesa más que una lectura rápida de NPK. El sensor ayuda a ver tendencia, pero el árbol dice la verdad en la hoja.”
+
+================================================================================
+7. REFERENCIAS DE DOSIS — SÓLO MODO AVANZADO, NO RECETA
+================================================================================
+
+7.1. UC ANR fertilization schedule — referencia de California
+
+ON year, lbs/acre:
+- N total aproximado: 200–225 lb/ac
+- K total aproximado: 110–200 lb/ac
+- ventanas: abril, junio, early August
+
+OFF year, lbs/acre:
+- N total aproximado: 100–113 lb/ac
+- K total aproximado: 36–100 lb/ac
+- ventanas: abril, junio, early August
+
+Uso BIO-G:
+- No mostrar como receta universal.
+- Usar para validar que ON year exige más N/K.
+- Usar para justificar factor de carga y alternancia.
+- Usar para evitar que PS-SKIP recomiende lo mismo en año bajo.
+
+7.2. K de investigación
+
+Estudio en Kerman maduro reportó:
+- 110–220 kg/ha K mejoró rendimiento/calidad.
+- 330 kg/ha K redujo rendimiento respecto al rango 110–220.
+- K foliar/suelo debe interpretarse con Ca/Mg/salinidad.
+
+Uso BIO-G:
+- K bajo en fruit_fill sí importa fuerte.
+- K alto no debe celebrarse si EC está alta o si hay antagonismo Ca/Mg.
+- Dosis altas sin análisis no se recomiendan.
+
+7.3. N por remoción/cosecha
+
+Fuentes de extensión mencionan manejo por presupuesto:
+- rendimiento esperado;
+- N en agua de riego;
+- N residual en suelo;
+- materia orgánica/cobertura;
+- eficiencia de riego/fertilización;
+- historial de huerto.
+
+Uso BIO-G:
+- En v1 no calcular dosis.
+- En modo avanzado futuro, considerar cropLoadStatus + yieldGoal + irrigationWaterN.
+- Si el agua trae nitrate-N, no sumar N como si el agua fuera cero.
+
+================================================================================
+8. REGLAS POR NUTRIENTE
+================================================================================
+
+8.1. NITRÓGENO — N
+
+Función principal:
+- brotación;
+- hoja funcional;
+- crecimiento de brotes;
+- fotosíntesis;
+- sostén de carga;
+- desarrollo de kernel;
+- reserva en tejidos perennes;
+- respuesta a año ON/OFF.
+
+Cuándo pesa más:
+- vegetative_growth;
+- flowering/fruit_set como soporte moderado;
+- fruit_fill si hay carga;
+- post_harvest sólo como contexto, no como receta automática.
+
+Deficiencia posible:
+- brotes cortos;
+- hojas pálidas;
+- hojas viejas amarillas y caída;
+- follaje escaso;
+- menor vigor;
+- menor rendimiento.
+
+Exceso posible:
+- puro follaje;
+- sombra;
+- baja eficiencia;
+- mayor susceptibilidad a enfermedades/cancros por vigor;
+- sales;
+- contaminación/lixiviación;
+- desbalance con K/Ca/Mg;
+- baja calidad si se empuja tarde.
+
+Reglas BIO-G:
+- N alto + baja carga = advertencia de vigor inútil.
+- N alto + EC alta = riesgo de sales/fertilizante acumulado.
+- N bajo + humedad baja = primero agua/raíz, no fertilizante.
+- N bajo + soilTemp fría = baja absorción; no diagnosticar deficiencia real.
+- N bajo + fruit_fill + carga alta + humedad/EC bien = prioridad alta.
+- N alto en harvest_maturity = no empujar; cuidar calidad y no retrasar manejo.
+- post_harvest: no asumir que pistache necesita N postcosecha; usar sólo si hay hoja activa, raíz activa, análisis y objetivo claro.
+
+Mensajes UX:
+- “Más nitrógeno no es más pistache; si no hay carga, se va a puro follaje.”
+- “Si el agua trae nitratos o el suelo ya tiene N, no cuentes el fertilizante como si fuera la única fuente.”
+- “En llenado, N ayuda si hay carga y raíz funcionando; si hay sales, primero baja el estrés.”
+
+8.2. FÓSFORO — P
+
+Función principal:
+- raíz;
+- energía;
+- arranque;
+- floración/cuaje como contexto;
+- soporte temprano.
+
+Cuándo pesa más:
+- planting_transplant;
+- root_establishment;
+- budbreak;
+- flowering.
+
+Reglas BIO-G:
+- P bajo en raíz/establecimiento pesa más que P bajo en cosecha.
+- P bajo + pH alto = posible bloqueo; no aplicar a ciegas.
+- P alto en suelo puede no ayudar y puede desbalancear micronutrientes.
+- En adulto, P no debe dominar si no hay análisis.
+- Documentar que deficiencias de P en pistache son raras en algunos sistemas; confirmar con foliar.
+
+Mensajes UX:
+- “El fósforo ayuda más al arranque y raíz; en adulto no lo metas por costumbre.”
+- “En suelo calizo, el problema puede ser disponibilidad, no que falte P.”
+- “Si el pistache no amarró, primero revisa frío, macho/hembra, viento y clima antes de culpar P.”
+
+8.3. POTASIO — K
+
+Función principal:
+- agua/estomas;
+- transporte de azúcares;
+- shell y kernel fill;
+- tamaño;
+- split/open;
+- calidad;
+- tolerancia a estrés;
+- año ON.
+
+Cuándo pesa más:
+- fruit_set;
+- fruit_fill;
+- harvest_maturity como calidad final;
+- post_harvest como reposición/reserva según análisis.
+
+Deficiencia posible:
+- hojas pequeñas/pálidas;
+- bordes quemados/curling;
+- menor crecimiento;
+- menor rendimiento;
+- kernel pobre;
+- más cerrados/blanks en contexto de estrés.
+
+Exceso/precaución:
+- K alto + EC alta = sales.
+- K alto puede bajar Ca/Mg en tejido.
+- KCl puede ser problemático si agua/suelo ya tienen Cl o poca lluvia/lavado.
+- K fuera de zona mojada no llega a raíz activa en microirrigación.
+
+Reglas BIO-G:
+- K bajo en fruit_fill es de las alertas NPK más importantes del pistache.
+- K bajo con humedad baja: hablar primero de agua, porque el K se mueve con agua/raíz.
+- K alto con EC alta: no celebrar; advertir acumulación.
+- K alto con Mg/Ca bajo/síntomas: advertir antagonismo.
+- Si el usuario reporta “no abre” o “vano”, no culpar sólo K: revisar agua, salinidad, carga, frío, polinización, NOW, cosecha y variedad.
+
+Mensajes UX:
+- “El potasio sí pesa en llenado, pero no trabaja solo: necesita raíz, agua y baja salinidad.”
+- “K alto con sales altas no es buena noticia; puede ser más presión osmótica.”
+- “El pistache se llena con hoja sana, agua, K y carga bien amarrada.”
+
+8.4. BORO — B, CONTEXTO CRÍTICO NO SENSOR
+
+Función:
+- floración;
+- polen/cuaje;
+- crecimiento de tejidos;
+- reproductivo.
+
+Reglas:
+- Pistache tiene alta demanda relativa de B.
+- B puede ser deficiente o tóxico según zona/agua/suelo.
+- No recomendar B sin análisis.
+- Si hay mala cuaja, revisar primero clima/frío/polinización y luego B con foliar.
+- B es inmóvil/limitado para remobilización en pistache; timing importa.
+
+Mensaje:
+“Boro puede ser clave en floración, pero también quema si te pasas. No se mueve como NPK; confírmalo con foliar/agua antes de corregir fuerte.”
+
+8.5. ZINC — Zn, CONTEXTO CRÍTICO NO SENSOR
+
+Función:
+- brotación;
+- crecimiento;
+- auxinas;
+- hoja;
+- entrenudos;
+- funcionamiento de brotes.
+
+Reglas:
+- pH alto/caliza baja disponibilidad.
+- Suelos alcalinos fijan Zn; foliar temprano suele ser más útil que suelo.
+- No inventar Zn desde P bajo o N bajo.
+- Urea foliar puede ayudar absorción de Zn/B según ensayos, pero BIO-G no debe recetar.
+
+Mensaje:
+“Si ves hoja chica, brote corto o roseta, no asumas nitrógeno: en pistache revisa zinc y pH.”
+
+8.6. COBRE — Cu, CONTEXTO NO SENSOR
+
+Función:
+- brotes;
+- hojas;
+- lignificación/enzimas;
+- deficiencias en zonas alcalinas según fuente.
+
+Reglas:
+- aparecer como contexto en micronutrientes, no como sensor.
+- confirmar con foliar.
+- no sugerir producto.
+
+8.7. CALCIO / MAGNESIO / SODIO / CLORO
+
+Ca:
+- estructura y balance; K alto puede reducir Ca en tejido.
+
+Mg:
+- clorofila/fotosíntesis; K alto puede reducir Mg.
+
+Na/Cl:
+- tóxicos/salinidad;
+- Cl alto en hoja puede quemar margen;
+- revisar agua de pozo y lixiviación.
+
+Regla BIO-G:
+Si hoja quemada en bordes + EC alta, no decir “falta K” primero. Decir:
+“Se parece a estrés salino o toxicidad; confirma agua/foliar antes de meter más fertilizante.”
+
+================================================================================
+9. STAGETARGETS OFICIALES PISTACHE PS — v1
+================================================================================
+
+Formato:
+- moisture/soilTemp/ph = métricas bilaterales.
+- ec/resistance = high-only.
+- nRel/pRel/kRel = índice relativo 0–100.
+- lowMax no es óptimo; es frontera crítica baja.
+- optimalMin/optimalMax = rango operativo.
+- highMin = frontera de exceso real / crítico alto.
+
+9.1. Targets por etapa — tabla humana
+
+Etapa | Moisture AW | SoilTemp °C | pH | EC dS/m | Resistance MPa | N index | P index | K index
+---|---|---|---|---|---|---|---|---
+planting_transplant | 42 / 55-75 / 86 | 8 / 12-26 / 33 | 5.8 / 6.5-7.8 / 8.4 | 0-2.0 / 3.5 | 0-1.6 / 2.4 | 5 / 15-30 / 70 | 20 / 50-72 / 90 | 15 / 35-55 / 85
+root_establishment | 42 / 55-76 / 86 | 8 / 12-28 / 34 | 5.8 / 6.5-7.8 / 8.4 | 0-2.0 / 3.5 | 0-1.6 / 2.4 | 10 / 20-40 / 75 | 20 / 55-75 / 90 | 18 / 38-60 / 85
+juvenile_vegetative | 38 / 50-78 / 88 | 8 / 14-31 / 38 | 5.8 / 6.5-7.8 / 8.5 | 0-2.5 / 4.5 | 0-1.8 / 2.6 | 28 / 55-78 / 92 | 15 / 35-58 / 85 | 25 / 45-70 / 90
+dormancy | 25 / 35-65 / 85 | -2 / 0-12 / 22 | 5.8 / 6.5-8.0 / 8.6 | 0-3.0 / 5.5 | 0-2.2 / 3.0 | 0 / 5-18 / 55 | 0 / 5-20 / 60 | 0 / 5-20 / 60
+budbreak | 38 / 50-76 / 88 | 7 / 12-28 / 36 | 5.8 / 6.5-7.8 / 8.4 | 0-2.5 / 4.5 | 0-1.8 / 2.6 | 25 / 45-65 / 85 | 20 / 40-62 / 85 | 25 / 45-68 / 90
+vegetative_growth | 38 / 50-78 / 88 | 8 / 15-32 / 39 | 5.8 / 6.5-7.8 / 8.5 | 0-2.8 / 4.8 | 0-1.9 / 2.7 | 35 / 55-75 / 92 | 15 / 35-55 / 80 | 35 / 55-75 / 92
+flowering | 42 / 55-78 / 88 | 8 / 14-30 / 37 | 5.8 / 6.5-7.8 / 8.5 | 0-2.6 / 4.5 | 0-1.8 / 2.6 | 25 / 40-60 / 85 | 25 / 45-65 / 88 | 35 / 55-75 / 92
+fruit_set | 45 / 58-80 / 90 | 10 / 16-32 / 39 | 5.8 / 6.5-7.8 / 8.5 | 0-2.6 / 4.5 | 0-1.8 / 2.6 | 30 / 45-65 / 88 | 20 / 35-55 / 80 | 45 / 65-85 / 96
+fruit_fill | 45 / 58-82 / 90 | 10 / 18-34 / 40 | 5.8 / 6.5-7.8 / 8.5 | 0-2.8 / 4.8 | 0-1.9 / 2.8 | 25 / 40-60 / 85 | 10 / 25-45 / 75 | 55 / 72-92 / 98
+harvest_maturity | 38 / 50-75 / 88 | 8 / 16-32 / 40 | 5.8 / 6.5-8.0 / 8.6 | 0-3.0 / 5.0 | 0-2.0 / 2.8 | 10 / 25-45 / 75 | 5 / 18-35 / 65 | 40 / 60-80 / 95
+post_harvest | 35 / 48-75 / 88 | 6 / 12-28 / 36 | 5.8 / 6.5-8.0 / 8.6 | 0-3.0 / 5.0 | 0-2.0 / 2.8 | 10 / 22-45 / 70 | 8 / 20-38 / 65 | 25 / 45-68 / 90
+unknown | 35 / 50-78 / 90 | 6 / 12-30 / 38 | 5.8 / 6.5-8.0 / 8.6 | 0-2.8 / 5.0 | 0-2.0 / 2.8 | 15 / 30-60 / 88 | 10 / 25-55 / 85 | 20 / 40-75 / 92
+
+Lectura de la tabla:
+- Moisture AW “42 / 55-75 / 86” significa: lowMax 42, optimalMin 55, optimalMax 75, highMin 86.
+- EC “0-2.0 / 3.5” significa high-only: optimal 0.0-2.0, critical high desde 3.5.
+- Resistance “0-1.6 / 2.4” significa high-only: optimal 0.0-1.6, critical high desde 2.4.
+
+9.2. Decisiones clave en targets
+
+- Pistache tolera algo de déficit, por eso moisture optimalMin no se sube tanto como manzano.
+- Root establishment no tolera saturación: highMin no debe ser muy alto.
+- Fruit_fill necesita agua estable, pero sin saturar raíz.
+- EC tolerable es mayor que en manzano, pero no se celebra.
+- K en fruit_fill es el índice más alto del cultivo.
+- N se mantiene moderado en fruit_fill: suficiente para carga, pero sin empujar puro vigor.
+- P cae después de floración; no domina en adulto.
+- Post_harvest conserva etapa viva, pero N no se vuelve automático.
+
+================================================================================
+10. STAGEWEIGHTS OFICIALES PISTACHE PS — v1
+================================================================================
+
+Pesos sugeridos para AgroScore por etapa. La suma puede variar; el motor normaliza.
+
+Etapa | moisture | soilTemp | pH | EC | resistance | N | P | K
+---|---:|---:|---:|---:|---:|---:|---:|---:
+planting_transplant | 0.28 | 0.12 | 0.10 | 0.20 | 0.20 | 0.03 | 0.05 | 0.02
+root_establishment | 0.30 | 0.12 | 0.10 | 0.20 | 0.18 | 0.03 | 0.05 | 0.02
+juvenile_vegetative | 0.22 | 0.12 | 0.10 | 0.15 | 0.14 | 0.17 | 0.05 | 0.05
+dormancy | 0.20 | 0.20 | 0.10 | 0.18 | 0.10 | 0.04 | 0.04 | 0.04
+budbreak | 0.20 | 0.16 | 0.10 | 0.14 | 0.12 | 0.14 | 0.08 | 0.08
+vegetative_growth | 0.20 | 0.12 | 0.09 | 0.14 | 0.10 | 0.18 | 0.05 | 0.12
+flowering | 0.24 | 0.16 | 0.08 | 0.14 | 0.10 | 0.10 | 0.10 | 0.12
+fruit_set | 0.26 | 0.12 | 0.08 | 0.14 | 0.10 | 0.10 | 0.06 | 0.18
+fruit_fill | 0.28 | 0.10 | 0.07 | 0.17 | 0.08 | 0.12 | 0.03 | 0.25
+harvest_maturity | 0.20 | 0.10 | 0.08 | 0.18 | 0.08 | 0.06 | 0.03 | 0.18
+post_harvest | 0.22 | 0.10 | 0.10 | 0.18 | 0.10 | 0.09 | 0.04 | 0.12
+unknown | 0.22 | 0.12 | 0.10 | 0.16 | 0.12 | 0.10 | 0.06 | 0.12
+
+Notas:
+- En planting/root, suelo manda: humedad, EC, resistance.
+- En flowering, clima/polinización no están en sensor; por eso el score no debe prometer cuajado por NPK.
+- En fruit_fill, K y agua dominan.
+- En harvest_maturity, K/EC/calidad pesan; N baja.
+- En post_harvest, reservas y hoja activa son contexto; si no hay hoja activa, bajar acción NPK.
+
+================================================================================
+11. PRIORIDADES NPK POR ETAPA
+================================================================================
+
+Etapa | N priority | P priority | K priority | Dominante | Nota UX
+---|---:|---:|---:|---|---
+planting_transplant | 0.18 | 0.78 | 0.45 | P | Raíz primero; no quemar con N.
+root_establishment | 0.25 | 0.80 | 0.50 | P | Raíz fina, oxígeno, baja salinidad.
+juvenile_vegetative | 0.72 | 0.45 | 0.55 | N | Formar árbol sin vigor blando tardío.
+dormancy | 0.05 | 0.05 | 0.05 | ninguno | No leer NPK agresivo; planear con análisis.
+budbreak | 0.68 | 0.55 | 0.55 | N | Arranque de hoja; Zn/B/Cu contexto.
+vegetative_growth | 0.75 | 0.35 | 0.65 | N | Hoja funcional; cuidado con puro follaje.
+flowering | 0.45 | 0.60 | 0.65 | K/P | No culpar NPK si falla polinización.
+fruit_set | 0.55 | 0.45 | 0.78 | K | Amarre, agua estable, carga futura.
+fruit_fill | 0.60 | 0.25 | 0.92 | K | Llenado de kernel: agua + K + hoja sana.
+harvest_maturity | 0.25 | 0.12 | 0.72 | K | Calidad final; no empujar N tarde.
+post_harvest | 0.35 | 0.20 | 0.55 | K | Reservas si hoja activa; no receta automática.
+unknown | 0.45 | 0.30 | 0.55 | K | Conservador; pedir etapa visible.
+
+================================================================================
+12. LECTURA BIO-G POR ETAPA
+================================================================================
+
+12.1. planting_transplant
+
+Prioridad real:
+- raíz, humedad estable, EC baja, suelo sin compactación.
+- P relativo alto.
+- N bajo.
+
+Mensaje UX:
+“Tu pistache está recién plantado. No lo empujes con nitrógeno: primero que agarre raíz, con humedad pareja, baja salinidad y suelo sin apretarlo.”
+
+N:
+- bajo/moderado.
+- exceso = riesgo de brote tierno y raíz quemada.
+
+P:
+- alto relativo como raíz/arranque.
+
+K:
+- apoyo medio.
+
+Bloqueos:
+- EC alta bloquea cualquier empuje.
+- resistance alta = raíz no explora.
+- moisture alta persistente = anoxia.
+
+12.2. root_establishment
+
+Mensaje UX:
+“El pistache está formando raíz. Si el suelo está duro, salino o demasiado mojado, no va a aprovechar el NPK aunque el sensor marque nutrientes.”
+
+N:
+- apoyo suave.
+P:
+- alto.
+K:
+- medio.
+
+Contexto:
+- rootstock y drenaje importan más que dosis.
+
+12.3. juvenile_vegetative
+
+Mensaje UX:
+“En pistache joven sí importa crecer, pero crecer parejo. Mucho N tarde puede dejar madera blanda y puro follaje.”
+
+N:
+- prioridad alta si hay agua/suelo bien.
+- exceso peligroso si después de media temporada o con EC alta.
+
+P:
+- medio.
+K:
+- medio-alto.
+
+Contexto:
+- Zn/Cu/B no sensores; vigilar hoja chica, brote corto, deformaciones.
+
+12.4. dormancy
+
+Mensaje UX:
+“Dormancia no es árbol muerto. Aquí NPK no manda; manda frío, reservas, suelo sano y planificación.”
+
+N/P/K:
+- prioridad baja.
+
+Acción:
+- no alertas agresivas por NPK.
+- análisis de suelo/agua/foliar histórico si se planea programa.
+
+12.5. budbreak
+
+Mensaje UX:
+“El pistache está arrancando. N ayuda a hoja, P ayuda arranque y K acompaña; pero si faltó frío, no lo arregla el fertilizante.”
+
+N:
+- alto moderado.
+P:
+- medio-alto.
+K:
+- medio.
+
+Contexto:
+- Zn/B/Cu importantes.
+- 50% leaf expansion es ventana técnica para foliares/micronutrientes, no sensor v1.
+
+12.6. vegetative_growth
+
+Mensaje UX:
+“El follaje es la fábrica del pistache, pero si hay poca carga y mucho N, el árbol se puede ir a puro verde.”
+
+N:
+- alto si hay crecimiento/productividad.
+- exceso con baja carga = alerta.
+
+P:
+- bajo-medio.
+K:
+- medio-alto.
+
+Bloqueos:
+- EC alta + N/K altos = sales.
+- pH alto + hoja chica = Zn/Fe/Cu, no asumir N bajo.
+
+12.7. flowering
+
+Mensaje UX:
+“En floración no gana el que tiene más NPK. Gana el que trae frío cumplido, macho compatible, hembra receptiva, viento y buen clima.”
+
+N:
+- moderado.
+P:
+- medio-alto.
+K:
+- medio-alto.
+
+Contexto:
+- B/Zn/Cu pueden importar, pero con análisis.
+- N alto no compensa falta de macho.
+- lluvia/humedad/viento/helada dominan.
+
+12.8. fruit_set
+
+Mensaje UX:
+“Ya se está amarrando el pistache. Aquí cuida agua estable, raíz y K; si hubo mala polinización, no lo corrige un golpe de fertilizante.”
+
+N:
+- moderado.
+P:
+- medio.
+K:
+- alto.
+
+Bloqueos:
+- humedad baja o alta = caída/estrés.
+- EC alta = baja absorción.
+
+12.9. fruit_fill
+
+Mensaje UX:
+“Esta es la ventana cara: el pistache se está llenando por dentro. Agua estable, hoja sana y potasio pesan más que empujar nitrógeno.”
+
+N:
+- moderado; alto sólo si carga alta y suelo bien.
+- N alto + baja carga = puro follaje.
+
+P:
+- bajo-medio.
+
+K:
+- máximo protagonista.
+- K bajo = alerta fuerte si agua/EC están bien.
+- K alto + EC alta = no celebrar.
+
+Contexto:
+- Kernel, split/open futuro, blanks, closed shell, calor y salinidad.
+- No usar copy de cosecha.
+
+12.10. harvest_maturity
+
+Mensaje UX:
+“Ahora sí hablamos de pistache abriendo, cerrados, vanos y calidad. No metas N tarde como si fueras a llenar lo que ya no llenó.”
+
+N:
+- bajo.
+P:
+- bajo.
+K:
+- medio-alto.
+
+Contexto:
+- NOW/mummies/early split/cosecha a tiempo.
+- EC alta afecta calidad y no debe empujarse fertilizante.
+
+12.11. post_harvest
+
+Mensaje UX:
+“El pistache no terminó al cosechar. Si queda hoja activa, el árbol está juntando reservas para el siguiente ciclo, pero no todo huerto necesita N postcosecha.”
+
+N:
+- bajo-moderado sólo con hoja activa, raíz activa, agua funcional, análisis y objetivo claro.
+
+P:
+- bajo.
+K:
+- medio, especialmente si hubo alta exportación y análisis lo justifica.
+
+Regla:
+- No cerrar cultivo.
+- Guardar memoria de estrés.
+- No recomendar N postcosecha como regla universal.
+
+12.12. unknown
+
+Mensaje UX:
+“Puedo leer el suelo, pero para afinar NPK necesito saber qué se ve: ¿flor, pistache amarrado, llenando, abriendo o después de cosecha?”
+
+Regla:
+- targets conservadores.
+- confidence baja/media.
+
+================================================================================
+13. MODIFICADORES POR PERFIL PS
+================================================================================
+
+Perfiles oficiales:
+- ps_skip
+- ps_01_kerman_peters
+- ps_02_golden_hills_randy
+- ps_03_lost_hills_randy
+- ps_04_sirora_compatible
+- ps_05_larnaka_mateur_low_chill
+
+13.1. ps_skip
+
+Grupo: generic.
+Regla:
+- No asume variedad, macho, portainjerto ni carga.
+- Baja confianza.
+- Alertas NPK conservadoras.
+
+Caution:
+“Pistache general: sin variedad ni macho confirmado, NPK orienta, pero no explica solo floración/cuajado.”
+
+13.2. ps_01_kerman_peters
+
+Grupo: kermanTraditional.
+Riesgos:
+- alto requerimiento de frío;
+- alternancia;
+- blanks/closed shell;
+- cosecha más tardía;
+- mayor exposición preharvest.
+
+Modificador:
+- K en fruit_fill +0.04 presión.
+- N alto con baja carga en vegetative/fruit_fill = alerta de vigor.
+- Postharvest reserve risk más fuerte después de ON year.
+
+Caution:
+“Kerman: si faltó frío o Peters no coincidió, no lo arreglas con NPK. En llenado manda K, agua y carga real.”
+
+13.3. ps_02_golden_hills_randy
+
+Grupo: goldenHillsEarly.
+Riesgos:
+- ciclo más temprano;
+- cosecha más temprana;
+- alto potencial de split/open si el manejo acompaña;
+- no confundir precocidad con menor demanda.
+
+Modificador:
+- adelantar ventanas de K/agua.
+- K en fruit_set/fruit_fill +0.05.
+- N tardío penaliza más porque el ciclo va más adelantado.
+
+Caution:
+“Golden Hills: entra antes; no esperes a tarde para sostener K y agua. Si ya va llenando, no conviertas el manejo en puro N.”
+
+13.4. ps_03_lost_hills_randy
+
+Grupo: lostHillsLargeKernel.
+Riesgos:
+- calibre grande exige llenado fuerte;
+- calidad depende de agua/K/cosecha;
+- alternancia posiblemente menor que Kerman, pero no desaparece.
+
+Modificador:
+- K protagonista +0.06 en fruit_fill.
+- water/EC weight se mantiene alto.
+- N alto con baja carga = alerta media.
+
+Caution:
+“Lost Hills: calibre y grano grande se pagan con agua, hoja y K. No metas K si la EC ya está alta.”
+
+13.5. ps_04_sirora_compatible
+
+Grupo: siroraIntermediate.
+Riesgos:
+- evidencia regional variable;
+- polinizador no hardcodeado;
+- confianza menor.
+
+Modificador:
+- no cambia targets, sólo baja confianza.
+- notas conservadoras.
+
+Caution:
+“Sirora: usa NPK con prudencia; confirma variedad, macho y análisis antes de empujar fuerte.”
+
+13.6. ps_05_larnaka_mateur_low_chill
+
+Grupo: mediterraneanLowChillRelative.
+Riesgos:
+- floración/cosecha más temprana;
+- helada tardía;
+- no significa tropical ni sin frío.
+
+Modificador:
+- adelantar ventanas de budbreak/flowering/fruit_set.
+- penalizar N tardío antes que Kerman.
+- confidence cap medio-bajo.
+
+Caution:
+“Bajo-frío relativo no es sin frío. Si brota temprano, cuida helada, floración y no empujes N tarde.”
+
+================================================================================
+14. DART SUGERIDO — UNIVERSAL PROFILE
+================================================================================
+
+Archivo esperado:
+- lib/core/crops/pistachio_tree/pistachio_tree_universal_profile.dart
+
+Estructura sugerida:
+
+```dart
+class PistachioTreeUniversalProfile {
+  const PistachioTreeUniversalProfile._();
+
+  static const AgroRange phActive = AgroRange(
+    lowMax: 5.8,
+    optimalMin: 6.5,
+    optimalMax: 7.8,
+    highMin: 8.5,
+  );
+
+  static const AgroRange phBase = AgroRange(
+    lowMax: 5.8,
+    optimalMin: 6.5,
+    optimalMax: 8.0,
+    highMin: 8.6,
+  );
+}
+
+class PistachioTreeStageNutrition {
+  const PistachioTreeStageNutrition({
+    required this.stageId,
+    required this.nPriority01,
+    required this.pPriority01,
+    required this.kPriority01,
+    required this.confidence,
+    required this.careNoteEs,
+  });
+
+  final String stageId;
+  final double nPriority01;
+  final double pPriority01;
+  final double kPriority01;
+  final String confidence;
+  final String careNoteEs;
+}
+```
+
+14.1. Perfil interno por etapa
+
+```dart
+class _PistachioStageProfile {
+  const _PistachioStageProfile({
+    required this.moisture,
+    required this.soilTemp,
+    required this.ph,
+    required this.ec,
+    required this.resistance,
+    required this.nRel,
+    required this.pRel,
+    required this.kRel,
+    required this.nPriority,
+    required this.pPriority,
+    required this.kPriority,
+    required this.wMoisture,
+    required this.wSoilTemp,
+    required this.wPh,
+    required this.wEc,
+    required this.wResistance,
+    required this.wN,
+    required this.wP,
+    required this.wK,
+    required this.confidence,
+    required this.careNoteEs,
+    required this.uxGuidanceEs,
+    required this.nWindowEs,
+    required this.pWindowEs,
+    required this.kWindowEs,
+  });
+
+  final AgroRange moisture;
+  final AgroRange soilTemp;
+  final AgroRange ph;
+  final AgroRange ec;
+  final AgroRange resistance;
+
+  final AgroRange nRel;
+  final AgroRange pRel;
+  final AgroRange kRel;
+
+  final double nPriority;
+  final double pPriority;
+  final double kPriority;
+
+  final double wMoisture;
+  final double wSoilTemp;
+  final double wPh;
+  final double wEc;
+  final double wResistance;
+  final double wN;
+  final double wP;
+  final double wK;
+
+  final String confidence;
+  final String careNoteEs;
+  final String uxGuidanceEs;
+  final String nWindowEs;
+  final String pWindowEs;
+  final String kWindowEs;
+}
+```
+
+14.2. Mapa de etapas — resumen listo para transcribir
+
+La tabla del punto 9 debe transcribirse al mapa `_pistachioStageProfiles` usando `TreeStageIds.*`.
+
+Ejemplo de fruit_fill:
+
+```dart
+TreeStageIds.fruitFill: _PistachioStageProfile(
+  moisture: AgroRange(lowMax: 45, optimalMin: 58, optimalMax: 82, highMin: 90),
+  soilTemp: AgroRange(lowMax: 10, optimalMin: 18, optimalMax: 34, highMin: 40),
+  ph: PistachioTreeUniversalProfile.phActive,
+  ec: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 2.8, highMin: 4.8),
+  resistance: AgroRange(lowMax: -0.01, optimalMin: 0.0, optimalMax: 1.9, highMin: 2.8),
+  nRel: AgroRange(lowMax: 25, optimalMin: 40, optimalMax: 60, highMin: 85),
+  pRel: AgroRange(lowMax: 10, optimalMin: 25, optimalMax: 45, highMin: 75),
+  kRel: AgroRange(lowMax: 55, optimalMin: 72, optimalMax: 92, highMin: 98),
+  nPriority: 0.60,
+  pPriority: 0.25,
+  kPriority: 0.92,
+  wMoisture: 0.28,
+  wSoilTemp: 0.10,
+  wPh: 0.07,
+  wEc: 0.17,
+  wResistance: 0.08,
+  wN: 0.12,
+  wP: 0.03,
+  wK: 0.25,
+  confidence: 'high',
+  careNoteEs: 'Llenado de kernel: agua estable, hoja sana y K protagonista.',
+  uxGuidanceEs: 'En llenado, el pistache se juega el grano. K y agua pesan fuerte; N alto sin carga o con sales no ayuda.',
+  nWindowEs: 'N moderado con carga real',
+  pWindowEs: 'P bajo-medio',
+  kWindowEs: 'K alto: kernel/split/calidad',
+),
+```
+
+================================================================================
+15. FUNCIONES PÚBLICAS ESPERADAS
+================================================================================
+
+```dart
+StageTargets resolvePistachioTreeTargets(String? stageId) {
+  final stage = normalizeTreeStageId(stageId);
+  final p = _pistachioStageProfiles[stage] ??
+      _pistachioStageProfiles[TreeStageIds.unknown]!;
+
+  return StageTargets(
+    moistureRaw: p.moisture,
+    soilTemp: p.soilTemp,
+    ph: p.ph,
+    ec: p.ec,
+    resistance: p.resistance,
+    nIndex: p.nRel,
+    pIndex: p.pRel,
+    kIndex: p.kRel,
+  );
+}
+
+StageWeights resolvePistachioTreeStageWeights(String? stageId) {
+  final stage = normalizeTreeStageId(stageId);
+  final p = _pistachioStageProfiles[stage] ??
+      _pistachioStageProfiles[TreeStageIds.unknown]!;
+
+  return StageWeights(
+    moisture: p.wMoisture,
+    soilTemp: p.wSoilTemp,
+    ph: p.wPh,
+    ec: p.wEc,
+    resistance: p.wResistance,
+    nutrientN: p.wN,
+    nutrientP: p.wP,
+    nutrientK: p.wK,
+  );
+}
+
+PistachioTreeStageNutrition resolvePistachioTreeNutritionPriorities(
+  String? stageId,
+) {
+  final stage = normalizeTreeStageId(stageId);
+  final p = _pistachioStageProfiles[stage] ??
+      _pistachioStageProfiles[TreeStageIds.unknown]!;
+
+  return PistachioTreeStageNutrition(
+    stageId: stage,
+    nPriority01: p.nPriority,
+    pPriority01: p.pPriority,
+    kPriority01: p.kPriority,
+    confidence: p.confidence,
+    careNoteEs: p.careNoteEs,
+  );
+}
+```
+
+================================================================================
+16. DART SUGERIDO — NUTRITION MODIFIER
+================================================================================
+
+Archivo esperado:
+- lib/core/agro/pistachio_tree_nutrition_modifier.dart
+
+```dart
+enum PistachioTreeNutritionGroup {
+  generic,
+  kermanPeters,
+  goldenHillsRandy,
+  lostHillsRandy,
+  siroraCompatible,
+  mediterraneanLowChill,
+}
+
+class PistachioTreeNutritionModifier implements TreeNutritionModifier {
+  const PistachioTreeNutritionModifier({
+    required this.profileId,
+    required this.group,
+    required this.labelEs,
+    required this.summaryEs,
+  });
+
+  final String profileId;
+  final PistachioTreeNutritionGroup group;
+  final String labelEs;
+  final String summaryEs;
+
+  bool get isGeneric => group == PistachioTreeNutritionGroup.generic;
+
+  bool get isEarlyCycle =>
+      group == PistachioTreeNutritionGroup.goldenHillsRandy ||
+      group == PistachioTreeNutritionGroup.lostHillsRandy ||
+      group == PistachioTreeNutritionGroup.mediterraneanLowChill;
+
+  bool get isKermanTraditional =>
+      group == PistachioTreeNutritionGroup.kermanPeters;
+
+  bool get isHighKernelDemand =>
+      group == PistachioTreeNutritionGroup.goldenHillsRandy ||
+      group == PistachioTreeNutritionGroup.lostHillsRandy;
+
+  @override
+  double adjustStagePressure(
+    double base, {
+    required AgroMetricKey nutrient,
+    required String? stageKey,
+  }) {
+    return (base + _stagePressureDelta(nutrient, stageKey)).clamp(0.0, 1.0);
+  }
+
+  double _stagePressureDelta(AgroMetricKey nutrient, String? stageKey) {
+    final stage = normalizeTreeStageId(stageKey);
+    final isEarlyP = stage == TreeStageIds.plantingTransplant ||
+        stage == TreeStageIds.rootEstablishment ||
+        stage == TreeStageIds.budbreak ||
+        stage == TreeStageIds.flowering;
+    final isFruitK = stage == TreeStageIds.fruitSet ||
+        stage == TreeStageIds.fruitFill ||
+        stage == TreeStageIds.harvestMaturity;
+    final isLateNitrogenRisk = stage == TreeStageIds.fruitFill ||
+        stage == TreeStageIds.harvestMaturity;
+
+    switch (nutrient) {
+      case AgroMetricKey.p:
+        return isEarlyP ? 0.04 : 0.0;
+      case AgroMetricKey.k:
+        if (!isFruitK) return 0.0;
+        if (isHighKernelDemand && stage == TreeStageIds.fruitFill) return 0.09;
+        if (isKermanTraditional && stage == TreeStageIds.fruitFill) return 0.07;
+        return 0.06;
+      case AgroMetricKey.n:
+        return isLateNitrogenRisk ? -0.03 : 0.0;
+      default:
+        return 0.0;
+    }
+  }
+
+  @override
+  double lateNitrogenExcessPenaltyFactor(String? stageKey) {
+    final stage = normalizeTreeStageId(stageKey);
+    final isLate = stage == TreeStageIds.fruitFill ||
+        stage == TreeStageIds.harvestMaturity;
+    if (!isLate) return 1.0;
+
+    if (isEarlyCycle) return 0.86;
+    if (isKermanTraditional) return 0.90;
+    return 0.92;
+  }
+
+  @override
+  String practicalCaution(AgroMetricKey nutrient, String? stageKey) {
+    final stage = normalizeTreeStageId(stageKey);
+    final isFruitFill = stage == TreeStageIds.fruitFill;
+    final isHarvest = stage == TreeStageIds.harvestMaturity;
+    final isFlowering = stage == TreeStageIds.flowering;
+
+    if (nutrient == AgroMetricKey.n) {
+      if (isFruitFill) {
+        return '$labelEs: en llenado el N solo ayuda si hay carga y raiz sana; con baja carga se va a puro follaje.';
+      }
+      if (isHarvest) {
+        return '$labelEs: cerca de cosecha evita empujar N; ya no arregla un kernel mal llenado.';
+      }
+      return '$labelEs: ajusta N por carga, agua y salinidad; mas N no es mas pistache.';
+    }
+    if (nutrient == AgroMetricKey.k) {
+      if (isFruitFill) {
+        return '$labelEs: K es protagonista del kernel y la apertura futura; no lo subas si la EC esta alta.';
+      }
+      if (isHarvest) {
+        return '$labelEs: K sostiene calidad final, pero la cosecha se decide por madurez, split y sanidad.';
+      }
+      return '$labelEs: maneja K en la zona mojada y con raiz activa.';
+    }
+    if (nutrient == AgroMetricKey.p) {
+      if (isFlowering) {
+        return '$labelEs: P acompaña floracion, pero macho/hembra, frio y viento mandan el cuajado.';
+      }
+      return '$labelEs: P pesa mas en raiz y arranque; en suelo calizo revisa disponibilidad antes de corregir.';
+    }
+    return '$labelEs: interpreta NPK junto con agua, EC, pH, raiz, macho/hembra y carga.';
+  }
+}
+```
+
+Resolver:
+
+```dart
+PistachioTreeNutritionModifier resolvePistachioTreeNutritionModifier({
+  String? profileId,
+  String? varietyId,
+  String? alias,
+}) {
+  final raw = (profileId ?? varietyId ?? alias ?? '').trim().toLowerCase();
+
+  if (raw.contains('kerman') || raw.contains('peters')) {
+    return const PistachioTreeNutritionModifier(
+      profileId: 'ps_01_kerman_peters',
+      group: PistachioTreeNutritionGroup.kermanPeters,
+      labelEs: 'Kerman/Peters',
+      summaryEs: 'Tradicional: alto frio, alternancia, K fuerte en llenado.',
+    );
+  }
+  if (raw.contains('golden') || raw.contains('randy')) {
+    return const PistachioTreeNutritionModifier(
+      profileId: 'ps_02_golden_hills_randy',
+      group: PistachioTreeNutritionGroup.goldenHillsRandy,
+      labelEs: 'Golden Hills/Randy',
+      summaryEs: 'Temprano moderno: adelanta ventanas, alto potencial de split.',
+    );
+  }
+  if (raw.contains('lost')) {
+    return const PistachioTreeNutritionModifier(
+      profileId: 'ps_03_lost_hills_randy',
+      group: PistachioTreeNutritionGroup.lostHillsRandy,
+      labelEs: 'Lost Hills/Randy',
+      summaryEs: 'Calibre/kernel grande: K, agua y calidad pesan fuerte.',
+    );
+  }
+  if (raw.contains('sirora')) {
+    return const PistachioTreeNutritionModifier(
+      profileId: 'ps_04_sirora_compatible',
+      group: PistachioTreeNutritionGroup.siroraCompatible,
+      labelEs: 'Sirora compatible',
+      summaryEs: 'Intermedio/adaptable: usar confianza moderada.',
+    );
+  }
+  if (raw.contains('larnaka') || raw.contains('mateur') || raw.contains('low_chill') || raw.contains('bajo')) {
+    return const PistachioTreeNutritionModifier(
+      profileId: 'ps_05_larnaka_mateur_low_chill',
+      group: PistachioTreeNutritionGroup.mediterraneanLowChill,
+      labelEs: 'Larnaka/Mateur bajo-frio relativo',
+      summaryEs: 'Temprano/bajo frio relativo: adelantar ventanas y cuidar heladas.',
+    );
+  }
+
+  return const PistachioTreeNutritionModifier(
+    profileId: 'ps_skip',
+    group: PistachioTreeNutritionGroup.generic,
+    labelEs: 'Pistache general',
+    summaryEs: 'Perfil general: no asume variedad, macho ni carga.',
+  );
+}
+```
+
+================================================================================
+17. DART SUGERIDO — AGRO SCORE WRAPPER
+================================================================================
+
+Archivo esperado:
+- lib/core/agro/pistachio_tree_agro_score_engine.dart
+
+```dart
+class PistachioTreeAgroScoreEngine {
+  const PistachioTreeAgroScoreEngine._();
+
+  static const Set<String> criticalStages = TreeAgroScoreEngine.criticalStages;
+  static const Set<String> semiCriticalStages = TreeAgroScoreEngine.semiCriticalStages;
+
+  static ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluate({
+    required BioGTelemetry t,
+    required String stageId,
+    required String stageLabelEs,
+    required StageTargets targets,
+    required StageWeights weights,
+    AlertsState alertsState = const AlertsState(),
+    Calibration? cal,
+    Duration alertsCooldown = AlertsEngine.defaultCooldown,
+    String? cropLabel,
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+  }) {
+    final modifier = resolvePistachioTreeNutritionModifier(
+      profileId: profileId,
+      varietyId: varietyId,
+      alias: varietyAlias,
+    );
+
+    return TreeAgroScoreEngine.evaluate(
+      t: t,
+      cropKey: 'pistachio_tree',
+      modifier: modifier,
+      stageId: stageId,
+      stageLabelEs: stageLabelEs,
+      targets: targets,
+      weights: weights,
+      alertsState: alertsState,
+      cal: cal,
+      alertsCooldown: alertsCooldown,
+      cropLabel: cropLabel ?? 'Pistache',
+      profileId: profileId,
+      varietyId: varietyId,
+      varietyAlias: varietyAlias,
+    );
+  }
+}
+```
+
+================================================================================
+18. DART SUGERIDO — CROP DEFINITION
+================================================================================
+
+Archivo esperado:
+- lib/core/crops/pistachio_tree/pistachio_tree_crop_definition.dart
+
+Debe exponer:
+- resolveProfile
+- resolveTargets
+- resolveStageWeights
+- resolveNutritionPriorities
+- evaluateTelemetry
+
+```dart
+class PistachioTreeCropDefinition extends CropDefinition {
+  const PistachioTreeCropDefinition();
+
+  @override
+  String get cropId => kCropPistachioTree;
+
+  @override
+  StageTargets resolveTargets({String? stageId, String? profileId}) {
+    return resolvePistachioTreeTargets(stageId);
+  }
+
+  StageWeights resolveStageWeights({String? stageId, String? profileId}) {
+    return resolvePistachioTreeStageWeights(stageId);
+  }
+
+  PistachioTreeStageNutrition resolveNutritionPriorities({
+    String? stageId,
+    String? profileId,
+  }) {
+    return resolvePistachioTreeNutritionPriorities(stageId);
+  }
+
+  @override
+  ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluateTelemetry({
+    required BioGTelemetry telemetry,
+    required String stageId,
+    required String stageLabelEs,
+    AlertsState alertsState = const AlertsState(),
+    Calibration? calibration,
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+  }) {
+    final targets = resolvePistachioTreeTargets(stageId);
+    final weights = resolvePistachioTreeStageWeights(stageId);
+
+    return PistachioTreeAgroScoreEngine.evaluate(
+      t: telemetry,
+      stageId: stageId,
+      stageLabelEs: stageLabelEs,
+      targets: targets,
+      weights: weights,
+      alertsState: alertsState,
+      cal: calibration,
+      cropLabel: 'Pistache',
+      profileId: profileId,
+      varietyId: varietyId,
+      varietyAlias: varietyAlias,
+    );
+  }
+}
+```
+
+================================================================================
+19. MENSAJES UX FARMER-FRIENDLY PARA NPK
+================================================================================
+
+19.1. Mensajes generales
+
+- “El sensor marca nutrientes, pero el pistache come con raíz activa. Si hay sales, suelo duro o agua mal puesta, no los aprovecha.”
+- “En pistache, N y K mandan más que P, pero ninguno trabaja si la raíz está peleando.”
+- “Más N no es más pistache; con poca carga se te puede ir a puro follaje.”
+- “El K ayuda al grano/kernel, pero si la EC está alta puede ser más estrés.”
+- “El fósforo ayuda al arranque y raíz; en adulto no se aplica por costumbre.”
+- “Boro y zinc pueden ser clave, pero este sensor no los mide. Confirma con foliar si hay señales.”
+
+19.2. Mensajes por etapa
+
+Plantación:
+“Primero raíz. No quemes el pistache nuevo con N fuerte. Cuida sales, humedad pareja y suelo flojo.”
+
+Establecimiento:
+“La raíz fina está agarrando. Si el suelo está saturado o duro, no importa cuánto NPK marque.”
+
+Juvenil:
+“Sí queremos crecimiento, pero no brote blando tarde. El pistache joven necesita estructura, no puro verde.”
+
+Dormancia:
+“Aquí no gana NPK. Gana frío cumplido, madera sana y planificación con análisis.”
+
+Brotación:
+“Está arrancando hoja. N ayuda, P acompaña, pero si faltó frío o zinc, el problema no se arregla sólo con NPK.”
+
+Floración:
+“En floración manda macho, hembra, viento y clima. NPK acompaña; no reemplaza polen.”
+
+Cuajado:
+“Si ya amarró, cuida agua y K. Si no amarró, revisa polinización antes de fertilizar de más.”
+
+Llenado:
+“Esta es la ventana cara: agua estable, hoja sana y K para llenar el grano. No empujes N si hay poca carga.”
+
+Madurez:
+“Ya estás en apertura/cosecha. No metas N tarde para corregir lo que debió llenarse antes.”
+
+Postcosecha:
+“No cierres el ciclo. Si queda hoja activa, el árbol junta reservas, pero no todo huerto necesita N postcosecha.”
+
+19.3. Mensajes de bloqueo
+
+EC alta:
+“La EC está alta. Antes de meter más fertilizante, revisa sales, agua de riego y lavado. El pistache aguanta, pero no es de fierro.”
+
+Humedad baja:
+“Hay nutriente, pero falta agua para moverlo y absorberlo. Primero estabiliza humedad.”
+
+Humedad alta:
+“El suelo está demasiado húmedo. Marchitez con suelo mojado puede ser raíz sin oxígeno, no falta de fertilizante.”
+
+pH alto:
+“Con pH alto puede haber bloqueo de P, Zn, Fe o Cu. No es sólo aplicar más.”
+
+Resistance alta:
+“El suelo está apretado. La raíz no explora bien; NPK puede estar ahí pero fuera del alcance real.”
+
+N alto + baja carga:
+“Con poca carga, el exceso de N se puede ir a puro follaje. No confundas verde con cosecha.”
+
+K alto + EC alta:
+“El K alto con sales altas no se celebra; puede subir la presión salina en raíz.”
+
+================================================================================
+20. TESTS MÍNIMOS RECOMENDADOS
+================================================================================
+
+1) pistachio_agro_range_semantics_test
+Caso:
+soilMoisture apenas debajo de optimalMin.
+Esperado:
+AgroBand.low/observación, no critical.
+
+2) pistachio_fruit_fill_identity_test
+Caso:
+stage fruit_fill + N/P/K cualquier lectura.
+Esperado:
+copy habla de llenado, kernel, grano, K, agua; NO habla de cosecha/listo para cortar.
+
+3) pistachio_harvest_maturity_identity_test
+Caso:
+stage harvest_maturity.
+Esperado:
+copy sí puede hablar de apertura, pistache abierto, cosecha, cerrados, vanos.
+
+4) pistachio_post_harvest_alive_test
+Caso:
+stage post_harvest.
+Esperado:
+no cerrar cultivo; hablar de reservas y siguiente ciclo.
+
+5) pistachio_npk_caps_test
+Caso:
+NpkCaps para pistachio_tree.
+Esperado:
+N=130, P=95, K=220.
+
+6) pistachio_k_dominates_fruit_fill_test
+Caso:
+fruit_fill.
+Esperado:
+kPriority01 > nPriority01 > pPriority01.
+
+7) pistachio_p_not_overweighted_adult_test
+Caso:
+harvest_maturity o fruit_fill + P bajo leve.
+Esperado:
+no alerta fuerte si agua/EC/raíz están bien; P baja prioridad.
+
+8) pistachio_ec_blocks_npk_test
+Caso:
+fruit_fill + EC crítica + K bajo.
+Esperado:
+mensaje: primero sales/agua/raíz; no “aplicar K” directo.
+
+9) pistachio_n_high_low_crop_load_test
+Caso:
+vegetative_growth/fruit_fill + N alto + cropLoad low.
+Esperado:
+advertir puro follaje/vigor; no recomendar más N.
+
+10) pistachio_k_high_ec_high_test
+Caso:
+K alto + EC alta.
+Esperado:
+no celebrar K alto; advertir salinidad/acumulación.
+
+11) pistachio_unknown_stage_conservative_test
+Caso:
+stage unknown.
+Esperado:
+weights conservadores, confidence baja/media, pedir etapa visible.
+
+12) pistachio_skip_not_block_test
+Caso:
+ps_skip + flowering.
+Esperado:
+usa targets, baja confianza por perfil/polinizador unknown, no bloquea.
+
+13) pistachio_kerman_modifier_test
+Caso:
+ps_01 + fruit_fill.
+Esperado:
+K presión fuerte, advertencia de carga/frío/polinización, no copy de cosecha.
+
+14) pistachio_golden_hills_early_modifier_test
+Caso:
+ps_02 + harvest_maturity.
+Esperado:
+no usar ventana tardía Kerman; advertir N tardío antes.
+
+15) pistachio_lost_hills_kernel_test
+Caso:
+ps_03 + fruit_fill + K low.
+Esperado:
+alerta fuerte por kernel/calibre.
+
+16) pistachio_low_chill_relative_test
+Caso:
+ps_05 + budbreak/flowering.
+Esperado:
+no decir “sin frío”; advertir frío relativo y helada.
+
+17) pistachio_leaf_analysis_note_test
+Caso:
+P/K/N alerta persistente.
+Esperado:
+mensaje sugiere confirmar con análisis foliar/suelo/agua.
+
+18) pistachio_soil_temp_absorption_test
+Caso:
+soilTemp < 8C + N bajo.
+Esperado:
+baja confianza de absorción; no diagnóstico de deficiencia.
+
+19) pistachio_high_p_high_ph_zinc_context_test
+Caso:
+pH alto + P alto + hoja chica reportada.
+Esperado:
+contexto Zn/disponibilidad; no sugerir N.
+
+20) pistachio_npk_screen_uses_eval_test
+Caso:
+dashboard/NPK screen con AgroMetricEval disponible.
+Esperado:
+usar eval del motor antes que fallback visual.
+
+================================================================================
+21. NO HACER EN CÓDIGO
+================================================================================
+
+No usar sowingDate como eje de pistache.
+No crear sensores B/Zn/Cu/Ca/Mg/Na/Cl en v1.
+No cerrar cultivo en cosecha.
+No apagar post_harvest.
+No mezclar fruit_fill con harvest_maturity para copy.
+No recomendar kg/ha automáticos.
+No decir “aplica N” si EC/humedad/pH/resistance están mal.
+No tratar N alto como bueno por defecto.
+No tratar K alto como bueno por defecto.
+No tratar P como solución universal para floración/cuajado.
+No confundir falta de macho/frío/viento con falta de fertilizante.
+No decir que pistache tolera sales y por eso EC alta está bien.
+No interpretar borde quemado como K bajo sin revisar Na/Cl/B/EC.
+No interpretar pistache cerrado o vano como falta de K sin revisar agua, carga, polinización, salinidad y sanidad.
+No copiar dosis UC/CDFA como receta visible en México.
+No usar foros como fuente de umbrales.
+No borrar memoria al migrar de ps_skip a perfil específico.
+No copiar walnut_tree targets sin ajustar pistache.
+
+================================================================================
+22. ARCHIVOS ESPERADOS EN CÓDIGO
+================================================================================
+
+Archivos directos:
+- lib/core/crops/pistachio_tree/pistachio_tree_universal_profile.dart
+- lib/core/crops/pistachio_tree/pistachio_tree_crop_definition.dart
+- lib/core/agro/pistachio_tree_nutrition_modifier.dart
+- lib/core/agro/pistachio_tree_agro_score_engine.dart
+
+Alta en caps:
+- lib/core/agro/npk_caps.dart
+  - N: 130.0
+  - P: 95.0
+  - K: 220.0
+  para:
+  - pistachio_tree
+  - crop_pistachio_tree
+  - pistache
+  - pistacho
+  - pistachio
+
+Alta en nutrient_recommendation_engine.dart:
+- importar pistachio_tree_nutrition_modifier.dart si el motor resuelve modificadores directos por cropKey.
+
+Alta en crop_definition:
+- evaluateTelemetry debe delegar al wrapper `PistachioTreeAgroScoreEngine.evaluate`.
+
+================================================================================
+23. FUENTES Y TRAZABILIDAD
+================================================================================
+
+S1. BIO-G — Estandar BIO-G para integración de árboles perennes v1.5 con addendum.
+Uso:
+- estructura oficial de 5 documentos;
+- no usar sowingDate;
+- post_harvest activo;
+- contrato StageTargets/AgroRange;
+- contrato etapa/NPK/copy/UI.
+
+S2. BIO-G — 05_Guia_Fertilizacion_NPK_Targets_BioG_Nogal_NG_v1_2_Reforzada_PDFs.
+Uso:
+- plantilla técnica;
+- estructura de StageTargets/StageWeights;
+- wrapper TreeAgroScoreEngine;
+- no convertir dosis en receta;
+- StageIds cerrados;
+- no usar foros como umbral.
+
+S3. Código BIO-G lib.zip revisado.
+Uso:
+- TreeAgroScoreEngine como motor genérico;
+- TreeNutritionModifier como contrato por perfil;
+- NpkCaps como normalización;
+- NutrientTargetRangeResolver como traductor índice relativo → ppm;
+- walnut/apple/pear/peach como patrón de integración.
+
+S4. UC ANR / California Pistachio Research — Nutrients & Fertilization.
+URL:
+https://ucanr.edu/site/california-pistachio-research/nutrients-fertilization
+Uso:
+- scheduling N/K ON vs OFF;
+- nutrientes al root zone en momento de mayor demanda;
+- leaf analysis y rangos.
+
+S5. CDFA FREP — California Fertilization Guidelines: Pistachio.
+URL:
+https://www.cdfa.ca.gov/is/ffldrs/frep/FertilizationGuidelines/Pistachio.html
+Uso:
+- soil test P/K interpretation;
+- K <150 ppm más probable respuesta;
+- spring/summer leaf sampling;
+- rangos foliares N/P/K;
+- pistachio prediction model.
+
+S6. Craig Kallsen / UC ANR — Diagnosing and correcting nutrient deficiencies in pistachio.
+URL:
+https://ucanr.edu/sites/default/files/2011-02/73696.pdf
+Uso:
+- leaf critical values;
+- N, K, B, Zn, Cu;
+- N deficiency symptoms;
+- K functions and symptoms;
+- Na/Cl/B toxicity context.
+
+S7. Zeng, Brown et al. — Potassium Fertilization Affects Soil K, Leaf K Concentration, and Nut Yield and Quality of Mature Pistachio Trees.
+URL:
+https://journals.ashs.org/downloadpdf/view/journals/hortsci/36/1/article-p85.pdf
+Uso:
+- K demand during nut fill;
+- K applications 110–220 kg/ha improved yield/quality;
+- >220/330 kg/ha can reduce yield;
+- K/Ca/Mg interaction;
+- K critical tied to yield, not just symptoms.
+
+S8. Rosecrance, Weinbaum, Brown — Assessment of nitrogen, phosphorus, and potassium uptake capacity and root growth in mature alternate-bearing pistachio trees.
+URL:
+https://pubmed.ncbi.nlm.nih.gov/14871788/
+Uso:
+- uptake during spring flush, nut fill and postharvest;
+- N/K uptake increases in ON year during nut fill;
+- sink demand drives N/P/K uptake and partitioning.
+
+S9. UC ANR / Phoebe Gordon — Micronutrients and Phosphorus Management in Pistachio.
+URL:
+https://ucanr.edu/sites/default/files/2022-02/362947.pdf
+Uso:
+- B, Zn, Cu, P como nutrientes de cuidado;
+- P response limitada;
+- deficiencies should be addressed by leaf tissue analysis;
+- overapplying a nutrient does not improve physiological functions.
+
+S10. UC ANR / Lovatt & Beede — Foliar Fertilization Strategies for Pistachios.
+URL:
+https://ucanr.edu/sites/default/files/2017-11/274450.pdf
+Uso:
+- 50% leaf expansion;
+- foliar urea aided Zn/B uptake;
+- foliar K did not increase tissue levels in the trial;
+- high nutrient absorption at 50% leaf expansion.
+
+S11. SJV Trees and Vines / UCCE — Pistachio Nitrogen Nutrition.
+URL:
+https://www.sjvtandv.com/blog/pistachio-nitrogen-nutrition-what-do-we-know-and-how-do-we-manage
+Uso:
+- no one-size-fits-all;
+- N overapplication reduces uptake of other nutrients and causes vegetative growth;
+- use prediction model / CDFA guideline / spring sampling.
+
+S12. West Coast Nut — Managing Salinity, Nutrients Key to Pistachio Productivity.
+URL:
+https://www.wcngg.com/2026/04/16/managing-salinity-nutrients-key-to-pistachio-productivity/
+Uso:
+- lenguaje de productor y 4R;
+- N in irrigation water as nitrogen source;
+- K placement in wetted zone;
+- salinity, infiltration, root zone and disease context.
+
+S13. SJV Trees and Vines / UCCE — Postharvest Nutrition of Nut Crops.
+URL:
+https://www.sjvtandv.com/blog/postharvest-nutrition-of-nut-crops
+Uso:
+- K postharvest/wetted zone;
+- KCl caution in low rainfall/high salts;
+- B/Zn postharvest vs spring timing;
+- no automatic postharvest N for pistachio/walnut.
+
+S14. Foros/productores/experiencia de campo.
+Uso permitido:
+- lenguaje UX: “no abre”, “vano”, “cerrado”, “puro follaje”, “borde quemado”, “no polinizó”, “no sé si tengo macho”.
+No usado para:
+- rangos;
+- dosis;
+- thresholds;
+- diagnóstico.
+
+================================================================================
+24. CIERRE TÉCNICO
+================================================================================
+
+La guía NPK del pistache debe vender la aplicación por su valor real: ayudar al productor a leer mejor el árbol, no por prometer recetas.
+
+BIO-G debe decir con claridad:
+
+- El pistache necesita N y K, pero no siempre más.
+- La raíz, el agua y las sales deciden si el NPK sirve.
+- El K manda en llenado, kernel y calidad, pero sólo con agua y raíz funcional.
+- El N ayuda a hoja y carga, pero con baja carga se va a follaje.
+- El P no debe aplicarse por costumbre en adulto.
+- B/Zn/Cu son importantes, pero no se inventan desde el sensor.
+- Floración/cuajado dependen de macho, hembra, viento, frío y clima; NPK no reemplaza eso.
+- Postcosecha no cierra el cultivo, pero tampoco es receta automática de fertilizante.
+
+Este Documento 05 queda listo para Codex/Claude como fuente de implementación de:
+- pistachio_tree_universal_profile.dart
+- pistachio_tree_crop_definition.dart
+- pistachio_tree_nutrition_modifier.dart
+- pistachio_tree_agro_score_engine.dart
+- NpkCaps para pistache
+- tests de NPK/etapa/copy/UI

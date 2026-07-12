@@ -16,6 +16,11 @@ import 'package:bio_g/core/crops/onion/onion_catalog.dart';
 import 'package:bio_g/core/crops/peach_tree/peach_tree_catalog.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_catalog.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_catalog.dart';
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_catalog.dart';
+import 'package:bio_g/core/crops/orange_tree/orange_tree_catalog.dart';
+import 'package:bio_g/core/crops/lemon_tree/lemon_tree_catalog.dart';
+import 'package:bio_g/core/crops/mango_tree/mango_tree_catalog.dart';
+import 'package:bio_g/core/crops/avocado_tree/avocado_tree_catalog.dart';
 import 'package:bio_g/core/crops/spinach/spinach_catalog.dart';
 import 'package:bio_g/core/crops/squash/squash_catalog.dart';
 import 'package:bio_g/core/crops/tomato/tomato_catalog.dart';
@@ -55,6 +60,11 @@ class CropCatalog {
   static const String pearTreeCropId = kCropPearTree;
   static const String peachTreeCropId = kCropPeachTree;
   static const String walnutTreeCropId = kCropWalnutTree;
+  static const String pistachioTreeCropId = kCropPistachioTree;
+  static const String orangeTreeCropId = kCropOrangeTree;
+  static const String lemonTreeCropId = kCropLemonTree;
+  static const String mangoTreeCropId = kCropMangoTree;
+  static const String avocadoTreeCropId = kCropAvocadoTree;
 
   static const String tomatoDefaultProfileId = 'tm_gen';
   static const String tomatoDefaultCalendarId = 'tomato_default';
@@ -86,6 +96,24 @@ class CropCatalog {
 
   // Nogal pecanero (perenne, frutal de nuez) — perfil general/seguro NG-SKIP. No es fallow.
   static const String walnutTreeDefaultProfileId = kNgSkip;
+
+  // Pistache (perenne, frutal de nuez, dioico) — perfil general/seguro PS-SKIP. No es fallow.
+  static const String pistachioTreeDefaultProfileId = kPsSkip;
+
+  // Naranjo (perenne, cítrico siempreverde) — perfil general/seguro OR-SKIP. No es fallow.
+  static const String orangeTreeDefaultProfileId = kOrSkip;
+
+  // Limón (perenne, cítrico siempreverde) — perfil general/seguro LM-SKIP. No es fallow.
+  static const String lemonTreeDefaultProfileId = kLmSkip;
+
+  // Mango (perenne, tropical/subtropical siempreverde) — perfil general/seguro
+  // MG-SKIP. No es fallow ni promete floración anual.
+  static const String mangoTreeDefaultProfileId = kMgSkip;
+
+  // Aguacate (perenne, subtropical/tropical siempreverde) — perfil general/
+  // seguro AG-SKIP. No es fallow ni promete floración/cuajado. NO es mango, NO
+  // es cítrico, NO es manzano.
+  static const String avocadoTreeDefaultProfileId = kAgSkip;
 
   // ── Maize catalog constants ─────────────────────────────────────────────────
   static const String maizeDemoVarietyId = 'dk_2069';
@@ -718,6 +746,77 @@ class CropCatalog {
       enabled: true,
       defaultProfileId: walnutTreeDefaultProfileId,
       profiles: walnutTreeProfileEntries,
+    ),
+    // Pistache habilitado: quinto árbol real y segundo frutal de nuez (dioico).
+    // Sin calendarios: los árboles no usan fecha de siembra; el anclaje perenne
+    // vive en DeviceCropContext.
+    CropCatalogEntry(
+      cropId: pistachioTreeCropId,
+      categoryId: treeCategoryId,
+      label: 'Pistache',
+      subtitle: 'Pistacia vera · árbol frutal perenne (nuez, dioico)',
+      enabled: true,
+      defaultProfileId: pistachioTreeDefaultProfileId,
+      profiles: pistachioTreeProfileEntries,
+    ),
+    // Naranjo habilitado: sexto árbol real y primer cítrico siempreverde. Sin
+    // calendarios: los árboles no usan fecha de siembra; el anclaje perenne vive
+    // en DeviceCropContext. `dormancy` es reposo relativo, no árbol pelón.
+    CropCatalogEntry(
+      cropId: orangeTreeCropId,
+      categoryId: treeCategoryId,
+      label: 'Naranjo',
+      subtitle: 'Citrus sinensis · árbol frutal perenne (cítrico siempreverde)',
+      enabled: true,
+      defaultProfileId: orangeTreeDefaultProfileId,
+      profiles: orangeTreeProfileEntries,
+    ),
+    // Limón habilitado: séptimo árbol real y segundo cítrico siempreverde. NO es
+    // un naranjo pequeño: cropId propio, K más alto y producción frecuente/
+    // escalonada. Sin calendarios: los árboles no usan fecha de siembra; el
+    // anclaje perenne vive en DeviceCropContext. `dormancy` es reposo relativo.
+    CropCatalogEntry(
+      cropId: lemonTreeCropId,
+      categoryId: treeCategoryId,
+      label: 'Limón',
+      subtitle:
+          'Citrus (limón/lima) · árbol frutal perenne (cítrico siempreverde)',
+      enabled: true,
+      defaultProfileId: lemonTreeDefaultProfileId,
+      profiles: lemonTreeProfileEntries,
+    ),
+    // Mango habilitado: octavo árbol real y primer frutal tropical episódico. NO
+    // es limón, NO es naranjo, NO es manzano: cropId propio, floración NO
+    // garantizada cada año (la no floración es estado válido) y fisiología
+    // propia (inducción, panícula, cuajado frágil, alternancia). Sin
+    // calendarios: los árboles no usan fecha de siembra; el anclaje perenne vive
+    // en DeviceCropContext. `dormancy` es reposo funcional, no árbol pelón.
+    CropCatalogEntry(
+      cropId: mangoTreeCropId,
+      categoryId: treeCategoryId,
+      label: 'Mango',
+      subtitle:
+          'Mangifera indica · árbol frutal perenne (tropical/subtropical)',
+      enabled: true,
+      defaultProfileId: mangoTreeDefaultProfileId,
+      profiles: mangoTreeProfileEntries,
+    ),
+    // Aguacate habilitado: noveno árbol real. NO es mango, NO es cítrico, NO es
+    // manzano ni cultivo anual: cropId propio, floración A/B y cuajado FRÁGIL
+    // (menos de 1% de flor llega a fruto), raíz superficial muy sensible a
+    // asfixia/salinidad/Phytophthora, alternancia marcada y fruta que madura
+    // DESPUÉS del corte. Sin calendarios: los árboles no usan fecha de siembra;
+    // el anclaje perenne vive en DeviceCropContext. `dormancy` es reposo
+    // funcional (siempreverde), no árbol pelón.
+    CropCatalogEntry(
+      cropId: avocadoTreeCropId,
+      categoryId: treeCategoryId,
+      label: 'Aguacate',
+      subtitle:
+          'Persea americana · árbol frutal perenne (subtropical/tropical)',
+      enabled: true,
+      defaultProfileId: avocadoTreeDefaultProfileId,
+      profiles: avocadoTreeProfileEntries,
     ),
   ];
 
@@ -1502,6 +1601,92 @@ class CropCatalog {
       'nuez' ||
       'nuez pecana' ||
       'nuez pecanera' => walnutTreeCropId,
+      'crop_pistachio_tree' ||
+      'pistachio_tree' ||
+      'pistachiotree' ||
+      'pistachio' ||
+      'pistache' ||
+      'pistaches' ||
+      'pistacho' ||
+      'pistachos' ||
+      'pistachero' ||
+      'pistacheros' ||
+      'alfoncigo' ||
+      'alfóncigo' => pistachioTreeCropId,
+      'crop_orange_tree' ||
+      'orange_tree' ||
+      'orangetree' ||
+      'orange' ||
+      'oranges' ||
+      'sweet orange' ||
+      'naranjo' ||
+      'naranjos' ||
+      'naranja' ||
+      'naranjas' ||
+      'naranja dulce' ||
+      'naranjo dulce' ||
+      'naranjero' => orangeTreeCropId,
+      'crop_lemon_tree' ||
+      'lemon_tree' ||
+      'lemontree' ||
+      'crop_lime_tree' ||
+      'lime_tree' ||
+      'limetree' ||
+      'lemon' ||
+      'lemons' ||
+      'lime' ||
+      'limes' ||
+      'limon' ||
+      'limón' ||
+      'limones' ||
+      'limonero' ||
+      'limoneros' ||
+      'lima' ||
+      'limon verde' ||
+      'limón verde' ||
+      'limon persa' ||
+      'limón persa' ||
+      'limon mexicano' ||
+      'limón mexicano' => lemonTreeCropId,
+      'crop_mango_tree' ||
+      'mango_tree' ||
+      'mangotree' ||
+      'crop_mango' ||
+      'mango' ||
+      'mangos' ||
+      'mangifera' ||
+      'mangifera_indica' ||
+      'mangifera indica' ||
+      'arbol_mango' ||
+      'árbol_mango' ||
+      'arbol de mango' ||
+      'árbol de mango' ||
+      'mango ataulfo' ||
+      'mango manila' ||
+      'mango tommy' ||
+      'mango kent' ||
+      'mango keitt' => mangoTreeCropId,
+      'crop_avocado_tree' ||
+      'avocado_tree' ||
+      'avocadotree' ||
+      'crop_avocado' ||
+      'avocado' ||
+      'avocados' ||
+      'aguacate' ||
+      'aguacates' ||
+      'aguacatero' ||
+      'palta' ||
+      'palto' ||
+      'persea' ||
+      'persea_americana' ||
+      'persea americana' ||
+      'arbol_aguacate' ||
+      'árbol_aguacate' ||
+      'arbol de aguacate' ||
+      'árbol de aguacate' ||
+      'aguacate hass' ||
+      'aguacate criollo' ||
+      'aguacate fuerte' => avocadoTreeCropId,
       _ => value,
     };
   }
@@ -1535,6 +1720,11 @@ class CropCatalog {
       pearTreeCropId => 'Pera',
       peachTreeCropId => 'Durazno',
       walnutTreeCropId => 'Nogal',
+      pistachioTreeCropId => 'Pistache',
+      orangeTreeCropId => 'Naranjo',
+      lemonTreeCropId => 'Limón',
+      mangoTreeCropId => 'Mango',
+      avocadoTreeCropId => 'Aguacate',
       _ => 'Cultivo',
     };
   }

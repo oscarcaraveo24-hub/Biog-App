@@ -1,0 +1,693 @@
+02_PERFIL_SKIP_BIOG_PISTACHE_PS_SKIP_V1_REFORZADO
+======================================================================
+BIO-G | Documento 02 oficial para árbol perenne
+Cultivo: Pistache / Pistacho
+Nombre científico asumido: Pistacia vera L. (grupo pistache)
+cropId recomendado: crop_pistachio_tree
+Alias legacy sugerido: pistachio_tree
+profileId: ps_skip
+Label técnico: PS-SKIP - Pistache general
+Label UX: No sé / Pistache general
+Versión: v1 reforzada
+Uso: documento fuente para perfil genérico, onboarding rápido, migración, fallback de targets y mensajes conservadores.
+
+IMPORTANTE
+Este documento NO sustituye análisis de suelo, agua, tejido/foliar ni asesoría técnica local. BIO-G v1 debe orientar, ponderar riesgo y pedir confirmación. SKIP no debe convertirse en diagnóstico, receta ni promesa de cosecha.
+
+Fuentes base revisadas para esta versión:
+- Base entregada por usuario: PERFIL SKIP BIO-G — PISTACHE.
+- Base entregada por usuario: PERFIL UNIVERSAL BIO-G — PISTACHE.
+- Estándar BIO-G para integración de árboles perennes v1.5.
+- UC ANR / UC Davis: Climate & Cultivars y fichas de cultivares.
+- UC IPM: Year-round pistachio IPM.
+- UC ANR: salinidad, riego, suelo y cultivares.
+- NMSU / Western SARE y CIAD México como contexto regional.
+- Foros/productores: sólo para lenguaje UX y problemas reportados, no para umbrales.
+
+======================================================================
+0. DECISIÓN EJECUTIVA
+======================================================================
+
+PS-SKIP es obligatorio.
+No es un perfil incompleto.
+No significa descanso.
+No significa suelo sin cultivo.
+No significa árbol apagado.
+No significa “no hay macho”.
+No significa “sin producción”.
+No significa “pistache genérico tropical”.
+
+PS-SKIP es la entrada segura cuando el usuario:
+- sólo sabe que tiene pistache;
+- no sabe si es Kerman, Golden Hills, Lost Hills, Sirora, Larnaka, Mateur u otro;
+- no conoce la variedad macho/polinizador;
+- no sabe proporción macho:hembra;
+- tiene uno o pocos árboles;
+- quiere avanzar rápido;
+- o todavía está aprendiendo el huerto.
+
+El usuario NO debe ver “SKIP”. El usuario ve:
+- “No sé / Pistache general”
+- “Pistache general”
+
+Regla central:
+El estado real del árbol y la etapa visible corrigen el comportamiento.
+
+Ejemplos:
+- Si usuario elige PS-SKIP pero state = newly_planted, BIO-G no proyecta producción.
+- Si usuario elige PS-SKIP y stage = flowering, BIO-G activa riesgo de macho/hembra, viento, lluvia, helada y frío insuficiente.
+- Si usuario elige PS-SKIP y sólo tiene un árbol, BIO-G no debe prometer cosecha porque puede faltar polinizador.
+- Si luego aprende que es Golden Hills, puede migrar a ps_02_golden_hills_randy sin borrar historial.
+
+======================================================================
+1. IDENTIDAD DEL PERFIL SKIP
+======================================================================
+
+profileId:
+- ps_skip
+
+profileCode visible técnico:
+- PS-SKIP
+
+label técnico:
+- PS-SKIP - Pistache general
+
+label UX:
+- No sé / Pistache general
+
+cropId:
+- crop_pistachio_tree
+
+Alias legacy:
+- pistachio_tree
+
+Cultivo visible:
+- Pistache / Pistacho
+
+Nombre científico asumido:
+- Pistacia vera L. (grupo pistache)
+
+Familia:
+- Anacardiaceae
+
+Tipo:
+- Árbol frutal perenne caducifolio
+- Frutal de nuez / semilla comestible
+- Dioico: machos y hembras separados
+- C3
+
+Órgano objetivo:
+- Pistache con cáscara y kernel/grano
+
+Sistema asumido:
+- Huerto a cielo abierto en zona seca o semiárida con invierno frío suficiente.
+
+isGeneric:
+- true
+
+isMigrable:
+- true
+
+defaultConfidence:
+- baja si sólo hay cultivo;
+- media si hay estado del árbol;
+- media si hay etapa visible;
+- media-alta si hay etapa visible + sensor estable + usuario confirma macho/hembra;
+- nunca alta si no hay variedad/perfil ni polinizador confirmado.
+
+migrationTargets:
+- ps_01_kerman_peters
+- ps_02_golden_hills_randy
+- ps_03_lost_hills_randy
+- ps_04_sirora_compatible
+- ps_05_larnaka_mateur_low_chill
+
+======================================================================
+2. CUÁNDO SE ACTIVA
+======================================================================
+
+PS-SKIP se activa cuando:
+- El usuario selecciona “No sé” en variedad.
+- Escribe “tengo pistache” sin más datos.
+- No conoce variedad hembra.
+- No conoce variedad macho.
+- No sabe si hay polinizador.
+- No sabe si Kerman/Peters, Golden/Randy, Lost/Randy, Sirora, Larnaka, Mateur u otro.
+- Tiene árboles jóvenes y aún no le preocupa producción.
+- Tiene huerto nuevo sin historial.
+- Quiere avanzar rápido.
+
+Regla UX:
+Aunque el usuario no conozca la variedad, BIO-G no debe detener el onboarding. Primero escucha el árbol con sensores, etapa visible y contexto climático; después permite migrar el perfil.
+
+======================================================================
+3. SUPUESTO BASE CONSERVADOR
+======================================================================
+
+BIO-G asume para PS-SKIP:
+- Pistache promedio.
+- Variedad hembra desconocida.
+- Variedad macho/polinizador desconocida.
+- Proporción macho:hembra desconocida.
+- Portainjerto desconocido.
+- Requerimiento de frío medio-alto conservador.
+- Sensibilidad media-conservadora.
+- Manejo estándar a cielo abierto.
+- Sin información de densidad.
+- Sin rendimiento fino.
+- Sin historial de carga/alternancia.
+- Sin certeza de porcentaje de abiertos, vacíos o cerrados.
+
+PS-SKIP NO asume:
+- Que sea Kerman.
+- Que sea Golden Hills.
+- Que sea Lost Hills.
+- Que tenga macho compatible.
+- Que el macho esté sincronizado con la hembra.
+- Que el árbol sea adulto.
+- Que el huerto esté en plena producción.
+- Que haya producción si el usuario tiene un solo árbol.
+- Que el pistache tolere cualquier salinidad sin daño.
+- Que la cosecha cierre el cultivo.
+- Que fruit_fill sea harvest_maturity.
+
+Regla:
+El estado visible manda más que el supuesto.
+Si el usuario dice “recién plantado”, el árbol es no productivo aunque PS-SKIP sea general.
+Si el usuario dice “con flor”, se activa etapa crítica aunque no se conozca variedad.
+Si el usuario dice “pistache abriendo”, se activa harvest_maturity aunque no se conozca perfil.
+
+======================================================================
+4. CASOS QUE DEBE CUBRIR
+======================================================================
+
+Caso 1: “Tengo pistache pero no sé qué variedad es”
+- profileId: ps_skip
+- confidence: baja/media
+- pedir etapa visible
+
+Caso 2: Árbol recién plantado
+- state: newly_planted
+- stage: planting_transplant o root_establishment
+- rendimiento: 0
+- prioridad: raíz, humedad, EC, compactación
+
+Caso 3: Pistache joven sin producción
+- state: juvenile_non_productive
+- stage: juvenile_vegetative o unknown
+- rendimiento: 0
+- prioridad: estructura, raíz, vigor, frío/helada como contexto
+
+Caso 4: Árbol en flor y no sabe macho/hembra
+- state: productive_season o established
+- stage: flowering
+- alertas: polinización, sincronía, viento, lluvia, helada, frío insuficiente
+- confianza: media-baja si no confirma macho/hembra
+
+Caso 5: Tiene un solo árbol
+- profileId: ps_skip
+- risk: alto riesgo de falta de polinización si no hay macho/hembra cerca
+- no prometer cosecha
+
+Caso 6: Racimos con pistache verde
+- stage: fruit_fill
+- targets: agua, EC, K relativo, salinidad, hoja sana
+- copy: llenado/kernel/calidad, no cosecha
+
+Caso 7: Pistache abriendo / cosecha
+- stage: harvest_maturity
+- copy: abiertos/cerrados/vacíos/manchado/hull slip/calidad
+- riesgo: early split, NOW, hongos, retraso de cosecha
+
+Caso 8: Después de cosecha
+- stage: post_harvest
+- no cerrar cultivo
+- activar memoria de reservas, mummies, saneamiento, sanidad de hoja
+
+Caso 9: Luego aprende la variedad
+- migration: ps_skip -> ps_01/02/03/04/05
+- conservar historial, sensores, memoria de estrés y eventos.
+
+======================================================================
+5. ESTRUCTURA FENOLÓGICA ACTIVA EN PS-SKIP
+======================================================================
+
+PS-SKIP usa el esqueleto completo del pistache universal:
+
+Pre-productivas:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+
+Productivas anuales:
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+
+Fallback:
+- unknown
+
+Regla:
+PS-SKIP no elimina etapas. Sólo usa rangos más amplios, sensibilidad conservadora y menor confianza.
+
+======================================================================
+6. ETAPAS ACTIVAS Y LABEL UX SKIP
+======================================================================
+
+StageId | Label UX SKIP | Política
+---|---|---
+planting_transplant | Plantación / trasplante | Si el árbol es nuevo; no producción
+root_establishment | Establecimiento de raíz | Raíz sensible; cuidado con saturación y sales
+juvenile_vegetative | Pistache joven sin producir | Formación; no penalizar por falta de pistache
+dormancy | Pelón / dormido | Frío y reservas; no cultivo muerto
+budbreak | Brotando | Arranque; vigilar brotación dispareja
+vegetative_growth | Lleno de hoja / creciendo | Hoja y estructura; cuidado con exceso de vigor
+flowering | Con flor | Etapa crítica macho-hembra, viento, lluvia, helada
+fruit_set | Pistache recién cuajado | Amarre; riesgo de caída temprana
+fruit_fill | Pistache creciendo / llenando grano | Agua, K, hoja, salinidad; NO copy de cosecha
+harvest_maturity | Pistache abriendo / cosecha | Abiertos, cerrados, hull slip, calidad final
+post_harvest | Después de cosecha | Reservas, saneamiento, mummies, siguiente ciclo
+unknown | No lo sé | Fallback seguro y preguntas visuales
+
+======================================================================
+7. CALENDARIO PROMEDIO CONSERVADOR PS-SKIP
+======================================================================
+
+Usar sólo para visualización, coherencia y copy. Nunca como promesa.
+
+Evento | Ventana SKIP | Regla
+---|---|---
+Floración | 15-30 días | No garantiza sincronía macho-hembra
+Polinización/cuajado | 7-21 días | Riesgo por viento, lluvia, frío, calor o falta de macho
+Crecimiento de fruto | 60-100 días iniciales | Tamaño, cáscara y racimo
+Llenado de kernel/grano | 6-10 semanas fuertes dentro del ciclo | Agua, K, hoja sana y calor pesan
+Madurez/apertura | 20-35 días | Pistaches abiertos/cerrados y hull slip
+Cosecha | Agosto-octubre, según perfil/zona | Golden/Lost suelen antes que Kerman; PS-SKIP no asume
+Postcosecha | Hasta caída de hoja / dormancia | Reservas y saneamiento
+
+Reglas:
+- Estas ventanas no sustituyen perfiles PS-01 a PS-05.
+- Si hay etapa visible, la etapa pesa más que el calendario.
+- Si hay bajo frío, las ventanas pueden extenderse y perder sincronía.
+
+======================================================================
+8. RANGOS CONSERVADORES PS-SKIP PARA SENSORES
+======================================================================
+
+PS-SKIP usa bandas amplias y evita falsos críticos. Los targets finales por etapa se definen en Documento 05.
+
+8.1 soilMoisture
+Banda conservadora:
+- crítico bajo: <35-40% AW
+- observación baja: 40-50% AW
+- operativo: 50-80% AW
+- observación alta: 80-88% AW
+- saturación/exceso: >88-90% AW o lectura persistente con mala aireación
+
+Lectura:
+- En establecimiento, evitar saturación.
+- En floración/cuajado/llenado, no dejar estrés fuerte.
+- En dormancia, no sobrerreaccionar si el suelo está frío y el árbol está dormido.
+
+8.2 soilTemp
+Banda conservadora:
+- actividad baja: <8 °C
+- absorción lenta: 8-12 °C
+- funcional: 12-28 °C
+- observación calor: 28-32 °C con baja humedad
+- alerta: >32-35 °C con humedad baja/EC alta
+
+Lectura:
+- No penalizar frío normal de dormancia.
+- Si soilTemp baja en budbreak, bajar confianza de absorción.
+
+8.3 pH
+Banda conservadora:
+- óptimo operativo: 6.5-7.8
+- aceptable calizo con vigilancia: 7.8-8.2
+- observación: 5.8-6.5 o 8.2-8.5
+- alerta: <5.5 o >8.5
+
+Lectura:
+- Pistache tolera suelos alcalinos, pero pH alto puede bloquear Fe/Zn/P.
+- No decir “falta fertilizante” sin revisar disponibilidad.
+
+8.4 EC
+Banda conservadora:
+- baja/preferente: <2.0 dS/m
+- observación: 2.0-3.5 dS/m
+- alerta moderada: 3.5-5.0 dS/m
+- alerta fuerte: >5.0-6.0 dS/m
+- crítica: >6.0 o tendencia ascendente con estrés visual
+
+Lectura:
+- EC es métrica de exceso/salinidad, no de déficit.
+- Pistache aguanta más, pero no es inmune.
+- Si EC alta + humedad baja, subir estrés osmótico.
+- Si EC alta + N/K alto, advertir acumulación de sales/fertilizante.
+
+8.5 resistance
+Banda conservadora:
+- favorable: <1.5 MPa
+- observación: 1.5-2.2 MPa
+- alerta: 2.2-2.8 MPa
+- crítica: >2.8-3.0 MPa
+
+Lectura:
+- Raíz profunda necesita suelo con aire.
+- Compactación + exceso de agua = raíz asfixiada.
+- Compactación + déficit = agua inaccesible.
+
+8.6 N/P/K relativo
+Regla:
+PS-SKIP no interpreta dosis. Sólo prioridad relativa según etapa.
+
+N:
+- moderado en juvenil/vegetativo;
+- bajo-moderado en floración/cuajado;
+- moderado en llenado si hay carga y agua;
+- bajo en cosecha;
+- moderado postcosecha sólo si hay hoja activa.
+
+P:
+- alto relativo en raíz/establecimiento;
+- medio en brotación/floración;
+- bajo-medio en cosecha.
+
+K:
+- medio en crecimiento;
+- alto en fruit_set/fruit_fill;
+- medio-alto en madurez si no hay EC alta;
+- medio en postcosecha.
+
+======================================================================
+9. SENSIBILIDAD CRÍTICA PS-SKIP
+======================================================================
+
+Riesgo | Peso SKIP | Mensaje técnico
+---|---|---
+Frío invernal insuficiente | Muy alto | Brotación/floración dispareja, caída temprana, blanks, baja carga
+Macho/hembra desconocido | Alto en flowering/fruit_set | Sin polinizador compatible no hay cosecha confiable
+Lluvia/alta HR en floración | Alto | Baja liberación/viabilidad de polen, enfermedades
+Viento insuficiente o extremo | Medio-alto | El polen se mueve por viento; poco viento o viento extremo complican amarre
+Helada tardía | Alto | Puede dañar flores y brotes
+Déficit hídrico en llenado | Muy alto | Menor kernel, más cerrados/vacíos, alternancia
+Salinidad/EC alta | Alto | Pistache tolera, pero el llenado y raíz se pagan
+Compactación/anoxia | Alto | Árbol puede verse “regado” pero sin raíz funcional
+Alternancia | Alta | Registrar carga alta/baja y estrés postcosecha
+N alto con baja carga | Medio-alto | Riesgo de follaje/vigor y sombra inútil
+K bajo en fruit_fill | Alto | Riesgo de llenado/calidad si agua/EC están bien
+
+======================================================================
+10. VENTANAS FISIOLÓGICAS PS-SKIP
+======================================================================
+
+Ventana crítica 1: Dormancia -> brotación
+- Frío efectivo define uniformidad de brotación y floración.
+- Si el invierno fue bajo en frío, BIO-G baja confianza del ciclo.
+
+Ventana crítica 2: Floración -> cuajado
+- Macho/hembra, viento, lluvia, humedad, helada y reservas mandan.
+- No culpar NPK como primera causa.
+
+Ventana hídrica: Cuajado -> llenado
+- Falta de agua fuerte reduce tamaño, kernel y calidad.
+- Exceso de agua reduce oxígeno y puede agravar raíz.
+
+Ventana de calidad: Llenado -> madurez
+- K, agua, hoja sana, calor y sanidad definen abiertos/cerrados, blanks, manchado y peso.
+
+Ventana de memoria: Postcosecha
+- Hoja activa + agua funcional + baja salinidad + sanidad = mejor reserva.
+- Defoliación temprana, estrés salino o sequía postcosecha suben alternancia siguiente.
+
+======================================================================
+11. MENSAJES UX RECOMENDADOS
+======================================================================
+
+Contexto: Perfil general
+Copy:
+“Este es un perfil general de pistache. Luego puedes elegir Kerman, Golden Hills, Lost Hills, Sirora u otro sin perder historial.”
+
+Contexto: No sabe variedad
+Copy:
+“No pasa nada si no sabes la variedad. En pistache lo más importante ahorita es saber qué se ve en el árbol y si hay macho/hembra cerca.”
+
+Contexto: No sabe macho/hembra
+Copy:
+“El pistache necesita macho y hembra para producir. Si no sabemos si hay polinizador, BIO-G puede leer el árbol, pero baja la confianza en floración y cuajado.”
+
+Contexto: Tiene un solo árbol
+Copy:
+“Con un solo árbol puede faltar polinización. Si floreó pero no amarró, no culpes primero al fertilizante: revisa si hay macho/hembra compatible cerca.”
+
+Contexto: Floración con lluvia/humedad
+Copy:
+“En floración el pistache se juega el amarre. Lluvia, humedad alta, helada o poco viento pueden pegarle aunque el suelo marque bien.”
+
+Contexto: Frío insuficiente
+Copy:
+“Si el invierno no dio frío parejo, el pistache puede brotar y florear disparejo. Eso puede terminar en poca carga, vacíos o mal amarre.”
+
+Contexto: Fruit_fill con agua baja
+Copy:
+“En llenado, el pistache no sólo está creciendo por fuera: se está formando el grano. Si falta agua aquí, se paga en kernel, abiertos y calidad.”
+
+Contexto: EC alta
+Copy:
+“El pistache aguanta más sales que otros árboles, pero no es de fierro. Si la EC sube, el árbol puede sentir sequía aunque estés regando.”
+
+Contexto: N alto con baja carga
+Copy:
+“Si hay poco pistache cargado y mucho nitrógeno, el árbol puede irse a puro follaje. Más verde no siempre significa más cosecha.”
+
+Contexto: Harvest_maturity
+Copy:
+“Ahora sí importa el porcentaje de abiertos, cerrados, vacíos y manchado. No retrases cosecha si el pistache ya está listo y hay riesgo de plaga o hongo.”
+
+Contexto: Postcosecha
+Copy:
+“No cierres el ciclo al cosechar. Si el árbol conserva hoja activa, todavía está juntando reservas para el siguiente año.”
+
+======================================================================
+12. MEMORIA DEL CULTIVO EN PS-SKIP
+======================================================================
+
+PS-SKIP registra estrés, pero pondera conservador hasta tener historial.
+
+Eventos a guardar:
+- bajo frío invernal;
+- helada en brotación/floración;
+- lluvia/humedad alta en floración;
+- ausencia o duda de macho/hembra;
+- baja carga/cuajado bajo;
+- déficit hídrico en fruit_fill;
+- EC/salinidad alta;
+- defoliación por plaga/enfermedad;
+- cosecha retrasada;
+- altos cerrados/blanks reportados;
+- postcosecha seca o sin hoja activa;
+- alternancia: año alto/año bajo.
+
+Impacto futuro:
+- frío bajo -> brotación/floración dispareja;
+- mala floración/cuajado -> baja carga actual;
+- estrés fruit_fill -> calidad baja y reservas afectadas;
+- defoliación/postcosecha mala -> menor retorno floral;
+- carga alta + postcosecha pobre -> alternancia probable.
+
+Campos sugeridos futuros:
+- lastWinterChillRisk
+- lastBloomPollinationRisk
+- lastFruitSetFailureRisk
+- lastFruitFillWaterStress
+- lastSalinityStressMemory
+- lastPostHarvestReserveRisk
+- alternateBearingRisk
+- malePollinizerConfidence
+
+======================================================================
+13. CONFIABILIDAD DEL DATO PS-SKIP
+======================================================================
+
+Fuente de dato:
+- sensor
+- modelo climático
+- estimación
+- observación del usuario
+- historial
+
+Confianza inicial:
+- baja: sólo cultivo “pistache”
+- media-baja: cultivo + estado, sin etapa visible
+- media: etapa visible + sensores
+- media-alta: etapa visible + sensores + macho/hembra confirmado + historial
+- alta: sólo en perfiles específicos con validación local y datos estables
+
+Reglas para bajar confianza:
+- variedad desconocida;
+- macho/polinizador desconocido;
+- etapa unknown;
+- EC alta;
+- pH extremo;
+- soilMoisture crítica;
+- resistance alta;
+- bajo frío probable;
+- ausencia de historial.
+
+Reglas para subir confianza:
+- etapa visible confirmada;
+- sensores estables;
+- perfil migrado a PS-01/02/03/04/05;
+- usuario confirma macho/hembra;
+- historial de carga/cosecha;
+- análisis de suelo/agua/foliar.
+
+======================================================================
+14. METADATOS BIO-G
+======================================================================
+
+Tipo de ficha:
+- Bio-G v1 — SKIP
+
+Dependencia:
+- Perfil Universal Pistache PS
+
+Compatible con sensores:
+- Sí
+
+Diseñado para onboarding rápido:
+- Sí
+
+Migrable:
+- Sí
+
+No visible como “incompleto”:
+- Sí
+
+Compatible con runtime perenne:
+- Sí
+
+No usa sowingDate:
+- Sí
+
+No cierra cultivo en cosecha:
+- Sí
+
+Conserva identidad stage/NPK/UI v1.5:
+- Sí
+
+======================================================================
+15. MAPEO TÉCNICO A CÓDIGO
+======================================================================
+
+ProfileEntry sugerido:
+
+profileId: ps_skip
+cropId: crop_pistachio_tree
+label: PS-SKIP - Pistache general
+uxLabel: No sé / Pistache general
+isGeneric: true
+isMigrable: true
+defaultConfidence: 0.45
+migrationTargets:
+  - ps_01_kerman_peters
+  - ps_02_golden_hills_randy
+  - ps_03_lost_hills_randy
+  - ps_04_sirora_compatible
+  - ps_05_larnaka_mateur_low_chill
+aliases:
+  - pistache
+  - pistacho
+  - pistachero
+  - alfóncigo
+  - alfónsigo
+  - no sé
+  - no se
+  - variedad desconocida
+  - otra variedad
+  - pistache general
+
+Resolver:
+- Si input contiene Kerman -> sugerir ps_01_kerman_peters.
+- Si input contiene Golden Hills/GH -> sugerir ps_02_golden_hills_randy.
+- Si input contiene Lost Hills/LH -> sugerir ps_03_lost_hills_randy.
+- Si input contiene Sirora -> sugerir ps_04_sirora_compatible.
+- Si input contiene Larnaka/Mateur/mediterráneo/bajo frío -> sugerir ps_05_larnaka_mateur_low_chill.
+- Si input ambiguo -> ps_skip.
+
+No hacer:
+- No convertir “pistache americano” siempre en Kerman sin preguntar.
+- No convertir “temprano” siempre en Golden Hills; puede ser Larnaka/Mateur u otro.
+- No inferir macho confirmado por variedad hembra.
+- No borrar memoria al migrar.
+
+======================================================================
+16. TESTS MÍNIMOS RECOMENDADOS
+======================================================================
+
+1) pistachio_skip_does_not_block_onboarding_test
+Input: crop_pistachio_tree + profile unknown
+Esperado: resolve ps_skip, no error, confidence baja/media.
+
+2) pistachio_skip_flowering_unknown_male_test
+Input: ps_skip + flowering + maleUnknown
+Esperado: riesgo polinización; no diagnóstico cerrado; no receta NPK.
+
+3) pistachio_skip_single_tree_test
+Input: ps_skip + flowering + treeCount=1
+Esperado: advertencia de posible falta de polinizador; no prometer cosecha.
+
+4) pistachio_skip_fruit_fill_copy_test
+Input: ps_skip + fruit_fill + N high
+Esperado: copy habla de llenado/kernel/calidad; NO contiene “cosecha”, “madurez”, “listo para cortar”.
+
+5) pistachio_skip_harvest_maturity_copy_test
+Input: ps_skip + harvest_maturity
+Esperado: copy sí habla de abiertos/cerrados/cosecha/calidad final.
+
+6) pistachio_skip_post_harvest_alive_test
+Input: ps_skip + post_harvest + leafActive true
+Esperado: reservas y siguiente ciclo; no cerrar cultivo.
+
+7) pistachio_skip_ec_high_test
+Input: ps_skip + fruit_fill + EC high + K high
+Esperado: advertencia por sales/acumulación; no celebrar K alto.
+
+8) pistachio_skip_low_chill_test
+Input: ps_skip + budbreak/flowering + lowChillContext
+Esperado: brotación/floración dispareja; baja confianza en cuajado.
+
+9) pistachio_skip_soil_moisture_watch_not_critical_test
+Input: ps_skip + fruit_fill + soilMoisture apenas debajo de optimalMin
+Esperado: observación baja, no crítico.
+
+10) pistachio_skip_migration_keeps_history_test
+Input: ps_skip con historial de estrés -> ps_02_golden_hills_randy
+Esperado: conserva memoria, sensores y eventos.
+
+======================================================================
+17. FUENTES Y TRAZABILIDAD
+======================================================================
+
+Fuentes de alta confianza:
+- UC ANR / UC Davis: Climate & Cultivars para pistache.
+- UC IPM: Year-round pistachio IPM y guías de plagas/enfermedades.
+- UC ANR: salinidad, riego, suelo y cultivares de pistache.
+- California Agriculture / Kallsen et al.: cultivares UC Golden Hills/Lost Hills y comparación con Kerman.
+- NMSU / Western SARE: producción de pistache en zonas áridas.
+- CIAD México: contexto de pistache en México y Chihuahua.
+
+Fuentes de media confianza:
+- Fichas comerciales de variedades y viveros para aliases/ventanas relativas.
+
+Fuentes de baja-media:
+- Foros y redes: sólo lenguaje UX y dudas frecuentes.
+
+CIERRE
+PS-SKIP permite que BIO-G trabaje con pistache aunque el usuario no sepa variedad, macho, polinizador, edad o sistema. El perfil es conservador, migrable y compatible con el runtime perenne. No bloquea, no inventa datos y no confunde fruit_fill con harvest_maturity.

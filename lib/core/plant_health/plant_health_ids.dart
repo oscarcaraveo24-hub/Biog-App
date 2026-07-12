@@ -117,6 +117,24 @@ class PlantHealthIds {
   static const String symptomShuckDiebackBlackening = 'shuck_dieback_blackening';
   static const String symptomPrematureNutDrop = 'premature_nut_drop';
 
+  // Pistache (frutal de nuez, dioico) — síntomas propios (doc 04 §5, §6, §8).
+  static const String symptomNutwormMummies = 'pistachio_nutworm_mummies';
+  static const String symptomEarlySplitStaining =
+      'pistachio_early_split_staining';
+  static const String symptomPanicleShootBlight =
+      'pistachio_panicle_shoot_blight';
+  static const String symptomBlankClosedNut = 'pistachio_blank_closed_nut';
+
+  // Naranjo (cítrico siempreverde) — síntomas propios (doc 04 §5, §8.4).
+  static const String symptomCitrusBlotchyMottle = 'citrus_blotchy_mottle';
+  static const String symptomCitrusSmallLopsidedFruit =
+      'citrus_small_lopsided_fruit';
+  static const String symptomCitrusGummosisTrunk = 'citrus_gummosis_trunk';
+  static const String symptomCitrusSplitFruit = 'citrus_split_fruit';
+  static const String symptomCitrusRindScarring = 'citrus_rind_scarring';
+  static const String symptomCitrusRaisedCorkyHaloLesions =
+      'citrus_raised_corky_halo_lesions';
+
   // Signals
   static const String signalPustulesOnStem = 'pustules_on_stem';
   static const String signalNoClearPustules = 'no_clear_pustules';
@@ -246,6 +264,26 @@ class PlantHealthIds {
   static const String signalYellowAphids = 'yellow_aphids';
   static const String signalBlackPecanAphids = 'black_pecan_aphids';
 
+  // Pistache (frutal de nuez, dioico) — señales propias (doc 04 §5, §6, §8).
+  static const String signalNavelOrangeworm = 'navel_orangeworm';
+  static const String signalMummyNuts = 'mummy_nuts';
+  static const String signalEarlyHullSplit = 'early_hull_split';
+
+  // Naranjo (cítrico siempreverde) — señales propias (doc 04 §8.5).
+  static const String signalAsymmetricMottle = 'asymmetric_mottle';
+  static const String signalPsyllidWaxyTubules = 'psyllid_waxy_tubules';
+  static const String signalFlushNewGrowth = 'flush_new_growth';
+  static const String signalFruitBitterMisshapen = 'fruit_bitter_misshapen';
+  static const String signalGumAtTrunkBase = 'gum_at_trunk_base';
+  static const String signalRindScarsNearCalyx = 'rind_scars_near_calyx';
+  static const String signalFruitSplitAfterIrrigation =
+      'fruit_split_after_irrigation';
+  static const String signalFruitLowCanopyRainSplash =
+      'fruit_low_canopy_rain_splash';
+  static const String signalWhiteGreenBlueMold = 'white_green_blue_mold';
+  static const String signalRecentSprayOilCopper = 'recent_spray_oil_copper';
+  static const String signalFruitLarvae = 'fruit_larvae';
+
   static const Map<String, String> organLabelsEs = <String, String>{
     organWhorl: 'Cogollo',
     organLeaf: 'Hoja',
@@ -357,6 +395,23 @@ class PlantHealthIds {
     symptomShuckDiebackBlackening:
         'Ruezno que se ennegrece o muere desde la punta',
     symptomPrematureNutDrop: 'Caída de nuez recién amarrada o nuez chica',
+    symptomNutwormMummies:
+        'Pistache con gusano, frass en racimo o momias en árbol',
+    symptomEarlySplitStaining:
+        'Cáscara abierta temprano (early split) con manchado',
+    symptomPanicleShootBlight:
+        'Racimo/brote ennegrecido con lesiones (tizón de panícula)',
+    symptomBlankClosedNut: 'Pistache vano (blank) o cerrado / no abre',
+    symptomCitrusBlotchyMottle:
+        'Hoja con moteado amarillo asimétrico/disparejo (posible HLB)',
+    symptomCitrusSmallLopsidedFruit:
+        'Naranja chica, ladeada, deforme o amarga',
+    symptomCitrusGummosisTrunk: 'Goma en la base del tronco o cuello (gomosis)',
+    symptomCitrusSplitFruit: 'Naranja rajada o partida',
+    symptomCitrusRindScarring:
+        'Cicatrices o raspaduras corchosas en la cáscara',
+    symptomCitrusRaisedCorkyHaloLesions:
+        'Lesiones elevadas/corchosas con halo (hoja/fruto/tallo)',
   };
 
   static const Map<String, String> signalLabelsEs = <String, String>{
@@ -476,6 +531,26 @@ class PlantHealthIds {
     signalYellowAphids: 'Pulgones amarillos y mielecilla en el envés',
     signalBlackPecanAphids:
         'Puntos amarillos que se vuelven cafés y defoliación (pulgón negro)',
+    signalNavelOrangeworm:
+        'Gusano/larva en la nuez con frass o telaraña (gusano del ombligo)',
+    signalMummyNuts: 'Hay momias (nueces viejas pegadas) en árbol o suelo',
+    signalEarlyHullSplit: 'La cascarilla/hull se abrió antes de tiempo',
+    signalAsymmetricMottle: 'El amarillamiento es disparejo/asimétrico en la hoja',
+    signalPsyllidWaxyTubules:
+        'Hay ninfas o tubitos cerosos blancos en los brotes (psílido)',
+    signalFlushNewGrowth: 'Hay brote tierno / flush nuevo',
+    signalFruitBitterMisshapen: 'La fruta sale chica, ladeada, deforme o amarga',
+    signalGumAtTrunkBase: 'Hay goma/exudado en la base del tronco o cuello',
+    signalRindScarsNearCalyx:
+        'Hay cicatrices o anillos cerca del cáliz en fruta chica',
+    signalFruitSplitAfterIrrigation:
+        'La fruta se rajó tras un periodo seco y luego riego/lluvia',
+    signalFruitLowCanopyRainSplash:
+        'La fruta dañada está en la parte baja, con salpicadura de suelo',
+    signalWhiteGreenBlueMold: 'Hay moho blanco/verde/azul en la fruta',
+    signalRecentSprayOilCopper:
+        'Hubo aspersión reciente de aceite, cobre o herbicida',
+    signalFruitLarvae: 'Hay larvas o picaduras dentro de la fruta',
   };
 
   static String organLabel(String organId) => organLabelsEs[organId] ?? organId;

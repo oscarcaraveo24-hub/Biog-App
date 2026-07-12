@@ -2,6 +2,11 @@ import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_assets.dart';
+import 'package:bio_g/core/crops/orange_tree/orange_tree_assets.dart';
+import 'package:bio_g/core/crops/lemon_tree/lemon_tree_assets.dart';
+import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
+import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
@@ -250,7 +255,12 @@ class CropPresentationResolver {
     if (cropId == CropCatalog.appleTreeCropId ||
         cropId == CropCatalog.pearTreeCropId ||
         cropId == CropCatalog.peachTreeCropId ||
-        cropId == CropCatalog.walnutTreeCropId) {
+        cropId == CropCatalog.walnutTreeCropId ||
+        cropId == CropCatalog.pistachioTreeCropId ||
+        cropId == CropCatalog.orangeTreeCropId ||
+        cropId == CropCatalog.lemonTreeCropId ||
+        cropId == CropCatalog.mangoTreeCropId ||
+        cropId == CropCatalog.avocadoTreeCropId) {
       return _resolveTree(
         cropId: cropId,
         cropContext: cropContext,
@@ -543,6 +553,36 @@ class CropPresentationResolver {
         return _resolveWalnutTreeIcon(
           cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
         );
+      case CropCatalog.pistachioTreeCropId:
+        // El pistache guarda el perfil PS en `profileId`; priorizarlo para el
+        // icono (igual que los demas arboles).
+        return _resolvePistachioTreeIcon(
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.orangeTreeCropId:
+        // El naranjo guarda el perfil OR en `profileId`; priorizarlo para el
+        // icono (igual que los demas arboles).
+        return _resolveOrangeTreeIcon(
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.lemonTreeCropId:
+        // El limón guarda el perfil LM en `profileId`; priorizarlo para el
+        // icono (igual que los demas arboles).
+        return _resolveLemonTreeIcon(
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.mangoTreeCropId:
+        // El mango guarda el perfil MG en `profileId`; priorizarlo para el
+        // icono (igual que los demas arboles).
+        return _resolveMangoTreeIcon(
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.avocadoTreeCropId:
+        // El aguacate guarda el perfil AG en `profileId`; priorizarlo para el
+        // icono (igual que los demas arboles).
+        return _resolveAvocadoTreeIcon(
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
       default:
         return _genericPlantIconAsset;
     }
@@ -570,6 +610,49 @@ class CropPresentationResolver {
     final raw = (rawVarietyValue ?? '').trim();
     if (raw.isEmpty) return WalnutTreeAssets.cropIcon;
     return walnutTreeProfileIcon(raw);
+  }
+
+  /// Icono del pistache por perfil PS. Usa los PNG definitivos `ic_pistachio_*`;
+  /// perfiles desconocidos caen al icono seguro del cultivo.
+  static String _resolvePistachioTreeIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return PistachioTreeAssets.cropIcon;
+    return pistachioTreeProfileIcon(raw);
+  }
+
+  /// Icono del naranjo por perfil OR. TEMPORAL: recicla el ícono genérico de
+  /// árbol mientras no exista arte de naranjo; perfiles desconocidos caen al
+  /// icono seguro del cultivo.
+  static String _resolveOrangeTreeIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return OrangeTreeAssets.cropIcon;
+    return orangeTreeProfileIcon(raw);
+  }
+
+  /// Icono del limón por perfil LM. TEMPORAL: usa arte cítrico reciclado
+  /// (placeholder) mientras no exista arte propio de limón; perfiles
+  /// desconocidos caen al icono seguro del cultivo.
+  static String _resolveLemonTreeIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return LemonTreeAssets.cropIcon;
+    return lemonTreeProfileIcon(raw);
+  }
+
+  /// Icono del mango por perfil MG. TEMPORAL: usa el ícono genérico de árbol
+  /// (placeholder) mientras no exista arte propio de mango; perfiles
+  /// desconocidos caen al icono seguro del cultivo.
+  static String _resolveMangoTreeIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return MangoTreeAssets.cropIcon;
+    return mangoTreeProfileIcon(raw);
+  }
+
+  /// Icono del aguacate por perfil AG; perfiles desconocidos caen al icono
+  /// seguro del cultivo.
+  static String _resolveAvocadoTreeIcon(String? rawVarietyValue) {
+    final raw = (rawVarietyValue ?? '').trim();
+    if (raw.isEmpty) return AvocadoTreeAssets.cropIcon;
+    return avocadoTreeProfileIcon(raw);
   }
 
   /// Ícono del manzano por perfil AP. Sin perfil claro → ícono del cultivo

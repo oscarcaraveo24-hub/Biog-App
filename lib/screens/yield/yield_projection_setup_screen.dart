@@ -4,6 +4,11 @@ import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/peach_tree/peach_tree_yield_reference.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_yield_reference.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_yield_reference.dart';
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_yield_reference.dart';
+import 'package:bio_g/core/crops/orange_tree/orange_tree_yield_reference.dart';
+import 'package:bio_g/core/crops/lemon_tree/lemon_tree_yield_reference.dart';
+import 'package:bio_g/core/crops/mango_tree/mango_tree_yield_reference.dart';
+import 'package:bio_g/core/crops/avocado_tree/avocado_tree_yield_reference.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/yield_projection_config.dart';
@@ -292,6 +297,71 @@ class _YieldProjectionSetupScreenState
       return;
     }
 
+    if (cropId == CropCatalog.pistachioTreeCropId) {
+      final projection = resolvePistachioTreeYield(
+        profileId: ctx.profileId,
+        perennialStateId: ctx.perennialStateId,
+        phenologyStageId: ctx.phenologyStageId,
+        treesPerHa: treesPerHa,
+        hectares: hectares,
+        treeCount: treeCount,
+      );
+      _setPistachioTreeProjection(projection, area);
+      return;
+    }
+
+    if (cropId == CropCatalog.orangeTreeCropId) {
+      final projection = resolveOrangeTreeYield(
+        profileId: ctx.profileId,
+        perennialStateId: ctx.perennialStateId,
+        phenologyStageId: ctx.phenologyStageId,
+        treesPerHa: treesPerHa,
+        hectares: hectares,
+        treeCount: treeCount,
+      );
+      _setOrangeTreeProjection(projection, area);
+      return;
+    }
+
+    if (cropId == CropCatalog.lemonTreeCropId) {
+      final projection = resolveLemonTreeYield(
+        profileId: ctx.profileId,
+        perennialStateId: ctx.perennialStateId,
+        phenologyStageId: ctx.phenologyStageId,
+        treesPerHa: treesPerHa,
+        hectares: hectares,
+        treeCount: treeCount,
+      );
+      _setLemonTreeProjection(projection, area);
+      return;
+    }
+
+    if (cropId == CropCatalog.mangoTreeCropId) {
+      final projection = resolveMangoTreeYield(
+        profileId: ctx.profileId,
+        perennialStateId: ctx.perennialStateId,
+        phenologyStageId: ctx.phenologyStageId,
+        treesPerHa: treesPerHa,
+        hectares: hectares,
+        treeCount: treeCount,
+      );
+      _setMangoTreeProjection(projection, area);
+      return;
+    }
+
+    if (cropId == CropCatalog.avocadoTreeCropId) {
+      final projection = resolveAvocadoTreeYield(
+        profileId: ctx.profileId,
+        perennialStateId: ctx.perennialStateId,
+        phenologyStageId: ctx.phenologyStageId,
+        treesPerHa: treesPerHa,
+        hectares: hectares,
+        treeCount: treeCount,
+      );
+      _setAvocadoTreeProjection(projection, area);
+      return;
+    }
+
     final tier = TreeYieldReferenceCatalog.tierForPerennialState(
       ctx.perennialStateId,
     );
@@ -382,6 +452,96 @@ class _YieldProjectionSetupScreenState
 
   void _setWalnutTreeProjection(
     WalnutTreeYieldProjection projection,
+    double area,
+  ) {
+    final expectedTotalKg = projection.totalKg?.expected ?? 0.0;
+    _projectedTotalYield = expectedTotalKg;
+    _totalUnitLabel = 'kg';
+
+    if (_areaUnit == YieldAreaUnit.hectare) {
+      _projectedYieldPerUnit = projection.tonPerHa?.expected ?? 0.0;
+      _yieldUnitLabel = 't/ha';
+    } else {
+      _projectedYieldPerUnit = area <= 0 ? 0.0 : expectedTotalKg / area;
+      _yieldUnitLabel = 'kg/m2';
+    }
+    _projectedIncome = 0.0;
+  }
+
+  void _setPistachioTreeProjection(
+    PistachioTreeYieldProjection projection,
+    double area,
+  ) {
+    final expectedTotalKg = projection.totalKg?.expected ?? 0.0;
+    _projectedTotalYield = expectedTotalKg;
+    _totalUnitLabel = 'kg';
+
+    if (_areaUnit == YieldAreaUnit.hectare) {
+      _projectedYieldPerUnit = projection.tonPerHa?.expected ?? 0.0;
+      _yieldUnitLabel = 't/ha';
+    } else {
+      _projectedYieldPerUnit = area <= 0 ? 0.0 : expectedTotalKg / area;
+      _yieldUnitLabel = 'kg/m2';
+    }
+    _projectedIncome = 0.0;
+  }
+
+  void _setOrangeTreeProjection(
+    OrangeTreeYieldProjection projection,
+    double area,
+  ) {
+    final expectedTotalKg = projection.totalKg?.expected ?? 0.0;
+    _projectedTotalYield = expectedTotalKg;
+    _totalUnitLabel = 'kg';
+
+    if (_areaUnit == YieldAreaUnit.hectare) {
+      _projectedYieldPerUnit = projection.tonPerHa?.expected ?? 0.0;
+      _yieldUnitLabel = 't/ha';
+    } else {
+      _projectedYieldPerUnit = area <= 0 ? 0.0 : expectedTotalKg / area;
+      _yieldUnitLabel = 'kg/m2';
+    }
+    _projectedIncome = 0.0;
+  }
+
+  void _setLemonTreeProjection(
+    LemonTreeYieldProjection projection,
+    double area,
+  ) {
+    final expectedTotalKg = projection.totalKg?.expected ?? 0.0;
+    _projectedTotalYield = expectedTotalKg;
+    _totalUnitLabel = 'kg';
+
+    if (_areaUnit == YieldAreaUnit.hectare) {
+      _projectedYieldPerUnit = projection.tonPerHa?.expected ?? 0.0;
+      _yieldUnitLabel = 't/ha';
+    } else {
+      _projectedYieldPerUnit = area <= 0 ? 0.0 : expectedTotalKg / area;
+      _yieldUnitLabel = 'kg/m2';
+    }
+    _projectedIncome = 0.0;
+  }
+
+  void _setMangoTreeProjection(
+    MangoTreeYieldProjection projection,
+    double area,
+  ) {
+    final expectedTotalKg = projection.totalKg?.expected ?? 0.0;
+    _projectedTotalYield = expectedTotalKg;
+    _totalUnitLabel = 'kg';
+
+    if (_areaUnit == YieldAreaUnit.hectare) {
+      _projectedYieldPerUnit = projection.tonPerHa?.expected ?? 0.0;
+      _yieldUnitLabel = 't/ha';
+    } else {
+      _projectedYieldPerUnit = area <= 0 ? 0.0 : expectedTotalKg / area;
+      _yieldUnitLabel = 'kg/m2';
+    }
+    _projectedIncome = 0.0;
+  }
+
+  void _setAvocadoTreeProjection(
+    AvocadoTreeYieldProjection projection,
     double area,
   ) {
     final expectedTotalKg = projection.totalKg?.expected ?? 0.0;
@@ -1824,11 +1984,23 @@ class _YieldProjectionSetupScreenState
                   manualBaseHint: _isTreeCrop
                       ? 'Ingresa la superficie y árboles abajo'
                       : 'Ingresa la superficie y semillas abajo',
-                  yieldNoun:
-                      CropCatalog.canonicalCropKey(cropContext?.cropId) ==
-                          CropCatalog.walnutTreeCropId
-                      ? 'rendimiento aproximado de nuez con cáscara'
-                      : 'rendimiento aproximado',
+                  yieldNoun: switch (CropCatalog.canonicalCropKey(
+                    cropContext?.cropId,
+                  )) {
+                    CropCatalog.walnutTreeCropId =>
+                      'rendimiento aproximado de nuez con cáscara',
+                    CropCatalog.pistachioTreeCropId =>
+                      'rendimiento aproximado de pistache seco con cáscara',
+                    CropCatalog.orangeTreeCropId =>
+                      'rendimiento aproximado de naranja fresca',
+                    CropCatalog.lemonTreeCropId =>
+                      'rendimiento aproximado de limón fresco',
+                    CropCatalog.mangoTreeCropId =>
+                      'rendimiento aproximado de mango fresco',
+                    CropCatalog.avocadoTreeCropId =>
+                      'rendimiento aproximado de aguacate fresco',
+                    _ => 'rendimiento aproximado',
+                  },
                 ),
                 const SizedBox(height: 24),
 
@@ -2809,6 +2981,11 @@ class _YieldProjectionSetupScreenState
         CropCatalog.pearTreeCropId => 'Variedad de peral',
         CropCatalog.peachTreeCropId => 'Variedad de duraznero',
         CropCatalog.walnutTreeCropId => 'Variedad de nogal',
+        CropCatalog.pistachioTreeCropId => 'Tipo de pistache',
+        CropCatalog.orangeTreeCropId => 'Tipo de naranja',
+        CropCatalog.lemonTreeCropId => 'Tipo de limón',
+        CropCatalog.mangoTreeCropId => 'Tipo de mango',
+        CropCatalog.avocadoTreeCropId => 'Tipo de aguacate',
         _ => 'Variedad',
       };
     }

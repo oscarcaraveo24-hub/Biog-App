@@ -1,0 +1,285 @@
+[ENCABEZADO]
+BIO-G | Limón / Limonero | Documentación técnica v1
+[/ENCABEZADO]
+
+BIO-G
+02. Perfil SKIP BIO-G - Limón / Limonero
+Perfil general conservador y migrable | profileId: lm_skip
+cropId canónico recomendado: crop_lemon_tree
+cropKey esperado: lemon_tree
+Aliases: crop_lime_tree, lime_tree, limón, limon, lima, lemon, lime
+Versión: v1 reforzada
+Formato: TXT técnico para Flutter/Dart, Codex, Claude Code y agentes IA
+
+IMPORTANTE
+Este documento no es receta agronómica local. No sustituye análisis de suelo, agua, tejido/foliar, diagnóstico fitosanitario regional ni asesoría agronómica local. BIO-G orienta, no sentencia.
+
+================================================================================
+0. DECISIÓN EDITORIAL
+================================================================================
+
+SKIP no significa incompleto, descanso, dormancia ni suelo sin cultivo. SKIP es la entrada segura cuando el usuario sólo sabe que tiene limón.
+
+El usuario NO ve:
+- lm_skip
+- perfil incompleto
+- sin variedad
+- dato pobre
+
+El usuario ve:
+- Limón general
+- No sé qué tipo de limón es
+- Limón verde común
+- Avanzar sin elegir variedad
+
+El estado real del árbol y la etapa visible corrigen el comportamiento del sistema.
+
+================================================================================
+1. IDENTIDAD SKIP
+================================================================================
+
+[TABLA]
+Campo | Valor
+profileId | lm_skip
+Label técnico | LM-SKIP - Limón general
+Label UX | No sé / Limón general
+cropId | crop_lemon_tree
+aliases | lemon_tree, crop_lime_tree, lime_tree, limon, limón, lima
+Nombre visible | Limón / Limonero
+Nombre científico asumido | Grupo comercial Citrus; no se define especie hasta seleccionar perfil
+Familia | Rutaceae
+Tipo | Árbol frutal perenne siempreverde, cítrico
+Órgano objetivo | Fruto
+Sistema asumido | Huerto a cielo abierto, citricultura mexicana/subtropical/tropical general
+Confianza inicial | Baja-media si sólo hay cultivo; media con estado/etapa; alta para lectura actual con sensores + etapa confirmada
+[/TABLA]
+
+================================================================================
+2. CUÁNDO SE ACTIVA
+================================================================================
+
+Se activa cuando:
+- el usuario no sabe si su limón es persa, mexicano, criollo o amarillo;
+- sólo dice “tengo limón” o “tengo un limonero”;
+- sólo sabe que es “limón verde”;
+- tiene mezcla de árboles;
+- no sabe si es con semilla o sin semilla;
+- no sabe destino principal;
+- no conoce portainjerto;
+- quiere avanzar rápido;
+- selecciona “No sé”.
+
+Regla UX: BIO-G no debe detener el onboarding. Primero escucha sensores, estado y etapa visible. Después permite migrar.
+
+================================================================================
+3. SUPUESTOS CONSERVADORES
+================================================================================
+
+[TABLA]
+Variable | Supuesto SKIP
+Especie/variedad | Desconocida; puede ser persa, mexicano, amarillo u otro limón comercial
+Tipo comercial | No asume exportación ni mercado premium
+Estado productivo | No se inventa; lo define usuario
+Clima | Cálido/templado-cálido como base; ajustar con ubicación si existe
+Manejo | Cielo abierto, manejo estándar
+Producción | Frecuente o escalonada como posibilidad, no promesa
+Rendimiento | Conservador; se cierra en Documento 03
+Nutrición | No receta; prioridades relativas
+Sanidad | HLB/psílido/Phytophthora/gomosis son riesgos, no diagnósticos por sensor
+Memoria | Activa; estrés afecta continuidad, calibre y floración futura
+[/TABLA]
+
+================================================================================
+4. QUÉ NO ASUME SKIP
+================================================================================
+
+No asume que sea Persa.
+No asume que sea Mexicano.
+No asume que todo fruto debe ponerse amarillo.
+No asume que todo fruto verde está inmaduro.
+No asume portainjerto tolerante a sales o Phytophthora.
+No asume edad exacta ni producción plena.
+No asume densidad ni rendimiento por hectárea.
+No asume que poca fruta sea problema si el árbol es joven.
+No asume que cosecha termina el cultivo.
+No convierte fruit_fill en harvest_maturity.
+No diagnostica HLB por hoja amarilla.
+No diagnostica falta de N si hay pH alto, salinidad, raíz limitada o micronutrientes.
+No recomienda pesticidas, marcas, ingredientes activos ni dosis.
+No usa dormancy como árbol pelón.
+No convierte desfase en receta de estrés hídrico.
+No borra historial al migrar a LM-01..LM-05.
+
+================================================================================
+5. ETAPAS ACTIVAS EN SKIP
+================================================================================
+
+[TABLA]
+StageId | Label UX SKIP | Política
+planting_transplant | Plantación / trasplante | Árbol nuevo; raíz y cuello primero; sin producción
+root_establishment | Establecimiento de raíz | Humedad sin saturación; no quemar con sales
+juvenile_vegetative | Limonero joven | Formación de copa, raíz y hoja; no penalizar por falta de fruto
+dormancy | Reposo relativo / baja actividad | No árbol pelón; cuidar raíz, sales y reservas
+budbreak | Brotando / brote tierno | Revisar psílido, minador, pulgones, trips y balance agua/N
+vegetative_growth | Con hoja nueva / creciendo | Balance vegetativo-productivo; no empujar puro follaje
+flowering | Con flor / azahar | Agua, calor/frío, sales y reservas pesan fuerte
+fruit_set | Frutito recién amarrado | Cuajado y caída fisiológica; no culpar NPK de entrada
+fruit_fill | Limón creciendo / llenando | Calibre, jugo, K, agua, hoja y salinidad; no cosecha
+harvest_maturity | Limón listo para corte | Verde o amarillo según perfil; en SKIP no exigir color único
+post_harvest | Después de corte / recuperación | Etapa viva; hoja, raíz y reservas
+unknown | No lo sé | Fallback seguro; preguntar realidad visible
+[/TABLA]
+
+================================================================================
+6. CALENDARIO PROMEDIO CONSERVADOR
+================================================================================
+
+[TABLA]
+Evento | Ventana SKIP | Regla
+Brotación / flush | variable; frecuente después de lluvia, riego, poda o calor funcional | Brote tierno sube riesgo de psílido/minador/pulgones/trips
+Inducción floral | variable; puede responder a estrés hídrico/temperatura/manejo | Estrés moderado puede inducir; estrés excesivo baja cuajado
+Floración | 10-35/45 días | Etapa crítica
+Cuajado / amarre | 10-30 días o semanas posteriores a floración | Caída puede ser normal o por estrés
+Llenado | 90-150/180 días | Calibre, jugo, K, hoja, agua y salinidad
+Cosecha | 4-6/7 meses postfloración por evento | Persa/mexicano pueden cortarse verdes
+Postcosecha / entre cortes | después de cada corte | No cerrar cultivo
+[/TABLA]
+
+================================================================================
+7. RANGOS CONSERVADORES SKIP
+================================================================================
+
+[TABLA]
+Métrica | Banda conservadora | Lectura
+soilMoisture | <40 crítico bajo; 40-55 observación; 55-80/85 óptimo; 85-90 alto; >90 saturación | En floración/cuajado/llenado alertar antes; saturación afecta raíz
+soilTemp | actividad baja con suelo frío; razonable >12-13 C | No penalizar reposo igual que floración
+pH | 5.5-7.5 preferente; >7.5 vigilancia; extremos requieren análisis | pH alto cambia disponibilidad
+EC | <1.2 favorable; 1.2-1.5 vigilancia; >1.5 observación fuerte; >1.7-2.0 alerta reproductiva; >2.5 fuerte | Salinidad/exceso, no déficit
+resistance | <1.8 favorable; 1.8-2.2 observación; >2.2-2.5 alta; >2.5 crítica | Raíz cítrica necesita aire
+N/P/K | prioridad relativa por etapa | SKIP no receta fertilizante
+[/TABLA]
+
+================================================================================
+8. SENSIBILIDAD CRÍTICA SKIP
+================================================================================
+
+[TABLA]
+Riesgo | Peso SKIP | Mensaje técnico
+Déficit hídrico en floración | Muy alto | Puede tumbar flor aunque NPK esté bien
+Déficit hídrico en cuajado | Muy alto | Puede aumentar caída de frutito
+Salinidad / EC alta | Muy alto | Afecta raíz, absorción, cuajado, calibre y jugo
+Exceso de humedad / anoxia | Muy alto | Marchitez con suelo húmedo no es falta de agua
+Brote tierno con plagas | Alto | Psílido, minador, pulgones y trips se concentran en brotes nuevos
+HLB / psílido | Muy alto sanitario | No diagnosticar; pedir revisión técnica
+pH alto + clorosis | Alto | Puede ser Fe/Zn/Mn/raíz, no sólo N
+Desbalance N/K | Media-alta | N alto puede empujar follaje; K pesa en calibre/jugo
+Desfase mal aplicado | Media-alta | Estrés excesivo reduce cuajado
+Postcosecha débil | Media-alta | Hoja/raíz/reservas impactan siguiente floración
+[/TABLA]
+
+================================================================================
+9. MENSAJES UX RECOMENDADOS
+================================================================================
+
+- “Este es un perfil general de limón. Luego puedes elegir Persa, Mexicano, Amarillo, Tropical o Desfase sin perder historial.”
+- “No pasa nada si no sabes la etapa. Dime qué ves: brote nuevo, flor, frutito, limón creciendo, listo para corte o después de corte.”
+- “El limonero no se apaga como un árbol que tira hoja. Si está en baja actividad, todavía hay que cuidar raíz, humedad y sales.”
+- “Hay brote tierno. En cítricos eso atrae psílido, minador, pulgones y trips.”
+- “En floración, el limón no perdona falta de agua. Puede tirar flor aunque el fertilizante esté bien.”
+- “Algo de caída de frutito puede ser normal, pero si coincide con calor, sales o humedad baja, el amarre se puede venir abajo.”
+- “En llenado, el potasio ayuda a calibre y jugo, pero primero revisa agua estable y salinidad.”
+- “Hay sales altas. Antes de meter más fertilizante, revisa agua, drenaje y salitre.”
+- “Con pH alto, la hoja amarilla puede venir de hierro, zinc, manganeso o raíz limitada.”
+- “Estos síntomas se parecen a problemas serios de cítricos. No lo cierres como diagnóstico: toma foto y confirma con técnico o sanidad local.”
+- “En limón persa o mexicano, el corte puede ser verde. No todo limón necesita ponerse amarillo.”
+- “No cierres el cultivo todavía. El limonero usa hoja y raíz para recuperarse y preparar la siguiente floración o corte.”
+- “Si buscas producción en meses caros, el estrés se maneja con cuidado. Si se pasa, puede bajar el amarre.”
+
+================================================================================
+10. CONFIABILIDAD SKIP
+================================================================================
+
+[TABLA]
+Entrada disponible | Confianza | Uso
+Sólo cultivo | Baja-media | Mostrar perfil general y pedir estado/etapa
+Cultivo + estado | Media | Permite no productivo/productivo
+Cultivo + etapa visible | Media-alta | Mejora targets y copy
+Cultivo + sensores + etapa | Alta para lectura actual | No equivale a diagnóstico varietal/sanitario
+Cultivo + historial | Alta para memoria local | Ajusta riesgo de caída, sales, carga, raíz y continuidad
+Sólo NPK sin etapa | Baja | No recomendar fertilización fina
+[/TABLA]
+
+================================================================================
+11. MIGRACIÓN DESDE SKIP
+================================================================================
+
+Reglas:
+- No reiniciar el árbol.
+- No borrar memoria.
+- Actualizar profileId.
+- Mantener perennialStateId, phenologyStageId, perennialAnchorDate y perennialAnchorTypeId.
+- Conservar estrés: calor, frío, déficit hídrico, salinidad, anoxia, pH alto, compactación, caída de flor/frutito, HLB sospechoso, raíz/gomosis, defoliación y postcosecha débil.
+- Recalcular sensibilidad, aliases, copy y rendimiento relativo desde el nuevo perfil.
+- No cambiar etapa automáticamente por cambiar perfil.
+
+Targets:
+lm_01_persa_tahiti, lm_02_mexicano_colima, lm_03_amarillo_eureka_lisbon, lm_04_tropical_continuo, lm_05_desfase_inducido.
+
+================================================================================
+12. METADATOS PARA CÓDIGO
+================================================================================
+
+Constantes:
+kCropLemonTree = 'crop_lemon_tree'
+kLemonTreeLegacyId = 'lemon_tree'
+kLimeTreeLegacyId = 'lime_tree'
+kCropLimeTreeLegacyId = 'crop_lime_tree'
+kLemonSkipProfileId = 'lm_skip'
+
+Catálogo:
+profileId: lm_skip
+labelEs: Limón general / No sé
+isGeneric: true
+cropId: crop_lemon_tree
+aliases: limón, limon, lima, lemon, lime, limón verde, limón común
+defaultConfidence: 0.45-0.55
+migrationTargets: LM-01..LM-05
+visibleInWizard: true
+
+================================================================================
+13. CASOS MÍNIMOS DE PRUEBA SKIP
+================================================================================
+
+1) lm_skip + only crop: onboarding no bloquea; pide estado/etapa.
+2) lm_skip + newly_planted + harvest_maturity: resolver incongruencia suavemente.
+3) lm_skip + flowering + soilMoisture bajo: alerta agua/floración; no receta NPK.
+4) lm_skip + fruit_set + EC alta: sales/raíz/agua antes que NPK.
+5) lm_skip + fruit_fill + K bajo + humedad baja: priorizar agua/absorción antes de K.
+6) lm_skip + harvest_maturity + fruto verde: no marcar inmaduro automáticamente.
+7) lm_skip + pH alto + hoja amarilla con nervadura verde: Fe/Zn/Mn/raíz/pH; no N automático.
+8) lm_skip + post_harvest: no cerrar cultivo.
+9) lm_skip + dormancy: reposo relativo/baja actividad; árbol verde.
+10) lm_skip -> lm_02_mexicano_colima: conserva memoria y recalcula copy/sensibilidad.
+
+================================================================================
+14. FUENTES CONSULTADAS
+================================================================================
+
+Alta confianza:
+- Estándar BIO-G para Integración de Árboles Perennes v1.5 con addendum.
+- PDF base del usuario: Perfil SKIP BIO-G — Limón.
+- PDF base del usuario: Perfil Universal BIO-G — Limón (verde mexicano).
+- UF/IFAS Extension: Growing 'Tahiti' Limes in the Home Landscape.
+- UF/IFAS Extension: Overview of US Tahiti Lime Production and Markets.
+- UC IPM: Asian Citrus Psyllid and Huanglongbing Disease.
+- UC IPM: Phytophthora Gummosis.
+- UC IPM Citrus Pest Management Guidelines.
+- UC ANR/UCCE: citrus soil, water, cold, nutrient interpretation.
+- INIFAP: limón persa en invierno y portainjertos en cítricos.
+- SENASICA/SIAP: estadísticas y sanidad regulada de cítricos.
+- ASyD 2022: producción de limón persa en Veracruz.
+
+Foros/productores:
+Usados sólo para lenguaje UX, no para umbrales.
+
+FIN DEL DOCUMENTO 02

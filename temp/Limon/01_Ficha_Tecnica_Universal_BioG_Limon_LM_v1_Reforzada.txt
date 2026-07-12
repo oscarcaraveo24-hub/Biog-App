@@ -1,0 +1,374 @@
+[ENCABEZADO]
+BIO-G | Limón / Limonero | Documentación técnica v1
+[/ENCABEZADO]
+
+BIO-G
+01. Ficha Técnica Universal + Perfiles/Variedades BIO-G - Limón / Limonero
+Cultivo visible: Limón / Limonero
+cropId canónico recomendado: crop_lemon_tree
+cropKey esperado: lemon_tree
+Aliases: crop_lime_tree, lime_tree, limón, limon, lima, lemon, lime
+profilePrefix: LM
+Perfil general obligatorio: lm_skip
+Versión: v1 reforzada
+Formato: TXT técnico para Flutter/Dart, Codex, Claude Code y agentes IA
+
+IMPORTANTE
+Este documento no es receta agronómica local. No sustituye análisis de suelo, agua, tejido/foliar, diagnóstico fitosanitario ni asesoría regional. BIO-G v1 orienta y pondera riesgo; no promete rendimiento, no prescribe dosis cerradas y no diagnostica enfermedades reguladas.
+
+================================================================================
+0. DECISIONES EJECUTIVAS
+================================================================================
+
+0.1 Producto BIO-G
+En México, “limón” puede referirse a varios cítricos comerciales: limón mexicano/Key lime (Citrus aurantiifolia), limón persa/Tahití/Persian lime (Citrus latifolia) y limón amarillo/italiano/Eureka-Lisbon (Citrus limon). Por eso BIO-G debe modelar “Limón / Limonero” como cultivo comercial de usuario, no como una sola especie rígida.
+
+0.2 cropId
+Recomendación: crop_lemon_tree.
+Motivo: el cultivo visible en v1 es “Limón”, y los perfiles incluyen limes botánicos y true lemon. Para compatibilidad con los PDFs base se aceptan aliases crop_lime_tree y lime_tree. Si el equipo decide usar crop_lime_tree en código, debe conservar los mismos profileIds LM y aliases.
+
+0.3 Alcance
+Incluye:
+- LM-01 Persa/Tahití/sin semilla.
+- LM-02 Mexicano/Colima/Criollo/con semilla.
+- LM-03 Amarillo/Italiano/Eureka/Lisbon.
+- LM-04 Tropical/continuo.
+- LM-05 Desfase/inducido.
+No incluye naranja dulce, mandarina, toronja, lima dulce, naranja agria como cultivo principal ni ornamentales.
+
+0.4 Regla cítrica principal
+El limonero es perenne y siempreverde. Puede tener al mismo tiempo brote tierno, flor, frutito, fruto en llenado y fruto de corte. BIO-G no debe reiniciar la biología por cada corte ni forzar una línea anual perfecta.
+
+0.5 StageIds cerrados
+Usar solamente:
+planting_transplant, root_establishment, juvenile_vegetative, dormancy, budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest, unknown.
+
+No crear IDs para pre_planting, floral_induction, stress_induction, petal_fall, multiple_bloom, off_bloom, winter_crop, green_maturity, market_pick o desfase. Esas subfases son contexto/labels, no StageIds.
+
+0.6 Dormancy en limón
+dormancy = reposo relativo / baja actividad / prefloración. No es árbol pelón ni suelo descansando.
+
+================================================================================
+1. IDENTIDAD UNIVERSAL
+================================================================================
+
+[TABLA]
+Campo | Valor
+Nombre BIO-G visible | Limón / Limonero
+Producto visible | Limón verde o amarillo según perfil
+Nombre científico madre | Grupo Citrus: C. aurantiifolia, C. latifolia y C. limon según perfil
+Familia | Rutaceae
+Tipo | Árbol frutal perenne siempreverde, cítrico
+Metabolismo | C3
+Órgano objetivo v1 | Fruto: cáscara, pulpa, jugo, acidez, calibre y calidad externa como contexto
+Sistema v1 | Huerto a cielo abierto, citricultura mexicana/subtropical/tropical comparable
+cropId | crop_lemon_tree
+cropKey | lemon_tree
+aliases | crop_lime_tree, lime_tree, limon_tree, limón, limon, lima, lemon, lime
+prefix | lm
+perfil genérico | lm_skip
+[/TABLA]
+
+================================================================================
+2. ÁRBOL PERENNE VS CULTIVO ANUAL
+================================================================================
+
+[TABLA]
+Aspecto | Cultivo anual | Limón BIO-G
+Eje temporal | Fecha de siembra/trasplante | Estado fisiológico + etapa visible + ancla + memoria
+Ciclo | Lineal, termina en cosecha | Recurrente, con etapas traslapadas
+Edad | Explica la etapa | Orienta, pero manda la realidad visible
+Dormancia | No aplica o fin | Reposo relativo, no caducifolio
+Variedad | Cambia duración | Ajusta sensibilidad, ventana, rendimiento y copy
+Rendimiento | t/ha por ciclo | kg/árbol + árboles/ha + t/ha + estado + carga + manejo + memoria
+Cosecha | Cierre | Corte escalonado; no cierra cultivo
+Postcosecha | Final | Recuperación viva para siguiente floración/corte
+[/TABLA]
+
+================================================================================
+3. ARQUITECTURA BIO-G
+================================================================================
+
+[TABLA]
+Grupo | Valor permitido | Regla
+Cultivo madre | crop_lemon_tree | Entrada principal del catálogo
+Categoría | tree/perennial | Rama de árboles
+Estados | newly_planted, juvenile_non_productive, established, productive_season, unknown | No inventar estados
+Etapas | StageIds cerrados de árboles | Usar labels de limón sin crear IDs
+Anclas | planting, stage_start, budbreak, flowering, harvest, post_harvest, manual_stage, unknown | Separar plantación de evento actual
+Sensores v1 | soilMoisture, soilTemp, ph, ec, resistance, n, p, k | No inventar sensores
+Contexto avanzado | HLB, psílido, Phytophthora, gomosis, Fe, Zn, Mn, Mg, Ca, B, Cl, Na, SAR, Brix, acidez, calibre, carga, portainjerto | No simular desde NPK
+[/TABLA]
+
+================================================================================
+4. ESTADOS DEL ÁRBOL
+================================================================================
+
+[TABLA]
+StateId | Label UX | Política
+newly_planted | Recién plantado | No exigir fruta. Prioridad raíz, cuello, humedad estable, baja salinidad y drenaje.
+juvenile_non_productive | Limonero joven | Formación de raíz, copa y hoja. No penalizar por poca fruta.
+established | Limonero establecido | Permite todas las etapas visibles sin depender de edad exacta.
+productive_season | Limonero en producción | Habilita floración, cuajado, llenado, cosecha y postcosecha.
+unknown | No lo sé | No bloquear; usar lm_skip conservador y pedir etapa visible.
+[/TABLA]
+
+================================================================================
+5. ETAPAS FENOLÓGICAS UNIVERSALES
+================================================================================
+
+[TABLA]
+StageId | Label limón | Señal visible | Cuidado principal
+planting_transplant | Plantación / trasplante | Árbol recién puesto, tutor, cepellón | Raíz, cuello, humedad, sales, drenaje
+root_establishment | Establecimiento de raíz | Árbol joven enraizando | Humedad sin saturación; evitar sales
+juvenile_vegetative | Crecimiento juvenil | Copa y estructura; sin producción comercial | Vigor sano, raíz, sanidad, formación
+dormancy | Reposo relativo / baja actividad | Árbol con hoja, sin evento dominante | No leer como caducifolio; cuidar reservas y raíz
+budbreak | Brotación / flush nuevo | Brotes tiernos y hojas claras | Psílido, minador, pulgones, Zn/Fe/Mn contexto
+vegetative_growth | Crecimiento vegetativo | Copa creciendo, hoja activa | Balance vegetativo-productivo; no puro follaje
+flowering | Floración / azahar | Botones y flores blancas | Agua, calor/frío, viento, salinidad, reservas
+fruit_set | Cuajado / amarre | Frutitos recién amarrados | Agua estable, EC baja, raíz sana, K funcional
+fruit_fill | Llenado del fruto | Fruto ganando calibre y jugo | K, agua, hoja, salinidad, calibre, jugo
+harvest_maturity | Madurez / corte | Fruto en tamaño/color de corte | Verde comercial en persa/mexicano; amarillo en italiano
+post_harvest | Postcosecha / entre cortes | Después de corte; hoja activa | Recuperación, reservas, raíz, siguiente evento
+unknown | No lo sé | Etapa no identificada | Preguntar realidad visible
+[/TABLA]
+
+================================================================================
+6. SUBFASES SIN CREAR IDs
+================================================================================
+
+- Pre-plantación: contexto de onboarding; no StageId productivo.
+- Inducción floral por estrés hídrico/temperatura/manejo: dormancy, budbreak o flowering según lo visible.
+- Floraciones múltiples: flowering dominante + tag/contexto multiple_bloom.
+- Caída de pétalos/frutito: fruit_set.
+- Fruto verde comercial: harvest_maturity en Persa/Mexicano.
+- Desfase/producción de invierno: perfil lm_05_desfase_inducido; no arquitectura nueva.
+- Entre cortes: post_harvest o vegetative_growth según hoja/brote.
+
+================================================================================
+7. RANGOS MEDIBLES BASE — NO SON STAGETARGETS FINALES
+================================================================================
+
+Documento 05 debe convertir estos rangos a StageTargets usando AgroRange:
+lowMax = frontera crítica baja; optimalMin/optimalMax = óptimo; highMin = frontera crítica alta.
+
+[TABLA]
+Métrica | Rango/lectura base | Regla BIO-G
+soilMoisture | <40 crítico bajo; 40-55 observación; 55-80/85 óptimo; 85-90 alto; >90 saturación | En floración/cuajado/llenado es muy sensible. Saturación también es mala.
+soilTemp | actividad baja con suelo frío; actividad razonable >12-13 C; mejor con suelo templado | No penalizar reposo igual que floración.
+pH | preferente 5.5-7.5; vigilancia >7.5; extremos <5.0 o >8.2 | pH alto + hoja amarilla no es N automático.
+EC | <1.2 favorable; 1.2-1.5 vigilancia; >1.5 observación fuerte; >1.7-2.0 alerta reproductiva; >2.5 fuerte | EC es exceso/salinidad, no deficiencia.
+resistance | <1.8 favorable; 1.8-2.2 observación; >2.2-2.5 alto; >2.5 crítico | Raíz cítrica superficial necesita aire.
+N relativo | alto en brotación/vegetativo; moderado en floración/cuajado; cuidado en madurez | N alto no siempre es bueno.
+P relativo | importante en raíz, establecimiento, prefloración/floración | No domina en adulto fuera de etapas sensibles.
+K relativo | sube en cuajado; máximo en llenado/calidad | K bajo con agua/EC correctas pesa por calibre y jugo.
+[/TABLA]
+
+================================================================================
+8. SENSIBILIDAD POR ETAPA
+================================================================================
+
+- Establecimiento: agua baja muy alta, agua alta muy alta, EC muy alta, no quemar raíz.
+- Juvenil: agua alta, N moderado, P/K balanceados, minador/psílido/brote.
+- Reposo relativo: conservar raíz/reservas, no apagar alertas.
+- Brotación: brote tierno = plagas y vector; N moderado, no exceso.
+- Vegetativo: hoja funcional sin puro follaje; vigilar sales, pH y raíz.
+- Floración: etapa crítica; agua baja, calor, viento, frío y sales pesan antes que NPK.
+- Cuajado: K sube, pero agua/EC/raíz mandan.
+- Llenado: K + agua + hoja funcional mandan calibre y jugo.
+- Madurez/corte: calidad, caída, color comercial según perfil; N alto con cuidado.
+- Postcosecha: recuperación, siguiente flush/floración y memoria.
+
+================================================================================
+9. PERFILES OFICIALES LM
+================================================================================
+
+Lista canónica:
+- lm_skip — Limón general / No sé
+- lm_01_persa_tahiti — Limón Persa / Tahití / sin semilla
+- lm_02_mexicano_colima — Limón Mexicano / Colima / agrio / con semilla
+- lm_03_amarillo_eureka_lisbon — Limón amarillo / italiano / Eureka / Lisbon
+- lm_04_tropical_continuo — Tropical / producción continua
+- lm_05_desfase_inducido — Desfase / inducido / ventana de mejor precio
+
+Aliases legacy:
+LM-SKIP => lm_skip
+LM-01 => lm_01_persa_tahiti
+LM-02 => lm_02_mexicano_colima
+LM-03 => lm_03_amarillo_eureka_lisbon
+LM-04 => lm_04_tropical_continuo
+LM-05 => lm_05_desfase_inducido
+
+9.1 lm_01_persa_tahiti
+Botánica principal: Citrus latifolia.
+UX: Limón Persa, Tahití, Persian lime, limón sin semilla.
+Uso: fresco/exportación; fruto grande, verde, generalmente sin semilla.
+Entrada a producción orientativa: año 2-3 si injertado y bien manejado; plena año 4-5+.
+Floración: 15-35 días; llenado 90-150 días; corte 4-6 meses postfloración por evento.
+Densidad orientativa: 250-500 árboles/ha.
+Sensibilidad: salinidad, agua en floración/cuajado, raíz/Phytophthora, calibre y calidad externa.
+
+9.2 lm_02_mexicano_colima
+Botánica principal: Citrus aurantiifolia.
+UX: Limón mexicano, Colima, criollo, limón agrio, Key lime, con semilla.
+Uso: mercado nacional; fruto chico, muy ácido, aroma fuerte.
+Entrada a producción orientativa: año 2-3; plena año 4-5+.
+Floración frecuente en zonas cálidas; llenado 90-150 días; cosecha múltiple.
+Densidad orientativa: 300-650 árboles/ha.
+Sensibilidad: frío, salinidad, caída de flor/frutito, brotes tiernos, HLB/psílido.
+
+9.3 lm_03_amarillo_eureka_lisbon
+Botánica principal: Citrus limon.
+UX: Limón amarillo, italiano, Eureka, Lisbon/Lisboa.
+Uso: nicho/fresco/regional.
+Entrada a producción: año 2-4; plena año 5+.
+Floración 20-45 días; llenado 120-180 días; corte 4-7 meses.
+Sensibilidad: frío/helada, humedad alta, enfermedades, estrés hídrico sostenido, color amarillo.
+
+9.4 lm_04_tropical_continuo
+Botánica: comportamiento de producción, no especie nueva.
+UX: tropical, de calor, producción continua.
+Uso: sistemas cálidos con flor/fruto/brote traslapados.
+Sensibilidad: calor extremo + baja HR, salinidad, brotes tiernos frecuentes, plagas, exceso de humedad.
+
+9.5 lm_05_desfase_inducido
+Botánica: comportamiento de manejo, no especie nueva.
+UX: desfase, inducido, producción de invierno, meses caros.
+Uso: productor que maneja riego/estrés/poda para mover picos.
+Regla: estrés mal aplicado baja cuajado. No convertir en receta.
+
+================================================================================
+10. UX Y ONBOARDING
+================================================================================
+
+Opciones visibles:
+- No sé / Limón general
+- Limón Persa / Tahití / sin semilla
+- Limón Mexicano / Colima / con semilla
+- Limón amarillo / italiano / Eureka / Lisbon
+- Tropical / producción continua
+- Desfase / producción programada
+
+Preguntas útiles:
+- ¿Tu limón es grande y casi sin semilla, o chico y con semilla?
+- ¿Lo cortas verde o lo esperas amarillo?
+- ¿Tiene flor y fruta al mismo tiempo?
+- ¿Tira flor o tira limoncito?
+- ¿Se queda chico o sin jugo?
+- ¿El agua deja salitre o costra blanca?
+- ¿La hoja nueva sale amarilla con nervaduras verdes?
+- ¿Buscas producción en meses caros?
+
+Mensajes base:
+- “El limón puede tener flor, fruto y brote al mismo tiempo. No vamos a reiniciar el árbol por cada corte.”
+- “En floración y cuajado, el limonero no perdona agua baja, sales altas ni raíz dañada.”
+- “Si K sale bajo en llenado, puede pegar en calibre y jugo, pero primero revisa humedad y sales.”
+- “N alto no siempre es bueno: puede irse a puro brote tierno y atraer plagas.”
+- “El limón persa y mexicano se pueden cortar verdes; no esperes amarillo si ese no es el perfil.”
+- “Después de cosechar, el árbol sigue trabajando.”
+
+================================================================================
+11. ASSETS RECOMENDADOS
+================================================================================
+
+Ruta de etapas:
+assets/seeds/lemon/
+
+- lemon_stage_planting_transplant.png
+- lemon_stage_root_establishment.png
+- lemon_stage_juvenile_vegetative.png
+- lemon_stage_dormancy.png
+- lemon_stage_budbreak.png
+- lemon_stage_vegetative_growth.png
+- lemon_stage_flowering.png
+- lemon_stage_fruit_set.png
+- lemon_stage_fruit_fill.png
+- lemon_stage_harvest_maturity.png
+- lemon_stage_post_harvest.png
+- lemon_stage_unknown.png
+
+Ruta icons:
+assets/icons/wizard/
+- ic_lemon_tree.png
+- ic_lemon_persa_tahiti.png
+- ic_lemon_mexicano_colima.png
+- ic_lemon_amarillo_eureka_lisbon.png
+- ic_lemon_tropical_continuo.png
+- ic_lemon_desfase_inducido.png
+
+Reglas visuales:
+No usar naranja recoloreada. Hojas cítricas brillantes, flor blanca, fruto verde/amarillo según perfil. `dormancy` verde/vivo. `fruit_fill` no cosecha final. `harvest_maturity` acepta verde comercial para Persa/Mexicano y amarillo para Italiano.
+
+================================================================================
+12. TRADUCCIÓN FUTURA A CÓDIGO
+================================================================================
+
+Archivos esperados:
+lib/core/crops/lemon_tree/lemon_tree_assets.dart
+lib/core/crops/lemon_tree/lemon_tree_catalog.dart
+lib/core/crops/lemon_tree/lemon_tree_crop_definition.dart
+lib/core/crops/lemon_tree/lemon_tree_universal_profile.dart
+lib/core/crops/lemon_tree/lemon_tree_yield_reference.dart
+lib/core/agro/lemon_tree_agro_score_engine.dart
+lib/core/agro/lemon_tree_nutrition_modifier.dart
+lib/core/plant_health/catalog/lemon_tree_syndromes.dart
+
+Constantes:
+kCropLemonTree = 'crop_lemon_tree'
+kLemonTreeLegacyId = 'lemon_tree'
+kLimeTreeLegacyId = 'lime_tree'
+kCropLimeTreeLegacyId = 'crop_lime_tree'
+kLemonSkipProfileId = 'lm_skip'
+
+Reglas para agentes:
+- categoría tree/perennial;
+- no usar sowingDate como eje;
+- no crear StageIds nuevos;
+- cosecha/postcosecha no cierran cultivo;
+- SKIP obligatorio, conservador y migrable;
+- no inventar sensores v1;
+- StageTargets finales viven en Documento 05;
+- no dejar lowMax == optimalMin ni optimalMax == highMin en suelo/ambiente sin justificación y tests;
+- no diagnosticar HLB/Phytophthora/cancro/tristeza/deficiencias foliares de forma cerrada;
+- no convertir Desfase en receta de estrés hídrico.
+
+================================================================================
+13. CASOS MÍNIMOS DE PRUEBA
+================================================================================
+
+1) lm_skip + unknown stage: no bloquear; preguntar etapa visible.
+2) Persa + harvest_maturity + fruto verde: no marcar inmaduro por no estar amarillo.
+3) Mexicano + flowering + humedad baja: alerta agua/floración; no NPK primero.
+4) fruit_set + caída de frutitos: diferenciar fisiológico vs estrés.
+5) fruit_fill + K bajo + humedad/EC ok: alerta K/calibre/jugo sin dosis.
+6) fruit_fill + K bajo + humedad baja: priorizar agua/absorción.
+7) EC alta: sales/drenaje/humedad antes que NPK.
+8) pH alto + hoja nueva amarilla: Fe/Zn/Mn/raíz; no N automático.
+9) post_harvest: no cerrar cultivo.
+10) dormancy: reposo relativo/baja actividad; árbol verde.
+11) lm_skip -> lm_01_persa_tahiti: conserva memoria.
+12) lm_05_desfase: no crear etapa nueva; advertir estrés mal aplicado.
+
+================================================================================
+14. FUENTES CONSULTADAS
+================================================================================
+
+Alta confianza:
+- Estándar BIO-G para Integración de Árboles Perennes v1.5 con addendum.
+- PDF base del usuario: Perfil Universal BIO-G — Limón (verde mexicano).
+- PDF base del usuario: Perfil SKIP BIO-G — Limón.
+- UF/IFAS Extension: Growing 'Tahiti' Limes in the Home Landscape.
+- UF/IFAS Extension: Overview of US Tahiti Lime Production and Markets.
+- UC IPM: Asian Citrus Psyllid and Huanglongbing Disease.
+- UC IPM: Phytophthora Gummosis.
+- UC IPM Citrus Pest Management Guidelines.
+- UC ANR/UCCE: citrus soil, water, cold, nutrient interpretation.
+- INIFAP: Bioestimulantes y prácticas para producción de Limón Persa en invierno.
+- INIFAP: Importancia del uso de portainjertos en cítricos.
+- SENASICA/SIAP: estadísticas y sanidad regulada de cítricos.
+- Agricultura, Sociedad y Desarrollo 2022: producción de limón persa en Veracruz.
+
+Foros/productores:
+Usados sólo para lenguaje UX: “tira flor”, “tira limoncito”, “se queda chico”, “no da jugo”, “salitre”, “hoja amarilla”, “goma”, “puro follaje”. No se usaron para umbrales.
+
+FIN DEL DOCUMENTO 01

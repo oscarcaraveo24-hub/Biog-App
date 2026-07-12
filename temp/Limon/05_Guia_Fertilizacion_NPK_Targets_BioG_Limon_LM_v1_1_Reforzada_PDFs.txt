@@ -1,0 +1,2193 @@
+[ENCABEZADO]
+BIO-G | Limón / Limonero | Documentación técnica v1
+[/ENCABEZADO]
+
+BIO-G
+05. Guía de Fertilización NPK y Targets por Etapa - Limón / Limonero
+Cultivo: Limón / Limón verde mexicano / Limón persa / Limón amarillo
+cropId canónico recomendado: crop_lemon_tree
+CropKey esperado: lemon_tree
+Alias legacy/técnicos: crop_lime_tree, lime_tree, lime, limón, limon, limonero, limón verde
+profilePrefix: LM
+Perfil general: lm_skip
+Versión: v1.1 reforzada con addendum de fertirrigación, HLB, remoción nutrimental y PDFs del usuario
+Formato: TXT técnico para Flutter/Dart, Codex y Claude Code
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+================================================================================
+IMPORTANTE
+================================================================================
+Este documento NO es receta local, NO sustituye análisis de suelo, agua, tejido/foliar,
+asesoría regional, laboratorio, portainjerto ni normatividad. En BIO-G v1 la lectura NPK
+es una interpretación relativa de sensor y etapa; no debe convertirse en dosis comercial
+cerrada.
+
+El motor debe hablar claro con el productor, pero técnicamente seguro:
+- Primero agua, raíz, EC/salinidad, pH, compactación, temperatura, etapa y sanidad.
+- Después N/P/K.
+- Si hay HLB, gomosis, raíz dañada, sales o estrés hídrico, baja la confianza del NPK.
+- No simular micronutrientes con el sensor NPK.
+- No recomendar productos, marcas, ingredientes activos ni dosis foliares a ciegas.
+- No confundir fertilización con solución mágica: el limón responde si la raíz puede tomar.
+
+
+================================================================================
+0.0 ADDENDUM v1.1 - REFUERZO CON NOTAS DEL USUARIO Y PDFs NUEVOS
+================================================================================
+
+Este addendum fortalece el Documento 05 de Limón con nueva información entregada por
+el usuario y PDFs anexos. Las reglas de este addendum tienen prioridad interpretativa
+sobre el cuerpo v1 cuando exista duda, SIN cambiar el contrato BIO-G:
+
+- Sensor NPK sigue siendo lectura relativa, no dosis.
+- Foliar/suelo/agua siguen siendo la base real para diagnóstico de nutrición.
+- Las dosis por kg/árbol, kg/ha, P2O5, K2O y MgO quedan solo para modo avanzado.
+- El modo productor simple NO muestra recetas cerradas, productos ni calendarios fijos.
+- Agua, raíz, EC/salinidad, pH, compactación, HLB y etapa se revisan antes de NPK.
+- No mezclar limón mexicano, persa y amarillo como si tuvieran una sola tabla exacta.
+- No convertir fuentes divulgativas o regionales en hardcode universal.
+
+Fuentes nuevas incorporadas:
+
+A) Nota del usuario: "Necesidades de nutrientes y fertilización del limonero".
+   Se usa como refuerzo divulgativo y de lenguaje técnico-práctico, no como fuente única.
+   Aporta:
+   - diagnóstico foliar y análisis de suelo como base para decidir fertilización;
+   - programa de fertilización debe considerar suelo, clima, demanda del árbol,
+     fertilizante disponible y sistema de riego;
+   - N participa en clorofila, aminoácidos, proteínas, enzimas, ácidos nucleicos,
+     carbohidratos, crecimiento vegetativo, resistencia y desarrollo del fruto;
+   - N tiene demanda fuerte en primavera/inicio de brotación-floración-cuaje;
+   - en crecimiento de fruto, N debe ser gradual y moderado para evitar exceso vegetativo;
+   - N debe reducirse hacia final de verano/otoño en zonas con frío o cuando se aproxima
+     maduración/corte sensible;
+   - P es clave en energía, raíz, ADN/ATP, división celular, floración y fructificación;
+   - P por baja movilidad debe planearse antes de la etapa crítica, no reaccionar tarde;
+   - K participa en osmorregulación, estomas, enzimas, tamaño/peso de fruto,
+     vitamina C, grosor de piel e índice de maduración;
+   - K debe estar disponible desde prefloración y mantenerse fuerte desde cuajado
+     hasta madurez;
+   - en limoneros adultos productivos se cita una relación general N:P:K cercana a
+     1:0.3:1, pero debe ajustarse por suelo/foliar/variedad/rendimiento;
+   - en suelos arenosos o con K foliar persistentemente bajo, puede requerirse más K;
+   - si K foliar sale alto, no seguir subiendo K;
+   - Mg mejora clorofila, fotosíntesis, transporte de carbohidratos, calibre, peso,
+     grosor de piel, maduración y tolerancia a frío/sequía;
+   - S mejora eficiencia del N, proteínas, aminoácidos, aceites/aroma/sabor y defensa.
+
+B) Salgado-García et al. 2016, Colegio de Postgraduados / Tabasco:
+   "Programa de fertilización sustentable para plantaciones de cítricos en Tabasco".
+   Aporta:
+   - enfoque SIRDF: suelo + clima + cultivo + demanda nutrimental + eficiencia;
+   - en Tabasco, limón Persa y naranja Valencia se evaluaron por subunidad de suelo;
+   - suelos ácidos con P fijado, bajo K/Ca/Mg/Zn y posibles problemas de Al/Fe;
+   - para limón Persa potencial 30 t/ha, la demanda/dosis cambia por subunidad;
+   - dosis modelo reportadas para limón Persa en Acrisoles: aprox. 184-230 kg N/ha,
+     69-92 kg P2O5/ha y 240-300 kg K2O/ha;
+   - confirma que K puede ser muy alto en sistemas de limón Persa con suelos limitantes;
+   - confirma que una fórmula única no sirve: el suelo manda.
+
+C) Soria Alfonso, Región de Murcia: "La fertirrigación del limonero".
+   Aporta:
+   - fertirrigación permite distribuir agua y fertilizante en zona de raíces y ajustar por
+     ciclo vegetativo;
+   - se recomiendan análisis de suelo cada 3 años y análisis foliar anual;
+   - muestreo foliar en octubre-diciembre de hojas de brotación primaveral de 7-9 meses;
+   - rangos foliares estándar para limonero: N 2.30-2.80%, P 0.12-0.16%, K 1.20-1.60%;
+   - valores cítricos para Ca, Mg, S, Fe, Zn, Mn, B, Cu y Mo;
+   - producción orientativa de limonero fino 45 t/ha con UF anuales aprox. N 190,
+     P2O5 64, K2O 137, CaO 17, MgO 10;
+   - producción orientativa de limonero Verna 35 t/ha con UF anuales aprox. N 208,
+     P2O5 67, K2O 136, CaO 20, MgO 11;
+   - sensores de humedad/FDR y sondas de succión ayudan a revisar humedad,
+     nutrientes y conductividad en el bulbo húmedo;
+   - fertilizantes solubles, pureza alta, bajo índice salino y compatibilidad son claves
+     en fertirriego;
+   - sales en paredes del bulbo húmedo pueden moverse hacia raíz; BIO-G debe tratar
+     agua/EC como parte de nutrición, no como pantalla separada.
+
+D) INIFAP 2018, limón mexicano en alta incidencia de HLB:
+   Aporta:
+   - HLB afecta floema, fotoasimilados y raíz; el árbol puede morir progresivamente si
+     se suma estrés biótico/abiótico;
+   - en Colima, huertas con HLB y buen manejo de riego/nutrición pueden sostener
+     15-25 t/ha, pero no igualan árboles sanos;
+   - riego presurizado debe mojar zona de raíces sin mojar tronco para reducir riesgo
+     de gomosis; evitar lapsos sin riego mayores a 4 días en ese contexto;
+   - suelos de Colima pueden tener carbonatos altos que afectan disponibilidad de P,
+     Mg y K;
+   - deficiencias comunes: N, Zn, Mn, Fe y Mg; P aparece esporádico cuando suelo está
+     muy deficiente o no asimilable;
+   - programa nutrimental eficiente requiere requerimiento del cultivo, suelo, síntomas,
+     análisis foliar y experimentos de campo; ninguna herramienta sola basta;
+   - con goteo/microaspersión se recomienda fraccionamiento semanal;
+   - urea y amoniacales son susceptibles a pérdidas por volatilización si no se incorporan;
+   - sulfato de amonio aporta S y puede ayudar en suelos alcalinos; KNO3 y MKP evitan
+     el inconveniente del cloruro en contextos sensibles;
+   - materia orgánica/compostas ayudan suelo/raíz, pero no sustituyen diagnóstico.
+
+E) Presentación INIFAP 2025, Manejo sostenible de limón con énfasis en nutrición:
+   Aporta:
+   - pH objetivo para cítricos cercano a 5.5-7.0;
+   - programa de nutrición debe considerar pH, materia orgánica, salinidad y nutrimentos;
+   - remoción de nutrimentos en limón mexicano: orden K > N > Ca > P > Mg;
+   - valores de extracción de limón mexicano por tonelada de fruta: aprox. N 1.86,
+     P 0.42, K 2.49, Ca 1.11, Mg 0.15, S 0.17 kg/t, más micronutrientes en gramos/t;
+   - fertilización por restitución: demanda por rendimiento esperado, oferta del suelo,
+     factor de compensación del resto de la planta y eficiencia del fertilizante;
+   - remoción de limón Persa varía por densidad, frecuencia/fuente de fertilización,
+     manejo del agua, suelo y clima;
+   - referencias de limón Persa: Veracruz aprox. N 2.1, P 0.3, K 1.5, Ca 1.4 kg/t;
+     Nayarit aprox. N 1.9, P 0.2, K 2.2, Ca 1.2 kg/t;
+   - foliar confirma deficiencias/toxicidades ocultas y evalúa programas de fertilización;
+   - aplicación foliar puede apoyar N, P, K, Mg, Zn, Mn y B, especialmente con pH alto,
+     pero macronutrientes principales suelen requerir suelo/fertirriego por demanda alta.
+
+================================================================================
+0.0.1 DECISIONES v1.1 QUE TIENEN PRIORIDAD
+================================================================================
+
+1) Mantener NpkCaps v1, pero ajustar la lectura verbal.
+   Mantener:
+   - N cap = 130.0
+   - P cap = 95.0
+   - K cap = 210.0
+   Motivo: los caps no son dosis. El nuevo material confirma que N y K son fuertes,
+   pero también muestra que la relación N/K cambia por región, flujo, suelo y variedad.
+   Por eso no se debe decir "K siempre manda sobre N" en todo el ciclo. La regla correcta:
+   - N manda en brote, hoja, recuperación y sostén de productividad.
+   - K manda en cuajado, llenado, calibre, jugo, calidad y tolerancia a estrés.
+   - P manda en raíz, prefloración/floración y establecimiento, pero no domina adulto.
+
+2) Reforzar que el análisis foliar es modo avanzado central.
+   El sensor NPK NO reemplaza el foliar. El foliar dice qué absorbió el árbol; el sensor
+   dice oferta/lectura relativa del suelo. BIO-G debe poder decir:
+   "El sensor ve suelo; la hoja confirma si el limonero lo tomó."
+
+3) Agregar una tabla foliar específica de limonero además de la tabla cítrica general.
+   Rango normal de limonero de Murcia:
+   - N: 2.30-2.80 %
+   - P: 0.12-0.16 %
+   - K: 1.20-1.60 %
+   Esto contrasta con tablas cítricas generales que pueden aceptar K óptimo más bajo.
+   Decisión BIO-G: usar tabla general como base segura y tabla limonero como referencia
+   específica si protocolo/variedad/región lo permiten. No activar alerta por una sola
+   tabla sin revisar protocolo de muestreo.
+
+4) Ajustar la interpretación de K foliar.
+   El material nuevo fortalece el K, pero evita dogmatismo:
+   - K bajo + fruta cargada + agua/EC/pH correctos = alerta fuerte.
+   - K bajo + humedad baja = primero agua.
+   - K bajo + EC alta = primero sales/drenaje/raíz.
+   - K bajo + pH/suelo calizo/antagonismo = revisar Ca/Mg/Na/raíz.
+   - K alto foliar = no seguir empujando K; revisar consumo de lujo/antagonismo/sales.
+   - En suelos arenosos o K foliar persistentemente bajo, K puede requerir más atención.
+
+5) Ajustar la interpretación de N por etapa.
+   N es central, pero en limón productivo no se debe empujar sin mirar carga:
+   - Pre-brote / brotación / floración temprana: N funcional, no pesado.
+   - Floración y cuajado: N moderado; agua, temperatura, sales y K deciden mucho.
+   - Crecimiento de fruto: N pequeño/intermitente si hace falta; evitar brote excesivo.
+   - Madurez/corte y clima frío: reducir presión de N para evitar brote blando y caída.
+   - Postcosecha con hoja activa: N moderado para recuperación si raíz y EC están bien.
+
+6) Ajustar P: planear, no reaccionar tarde.
+   El P es poco móvil. Si P aparece bajo en plantación/raíz/prefloración/floración, sí pesa.
+   Si aparece bajo en madurez/cosecha, no tumbar score como crítico si agua/K/hoja están bien.
+   P alto + pH alto = posible bloqueo/desbalance de Fe/Zn/Cu; no celebrarlo.
+
+7) Mg y S suben de categoría como contexto avanzado fuerte.
+   No son sensores v1, pero sí deben aparecer en el lenguaje:
+   - Mg: clorofila, fotosíntesis, transporte de carbohidratos, calibre, piel, madurez,
+     resistencia a frío/sequía; deficiencia común en limón con HLB o suelos limitantes.
+   - S: eficiencia de uso de N, proteínas/aminoácidos, aceites/aroma/sabor y defensa;
+     sulfato de amonio puede ser útil en algunos suelos alcalinos, pero no es receta universal.
+
+8) EC/salinidad y bulbo húmedo deben integrarse más fuerte al motor.
+   El limonero bajo goteo vive de un bulbo húmedo funcional. Sales acumuladas en la
+   periferia del bulbo o en solución del suelo pueden bloquear nutrición aunque el NPK
+   del sensor parezca presente. BIO-G debe leer:
+   - EC alta + K/N altos = posible acumulación de sales/fertilizante.
+   - EC alta + humedad baja = estrés osmótico.
+   - EC alta + borde quemado = sales/Cl/Na antes que deficiencia simple.
+   - lluvia después de salinidad puede mover sales hacia raíz si el manejo de riego es malo.
+
+9) HLB cambia la confianza, no la necesidad de observar NPK.
+   Con HLB, la fertilización balanceada puede sostener productividad, pero no cura.
+   BIO-G debe bajar confidence si hay HLB/PAC/raíz dañada y hablar de floema/raíz.
+   Debe evitar mensajes mágicos: "aplica NPK y se corrige".
+
+10) Dosis regionales se guardan como modo avanzado, no como simple.
+    Las tablas nuevas muestran rangos muy distintos:
+    - Murcia Fino: N 190, P2O5 64, K2O 137 UF/ha para 45 t/ha.
+    - Murcia Verna: N 208, P2O5 67, K2O 136 UF/ha para 35 t/ha.
+    - Tabasco LP: N 184-230, P2O5 69-92, K2O 240-300 kg/ha por subunidad de suelo.
+    - INIFAP Colima: kg/árbol/año varía por edad y densidad.
+    Conclusión BIO-G: rendimiento esperado + suelo + densidad + agua + foliar + región
+    cambian el programa. No hay fórmula universal visible para productor simple.
+
+================================================================================
+0.0.2 RANGOS FOLIARES v1.1 - LIMONERO Y CÍTRICOS
+================================================================================
+
+NO mezclar estos rangos con el sensor NPK.
+Foliar = absorción real del árbol.
+Sensor NPK = lectura rápida relativa de suelo.
+Suelo/agua = disponibilidad y bloqueo.
+
+A) Tabla específica de limonero reportada en fertirrigación de limonero:
+
+[TABLA]
+Columnas: Elemento | Rango normal foliar | Uso BIO-G
+Fila 1:
+- Elemento: N (%)
+- Rango normal foliar: 2.30-2.80
+- Uso BIO-G: Hoja, brotación, floración recurrente; exceso puede empujar vegetativo.
+Fila 2:
+- Elemento: P (%)
+- Rango normal foliar: 0.12-0.16
+- Uso BIO-G: Raíz, energía, floración; planear por baja movilidad.
+Fila 3:
+- Elemento: K (%)
+- Rango normal foliar: 1.20-1.60
+- Uso BIO-G: Amarre, calibre, jugo, calidad; contrastar con tablas cítricas generales.
+[/TABLA]
+
+B) Tabla cítrica secundaria/micronutrientes reforzada:
+
+[TABLA]
+Columnas: Elemento | Muy bajo | Bajo | Normal | Alto | Muy alto | Uso BIO-G
+Fila 1:
+- Elemento: Ca (%)
+- Muy bajo: <1.60
+- Bajo: 1.60-2.99
+- Normal: 3.00-5.00
+- Alto: 5.10-6.50
+- Muy alto: >6.50
+- Uso BIO-G: Raíz, pared celular, calidad de piel, antagonismo.
+Fila 2:
+- Elemento: Mg (%)
+- Muy bajo: <0.15
+- Bajo: 0.15-0.24
+- Normal: 0.25-0.45
+- Alto: 0.46-0.90
+- Muy alto: >0.90
+- Uso BIO-G: Clorofila, fotosíntesis, carbohidratos, resistencia.
+Fila 3:
+- Elemento: S (%)
+- Muy bajo: <0.14
+- Bajo: 0.14-0.19
+- Normal: 0.20-0.30
+- Alto: 0.31-0.50
+- Muy alto: >0.50
+- Uso BIO-G: Eficiencia de N, proteínas, defensa, aroma/sabor.
+Fila 4:
+- Elemento: Fe (ppm)
+- Muy bajo: <35
+- Bajo: 35-60
+- Normal: 61-100
+- Alto: 101-200
+- Muy alto: >200
+- Uso BIO-G: Clorosis férrica; pH alto/caliza/raíz.
+Fila 5:
+- Elemento: Zn (ppm)
+- Muy bajo: <14
+- Bajo: 14-25
+- Normal: 26-70
+- Alto: 71-300
+- Muy alto: >300
+- Uso BIO-G: Brote corto, hoja chica; común en cítricos/HLB.
+Fila 6:
+- Elemento: Mn (ppm)
+- Muy bajo: <12
+- Bajo: 12-25
+- Normal: 26-60
+- Alto: 61-250
+- Muy alto: >250
+- Uso BIO-G: Clorosis/moteado; interpretar con pH.
+Fila 7:
+- Elemento: B (ppm)
+- Muy bajo: <21
+- Bajo: 21-30
+- Normal: 31-100
+- Alto: 101-260
+- Muy alto: >260
+- Uso BIO-G: Floración/cuajado; margen estrecho.
+Fila 8:
+- Elemento: Cu (ppm)
+- Muy bajo: <3
+- Bajo: 3-5
+- Normal: 6-14
+- Alto: 15-25
+- Muy alto: >25
+- Uso BIO-G: Lignificación/sanidad; cuidado con acumulación.
+Fila 9:
+- Elemento: Mo (ppm)
+- Muy bajo: <0.06
+- Bajo: 0.06-0.09
+- Normal: 0.10-3.0
+- Alto: 3.10-10
+- Muy alto: >10
+- Uso BIO-G: Contexto avanzado; no sensor v1.
+[/TABLA]
+
+C) Muestreo foliar v1.1:
+- Hacer análisis foliar anual cuando sea posible.
+- En fertirrigación de Murcia se sugiere octubre-diciembre.
+- Hojas de brotación vegetativa de primavera, 7-9 meses, ramas que soportarán producción siguiente.
+- Tomar 100-200 hojas por parcela, 4 hojas por árbol, máximo 25-50 árboles.
+- Muestrear alrededor del árbol, a media altura, en parcela homogénea.
+- No mezclar árboles anómalos, plagas, enfermedades, zonas salinas o suelos distintos.
+- Registrar perfil: persa, mexicano, amarillo, tropical o desfase.
+
+================================================================================
+0.0.3 EXTRACCIÓN NUTRIMENTAL v1.1 - SOLO MODO AVANZADO
+================================================================================
+
+Estas cifras sirven para coherencia técnica y futuro modo avanzado. NO se muestran como
+receta automática en modo productor simple.
+
+A) Limón mexicano - extracción aproximada por tonelada de fruta:
+
+[TABLA]
+Columnas: Elemento | Extracción aprox. | Unidad | Lectura BIO-G
+Fila 1:
+- Elemento: N
+- Extracción aprox.: 1.86
+- Unidad: kg/t fruta
+- Lectura BIO-G: Alto; sostén de hoja/productividad.
+Fila 2:
+- Elemento: P
+- Extracción aprox.: 0.42
+- Unidad: kg/t fruta
+- Lectura BIO-G: Menor que N/K/Ca, pero relevante en floración/raíz.
+Fila 3:
+- Elemento: K
+- Extracción aprox.: 2.49
+- Unidad: kg/t fruta
+- Lectura BIO-G: Mayor extracción; fuerte en fruto, calibre y jugo.
+Fila 4:
+- Elemento: Ca
+- Extracción aprox.: 1.11
+- Unidad: kg/t fruta
+- Lectura BIO-G: Calidad/pared celular/raíz; contexto avanzado.
+Fila 5:
+- Elemento: Mg
+- Extracción aprox.: 0.15
+- Unidad: kg/t fruta
+- Lectura BIO-G: Fotosíntesis/carbohidratos; revisar con hoja.
+Fila 6:
+- Elemento: S
+- Extracción aprox.: 0.17
+- Unidad: kg/t fruta
+- Lectura BIO-G: Eficiencia N/defensa/aroma.
+[/TABLA]
+
+Orden reportado para fruto de limón mexicano:
+K > N > Ca > P > Mg.
+
+B) Limón Persa - extracción aproximada por tonelada de fruta:
+
+[TABLA]
+Columnas: Región/contexto | N kg/t | P kg/t | K kg/t | Ca kg/t | Mg kg/t | S kg/t | Lectura BIO-G
+Fila 1:
+- Región/contexto: Veracruz
+- N kg/t: 2.1
+- P kg/t: 0.3
+- K kg/t: 1.5
+- Ca kg/t: 1.4
+- Mg kg/t: 0.1
+- S kg/t: 0.1
+- Lectura BIO-G: N/Ca/K fuertes; no asumir K>N siempre.
+Fila 2:
+- Región/contexto: Nayarit
+- N kg/t: 1.9
+- P kg/t: 0.2
+- K kg/t: 2.2
+- Ca kg/t: 1.2
+- Mg kg/t: 0.2
+- S kg/t: 0.1
+- Lectura BIO-G: K>N; agua/suelo/flujo cambian remoción.
+Fila 3:
+- Región/contexto: Tabasco potencial 30 t/ha, demanda frutos+hojas promedio aproximado
+- N kg/t: 3.1-3.8 demanda total/30t, segun subunidad
+- P kg/t: 0.3-0.4 demanda total/30t
+- K kg/t: 2.6-3.2 demanda total/30t
+- Ca kg/t: variable
+- Mg kg/t: variable
+- S kg/t: no central en tabla
+- Lectura BIO-G: uso como demanda total + eficiencia, no extracción simple de fruta.
+[/TABLA]
+
+Regla BIO-G:
+- La extracción por tonelada NO es dosis.
+- La dosis depende de oferta del suelo, eficiencia, pérdidas, pH, salinidad, agua,
+  materia orgánica, densidad, edad, rendimiento objetivo y análisis foliar.
+- Si el suelo tiene valores positivos altos o excesivos, no aplicar por rutina.
+- Si hay déficit real, el programa técnico puede ajustar, pero BIO-G simple solo orienta.
+
+================================================================================
+0.0.4 PROGRAMACIÓN POR ETAPA v1.1 - TRADUCCIÓN AL MOTOR BIO-G
+================================================================================
+
+No usar calendario fijo como motor principal. El calendario se traduce a etapa visible.
+
+1) Plantación / root_establishment
+- Prioridad: raíz, humedad estable, baja EC, P funcional, N bajo-moderado.
+- Evitar quemar raíz con sales.
+- En árboles jóvenes, las necesidades suben con edad y tamaño de copa.
+
+2) Juvenile_vegetative
+- Prioridad: N moderado y fraccionado, K de balance, P según suelo.
+- Objetivo: copa/hoja/raíz, no producción forzada.
+- Si hay alta densidad, no escalar kg/árbol como árbol aislado.
+
+3) Dormancy / reposo relativo
+- En limón es baja actividad o transición; no árbol pelón.
+- Prioridad: revisar sales, pH, raíz y planear P/K/N según próximo flush/floración.
+- No empujar N si temperatura baja o no hay hoja activa.
+
+4) Budbreak / vegetative_growth
+- N funcional para brote/hoja, pero no exceso.
+- En zonas con HLB/PAC, brote tierno aumenta riesgo vectorial.
+- Zn/Fe/Mn/Mg como contexto si hoja nueva sale amarilla/chica.
+
+5) Flowering
+- N moderado; P/K deben estar funcionales antes de la floración.
+- Agua, temperatura, EC y raíz pesan más que una lectura NPK aislada.
+- No aplicar N pesado si el árbol ya trae exceso vegetativo.
+
+6) Fruit_set
+- K sube fuerte; N moderado; P funcional.
+- Agua estable y EC baja son obligatorias para interpretar K/N.
+- Ca/B/Zn/Mg como contexto; no recomendar B a ciegas.
+
+7) Fruit_fill
+- K/agua mandan calibre, jugo y calidad.
+- N pequeño/intermitente si hay hoja/carga; no empujar brote blando.
+- Mg ayuda fotosíntesis y transporte de carbohidratos.
+- EC alta bloquea recomendación agresiva.
+
+8) Harvest_maturity
+- En persa/mexicano, verde puede ser comercial.
+- K sigue importando para calidad, pero no subir si EC alta.
+- N alto tarde es observación por brote, caída, plaga y calidad.
+
+9) Post_harvest / entre cortes
+- Recuperación si hay hoja activa, humedad estable y EC baja.
+- N/K moderados pueden sostener reservas y siguiente floración.
+- Si hay HLB/raíz/sales, bajar confianza.
+
+================================================================================
+0.0.5 AJUSTES DIRECTOS RECOMENDADOS AL MOTOR v1.1
+================================================================================
+
+A) evaluateTelemetry
+Antes de cualquier mensaje NPK, revisar en este orden:
+1. stage;
+2. perennialState;
+3. soilMoisture;
+4. EC;
+5. pH;
+6. resistance/compactación;
+7. soilTemp;
+8. healthContext: HLB/PAC/gomosis/Phytophthora si existe;
+9. cropLoadStatus / fruitVisible / bloomSetStatus si existe;
+10. leafActive / flushActive;
+11. nRel/pRel/kRel.
+
+B) Guardas nuevas
+- EC >= 1.7 en flowering/fruit_set/fruit_fill = observación fuerte.
+- EC >= 2.0 en reproducción = bloquear recomendaciones agresivas N/K/P.
+- pH >= 7.8 = hablar de Fe/Zn/Mn/Mg/P bloqueados.
+- pH < 5.0 = hablar de acidez, Al/Fe, Ca/Mg/K bajos, suelo ácido.
+- soilMoisture baja en fruit_set/fruit_fill = agua primero.
+- soilMoisture alta/saturación = raíz/gomosis/anoxia antes que fertilizante.
+- resistance alta = compactación/raíz; NPK no resuelve.
+
+C) StageTargets
+No es obligatorio rehacer toda la tabla del documento v1. Ajustes conceptuales:
+- fruit_set: mantener kPriority alto; N moderado.
+- fruit_fill: mantener kPriority máximo; Mg/S/Ca/B como contexto avanzado.
+- harvest_maturity: N high debe generar observación.
+- post_harvest: permitir N/K moderado solo con hoja activa, EC baja y raíz funcional.
+- root_establishment: P funcional y EC conservadora.
+
+D) FertilizationPlanner
+Agregar mensaje base:
+"El sensor te dice cómo viene el suelo, pero la hoja confirma si el limonero lo tomó.
+Si vas a mover fuerte NPK, confirma con suelo, agua y foliar. En limón, K sostiene
+calibre/jugo, N sostiene hoja/brote, P sostiene raíz/floración, y Mg/S ayudan a fotosíntesis,
+uso de N y calidad. Pero con sales, pH alto, HLB o raíz mala, primero se corrige absorción."
+
+================================================================================
+0.0.6 MENSAJES UX NUEVOS v1.1
+================================================================================
+
+- "El potasio sale fuerte con el limón. Si trae carga y K viene bajo, se puede pegar en tamaño, jugo y calidad; pero primero revisa agua y sales."
+- "El nitrógeno ayuda a hoja y brote, pero si te pasas se va a puro follaje y brote tierno. Eso no siempre se vuelve limón."
+- "El fósforo se planea antes; no es de echarlo tarde y esperar que arregle floración de golpe."
+- "El magnesio no lo mide el sensor v1, pero si falta puede bajar fotosíntesis y movimiento de carbohidratos. Confírmalo con hoja."
+- "El azufre ayuda a que el árbol use mejor el nitrógeno, pero tampoco se aplica a ciegas: revisa suelo y fuente."
+- "Con HLB, la nutrición balanceada ayuda a sostener el árbol, pero no cura la enfermedad. Baja la confianza del NPK."
+- "En goteo, el bulbo húmedo manda. Puede haber fertilizante, pero si la sal se movió a la raíz, el árbol se frena."
+- "Si el pH está alto, la hoja amarilla puede ser hierro, zinc, manganeso o raíz; no le metas nitrógeno por reflejo."
+- "Si el K foliar ya salió alto, no sigas subiendo potasio nomás por costumbre."
+- "Limón verde comercial no significa inmaduro: revisa calibre, jugo, firmeza y objetivo de corte."
+
+================================================================================
+0.0.7 TESTS NUEVOS v1.1
+================================================================================
+
+1) lemon_foliar_sensor_not_same_test
+Caso: sensor NPK medio, foliar K bajo.
+Esperado: explicar que suelo y hoja no son lo mismo; pedir revisar absorción/agua/EC.
+
+2) lemon_high_foliar_k_no_more_k_test
+Caso: fruit_fill, K sensor bajo-medio, foliar K alto, EC normal.
+Esperado: no recomendar subir K; revisar calibración, carga, muestra y antagonismos.
+
+3) lemon_mg_context_not_n_deficiency_test
+Caso: hoja vieja amarilla, N normal, K alto, pH ok.
+Esperado: mencionar Mg/Ca/K balance como contexto, no diagnosticar N.
+
+4) lemon_sulfur_n_efficiency_context_test
+Caso: N bajo recurrente + suelo alcalino + fuente sulfato reportada.
+Esperado: mencionar S como contexto de eficiencia N, no como sensor v1.
+
+5) lemon_bulb_salinity_after_rain_test
+Caso: EC alta después de lluvia/riego, humedad alta, fruit_set.
+Esperado: sales/bulbo/raíz primero; bloquear NPK agresivo.
+
+6) lemon_fertigation_weekly_fractioning_test
+Caso: goteo/microaspersión, etapa productiva, usuario pregunta dosis.
+Esperado: hablar de fraccionamiento y análisis, sin dosis cerrada.
+
+7) lemon_hlb_npk_confidence_drop_test
+Caso: HLB confirmado, NPK aparentemente óptimo, bajo vigor.
+Esperado: score nutricional no se celebra; confidence baja por floema/raíz.
+
+8) lemon_ph_low_acid_soil_context_test
+Caso: pH <5, K/P/Mg bajos, Tabasco/tropical húmedo.
+Esperado: hablar de acidez, Ca/Mg/K/P, Al/Fe y análisis; no solo NPK.
+
+================================================================================
+0.0.8 NO HACER EN CÓDIGO v1.1
+================================================================================
+
+- No convertir calendarios enero-febrero/mayo-septiembre en lógica fija global.
+- No usar dosis de Murcia, Tabasco, Colima o artículo divulgativo como receta visible.
+- No mezclar P elemental con P2O5 ni K elemental con K2O sin conversión documentada.
+- No asumir que K siempre debe ser mayor que N en toda región o etapa.
+- No asumir que N alto es bueno en fruit_fill/cosecha.
+- No asumir que P bajo en cosecha es crisis.
+- No recomendar boro, zinc, hierro, magnesio o azufre a ciegas.
+- No simular Mg/S/Ca/Fe/Zn/Mn/B con sensor NPK.
+- No recomendar KCl en ambientes salinos sin cautela por cloruros.
+- No decir que HLB se corrige con fertilización.
+- No celebrar NPK si hay EC alta, pH extremo, compactación, raíz mala o HLB.
+- No tratar una tabla foliar regional como absoluta sin protocolo de muestreo.
+- No olvidar que el limón persa/mexicano puede ser comercialmente verde.
+
+================================================================================
+0.0.9 CUERPO BASE v1 CONSERVADO ABAJO
+================================================================================
+
+El cuerpo v1 queda conservado porque ya estaba alineado al contrato BIO-G. Este addendum
+refuerza y corrige la interpretación si existe conflicto.
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+La guía NPK del Limón es el documento más delicado del módulo porque define cómo BIO-G
+convierte una lectura cruda de sensor en una lectura agronómica por etapa. El limón comparte
+familia y arquitectura cítrica con el naranjo, pero NO debe ser un naranjo pequeño.
+
+Verdades BIO-G para limón:
+
+1) El limón es cítrico siempreverde de producción frecuente.
+   Puede tener brote, flor, frutito y fruto en llenado al mismo tiempo. No hay dormancia
+   caducifolia real. El StageId `dormancy` se traduce como reposo relativo, baja actividad,
+   entre cortes, prefloración o árbol sin evento visible fuerte.
+
+2) En limón, N y K son protagonistas, pero con lectura distinta.
+   - N sostiene hoja, brote, recuperación, floración recurrente y productividad.
+   - K sostiene amarre, calibre, jugo, acidez/calidad, tolerancia a estrés y fruta comercial.
+   - En producción continua el balance N/K importa más que “subir todo”.
+   - N alto con poca carga puede empujar puro brote tierno y no limón comercial.
+   - K bajo en cuajado/llenado se pega en tamaño, jugo, calidad y continuidad.
+
+3) P pesa, pero no debe dominar adulto.
+   P es importante en plantación, raíz, energía, prefloración, floración y cuajado. En árbol
+   adulto con suelo ya corregido, P bajo del sensor no debe tumbar el score fuera de etapas
+   sensibles. P se valida con suelo + foliar, no por lectura aislada.
+
+4) El limón es sensible a sales y al cloro.
+   EC alta bloquea absorción y puede hacer que el sensor muestre nutrientes “presentes” que
+   el árbol no puede usar. En limón mexicano y persa, evitar mensajes que celebren K o N
+   si la EC está alta. En ambientes salinos, KCl/cloruro de potasio debe tratarse como tema
+   avanzado y con cautela por cloruros.
+
+5) El limón depende de raíz fina activa.
+   Phytophthora/gomosis, saturación, compactación, salinidad, HLB y suelos mal drenados
+   bajan la confianza del NPK. Marchitez con suelo húmedo NO es falta de agua.
+
+6) El flujo de floración/cosecha importa.
+   En limón persa y mexicano la extracción nutrimental puede cambiar por flujo de floración
+   y por agua. BIO-G debe guardar memoria de floración, cuajado, corte, postcosecha y estrés.
+
+7) La fruta verde comercial cambia el copy.
+   En limón persa/mexicano, cosecha no significa “fruta amarilla”. Madurez/corte puede ser
+   verde comercial. En limón amarillo Eureka/Lisbon sí puede hablarse de amarillo y color.
+
+8) HLB/PAC modifica todo.
+   HLB afecta floema, raíz y movilidad de fotoasimilados/nutrientes. Fertilizar puede sostener
+   el árbol dentro de manejo integral, pero no corrige HLB solo. En presencia de HLB o PAC,
+   el motor baja confianza, pregunta por brotes y sanidad, y no sentencia deficiencias.
+
+Regla rectora BIO-G para limón:
+AGUA + RAÍZ + SALES + pH + ETAPA + BROTE/FLOR/FRUTO + CARGA + SANIDAD mandan antes que NPK.
+
+Mensaje rector farmer-friendly:
+"En limón no se trata de echar más fertilizante. Primero hay que ver si el árbol puede tomarlo:
+humedad pareja, sales bajas, pH manejable, raíz viva y etapa correcta. Luego sí: N para hoja y
+brote, P para raíz/floración y K para amarre, calibre, jugo y calidad."
+
+================================================================================
+0.1 LECTURA DEL CÓDIGO ACTUAL BIO-G Y PATRÓN A SEGUIR
+================================================================================
+
+La librería actual ya tiene un patrón moderno para árboles perennes y Naranjo OR:
+
+lib/core/crops/orange_tree/
+  orange_tree_assets.dart
+  orange_tree_catalog.dart
+  orange_tree_crop_definition.dart
+  orange_tree_universal_profile.dart
+  orange_tree_yield_reference.dart
+
+lib/core/agro/
+  orange_tree_agro_score_engine.dart
+  orange_tree_nutrition_modifier.dart
+
+lib/core/plant_health/catalog/
+  orange_tree_syndromes.dart
+
+Para Limón se debe crear espejo limpio, no arquitectura nueva:
+
+lib/core/crops/lemon_tree/
+  lemon_tree_assets.dart
+  lemon_tree_catalog.dart
+  lemon_tree_crop_definition.dart
+  lemon_tree_universal_profile.dart
+  lemon_tree_yield_reference.dart
+
+lib/core/agro/
+  lemon_tree_agro_score_engine.dart
+  lemon_tree_nutrition_modifier.dart
+
+lib/core/plant_health/catalog/
+  lemon_tree_syndromes.dart
+
+Capas compartidas a tocar cuando se implemente:
+- crop_types.dart
+- crop_registry.dart
+- crop_catalog.dart
+- crop_runtime_resolver.dart
+- tree_stage_resolver.dart
+- crop_cycle_display_resolver.dart
+- tree_profile_presentation.dart
+- crop_presentation_resolver.dart
+- npk_caps.dart
+- nutrient_recommendation_engine.dart
+- fertilization_planner.dart
+- tree_yield_reference_catalog.dart
+- plant_health_registry.dart
+- plant_health_stage_adapter.dart
+- yield_projection_setup_screen.dart
+- npk_screen.dart
+- quick_report_builder.dart
+- onboarding_asset_badge.dart
+
+Contrato de código que este documento respeta:
+- StageIds cerrados.
+- No usar sowingDate como eje principal.
+- `AgroRange.lowMax` = frontera crítica baja, no inicio de óptimo.
+- Evitar `lowMax == optimalMin` y `optimalMax == highMin` en suelo/ambiente.
+- EC y resistance son métricas principalmente de exceso: lowMax puede ser placeholder seguro.
+- Sensor NPK = lectura relativa; foliar/suelo/agua = diagnóstico avanzado.
+
+================================================================================
+0.2 FUENTES Y CRITERIO DE CONFIANZA
+================================================================================
+
+Alta confianza usada para decisiones duras:
+- UF/IFAS Florida Citrus Production Guide 2025-2026: Nutrition Management for Citrus Trees.
+- UF/IFAS Soil and Leaf Tissue Testing for Commercial Citrus Production.
+- UF/IFAS Potassium (K) for Citrus Trees.
+- UF/IFAS/EDIS y documentos de salinidad/agua de cítricos.
+- UC ANR / CDFA FREP Citrus Fertilization Guidelines.
+- NSW DPI Citrus nutrition.
+- INIFAP: Manejo integral del cultivo de limón mexicano en escenario de alta incidencia de HLB.
+- Revista Mexicana de Ciencias Agrícolas / INIFAP: Remoción de nutrimentos por cosecha de limón Persa en Nayarit y Veracruz.
+- Acta Agrícola y Pecuaria / UAEM: La dosis de fertilización afecta el rendimiento y calidad en limón Persa.
+- Terra Latinoamericana / Colegio de Postgraduados: Diagnóstico nutrimental y validación de dosis de fertilización para limón Persa.
+
+Media-alta:
+- Manuales regionales de INIFAP, agendas técnicas estatales, ensayos de fertirriego y producción de limón persa.
+
+Media:
+- Guías comerciales o de empresas de nutrición vegetal solo si coinciden con fuentes universitarias y se usan para lenguaje/contraste, no para hardcodear dosis.
+
+Baja-media:
+- Foros, grupos y comentarios de productores. Se usan solo para lenguaje UX real:
+  "limón chico", "tiró flor", "no amarró", "no trae jugo", "se está poniendo amarillo",
+  "se quemó de la orilla", "trae salitre", "le eché fertilizante y se enchiló", "se secó rama",
+  "trae minador", "se raja", "está puro brote y nada de limón".
+
+================================================================================
+0.3 DECISIONES PRIORITARIAS PARA BIO-G v1
+================================================================================
+
+A) El motor de limón debe ser más cítrico-continuo que el de naranjo.
+   Naranjo ya modela traslape, pero Limón debe enfatizar floración/corte repetido.
+   `post_harvest` no cierra: puede ser recuperación entre cortes.
+
+B) NpkCaps recomendados:
+   N = 130.0
+   P = 95.0
+   K = 210.0
+
+   Motivo:
+   - N y K son muy demandados en limón con producción frecuente.
+   - K debe subir respecto a naranjo porque el limón persa/mexicano puede sostener cortes frecuentes y K pesa fuerte en fruto.
+   - N sube levemente respecto a naranjo, pero no demasiado para evitar que el dashboard celebre exceso de N.
+   - P queda igual/moderado: raíz/floración sí, adulto no domina todo.
+
+C) K debe pesar fuerte desde fruit_set.
+   `fruit_set`, `fruit_fill` y `harvest_maturity` tienen kPriority alto.
+
+D) N debe pesar fuerte en juvenil, budbreak, vegetativo y postcosecha activa.
+   Pero N alto en fruit_fill/harvest_maturity con baja carga es advertencia.
+
+E) P debe pesar en plantación/raíz/floración.
+   P bajo en cosecha no debe ser alerta destructiva si agua/K/hoja están bien.
+
+F) EC debe ser agresiva como bloqueo.
+   En etapas reproductivas, EC >1.7-2.0 dS/m debe bloquear recomendaciones agresivas.
+   En establecimiento, el límite debe ser más conservador.
+
+G) pH alto dispara contexto Fe/Zn/Mn.
+   Hoja nueva amarilla con nervadura verde no es automáticamente falta de N.
+
+H) HLB o raíz dañada bajan confianza NPK.
+   El motor no debe decir "aplica NPK y se corrige" si hay HLB, PAC, gomosis, raíz dañada o salinidad.
+
+================================================================================
+1. ALCANCE DEL DOCUMENTO
+================================================================================
+
+Este documento alimenta:
+- lemon_tree_universal_profile.dart
+- lemon_tree_crop_definition.dart
+- lemon_tree_agro_score_engine.dart
+- lemon_tree_nutrition_modifier.dart
+- tree_agro_score_engine.dart vía delegación genérica
+- resolveTargets(...)
+- resolveStageWeights(...)
+- evaluateTelemetry(...)
+- AgroScore por etapa
+- AgroMetricEval para N/P/K
+- NutrientRecommendationEngine
+- FertilizationPlanner
+- NpkCaps
+- Dashboard/NPK screen
+- Tests de regresión del motor
+
+No alimenta directamente:
+- dosis comerciales cerradas;
+- marca de fertilizante;
+- receta kg/ha visible en modo simple;
+- aplicación foliar por producto;
+- diagnóstico de HLB, PAC, Phytophthora o deficiencias micronutrimentales;
+- promesa de rendimiento;
+- Brix/acidez como sensor v1.
+
+Estados perennes permitidos:
+- newly_planted
+- juvenile_non_productive
+- established
+- productive_season
+- unknown
+
+Etapas arbol permitidas:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Métricas sensor v1 permitidas:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Contexto avanzado NO sensor v1:
+- HLB / dragón amarillo
+- psílido asiático
+- Fe, Zn, Mn, B, Cu, Ca, Mg, S, Cl, Na
+- SAR / sodio intercambiable
+- bicarbonatos / caliza
+- materia orgánica
+- textura
+- drenaje
+- salinidad del agua
+- portainjerto
+- carga de fruta
+- número de cortes
+- fruta verde comercial
+- Brix/acidez
+- calibre
+- jugo
+- floración inducida/desfase
+
+================================================================================
+2. NPK CAPS RECOMENDADOS PARA LIMÓN
+================================================================================
+
+NpkCaps NO son dosis. Solo normalizan lectura cruda del sensor a escala relativa.
+
+[TABLA]
+Columnas: Nutriente | Cap recomendado | Justificación BIO-G
+Fila 1:
+- Nutriente: N
+- Cap recomendado: 130.0
+- Justificación BIO-G: Limón con brotación/floración/corte frecuente requiere N para hoja, brote y recuperación. Se sube sobre naranjo, pero se evita inflar demasiado porque N alto puede empujar brote tierno, baja calidad y desbalance con K.
+Fila 2:
+- Nutriente: P
+- Cap recomendado: 95.0
+- Justificación BIO-G: P pesa en raíz, establecimiento, energía, prefloración y floración. En árbol adulto no debe dominar el ciclo; su corrección depende mucho de suelo/foliar.
+Fila 3:
+- Nutriente: K
+- Cap recomendado: 210.0
+- Justificación BIO-G: K pesa fuerte en amarre, llenado, calibre, jugo y calidad. La producción continua y la remoción por cosecha justifican cap mayor que naranjo, sin llegar a extremos.
+[/TABLA]
+
+Código esperado en NpkCaps:
+
+```dart
+case 'lemon_tree':
+case 'crop_lemon_tree':
+case 'crop_lime_tree':
+case 'lime_tree':
+case 'lemon':
+case 'lime':
+case 'limon':
+case 'limón':
+case 'limonero':
+  return 130.0; // N
+
+case 'lemon_tree':
+case 'crop_lemon_tree':
+case 'crop_lime_tree':
+case 'lime_tree':
+case 'lemon':
+case 'lime':
+case 'limon':
+case 'limón':
+case 'limonero':
+  return 95.0; // P
+
+case 'lemon_tree':
+case 'crop_lemon_tree':
+case 'crop_lime_tree':
+case 'lemon':
+case 'lime':
+case 'limon':
+case 'limón':
+case 'limonero':
+  return 210.0; // K
+```
+
+Opción futura con calibración local:
+- N cap 135 en huertas con fertirriego, carga alta y sensor calibrado.
+- K cap 220 en limón persa de alta productividad y cortes frecuentes.
+No activar sin validación contra suelo/foliar.
+
+================================================================================
+3. PRINCIPIOS AGRONÓMICOS PARA EL MOTOR NPK
+================================================================================
+
+3.1 Suelo primero
+Antes de interpretar N/P/K, BIO-G debe revisar:
+1. stage
+2. perennialState
+3. soilMoisture
+4. EC
+5. pH
+6. resistance/compactación
+7. soilTemp
+8. healthContext HLB/PAC/gomosis/raíz si existe
+9. cropLoadStatus/cortes/carga visible si existe
+10. leafActive / brote activo
+11. nRel/pRel/kRel
+
+Si NPK aparece bajo/alto pero hay problema de raíz, agua, pH o sales, el mensaje cambia de:
+"falta fertilizante"
+a:
+"posible baja absorción / disponibilidad limitada / revisar raíz, agua, sales y pH".
+
+3.2 Agua siempre
+En limón, agua estable pesa todo el año:
+- brotación y hoja;
+- inducción/floración recurrente;
+- cuajado/amarre;
+- llenado, calibre y jugo;
+- prevención de caída de flor/fruto;
+- menor estrés salino;
+- recuperación entre cortes.
+
+Reglas:
+- Si soilMoisture baja en flowering, fruit_set o fruit_fill, priorizar agua antes que NPK.
+- Si K bajo + humedad baja, no decir primero "falta potasio"; primero agua/absorción.
+- Si humedad alta/saturada + bajo vigor, no pedir más riego; revisar raíz/anoxia/Phytophthora.
+- Humedad irregular + fruto rajado/caída = memoria de riego irregular.
+
+3.3 Salinidad / EC
+La EC es bloqueo central.
+
+Reglas:
+- EC baja no es deficiencia.
+- EC alta bloquea recomendaciones agresivas de N/P/K.
+- EC alta + N/K alto = posible acumulación de sales/fertilizante.
+- EC alta + fruit_set = riesgo de aborto/caída de frutito.
+- EC alta + fruit_fill = riesgo de calibre bajo, jugo bajo, hoja quemada.
+- EC alta + root_establishment = riesgo alto de raíz joven.
+- EC alta + borde de hoja quemado = salinidad/Cl/Na primero, no K/Mg de entrada.
+- Si EC es crítica, dashboard debe decir "sales, agua, drenaje y raíz" antes que "aplica NPK".
+
+Umbral BIO-G v1:
+- óptimo conservador en etapas críticas: EC 0.0-1.1/1.2 dS/m de sensor.
+- observación fuerte: >1.4-1.7 según etapa.
+- bloqueo/revisión: >1.8-2.0 en floración, cuajado y llenado.
+- crítico fuerte: >2.5 o si coincide con hoja quemada, caída, raíz mala o agua salina.
+
+3.4 pH
+Rango operativo BIO-G v1:
+- Preferente general: 5.8-7.2/7.3.
+- Aceptable vigilado: 5.5-7.5.
+- Alerta acidez: <5.0.
+- Alerta alcalinidad/bloqueo: >7.8-8.0.
+
+Reglas:
+- pH alto + hoja nueva amarilla/nervadura verde = Fe/Zn/Mn/raíz, no N automático.
+- pH alto + P alto = advertir desbalance/bloqueo de micros.
+- pH bajo + exceso de humedad = raíz y toxicidad/contexto, no solo fertilización.
+
+3.5 Nitrógeno
+Funciones:
+- hoja activa;
+- brote nuevo;
+- formación de copa;
+- floración recurrente;
+- recuperación postcosecha;
+- productividad de largo plazo;
+- sostén de árboles afectados si agua/raíz funcionan.
+
+Riesgos:
+- exceso de brote tierno;
+- presión de psílido/minador/pulgón;
+- follaje en vez de fruta;
+- baja eficiencia si EC alta o raíz dañada;
+- más necesidad de K;
+- baja calidad/vida de fruta si se empuja tarde;
+- acumulación de sales.
+
+Reglas:
+- N bajo en juvenile/budbreak/vegetative pesa fuerte si agua/EC/pH están bien.
+- N bajo en flowering/fruit_set pesa moderado, pero no se debe empujar N pesado.
+- N bajo en fruit_fill pesa menos que K/agua salvo árbol defoliado o carga alta.
+- N alto en fruit_fill/harvest_maturity = observación de calidad/vigor, no excelente.
+- N alto + baja carga = puro brote/hoja; advertir.
+- N alto + EC alta = sales/acumulación; pausar.
+- N normal/alto + hoja amarilla con nervadura verde = revisar Fe/Zn/Mn/pH.
+
+3.6 Fósforo
+Funciones:
+- raíz;
+- energía;
+- establecimiento;
+- prefloración;
+- floración;
+- cuajado temprano.
+
+Reglas:
+- P pesa fuerte en planting_transplant/root_establishment.
+- P pesa medio-alto en flowering.
+- P pesa moderado en fruit_set.
+- P bajo en fruit_fill/harvest_maturity NO tumba score si agua/K/hoja están bien.
+- P alto no se celebra: puede reflejar acumulación o antagonismo con Zn/Fe/Cu.
+- P se corrige con suelo + foliar, no con sensor aislado.
+
+3.7 Potasio
+Funciones:
+- transporte de azúcares/fotoasimilados;
+- regulación hídrica;
+- calibre;
+- jugo;
+- acidez/calidad interna;
+- cáscara/calidad externa;
+- tolerancia a sequía/calor;
+- continuidad productiva.
+
+Reglas:
+- K sube desde flowering/fruit_set.
+- K es máximo en fruit_fill.
+- K sigue importante en harvest_maturity por calidad/corte.
+- K bajo + humedad correcta + EC baja en fruit_fill = alerta fuerte de calibre/jugo/calidad.
+- K bajo + humedad baja = primero agua.
+- K bajo + EC alta = primero sales/raíz/drenaje.
+- K bajo + N alto = desbalance: mucho brote y poca fruta/calidad.
+- K alto + EC alta = acumulación/sales.
+- K alto + Mg/Ca bajo contextual = antagonismo.
+
+3.8 Ca, Mg, Fe, Zn, Mn, B, Cu, Cl/Na como contexto
+No son sensores v1, pero el motor debe mencionarlos cuando el patrón lo pida.
+
+Ca:
+- pared celular, calidad, cáscara, raíz, rajado, interacción con Na/Mg/K.
+- No simular Ca desde NPK.
+
+Mg:
+- clorofila, fotosíntesis, movimiento de fotoasimilados.
+- INIFAP señala Mg y K como importantes para movimiento de productos de fotosíntesis en limón con HLB.
+
+Fe/Zn/Mn:
+- muy importantes en cítricos; pH alto y HLB/raíz pueden bloquearlos.
+- hoja nueva amarilla, hoja chica, roseta, brote corto = contexto Fe/Zn/Mn.
+
+B:
+- floración, polen, cuajado, pared celular; margen estrecho.
+- No recomendar B a ciegas.
+
+Cu:
+- lignificación y sanidad, pero exceso puede afectar raíz/Fe; no simular.
+
+Cl/Na:
+- salinidad/toxicidad. El sensor EC no separa Cl/Na, pero alerta.
+
+3.9 HLB / psílido / sanidad y nutrición
+Reglas:
+- HLB/PAC reportado + clorosis = bajar confianza NPK.
+- HLB/raíz débil + N/K bajos = hablar de absorción y sanidad, no solo aplicar.
+- Fertilización balanceada puede sostener, pero no cura HLB.
+- Brotes tiernos frecuentes + N alto = presión vectorial/plagas de brote.
+
+================================================================================
+4. MAPEO FENOLÓGICO LIMÓN A STAGE IDS BIO-G
+================================================================================
+
+[TABLA]
+Columnas: Realidad limonera | StageId BIO-G | Regla UX NPK
+Fila 1:
+- Realidad limonera: Árbol recién plantado
+- StageId BIO-G: planting_transplant
+- Regla UX NPK: Raíz, humedad, baja salinidad; no fruta ni N fuerte.
+Fila 2:
+- Realidad limonera: Raíz agarrando
+- StageId BIO-G: root_establishment
+- Regla UX NPK: P/raíz y agua estable; evitar sales.
+Fila 3:
+- Realidad limonera: Árbol joven sin producción comercial
+- StageId BIO-G: juvenile_vegetative
+- Regla UX NPK: N moderado-alto para copa, pero sin quemar raíz.
+Fila 4:
+- Realidad limonera: Baja actividad / entre cortes / sin evento fuerte
+- StageId BIO-G: dormancy
+- Regla UX NPK: Reposo relativo; no árbol pelón; baja presión NPK.
+Fila 5:
+- Realidad limonera: Brote nuevo / flush
+- StageId BIO-G: budbreak
+- Regla UX NPK: N y micros contexto; vigilar psílido/minador.
+Fila 6:
+- Realidad limonera: Hoja y brote activos
+- StageId BIO-G: vegetative_growth
+- Regla UX NPK: Construir hoja sin empujar puro follaje.
+Fila 7:
+- Realidad limonera: Floración / flor repetida
+- StageId BIO-G: flowering
+- Regla UX NPK: Agua, temperatura, EC baja; N moderado, P/K funcionales.
+Fila 8:
+- Realidad limonera: Frutito recién amarrado
+- StageId BIO-G: fruit_set
+- Regla UX NPK: K sube; evitar sales/agua baja/N pesado.
+Fila 9:
+- Realidad limonera: Crecimiento/llenado del limón
+- StageId BIO-G: fruit_fill
+- Regla UX NPK: K y agua mandan; hablar de calibre/jugo, no solo cosecha.
+Fila 10:
+- Realidad limonera: Corte/madurez comercial
+- StageId BIO-G: harvest_maturity
+- Regla UX NPK: Persa/mexicano puede cortarse verde; K/calidad/sanidad; N tarde con cuidado.
+Fila 11:
+- Realidad limonera: Después de corte / entre cortes / recuperación
+- StageId BIO-G: post_harvest
+- Regla UX NPK: Etapa viva; reservas, hoja activa, raíz, siguiente floración.
+Fila 12:
+- Realidad limonera: No lo sé
+- StageId BIO-G: unknown
+- Regla UX NPK: Fallback conservador; pedir realidad visible.
+[/TABLA]
+
+================================================================================
+5. STAGE TARGETS RECOMENDADOS PARA lemon_tree_universal_profile.dart
+================================================================================
+
+Notas:
+- Todos los N/P/K están en escala relativa 0..100 después de NpkCaps.
+- `AgroRange(lowMax, optimalMin, optimalMax, highMin)`.
+- lowMax = frontera crítica baja.
+- optimalMin/optimalMax = óptimo documental.
+- highMin = frontera crítica alta/exceso.
+- EC y resistance usan lowMax -0.01 como placeholder seguro porque no hay deficiencia baja.
+
+5.1 Rangos base pH
+
+```dart
+static const AgroRange phActive = AgroRange(
+  lowMax: 5.0,
+  optimalMin: 5.8,
+  optimalMax: 7.2,
+  highMin: 8.0,
+);
+
+static const AgroRange phBase = AgroRange(
+  lowMax: 5.0,
+  optimalMin: 5.7,
+  optimalMax: 7.4,
+  highMin: 8.2,
+);
+```
+
+5.2 Tabla StageTargets + prioridades
+
+[TABLA]
+Columnas: StageId | Moisture | SoilTemp | pH | EC | Resistance | Nrel | Prel | Krel | nP | pP | kP | Nota UX
+Fila 1:
+- StageId: planting_transplant
+- Moisture: 45 / 60 / 80 / 88
+- SoilTemp: 10 / 16 / 28 / 34
+- pH: phActive
+- EC: -0.01 / 0.0 / 1.0 / 1.6
+- Resistance: -0.01 / 0.0 / 1.5 / 2.1
+- Nrel: 8 / 18 / 36 / 72
+- Prel: 20 / 55 / 78 / 92
+- Krel: 15 / 35 / 60 / 86
+- nP: 0.25
+- pP: 0.78
+- kP: 0.40
+- Nota UX: Raíz joven; P de arranque, no quemar con N/sales.
+Fila 2:
+- StageId: root_establishment
+- Moisture: 45 / 60 / 82 / 90
+- SoilTemp: 10 / 16 / 28 / 34
+- pH: phActive
+- EC: -0.01 / 0.0 / 1.0 / 1.7
+- Resistance: -0.01 / 0.0 / 1.5 / 2.1
+- Nrel: 10 / 22 / 44 / 75
+- Prel: 20 / 55 / 78 / 92
+- Krel: 16 / 38 / 62 / 86
+- nP: 0.32
+- pP: 0.80
+- kP: 0.45
+- Nota UX: Raíz fina activa; humedad pareja y baja EC.
+Fila 3:
+- StageId: juvenile_vegetative
+- Moisture: 42 / 58 / 82 / 90
+- SoilTemp: 10 / 17 / 30 / 35
+- pH: phBase
+- EC: -0.01 / 0.0 / 1.2 / 1.9
+- Resistance: -0.01 / 0.0 / 1.6 / 2.2
+- Nrel: 25 / 58 / 78 / 92
+- Prel: 15 / 35 / 58 / 85
+- Krel: 22 / 48 / 72 / 92
+- nP: 0.78
+- pP: 0.48
+- kP: 0.58
+- Nota UX: Formar copa y hoja; no exigir fruta.
+Fila 4:
+- StageId: dormancy
+- Moisture: 35 / 52 / 78 / 90
+- SoilTemp: 6 / 12 / 26 / 34
+- pH: phBase
+- EC: -0.01 / 0.0 / 1.4 / 2.1
+- Resistance: -0.01 / 0.0 / 1.8 / 2.4
+- Nrel: 0 / 8 / 30 / 65
+- Prel: 0 / 10 / 28 / 68
+- Krel: 0 / 12 / 35 / 72
+- nP: 0.18
+- pP: 0.22
+- kP: 0.25
+- Nota UX: Reposo relativo / entre cortes; no árbol apagado.
+Fila 5:
+- StageId: budbreak
+- Moisture: 45 / 60 / 84 / 91
+- SoilTemp: 10 / 18 / 30 / 35
+- pH: phActive
+- EC: -0.01 / 0.0 / 1.2 / 1.9
+- Resistance: -0.01 / 0.0 / 1.6 / 2.2
+- Nrel: 25 / 58 / 78 / 92
+- Prel: 15 / 38 / 62 / 86
+- Krel: 22 / 48 / 72 / 92
+- nP: 0.78
+- pP: 0.50
+- kP: 0.60
+- Nota UX: Brote tierno; N sí, pero cuidado con psílido/minador y sales.
+Fila 6:
+- StageId: vegetative_growth
+- Moisture: 42 / 58 / 84 / 91
+- SoilTemp: 10 / 18 / 31 / 36
+- pH: phActive
+- EC: -0.01 / 0.0 / 1.3 / 2.0
+- Resistance: -0.01 / 0.0 / 1.7 / 2.3
+- Nrel: 28 / 58 / 80 / 93
+- Prel: 12 / 32 / 55 / 85
+- Krel: 25 / 52 / 76 / 92
+- nP: 0.76
+- pP: 0.40
+- kP: 0.64
+- Nota UX: Construir hoja, sin irse a puro follaje.
+Fila 7:
+- StageId: flowering
+- Moisture: 50 / 65 / 86 / 92
+- SoilTemp: 11 / 18 / 30 / 35
+- pH: phActive
+- EC: -0.01 / 0.0 / 1.2 / 1.8
+- Resistance: -0.01 / 0.0 / 1.6 / 2.2
+- Nrel: 16 / 35 / 56 / 78
+- Prel: 20 / 45 / 68 / 88
+- Krel: 28 / 55 / 78 / 92
+- nP: 0.42
+- pP: 0.62
+- kP: 0.70
+- Nota UX: Floración crítica; agua/temperatura/EC mandan, N pesado no.
+Fila 8:
+- StageId: fruit_set
+- Moisture: 50 / 65 / 86 / 92
+- SoilTemp: 11 / 18 / 31 / 36
+- pH: phActive
+- EC: -0.01 / 0.0 / 1.2 / 1.8
+- Resistance: -0.01 / 0.0 / 1.6 / 2.2
+- Nrel: 18 / 38 / 60 / 80
+- Prel: 15 / 35 / 60 / 84
+- Krel: 35 / 65 / 85 / 95
+- nP: 0.48
+- pP: 0.55
+- kP: 0.84
+- Nota UX: Amarre del limoncito; K sube, sales/agua baja tumban cuajado.
+Fila 9:
+- StageId: fruit_fill
+- Moisture: 50 / 65 / 88 / 93
+- SoilTemp: 11 / 18 / 32 / 37
+- pH: phActive
+- EC: -0.01 / 0.0 / 1.1 / 1.8
+- Resistance: -0.01 / 0.0 / 1.7 / 2.3
+- Nrel: 15 / 35 / 58 / 80
+- Prel: 8 / 22 / 45 / 75
+- Krel: 42 / 72 / 92 / 97
+- nP: 0.45
+- pP: 0.32
+- kP: 0.92
+- Nota UX: Calibre y jugo; K/agua mandan, no cosecha todavía.
+Fila 10:
+- StageId: harvest_maturity
+- Moisture: 45 / 58 / 82 / 90
+- SoilTemp: 9 / 16 / 32 / 37
+- pH: phBase
+- EC: -0.01 / 0.0 / 1.3 / 2.0
+- Resistance: -0.01 / 0.0 / 1.8 / 2.4
+- Nrel: 8 / 18 / 42 / 68
+- Prel: 5 / 18 / 40 / 70
+- Krel: 30 / 58 / 80 / 92
+- nP: 0.26
+- pP: 0.18
+- kP: 0.70
+- Nota UX: Corte/madurez comercial; en persa/mexicano el verde puede ser maduro.
+Fila 11:
+- StageId: post_harvest
+- Moisture: 42 / 58 / 82 / 90
+- SoilTemp: 8 / 15 / 30 / 36
+- pH: phBase
+- EC: -0.01 / 0.0 / 1.4 / 2.1
+- Resistance: -0.01 / 0.0 / 1.8 / 2.4
+- Nrel: 15 / 40 / 65 / 85
+- Prel: 8 / 22 / 45 / 75
+- Krel: 22 / 48 / 72 / 90
+- nP: 0.60
+- pP: 0.30
+- kP: 0.62
+- Nota UX: Recuperación entre cortes; hoja activa y reservas.
+Fila 12:
+- StageId: unknown
+- Moisture: 45 / 60 / 85 / 92
+- SoilTemp: 8 / 16 / 31 / 37
+- pH: phBase
+- EC: -0.01 / 0.0 / 1.4 / 2.1
+- Resistance: -0.01 / 0.0 / 1.8 / 2.4
+- Nrel: 15 / 35 / 62 / 85
+- Prel: 10 / 30 / 55 / 82
+- Krel: 22 / 48 / 72 / 92
+- nP: 0.48
+- pP: 0.38
+- kP: 0.58
+- Nota UX: Fallback conservador; pide etapa visible.
+[/TABLA]
+
+================================================================================
+6. STAGE WEIGHTS RECOMENDADOS
+================================================================================
+
+Los pesos deben sumar aproximadamente 1.0. Se ajustan para que el score no se desplome por
+una lectura NPK si agua/EC/raíz son el cuello de botella.
+
+[TABLA]
+Columnas: StageId | moisture | soilTemp | pH | EC | resistance | N | P | K | Lectura
+Fila 1:
+- StageId: planting_transplant
+- moisture: 0.26
+- soilTemp: 0.14
+- pH: 0.12
+- EC: 0.16
+- resistance: 0.16
+- N: 0.04
+- P: 0.08
+- K: 0.04
+- Lectura: Raíz y suelo mandan.
+Fila 2:
+- StageId: root_establishment
+- moisture: 0.27
+- soilTemp: 0.13
+- pH: 0.12
+- EC: 0.17
+- resistance: 0.17
+- N: 0.04
+- P: 0.07
+- K: 0.03
+- Lectura: Raíz fina y salinidad.
+Fila 3:
+- StageId: juvenile_vegetative
+- moisture: 0.20
+- soilTemp: 0.10
+- pH: 0.10
+- EC: 0.13
+- resistance: 0.13
+- N: 0.16
+- P: 0.08
+- K: 0.10
+- Lectura: N y hoja, sin ignorar suelo.
+Fila 4:
+- StageId: dormancy
+- moisture: 0.22
+- soilTemp: 0.14
+- pH: 0.12
+- EC: 0.16
+- resistance: 0.14
+- N: 0.07
+- P: 0.06
+- K: 0.09
+- Lectura: Reposo relativo, raíz/sales.
+Fila 5:
+- StageId: budbreak
+- moisture: 0.20
+- soilTemp: 0.10
+- pH: 0.10
+- EC: 0.13
+- resistance: 0.11
+- N: 0.18
+- P: 0.08
+- K: 0.10
+- Lectura: Brote nuevo; N importante.
+Fila 6:
+- StageId: vegetative_growth
+- moisture: 0.19
+- soilTemp: 0.09
+- pH: 0.10
+- EC: 0.13
+- resistance: 0.11
+- N: 0.18
+- P: 0.07
+- K: 0.13
+- Lectura: Hoja y K de balance.
+Fila 7:
+- StageId: flowering
+- moisture: 0.26
+- soilTemp: 0.14
+- pH: 0.10
+- EC: 0.15
+- resistance: 0.10
+- N: 0.07
+- P: 0.08
+- K: 0.10
+- Lectura: Floración: agua/clima/sales pesan más que NPK.
+Fila 8:
+- StageId: fruit_set
+- moisture: 0.26
+- soilTemp: 0.11
+- pH: 0.10
+- EC: 0.16
+- resistance: 0.10
+- N: 0.06
+- P: 0.07
+- K: 0.14
+- Lectura: Cuajado: K, agua y sales.
+Fila 9:
+- StageId: fruit_fill
+- moisture: 0.26
+- soilTemp: 0.09
+- pH: 0.09
+- EC: 0.17
+- resistance: 0.10
+- N: 0.06
+- P: 0.04
+- K: 0.19
+- Lectura: Llenado: K máximo, EC bloquea.
+Fila 10:
+- StageId: harvest_maturity
+- moisture: 0.21
+- soilTemp: 0.08
+- pH: 0.10
+- EC: 0.15
+- resistance: 0.10
+- N: 0.06
+- P: 0.04
+- K: 0.16
+- Lectura: Calidad/corte; no empujar N.
+Fila 11:
+- StageId: post_harvest
+- moisture: 0.22
+- soilTemp: 0.09
+- pH: 0.10
+- EC: 0.15
+- resistance: 0.12
+- N: 0.12
+- P: 0.05
+- K: 0.15
+- Lectura: Recuperación; N/K moderados con hoja activa.
+Fila 12:
+- StageId: unknown
+- moisture: 0.23
+- soilTemp: 0.10
+- pH: 0.10
+- EC: 0.15
+- resistance: 0.12
+- N: 0.10
+- P: 0.07
+- K: 0.13
+- Lectura: Conservador, pedir etapa.
+[/TABLA]
+
+================================================================================
+7. LECTURA POR ETAPA - MENSAJES Y VENTANAS NPK
+================================================================================
+
+planting_transplant
+- N: bajo/moderado. No empujar follaje si raíz no agarró.
+- P: alto relativo. Raíz y establecimiento.
+- K: soporte, no protagonista.
+- Mensaje: "Ahorita el limón no se fuerza. Primero raíz viva, humedad pareja, baja EC y cuello sano."
+
+root_establishment
+- N: moderado bajo.
+- P: alto relativo.
+- K: soporte de raíz/agua.
+- Mensaje: "La raíz fina del limón es delicada. Si hay sales o suelo duro, el NPK no se aprovecha."
+
+juvenile_vegetative
+- N: protagonista.
+- P: medio.
+- K: medio-alto.
+- Mensaje: "En limón joven queremos hoja y copa, pero no quemar raíz ni provocar brote débil."
+
+reposo relativo / dormancy
+- N/P/K: bajos/moderados.
+- Mensaje: "El limonero sigue verde. No lo leas como árbol apagado; cuida raíz, humedad y sales."
+
+budbreak
+- N: alto relativo.
+- P: medio.
+- K: medio.
+- Mensaje: "Hay brote tierno. Sí ocupa nitrógeno, pero también atrae psílido, minador y pulgones."
+
+vegetative_growth
+- N: alto relativo.
+- P: medio bajo.
+- K: medio-alto.
+- Mensaje: "Construye hoja, pero no lo lleves a puro follaje. K mantiene balance y calidad futura."
+
+flowering
+- N: moderado/bajo.
+- P: medio-alto.
+- K: medio-alto.
+- Mensaje: "En floración el limón no perdona agua baja, calor ni sales. No corrijas todo con N."
+
+fruit_set
+- N: moderado.
+- P: medio.
+- K: alto.
+- Mensaje: "El limoncito está amarrando. K y agua estable pesan más; N pesado puede empujar brote y caída."
+
+fruit_fill
+- N: moderado bajo.
+- P: bajo-medio.
+- K: máximo.
+- Mensaje: "En llenado, K y agua mandan calibre y jugo. Si falta agua o hay sal, primero arregla eso."
+
+harvest_maturity
+- N: bajo.
+- P: bajo.
+- K: alto moderado.
+- Mensaje: "Cerca del corte, cuida calidad. En persa/mexicano el verde puede ser comercial; no empujes N tarde."
+
+post_harvest
+- N: moderado.
+- P: bajo-medio.
+- K: medio-alto.
+- Mensaje: "Después del corte el árbol no se apaga. Si trae hoja activa, recupera reservas y prepara nueva flor."
+
+unknown
+- N/P/K: conservador.
+- Mensaje: "Dime qué ves: brote, flor, limoncito, fruta llenando, lista para corte o después de corte."
+
+================================================================================
+8. MODIFICADOR NUTRICIONAL POR PERFIL LM
+================================================================================
+
+Perfiles oficiales recomendados:
+- lm_skip
+- lm_01_persa_tahiti
+- lm_02_mexicano_colima
+- lm_03_amarillo_eureka_lisbon
+- lm_04_tropical_continuo
+- lm_05_desfase_inducido
+
+Enum sugerido:
+
+```dart
+enum LemonTreeNutritionGroup {
+  generic,
+  persianTahitiExport,
+  mexicanColimaKey,
+  yellowEurekaLisbon,
+  tropicalContinuous,
+  inducedOffSeason,
+}
+```
+
+Reglas por grupo:
+
+lm_skip
+- Conservador.
+- No asume persa, mexicano ni amarillo.
+- Menor agresividad ante desviaciones pequeñas.
+
+lm_01_persa_tahiti
+- Exportación/fresco, verde comercial, sin semilla.
+- K pesa fuerte en calibre, jugo y calidad externa.
+- EC/salinidad muy crítica.
+- N tarde con cuidado por brote tierno y calidad.
+
+lm_02_mexicano_colima
+- Con semilla, producción frecuente, más sensible a frío y HLB/PAC.
+- Brotes frecuentes: N útil, pero presión de plagas/vector.
+- K y Mg contexto para movimiento de fotoasimilados.
+- En HLB, baja confianza NPK.
+
+lm_03_amarillo_eureka_lisbon
+- Limón amarillo/nicho.
+- Mayor sensibilidad al frío/helada y calidad externa.
+- Harvest puede hablar de amarillo/color, a diferencia de Persa/Mexicano.
+- N tarde puede alterar color/calidad.
+
+lm_04_tropical_continuo
+- Eventos repetidos de floración/corte.
+- Agua/EC pesan más todo el año.
+- Postcosecha se interpreta como entre cortes, no fin.
+- K sostenido, N fraccionado/moderado.
+
+lm_05_desfase_inducido
+- No aumenta potencial por sí mismo; cambia ventana de cosecha.
+- Estrés hídrico inducido mal aplicado puede bajar cuajado.
+- No debe premiar estrés; debe vigilar recuperación, agua y sales.
+- N alto durante inducción/desfase puede romper balance y empujar vegetativo.
+
+Métodos sugeridos:
+
+```dart
+double adjustStagePressure(double base, {required AgroMetricKey nutrient, required String? stageKey})
+```
+
+Reglas de ajuste:
+- K +0.08 en fruit_set/fruit_fill/harvest_maturity para persa, tropical y desfase.
+- N -0.04 en fruit_fill/harvest_maturity para persa/amarillo/desfase.
+- N +0.03 en budbreak/vegetative/post_harvest para tropical/mexicano si EC y agua OK.
+- P +0.04 en root_establishment/flowering.
+- Desfase: si stage flowering/fruit_set y moisture baja o EC alta, no subir NPK; subir guardas de estrés.
+
+Penalización extra por exceso N tardío:
+- persa_tahiti: 0.84
+- mexicano_colima: 0.88
+- amarillo_eureka_lisbon: 0.82
+- tropical_continuo: 0.87
+- desfase_inducido: 0.80
+- skip: 0.92
+
+================================================================================
+9. GUARDAS DE SUELO PARA nutrient_recommendation_engine.dart
+================================================================================
+
+Crear guardas tipo `_lemonSoilGuard(...)` similares a naranjo, pero con lenguaje limón.
+
+Orden obligatorio:
+1. saturación/anoxia;
+2. déficit hídrico crítico en floración/cuajado/llenado;
+3. EC/salinidad alta;
+4. pH alto/bloqueo Fe/Zn/Mn;
+5. compactación;
+6. HLB/raíz/sanidad si contexto existe;
+7. N/P/K.
+
+Pseudocódigo:
+
+```dart
+static String? _lemonSoilGuard({
+  required String stageKey,
+  required double? soilMoisture,
+  required double? ec,
+  required double? ph,
+  required double? resistance,
+  required AgroMetricKey nutrient,
+}) {
+  final isCriticalRepro = stageKey == TreeStageIds.flowering ||
+      stageKey == TreeStageIds.fruitSet ||
+      stageKey == TreeStageIds.fruitFill;
+
+  if (soilMoisture != null && soilMoisture >= 92) {
+    return 'El suelo está saturado para el limonero. Eso favorece raíz asfixiada, gomosis y mala absorción. Antes de meter fertilizante, revisa drenaje y cuello.';
+  }
+
+  if (soilMoisture != null && soilMoisture < (isCriticalRepro ? 50 : 42)) {
+    return 'Primero estabiliza la humedad. En limón, con flor, frutito o llenado, la falta de agua tumba amarre y calibre aunque el NPK se vea corregible.';
+  }
+
+  if (ec != null && ec >= (isCriticalRepro ? 1.8 : 2.1)) {
+    return 'La salinidad está alta para limón. Puede haber nutrientes presentes, pero la raíz no los toma bien. Revisa agua, drenaje y acumulación de sales antes de subir NPK.';
+  }
+
+  if (ph != null && ph >= 7.8) {
+    return 'El pH está alto: en cítricos puede bloquear hierro, zinc y manganeso. Hoja amarilla no siempre es falta de nitrógeno.';
+  }
+
+  if (resistance != null && resistance >= 2.3) {
+    return 'El suelo está duro/compactado. La raíz del limón necesita aire y zona mojada funcional; NPK no resuelve compactación.';
+  }
+
+  return null;
+}
+```
+
+================================================================================
+10. RECOMENDACIONES PRÁCTICAS POR NUTRIENTE
+================================================================================
+
+N bajo:
+- Juvenil/brote/vegetativo: "BioG lee poco N para sostener hoja y brote. Corrige solo si humedad, EC y raíz están bien."
+- Floración/cuajado: "N bajo puede limitar hoja y amarre, pero no empujes N pesado: primero agua, temperatura, sales y K."
+- Llenado/cosecha: "N bajo tarde no siempre se corrige con prisa; K/agua/calidad mandan."
+- Postcosecha: "Si hay hoja activa, N moderado ayuda a recuperar; si hay frío/sales/raíz mala, no empujes."
+
+N alto:
+- "Más N no es más limón. Con poca carga se va a brote tierno, plaga y follaje."
+- "N alto + EC alta = posible acumulación; pausar nitrogenados y revisar sales."
+- "N alto cerca de corte puede bajar calidad o empujar brote cuando el árbol debería sostener fruta."
+
+P bajo:
+- Plantación/raíz/floración: "P bajo pesa en raíz y floración; confirma con suelo/foliar antes de corregir fuerte."
+- Adulto/fruto/cosecha: "P bajo en esta etapa se planea, no se corrige a ciegas si K/agua/hoja están bien."
+
+P alto:
+- "P alto no es premio: puede bloquear/desbalancear Fe/Zn/Cu, sobre todo con pH alto."
+
+K bajo:
+- Cuajado/llenado: "K bajo en limón puede pegar en amarre, calibre y jugo. Pero si hay agua baja o salinidad, primero corrige absorción."
+- Cosecha: "K bajo puede afectar calidad final, pero no metas K si la EC está alta."
+
+K alto:
+- "K alto puede ser útil hasta cierto punto en fruta, pero si se pasa o hay EC alta, sube riesgo de sales y antagonismo con Mg/Ca."
+- "K alto con N/P bajos puede ser consumo de lujo y no mejora el limón."
+
+================================================================================
+11. GUÍA CONSERVADORA PARA fertilization_planner.dart
+================================================================================
+
+El FertilizationPlanner de BIO-G no debe dar dosis cerrada. Debe dar guía segura:
+
+Mensaje base:
+"El limón no se fertiliza a ciegas. Manda primero agua, raíz, salinidad y pH. N ayuda hoja/brote, P ayuda raíz/floración y K manda en amarre, calibre, jugo y calidad. Si vas a mover fuerte el plan, confirma con análisis de suelo, agua y hoja."
+
+Por etapa:
+- planting/root: "No quemes raíz joven; evita sales y corrige P solo con base técnica."
+- juvenile/budbreak/vegetative: "Construye hoja y copa, pero no empujes brote blando."
+- flowering: "No metas N pesado; cuida agua, clima, EC y P/K funcionales."
+- fruit_set: "K sube; agua y salinidad deciden el amarre."
+- fruit_fill: "K/agua mandan calibre y jugo; P pesa poco; N con mesura."
+- harvest_maturity: "No empujes N tarde; cuida calidad/corte. En persa/mexicano la fruta comercial puede seguir verde."
+- post_harvest: "Recupera si hay hoja activa y raíz funcional; no cerrar cultivo."
+- dormancy: "Reposo relativo; baja presión NPK, cuida raíz y sales."
+
+================================================================================
+12. RANGOS FOLIARES - MODO AVANZADO, NO SENSOR NPK
+================================================================================
+
+NO mezclar foliar con sensor NPK.
+Foliar = lo que el árbol absorbió.
+Suelo = oferta/disponibilidad.
+Sensor NPK = lectura rápida relativa, dependiente de calibración.
+
+Usar rangos cítricos UF/IFAS como referencia inicial para BIO-G v1. Ajustar futuro con tablas locales de limón si se validan.
+
+[TABLA]
+Columnas: Elemento | Deficiente | Bajo | Óptimo | Alto | Exceso | Uso BIO-G
+Fila 1:
+- Elemento: N (%)
+- Deficiente: <2.2
+- Bajo: 2.2-2.4
+- Óptimo: 2.5-2.7
+- Alto: 2.8-3.0
+- Exceso: >3.0
+- Uso BIO-G: Hoja, brote, productividad; exceso puede empujar vegetativo.
+Fila 2:
+- Elemento: P (%)
+- Deficiente: <0.09
+- Bajo: 0.09-0.11
+- Óptimo: 0.12-0.16
+- Alto: 0.17-0.29
+- Exceso: >0.30
+- Uso BIO-G: Raíz/floración; no domina adulto.
+Fila 3:
+- Elemento: K (%)
+- Deficiente: <0.40
+- Bajo: 0.40-0.69
+- Óptimo: 0.70-1.09
+- Alto: 1.10-2.00
+- Exceso: >2.30
+- Uso BIO-G: Amarre, calibre, jugo, calidad; revisar Ca/Mg/Na.
+Fila 4:
+- Elemento: Ca (%)
+- Deficiente: <1.5
+- Bajo: 1.5-2.9
+- Óptimo: 3.0-5.0 aprox.
+- Alto: >5.0
+- Exceso: variable
+- Uso BIO-G: Raíz/cáscara/calidad; no sensor v1.
+Fila 5:
+- Elemento: Mg (%)
+- Deficiente: <0.20
+- Bajo: 0.20-0.29
+- Óptimo: 0.30-0.49
+- Alto: 0.50-0.70
+- Exceso: >0.70
+- Uso BIO-G: Clorofila y flujo de fotoasimilados; antagonismo K/Ca/Mg.
+Fila 6:
+- Elemento: Fe (mg/kg)
+- Deficiente: <35
+- Bajo: 35-59
+- Óptimo: 60-120
+- Alto: 121-200
+- Exceso: >200
+- Uso BIO-G: Clorosis férrica; pH alto/raíz/suelo calizo.
+Fila 7:
+- Elemento: Zn (mg/kg)
+- Deficiente: <18
+- Bajo: 18-24
+- Óptimo: 25-100
+- Alto: 101-300
+- Exceso: >300
+- Uso BIO-G: Hoja chica, roseta, brotes cortos; clave en cítricos.
+Fila 8:
+- Elemento: Mn (mg/kg)
+- Deficiente: <18
+- Bajo: 18-24
+- Óptimo: 25-100/300 según tabla
+- Alto: variable
+- Exceso: alto extremo
+- Uso BIO-G: Moteado/clorosis; interpretar con pH.
+Fila 9:
+- Elemento: B (mg/kg)
+- Deficiente: <20
+- Bajo: 20-35
+- Óptimo: 36-100
+- Alto: 101-200
+- Exceso: >200
+- Uso BIO-G: Floración/cuajado, margen estrecho.
+Fila 10:
+- Elemento: Cu (mg/kg)
+- Deficiente: <4
+- Bajo: 4-5
+- Óptimo: 5-16
+- Alto: 17-20+
+- Exceso: variable
+- Uso BIO-G: Lignificación/sanidad; exceso por cobre histórico puede afectar raíz.
+[/TABLA]
+
+Muestreo foliar sugerido:
+- Hojas de brote de primavera de 4-6 meses, de ramillas sin fruto, cuando aplique el protocolo regional.
+- 20 árboles o más en bloque uniforme.
+- 60-100 hojas por muestra.
+- No mezclar lotes, edades, portainjertos, suelos o zonas de estrés.
+- Registrar si la muestra es de limón persa, mexicano o amarillo.
+
+================================================================================
+13. EXTRACCIÓN Y DOSIS - SOLO MODO AVANZADO / NO RECETA VISIBLE
+================================================================================
+
+Estas cifras NO deben salir como recomendación automática al productor simple.
+Sirven para calibración técnica, coherencia de mensajes y modo avanzado con asesoría.
+
+13.1 Remoción por tonelada de limón persa
+
+Referencias de Nayarit/Veracruz muestran variabilidad fuerte por agua, suelo y flujo de floración.
+
+[TABLA]
+Columnas: Contexto | N kg/t | P kg/t | K kg/t | Ca kg/t | Mg kg/t | Observación BIO-G
+Fila 1:
+- Contexto: Nayarit temporal primavera
+- N kg/t: 1.26
+- P kg/t: 0.13
+- K kg/t: 1.87
+- Ca kg/t: 1.19
+- Mg kg/t: 0.22
+- Observación BIO-G: K y N relevantes; flujo cambia.
+Fila 2:
+- Contexto: Nayarit temporal invierno
+- N kg/t: 1.60
+- P kg/t: 0.27
+- K kg/t: 2.10
+- Ca kg/t: 1.00
+- Mg kg/t: 0.26
+- Observación BIO-G: P/Mn/B suben en invierno.
+Fila 3:
+- Contexto: Huimanguillo Tabasco potencial 30 t/ha
+- N kg/t: 1.83
+- P kg/t: 0.27
+- K kg/t: 1.97
+- Ca kg/t: 1.11
+- Mg kg/t: 0.15
+- Observación BIO-G: referencia balanceada.
+Fila 4:
+- Contexto: Veracruz floración verano 2015 promedio
+- N kg/t: 3.93
+- P kg/t: 0.43
+- K kg/t: 2.48
+- Ca kg/t: 2.20
+- Mg kg/t: 0.22
+- Observación BIO-G: N/Ca/K altos; no convertir directo a dosis universal.
+Fila 5:
+- Contexto: Veracruz floración invierno 2016 promedio
+- N kg/t: 4.51
+- P kg/t: 0.40
+- K kg/t: 1.97
+- Ca kg/t: 1.95
+- Mg kg/t: 0.24
+- Observación BIO-G: N, Ca, Zn, B postcosecha importantes.
+[/TABLA]
+
+Lectura BIO-G:
+- En limón persa, N y K son removidos fuertemente por cosecha.
+- Ca, Zn y B aparecen como contexto fuerte en ciertos flujos.
+- Agua y flujo de floración cambian la remoción; no usar una fórmula fija para todos.
+- La remoción de Veracruz es alta; usar para advertencia técnica, no como target simple.
+
+13.2 Dosis regionales encontradas - modo avanzado
+
+[TABLA]
+Columnas: Fuente/contexto | Dosis reportada | Uso BIO-G
+Fila 1:
+- Fuente/contexto: INIFAP limón mexicano con HLB, Colima, kg/árbol/año por edad/densidad
+- Dosis reportada: varía por densidad y edad; en más de 300 árboles/ha: 0.6-0.7 kg N/árbol/año y 0.28-0.35 P/K según edad; densidades bajas usan más kg/árbol.
+- Uso BIO-G: referencia de que kg/árbol baja al subir densidad; no mostrar como receta.
+Fila 2:
+- Fuente/contexto: Limón persa norte de Veracruz, Curti et al. citado en Terra Latinoamericana
+- Dosis reportada: 1500 g N + 500 g P + 750 g K por árbol/año
+- Uso BIO-G: referencia histórica regional; requiere densidad/árbol/foliar/suelo.
+Fila 3:
+- Fuente/contexto: Morelos, método de restitución en limón persa
+- Dosis reportada: cálculo por remoción, aporte de suelo y eficiencia; eficiencia N 65%, P 25%, K 80%; P/K al inicio y N fraccionado.
+- Uso BIO-G: valida que suelo + rendimiento esperado + eficiencia importan.
+Fila 4:
+- Fuente/contexto: Tabasco/SIRDF limón persa
+- Dosis reportada: rangos aprox. 184-230 kg N, 69-92 kg P, 240-300 kg K según subunidad/suelo.
+- Uso BIO-G: modo técnico por suelo; no receta simple.
+Fila 5:
+- Fuente/contexto: UF/IFAS cítricos con HLB
+- Dosis reportada: N y K frecuentes/fraccionados; K2O puede igualar o superar N; foliar puede mantener óptimo pero no recuperar producción sola.
+- Uso BIO-G: valida fraccionamiento y baja confianza con HLB.
+[/TABLA]
+
+13.3 Regla de aplicación por etapa para modo avanzado
+- Plantación/raíz: P y raíz; N bajo; EC baja.
+- Juvenil: N fraccionado y moderado; K de balance; P según suelo.
+- Brotación: N funcional; micros contexto; no exceso por psílido/minador.
+- Floración: N moderado, P/K funcionales; agua/temperatura/sales mandan.
+- Cuajado: K alto, N moderado; evitar N pesado.
+- Llenado: K protagonista; agua estable; Ca/Mg/B/Zn contexto.
+- Corte/madurez: K de calidad; N tardío con cuidado.
+- Postcosecha/entre cortes: recuperación N/K moderada si hoja activa y EC baja.
+
+================================================================================
+14. MENSAJES UX RECOMENDADOS
+================================================================================
+
+[TABLA]
+Columnas: Contexto | Copy sugerido
+Fila 1:
+- Contexto: Perfil general
+- Copy sugerido: Este es un perfil general de limón. Luego puedes elegir persa, mexicano, amarillo, tropical o desfase sin perder historial.
+Fila 2:
+- Contexto: No sabe etapa
+- Copy sugerido: No pasa nada. Dime qué ves: brote nuevo, flor, limoncito recién amarrado, limón creciendo, listo para corte o después de corte.
+Fila 3:
+- Contexto: Reposo relativo
+- Copy sugerido: El limón no se apaga como un árbol que tira hoja. Si está quieto, igual cuida raíz, humedad y sales.
+Fila 4:
+- Contexto: Brote nuevo
+- Copy sugerido: Hay brote tierno. Sí necesita nutrición, pero también atrae psílido, minador y pulgones; revisa antes de culpar al fertilizante.
+Fila 5:
+- Contexto: Floración con agua baja
+- Copy sugerido: En floración, el limón no perdona falta de agua. Puede tirar flor aunque el NPK no esté tan mal.
+Fila 6:
+- Contexto: Cuajado con frutito cayendo
+- Copy sugerido: Algo de caída puede ser normal, pero si coincide con calor, sales o humedad baja, el amarre se viene abajo.
+Fila 7:
+- Contexto: Llenado con K bajo
+- Copy sugerido: En llenado, el potasio ayuda a calibre y jugo. Pero primero revisa que haya agua estable y que la salinidad no bloquee la raíz.
+Fila 8:
+- Contexto: EC alta
+- Copy sugerido: Hay sales altas. Antes de meter más fertilizante, revisa agua, drenaje y salitre en la zona de raíz.
+Fila 9:
+- Contexto: pH alto + hoja amarilla
+- Copy sugerido: Con pH alto, la hoja amarilla puede venir de hierro, zinc o raíz limitada. No lo leas automáticamente como falta de nitrógeno.
+Fila 10:
+- Contexto: N alto + poca fruta
+- Copy sugerido: El árbol trae comida de sobra para brote. Si no trae carga, ese N se puede ir a pura hoja y plaga, no a limón.
+Fila 11:
+- Contexto: Limón persa/mexicano en cosecha
+- Copy sugerido: En este tipo de limón, verde no siempre significa inmaduro. Revisa calibre, jugo, firmeza y calidad de corte.
+Fila 12:
+- Contexto: HLB/raíz
+- Copy sugerido: Si hay HLB, gomosis o raíz dañada, fertilizar ayuda a sostener, pero no corrige solo el problema. Baja la confianza del NPK.
+Fila 13:
+- Contexto: Postcosecha
+- Copy sugerido: Después del corte el limonero sigue trabajando. Hoja y raíz preparan la siguiente floración.
+[/TABLA]
+
+================================================================================
+15. PREGUNTAS DE DIAGNÓSTICO FARMER-FRIENDLY
+================================================================================
+
+- ¿El limón está con flor, con limoncito recién amarrado o ya está llenando?
+- ¿La caída es de flor, de frutito o de limón ya grande?
+- ¿El árbol trae mucha hoja y poco limón?
+- ¿La hoja nueva sale amarilla con nervaduras verdes?
+- ¿Hay brote tierno con minador, psílido o pulgón?
+- ¿El agua deja costra blanca o salitre?
+- ¿El suelo se encharca o se pone duro?
+- ¿El árbol se ve triste aunque sí lo riegas?
+- ¿Tiene goma en tronco/cuello?
+- ¿La fruta trae buen tamaño pero poco jugo?
+- ¿Se está cortando verde comercial o quieres que amarillee?
+- ¿Hubo poda/desfase/estrés hídrico para inducir floración?
+- ¿Hay HLB confirmado o psílido en la zona?
+
+================================================================================
+16. TESTS NUEVOS RECOMENDADOS
+================================================================================
+
+1) lemon_fruit_fill_k_low_water_ok_test
+Caso: fruit_fill, K bajo, humedad óptima, EC baja, pH ok.
+Esperado: alerta K/calibre/jugo; no receta dosis; sugiere suelo/foliar.
+
+2) lemon_fruit_fill_k_low_water_low_test
+Caso: fruit_fill, K bajo, humedad baja.
+Esperado: priorizar agua/absorción; no decir primero "falta potasio".
+
+3) lemon_high_ec_blocks_k_test
+Caso: fruit_fill, K bajo/medio, EC alta.
+Esperado: bloqueo salinidad; mensaje sales/agua/drenaje antes de K.
+
+4) lemon_flowering_n_high_low_load_test
+Caso: flowering/fruit_set, N alto, baja carga.
+Esperado: advertir brote/follaje y posible mal amarre; no premio.
+
+5) lemon_green_harvest_not_immature_test
+Caso: harvest_maturity, perfil persa/mexicano, fruta verde comercial.
+Esperado: no decir inmaduro por color; hablar de calibre/jugo/firmeza/calidad.
+
+6) lemon_young_root_p_priority_test
+Caso: root_establishment, P bajo, EC baja, humedad correcta.
+Esperado: P aparece prioridad raíz, sin receta cerrada.
+
+7) lemon_adult_low_p_not_destructive_test
+Caso: harvest_maturity, P bajo, agua/K/hoja correctos.
+Esperado: observación/planeación; no critical destructivo.
+
+8) lemon_fe_zn_mn_context_test
+Caso: pH alto, hoja nueva amarilla con nervadura verde, N normal.
+Esperado: mensaje Fe/Zn/Mn/pH/raíz; no diagnosticar N bajo.
+
+9) lemon_hlb_low_confidence_test
+Caso: HLB/PAC + NPK medio/alto + bajo rendimiento.
+Esperado: bajar confianza; sanidad/floema/raíz; no vender NPK como solución.
+
+10) lemon_desfase_stress_bad_set_test
+Caso: perfil lm_05_desfase_inducido, humedad baja fuerte, fruit_set pobre.
+Esperado: advertir estrés mal aplicado; no premiar inducción.
+
+11) lemon_post_harvest_leaf_active_test
+Caso: post_harvest, hoja activa, EC baja, humedad estable, N/K moderado.
+Esperado: mensaje reservas/recuperación/siguiente floración.
+
+12) lemon_post_harvest_salt_stress_test
+Caso: post_harvest, EC alta, N/K bajos.
+Esperado: salinidad/raíz primero; no subir fertilizante.
+
+13) lemon_high_n_psyllid_flush_context_test
+Caso: budbreak, N alto, brote tierno, contexto psílido.
+Esperado: advertir presión de plaga/vector; no celebrar N.
+
+14) lemon_k_high_ec_high_test
+Caso: K alto y EC alta.
+Esperado: acumulación/sales, no "K excelente".
+
+15) lemon_moisture_just_below_optimal_not_critical_test
+Caso: fruit_fill moisture 62 si óptimo empieza 65.
+Esperado: low/watch, no critical.
+
+16) lemon_moisture_just_above_optimal_not_critical_test
+Caso: harvest_maturity moisture 85 si óptimo termina 82.
+Esperado: high/watch, no saturación crítica.
+
+================================================================================
+17. NO HACER EN CÓDIGO
+================================================================================
+
+- No convertir dosis kg/ha o kg/árbol en recomendaciones visibles automáticas.
+- No mostrar marcas/productos/fuentes comerciales de fertilizante.
+- No usar P2O5/K2O como si fueran P/K elementales sin conversión/documentación.
+- No diagnosticar HLB, PAC, Fe, Zn, Mn, B, Mg, Ca o salinidad específica solo con NPK.
+- No recomendar boro a ciegas.
+- No decir "aplica K" si EC alta, humedad baja o raíz mala.
+- No celebrar N alto en floración/cuajado/llenado si hay poca carga.
+- No tratar pH alto como detalle menor.
+- No confundir fruit_fill con harvest_maturity.
+- No asumir que limón verde es inmaduro en Persa/Mexicano.
+- No apagar postcosecha.
+- No usar `dormancy` como árbol pelón.
+- No premiar desfase/estrés inducido si el árbol está bajo estrés severo.
+- No usar foros como fuente de umbrales técnicos.
+
+================================================================================
+18. ARCHIVOS ESPERADOS EN LA INTEGRACIÓN
+================================================================================
+
+Nuevos:
+- lib/core/crops/lemon_tree/lemon_tree_universal_profile.dart
+- lib/core/crops/lemon_tree/lemon_tree_crop_definition.dart
+- lib/core/agro/lemon_tree_agro_score_engine.dart
+- lib/core/agro/lemon_tree_nutrition_modifier.dart
+
+Conexiones:
+- lib/core/agro/npk_caps.dart
+- lib/core/agro/nutrient_recommendation_engine.dart
+- lib/core/agro/fertilization_planner.dart
+- lib/core/crops/crop_registry.dart
+- lib/core/crops/crop_catalog.dart
+- lib/core/crops/crop_types.dart
+- lib/core/crops/tree_profile_presentation.dart
+- lib/core/presentation/crop_presentation_resolver.dart
+- lib/core/plant_health/plant_health_registry.dart
+- lib/core/yield/tree_yield_reference_catalog.dart
+
+Tests mínimos:
+- test/core/lemon_tree/lemon_tree_universal_profile_test.dart
+- test/core/lemon_tree/lemon_tree_agro_score_engine_test.dart
+- test/core/lemon_tree/lemon_tree_nutrition_modifier_test.dart
+- test/core/lemon_tree/lemon_tree_npk_caps_test.dart
+- test/core/lemon_tree/lemon_tree_recommendation_engine_test.dart
+
+================================================================================
+19. FUENTES CONSULTADAS / TRAZABILIDAD
+================================================================================
+
+1. UF/IFAS, 2025-2026 Florida Citrus Production Guide: Nutrition Management for Citrus Trees.
+   https://ask.ifas.ufl.edu/publication/CG091
+
+2. UF/IFAS, Soil and Leaf Tissue Testing for Commercial Citrus Production.
+   https://ask.ifas.ufl.edu/publication/SS531
+
+3. UF/IFAS, Potassium (K) for Citrus Trees.
+   https://ask.ifas.ufl.edu/publication/SS583
+
+4. UF/IFAS, Soil and Container Media Electrical Conductivity Interpretations.
+   https://ask.ifas.ufl.edu/publication/SS117
+
+5. UC ANR / CDFA FREP, Citrus Fertilization Guidelines.
+   https://www.cdfa.ca.gov/is/ffldrs/frep/FertilizationGuidelines/Citrus.html
+
+6. NSW DPI, Citrus nutrition.
+   https://www.dpird.nsw.gov.au/agriculture/horticulture/citrus/content/crop-management/nutrition-factsheets/nutrition
+
+7. INIFAP, Manejo integral del cultivo de limón mexicano en un escenario de alta incidencia de HLB.
+   Biblioteca Digital INIFAP / folleto productores 4160.
+
+8. Mellado-Vázquez et al. 2017. Remoción de nutrimentos por cosecha de limón Persa en Nayarit y Veracruz, México.
+   Revista Mexicana de Ciencias Agrícolas.
+   https://www.scielo.org.mx/scielo.php?pid=S2007-09342017001103939&script=sci_arttext
+
+9. Conde-Delgado et al. 2018. La dosis de fertilización afecta el rendimiento y calidad en limón Persa (Citrus latifolia Tan.).
+   Acta Agrícola y Pecuaria / UAEM.
+   https://dialnet.unirioja.es/descarga/articulo/6572566.pdf
+
+10. Maldonado et al. 2008. Diagnóstico nutrimental y validación de dosis de fertilización para limón Persa.
+    Terra Latinoamericana / Colegio de Postgraduados.
+    https://www.scielo.org.mx/pdf/tl/v26n4/v26n4a7.pdf
+
+================================================================================
+20. CIERRE TÉCNICO
+================================================================================
+
+El Limón en BIO-G debe salir como un cítrico de producción frecuente, con N y K fuertes,
+pero sin caer en recetas. La ventaja competitiva de BIO-G no es decir "échale más"; es decir:
+
+- cuándo el árbol sí puede tomarlo;
+- cuándo el sensor está leyendo algo bloqueado por agua/sales/pH/raíz;
+- cuándo N alto es problema, no éxito;
+- cuándo K bajo pega en calibre/jugo;
+- cuándo P bajo importa y cuándo solo se planea;
+- cuándo HLB/gomosis/salinidad bajan la confianza;
+- cuándo la etapa visible cambia todo.
+
+Regla final:
+"Primero que el limonero pueda tomar. Luego que el nutriente corresponda a la etapa. Después sí, ajustar NPK."

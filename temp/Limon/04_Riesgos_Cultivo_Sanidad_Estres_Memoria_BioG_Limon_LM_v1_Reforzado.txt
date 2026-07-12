@@ -1,0 +1,1740 @@
+BIO-G
+
+04_RIESGOS_CULTIVO_SANIDAD_ESTRES_MEMORIA_BIOG_LIMON_LM_v1_REFORZADO
+Cultivo: Limón / Limonero / limón verde mexicano + limón persa + limón amarillo
+Nombre científico comercial agrupado:
+- Grupo limón mexicano / lima ácida: Citrus aurantiifolia (Christm.) Swingle
+- Grupo limón persa / Tahití: Citrus latifolia Tanaka
+- Grupo limón amarillo: Citrus limon (L.) Burm. f. / Eureka-Lisbon como grupo UX
+Familia: Rutaceae
+cropId canónico recomendado: crop_lemon_tree
+CropKey esperado: lemon_tree
+Aliases legacy/técnicos: crop_lime_tree, lime_tree, lime, lemon, limon, limón, limonero, limon_verde
+Prefijo de perfiles: LM
+Perfil base: lm_skip
+Perfiles oficiales v1:
+- lm_skip — Limón general / No sé
+- lm_01_persa_tahiti — Persa / Tahití / sin semilla
+- lm_02_mexicano_colima — Mexicano / Colima / criollo agrio / con semilla
+- lm_03_amarillo_eureka_lisbon — Amarillo / italiano / Eureka-Lisbon
+- lm_04_tropical_continuo — Tropical / producción continua
+- lm_05_desfase_inducido — Desfase / producción inducida / meses caros
+Documento: 04 de 05 — Riesgos del cultivo / Sanidad / Estrés / Memoria perenne
+Versión: v1 reforzada
+Formato: TXT técnico para Flutter/Dart, Codex y Claude Code
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+IMPORTANTE
+---------
+Este documento NO es diagnóstico fitosanitario definitivo.
+No sustituye revisión de campo, laboratorio, análisis foliar/suelo/agua, asesoría agronómica local ni normatividad vigente.
+BIO-G v1 debe orientar, priorizar riesgo, pedir confirmación, registrar memoria y evitar recetas cerradas.
+BIO-G NO debe recomendar ingredientes activos, dosis de plaguicidas ni manejo cuarentenario fuera de autoridad local.
+
+BIO-G debe decir:
+- “condición favorable a…”
+- “síntomas compatibles con…”
+- “revisa…”
+- “confirma con técnico / sanidad local si avanza…”
+
+BIO-G NO debe decir:
+- “diagnóstico definitivo”
+- “aplique X producto”
+- “esto es HLB seguro”
+- “esto es gomosis seguro”
+- “esto es falta de N” cuando hay pH alto, sales, raíz dañada o síntomas vectoriales
+- “el cultivo terminó” después de cosecha
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+El limonero en BIO-G NO debe modelarse como naranjo pequeño.
+Sí comparte arquitectura cítrica siempreverde con el naranjo, pero tiene lógica propia:
+
+1. Puede florear y producir de forma más frecuente/escalonada.
+2. Puede traer al mismo tiempo brote tierno + flor + frutito + limón en corte.
+3. El usuario mexicano dice “limón” para grupos botánicos distintos: mexicano, persa y amarillo.
+4. La fruta comercial puede cortarse verde, no necesariamente amarilla o naranja.
+5. El valor comercial depende mucho de calibre, jugo, color verde, cáscara, sanidad externa y ventana de precio.
+6. La floración y el cuajado se repiten, por eso la memoria de estrés pesa todavía más.
+7. HLB, psílido, Phytophthora/gomosis, salinidad, antracnosis, plagas de brote y desórdenes de fruto son centrales.
+8. En limón, el manejo de riego/estrés puede inducir floración o desfase, pero mal aplicado tumba cuajado y debilita el árbol.
+
+Regla v1:
+BIO-G debe leer el limón como árbol cítrico siempreverde con memoria continua.
+No usar sowingDate como eje principal. El eje correcto es:
+
+estado perenne + etapa visible + perfil LM + ancla del ciclo + sensores + sanidad + memoria.
+
+Mensaje rector para productor:
+“En limón no todo se arregla con fertilizante. Primero hay que ver si el árbol puede tomar agua y nutrientes: raíz, humedad, sales, pH y etapa. Luego se revisa brote, flor, cuajado, calibre, jugo y sanidad. Si hay HLB, psílido, gomosis o raíz dañada, baja la confianza de cualquier lectura NPK.”
+
+================================================================================
+1. BASE TÉCNICA, FUENTES Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+1.1 Fuentes principales consultadas
+-----------------------------------
+Alta confianza:
+- Estándar BIO-G para integración de árboles perennes v1.5 con addendum.
+- Documentos 01, 02 y 03 de Limón LM preparados para BIO-G.
+- Documentos 01-05 de Naranjo OR como patrón cítrico ya integrado.
+- Código actual de BIO-G: plant_health_models.dart, plant_health_ids.dart, plant_health_stage_adapter.dart, orange_tree_syndromes.dart, crop_registry.dart y módulos de árboles.
+- UF/IFAS EDIS: Growing 'Tahiti' Limes in the Home Landscape; Key Lime Growing; Citrus Problems in the Home Landscape; Guide to Citrus Disease Identification; Florida Citrus Production Guide / Asian Citrus Psyllid.
+- UC IPM / UC ANR: Phytophthora root rot, Phytophthora gummosis, brown rot, citrus disease/disorder identification, citrus invertebrate damage.
+- SENASICA / Gobierno de México: Plagas reglamentadas de cítricos; HLB / dragón amarillo / psílido asiático.
+- INIFAP: Manejo integral del cultivo de limón mexicano en escenario de alta incidencia de HLB.
+- Revista Mexicana de Ciencias Agrícolas / SciELO: efecto del HLB sobre rendimiento de limón mexicano en Colima.
+- Guías técnicas regionales de limón mexicano/persa, manuales fitosanitarios y documentos de extensión.
+
+Media-alta:
+- DPIRD NSW / Citrus Australia: guías de plagas, enfermedades y desórdenes en cítricos.
+- Manuales técnicos de limón y citricultura regional.
+- Artículos revisados sobre HLB, Diaphorina citri, productividad de limón y producción en alta incidencia de HLB.
+
+Media:
+- Fuentes comerciales o de asesoría privada usadas únicamente para contrastar lenguaje y problemas frecuentes cuando coinciden con universidades/extensión.
+
+Baja-media:
+- Foros, Reddit, grupos de productores y jardinería.
+Uso permitido SOLO para UX y preguntas reales del agricultor:
+“se me cae el limoncito”, “hoja pegajosa”, “tiene goma”, “amarillea por ramas”, “sale limón chico”, “se seca por dentro”, “no amarra”, “tiene hormigas/escamas”, “le puse fertilizante y se quemó”.
+No usar foros para fijar umbrales, diagnósticos ni recetas.
+
+1.2 Conclusiones fuertes de fuentes externas
+--------------------------------------------
+- El HLB es de los riesgos más graves para limón mexicano y persa en México; es transmitido por Diaphorina citri y no debe diagnosticarse con sensor NPK.
+- En limón mexicano con HLB, el problema no es solo “hoja amarilla”: el HLB altera floema, fotoasimilados, raíz, vigor, fruta y rendimiento.
+- El limón persa/Tahití y el key/mexicano pueden florear durante gran parte del año, con picos fuertes; eso aumenta presión de brote tierno y psílido.
+- Phytophthora root rot destruye raíces alimentadoras, limita absorción de agua/nutrientes y causa declive; marchitez con suelo húmedo no significa falta de agua.
+- La gomosis/foot rot se manifiesta como goma/savia en tronco bajo y lesiones de corteza; se favorece por humedad/salpicadura y condiciones mojadas.
+- En cítricos, cancro, HLB, tristeza, leprosis y otras enfermedades reguladas requieren confirmación técnica y contexto regional.
+- Antracnosis en limón mexicano es especialmente importante porque puede afectar brote, flor, fruto pequeño, causar “tachuelas”, lesiones corchosas, agrietamiento y momificación.
+- Escamas, cochinillas, pulgones, mosca blanca/prieta y psílido pueden producir mielecilla; la fumagina/negrilla es consecuencia, no causa primaria.
+- Salinidad, pH alto, compactación y drenaje pobre cambian toda la lectura NPK.
+- El árbol en postcosecha no se apaga; en limón puede seguir con brotes, floraciones y cortes escalonados.
+
+================================================================================
+2. LECTURA DEL CÓDIGO ACTUAL BIO-G
+================================================================================
+
+2.1 Arquitectura encontrada
+---------------------------
+El código actual ya tiene integración moderna de árboles perennes y un patrón cítrico completo en naranjo.
+
+Módulos ya existentes para Naranjo:
+- lib/core/crops/orange_tree/orange_tree_assets.dart
+- lib/core/crops/orange_tree/orange_tree_catalog.dart
+- lib/core/crops/orange_tree/orange_tree_crop_definition.dart
+- lib/core/crops/orange_tree/orange_tree_universal_profile.dart
+- lib/core/crops/orange_tree/orange_tree_yield_reference.dart
+- lib/core/agro/orange_tree_agro_score_engine.dart
+- lib/core/agro/orange_tree_nutrition_modifier.dart
+- lib/core/plant_health/catalog/orange_tree_syndromes.dart
+
+Módulos esperados para Limón:
+- lib/core/crops/lemon_tree/lemon_tree_assets.dart
+- lib/core/crops/lemon_tree/lemon_tree_catalog.dart
+- lib/core/crops/lemon_tree/lemon_tree_crop_definition.dart
+- lib/core/crops/lemon_tree/lemon_tree_universal_profile.dart
+- lib/core/crops/lemon_tree/lemon_tree_yield_reference.dart
+- lib/core/agro/lemon_tree_agro_score_engine.dart
+- lib/core/agro/lemon_tree_nutrition_modifier.dart
+- lib/core/plant_health/catalog/lemon_tree_syndromes.dart
+
+2.2 Contrato PlantHealthSyndrome vigente
+----------------------------------------
+El catálogo de sanidad debe traducirse a PlantHealthSyndrome con estos campos:
+- id
+- cropId
+- labelEs
+- stages
+- organIds
+- primarySymptomId
+- strongSignals
+- weakSignals
+- conflictingSignals
+- probableDiagnoses
+- confirmationChecksEs
+- severity
+- urgency
+- baseActionsEs
+- disclaimerEs
+- varietyModifiers
+- favorsHighHumidity
+- favorsCoolDewyWindow
+- favorsVectorPressure
+- favorsRecentStress
+
+Regla para Limón:
+El catálogo debe ser propio, no reutilizar directamente orange_tree_syndromes.dart.
+Sí se pueden reutilizar IDs cítricos ya existentes en PlantHealthIds:
+- symptomCitrusBlotchyMottle
+- symptomCitrusSmallLopsidedFruit
+- symptomCitrusGummosisTrunk
+- symptomCitrusSplitFruit
+- symptomCitrusRindScarring
+- symptomCitrusRaisedCorkyHaloLesions
+- signalAsymmetricMottle
+- signalPsyllidWaxyTubules
+- signalFruitBitterMisshapen
+- signalFlushNewGrowth
+- signalVectorPresent
+- signalLeafMines
+- signalStickyHoneydew
+- signalSootyMold
+- signalWaterlogging
+- signalRootsDarkRot
+- signalSalinityLoad
+- signalDryHotWindow
+- signalFlowerDrop
+- signalHeatStress
+- signalColdExposure
+- signalRecentStress
+
+Pero el copy, diagnósticos probables y memoria deben ser de limón.
+
+2.3 Recomendación de StageBucket para Limón
+-------------------------------------------
+StageIds BIO-G cerrados:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Mapeo sugerido a PlantHealthStageBucket:
+- planting_transplant, root_establishment => seedling
+- juvenile_vegetative, budbreak => vegetativeEarly
+- vegetative_growth => vegetativeMid
+- flowering => reproductiveEarly
+- fruit_set => reproductiveMid
+- fruit_fill => grainFill
+- harvest_maturity => lateSeason
+- post_harvest => lateSeason
+- dormancy => lateSeason, pero label UX “reposo relativo / baja actividad”, no dormancia caducifolia
+- unknown => null / baja confianza
+
+Regla crítica:
+Para Limón, `post_harvest` y `dormancy` deben tener cobertura sanitaria. No apagan el árbol. En limón tropical/continuo puede haber flor/fruto/brote aun cuando el usuario seleccione baja actividad.
+
+================================================================================
+3. FAMILIAS UX DEL MÓDULO RIESGOS LIMÓN
+================================================================================
+
+Familia UX 1: HLB, psílido asiático, tristeza y riesgos regulados
+Objetivo: detectar señales compatibles, pedir confirmación, bajar confianza de inferencias NPK y elevar cautela sanitaria.
+Entradas principales:
+- lemon_hlb_context
+- asian_citrus_psyllid_vector
+- asymmetric_blotchy_mottle
+- small_lopsided_bitter_fruit
+- citrus_tristeza_context
+- citrus_canker_regulated_context
+- leprosis_regional_context
+
+Familia UX 2: Raíz, cuello, drenaje, Phytophthora, gomosis y salinidad
+Objetivo: proteger raíz funcional y vida del árbol.
+Entradas principales:
+- phytophthora_gummosis_foot_rot
+- phytophthora_root_rot
+- root_crown_rot_anoxia_complex
+- salinity_root_stress_context
+- soil_compaction_root_stress
+- poor_drainage_decline_context
+- rootstock_or_nursery_problem_context
+
+Familia UX 3: Brotación tierna y plagas de brote
+Objetivo: proteger flush nuevo y reducir presión de psílido/minador/pulgones/trips.
+Entradas principales:
+- citrus_leafminer
+- asian_citrus_psyllid_direct_damage
+- aphid_flush_complex
+- citrus_thrips_flower_fruit_scarring
+- broad_mite_bud_mite_context
+- flush_deformation_complex
+
+Familia UX 4: Chupadores, mielecilla, fumagina, escamas, cochinillas, mosca blanca/prieta y ácaros
+Objetivo: proteger hoja funcional, fotosíntesis y calidad externa de limón verde.
+Entradas principales:
+- soft_scale_armored_scale_complex
+- snow_scale_context
+- mealybug_complex
+- whitefly_blackfly_complex
+- sooty_mold_honeydew_complex
+- citrus_rust_mite
+- citrus_red_mite_spider_mite_complex
+- ants_chupador_protection_context
+
+Familia UX 5: Floración, cuajado, caída de flor/frutito y desfase
+Objetivo: separar caída fisiológica de estrés y manejo de inducción/desfase mal aplicado.
+Entradas principales:
+- flowering_heat_water_stress
+- fruit_set_drop_stress_complex
+- induced_bloom_stress_mismanagement
+- salinity_fruit_set_drop
+- low_leaf_area_carbohydrate_competition
+- frost_bloom_damage
+- rain_humidity_flower_disease_context
+
+Familia UX 6: Antracnosis, muerte de ramas y complejos flor-fruto en limón mexicano
+Objetivo: cubrir un eje clave de limón mexicano: brote, flor, fruto pequeño y rama.
+Entradas principales:
+- anthracnose_flower_fruit_shoot_complex
+- fruit_pinhead_mummification_context
+- rind_corky_lesions_cracking_context
+- branch_dieback_stress_hlb_complex
+
+Familia UX 7: Enfermedades foliares y de copa
+Objetivo: proteger hoja activa y evitar defoliación que afecte continuidad productiva.
+Entradas principales:
+- greasy_spot_mycosphaerella
+- melanose_diaporthe
+- citrus_scab_regional
+- alternaria_leaf_fruit_context
+- septoria_leaf_fruit_spot
+- bacterial_blast_context
+
+Familia UX 8: Enfermedades y daños de fruto/cáscara
+Objetivo: proteger calidad comercial y reducir pérdidas por pudrición, marcas o daño de cosecha.
+Entradas principales:
+- brown_rot_phytophthora_fruit
+- penicillium_blue_green_mold
+- stem_end_rot_lasiodiplodia
+- alternaria_black_rot_context
+- fruit_fly_maggot_context
+- rind_scarring_thrips_wind_context
+
+Familia UX 9: Desórdenes abióticos de fruto y ambiente
+Objetivo: no confundir estrés físico/fisiológico con patógeno.
+Entradas principales:
+- fruit_splitting_cracking
+- sunburn_fruit_leaf
+- wind_scarring_rind
+- frost_fruit_damage
+- hail_fruit_leaf_damage
+- phytotoxicity_oil_copper_herbicide
+- oleocellosis_oil_spotting_context
+- dry_fruit_low_juice_context
+
+Familia UX 10: Nutrición, disponibilidad aparente y memoria postcosecha
+Objetivo: distinguir deficiencia real vs bloqueo por raíz, pH, sales, HLB o falta de agua.
+Entradas principales:
+- nitrogen_deficiency_context
+- nitrogen_excess_vigor_flush_context
+- potassium_low_fruit_quality_context
+- iron_chlorosis_high_ph
+- zinc_manganese_context
+- magnesium_leaf_chlorosis_context
+- calcium_boron_rind_quality_context
+- salinity_chloride_boron_leaf_burn
+- post_harvest_leaf_loss_memory
+- repeated_flush_reserve_depletion_memory
+- desfase_stress_memory
+
+================================================================================
+4. MAPEO FENOLÓGICO BIO-G PARA SANIDAD DEL LIMÓN
+================================================================================
+
+planting_transplant
+- Label UX: Plantación / trasplante
+- Riesgos: raíz, cuello, sales, Phytophthora, planta de vivero, estrés por trasplante.
+- No proyectar problema por no producir.
+
+root_establishment
+- Label UX: Establecimiento de raíz
+- Riesgos: exceso de humedad, salinidad, compactación, Phytophthora, raíz enrollada, baja absorción.
+- Si el árbol se ve triste y el suelo está húmedo, no pedir más agua.
+
+juvenile_vegetative
+- Label UX: Limonero joven / formación
+- Riesgos: minador, psílido, pulgones, ácaros, escamas, salinidad, clorosis, crecimiento débil.
+- No penalizar falta de fruta.
+
+budbreak
+- Label UX: Brotación / hoja nueva
+- Riesgos: psílido asiático, minador, pulgones, trips, ácaros, deficiencias Zn/Fe/Mn como contexto.
+- En limón tropical/continuo puede repetirse varias veces al año.
+
+vegetative_growth
+- Label UX: Crecimiento vegetativo activo
+- Riesgos: chupadores, fumagina, minador, clorosis, salinidad, exceso de N, vigor blando.
+- Cuidar hoja funcional, pero sin empujar puro follaje.
+
+flowering
+- Label UX: Floración / azahar de limón
+- Riesgos: calor, baja HR, frío/helada, déficit de agua, salinidad, trips, antracnosis/Botrytis en humedad, estrés inducido mal manejado.
+- Etapa crítica. No culpar solo NPK.
+
+fruit_set
+- Label UX: Cuajado / amarre del limoncito
+- Riesgos: caída fisiológica, estrés hídrico, calor, salinidad, baja hoja, HLB, trips/ácaros.
+- Algo de caída es normal; alerta si coincide con estrés o caída fuerte.
+
+fruit_fill
+- Label UX: Crecimiento y llenado del limón
+- Riesgos: agua, K, hoja funcional, salinidad, ácaros, escamas, rajado, cicatriz de viento, golpe de sol, fruta seca/poco jugo.
+- No hablar de cosecha final todavía.
+
+harvest_maturity
+- Label UX: Corte / madurez comercial
+- Riesgos: calibre, jugo, cáscara, color verde comercial en persa/mexicano, color amarillo en italiano, caída, pudriciones, mosca de fruta, mohos de cosecha, daño mecánico.
+- En limón verde, “madurez” no significa siempre amarillo.
+
+post_harvest
+- Label UX: Después de corte / recuperación / nuevo flush
+- Riesgos: hoja activa, raíces, sales, Phytophthora, plagas remanentes, reservas, nuevo brote y siguiente floración.
+- No cerrar cultivo.
+
+dormancy
+- Label UX: Reposo relativo / baja actividad
+- Riesgos: raíz, sales, frío, plagas remanentes, preparación de siguiente flush/floración.
+- No significa árbol pelón ni dormancia caducifolia.
+
+unknown
+- Label UX: No lo sé
+- Riesgos: bajar confianza; pedir realidad visible.
+- No bloquear.
+
+================================================================================
+5. CATÁLOGO MAESTRO DE RIESGOS BIÓTICOS
+================================================================================
+
+Formato:
+Riesgo | Dónde pesa más | Qué lo favorece | Clave visual | Etapa | Prioridad BIO-G | Memoria | Lectura BIO-G
+
+--------------------------------------------------------------------------------
+5.1 HLB, PSÍLIDO Y RIESGOS REGULADOS
+--------------------------------------------------------------------------------
+
+1) lemon_hlb_context
+Nombre UX: HLB / dragón amarillo / greening en limón
+Nombre técnico: Candidatus Liberibacter spp. asociado a HLB
+Dónde pesa más: todas las etapas, especialmente brotación, vegetativo, cuajado, llenado y cosecha.
+Qué lo favorece: presencia regional de HLB, presencia de psílido, brotes tiernos continuos, material vegetal no certificado, huertos abandonados, traspatios, baja coordinación regional.
+Clave visual: moteado amarillo asimétrico, sectores de copa amarillos, hoja chica, brotación irregular, fruto chico/deforme/ladeado, fruto con color irregular, caída, bajo vigor, muerte progresiva.
+Etapa: budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Crítica con cautela.
+Memoria: Muy alta; enfermedad crónica/regional, afecta raíz, copa y rendimiento futuro.
+Lectura BIO-G: BIO-G nunca confirma HLB por sensor ni por foto suelta. Si hay moteado asimétrico + fruta chica/deforme + caída + psílido/región citrícola, elevar urgencia de revisión y bajar confianza NPK.
+
+2) asian_citrus_psyllid_vector
+Nombre UX: Psílido asiático de los cítricos / PAC / diaforina
+Nombre técnico: Diaphorina citri
+Dónde pesa más: brotación/flush nuevo y huertos con brotes frecuentes.
+Qué lo favorece: brotes tiernos, clima cálido, limón tropical/continuo, manejo de desfase con flush repetido, huertos vecinos, plantas hospedantes, hormigas.
+Clave visual: insecto pequeño café inclinado, ninfas amarillas/naranjas, túbulos cerosos blancos, mielecilla, brotes deformados, hoja nueva retorcida.
+Etapa: budbreak, vegetative_growth, flowering si hay flush, post_harvest si rebrotó.
+Prioridad BIO-G: Muy alta como vector.
+Memoria: Alta regional; marca presión de vector y riesgo HLB.
+Lectura BIO-G: si se ve psílido, no diagnosticar HLB automáticamente, pero sí subir vectorPressure y pedir revisión de brotes.
+
+3) tristeza_virus_context
+Nombre UX: Virus de la tristeza de los cítricos / VTC / decaimiento
+Nombre técnico: Citrus tristeza virus
+Dónde pesa más: huertos con portainjertos sensibles, pulgones vectores, decaimiento crónico.
+Qué lo favorece: material propagativo infectado, vectores, portainjertos susceptibles, huertos viejos.
+Clave visual: bajo vigor, hojas chicas/cloróticas, decaimiento, ramas secas, posible muerte en combinaciones sensibles.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Muy alta si se confirma.
+Lectura BIO-G: diferencial de decaimiento crónico; requiere diagnóstico técnico. No confundir con HLB, Phytophthora, sales o nutrición.
+
+4) citrus_canker_regulated_context
+Nombre UX: Cancro de los cítricos / lesiones corchosas con halo
+Nombre técnico: Xanthomonas citri subsp. citri
+Dónde pesa más: hojas, tallos y frutos en zonas donde esté presente o bajo vigilancia.
+Qué lo favorece: lluvia, viento, heridas, tejido joven, material contaminado, tormentas.
+Clave visual: lesiones elevadas/corchosas, margen acuoso/aceitoso, halo amarillo; en fruto parecen costras ásperas.
+Etapa: budbreak, vegetative_growth, fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta-regulada donde aplique.
+Memoria: Alta de región/lote.
+Lectura BIO-G: no activar universalmente. Si hay lesiones elevadas con halo y contexto regional, pedir confirmación fitosanitaria. No recomendar productos.
+
+5) leprosis_regional_context
+Nombre UX: Leprosis de los cítricos / manchas localizadas
+Nombre técnico: Citrus leprosis virus asociado a ácaros Brevipalpus spp.
+Dónde pesa más: regiones con presencia/vigilancia; hojas, frutos y ramas.
+Qué lo favorece: ácaros vectores, material infectado, focos localizados.
+Clave visual: lesiones circulares cloróticas/necróticas en hoja/fruto/rama, manchas localizadas, muerte de ramillas si severa.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Alta en lote/foco.
+Lectura BIO-G: no activar sin contexto regional o síntomas claros. Si aparece, pedir revisión técnica.
+
+--------------------------------------------------------------------------------
+5.2 RAÍZ, CUELLO, SUELO, PHytophthora Y SALINIDAD
+--------------------------------------------------------------------------------
+
+6) phytophthora_gummosis_foot_rot
+Nombre UX: Gomosis / pudrición de pie / cuello
+Nombre técnico: Phytophthora spp.
+Dónde pesa más: tronco bajo, cuello, injerto, raíz cercana, suelos mojados/pesados, riego pegado al tronco.
+Qué lo favorece: humedad en cuello, salpicadura, suelo saturado, mal drenaje, heridas, enterrar demasiado el cuello, portainjerto sensible.
+Clave visual: goma/ámbar en tronco, corteza oscura/hundida, lesión en base, copa rala, hojas amarillas, baja respuesta al riego/fertilizante.
+Etapa: planting_transplant, root_establishment, vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Muy alta; reduce vida y productividad del árbol.
+Lectura BIO-G: si hay goma en tronco bajo + humedad/salpicadura, priorizar cuello/raíz. No recomendar más riego ni fertilizante como primera acción.
+
+7) phytophthora_root_rot
+Nombre UX: Pudrición de raíz / raíz dañada
+Nombre técnico: Phytophthora spp.
+Dónde pesa más: raíces finas, suelos húmedos/pesados, árboles jóvenes, árboles con HLB o baja raíz.
+Qué lo favorece: saturación, riego frecuente sin aireación, drenaje pobre, compactación, HLB que reduce raíz fina.
+Clave visual: árbol triste con suelo húmedo, hojas pálidas, copa rala, caída, raíz fina marrón/necrosada, pobre respuesta a NPK.
+Etapa: root_establishment, vegetative_growth, fruit_set, fruit_fill, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Muy alta; reduce absorción y confianza NPK.
+Lectura BIO-G: soilMoisture alta + resistencia alta + bajo vigor = riesgo raíz, no déficit hídrico.
+
+8) root_crown_rot_anoxia_complex
+Nombre UX: Raíz asfixiada / exceso de agua / anoxia
+Dónde pesa más: suelos pesados, zonas bajas, riego excesivo, macetas/traspatio con mal drenaje, huertos jóvenes.
+Qué lo favorece: humedad alta, drenaje deficiente, compactación, lluvia acumulada, riegos largos.
+Clave visual: marchitez con suelo húmedo, olor a podrido, raíz oscura, amarillamiento, caída de hojas.
+Etapa: planting_transplant, root_establishment, vegetative_growth, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: “Que esté marchito no significa que le falte agua”. Revisar drenaje y raíz antes de regar.
+
+9) salinity_root_stress_context
+Nombre UX: Estrés salino / salitre / agua salada
+Dónde pesa más: zonas áridas/semiáridas, riego de pozo, mal drenaje, calor, fertirriego concentrado.
+Qué lo favorece: EC alta, acumulación de sales, riegos superficiales, baja lluvia/lavado, cloruros/sodio/boro, compactación.
+Clave visual: borde de hoja quemado, defoliación, crecimiento pobre, fruta chica, caída de flor/fruto, síntomas de sequía aunque se riegue.
+Etapa: root_establishment, vegetative_growth, flowering, fruit_set, fruit_fill, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: si EC está alta, bloquear recomendaciones agresivas de NPK. Sales + humedad baja = estrés osmótico fuerte.
+
+10) soil_compaction_root_stress
+Nombre UX: Compactación / raíz sin aire
+Dónde pesa más: calles de maquinaria, suelos arcillosos, huertos viejos, plantaciones mal preparadas.
+Qué lo favorece: tránsito, trabajar suelo húmedo, baja materia orgánica, capas endurecidas.
+Clave visual: bajo vigor por líneas, charcos, raíz superficial, respuesta pobre a riego/fertilizante.
+Etapa: todas.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: resistance alta + humedad irregular + bajo vigor = suelo/raíz primero, NPK después.
+
+11) nursery_rootstock_problem_context
+Nombre UX: Planta de vivero / portainjerto / injerto mal logrado
+Dónde pesa más: plantación y primeros años.
+Qué lo favorece: planta no certificada, raíz enrollada, injerto débil, incompatibilidad, enfermedades de vivero, HLB/VTC desde origen.
+Clave visual: árbol que no arranca, brotación irregular, cuello/injerto con problema, raíces deformes.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative.
+Prioridad BIO-G: Alta en árbol nuevo.
+Memoria: Muy alta.
+Lectura BIO-G: si falla desde el inicio y sensores no explican, preguntar origen de planta, injerto y raíz.
+
+--------------------------------------------------------------------------------
+5.3 BROTACIÓN TIERNA Y PLAGAS DE BROTE
+--------------------------------------------------------------------------------
+
+12) citrus_leafminer
+Nombre UX: Minador de la hoja
+Nombre técnico: Phyllocnistis citrella
+Dónde pesa más: brotes tiernos y hojas nuevas; árboles jóvenes y flush repetido.
+Qué lo favorece: brotación continua, clima cálido, tejido nuevo, limón tropical/continuo, exceso de vigor blando.
+Clave visual: galerías plateadas/serpenteadas, hoja nueva enrollada/deformada.
+Etapa: budbreak, vegetative_growth, juvenile_vegetative, post_harvest si hay flush.
+Prioridad BIO-G: Alta en jóvenes; media en adultos.
+Memoria: Media; afecta formación y entrada de patógenos.
+Lectura BIO-G: “caminos” en hoja nueva = minador; no diagnosticar hongo ni deficiencia.
+
+13) aphid_flush_complex
+Nombre UX: Pulgones en brote tierno
+Dónde pesa más: brotes nuevos, primavera/flush, juveniles.
+Qué lo favorece: hoja tierna, exceso de N, hormigas, baja presencia de benéficos.
+Clave visual: colonias en brotes, hojas enrolladas, mielecilla pegajosa, negrilla posterior.
+Etapa: budbreak, vegetative_growth, flowering si hay brotes.
+Prioridad BIO-G: Media-alta.
+Memoria: Media si deforma brotes.
+Lectura BIO-G: hoja pegajosa + brote enrollado = revisar chupador antes que hongo.
+
+14) citrus_thrips_flower_fruit_scarring
+Nombre UX: Trips / cicatriz en flor o limón chico
+Dónde pesa más: floración, caída de pétalos, fruta recién cuajada.
+Qué lo favorece: flor/fruto tierno, clima seco/cálido, historial.
+Clave visual: cicatrices plateadas/corchosas, raspaduras cerca del cáliz, marcas desde fruto pequeño.
+Etapa: flowering, fruit_set, early fruit_fill.
+Prioridad BIO-G: Alta para calidad externa.
+Memoria: Media.
+Lectura BIO-G: marca desde limón chico = revisar trips/viento/daño físico, no esperar a cosecha.
+
+15) broad_mite_bud_mite_context
+Nombre UX: Ácaros de brote / deformación de brote y fruto
+Dónde pesa más: brotes tiernos, botones, fruta pequeña.
+Qué lo favorece: microclima húmedo/cálido, canopia densa, brote tierno.
+Clave visual: hojas nuevas deformadas, brotes atrofiados, fruta con daño superficial o deformación.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad BIO-G: Media regional.
+Memoria: Baja-media.
+Lectura BIO-G: si hay deformación sin minas claras, revisar ácaros/trips/fitotoxicidad.
+
+--------------------------------------------------------------------------------
+5.4 CHUPADORES, MIELECILLA, FUMAGINA Y ÁCAROS
+--------------------------------------------------------------------------------
+
+16) soft_scale_armored_scale_complex
+Nombre UX: Escamas / conchuelas
+Dónde pesa más: hojas, ramas, tronco, fruto; huertos densos.
+Qué lo favorece: canopia densa, hormigas, baja regulación biológica, estrés, polvo, manejo no selectivo.
+Clave visual: costras pegadas en hoja/rama/fruto, mielecilla en algunas especies, negrilla, fruta sucia o manchada.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad y vigor.
+Memoria: Media-alta.
+Lectura BIO-G: si la costra no se mueve y está pegada, pensar escama. Si hay negrilla, buscar insecto.
+
+17) snow_scale_context
+Nombre UX: Escama de nieve / capa blanca en ramas
+Dónde pesa más: tronco y ramas de limón mexicano/persa.
+Qué lo favorece: disminución de enemigos naturales, huertos estresados, ramas densas.
+Clave visual: capa blanca como nieve sobre tronco/ramas, ramas debilitadas.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Alta si avanza.
+Memoria: Media-alta.
+Lectura BIO-G: diferenciar de hongo blanco; revisar si son escamas cerosas adheridas.
+
+18) mealybug_complex
+Nombre UX: Cochinilla algodonosa / piojo harinoso
+Dónde pesa más: cáliz, fruto, ramas protegidas.
+Qué lo favorece: hormigas, canopia densa, fruta en contacto.
+Clave visual: masas blancas algodonosas, mielecilla, negrilla, fruta manchada.
+Etapa: fruit_set, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad.
+Memoria: Media.
+Lectura BIO-G: revisar debajo del cáliz y uniones de fruta/ramas.
+
+19) whitefly_blackfly_complex
+Nombre UX: Mosca blanca / mosca prieta
+Dónde pesa más: envés de hojas, copa densa, brotes.
+Qué lo favorece: humedad/canopia densa, baja ventilación, hormigas.
+Clave visual: ninfas en envés, nube de mosquitas al mover hojas, mielecilla, fumagina negra.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta; alta si hay negrilla fuerte.
+Memoria: Media.
+Lectura BIO-G: negrilla + envés con ninfas = chupador.
+
+20) sooty_mold_honeydew_complex
+Nombre UX: Fumagina / negrilla
+Dónde pesa más: hojas y fruto donde hay chupadores.
+Qué lo favorece: pulgones, escamas, cochinillas, mosca blanca/prieta, psílido, canopia densa.
+Clave visual: capa negra superficial que se puede raspar, hoja/fruto pegajoso.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad; media para vigor si cubre mucha hoja.
+Memoria: Media.
+Lectura BIO-G: la negrilla es consecuencia; buscar chupador productor de miel.
+
+21) citrus_red_mite_spider_mite_complex
+Nombre UX: Araña roja / ácaros
+Dónde pesa más: hojas, fruto, época seca/polvo.
+Qué lo favorece: polvo, calor seco, estrés hídrico, baja presencia de benéficos.
+Clave visual: punteado/bronceado, telaraña fina, polvillo rojo, fruta gris/plateada.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: polvo + hoja bronceada + telaraña = ácaros; revisar agua/estrés.
+
+22) citrus_rust_mite
+Nombre UX: Ácaro de la roya / bronceado del limón
+Dónde pesa más: fruto en desarrollo y cosecha.
+Qué lo favorece: calor, poblaciones de ácaros, fruta expuesta, falta de monitoreo.
+Clave visual: bronceado/plateado en cáscara, fruta demeritada.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta para calidad externa.
+Memoria: Media.
+Lectura BIO-G: no afecta necesariamente kg, pero sí valor comercial.
+
+23) ants_chupador_protection_context
+Nombre UX: Hormigas protegiendo plagas
+Dónde pesa más: brotes, tronco, cochinillas, escamas, psílido/pulgones.
+Qué lo favorece: mielecilla, chupadores, maleza/refugios.
+Clave visual: hormigas subiendo y bajando, especialmente con hoja pegajosa.
+Etapa: todo el año.
+Prioridad BIO-G: Media.
+Memoria: Baja-media.
+Lectura BIO-G: las hormigas no siempre comen el árbol; suelen estar cuidando chupadores por miel.
+
+--------------------------------------------------------------------------------
+5.5 FLORACIÓN, CUAJADO, CAÍDA Y DESFASE
+--------------------------------------------------------------------------------
+
+24) flowering_heat_water_stress
+Nombre UX: Floración bajo calor/falta de agua
+Dónde pesa más: flowering.
+Qué lo favorece: humedad baja, calor >35 °C, viento seco, déficit hídrico, riego irregular.
+Clave visual: flor se seca, caída de flor, poca abeja/actividad, brote débil, hojas decaídas.
+Etapa: flowering.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta; afecta carga y continuidad.
+Lectura BIO-G: en floración, agua y temperatura mandan; no culpar solo NPK.
+
+25) fruit_set_drop_stress_complex
+Nombre UX: Caída de limoncito / no amarró
+Dónde pesa más: fruit_set.
+Qué lo favorece: estrés hídrico, calor, salinidad, raíz mala, baja hoja, HLB, trips/ácaros, exceso de N, baja reserva.
+Clave visual: frutitos amarillean/se caen, mucha flor pero poca carga.
+Etapa: fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: algo de caída es normal; alerta si es fuerte o coincide con agua baja/sales/calor/raíz.
+
+26) induced_bloom_stress_mismanagement
+Nombre UX: Desfase/inducción mal aplicado
+Dónde pesa más: lm_05_desfase_inducido, lm_04_tropical_continuo, lm_02_mexicano_colima.
+Qué lo favorece: estrés hídrico excesivo, poda/defoliación fuerte, riego de retorno mal sincronizado, árbol débil.
+Clave visual: brote/flor irregular, caída de flor, árbol cansado, fruta dispareja, baja hoja.
+Etapa: dormancy, budbreak, flowering, fruit_set.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: el desfase no es magia; si el árbol entra débil, puede bajar cuajado.
+
+27) salinity_fruit_set_drop
+Nombre UX: Sales tumbando flor/frutito
+Dónde pesa más: flowering, fruit_set.
+Qué lo favorece: EC alta, riego de pozo, sequía, fertilización concentrada, drenaje pobre.
+Clave visual: caída de flor/frutito con borde de hoja quemado o árbol “sediento” aunque se riegue.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: si EC alta, primero sales/agua/drenaje; no empujar fertilización.
+
+28) low_leaf_area_carbohydrate_competition
+Nombre UX: Mucha flor pero poca hoja/reserva
+Dónde pesa más: flowering, fruit_set, post_harvest.
+Qué lo favorece: defoliación previa, carga alta anterior, HLB, salinidad, plagas, poda fuerte.
+Clave visual: floreó pero no sostuvo frutito; copa rala, hoja amarilla o caída.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: mucha flor no asegura cosecha; hace falta hoja funcional y raíz.
+
+--------------------------------------------------------------------------------
+5.6 ANTRACNOSIS, MUERTE DE RAMAS Y COMPLEJOS FLOR-FRUTO
+--------------------------------------------------------------------------------
+
+29) anthracnose_flower_fruit_shoot_complex
+Nombre UX: Antracnosis en limón / flor, brote y fruto
+Nombre técnico: Colletotrichum spp.
+Dónde pesa más: floración, brote tierno, fruto pequeño, humedad alta.
+Qué lo favorece: lluvia/humedad, tejido tierno, copa densa, estrés, floraciones frecuentes.
+Clave visual: brotes con necrosis, flores afectadas, frutitos momificados, “tachuelas” adheridas, lesiones corchosas, agrietamiento de fruto.
+Etapa: budbreak, flowering, fruit_set, fruit_fill.
+Prioridad BIO-G: Muy alta en limón mexicano; media-alta en otros.
+Memoria: Alta si provoca caída/daño recurrente.
+Lectura BIO-G: en limón mexicano, este complejo merece entrada propia. No confundir todo con trips o daño físico.
+
+30) branch_dieback_stress_hlb_complex
+Nombre UX: Muerte de ramas / secamiento progresivo
+Dónde pesa más: vegetative_growth, fruit_fill, post_harvest.
+Qué lo favorece: sequía, nutrición deficiente, frío, mantos freáticos altos, suelos compactos/poco profundos, HLB, Phytophthora, heridas.
+Clave visual: ramas que se secan desde punta o sectores, hoja clorótica, defoliación, muerte parcial de copa.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Muy alta.
+Lectura BIO-G: no cerrar como HLB ni como falta de agua. Revisar raíz, sales, HLB, Phytophthora y estrés acumulado.
+
+31) fruit_pinhead_mummification_context
+Nombre UX: Frutitos momificados / “tachuelas”
+Dónde pesa más: fruit_set.
+Qué lo favorece: antracnosis/humedad, estrés en cuajado, tejido tierno.
+Clave visual: frutitos pequeños secos adheridos, cicatrices, lesiones.
+Etapa: fruit_set, early fruit_fill.
+Prioridad BIO-G: Alta en limón mexicano.
+Memoria: Media-alta.
+Lectura BIO-G: registrar como pérdida de cuajado y sanidad de flor/fruto.
+
+--------------------------------------------------------------------------------
+5.7 ENFERMEDADES FOLIARES Y DE COPA
+--------------------------------------------------------------------------------
+
+32) greasy_spot_mycosphaerella
+Nombre UX: Mancha grasienta / greasy spot
+Dónde pesa más: hojas maduras, zonas húmedas, copa densa.
+Qué lo favorece: humedad, hojarasca infectada, copa cerrada, periodos mojados.
+Clave visual: moteado amarillo superior y lesiones marrón/negras con aspecto grasoso, sobre todo en envés; defoliación si severa.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta si defolia.
+Lectura BIO-G: defoliación afecta reservas y floración siguiente.
+
+33) melanose_diaporthe
+Nombre UX: Melanosis / puntitos ásperos
+Nombre técnico: Diaporthe citri
+Dónde pesa más: hojas y fruto joven, lluvia sobre madera muerta.
+Qué lo favorece: ramillas muertas, lluvia, tejido joven.
+Clave visual: lesiones pequeñas elevadas ásperas, manchas tipo “lija”, marcas en cáscara.
+Etapa: vegetative_growth, fruit_set, fruit_fill.
+Prioridad BIO-G: Media.
+Memoria: Media.
+Lectura BIO-G: afecta calidad externa; revisar madera muerta y humedad.
+
+34) citrus_scab_regional
+Nombre UX: Roña / sarna de cítricos
+Dónde pesa más: fruto joven y hojas tiernas en zonas/regiones sensibles.
+Qué lo favorece: humedad, brote tierno, variedades/portainjertos sensibles.
+Clave visual: lesiones corchosas verrugosas, deformación en fruto/hoja.
+Etapa: budbreak, fruit_set, fruit_fill.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Media.
+Lectura BIO-G: no confundir con cancro; cancro tiene halo/lesión elevada y es regulado según región.
+
+35) alternaria_leaf_fruit_context
+Nombre UX: Alternaria / mancha negra o pudrición interna como contexto
+Dónde pesa más: hojas/fruto según variedad/región.
+Qué lo favorece: humedad, tejido susceptible, heridas, cosecha/postcosecha.
+Clave visual: manchas oscuras, pudrición interna o del extremo, fruto afectado.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Media.
+Lectura BIO-G: diferencial; no sobreactivar sin síntomas claros.
+
+36) bacterial_blast_context
+Nombre UX: Daño bacteriano/frío-viento en brotes
+Dónde pesa más: zonas frías/húmedas, brotes tiernos.
+Qué lo favorece: frío, viento, lluvia, heridas.
+Clave visual: brotes/hojas necrosados tras evento frío-húmedo.
+Etapa: budbreak, vegetative_growth, flowering.
+Prioridad BIO-G: Media regional.
+Memoria: Media.
+Lectura BIO-G: cruzar con evento climático; no diagnosticar nutrición.
+
+--------------------------------------------------------------------------------
+5.8 ENFERMEDADES Y DAÑOS DE FRUTO/CÁSCARA
+--------------------------------------------------------------------------------
+
+37) brown_rot_phytophthora_fruit
+Nombre UX: Pudrición café / brown rot
+Nombre técnico: Phytophthora spp.
+Dónde pesa más: fruto maduro o casi maduro, fruta baja cerca del suelo, humedad/lluvia.
+Qué lo favorece: salpicadura de suelo, ramas bajas, lluvia, humedad prolongada.
+Clave visual: lesión firme café/oliva, olor fuerte/rancio, fruta cae, posible pelusa blanca en humedad.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: si inicia en fruta baja tras lluvia, pensar Phytophthora/fruta; revisar poda de faldeo y salpicadura.
+
+38) penicillium_blue_green_mold
+Nombre UX: Moho verde/azul de cosecha
+Nombre técnico: Penicillium spp.
+Dónde pesa más: harvest_maturity y postcosecha.
+Qué lo favorece: heridas, golpes, mala cosecha, humedad, almacenamiento.
+Clave visual: moho verde/azul, pudrición blanda alrededor de herida.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Baja-media.
+Lectura BIO-G: problema de heridas/cosecha/postcosecha; no necesariamente del árbol en campo.
+
+39) stem_end_rot_lasiodiplodia
+Nombre UX: Pudrición del extremo del pedúnculo
+Nombre técnico: Lasiodiplodia / Diplodia / complejos de postcosecha
+Dónde pesa más: harvest_maturity, post_harvest.
+Qué lo favorece: estrés de árbol, heridas, calor, cosecha/almacenamiento.
+Clave visual: pudrición desde pedúnculo, avance oscuro.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: si se repite, revisar estrés del árbol y manejo de cosecha.
+
+40) fruit_fly_maggot_context
+Nombre UX: Mosca de la fruta / larvas
+Dónde pesa más: fruta madura o sobremadura, regiones con campaña.
+Qué lo favorece: fruta madura en árbol/suelo, mal manejo de fruta caída, presión regional.
+Clave visual: picaduras, larvas al abrir fruto, pudrición secundaria.
+Etapa: harvest_maturity.
+Prioridad BIO-G: Alta-regional.
+Memoria: Media.
+Lectura BIO-G: si hay larvas o campaña, recomendar seguimiento con sanidad local; no recetar.
+
+41) rind_scarring_thrips_wind_context
+Nombre UX: Cicatriz de cáscara / raspadura
+Dónde pesa más: fruto pequeño a llenado.
+Qué lo favorece: trips, viento/roce de ramas, espinas, granizo leve, daño mecánico.
+Clave visual: marcas plateadas/corchosas, cicatriz superficial, patrón por exposición/roce.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta para calidad.
+Memoria: Media.
+Lectura BIO-G: separar plaga temprana de viento/espinas y daño físico.
+
+--------------------------------------------------------------------------------
+5.9 DESÓRDENES ABIÓTICOS DE FRUTO Y AMBIENTE
+--------------------------------------------------------------------------------
+
+42) fruit_splitting_cracking
+Nombre UX: Limón rajado / agrietado
+Dónde pesa más: fruit_fill, harvest_maturity.
+Qué lo favorece: riego irregular, sequía seguida de mucha agua, calor, desbalance K/Ca/Mg como contexto, cáscara débil, antracnosis/lesión previa.
+Clave visual: rajadura en cáscara, exposición de vesículas de jugo si severo.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta para calidad.
+Memoria: Media-alta.
+Lectura BIO-G: revisar riego irregular antes de culpar hongo. Si hay lesión corchosa previa, considerar antracnosis/daño.
+
+43) sunburn_fruit_leaf
+Nombre UX: Golpe de sol / fruta quemada
+Dónde pesa más: fruit_fill, harvest_maturity.
+Qué lo favorece: calor, exposición directa, poda fuerte, defoliación, baja humedad.
+Clave visual: parche seco/quemado del lado expuesto, no se distribuye al azar.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: daño físico/climático; revisar sombra/copa/defoliación.
+
+44) wind_scarring_rind
+Nombre UX: Raspadura por viento / roce
+Dónde pesa más: fruto en crecimiento.
+Qué lo favorece: viento, ramas/espinas, fruta en contacto, copa densa.
+Clave visual: cicatriz superficial lineal o irregular, del lado que roza.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media.
+Memoria: Baja-media.
+Lectura BIO-G: no confundir con enfermedad si sigue patrón de roce.
+
+45) frost_fruit_bloom_damage
+Nombre UX: Daño por frío/helada
+Dónde pesa más: floración, brote y fruta.
+Qué lo favorece: helada, aire frío en zonas bajas, brotes tiernos, limón mexicano sensible al frío.
+Clave visual: flor/brote quemado, fruta dañada, hoja caída tras evento frío.
+Etapa: budbreak, flowering, fruit_set, harvest_maturity.
+Prioridad BIO-G: Alta en regiones frías.
+Memoria: Alta si afecta flor/carga.
+Lectura BIO-G: cruzar con evento climático; no diagnosticar NPK.
+
+46) dry_fruit_low_juice_context
+Nombre UX: Limón seco / poco jugo / bajo calibre
+Dónde pesa más: fruit_fill, harvest_maturity.
+Qué lo favorece: falta de agua, K bajo o bloqueado, sales, HLB, raíz dañada, cosecha tardía, calor.
+Clave visual: fruto chico, poco jugo, cáscara gruesa/dura, calidad baja.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta comercial.
+Memoria: Alta si se repite.
+Lectura BIO-G: revisar agua + K + sales + raíz + HLB antes de asumir una causa.
+
+47) phytotoxicity_oil_copper_herbicide
+Nombre UX: Quemadura por aplicación / deriva / fitotoxicidad
+Dónde pesa más: hojas, brotes, fruto.
+Qué lo favorece: aplicaciones en calor, mezclas incompatibles, aceite/cobre/herbicida, deriva, estrés hídrico.
+Clave visual: daño uniforme según patrón de aspersión/deriva, manchas o quemaduras tras aplicación.
+Etapa: todas, especialmente brote/fruto tierno.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: preguntar aplicaciones recientes antes de culpar plaga/enfermedad.
+
+48) oleocellosis_oil_spotting_context
+Nombre UX: Manchas por aceite de la cáscara / daño de manejo
+Dónde pesa más: cosecha/postcosecha.
+Qué lo favorece: fruta turgente, cosecha con rocío/humedad, golpes, manipulación fuerte.
+Clave visual: manchas superficiales en cáscara, no necesariamente pudrición.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Media comercial.
+Memoria: Baja-media.
+Lectura BIO-G: manejo de cosecha/calidad, no patógeno primario.
+
+--------------------------------------------------------------------------------
+5.10 NUTRICIÓN, DISPONIBILIDAD APARENTE Y MEMORIA
+--------------------------------------------------------------------------------
+
+49) nitrogen_deficiency_context
+Nombre UX: Amarillamiento por posible N bajo
+Dónde pesa más: vegetative_growth, post_harvest, árboles jóvenes.
+Qué lo favorece: baja fertilidad, raíz dañada, lixiviación, baja materia orgánica, carga alta.
+Clave visual: amarillamiento relativamente uniforme, más en hoja vieja, bajo vigor.
+Etapa: juvenile_vegetative, vegetative_growth, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Media.
+Lectura BIO-G: si hay pH alto, sales, HLB o raíz mala, no culpar N de entrada.
+
+50) nitrogen_excess_vigor_flush_context
+Nombre UX: Mucha hoja/brote y poca fruta
+Dónde pesa más: budbreak, vegetative_growth, flowering, fruit_set.
+Qué lo favorece: N alto, baja carga, riego fuerte, poda fuerte, clima cálido.
+Clave visual: brote muy tierno, copa muy vegetativa, poca flor o bajo amarre.
+Etapa: vegetative_growth, flowering, fruit_set.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: N alto no siempre es bueno; puede atraer brote/plagas y competir con fruto.
+
+51) potassium_low_fruit_quality_context
+Nombre UX: K bajo / calibre-jugo-calidad
+Dónde pesa más: fruit_set, fruit_fill, harvest_maturity.
+Qué lo favorece: carga alta, K bajo o bloqueado, falta de agua, sales, antagonismo Ca/Mg/Na, raíz mala.
+Clave visual: fruto chico, bajo jugo, madurez/calidad débil, borde quemado si sales.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: K pesa en calibre/jugo, pero si humedad baja o EC alta, primero agua/sales.
+
+52) iron_chlorosis_high_ph
+Nombre UX: Hoja nueva amarilla con nervadura verde
+Dónde pesa más: brotación y crecimiento.
+Qué lo favorece: pH alto, caliza, exceso de humedad, raíz dañada, portainjerto sensible.
+Clave visual: hoja joven amarilla con nervaduras verdes.
+Etapa: budbreak, vegetative_growth.
+Prioridad BIO-G: Alta como contexto.
+Memoria: Media.
+Lectura BIO-G: no leer automáticamente como falta de N.
+
+53) zinc_manganese_context
+Nombre UX: Hoja chica / roseta / moteado por Zn/Mn contexto
+Dónde pesa más: brotación, vegetativo.
+Qué lo favorece: pH alto, suelos alcalinos/arenosos, baja disponibilidad, HLB como imitador.
+Clave visual: hoja pequeña, brotes cortos, moteado, clorosis irregular.
+Etapa: budbreak, vegetative_growth.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: usar análisis foliar; no simular Zn/Mn desde NPK.
+
+54) magnesium_leaf_chlorosis_context
+Nombre UX: Amarillamiento de hoja vieja / Mg contexto
+Dónde pesa más: árboles con carga, fruit_fill, post_harvest.
+Qué lo favorece: carga alta, K alto/antagonismo, suelo ácido o bajo Mg.
+Clave visual: clorosis en hoja vieja, patrones cerca de fruta/carga.
+Etapa: fruit_fill, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Media.
+Lectura BIO-G: mencionar Mg como contexto; no diagnosticar sin foliar.
+
+55) salinity_chloride_boron_leaf_burn
+Nombre UX: Borde quemado por sales/cloruros/boro
+Dónde pesa más: vegetative_growth, fruit_set, fruit_fill.
+Qué lo favorece: agua salina, EC alta, KCl u otras sales, drenaje pobre, calor.
+Clave visual: borde de hoja quemado, puntas secas, caída, fruta chica.
+Etapa: todas.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: EC alta + borde quemado = sales primero, no solo deficiencia K/Mg.
+
+56) post_harvest_leaf_loss_memory
+Nombre UX: Pérdida de hoja después de corte
+Dónde pesa más: post_harvest.
+Qué lo favorece: carga alta, cosecha larga, estrés hídrico, sales, plagas, HLB, Phytophthora.
+Clave visual: árbol cansado, baja hoja, brote débil, poca flor siguiente.
+Etapa: post_harvest, dormancy.
+Prioridad BIO-G: Alta.
+Memoria: Muy alta.
+Lectura BIO-G: la cosecha no cierra el cultivo; guardar memoria para siguiente floración.
+
+57) repeated_flush_reserve_depletion_memory
+Nombre UX: Muchos brotes/cortes, árbol cansado
+Dónde pesa más: lm_04_tropical_continuo y lm_05_desfase_inducido.
+Qué lo favorece: floraciones repetidas, cosechas frecuentes, N/agua mal balanceados, baja hoja, estrés.
+Clave visual: árbol con brotes/flor/fruta disparejos, baja continuidad, calibre variable.
+Etapa: todo el año.
+Prioridad BIO-G: Alta.
+Memoria: Muy alta.
+Lectura BIO-G: producción continua exige hoja/raíz; si el árbol se fuerza sin reservas, baja calibre y amarre.
+
+58) hlb_chronic_decline_memory
+Nombre UX: Decaimiento crónico por HLB/región
+Dónde pesa más: todo el ciclo.
+Qué lo favorece: HLB confirmado o sospecha repetida, psílido, árboles con sectores amarillos y baja producción.
+Clave visual: copa sectorizada, fruta chica/deforme, muerte de ramas, caída, bajo calibre.
+Etapa: todo el año.
+Prioridad BIO-G: Crítica con cautela.
+Memoria: Muy alta.
+Lectura BIO-G: guardar memoria, bajar confianza de NPK, pedir confirmación; fertilizar no cura HLB.
+
+================================================================================
+6. CATÁLOGO RECOMENDADO PARA lemon_tree_syndromes.dart
+================================================================================
+
+El catálogo no necesita crear 58 PlantHealthSyndrome individuales. Igual que Naranjo, conviene agrupar por familias UX para que el motor sea mantenible. Recomendación: 12 síndromes principales.
+
+SÍNDROME 1
+id: lemon_hlb_psyllid_regulated_01
+labelEs: Moteado disparejo, brote con psílido o limón chico/deforme
+stages: _hlbStages
+organIds: leaf, fruit, whole_plant
+primarySymptomId sugerido: symptomCitrusBlotchyMottle
+strongSignals: asymmetricMottle, psyllidWaxyTubules
+weakSignals: fruitBitterMisshapen, flushNewGrowth, vectorPresent, fruitDrop
+probableDiagnoses:
+- huanglongbing_hlb_context
+- asian_citrus_psyllid_vector
+- citrus_canker_regulated_context
+- tristeza_virus_context
+severity: critical
+urgency: immediate
+favorsVectorPressure: true
+favorsRecentStress: true
+baseActions: _hlbActions
+varietyModifiers:
+- lm_04_tropical_continuo +8 vectorPressure por brotes frecuentes
+- lm_05_desfase_inducido +6 vectorPressure por flush inducido
+- lm_02_mexicano_colima +8 HLB contextual en zonas del Pacífico mexicano / Colima / Michoacán / Nayarit / Jalisco con cautela
+- lm_01_persa_tahiti +5 HLB/PAC regional
+
+SÍNDROME 2
+id: lemon_root_crown_phytophthora_salinity_01
+labelEs: Árbol triste con suelo húmedo, goma en tronco o borde quemado
+stages: _rootStages + _foliarStages + lateSeason
+organIds: root, crown, stem, leaf, whole_plant
+primarySymptomId: symptomCitrusGummosisTrunk
+strongSignals: waterlogging, rootsDarkRot, salinityLoad
+weakSignals: leafEdgeBurn, recentStress, highPhCalcareous
+probableDiagnoses:
+- phytophthora_gummosis_foot_rot
+- phytophthora_root_rot
+- root_crown_rot_anoxia_complex
+- salinity_root_stress_context
+- soil_compaction_root_stress
+severity: critical/high
+urgency: sameDay/review24h
+favorsHighHumidity: true
+favorsRecentStress: true
+baseActions: _rootActions
+varietyModifiers:
+- lm_01_persa_tahiti +5 salinity sensitivity
+- lm_02_mexicano_colima +5 HLB + root decline interaction
+- lm_03_amarillo_eureka_lisbon +4 Phytophthora/cold-wet context
+
+SÍNDROME 3
+id: lemon_flush_pests_01
+labelEs: Hoja nueva con minas, brote enrollado o insectos en brote
+stages: _flushStages
+organIds: leaf, flower, fruit
+primarySymptomId: symptomLeafCurling o symptomCitrusBlotchyMottle si no existe nuevo
+strongSignals: leafMines, flushNewGrowth, psyllidWaxyTubules
+weakSignals: stickyHoneydew, thripsPresent, miteWebbing
+probableDiagnoses:
+- citrus_leafminer
+- asian_citrus_psyllid_direct_damage
+- aphid_flush_complex
+- citrus_thrips_flower_fruit_scarring
+- broad_mite_bud_mite_context
+severity: high
+urgency: review24h
+favorsVectorPressure: true
+baseActions: _flushActions
+
+SÍNDROME 4
+id: lemon_sucking_pests_sooty_mold_mites_01
+labelEs: Hoja/fruto pegajoso, negrilla, escamas o bronceado
+stages: _foliarStages + _fruitStages
+organIds: leaf, stem, fruit
+primarySymptomId: stickyHoneydew/sootyMold if available; otherwise citrusRindScarring
+strongSignals: stickyHoneydew, sootyMold, whiteflyCloud, mitesWebbing
+weakSignals: ants, bronzedLeafSurface, rindScarring
+probableDiagnoses:
+- soft_scale_armored_scale_complex
+- snow_scale_context
+- mealybug_complex
+- whitefly_blackfly_complex
+- sooty_mold_honeydew_complex
+- citrus_red_mite_spider_mite_complex
+- citrus_rust_mite
+- ants_chupador_protection_context
+severity: high/medium
+urgency: review48h
+baseActions: _foliarActions
+
+SÍNDROME 5
+id: lemon_flowering_set_drop_desfase_01
+labelEs: Floreó pero no amarró, se cae el limoncito o el desfase salió débil
+stages: reproductiveEarly, reproductiveMid
+organIds: flower, fruit, whole_plant
+primarySymptomId: flowerDrop
+strongSignals: flowerDrop, dryHotWindow, salinityLoad
+weakSignals: heatStress, coldExposure, recentStress, lowLeafArea
+probableDiagnoses:
+- flowering_heat_water_stress
+- fruit_set_drop_stress_complex
+- induced_bloom_stress_mismanagement
+- salinity_fruit_set_drop
+- low_leaf_area_carbohydrate_competition
+severity: critical/high
+urgency: review24h/sameDay
+baseActions: _bloomActions
+varietyModifiers:
+- lm_05_desfase_inducido +10 induced_bloom_stress_mismanagement
+- lm_04_tropical_continuo +6 heat_water_stress
+- lm_02_mexicano_colima +5 fruit_set_drop_stress_complex
+
+SÍNDROME 6
+id: lemon_anthracnose_flower_fruit_dieback_01
+labelEs: Brote, flor o limoncito con necrosis, tachuelas o ramas secas
+stages: flushStages + bloomStages + fruitStages
+organIds: leaf, flower, fruit, stem, whole_plant
+primarySymptomId: mummifiedFruitRot or citrusRindScarring
+strongSignals: recentStress, humidWindow, shootTipWilt, fruitCorkyCracking
+weakSignals: flowerDrop, waterSoakedSpots
+probableDiagnoses:
+- anthracnose_flower_fruit_shoot_complex
+- fruit_pinhead_mummification_context
+- branch_dieback_stress_hlb_complex
+severity: high
+urgency: review24h
+favorsHighHumidity: true
+favorsRecentStress: true
+baseActions: _anthracnoseActions
+varietyModifiers:
+- lm_02_mexicano_colima +10 anthracnose_flower_fruit_shoot_complex
+- lm_04_tropical_continuo +5 humid disease context
+
+SÍNDROME 7
+id: lemon_foliar_fungal_canker_01
+labelEs: Manchas grasosas, corchosas o ásperas en hoja/fruto
+stages: foliarStages + fruitStages
+organIds: leaf, fruit, stem
+primarySymptomId: symptomCitrusRaisedCorkyHaloLesions or velvety/spot symptom
+strongSignals: waterSoakedMargin, springWetFoliage, humidWindow
+weakSignals: rindScarring, recentStress
+probableDiagnoses:
+- greasy_spot_mycosphaerella
+- melanose_diaporthe
+- citrus_scab_regional
+- alternaria_leaf_fruit_context
+- citrus_canker_regulated_context
+severity: high if canker context, medium-high otherwise
+urgency: review24h/review48h
+favorsHighHumidity: true
+baseActions: _foliarDiseaseActions
+
+SÍNDROME 8
+id: lemon_fruit_rot_quality_01
+labelEs: Limón podrido, con moho, olor fuerte o larvas
+stages: grainFill, lateSeason
+organIds: fruit
+primarySymptomId: mummifiedFruitRot / fruitRot if available
+strongSignals: blueGreenMold, maggotLarvae, waterSoakedSpots
+weakSignals: humidWindow, recentStress, harvestInjury
+probableDiagnoses:
+- brown_rot_phytophthora_fruit
+- penicillium_blue_green_mold
+- stem_end_rot_lasiodiplodia
+- fruit_fly_maggot_context
+severity: high
+urgency: review24h
+favorsHighHumidity: true
+baseActions: _fruitActions
+
+SÍNDROME 9
+id: lemon_abiotic_fruit_disorders_01
+labelEs: Limón rajado, quemado, seco, raspado o con poco jugo
+stages: reproductiveMid, grainFill, lateSeason
+organIds: fruit, leaf
+primarySymptomId: symptomCitrusSplitFruit or symptomCitrusRindScarring
+strongSignals: dryHotWindow, salinityLoad, fruitSunburnPatch
+weakSignals: windEvent, hailEvent, recentStress
+probableDiagnoses:
+- fruit_splitting_cracking
+- sunburn_fruit_leaf
+- wind_scarring_rind
+- frost_fruit_bloom_damage
+- dry_fruit_low_juice_context
+- phytotoxicity_oil_copper_herbicide
+- oleocellosis_oil_spotting_context
+severity: high for fruit quality
+urgency: review48h
+baseActions: _abioticActions
+
+SÍNDROME 10
+id: lemon_nutrition_availability_01
+labelEs: Hoja amarilla, hoja chica, borde quemado o fruta chica
+stages: micronutrientStages + fruitStages + lateSeason
+organIds: leaf, fruit, whole_plant
+primarySymptomId: symptomInternervalChlorosisNewLeaves or symptomCitrusSmallLopsidedFruit
+strongSignals: highPhCalcareous, salinityLoad, leafEdgeBurn
+weakSignals: recentStress, lowVigor
+probableDiagnoses:
+- nitrogen_deficiency_context
+- nitrogen_excess_vigor_flush_context
+- potassium_low_fruit_quality_context
+- iron_chlorosis_high_ph
+- zinc_manganese_context
+- magnesium_leaf_chlorosis_context
+- salinity_chloride_boron_leaf_burn
+severity: high/medium
+urgency: review48h
+baseActions: _nutritionActions
+
+SÍNDROME 11
+id: lemon_cold_heat_wind_stress_01
+labelEs: Flor, brote o limón dañado tras calor, frío, viento o granizo
+stages: all, but strong in flowering/fruit_set/fruit_fill
+organIds: leaf, flower, fruit, whole_plant
+primarySymptomId: heat/cold/frost/wind signal if available
+strongSignals: heatStress, coldExposure, hailEvent, dryHotWindow
+weakSignals: recentStress, fruitSunburnPatch
+probableDiagnoses:
+- frost_fruit_bloom_damage
+- sunburn_fruit_leaf
+- wind_scarring_rind
+- flowering_heat_water_stress
+severity: high when flowering/fruit_set
+urgency: review24h/review48h
+baseActions: _climateActions
+
+SÍNDROME 12
+id: lemon_postharvest_memory_01
+labelEs: Árbol cansado después de cortes, baja hoja o siguiente floración débil
+stages: lateSeason + unknown allowed
+organIds: whole_plant, leaf, root, fruit
+primarySymptomId: recentStress / wholePlantLowVigor if available
+strongSignals: recentStress, salinityLoad, leafLoss
+weakSignals: vectorPressure, highCropLoad, lowLeafArea
+probableDiagnoses:
+- post_harvest_leaf_loss_memory
+- repeated_flush_reserve_depletion_memory
+- hlb_chronic_decline_memory
+- post_harvest_root_salinity_memory
+- phytophthora_chronic_root_loss_memory
+severity: high
+urgency: review48h
+favorsRecentStress: true
+baseActions: _memoryActions
+
+================================================================================
+7. ACCIONES BASE RECOMENDADAS PARA CÓDIGO
+================================================================================
+
+_disclaimer:
+“Orientación de riesgo, no diagnóstico definitivo. BIO-G sugiere revisar, comparar y confirmar en campo o con asesoría/sanidad local si el daño avanza. No prescribe plaguicidas ni ingredientes activos. HLB, cancro, tristeza, leprosis y Phytophthora requieren confirmación técnica; no se cierran por sensor.”
+
+_baseActions:
+- Marca el foco: árbol completo, rama, línea, borde, zona baja o manchas por sectores.
+- Revisa avance en 24-72 horas con fotos desde el mismo ángulo.
+- Cruza síntoma con etapa visible, clima reciente, riego, EC, pH, raíz y aplicaciones.
+- Registra memoria: en limón el estrés puede afectar la siguiente floración, cuajado, calibre y continuidad de cortes.
+
+_hlbActions:
+- No cierres HLB por una hoja amarilla. Revisa si el moteado es disparejo/asimétrico, si hay psílido en brotes, fruta chica/ladeada o sectores de copa amarillos.
+- Si hay señales compatibles y la región tiene psílido/HLB, toma foto y confirma con técnico/laboratorio/sanidad local.
+- Baja confianza de NPK cuando hay sospecha HLB: el árbol puede no mover bien fotoasimilados ni nutrientes.
+
+_rootActions:
+- Revisa cuello, raíces y drenaje antes de regar más.
+- Marchitez con suelo húmedo no es falta de agua; puede ser raíz asfixiada, Phytophthora o compactación.
+- Si hay goma en tronco bajo, piensa en gomosis/cuello antes que fertilizante.
+- Si EC alta, no empujes NPK: revisa agua, drenaje y sales.
+
+_flushActions:
+- Revisa brotes tiernos y envés: psílido, minador, pulgones, trips o ácaros.
+- Brote tierno no significa exceso de N automáticamente.
+- En limón continuo/desfase, cada flush nuevo sube presión de vector.
+
+_foliarActions:
+- Revisa chupadores: escamas, cochinillas, pulgones, mosca blanca/prieta, psílido y ácaros.
+- La negrilla es consecuencia de mielecilla: busca insecto, no trates fumagina como causa primaria.
+- Si defolia en llenado o postcosecha, guarda memoria.
+
+_bloomActions:
+- En floración/cuajado, cruza humedad, calor, frío, viento, sales y raíz antes de culpar fertilizante.
+- Algo de caída puede ser normal; alerta si coincide con estrés o es fuerte.
+- Desfase mal aplicado puede tumbar cuajado. No prometer más cosecha solo por inducir floración.
+
+_anthracnoseActions:
+- En limón mexicano, revisa brotes, flor y limoncitos: necrosis, frutitos momificados, tachuelas o lesiones corchosas.
+- Si hay humedad/lluvia y daño en flor/fruto pequeño, no lo reduzcas a trips o riego.
+- Guarda pérdida de cuajado y daño de fruta como memoria.
+
+_fruitActions:
+- Abre varios limones: ¿hay moho, olor fuerte, larvas, pudrición desde pedúnculo o daño superficial?
+- Separa brown rot por salpicadura/humedad de moho de cosecha por heridas.
+- Si hay mosca de fruta o riesgo regulado, pedir seguimiento con sanidad local.
+
+_abioticActions:
+- Rajado suele venir de riego irregular, calor, cáscara débil o lesión previa.
+- Golpe de sol aparece del lado expuesto; cicatriz de viento sigue patrón de roce.
+- Pregunta por aplicaciones recientes antes de diagnosticar hongo.
+
+_nutritionActions:
+- Hoja nueva amarilla con nervadura verde en pH alto puede ser Fe/Zn/Mn, no N.
+- K bajo pega a calibre/jugo, pero con humedad baja o EC alta primero corrige absorción.
+- Borde quemado puede ser sales/cloruros/sodio/boro o calor.
+- BIO-G v1 no mide Fe/Zn/Mn/B/Ca/Mg: pedir análisis, no inventar dosis.
+
+_memoryActions:
+- No cierres el cultivo después del corte; el limonero sigue activo.
+- Guarda salinidad, HLB/psílido, Phytophthora, defoliación, caída fuerte, carga alta y desfase mal aplicado.
+- Si el árbol quedó cansado, la siguiente floración y el calibre pueden caer.
+
+================================================================================
+8. MODIFICADORES POR PERFIL LM
+================================================================================
+
+lm_skip
+- Conservador.
+- No asume variedad, región, HLB ni portainjerto.
+- Mayor uso de “revisa / confirma” y menor dureza en diagnóstico.
+- No bloquea app.
+
+lm_01_persa_tahiti
+- Sensibilidad alta a salinidad, raíz, Phytophthora, HLB/PAC regional y calidad externa verde.
+- Mucha importancia de calibre, color verde, cáscara, empaque y cortes frecuentes.
+- Puede tener producción escalonada; presión de brote/plagas si hay manejo intensivo.
+- Modificadores sugeridos:
+  - +5 salinity_root_stress_context
+  - +5 asian_citrus_psyllid_vector
+  - +4 brown_rot_phytophthora_fruit si fruta baja/humedad
+  - +4 fruit_quality_rind_scarring
+
+lm_02_mexicano_colima
+- Muy importante en México; fuerte contexto de HLB en Pacífico mexicano.
+- Más sensible al frío que otros cítricos.
+- Fruta chica/ácida, con semilla; producción frecuente en climas cálidos.
+- Antracnosis, muerte de ramas, HLB, PAC, araña roja, escama de nieve y minador pesan fuerte.
+- Modificadores sugeridos:
+  - +10 anthracnose_flower_fruit_shoot_complex
+  - +8 huanglongbing_hlb_context en región citrícola con vector
+  - +6 fruit_set_drop_stress_complex
+  - +5 frost_fruit_bloom_damage
+
+lm_03_amarillo_eureka_lisbon
+- Sensible a heladas/frío y enfermedades de humedad.
+- Fruta amarilla: color externo y cosecha no se interpretan igual que persa/mexicano.
+- Modificadores sugeridos:
+  - +7 cold_frost_damage
+  - +5 foliar_fungal_disease_context
+  - +4 Phytophthora/cold-wet context
+
+lm_04_tropical_continuo
+- Brotes/floraciones/cortes frecuentes; riesgo constante de psílido, minador, pulgones, trips y reserva baja.
+- Calor + baja HR tumba flor/frutito.
+- Modificadores sugeridos:
+  - +8 asian_citrus_psyllid_vector
+  - +7 flowering_heat_water_stress
+  - +6 repeated_flush_reserve_depletion_memory
+  - +5 mites/thrips context
+
+lm_05_desfase_inducido
+- No es variedad botánica; es manejo/calendario.
+- Riesgo de estrés inducido mal aplicado, baja hoja, caída de flor, presión de brote tierno y agotamiento de reservas.
+- Modificadores sugeridos:
+  - +10 induced_bloom_stress_mismanagement
+  - +8 repeated_flush_reserve_depletion_memory
+  - +6 asian_citrus_psyllid_vector
+  - +5 salinity_fruit_set_drop
+
+================================================================================
+9. REGLAS DE MOTOR PARA BIO-G
+================================================================================
+
+9.1 Reglas no negociables
+-------------------------
+- No diagnosticar HLB, cancro, tristeza, leprosis ni Phytophthora de forma cerrada.
+- No recomendar ingredientes activos ni dosis.
+- No usar NPK para explicar todo.
+- No decir “falta agua” si el suelo está saturado o la raíz está mala.
+- No decir “falta N” si hay pH alto, hoja nueva con nervadura verde, HLB sospechoso o raíz dañada.
+- No decir “aplica K” si EC alta o humedad baja bloquean absorción.
+- No apagar sanidad en postcosecha.
+- No tratar fruit_fill como cosecha.
+- No tratar limón verde comercial como “inmaduro” solo porque no está amarillo.
+
+9.2 Orden de interpretación recomendado
+---------------------------------------
+Antes de emitir alerta de sanidad/nutrición, revisar:
+1. cropId/profileId LM.
+2. etapa visible.
+3. estado perenne.
+4. humedad de suelo.
+5. EC/salinidad.
+6. pH.
+7. resistencia/compactación.
+8. temperatura/estrés térmico reciente.
+9. brotación tierna y vectorPressure.
+10. highHumidity/coolDewyWindow/recentStress.
+11. síntomas por órgano.
+12. memoria de HLB, salinidad, raíz, defoliación, caída, antracnosis, desfase.
+
+9.3 Bajar confianza de NPK cuando...
+------------------------------------
+- HLB/PAC sospechoso o confirmado.
+- Phytophthora/gomosis/raíz dañada.
+- EC alta.
+- pH extremo.
+- resistencia/compactación alta.
+- humedad saturada o muy baja.
+- defoliación fuerte.
+- árbol con mucha muerte de ramas.
+- postcosecha con hoja baja.
+- estrés de desfase mal aplicado.
+
+9.4 Memoria perenne
+-------------------
+Guardar como eventos:
+- hlb_or_vector_pressure
+- phytophthora_or_gummosis
+- salinity_root_stress
+- flowering_heat_or_water_stress
+- fruit_set_drop
+- anthracnose_flower_fruit_event
+- fruit_fill_water_k_quality_stress
+- defoliation_or_sooty_mold
+- branch_dieback
+- postharvest_reserve_depletion
+- induced_bloom_stress
+- fruit_quality_loss
+
+Cada evento debe guardar:
+- severidad: none/mild/moderate/severe
+- etapa
+- duración aproximada
+- órgano afectado
+- impacto esperado:
+  - siguiente floración
+  - cuajado
+  - calibre
+  - jugo
+  - calidad externa
+  - vigor/raíz
+  - confianza NPK
+
+================================================================================
+10. PREGUNTAS DE DIAGNÓSTICO FARMER-FRIENDLY
+================================================================================
+
+Generales:
+- ¿El problema está en todo el árbol, en una rama, en un lado o en varios árboles por línea?
+- ¿Empezó después de calor, frío, lluvia, riego fuerte, sequía o aplicación?
+- ¿El suelo está seco, húmedo o encharcado cuando el árbol se ve triste?
+- ¿El agua deja salitre o costra blanca?
+- ¿El árbol está en flor, con frutito, llenando limón, en corte o después de corte?
+
+HLB/psílido:
+- ¿La hoja amarilla está manchada dispareja entre los dos lados de la hoja?
+- ¿Ves psílido o tubitos blancos en los brotes tiernos?
+- ¿El limón sale chico, ladeado, deforme o se cae verde?
+- ¿Hay HLB o psílido reportado cerca?
+
+Raíz/gomosis/sales:
+- ¿Hay goma color ámbar en el tronco bajo o cuello?
+- ¿El árbol se ve triste aunque el suelo esté húmedo?
+- ¿Hay charcos, drenaje lento o suelo duro?
+- ¿El borde de la hoja se quema de las orillas?
+
+Flor/cuajado:
+- ¿Floreó mucho pero no amarró?
+- ¿Se cayó el frutito después de calor, viento o falta de agua?
+- ¿Intentaste inducir floración/desfase con riego, poda o estrés?
+- ¿El árbol trae hoja suficiente o está muy ralo?
+
+Brote/plagas:
+- ¿La hoja nueva trae caminos plateados como víboras?
+- ¿Hay hoja pegajosa o negrilla?
+- ¿Hay hormigas subiendo por el tronco?
+- ¿Hay escamas/costras pegadas en rama o fruto?
+
+Fruto/calidad:
+- ¿El limón está chico, seco, con poco jugo o cáscara gruesa?
+- ¿Se raja después de riegos o lluvias fuertes?
+- ¿Tiene cicatrices plateadas/corchosas desde chico?
+- ¿La pudrición trae olor fuerte, moho verde/azul o larvas?
+
+Postcosecha/memoria:
+- ¿Después de cortar quedó cansado o tiró hoja?
+- ¿La siguiente floración salió débil?
+- ¿Trajo muchos cortes seguidos y luego bajó calibre?
+- ¿La EC/sales quedaron altas al cierre?
+
+================================================================================
+11. LENGUAJE UX RECOMENDADO
+================================================================================
+
+Contexto: perfil general
+Copy: “Este es un perfil general de limón. Luego puedes elegir Persa/Tahití, Mexicano/Colima, Amarillo/Eureka-Lisbon, Tropical o Desfase sin perder historial.”
+
+Contexto: brote nuevo
+Copy: “Hay brote tierno. En limón eso atrae psílido, minador y pulgones. Revisa hoja nueva antes de culpar al fertilizante.”
+
+Contexto: floración con humedad baja
+Copy: “En floración, el limón no perdona falta de agua ni calor seco. Puede tirar flor aunque el NPK marque bien.”
+
+Contexto: cuajado con caída
+Copy: “Algo de caída de limoncito puede ser normal. Si coincide con calor, sales, raíz mala o humedad baja, el amarre se puede venir abajo.”
+
+Contexto: EC alta
+Copy: “Hay sales altas. Antes de meter más fertilizante, revisa agua, drenaje y acumulación de salitre en la zona de raíz.”
+
+Contexto: gomosis
+Copy: “Si hay goma en el tronco bajo, no lo leas como falta de fertilizante. Revisa cuello, drenaje, humedad y posible Phytophthora con un técnico.”
+
+Contexto: HLB/PAC
+Copy: “Estos síntomas pueden parecer nutrición, pero en limón también pueden ser compatibles con HLB o psílido. No cierres diagnóstico: revisa brotes, toma foto y confirma con sanidad/técnico.”
+
+Contexto: hoja amarilla con nervadura verde
+Copy: “Con pH alto o raíz limitada, la hoja nueva amarilla puede venir de hierro, zinc o manganeso bloqueados. No lo leas automáticamente como falta de nitrógeno.”
+
+Contexto: limón chico/seco
+Copy: “Limón chico o con poco jugo suele venir de agua, K, sales, raíz o HLB. Primero revisa absorción antes de aplicar más.”
+
+Contexto: postcosecha
+Copy: “No cierres el cultivo después del corte. El limonero sigue con hoja, raíz y reservas para el siguiente brote, floración y calibre.”
+
+Contexto: desfase
+Copy: “El desfase puede mover producción, pero si el estrés se pasó de la raya, el árbol puede florear débil y tirar frutito.”
+
+================================================================================
+12. TESTS RECOMENDADOS
+================================================================================
+
+1) lemon_hlb_psyllid_low_npk_confidence_test
+Caso: moteado asimétrico + fruta chica/deforme + psílido + NPK medio.
+Esperado: alerta HLB/PAC contextual, baja confianza NPK, pedir confirmación, no diagnóstico cerrado.
+
+2) lemon_phytophthora_wet_wilt_test
+Caso: suelo húmedo/saturado + árbol triste + raíces oscuras/goma.
+Esperado: raíz/Phytophthora/gomosis primero, no pedir más riego ni fertilizante.
+
+3) lemon_high_ec_blocks_npk_test
+Caso: EC alta + fruit_set/fruit_fill + K bajo/medio.
+Esperado: priorizar sales/agua/drenaje, bloquear recomendación agresiva de NPK.
+
+4) lemon_flowering_heat_water_drop_test
+Caso: flowering + calor seco + humedad baja + caída de flor.
+Esperado: estrés hídrico/térmico, no culpar NPK.
+
+5) lemon_fruit_set_drop_normal_vs_stress_test
+Caso A: caída leve con sensores ok.
+Esperado: caída fisiológica posible, observación.
+Caso B: caída fuerte + EC alta + calor.
+Esperado: alerta alta por estrés.
+
+6) lemon_anthracnose_mexican_test
+Caso: lm_02_mexicano_colima + flor/frutito con necrosis/tachuelas + humedad.
+Esperado: antracnosis contexto alta, revisar brote/flor/fruto, no recetar.
+
+7) lemon_sooty_mold_honeydew_test
+Caso: hoja pegajosa + negrilla.
+Esperado: buscar chupadores primero; fumagina como consecuencia.
+
+8) lemon_leafminer_flush_test
+Caso: hoja nueva con galerías plateadas.
+Esperado: minador, brote tierno; no hongo ni deficiencia.
+
+9) lemon_green_fruit_not_immature_test
+Caso: lm_01_persa_tahiti o lm_02_mexicano_colima + harvest_maturity + fruto verde.
+Esperado: no marcar inmaduro por no estar amarillo; calidad comercial verde.
+
+10) lemon_yellow_eureka_maturity_test
+Caso: lm_03_amarillo_eureka_lisbon + harvest_maturity.
+Esperado: copy de amarillo/Eureka-Lisbon, no verde comercial como regla única.
+
+11) lemon_desfase_stress_test
+Caso: lm_05_desfase_inducido + estrés hídrico severo + floración débil.
+Esperado: advertir inducción mal aplicada, memoria de estrés, no prometer mayor rendimiento.
+
+12) lemon_postharvest_memory_test
+Caso: post_harvest + defoliación/carga alta/EC alta.
+Esperado: guardar memoria para siguiente floración y calibre; no cerrar cultivo.
+
+13) lemon_high_ph_micronutrient_context_test
+Caso: pH alto + hoja nueva amarilla con nervadura verde + N normal.
+Esperado: Fe/Zn/Mn/pH/raíz, no falta N.
+
+14) lemon_fruit_splitting_irrigation_test
+Caso: fruta rajada + riego irregular + calor.
+Esperado: desorden abiótico/riego irregular; revisar K/Ca/Mg solo como contexto.
+
+15) lemon_fruit_rot_open_sample_test
+Caso: fruta podrida + moho/olor/larvas.
+Esperado: pedir abrir muestra; separar brown rot/Penicillium/mosca de fruta.
+
+================================================================================
+13. NO HACER EN CÓDIGO
+================================================================================
+
+- No copiar orange_tree_syndromes.dart cambiando “naranja” por “limón”.
+- No tratar limón como naranjo pequeño.
+- No diagnosticar HLB/cancro/tristeza/leprosis/Phytophthora de forma cerrada.
+- No prescribir plaguicidas, ingredientes activos ni dosis.
+- No usar foros para umbrales duros.
+- No usar `sowingDate` como eje del árbol.
+- No apagar post_harvest.
+- No interpretar dormancy como árbol pelón.
+- No marcar limón verde comercial como inmaduro en perfiles persa/mexicano.
+- No convertir LM-05 Desfase en promesa automática de rendimiento.
+- No asumir que N alto es bueno si hay baja carga o puro brote.
+- No asumir que K bajo es la causa si falta agua, hay EC alta o raíz mala.
+- No decir “falta N” cuando la hoja nueva amarilla apunta a Fe/Zn/Mn/pH/raíz.
+- No simular Fe/Zn/Mn/B/Ca/Mg desde sensor NPK.
+- No diagnosticar fumagina como hongo primario sin buscar chupadores.
+- No confundir antracnosis de limón mexicano con daño físico simple.
+- No recomendar más riego si hay saturación o gomosis.
+
+================================================================================
+14. FUENTES Y TRAZABILIDAD
+================================================================================
+
+Fuentes internas BIO-G:
+- Estandar_BIOG_Integracion_Arboles_Perennes_v1_5_con_addendum.pdf
+- 01_Ficha_Tecnica_Universal_BioG_Limon_LM_v1_Reforzada.txt
+- 02_Perfil_SKIP_BioG_Limon_LM_SKIP_v1_Reforzado.txt
+- 03_Rendimiento_Aproximado_BioG_Limon_LM_v1_Reforzado.txt
+- 01-05 documentos Naranjo OR, especialmente 04_Riesgos y 05_NPK.
+- lib.zip analizada: orange_tree_syndromes.dart, plant_health_models.dart, plant_health_ids.dart, plant_health_stage_adapter.dart.
+
+Fuentes externas usadas como base técnica:
+- UF/IFAS EDIS — Growing 'Tahiti' Limes in the Home Landscape.
+- UF/IFAS EDIS — Key Lime Growing in the Florida Home Landscape.
+- UF/IFAS EDIS — Citrus Problems in the Home Landscape.
+- UF/IFAS EDIS — Guide to Citrus Disease Identification.
+- UF/IFAS Florida Citrus Production Guide — Asian Citrus Psyllid.
+- UC IPM — Phytophthora Root Rot / Citrus.
+- UC IPM — Phytophthora Gummosis / Citrus.
+- UC IPM — Brown Rot / Citrus.
+- UC IPM — Citrus invertebrate damage and fruit disease/disorder identification.
+- SENASICA / Gobierno de México — Plagas reglamentadas de los cítricos.
+- Gobierno de México / Agricultura — HLB / dragón amarillo y psílido asiático.
+- INIFAP — Manejo integral del cultivo de limón mexicano en escenario de alta incidencia de HLB.
+- Revista Mexicana de Ciencias Agrícolas / SciELO — Efecto del HLB sobre el rendimiento de limón mexicano en Colima, México.
+- DPIRD NSW — Pests, beneficials, diseases and disorders in citrus; Citrus diseases.
+- Foros de productores/jardinería y Reddit r/Citrus/r/gardening — usados solo para lenguaje UX, no para umbrales ni diagnóstico.
+
+================================================================================
+15. RESUMEN PARA CODEX / CLAUDE
+================================================================================
+
+Crear `lemon_tree_syndromes.dart` con catálogo propio para `crop_lemon_tree`.
+Usar patrón de `orange_tree_syndromes.dart`, pero adaptar a limón:
+- fruta verde comercial;
+- producción frecuente/escalonada;
+- floración/cuajado repetidos;
+- perfiles mexicano/persa/amarillo/tropical/desfase;
+- antracnosis fuerte en limón mexicano;
+- HLB/PAC crítico con cautela;
+- Phytophthora/gomosis/raíz/salinidad como bloqueador de NPK;
+- postcosecha viva y memoria fuerte.
+
+Sugerencia de archivo:
+lib/core/plant_health/catalog/lemon_tree_syndromes.dart
+
+Importar:
+- crop_catalog.dart
+- lemon_tree_catalog.dart
+- plant_health_ids.dart
+- plant_health_models.dart
+- plant_health_stage_bucket.dart
+
+Exportar:
+final List<PlantHealthSyndrome> lemonTreeSyndromes = <PlantHealthSyndrome>[ ... ];
+
+Registrar después en:
+- plant_health_registry.dart
+- plant_health_ids.dart si faltan síntomas/señales propios
+- plant_health_stage_adapter.dart si el mapeo cítrico requiere ajuste
+- crop_risk_intro_screen / UI si usa listas específicas
+
+Prioridad de implementación:
+1. HLB/PAC/regulados
+2. raíz/gomosis/Phytophthora/salinidad
+3. brotación/plagas de flush
+4. floración/cuajado/desfase
+5. antracnosis limón mexicano
+6. chupadores/fumagina/ácaros
+7. fruto/calidad/rot/abióticos
+8. nutrición-disponibilidad
+9. memoria postcosecha
+
+FIN DEL DOCUMENTO

@@ -1,0 +1,1461 @@
+BIO-G
+
+04_RIESGOS_CULTIVO_SANIDAD_ESTRES_MEMORIA_BIOG_MANGO_MG_v1_REFORZADO
+Cultivo: Mango / árbol de mango
+Nombre científico: Mangifera indica L.
+Familia: Anacardiaceae
+cropId canónico recomendado: crop_mango_tree
+CropKey esperado: mango_tree
+Aliases legacy/técnicos: crop_mango_tree, mango_tree, mango, mango_arbol, mango tree, mangifera_indica
+Prefijo de perfiles: MG
+Perfil base: mg_skip
+Perfiles oficiales v1:
+- mg_skip — Mango general / No sé
+- mg_01_ataulfo — Ataulfo / Manila / mango miel / temprano premium
+- mg_02_tommy_atkins — Tommy Atkins / Tommy / volumen / exportación
+- mg_03_haden_kent_keitt — Haden / Kent / Keitt / intermedio-tardío / exportación
+- mg_04_criollo_regional — Criollo / regional / local / Manila local
+- mg_05_temprano_tropical — Temprano / tropical / producción temprana
+- mg_06_tardio_exportacion — Tardío / exportación / ventana extendida
+Documento: 04 de 05 — Riesgos del cultivo / Sanidad / Estrés / Memoria perenne
+Versión: v1 reforzada
+Formato: TXT técnico para Flutter/Dart, Codex y Claude Code
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+================================================================================
+IMPORTANTE
+================================================================================
+
+Este documento NO es diagnóstico fitosanitario definitivo.
+No sustituye revisión de campo, laboratorio, análisis foliar/suelo/agua, asesoría agronómica local ni normatividad vigente.
+BIO-G v1 debe orientar, priorizar riesgo, pedir confirmación, registrar memoria y evitar recetas cerradas.
+BIO-G NO debe recomendar ingredientes activos, dosis de plaguicidas ni manejo cuarentenario fuera de autoridad local.
+
+BIO-G debe decir:
+- “condición favorable a…”
+- “síntomas compatibles con…”
+- “revisa…”
+- “confirma con técnico / sanidad local si avanza…”
+- “registra este estrés porque puede pegar en el siguiente ciclo…”
+
+BIO-G NO debe decir:
+- “diagnóstico definitivo”
+- “aplique X producto”
+- “esto es antracnosis seguro”
+- “esto es cenicilla seguro”
+- “esto es mosca de fruta seguro” sin abrir fruta / trampeo / confirmación
+- “échale más fertilizante” cuando hay estrés hídrico, salinidad, pH extremo, raíz dañada o enfermedad
+- “el cultivo terminó” después de cosecha
+- “el mango va a florear por fuerza”
+- “induce estrés hídrico” como receta automática
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+El mango en BIO-G NO debe modelarse como limón, naranjo ni manzano tropical.
+Tiene lógica propia:
+
+1. Es árbol perenne tropical/subtropical, siempreverde, con reposo funcional.
+2. La inducción floral NO es automática; depende de temperatura, estrés moderado, edad de brote, reservas, clima previo y manejo.
+3. La ausencia de floración es un estado válido, no un error del motor.
+4. La floración puede ser muy abundante y aun así no convertirse en rendimiento.
+5. El cuajado es el punto más frágil: agua, temperatura, humedad, sanidad, polinización y reservas deciden.
+6. La caída de flores y frutos pequeños puede ser normal hasta cierto punto, pero se vuelve alerta si coincide con calor, frío, lluvia, alta HR, cenicilla, antracnosis, estrés hídrico, sales o baja hoja funcional.
+7. Antracnosis y cenicilla/powdery mildew son los ejes sanitarios más importantes en floración, panícula, fruto pequeño y calidad comercial.
+8. Mosca de la fruta es eje regulado/comercial en México: afecta movilización, exportación y calidad. No se diagnostica por sensor; se confirma con fruta abierta, larvas, trampas/campaña y sanidad local.
+9. Mango tiene memoria multianual: estrés severo en floración, cuajado, llenado o postcosecha puede afectar 1–2 ciclos futuros.
+10. La alternancia productiva no se fuerza, pero se registra: año muy cargado + postcosecha débil + estrés hídrico/nutricional puede bajar floración o cuajado del siguiente ciclo.
+
+Regla v1:
+BIO-G debe leer el mango como árbol perenne con evento reproductivo dominante, NO como cultivo anual.
+No usar sowingDate como eje principal. El eje correcto es:
+
+estado perenne + etapa visible + perfil MG + ancla del evento + sensores + floración/cuajado/carga + sanidad + memoria.
+
+Mensaje rector para productor:
+“En mango no basta que el árbol se llene de flor. Primero hay que ver si esa flor puede amarrar: clima, agua, humedad, panícula sana, raíz funcional y reservas. Si hay cenicilla, antracnosis, lluvia en floración, calor fuerte o estrés de agua, se cae la flor o el manguito aunque el NPK salga bonito.”
+
+================================================================================
+1. BASE TÉCNICA, FUENTES Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+1.1 Fuentes principales consultadas
+-----------------------------------
+
+Alta confianza:
+- Estándar BIO-G para integración de árboles perennes v1.5 con addendum.
+- Documento 01 BIO-G Mango MG v1 Reforzado.
+- Documento 02 Perfil SKIP BIO-G Mango MG v1 Reforzado.
+- Documento 03 Rendimiento Aproximado BIO-G Mango MG v1 Reforzado.
+- Código actual de BIO-G revisado desde lib.zip: plant_health_models.dart, plant_health_ids.dart, plant_health_stage_adapter.dart, plant_health_registry.dart, lemon_tree_syndromes.dart, orange_tree_syndromes.dart y módulos modernos de árboles.
+- National Mango Board / INIFAP: unidades calor y madurez de Ataulfo, Tommy Atkins, Kent y Keitt; revisión de floración del mango.
+- National Mango Board / IHSM La Mayora CSIC-UMA: Plagas y Enfermedades del Mango (Mangifera indica L.).
+- CTAHR University of Hawaii: Mango anthracnose, mango diseases, cultivo de mango y presión de antracnosis en climas húmedos.
+- UF/IFAS Extension: Mango fruit drop, antracnosis/cenicilla y manejo estacional de mango.
+- SENASICA / Gobierno de México: moscas nativas de la fruta, campaña nacional contra moscas de la fruta y movilización de frutos hospederos.
+- UAM / manual de estrategias para identificar y monitorear mosca de fruta en mango.
+- Estudios/boletines mexicanos: caída de flores y frutos en mango Ataulfo en Chiapas; antracnosis y caída de frutos de mango Ataulfo en Guerrero.
+
+Media-alta:
+- Revisiones académicas sobre floración, inducción, caída de fruto, malformación, antracnosis, oídio/cenicilla y enfermedades poscosecha.
+- Manuales de manejo integrado de mango de América Latina, India, Australia, Hawaii y Florida, usados como contraste cuando coinciden con fuentes universitarias.
+
+Media:
+- Fuentes comerciales, notas técnicas de agroindustrias y publicaciones de asociaciones. Se usaron solo cuando coinciden con universidades/extensión y para lenguaje de productor.
+
+Baja-media:
+- Foros, Reddit, grupos de productores y redes sociales.
+Uso permitido SOLO para UX y preguntas reales del agricultor:
+“florea mucho pero no amarra”, “la panícula se pone negra”, “se cae el mango chiquito”, “el manguito se pone amarillo y cae”, “sale puro brote y nada de flor”, “tiene polvo blanco en la flor”, “se mancha el mango al madurar”, “se pudre por el pedúnculo”, “tiene larvas”, “la fruta se quema por el sol”, “se fue en puro follaje”, “se alternó: un año sí y otro no”.
+No usar foros para fijar umbrales, diagnósticos, ingredientes activos ni dosis.
+
+1.2 Conclusiones fuertes de fuentes externas
+--------------------------------------------
+
+- En mango, las enfermedades y plagas afectan no solo vigor y hoja, sino también cuajado, desarrollo de fruto, calidad previa a cosecha y poscosecha.
+- La antracnosis es una de las enfermedades más importantes del mango, especialmente en climas húmedos; puede afectar panículas, flores, hojas, fruto pequeño y fruto maduro/poscosecha.
+- En zonas secas o de baja lluvia, la cenicilla/oídio/powdery mildew puede ser tan o más limitante que antracnosis durante floración.
+- Lluvia, rocío, humedad alta y follaje mojado durante floración y cuajado elevan el riesgo de antracnosis/cenicilla y reducen amarre.
+- Frío, noches frescas fuera de rango, calor fuerte, baja humedad relativa y viento seco pueden bajar viabilidad de flor, polen o cuajado.
+- Mango puede perder mucha flor y mucho fruto pequeño de forma fisiológica; BIO-G debe separar caída normal de caída asociada a estrés/sanidad.
+- Mosca de la fruta en mango es riesgo fitosanitario y comercial serio en México; requiere monitoreo, trampeo, muestreo de frutos y seguimiento de campañas, no diagnóstico por sensor.
+- Cochinillas/escamas, mielecilla y fumagina son frecuentes en mango y afectan hoja funcional y calidad externa.
+- Trips, cicadélidos/saltahojas, ácaros y plagas de brote/panícula pueden pegar en brote tierno, floración, panículas y fruto pequeño.
+- Malformación floral/vegetativa es un complejo serio en mango; se reconoce por panículas compactas/deformes tipo escoba, brotes deformes y baja productividad. Requiere manejo sanitario y confirmación, no receta simple.
+- Pudriciones poscosecha, antracnosis latente, alternaria y pudrición por pedúnculo pueden aparecer después del corte aunque el fruto parecía sano en árbol.
+- Salinidad, pH alto, compactación, exceso de humedad y raíz limitada cambian toda la interpretación NPK.
+- Postcosecha no apaga el cultivo: recuperación de reservas, poda, hoja funcional y manejo hídrico/nutricional definen el siguiente evento de floración.
+
+================================================================================
+2. LECTURA DEL CÓDIGO ACTUAL BIO-G Y PATRÓN A SEGUIR
+================================================================================
+
+2.1 Arquitectura encontrada en lib.zip
+--------------------------------------
+
+El código actual ya tiene integración moderna para árboles perennes. Mango aún no existe, pero Manzano/Naranjo/Limón comparten el mismo patrón.
+
+Módulos de referencia existentes:
+- lib/core/crops/lemon_tree/lemon_tree_assets.dart
+- lib/core/crops/lemon_tree/lemon_tree_catalog.dart
+- lib/core/crops/lemon_tree/lemon_tree_crop_definition.dart
+- lib/core/crops/lemon_tree/lemon_tree_universal_profile.dart
+- lib/core/crops/lemon_tree/lemon_tree_yield_reference.dart
+- lib/core/agro/lemon_tree_agro_score_engine.dart
+- lib/core/agro/lemon_tree_nutrition_modifier.dart
+- lib/core/plant_health/catalog/lemon_tree_syndromes.dart
+
+Módulos esperados para Mango:
+- lib/core/crops/mango_tree/mango_tree_assets.dart
+- lib/core/crops/mango_tree/mango_tree_catalog.dart
+- lib/core/crops/mango_tree/mango_tree_crop_definition.dart
+- lib/core/crops/mango_tree/mango_tree_universal_profile.dart
+- lib/core/crops/mango_tree/mango_tree_yield_reference.dart
+- lib/core/agro/mango_tree_agro_score_engine.dart
+- lib/core/agro/mango_tree_nutrition_modifier.dart
+- lib/core/plant_health/catalog/mango_tree_syndromes.dart
+
+2.2 Contrato PlantHealthSyndrome vigente
+----------------------------------------
+
+El catálogo de sanidad debe traducirse a PlantHealthSyndrome con estos campos:
+- id
+- cropId
+- labelEs
+- stages
+- organIds
+- primarySymptomId
+- strongSignals
+- weakSignals
+- conflictingSignals
+- probableDiagnoses
+- confirmationChecksEs
+- severity
+- urgency
+- baseActionsEs
+- disclaimerEs
+- varietyModifiers
+- favorsHighHumidity
+- favorsCoolDewyWindow
+- favorsVectorPressure
+- favorsRecentStress
+
+Regla para Mango:
+El catálogo debe ser propio. NO copiar lemon_tree_syndromes.dart ni orange_tree_syndromes.dart cambiando nombres.
+Sí se puede reutilizar el contrato, organIds, severities, urgencies y algunos PlantHealthIds genéricos existentes.
+
+PlantHealthIds existentes útiles para Mango:
+OrganIds:
+- organLeaf
+- organStem
+- organRoot
+- organCrown
+- organFruit
+- organFlower
+- organWholePlant
+
+Symptoms genéricos útiles:
+- symptomNecroticFoliarSpots
+- symptomDarkSunkenLesions
+- symptomPowderyGrowth
+- symptomFlowerAbortion
+- symptomFruitDeformation
+- symptomThripsSilverScarring
+- symptomBronzingStippling
+- symptomRootRotWilt
+- symptomLeafMines
+- symptomFeedingHoles
+- symptomLeafEdgeBurn
+- symptomBlightedBlossomsShoots
+- symptomFruitTunnelFrass
+- symptomWoollyWhiteColonies
+- symptomFruitSunkenPits
+- symptomFruitSunburnPatch
+- symptomInternervalChlorosisNewLeaves
+- symptomShootDecayCanker
+- symptomMummifiedFruitRot
+- symptomHoneydewSootyShoots
+
+Signals genéricos útiles:
+- signalHumidWindow
+- signalCoolDewyWindow
+- signalWhitePowderGrowth
+- signalDryHotWindow
+- signalHeatStress
+- signalFlowerDrop
+- signalSalinityLoad
+- signalWaterlogging
+- signalRootsDarkRot
+- signalStickyHoneydew
+- signalSootyMold
+- signalThripsPresent
+- signalThripsSilverScarring
+- signalBronzedLeafSurface
+- signalMitesWebbing
+- signalLeafMines
+- signalFeedingHoles
+- signalFrassPresent
+- signalFruitLarvae
+- signalFruitSplitAfterIrrigation
+- signalExposedFruitSouthwest
+- signalRecentSprayOilCopper
+- signalRecentStress
+- signalColdExposure
+- signalHailEvent
+- signalHighPhCalcareous
+- signalDenseWetCanopy
+- signalWhiteGreenBlueMold
+- signalWaterSoakedSpots
+- signalTanPaperySpots
+- signalStemCanker
+- signalVascularBrowning
+- signalOneSidedWilt
+
+IDs nuevos recomendados para PlantHealthIds si se desea más precisión en Mango:
+Symptoms nuevos sugeridos:
+- symptomMangoPanicleBlackening = 'mango_panicle_blackening'
+- symptomMangoMalformedPanicle = 'mango_malformed_panicle'
+- symptomMangoFruitDropYellowing = 'mango_fruit_drop_yellowing'
+- symptomMangoLatexBurn = 'mango_latex_burn'
+- symptomMangoInternalBreakdown = 'mango_internal_breakdown'
+- symptomMangoStemEndRot = 'mango_stem_end_rot'
+- symptomMangoAnthracnosePanicleFruit = 'mango_anthracnose_panicle_fruit'
+
+Signals nuevos sugeridos:
+- signalPanicleBlackDots = 'panicle_black_dots'
+- signalPanicleWhitePowder = 'panicle_white_powder'
+- signalMalformedBroomPanicle = 'malformed_broom_panicle'
+- signalTinyFruitYellowDrop = 'tiny_fruit_yellow_drop'
+- signalFruitFlyStingMarks = 'fruit_fly_sting_marks'
+- signalStemEndRotStartsPeduncle = 'stem_end_rot_starts_peduncle'
+- signalLatexSapBurnPattern = 'latex_sap_burn_pattern'
+- signalPostharvestRipeningLesions = 'postharvest_ripening_lesions'
+- signalPoorFlowerInduction = 'poor_flower_induction'
+- signalExcessVegetativeFlush = 'excess_vegetative_flush'
+- signalAlternateBearingHistory = 'alternate_bearing_history'
+- signalHeavyBloomPoorSet = 'heavy_bloom_poor_set'
+
+Recomendación práctica para v1:
+Si Codex no quiere tocar PlantHealthIds todavía, puede implementar mango_tree_syndromes.dart usando IDs genéricos existentes. Pero el documento deja IDs nuevos sugeridos para una integración más limpia.
+
+2.3 Recomendación de StageBucket para Mango
+-------------------------------------------
+
+StageIds BIO-G cerrados:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Mapeo sugerido a PlantHealthStageBucket:
+- planting_transplant, root_establishment => seedling
+- juvenile_vegetative, budbreak => vegetativeEarly
+- vegetative_growth => vegetativeMid
+- flowering => reproductiveEarly
+- fruit_set => reproductiveMid
+- fruit_fill => grainFill
+- harvest_maturity => lateSeason o grainFill según patrón final de UI; recomendación Mango: lateSeason para cosecha/poscosecha sanitaria y pudriciones.
+- post_harvest => lateSeason
+- dormancy => lateSeason, pero label UX “reposo funcional / preparación / inducción floral”, no dormancia caducifolia
+- unknown => null / baja confianza
+
+Regla crítica:
+Para Mango, `dormancy` y `post_harvest` deben tener cobertura sanitaria y de memoria.
+`dormancy` no se apaga porque es ventana de preparación/inducción.
+`post_harvest` no se apaga porque define reservas, brotación futura, poda/sanidad y probabilidad de siguiente floración.
+
+================================================================================
+3. FAMILIAS UX DEL MÓDULO RIESGOS MANGO
+================================================================================
+
+Familia UX 1: Inducción floral, reposo funcional y no-floración
+Objetivo: reconocer que no florear puede ser biología real; diferenciar clima/edad de brote/reservas/exceso vegetativo.
+Entradas principales:
+- mango_poor_flower_induction_context
+- excessive_vegetative_flush_n_high_context
+- warm_winter_no_induction_context
+- postharvest_reserve_depletion_context
+- alternate_bearing_low_year_context
+
+Familia UX 2: Floración, panícula, cenicilla y antracnosis temprana
+Objetivo: proteger la panícula y evitar pérdida total de flor.
+Entradas principales:
+- mango_powdery_mildew_panicle
+- mango_anthracnose_panicle_blossom
+- rain_humidity_bloom_disease_context
+- cold_dew_bloom_set_loss
+- heat_dry_bloom_abort
+
+Familia UX 3: Cuajado / caída de flor y manguito
+Objetivo: separar caída fisiológica normal de caída por estrés/sanidad.
+Entradas principales:
+- mango_fruit_set_drop_complex
+- physiological_fruit_drop_context
+- pollination_or_flower_sex_balance_context
+- drought_heat_set_loss
+- excess_water_set_loss
+- low_leaf_reserve_set_loss
+
+Familia UX 4: Llenado, calibre, rajado, desórdenes fisiológicos y calidad
+Objetivo: proteger agua/K/hoja/raíz y evitar fruta chica, rajada, quemada o con bajo calibre.
+Entradas principales:
+- mango_fruit_fill_water_stress
+- mango_low_caliber_quality_context
+- fruit_split_irrigation_context
+- sunburn_heat_fruit_context
+- internal_breakdown_spongy_tissue_context
+- latex_burn_sap_damage_context
+
+Familia UX 5: Mosca de la fruta y riesgos regulados/comerciales
+Objetivo: activar cautela fitosanitaria y seguimiento de campaña; nunca diagnosticar por sensor.
+Entradas principales:
+- anastrepha_fruit_fly_context
+- fruit_larvae_maggot_context
+- fruit_fly_sting_marks_context
+- quarantine_movement_context
+
+Familia UX 6: Plagas de panícula, brote tierno y fruto pequeño
+Objetivo: proteger flores, panículas y primeros frutos.
+Entradas principales:
+- mango_hopper_cicadellid_context
+- mango_thrips_flower_fruit_scarring
+- gall_midge_panicle_context
+- aphid_or_sap_sucker_flush_context
+- leafminer_context
+
+Familia UX 7: Chupadores, escamas/cochinillas, fumagina y ácaros
+Objetivo: proteger hoja funcional y calidad externa.
+Entradas principales:
+- mango_scale_mealybug_complex
+- sooty_mold_honeydew_complex
+- whitefly_blackfly_context
+- mango_mites_bronzing_context
+- ants_protecting_sap_suckers_context
+
+Familia UX 8: Malformación, muerte regresiva, cancro y problemas de madera/vivero
+Objetivo: capturar problemas crónicos de brote/panícula/madera.
+Entradas principales:
+- mango_malformation_floral_vegetative
+- dieback_canker_lasiodiplodia_context
+- nursery_material_problem_context
+- vascular_decline_context
+
+Familia UX 9: Enfermedades foliares y de fruto pre/poscosecha
+Objetivo: separar antracnosis, alternaria, stem-end rot, manchas foliares y pudriciones poscosecha.
+Entradas principales:
+- anthracnose_fruit_leaf_context
+- alternaria_black_spot_context
+- stem_end_rot_context
+- postharvest_decay_mold_context
+- bacterial_black_spot_regional_context
+
+Familia UX 10: Raíz, suelo, salinidad, pH, compactación y anoxia
+Objetivo: evitar mensajes falsos de NPK cuando el árbol no puede absorber.
+Entradas principales:
+- root_rot_waterlogging_context
+- salinity_root_stress_context
+- soil_compaction_root_stress
+- high_ph_micronutrient_context
+- drought_root_stress_context
+
+Familia UX 11: Fitotoxicidad, clima extremo y daño físico
+Objetivo: no confundir daño por aplicación, sol, viento, granizo o frío con patógeno.
+Entradas principales:
+- phytotoxicity_spray_context
+- frost_cold_bloom_damage
+- hail_wind_mechanical_damage
+- sunburn_fruit_leaf
+- heat_low_humidity_context
+
+Familia UX 12: Memoria productiva, alternancia y postcosecha
+Objetivo: conectar lo ocurrido en este ciclo con el siguiente evento reproductivo.
+Entradas principales:
+- alternate_bearing_memory
+- heavy_crop_reserve_depletion_memory
+- postharvest_leaf_loss_memory
+- repeated_bloom_failure_memory
+- drought_or_salinity_memory
+- disease_pressure_memory
+
+================================================================================
+4. MAPEO FENOLÓGICO BIO-G PARA SANIDAD DEL MANGO
+================================================================================
+
+planting_transplant
+- Label UX: Plantación / trasplante
+- Riesgos: estrés por trasplante, raíz sin establecer, exceso de agua, déficit hídrico, salinidad, compactación, planta de vivero con problema.
+- Lectura: no proyectar problema por falta de fruta. Primero raíz, cuello, humedad y drenaje.
+
+root_establishment
+- Label UX: Establecimiento de raíz
+- Riesgos: déficit hídrico, encharque/anoxia, salinidad, compactación, raíz enrollada, pudrición de raíz, bajo arranque.
+- Lectura: árbol triste con suelo húmedo no significa falta de agua; revisar raíz y drenaje.
+
+juvenile_vegetative
+- Label UX: Mango joven / formación
+- Riesgos: brote tierno con trips/ácaros/chupadores, antracnosis foliar, escamas/cochinillas, salinidad, pH alto/clorosis, exceso vegetativo.
+- Lectura: no penalizar falta de flor/fruto. La prioridad es copa, raíz, hoja funcional y arquitectura.
+
+budbreak
+- Label UX: Brotación / flush vegetativo
+- Riesgos: brotes tiernos dañados por plagas, exceso de N, antracnosis en brote, trips, ácaros, leafminer, saltahojas.
+- Lectura: si hay mucho flush antes de floración, puede competir con inducción floral.
+
+vegetative_growth
+- Label UX: Crecimiento vegetativo activo
+- Riesgos: exceso de N/vigor, hoja funcional dañada por chupadores/fumagina/ácaros, enfermedades foliares, salinidad, pH alto, compactación.
+- Lectura: cuidar hoja y reservas sin empujar puro follaje.
+
+dormancy
+- Label UX: Reposo funcional / preparación / inducción floral
+- Riesgos: no inducción por calor o brote demasiado joven, exceso vegetativo, falta de reservas, estrés severo, salinidad/raíz, poda tardía o postcosecha débil.
+- Lectura: no es árbol muerto. Si no hay flor, puede ser estado válido; pedir realidad visible y clima reciente.
+
+flowering
+- Label UX: Floración / panícula
+- Riesgos: cenicilla/oídio, antracnosis, lluvia/alta HR/rocío, frío, calor seco, viento, mala polinización, panícula negra, panícula deformada, insectos en flor.
+- Lectura: etapa crítica. No culpar solo NPK. La panícula manda.
+
+fruit_set
+- Label UX: Cuajado / amarre del manguito
+- Riesgos: caída fisiológica, aborto por estrés hídrico, calor, frío, lluvia/HR alta, antracnosis/cenicilla, plagas de panícula, baja hoja/reservas, exceso o falta de agua.
+- Lectura: algo de caída es normal; alerta si es fuerte, repetida o coincide con estrés.
+
+fruit_fill
+- Label UX: Llenado / crecimiento del mango
+- Riesgos: déficit hídrico, K bajo o bloqueado, salinidad, fruta chica, rajado, golpe de sol, trips/cicatrices, ácaros, escamas, antracnosis latente, alternaria.
+- Lectura: calibre y calidad dependen de agua estable, hoja sana y raíz funcional.
+
+harvest_maturity
+- Label UX: Madurez / corte
+- Riesgos: mosca de fruta, antracnosis latente, pudrición por pedúnculo, alternaria, daño de látex, golpe de sol, daño mecánico, madurez mal calculada.
+- Lectura: no confundir madurez con color único; cada perfil tiene ventana y destino. Pedir abrir fruta si hay larvas o pudrición.
+
+post_harvest
+- Label UX: Postcosecha / recuperación
+- Riesgos: defoliación, plagas remanentes, poda mal hecha, estrés hídrico, salinidad, pH/raíz, pérdida de reservas, brote débil, alternancia futura.
+- Lectura: no cerrar cultivo. Es etapa viva que define la próxima inducción/floración.
+
+unknown
+- Label UX: No lo sé
+- Riesgos: bajar confianza; pedir realidad visible.
+- Lectura: no bloquear. Preguntar: ¿tiene brote nuevo, panícula/flor, manguito, mango creciendo, listo para corte o ya cosechaste?
+
+================================================================================
+5. CATÁLOGO MAESTRO DE RIESGOS BIÓTICOS
+================================================================================
+
+Formato:
+Riesgo | Dónde pesa más | Qué lo favorece | Clave visual | Etapa | Prioridad BIO-G | Memoria | Lectura BIO-G
+
+--------------------------------------------------------------------------------
+5.1 INDUCCIÓN, FLORACIÓN, CENICILLA Y ANTRACNOSIS
+--------------------------------------------------------------------------------
+
+1) mango_poor_flower_induction_context
+Nombre UX: No indujo flor / baja probabilidad de floración
+Dónde pesa más: dormancy, budbreak, vegetative_growth, post_harvest.
+Qué lo favorece: invierno/ciclo previo demasiado cálido, exceso de brote vegetativo, brote joven, exceso de N, poda tardía, postcosecha débil, estrés severo, árbol juvenil.
+Clave visual: mucho follaje, brote nuevo, poca o nada de panícula, árbol sano pero sin flor, alternancia después de año muy cargado.
+Etapa: dormancy, budbreak, vegetative_growth.
+Prioridad BIO-G: Alta en perfil productivo; baja en árbol joven.
+Memoria: Alta; puede marcar ciclo bajo.
+Lectura BIO-G: no prometer floración. La ausencia de flor es estado válido; revisar reservas, edad del brote, clima y manejo.
+
+2) mango_powdery_mildew_panicle
+Nombre UX: Cenicilla / oídio en panícula de mango
+Nombre técnico: Oidium mangiferae / powdery mildew.
+Dónde pesa más: flowering, fruit_set.
+Qué lo favorece: clima fresco-húmedo, rocío, panícula tierna, alta humedad nocturna, floración prolongada, copa densa.
+Clave visual: polvillo blanco/gris en panículas, flores que se secan, panícula oscura, cuajado bajo, manguitos que caen.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta si reduce cuajado.
+Lectura BIO-G: polvillo en panícula + flor que cae = riesgo de cenicilla. No diagnosticar solo por sensor; revisar panícula completa y clima de rocío.
+
+3) mango_anthracnose_panicle_blossom
+Nombre UX: Antracnosis en flor/panícula
+Nombre técnico: Colletotrichum gloeosporioides y complejo Colletotrichum spp.
+Dónde pesa más: flowering, fruit_set, fruit_fill, harvest_maturity.
+Qué lo favorece: lluvia, humedad alta, rocío, panícula mojada, copa cerrada, fruta en desarrollo durante lluvias, restos de panículas secas/fruta momificada.
+Clave visual: puntos negros en panícula, flores que se ennegrecen, necrosis en brotes, manchas oscuras hundidas en fruto, lesiones que aparecen al madurar.
+Etapa: flowering, fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Crítica con cautela en zonas húmedas.
+Memoria: Muy alta; afecta amarre, calidad y poscosecha.
+Lectura BIO-G: antracnosis puede venir desde flor y aparecer en poscosecha. Alta HR + panícula negra + caída fuerte = elevar riesgo; no recetar fungicida.
+
+4) rain_humidity_bloom_disease_context
+Nombre UX: Lluvia / humedad alta pegando en flor
+Dónde pesa más: flowering, fruit_set.
+Qué lo favorece: lluvias fuera de temporada, rocío prolongado, nubosidad, baja ventilación, dosel cerrado.
+Clave visual: panículas mojadas, flores negras o secas, caída fuerte, baja actividad de polinizadores, manchas tempranas.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: si llovió en floración, primero sanidad/polinización/amarre; no NPK primero.
+
+5) heat_dry_bloom_abort
+Nombre UX: Calor seco tumbando flor
+Dónde pesa más: flowering, fruit_set.
+Qué lo favorece: temperaturas altas, baja HR, viento seco, humedad de suelo baja, árbol con poca reserva.
+Clave visual: panícula seca, flor quemada, aborto floral, hojas caídas por estrés.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Alta.
+Memoria: Alta si baja carga.
+Lectura BIO-G: calor seco + falta de agua puede tumbar flor aunque no haya hongo. Registrar evento climático.
+
+6) cold_dew_bloom_set_loss
+Nombre UX: Frío / rocío / noche fresca en floración
+Dónde pesa más: flowering, fruit_set.
+Qué lo favorece: noches frías, rocío pesado, niebla, frío fuera de rango, panícula mojada.
+Clave visual: flor negra/seca, baja fecundación, cuajado débil.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Media-alta.
+Memoria: Media-alta.
+Lectura BIO-G: frío + rocío favorece falla de cuajado y enfermedades; no diagnosticar nutrición de entrada.
+
+--------------------------------------------------------------------------------
+5.2 CUAJADO, CAÍDA DE FLOR Y CAÍDA DE FRUTO PEQUEÑO
+--------------------------------------------------------------------------------
+
+7) physiological_fruit_drop_context
+Nombre UX: Caída fisiológica normal de manguito
+Dónde pesa más: fruit_set.
+Qué lo favorece: regulación natural de carga, baja proporción de flores fértiles, competencia entre frutos, aborto de embriones.
+Clave visual: muchos manguitos pequeños caen, pero quedan algunos sanos; árbol sin síntomas fuertes de estrés.
+Etapa: fruit_set.
+Prioridad BIO-G: Media; no sobrealertar.
+Memoria: Baja-media si no hay estrés.
+Lectura BIO-G: algo de caída es normal. Alertar solo si es excesiva o coincide con clima/sanidad/agua baja.
+
+8) mango_fruit_set_drop_complex
+Nombre UX: No amarró / se cayó el manguito
+Dónde pesa más: fruit_set.
+Qué lo favorece: antracnosis, cenicilla, lluvia en floración, calor, frío, estrés hídrico, exceso de agua, baja hoja, mala polinización, salinidad, alternancia.
+Clave visual: floreó mucho pero quedaron pocos frutos; manguitos amarillos o negros que caen; panículas vacías.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Muy alta si baja cosecha.
+Lectura BIO-G: no culpar de entrada a fertilizante. Revisar panícula, clima, agua, enfermedad y reservas.
+
+9) pollination_or_flower_sex_balance_context
+Nombre UX: Floración abundante pero poco fruto
+Dónde pesa más: flowering, fruit_set.
+Qué lo favorece: poca actividad de insectos, lluvia/viento, clima extremo, baja proporción de flores funcionales, variedad, competencia vegetativa.
+Clave visual: muchas flores, poco amarre, panículas vacías sin pudrición clara.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: mucha flor no significa cosecha. Ver si hubo clima/polinizadores y si la panícula estuvo sana.
+
+10) drought_heat_set_loss
+Nombre UX: Falta de agua/calor en cuajado
+Dónde pesa más: fruit_set, early fruit_fill.
+Qué lo favorece: humedad baja, calor, viento seco, riego irregular, salinidad.
+Clave visual: frutito amarillo, caída, hojas con baja turgencia, suelo seco, bordes quemados.
+Etapa: fruit_set, fruit_fill.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: agua estable en cuajado pesa más que NPK. Si humedad baja, no recomendar K/N primero.
+
+11) excess_water_set_loss
+Nombre UX: Exceso de agua / raíz asfixiada durante amarre
+Dónde pesa más: fruit_set, fruit_fill.
+Qué lo favorece: lluvia fuerte, riego excesivo, drenaje pobre, compactación, suelo pesado.
+Clave visual: suelo húmedo pero árbol triste, caída de frutito, raíz oscura, hojas pálidas.
+Etapa: root_establishment, fruit_set, fruit_fill.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: más agua no siempre ayuda. Revisar drenaje/raíz antes de fertilizar.
+
+--------------------------------------------------------------------------------
+5.3 PLAGAS DE PANÍCULA, BROTE, HOJA Y FRUTO
+--------------------------------------------------------------------------------
+
+12) mango_hopper_cicadellid_context
+Nombre UX: Saltahojas / cicadélidos en panícula
+Dónde pesa más: flowering, budbreak, vegetative_growth.
+Qué lo favorece: panículas tiernas, brotes nuevos, clima cálido, copa densa, baja vigilancia.
+Clave visual: insectitos saltadores en panícula/envés, mielecilla, fumagina, flores marchitas o caídas.
+Etapa: flowering, fruit_set, budbreak.
+Prioridad BIO-G: Alta donde esté presente.
+Memoria: Media-alta si afectó amarre.
+Lectura BIO-G: si hay mielecilla/negrilla en panícula, buscar chupadores antes que hongo.
+
+13) mango_thrips_flower_fruit_scarring
+Nombre UX: Trips / raspado en flor o mango chico
+Dónde pesa más: flowering, fruit_set, fruit_fill.
+Qué lo favorece: flor/fruto tierno, clima seco-cálido, malezas, historial.
+Clave visual: raspado plateado/bronceado, cicatrices en fruto joven, daño cerca de cáliz, flor lastimada.
+Etapa: flowering, fruit_set, fruit_fill.
+Prioridad BIO-G: Alta para calidad externa.
+Memoria: Media.
+Lectura BIO-G: marca desde fruto pequeño = revisar trips/viento/roce, no esperar a cosecha.
+
+14) gall_midge_panicle_context
+Nombre UX: Cecidómidos / agallas en panícula o brote
+Dónde pesa más: flowering, budbreak.
+Qué lo favorece: tejido tierno, humedad, zonas con historial.
+Clave visual: deformaciones/agallas, panículas dañadas, brote anormal.
+Etapa: budbreak, flowering.
+Prioridad BIO-G: Media regional.
+Memoria: Media.
+Lectura BIO-G: riesgo regional; no sobreactivar si no hay agallas o deformación clara.
+
+15) mango_scale_mealybug_complex
+Nombre UX: Escamas / cochinillas / piojo harinoso
+Dónde pesa más: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Qué lo favorece: copa densa, hormigas, estrés, uso indiscriminado de insecticidas, baja ventilación.
+Clave visual: costras pegadas, masas algodonosas, mielecilla, fumagina, fruto sucio/manchado.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para hoja y calidad.
+Memoria: Media-alta.
+Lectura BIO-G: la fumagina es consecuencia; buscar chupador y hormigas.
+
+16) sooty_mold_honeydew_complex
+Nombre UX: Fumagina / negrilla por mielecilla
+Dónde pesa más: vegetative_growth, fruit_fill, harvest_maturity.
+Qué lo favorece: cochinillas, escamas, pulgones, saltahojas, mosca blanca, hormigas.
+Clave visual: capa negra superficial que se puede raspar, hoja/fruto pegajoso.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta; alta si cubre fruta exportable.
+Memoria: Media.
+Lectura BIO-G: no tratar como hongo principal; buscar insecto productor de miel.
+
+17) mango_mites_bronzing_context
+Nombre UX: Ácaros / bronceado / punteado fino
+Dónde pesa más: vegetative_growth, fruit_fill, harvest_maturity.
+Qué lo favorece: calor seco, polvo, estrés hídrico, baja fauna benéfica.
+Clave visual: hoja bronceada, punteado, telaraña fina, fruto con russeting/broncedo.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media.
+Memoria: Media si defolia o demerita fruta.
+Lectura BIO-G: polvo + calor + bronceado = revisar ácaros y estrés hídrico.
+
+18) leafminer_or_chewing_context
+Nombre UX: Minador / mordida en hoja joven
+Dónde pesa más: juvenile_vegetative, budbreak.
+Qué lo favorece: brote tierno, árboles jóvenes, flush repetido.
+Clave visual: galerías en hoja, mordidas, deformación del brote.
+Etapa: juvenile_vegetative, budbreak.
+Prioridad BIO-G: Media.
+Memoria: Baja-media.
+Lectura BIO-G: en joven puede frenar formación; en adulto normalmente baja prioridad salvo daño fuerte.
+
+19) fruit_borer_or_seed_weevil_context
+Nombre UX: Gusano/barrenador/picudo del fruto o semilla
+Dónde pesa más: fruit_fill, harvest_maturity.
+Qué lo favorece: fruta en desarrollo, fruta abandonada, presión regional, falta de monitoreo.
+Clave visual: orificio, frass/aserrín, túneles, semilla dañada, larva interna.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta regional.
+Memoria: Media-alta.
+Lectura BIO-G: abrir muestra. No confundir con mosca de fruta sin ver larva/picadura/patrón.
+
+20) anastrepha_fruit_fly_context
+Nombre UX: Mosca de la fruta en mango
+Nombre técnico: Anastrepha spp.; en México puede incluir A. obliqua y otras especies reguladas.
+Dónde pesa más: harvest_maturity, fruit_fill.
+Qué lo favorece: fruta madura/sobremadura, fruta caída, movilización de fruta infestada, presión regional, ausencia de trampas/campaña.
+Clave visual: picaduras, larvas dentro de fruta, pudrición secundaria, fruta caída, reportes de campaña.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Crítica-comercial/regulada.
+Memoria: Alta regional y de lote.
+Lectura BIO-G: si hay larvas o región con campaña, pedir seguimiento con sanidad local. No diagnosticar por sensor ni por una mancha superficial.
+
+--------------------------------------------------------------------------------
+5.4 ENFERMEDADES DE MADERA, MALFORMACIÓN Y DECAIMIENTO
+--------------------------------------------------------------------------------
+
+21) mango_malformation_floral_vegetative
+Nombre UX: Malformación de mango / panícula tipo escoba
+Nombre técnico: complejo asociado a Fusarium spp. y factores de manejo/región.
+Dónde pesa más: dormancy, budbreak, flowering.
+Qué lo favorece: material de vivero infectado, brotes afectados, ácaros asociados como contexto, huertos con historial, mala sanidad de poda.
+Clave visual: panículas compactas/deformes tipo escoba, brotes vegetativos deformes, floración anormal que no amarra.
+Etapa: budbreak, flowering, vegetative_growth.
+Prioridad BIO-G: Alta con cautela.
+Memoria: Muy alta.
+Lectura BIO-G: no confundir con mucha flor normal. Si hay escoba/panícula compacta repetida, registrar memoria y pedir confirmación técnica.
+
+22) dieback_canker_lasiodiplodia_context
+Nombre UX: Muerte regresiva / cancro / ramas secándose
+Nombre técnico: Lasiodiplodia / Botryosphaeriaceae y otros complejos.
+Dónde pesa más: vegetative_growth, post_harvest, harvest_maturity.
+Qué lo favorece: estrés hídrico, heridas de poda, golpe de sol, alta HR, árboles debilitados, poscosecha débil.
+Clave visual: ramas secas desde la punta, cancro, goma/exudado, muerte de brotes, fruta con pudrición por pedúnculo como contexto.
+Etapa: vegetative_growth, post_harvest, harvest_maturity.
+Prioridad BIO-G: Alta.
+Memoria: Muy alta.
+Lectura BIO-G: muerte de rama no es NPK. Revisar poda, heridas, estrés, raíz y patógenos de madera.
+
+23) nursery_material_problem_context
+Nombre UX: Planta de vivero / injerto / raíz mal lograda
+Dónde pesa más: planting_transplant, root_establishment, juvenile_vegetative.
+Qué lo favorece: planta no certificada, raíz enrollada, injerto débil, material enfermo, vivero con problemas.
+Clave visual: árbol que no arranca, brote débil, cuello/injerto raro, raíz deformada, clorosis temprana.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative.
+Prioridad BIO-G: Alta en árbol nuevo.
+Memoria: Muy alta.
+Lectura BIO-G: si falla desde inicio y sensores no explican, preguntar origen de planta, raíz e injerto.
+
+--------------------------------------------------------------------------------
+5.5 ENFERMEDADES FOLIARES, FRUTO Y POSCOSECHA
+--------------------------------------------------------------------------------
+
+24) anthracnose_fruit_leaf_context
+Nombre UX: Antracnosis en hoja/fruto
+Dónde pesa más: flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest.
+Qué lo favorece: humedad, lluvia, dosel cerrado, panículas secas, fruta momificada, heridas, clima tropical húmedo.
+Clave visual: manchas oscuras hundidas, puntos negros, lesiones en fruto que aparecen al madurar, flores/panículas negras.
+Etapa: flowering, fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: antracnosis puede ser latente y explotar en maduración/poscosecha. Registrar clima y etapa.
+
+25) alternaria_black_spot_context
+Nombre UX: Alternaria / mancha negra / pudrición interna como contexto
+Dónde pesa más: fruit_fill, harvest_maturity, post_harvest.
+Qué lo favorece: heridas, fruta susceptible, poscosecha, humedad, maduración.
+Clave visual: manchas oscuras, pudrición interna, daño que aparece tras corte o maduración.
+Etapa: fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: diferencial de poscosecha; separar de antracnosis y stem-end rot.
+
+26) stem_end_rot_context
+Nombre UX: Pudrición por pedúnculo / stem-end rot
+Dónde pesa más: harvest_maturity, post_harvest.
+Qué lo favorece: infección latente en pedúnculo, estrés del árbol, heridas, humedad, manejo poscosecha, patógenos de madera.
+Clave visual: pudrición que inicia desde el pedúnculo, avance oscuro hacia la pulpa, fruta aparentemente sana al corte que se pudre después.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad comercial.
+Memoria: Media-alta.
+Lectura BIO-G: si arranca del pedúnculo, no es mosca por default. Revisar cosecha, humedad, heridas y manejo poscosecha.
+
+27) postharvest_decay_mold_context
+Nombre UX: Moho/pudrición poscosecha
+Dónde pesa más: harvest_maturity, post_harvest.
+Qué lo favorece: golpes, madurez excesiva, heridas, humedad, mala ventilación, lavado/almacenamiento deficiente.
+Clave visual: moho blanco/verde/azul, pudrición blanda, olor, lesión que crece en almacén.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: problema de calidad/poscosecha; no siempre indica enfermedad activa en árbol.
+
+28) bacterial_black_spot_regional_context
+Nombre UX: Mancha bacteriana negra / cancro bacteriano regional
+Dónde pesa más: vegetative_growth, fruit_fill, harvest_maturity.
+Qué lo favorece: lluvia/viento, heridas, material vegetal, región con presencia, humedad.
+Clave visual: manchas elevadas/corchosas o negras con halo, lesiones en hoja/fruto/tallo, posible exudado.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Alta si confirmado.
+Lectura BIO-G: no activar universalmente. Si hay lesiones compatibles y contexto regional, pedir confirmación técnica.
+
+================================================================================
+6. CATÁLOGO MAESTRO DE RIESGOS ABIÓTICOS Y FISIOLÓGICOS
+================================================================================
+
+29) salinity_root_stress_context
+Nombre UX: Sales / salinidad frenando mango
+Dónde pesa más: root_establishment, flowering, fruit_set, fruit_fill.
+Qué lo favorece: EC alta, riego de pozo, drenaje pobre, acumulación de fertilizante, sequía, suelos salinos.
+Clave visual: borde de hoja quemado, baja brotación, fruta chica, caída, árbol “sediento” aunque se riegue.
+Etapa: todas, fuerte en reproducción.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: si EC alta, bloquear recomendaciones agresivas NPK; primero agua, sales, drenaje y raíz.
+
+30) root_rot_waterlogging_context
+Nombre UX: Raíz asfixiada / exceso de humedad
+Dónde pesa más: planting_transplant, root_establishment, fruit_set, post_harvest.
+Qué lo favorece: encharque, lluvia prolongada, riego excesivo, compactación, suelo pesado.
+Clave visual: marchitez con suelo húmedo, raíz oscura, bajo vigor, hoja amarilla, caída de fruto.
+Etapa: root_establishment, vegetative_growth, fruit_set, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: mango no tolera raíz sin aire. No pedir más agua si el suelo ya está saturado.
+
+31) soil_compaction_root_stress
+Nombre UX: Compactación / raíz sin aire
+Dónde pesa más: todas las etapas.
+Qué lo favorece: tránsito, suelo trabajado húmedo, capa dura, baja materia orgánica, preparación pobre.
+Clave visual: charcos, raíz superficial, bajo vigor por líneas, respuesta pobre a riego/fertilizante.
+Etapa: todas.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: resistance alta + bajo vigor = suelo/raíz primero, NPK después.
+
+32) high_ph_micronutrient_context
+Nombre UX: pH alto / clorosis / micros bloqueados
+Dónde pesa más: vegetative_growth, budbreak, post_harvest.
+Qué lo favorece: suelos calizos, agua dura, pH alto, raíz limitada, salinidad.
+Clave visual: hoja nueva amarilla con nervadura verde, brote corto, hoja chica.
+Etapa: budbreak, vegetative_growth, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: no es N automático. Fe/Zn/Mn/Mg/B/Ca son contexto avanzado, no sensor v1.
+
+33) nitrogen_excess_vegetative_flush_context
+Nombre UX: Puro follaje y poca flor
+Dónde pesa más: dormancy, budbreak, vegetative_growth, flowering.
+Qué lo favorece: N alto, poda fuerte, riego fuerte, baja carga, clima cálido, árbol joven.
+Clave visual: brote tierno abundante, copa muy vegetativa, poca panícula, floración débil.
+Etapa: dormancy, budbreak, vegetative_growth.
+Prioridad BIO-G: Alta si árbol productivo; baja si juvenil.
+Memoria: Media-alta.
+Lectura BIO-G: N alto no siempre es bueno; puede frenar inducción y mandar el árbol a puro brote.
+
+34) potassium_low_fruit_quality_context
+Nombre UX: K bajo / calibre-calidad débil
+Dónde pesa más: fruit_set, fruit_fill, harvest_maturity.
+Qué lo favorece: carga alta, K bajo/bloqueado, salinidad, humedad baja, antagonismo Ca/Mg/Na, raíz mala.
+Clave visual: fruta chica, bajo calibre, maduración débil, caída, mala calidad.
+Etapa: fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta.
+Memoria: Media-alta.
+Lectura BIO-G: K pesa en llenado, pero si hay agua baja o EC alta, primero corregir absorción.
+
+35) fruit_splitting_irrigation_context
+Nombre UX: Mango rajado / partido
+Dónde pesa más: fruit_fill, harvest_maturity.
+Qué lo favorece: riego irregular, sequía seguida de lluvia/riego fuerte, calor, cáscara débil, desbalance mineral como contexto.
+Clave visual: grietas en fruto, rajado después de lluvia o riego.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: revisar riego irregular antes de culpar hongo.
+
+36) sunburn_heat_fruit_context
+Nombre UX: Golpe de sol / fruta quemada
+Dónde pesa más: fruit_fill, harvest_maturity.
+Qué lo favorece: calor, fruta expuesta, poda fuerte, defoliación, baja HR, viento seco.
+Clave visual: parche claro/café seco del lado expuesto, patrón por orientación.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: daño físico/climático. Revisar copa, defoliación y exposición.
+
+37) internal_breakdown_spongy_tissue_context
+Nombre UX: Tejido esponjoso / desorden interno
+Dónde pesa más: harvest_maturity, post_harvest.
+Qué lo favorece: variedad, madurez/corte, calor, manejo poscosecha, desequilibrios, cosecha tardía.
+Clave visual: fruta externamente aceptable pero pulpa interna esponjosa/oscura/mala calidad.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta en calidad.
+Memoria: Media.
+Lectura BIO-G: no se ve siempre por fuera; registrar como calidad interna y revisar madurez/temperatura/perfil.
+
+38) latex_burn_sap_damage_context
+Nombre UX: Quemadura por látex / savia
+Dónde pesa más: harvest_maturity, post_harvest.
+Qué lo favorece: corte/manipulación, látex sobre cáscara, cosecha con mala técnica, calor, fruta sensible.
+Clave visual: manchas oscuras/quemadas por escurrimiento de savia, patrón desde pedúnculo.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Media comercial.
+Memoria: Baja-media.
+Lectura BIO-G: manejo de cosecha/calidad, no necesariamente enfermedad.
+
+39) phytotoxicity_spray_context
+Nombre UX: Quemadura por aplicación / fitotoxicidad
+Dónde pesa más: flowering, fruit_set, fruit_fill, vegetative_growth.
+Qué lo favorece: mezclas incompatibles, aplicación con calor, aceite/azufre/cobre/herbicida, dosis mal preparada, estrés hídrico.
+Clave visual: quemadura uniforme, patrón de aspersión, daño tras aplicación.
+Etapa: todas, fuerte en flor/fruto tierno.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: preguntar aplicaciones recientes antes de cerrar como hongo/plaga.
+
+40) cold_or_frost_bloom_damage
+Nombre UX: Daño por frío en flor/brote
+Dónde pesa más: flowering, budbreak, fruit_set.
+Qué lo favorece: noche fría, frente frío, ubicación baja, brote tierno, flor abierta.
+Clave visual: flor negra, panícula quemada, brote dañado, caída.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad BIO-G: Alta en regiones subtropicales.
+Memoria: Alta si afectó carga.
+Lectura BIO-G: cruzar con evento climático; no diagnosticar NPK.
+
+41) hail_wind_mechanical_damage
+Nombre UX: Granizo/viento/roce
+Dónde pesa más: fruit_fill, harvest_maturity, vegetative_growth.
+Qué lo favorece: tormenta, viento fuerte, ramas rozando, granizo.
+Clave visual: heridas lineales, golpes, cicatrices en un lado, hojas rotas.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media.
+Memoria: Media si abre puerta a pudrición.
+Lectura BIO-G: patrón físico; vigilar entrada de enfermedades secundarias.
+
+================================================================================
+7. MEMORIA DEL CULTIVO EN MANGO
+================================================================================
+
+La memoria en mango es obligatoria porque la floración y cuajado dependen de reservas, estrés previo y balance vegetativo-reproductivo.
+
+Eventos que BIO-G debe guardar:
+- no_flowering_year: año sin floración o inducción débil.
+- poor_bloom: floración débil o tardía.
+- heavy_bloom_poor_set: mucha flor y poco amarre.
+- anthracnose_or_powdery_bloom_loss: panícula dañada por humedad/cenicilla/antracnosis.
+- fruit_set_drop_severe: caída fuerte de manguito.
+- heat_drought_bloom_set_stress: calor/sequía en floración/cuajado.
+- waterlogging_root_stress: exceso de agua/anoxia.
+- salinity_stress: EC alta o salinidad recurrente.
+- fruit_fill_water_stress: estrés hídrico en llenado.
+- postharvest_defoliation: pérdida de hoja poscosecha.
+- postharvest_reserve_risk: árbol agotado tras carga alta.
+- alternate_bearing_high_year: año muy cargado.
+- alternate_bearing_low_year: año bajo.
+- disease_pressure_high: antracnosis/cenicilla/mosca fruta/plaga alta.
+- fruit_quality_loss: calibre bajo, sol, rajado, pudrición o poscosecha mala.
+
+Impacto esperado:
+- Estrés en dormancy/inducción: baja probabilidad de floración.
+- Estrés en flowering: aborto floral y baja carga.
+- Estrés en fruit_set: caída de manguito y baja cosecha.
+- Estrés en fruit_fill: calibre, calidad y reservas.
+- Estrés en harvest_maturity/post_harvest: calidad, brote posterior y ciclo siguiente.
+
+Clase conceptual sugerida:
+
+```dart
+enum MangoStressSeverity { none, mild, moderate, severe }
+
+class MangoTreeStressMemory {
+  const MangoTreeStressMemory({
+    this.poorFlowerInduction = MangoStressSeverity.none,
+    this.powderyOrAnthracnoseBloomLoss = MangoStressSeverity.none,
+    this.fruitSetDrop = MangoStressSeverity.none,
+    this.heatOrDroughtBloomSetStress = MangoStressSeverity.none,
+    this.waterloggingOrRootStress = MangoStressSeverity.none,
+    this.salinityStress = MangoStressSeverity.none,
+    this.fruitFillWaterStress = MangoStressSeverity.none,
+    this.pestOrFruitFlyPressure = MangoStressSeverity.none,
+    this.postHarvestLeafLoss = MangoStressSeverity.none,
+    this.reserveDepletionOrAlternateBearing = MangoStressSeverity.none,
+    this.qualityLossOrPostharvestDecay = MangoStressSeverity.none,
+  });
+
+  final MangoStressSeverity poorFlowerInduction;
+  final MangoStressSeverity powderyOrAnthracnoseBloomLoss;
+  final MangoStressSeverity fruitSetDrop;
+  final MangoStressSeverity heatOrDroughtBloomSetStress;
+  final MangoStressSeverity waterloggingOrRootStress;
+  final MangoStressSeverity salinityStress;
+  final MangoStressSeverity fruitFillWaterStress;
+  final MangoStressSeverity pestOrFruitFlyPressure;
+  final MangoStressSeverity postHarvestLeafLoss;
+  final MangoStressSeverity reserveDepletionOrAlternateBearing;
+  final MangoStressSeverity qualityLossOrPostharvestDecay;
+}
+```
+
+Regla de factor:
+- mild: bajar confianza/copy, no tumbar score.
+- moderate: bajar score y guardar memoria del ciclo.
+- severe: bajar score fuerte, bloquear recomendación NPK agresiva y advertir impacto probable en 1–2 ciclos.
+
+No multiplicar todos los estreses de forma destructiva; usar el peor cuello de botella + suma suave.
+
+================================================================================
+8. MODIFICADORES POR PERFIL MG
+================================================================================
+
+mg_skip
+- Conservador.
+- No asume variedad, ventana ni sensibilidad exacta.
+- Baja confianza si solo hay cultivo.
+- Alertas principales: inducción insuficiente, floración/cuajado, antracnosis/cenicilla, agua/raíz, alternancia.
+
+mg_01_ataulfo
+- Temprano/premium; sensible a floración/cuajado, antracnosis, caída de fruto pequeño, calibre y calidad de piel/pulpa.
+- Subir peso: fruit_set_drop, anthracnose_bloom, poor_caliber_quality, postharvest_quality.
+- En zonas del Pacífico/Chiapas/Guerrero/Oaxaca/Nayarit, elevar cautela por lluvia/humedad en floración si aplica.
+
+mg_02_tommy_atkins
+- Más rústico/volumen; fruta de exportación con énfasis en calidad externa y poscosecha.
+- Subir peso: mosca de fruta, daños de cáscara, antracnosis/poscosecha, sol/roce.
+- No sobrealertar por caída leve si carga alta.
+
+mg_03_haden_kent_keitt
+- Grupo exportación/intermedio-tardío; Kent/Keitt tardíos pueden cruzarse con lluvias y presiones de antracnosis/poscosecha.
+- Subir peso: antracnosis latente, stem-end rot, alternaria, calidad poscosecha, fruit_fill_water_stress.
+- Haden puede ser más sensible a antracnosis/cenicilla y floración según ambiente.
+
+mg_04_criollo_regional
+- Variabilidad alta; manejo local y calidad variable.
+- Subir peso: alternancia, no-floración, sanidad general, caída de fruto, mosca de fruta si fruta madura en árbol/suelo.
+- Confianza menor; no prometer fenología exacta.
+
+mg_05_temprano_tropical
+- Puede tener brotes y floraciones en ventanas tempranas; sensible a humedad, calor y mala inducción.
+- Subir peso: poor_flower_induction, heat_bloom_abort, anthracnose/powdery_bloom, fruit_set_drop.
+
+mg_06_tardio_exportacion
+- Ventana extendida; puede cruzar lluvias, más riesgo de poscosecha y presión de mosca de fruta por fruta madura.
+- Subir peso: antracnosis de fruto, stem-end rot, fruit_fly, sunburn, fruit_fill_water_stress, postharvest_quality.
+
+================================================================================
+9. CATÁLOGO RECOMENDADO PARA mango_tree_syndromes.dart
+================================================================================
+
+El catálogo no necesita crear 40 PlantHealthSyndrome individuales. Igual que Naranjo/Limón, conviene agrupar por familias UX para que el motor sea mantenible.
+Recomendación: 12 síndromes principales.
+
+SÍNDROME 1
+id: mango_induction_no_flowering_01
+labelEs: Mango con poco brote floral, puro follaje o sin panícula
+stages: lateSeason + vegetativeEarly + vegetativeMid
+organIds: whole_plant, leaf, flower
+primarySymptomId sugerido: symptomFlowerAbortion o nuevo symptomMangoPoorInduction
+strongSignals: poorFlowerInduction, excessVegetativeFlush, lateGreenExcessVigor, recentStress
+weakSignals: highPhCalcareous, salinityLoad, heatStress, alternateBearingHistory
+probableDiagnoses:
+- poor_flower_induction_context
+- nitrogen_excess_vegetative_flush_context
+- warm_winter_no_induction_context
+- postharvest_reserve_depletion_context
+severity: medium/high según árbol productivo
+urgency: review48h
+favorsRecentStress: true
+baseActions: _inductionActions
+varietyModifiers: mg_05 +6, mg_06 +5, mg_skip +0 conservador
+
+SÍNDROME 2
+id: mango_powdery_anthracnose_panicle_01
+labelEs: Panícula con polvillo blanco, puntos negros o flores secándose
+stages: reproductiveEarly + reproductiveMid
+organIds: flower, leaf, fruit
+primarySymptomId: symptomPowderyGrowth o nuevo symptomMangoPanicleBlackening
+strongSignals: whitePowderGrowth, humidWindow, coolDewyWindow, panicleBlackDots, flowerDrop
+weakSignals: denseWetCanopy, coldExposure, recentStress
+probableDiagnoses:
+- mango_powdery_mildew_panicle
+- mango_anthracnose_panicle_blossom
+- rain_humidity_bloom_disease_context
+severity: high/critical
+urgency: sameDay/review24h
+favorsHighHumidity: true
+favorsCoolDewyWindow: true
+baseActions: _panicleDiseaseActions
+varietyModifiers: mg_01 +7, mg_03 +5, mg_05 +5, mg_06 +6
+
+SÍNDROME 3
+id: mango_fruit_set_drop_01
+labelEs: Mucha flor, poco amarre o manguitos cayendo
+stages: reproductiveEarly + reproductiveMid
+organIds: flower, fruit, whole_plant
+primarySymptomId: symptomFlowerAbortion o nuevo symptomMangoFruitDropYellowing
+strongSignals: flowerDrop, tinyFruitYellowDrop, heavyBloomPoorSet, dryHotWindow
+weakSignals: heatStress, humidWindow, salinityLoad, waterlogging, recentStress
+probableDiagnoses:
+- mango_fruit_set_drop_complex
+- physiological_fruit_drop_context
+- drought_heat_set_loss
+- rain_humidity_bloom_disease_context
+severity: high
+urgency: review24h
+favorsRecentStress: true
+baseActions: _setDropActions
+varietyModifiers: mg_01 +8, mg_skip +0, mg_04 +4
+
+SÍNDROME 4
+id: mango_root_water_salinity_01
+labelEs: Árbol triste con suelo seco, saturado, sales o raíz limitada
+stages: seedling + vegetativeEarly + vegetativeMid + reproductiveMid + grainFill + lateSeason
+organIds: root, crown, leaf, whole_plant
+primarySymptomId: symptomRootRotWilt
+strongSignals: waterlogging, rootsDarkRot, salinityLoad, leafEdgeBurn
+weakSignals: highPhCalcareous, recentStress, dryHotWindow
+probableDiagnoses:
+- root_rot_waterlogging_context
+- salinity_root_stress_context
+- soil_compaction_root_stress
+- drought_root_stress_context
+severity: high/critical si root_establishment o reproducción
+urgency: review24h/sameDay
+favorsRecentStress: true
+baseActions: _rootWaterActions
+
+SÍNDROME 5
+id: mango_fruit_fly_quarantine_01
+labelEs: Mango con picaduras, larvas o riesgo de mosca de la fruta
+stages: grainFill + lateSeason
+organIds: fruit
+primarySymptomId: symptomFruitTunnelFrass
+strongSignals: fruitLarvae, fruitFlyStingMarks
+weakSignals: whiteGreenBlueMold, recentStress, fruitLowCanopyRainSplash
+probableDiagnoses:
+- anastrepha_fruit_fly_context
+- fruit_larvae_maggot_context
+- postharvest_decay_mold_context
+severity: critical comercial/regulado
+urgency: immediate/sameDay
+favorsVectorPressure: true
+baseActions: _fruitFlyActions
+varietyModifiers: mg_02 +5 exportación, mg_03 +6 exportación, mg_06 +8 tardío/exportación
+
+SÍNDROME 6
+id: mango_scale_sooty_mold_suckers_01
+labelEs: Mielecilla, negrilla, escamas/cochinillas o chupadores
+stages: vegetativeEarly + vegetativeMid + reproductiveMid + grainFill + lateSeason
+organIds: leaf, stem, fruit, flower
+primarySymptomId: symptomHoneydewSootyShoots
+strongSignals: stickyHoneydew, sootyMold, cannotScrapeOff
+weakSignals: whiteflyCloud, antsProtectingSuckers, denseWetCanopy
+probableDiagnoses:
+- mango_scale_mealybug_complex
+- sooty_mold_honeydew_complex
+- mango_hopper_cicadellid_context
+severity: medium/high
+urgency: review48h
+favorsVectorPressure: true
+baseActions: _suckerActions
+
+SÍNDROME 7
+id: mango_thrips_mites_scarring_01
+labelEs: Raspado, bronceado o cicatriz en flor/fruto/hoja
+stages: vegetativeEarly + reproductiveEarly + reproductiveMid + grainFill
+organIds: leaf, flower, fruit
+primarySymptomId: symptomThripsSilverScarring
+strongSignals: thripsPresent, thripsSilverScarring, bronzedLeafSurface
+weakSignals: mitesWebbing, dryHotWindow, exposedFruitSouthwest
+probableDiagnoses:
+- mango_thrips_flower_fruit_scarring
+- mango_mites_bronzing_context
+- wind_hail_mechanical_damage
+severity: medium/high para exportación
+urgency: review48h
+baseActions: _thripsMiteActions
+
+SÍNDROME 8
+id: mango_malformation_dieback_01
+labelEs: Panícula tipo escoba, brote deforme o ramas secándose
+stages: vegetativeEarly + vegetativeMid + reproductiveEarly + lateSeason
+organIds: flower, stem, leaf, whole_plant
+primarySymptomId: symptomShootDecayCanker o nuevo symptomMangoMalformedPanicle
+strongSignals: malformedBroomPanicle, stemCanker, shootTipWilt
+weakSignals: recentStress, mitesWebbing, highPhCalcareous
+probableDiagnoses:
+- mango_malformation_floral_vegetative
+- dieback_canker_lasiodiplodia_context
+- nursery_material_problem_context
+severity: high
+urgency: review24h
+favorsRecentStress: true
+baseActions: _malformationDiebackActions
+
+SÍNDROME 9
+id: mango_fruit_quality_abiotic_01
+labelEs: Mango chico, rajado, quemado o con calidad débil
+stages: reproductiveMid + grainFill + lateSeason
+organIds: fruit, leaf, whole_plant
+primarySymptomId: symptomFruitDeformation o symptomFruitSunburnPatch
+strongSignals: fruitSplitAfterIrrigation, exposedFruitSouthwest, dryHotWindow, salinityLoad
+weakSignals: leafEdgeBurn, recentStress, highPhCalcareous
+probableDiagnoses:
+- fruit_splitting_irrigation_context
+- sunburn_heat_fruit_context
+- potassium_low_fruit_quality_context
+- internal_breakdown_spongy_tissue_context
+severity: medium/high
+urgency: review48h
+baseActions: _fruitQualityActions
+
+SÍNDROME 10
+id: mango_postharvest_decay_01
+labelEs: Mango que se pudre al madurar, por pedúnculo o con moho
+stages: lateSeason + grainFill
+organIds: fruit, stem
+primarySymptomId: symptomMummifiedFruitRot o nuevo symptomMangoStemEndRot
+strongSignals: stemEndRotStartsPeduncle, whiteGreenBlueMold, postharvestRipeningLesions
+weakSignals: darkSunkenLesions, recentStress, humidWindow
+probableDiagnoses:
+- stem_end_rot_context
+- anthracnose_fruit_leaf_context
+- alternaria_black_spot_context
+- postharvest_decay_mold_context
+severity: high comercial
+urgency: review24h
+favorsHighHumidity: true
+baseActions: _postharvestDecayActions
+
+SÍNDROME 11
+id: mango_phytotoxicity_weather_damage_01
+labelEs: Quemadura por sol, frío, granizo, aplicación o viento
+stages: vegetativeEarly + vegetativeMid + reproductiveEarly + reproductiveMid + grainFill + lateSeason
+organIds: leaf, flower, fruit, stem
+primarySymptomId: symptomLeafEdgeBurn o symptomFruitSunburnPatch
+strongSignals: recentSprayOilCopper, uniformLeafBurn, frostEvent, hailEvent, exposedFruitSouthwest
+weakSignals: dryHotWindow, heatStress, coldExposure
+probableDiagnoses:
+- phytotoxicity_spray_context
+- cold_or_frost_bloom_damage
+- hail_wind_mechanical_damage
+- sunburn_heat_fruit_context
+severity: medium/high
+urgency: review48h
+baseActions: _weatherDamageActions
+
+SÍNDROME 12
+id: mango_memory_alternate_bearing_01
+labelEs: Árbol cansado, alternancia o postcosecha débil
+stages: lateSeason + vegetativeMid + vegetativeEarly
+organIds: whole_plant, leaf, flower, fruit
+primarySymptomId: symptomLateDefoliation o symptomFlowerAbortion
+strongSignals: alternateBearingHistory, postharvestLeafLoss, recentStress, heavyBloomPoorSet
+weakSignals: salinityLoad, heatStress, dryHotWindow, highPhCalcareous
+probableDiagnoses:
+- alternate_bearing_memory
+- heavy_crop_reserve_depletion_memory
+- postharvest_leaf_loss_memory
+- repeated_bloom_failure_memory
+severity: medium/high
+urgency: monitor72h/review48h
+favorsRecentStress: true
+baseActions: _memoryActions
+
+================================================================================
+10. ACCIONES BASE UX RECOMENDADAS
+================================================================================
+
+_inductionActions:
+- “No todo mango florece por calendario. Revisa si el árbol trae brote maduro, si hubo clima fresco/seco y si no se fue a puro follaje.”
+- “Si el árbol es joven, no lo castigues por no producir. Si ya es productivo y no floreó, guarda memoria de clima, poda, riego, N y cosecha anterior.”
+- “No conviertas estrés hídrico en receta: estrés leve puede inducir, estrés fuerte tumba flor y cuajado.”
+
+_panicleDiseaseActions:
+- “Revisa la panícula: polvillo blanco, puntos negros, flores secas o panícula ennegrecida.”
+- “Si hubo lluvia, rocío o humedad alta en floración, sube el riesgo de antracnosis/cenicilla y baja la confianza de que el problema sea solo NPK.”
+- “No diagnostiques con una foto suelta. Compara panículas sanas y dañadas, revisa clima y confirma si avanza.”
+
+_setDropActions:
+- “Algo de caída de flor/manguito puede ser normal. Se vuelve alerta si la caída es fuerte o coincide con calor, frío, lluvia, humedad baja, sales o panícula enferma.”
+- “En cuajado, primero agua estable, panícula sana y raíz funcional. Luego revisa K/N/P.”
+- “Registra caída fuerte como memoria: puede explicar baja cosecha y alternancia del siguiente ciclo.”
+
+_rootWaterActions:
+- “Revisa humedad, drenaje, sales y raíz antes de meter más fertilizante.”
+- “Marchitez con suelo húmedo no es falta de agua; puede ser raíz sin aire.”
+- “Si EC está alta, BIO-G bloquea recomendaciones agresivas NPK: primero sales, agua, drenaje y raíz.”
+
+_fruitFlyActions:
+- “Abre varias frutas sospechosas. Busca larvas, galerías o picaduras.”
+- “Si hay larvas o campaña regional de mosca de fruta, confirma con sanidad local/Junta/SENASICA. No muevas fruta sospechosa sin seguir reglas locales.”
+- “El sensor no detecta mosca de la fruta. Esto se confirma con muestreo/trampeo/fruta abierta.”
+
+_suckerActions:
+- “La negrilla es consecuencia de mielecilla. Busca escamas, cochinillas, saltahojas, pulgones o mosca blanca.”
+- “Revisa hormigas: muchas veces protegen chupadores.”
+- “Si cubre mucha hoja o fruta, registra pérdida de fotosíntesis/calidad.”
+
+_thripsMiteActions:
+- “Raspado plateado/bronceado en fruto pequeño apunta a trips, ácaros o roce/viento.”
+- “Revisa flor, cáliz, envés y brote nuevo.”
+- “El daño temprano queda marcado hasta cosecha: guárdalo como riesgo de calidad.”
+
+_malformationDiebackActions:
+- “Panículas tipo escoba o brotes deformes no son floración normal. Toma foto, compara árboles y confirma con técnico.”
+- “Si hay ramas secándose, revisa heridas de poda, estrés hídrico, cancro, raíz y madera.”
+- “No lo resuelvas con NPK: es problema de sanidad/memoria.”
+
+_fruitQualityActions:
+- “Fruta chica/rajada/quemada suele venir de agua irregular, calor, sales, defoliación o K bloqueado.”
+- “Si K sale bajo pero falta agua o hay EC alta, primero corrige absorción.”
+- “Revisa orientación del daño: golpe de sol suele estar del lado expuesto.”
+
+_postharvestDecayActions:
+- “Si la pudrición empieza por el pedúnculo, separa stem-end rot de antracnosis y mosca de fruta.”
+- “La antracnosis puede ser latente: el fruto se ve bien en árbol y se mancha al madurar.”
+- “Registra daño poscosecha como memoria de calidad y manejo de corte.”
+
+_weatherDamageActions:
+- “Cruza el síntoma con clima y aplicaciones recientes: granizo, viento, sol, frío, calor o mezcla de aspersión.”
+- “No diagnostiques hongo si el patrón sigue línea de aspersión, lado soleado o evento de granizo.”
+- “Registra el evento: en floración/cuajado puede explicar baja carga.”
+
+_memoryActions:
+- “Postcosecha no cierra el mango. Es cuando el árbol repone reservas para inducir o sostener la siguiente floración.”
+- “Si hubo carga alta, caída fuerte, defoliación, sales, antracnosis/cenicilla o estrés hídrico, guarda memoria para el próximo ciclo.”
+- “Alternancia no se fuerza, pero se registra: un año muy cargado o muy estresado puede bajar el siguiente.”
+
+================================================================================
+11. MENSAJES FARMER-FRIENDLY PARA BIO-G
+================================================================================
+
+- “El mango no se gana por tener mucha flor; se gana por amarrar y sostener el manguito.”
+- “Si la panícula trae polvo blanco o se pone negra, no empieces por fertilizante: revisa cenicilla, antracnosis y humedad.”
+- “Mucha flor y poco mango puede ser clima, enfermedad, estrés, polinización o falta de reservas. No es una sola cosa.”
+- “En cuajado, el árbol no perdona: calor, frío, sales o falta de agua tumban el manguito.”
+- “La caída de manguito puede ser normal, pero si cae casi todo o se pone amarillo/negro, hay que revisar.”
+- “Si el sensor marca NPK bien pero hay raíz saturada o sales, el mango no lo está tomando bien.”
+- “No fuerces flor con estrés si el árbol viene débil; puedes sacar flor y perder el amarre.”
+- “La mosca de fruta no se diagnostica con el sensor. Abre fruta, revisa larvas y sigue la campaña local.”
+- “La negrilla no es el problema principal: busca el insecto que está dejando mielecilla.”
+- “Después de cosechar no se acabó el cultivo. La postcosecha decide la siguiente floración.”
+
+================================================================================
+12. CASOS MÍNIMOS DE PRUEBA
+================================================================================
+
+1) mango_no_flowering_valid_state_test
+Caso: mg_skip + productive_season + dormancy + sin panículas.
+Esperado: no bloquear; decir que no-floración puede ser estado válido; pedir brote/clima/reservas.
+
+2) mango_panicle_powdery_mildew_test
+Caso: flowering + polvillo blanco + rocío/noches frescas.
+Esperado: cenicilla/oídio como probable; no NPK primero; pedir revisar panículas.
+
+3) mango_anthracnose_bloom_humidity_test
+Caso: flowering + panícula con puntos negros + lluvia/alta HR.
+Esperado: antracnosis/panícula; alta urgencia; no receta.
+
+4) mango_heavy_bloom_poor_set_test
+Caso: mucha flor + poco amarre + sin síntomas claros.
+Esperado: diferenciar caída fisiológica/polinización/clima/reservas; no diagnosticar.
+
+5) mango_fruit_set_drop_water_stress_test
+Caso: fruit_set + manguitos amarillos cayendo + soilMoisture bajo.
+Esperado: agua/estrés primero; registrar memoria de cuajado.
+
+6) mango_fruit_set_drop_ec_high_test
+Caso: fruit_set + EC alta + caída de frutito.
+Esperado: sales/absorción/raíz antes que NPK; bloquear recomendaciones agresivas.
+
+7) mango_fruit_fill_k_low_but_dry_test
+Caso: fruit_fill + K bajo + humedad baja.
+Esperado: priorizar agua/absorción antes de subir K.
+
+8) mango_fruit_fly_larvae_test
+Caso: harvest_maturity + fruta con larvas.
+Esperado: riesgo mosca fruta; abrir muestra; seguir sanidad local; no sensor.
+
+9) mango_stem_end_rot_test
+Caso: postharvest + pudrición inicia por pedúnculo.
+Esperado: stem-end rot/poscosecha; separar de mosca fruta y antracnosis.
+
+10) mango_sooty_mold_test
+Caso: hoja/fruto con negrilla + pegajoso.
+Esperado: buscar chupadores; fumagina como consecuencia.
+
+11) mango_malformation_test
+Caso: flowering + panícula compacta tipo escoba + no amarre.
+Esperado: malformación contexto; pedir confirmación; memoria alta.
+
+12) mango_sunburn_test
+Caso: fruit_fill + mancha quemada en lado expuesto.
+Esperado: golpe de sol/defoliación/calor; no hongo.
+
+13) mango_postharvest_memory_test
+Caso: post_harvest + defoliación + carga alta previa.
+Esperado: guardar memoria para inducción/floración siguiente.
+
+14) mango_high_ph_chlorosis_test
+Caso: vegetative_growth + pH alto + hoja nueva amarilla con nervadura verde.
+Esperado: Fe/Zn/Mn/pH/raíz; no falta de N automática.
+
+15) mango_phytotoxicity_spray_test
+Caso: flowering + quemadura uniforme tras aplicación.
+Esperado: fitotoxicidad; revisar aplicación reciente; no antracnosis por default.
+
+================================================================================
+13. NO HACER EN CÓDIGO
+================================================================================
+
+- No copiar lemon_tree_syndromes.dart cambiando “limón” por “mango”.
+- No copiar orange_tree_syndromes.dart: mango no es cítrico.
+- No usar sowingDate como eje del árbol.
+- No crear StageIds nuevos como floral_induction, panicle_emergence, fruit_drop, export_maturity. Usarlos como contexto/labels.
+- No forzar floración anual. La no-floración es estado válido.
+- No convertir estrés hídrico en receta automática de inducción.
+- No diagnosticar antracnosis, cenicilla, malformación, mosca fruta, stem-end rot o bacterial black spot de forma cerrada.
+- No prescribir plaguicidas, ingredientes activos ni dosis.
+- No usar foros para umbrales duros.
+- No culpar NPK primero si hay humedad baja, EC alta, pH extremo, compactación o raíz dañada.
+- No asumir que N alto es bueno antes de floración: puede mandar el árbol a puro brote.
+- No asumir que K bajo es causa si falta agua o hay sales.
+- No apagar post_harvest.
+- No tratar dormancy como árbol muerto; en mango es reposo funcional / preparación / inducción.
+- No prometer rendimiento por floración abundante.
+- No bloquear mg_skip por no saber variedad.
+- No borrar memoria al migrar de mg_skip a MG-01..MG-06.
+
+================================================================================
+14. FUENTES CONSULTADAS Y USO EN BIO-G
+================================================================================
+
+Fuentes BIO-G internas:
+- Estándar BIO-G para Integración de Árboles Perennes v1.5 con addendum.
+- 01_Ficha_Tecnica_Universal_BioG_Mango_MG_v1_Reforzada.txt.
+- 02_Perfil_SKIP_BioG_Mango_MG_SKIP_v1_Reforzado.txt.
+- 03_Rendimiento_Aproximado_BioG_Mango_MG_v1_Reforzado.txt.
+- 04_Riesgos_Cultivo_Sanidad_Estres_Memoria_BioG_Limon_LM_v1_Reforzado.txt como formato/patrón documental.
+- lib.zip BIO-G: plant_health_models.dart, plant_health_ids.dart, plant_health_stage_adapter.dart, plant_health_registry.dart, lemon_tree_syndromes.dart, orange_tree_syndromes.dart.
+
+Fuentes externas alta/media-alta:
+- National Mango Board / INIFAP: Unidades de calor para Ataulfo, Tommy Atkins, Kent y Keitt.
+- National Mango Board: La Floración del Mango.
+- National Mango Board / IHSM La Mayora CSIC-UMA: Plagas y Enfermedades del Mango.
+- CTAHR University of Hawaii: Mango anthracnose; Mango crop notes.
+- UF/IFAS Extension Collier County: Mango Fruit Drop: Is it Normal?
+- SENASICA / Gobierno de México: Moscas nativas de la fruta; Campaña Nacional contra Moscas de la Fruta.
+- UAM: Manual para manejo integrado de la mosca de la fruta en mango.
+- UNACH / Quehacer Científico: La caída de flores y frutos en mango Ataulfo.
+- INIFAP: Manejo de antracnosis del mango en la costa de Guerrero.
+
+Foros/productores/redes:
+Usados solo para lenguaje UX y síntomas frecuentes:
+- Reddit r/mango: “flowers turning black”, “terrible fruit retention”, “powdery mildew”, “anthracnose”, “watering during fruit set”.
+- Grupos de Facebook y publicaciones de productores: “mucha flor pero se cae la fruta pequeña”, “lluvias en floración”, “antracnosis en mango”.
+
+FIN DEL DOCUMENTO 04

@@ -1,0 +1,453 @@
+[ENCABEZADO]
+BIO-G | Mango / Árbol de mango | Documentación técnica v1
+[/ENCABEZADO]
+
+BIO-G
+01. Ficha Técnica Universal + Perfiles/Variedades BIO-G - Mango / Árbol de mango
+Cultivo visible: Mango / Árbol de mango
+cropId canónico recomendado: crop_mango_tree
+cropKey esperado: mango_tree
+Aliases: mango, mangos, mango_tree, crop_mango, mangifera, mangifera_indica, arbol_mango, árbol_mango
+profilePrefix: MG
+Perfil general obligatorio: mg_skip
+Versión: v1 reforzada
+Formato: TXT técnico para Flutter/Dart, Codex, Claude Code y agentes IA
+
+IMPORTANTE
+Este documento no es receta agronómica local. No sustituye análisis de suelo, agua, tejido/foliar, diagnóstico fitosanitario, asesoría regional ni normatividad de exportación. BIO-G v1 orienta, pondera riesgo y traduce sensores a lectura agronómica; no promete rendimiento, no prescribe dosis cerradas y no diagnostica enfermedades de forma definitiva.
+
+================================================================================
+0. DECISIONES EJECUTIVAS
+================================================================================
+
+0.1 Producto BIO-G
+Mango se integra como árbol frutal perenne tropical/subtropical, de producción episódica o cuasi-anual, con floración sensible y fuerte memoria fisiológica. No debe modelarse como cultivo anual ni como cítrico. La variedad ajusta precocidad, sensibilidad, ventana de cosecha, calidad y rendimiento; no cambia la arquitectura base.
+
+0.2 cropId
+Recomendación canónica: crop_mango_tree.
+Motivo: el cultivo visible y comercial es “Mango”; la app debe resolver perfiles por alias sin obligar al usuario a conocer la variedad. crop_mango_tree debe ser entrada principal. mango_tree funciona como cropKey/legacy técnico.
+
+0.3 Alcance v1
+Incluye los perfiles MG oficiales:
+- mg_skip — Mango general / No sé.
+- mg_01_ataulfo_manila — Ataulfo / Manila / miel.
+- mg_02_tommy_atkins — Tommy Atkins / exportación volumen.
+- mg_03_kent — Kent / exportación tardía / calidad interna.
+- mg_04_keitt — Keitt / muy tardío / ventana extendida.
+- mg_05_criollo_regional — Criollo / regional / local.
+
+No incluye como perfil propio v1: Haden, Haden-like, Palmer, Irwin, Sensation, Manila separado, Manilita separado, Edward, variedades ornamentales o colecciones de vivero. Esos entran por alias o quedan para expansión futura si el equipo decide abrir mg_06.
+
+0.4 Regla fisiológica principal
+El mango NO florece automáticamente cada año. La ausencia de floración es un estado válido. BIO-G debe evaluar la probabilidad/riesgo del evento reproductivo dominante, no prometer fechas exactas. El árbol puede permanecer vegetativo por edad, exceso de N/vigor, falta de estrés fresco/seco, poda fuera de ventana, clima inadecuado o memoria de estrés.
+
+0.5 StageIds cerrados
+Usar solamente los StageIds oficiales de árboles:
+planting_transplant, root_establishment, juvenile_vegetative, dormancy, budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest, unknown.
+
+No crear IDs como pre_planting, floral_induction, panicle_emergence, bloom_flush, embryo_abortion, fruit_drop, marble_stage, heat_units, export_maturity, ripe_to_eat, hydrothermal_treatment, off_year, on_year o paclobutrazol. Esas subfases son contexto/labels/memoria, no StageIds.
+
+0.6 Dormancy en mango
+dormancy = reposo funcional / baja actividad vegetativa / preparación fisiológica / posible inducción floral. No significa árbol muerto, suelo descansando ni dormancia caducifolia obligatoria como nogal. En mango puede ser un periodo seco/fresco y de baja brotación que favorece el evento floral si el árbol trae reservas y hojas maduras.
+
+0.7 Regla de inducción floral
+BIO-G puede hablar de “condiciones favorables para inducción floral” o “inducción insuficiente”, pero NO debe convertir estrés hídrico, nitratos, PBZ, ethephon o cualquier regulador en receta. La investigación muestra que temperatura fresca, estrés hídrico controlado, edad de hoja, genética, reservas y manejo pueden influir, pero el motor v1 sólo debe orientar riesgo y pedir validación técnica local.
+
+0.8 Regla de sanidad
+En mango, floración y cuajado se pierden fácilmente por antracnosis, cenicilla, humedad alta, lluvia, temperaturas inadecuadas, mala ventilación, trips, estrés hídrico o baja viabilidad de polen. BIO-G no debe decir “falta fertilizante” por reflejo cuando hay flor negra, panícula seca, polvillo blanco, lluvia en floración o caída de frutito.
+
+================================================================================
+1. IDENTIDAD UNIVERSAL
+================================================================================
+
+[TABLA]
+Campo | Valor
+Nombre BIO-G visible | Mango / Árbol de mango
+Producto visible | Mango fresco; fruta de mesa/exportación/mercado local según perfil
+Nombre científico | Mangifera indica L.
+Familia | Anacardiaceae
+Tipo | Árbol frutal perenne tropical/subtropical, siempreverde o semi-siempreverde según clima y estrés
+Metabolismo | C3
+Órgano objetivo v1 | Fruto: calibre, llenado, madurez, calidad externa/interna como contexto
+Sistema v1 | Huerto a cielo abierto en zonas productoras mexicanas tropicales/subtropicales
+cropId | crop_mango_tree
+cropKey | mango_tree
+aliases | mango, mangos, mango_tree, crop_mango, mangifera, mangifera_indica, arbol_mango, árbol_mango
+prefix | mg
+perfil genérico | mg_skip
+[/TABLA]
+
+================================================================================
+2. ÁRBOL PERENNE VS CULTIVO ANUAL
+================================================================================
+
+[TABLA]
+Aspecto | Cultivo anual | Mango BIO-G
+Eje temporal | Fecha de siembra/trasplante | Estado fisiológico + etapa visible + ancla + memoria
+Ciclo | Lineal: nace, produce y termina | Recurrente/episódico; no siempre florece cada año con éxito
+Edad | Suele explicar etapa | Orienta, pero manda la realidad visible: joven, vegetativo, flor, fruto, postcosecha
+Dormancia | No aplica o final | Reposo funcional/inducción, no árbol muerto
+Floración | Esperada por calendario | No garantizada; depende de temperatura, estrés moderado, reservas, hoja madura y manejo
+Variedad | Cambia duración | Ajusta precocidad, sensibilidad, cosecha, destino y copy
+Rendimiento | t/ha por ciclo | kg/árbol + árboles/ha + t/ha + estado productivo + carga + manejo + memoria
+Cosecha | Cierre | Evento productivo; el árbol sigue vivo
+Postcosecha | Final | Recuperación, poda, brotación nueva, hojas maduras y reservas para siguiente floración
+Memoria | Menor o de un ciclo | Alta: estrés en floración/cuajado/llenado/postcosecha puede afectar 1-2 ciclos
+[/TABLA]
+
+================================================================================
+3. ARQUITECTURA BIO-G
+================================================================================
+
+[TABLA]
+Grupo | Valor permitido | Regla
+Cultivo madre | crop_mango_tree | Entrada principal del catálogo
+Categoría | tree/perennial | Rama de árboles perennes
+Estados | newly_planted, juvenile_non_productive, established, productive_season, unknown | No inventar estados globales
+Etapas | StageIds cerrados de árboles | Usar labels de mango sin crear IDs
+Anclas | planting, stage_start, budbreak, flowering, harvest, post_harvest, manual_stage, unknown | Separar plantación de evento actual
+Sensores v1 | soilMoisture, soilTemp, ph, ec, resistance, n, p, k | No inventar sensores
+Contexto avanzado | inducción floral, lluvia en floración, antracnosis, cenicilla, mosca de fruta, trips, carga visible, alternancia, madurez fisiológica, Ca/Mg/B/Zn, Brix, firmeza, tratamiento hidrotérmico | No simular desde NPK
+[/TABLA]
+
+3.1 Patrón real de librería BIO-G
+La librería actual tiene Manzano, Naranjo y Limón integrados con el mismo paquete moderno de 9 archivos. Mango todavía no existe. Por eso Mango debe crearse siguiendo la estructura ya validada:
+
+lib/core/crops/mango_tree/
+  mango_tree_assets.dart
+  mango_tree_catalog.dart
+  mango_tree_crop_definition.dart
+  mango_tree_universal_profile.dart
+  mango_tree_yield_reference.dart
+
+lib/core/agro/
+  mango_tree_agro_score_engine.dart
+  mango_tree_nutrition_modifier.dart
+
+lib/core/plant_health/catalog/
+  mango_tree_syndromes.dart
+
+No copiar agronomía de limón/naranjo. Sólo copiar arquitectura.
+
+================================================================================
+4. ESTADOS DEL ÁRBOL
+================================================================================
+
+[TABLA]
+StateId | Label UX | Política
+newly_planted | Mango recién plantado | No exigir flor ni fruta. Prioridad raíz, tutor, humedad estable, baja EC, drenaje y golpe de trasplante.
+juvenile_non_productive | Mango joven / formación | Formación de copa, raíz y hojas maduras. No penalizar por no florear.
+established | Mango establecido | Permite reposo, brotación, vegetativo, floración y fruta según realidad visible. No asumir producción plena.
+productive_season | Mango en producción | Habilita floración, cuajado, llenado, madurez, cosecha y postcosecha.
+unknown | No lo sé | No bloquear; usar mg_skip conservador y preguntar etapa visible.
+[/TABLA]
+
+================================================================================
+5. ETAPAS FENOLÓGICAS UNIVERSALES BIO-G PARA MANGO
+================================================================================
+
+[TABLA]
+StageId | Label mango | Señal visible | Cuidado principal
+planting_transplant | Plantación / trasplante | Árbol recién puesto, tutor, cepellón, poca copa | Raíz, humedad, baja salinidad, sombra temporal si aplica, drenaje
+root_establishment | Establecimiento de raíz | Árbol joven enraizando, brotes iniciales | Humedad sin saturación; evitar sales y compactación
+juvenile_vegetative | Mango joven / formación | Copa y estructura; sin producción comercial | Vigor sano, hojas maduras, poda/formación, no forzar floración
+
+dormancy | Reposo funcional / preparación | Baja brotación, hojas maduras, árbol “quieto” | Reservas, posible inducción, no sobrerregar ni empujar N sin razón
+budbreak | Brotación / flush vegetativo | Brotes rojizos/cobrizos o verdes tiernos | No confundir brote vegetativo con flor; vigilar trips, ácaros, plagas y N excesivo
+vegetative_growth | Crecimiento vegetativo | Copa creciendo, hojas nuevas endureciendo | Balance vegetativo-reproductivo; exceso de N puede retrasar floración
+flowering | Floración / panícula | Panículas, flores pequeñas, olor, visita de insectos | Etapa crítica; humedad, lluvia, cenicilla, antracnosis, calor/frío y agua estable
+fruit_set | Cuajado / amarre | Frutitos recién amarrados, caída inicial | Punto frágil; agua, temperatura, sanidad, estrés y K funcional
+fruit_fill | Llenado / crecimiento del mango | Fruto creciendo y ganando tamaño | K, agua, hoja funcional, calcio/magnesio/boro como contexto, calibre
+harvest_maturity | Madurez / corte | Fruto con tamaño y madurez fisiológica de corte | Madurez de cosecha, calidad, firmeza, destino, no sólo color externo
+post_harvest | Postcosecha / recuperación | Después de cosecha, poda, nuevo flush | Recuperar reservas, hoja nueva, sanidad, preparar siguiente ciclo
+unknown | No lo sé | Etapa no identificada | Preguntar realidad visible sin bloquear
+[/TABLA]
+
+================================================================================
+6. SUBFASES SIN CREAR IDs
+================================================================================
+
+- Pre-plantación: contexto de onboarding; no StageId productivo.
+- Inducción floral: mapear a dormancy si hay reposo/preparación; a budbreak si emerge brote; a flowering si ya hay panícula.
+- Panícula emergente: flowering si domina flor; budbreak si el usuario no distingue y sólo ve brote.
+- Aborto floral: evento de riesgo dentro de flowering.
+- Caída de frutito: evento de riesgo dentro de fruit_set.
+- Fruto tamaño canica/golf: fruit_set temprano o fruit_fill según tamaño y estabilidad.
+- Llenado/calibre: fruit_fill.
+- Madurez fisiológica de corte: harvest_maturity.
+- Mango maduro para comer / ready-to-eat: poscosecha/comercial; no StageId de árbol.
+- Tratamiento hidrotérmico/cuarentenario: postcosecha/comercial; no StageId de árbol.
+- Año cargado/año bajo: memoria/rendimiento; no StageId.
+- Inducción con estrés/PBZ/nitratos: contexto avanzado; no receta ni StageId.
+
+================================================================================
+7. RANGOS MEDIBLES BASE — NO SON STAGETARGETS FINALES
+================================================================================
+
+Documento 05 debe convertir estos rangos a StageTargets usando AgroRange:
+lowMax = frontera crítica baja; optimalMin/optimalMax = óptimo; highMin = frontera crítica alta.
+
+[TABLA]
+Métrica | Rango/lectura base | Regla BIO-G
+soilMoisture | <40 crítico bajo; 40-55 observación; 55-85 óptimo general; 85-90 alto; >90 saturación | En inducción puede tolerar moderado seco si árbol adulto y sano; en floración/cuajado/llenado no perdona déficit severo. Saturación favorece raíz y enfermedad.
+soilTemp | actividad baja con suelo frío; actividad razonable >15 C; óptimo operativo 22-32 C ambiente/suelo templado | Frío prolongado limita crecimiento y cuajado; calor extremo + baja humedad tumba flor/fruto.
+pH | preferente 5.5-7.5; vigilancia >7.5; extremos <5.0 o >8.2 | pH alto + hoja amarilla no es N automático; revisar Fe/Zn/Mn/raíz.
+EC | <1.2 favorable; 1.2-1.7 vigilancia; >2.0 observación fuerte; >2.5 crítica en reproducción/raíz | Salinidad afecta cuajado, calibre y longevidad. EC baja no es deficiencia.
+resistance | <1.6 favorable; 1.6-2.0 observación; >2.0-2.3 alta; >2.3 crítica | Mango necesita raíz funcional y drenaje; compactación bloquea agua/NPK.
+N relativo | moderado en juvenil y postcosecha; cuidado en prefloración/inducción | N alto puede empujar vegetativo e inhibir floración.
+P relativo | importante en raíz, energía y prefloración/floración | No domina todo el ciclo adulto; validar con suelo/foliar.
+K relativo | sube desde cuajado; máximo en llenado/calidad | K bajo con agua/EC correctas pesa en calibre/calidad.
+[/TABLA]
+
+================================================================================
+8. SENSIBILIDAD POR ETAPA
+================================================================================
+
+- Plantación / establecimiento: déficit hídrico alto, exceso de humedad alto, compactación alta, EC alta, golpe de trasplante.
+- Juvenil: N moderado, agua estable, formación de copa; no forzar floración temprana.
+- Reposo funcional / inducción: exceso de N y brotes tiernos pueden retrasar floración; estrés severo daña reservas.
+- Brotación: brote nuevo no siempre es bueno si buscabas flor; vigilar trips, ácaros y vigor excesivo.
+- Vegetativo: construir hoja madura; exceso vegetativo compite con floración.
+- Floración: etapa crítica; lluvia/HR alta, cenicilla, antracnosis, calor/frío y agua inestable pesan antes que NPK.
+- Cuajado: punto más frágil; algo de caída es normal, pero caída fuerte con calor, sales, enfermedad o agua baja debe alertar.
+- Llenado: agua + K + hoja funcional mandan calibre y calidad.
+- Madurez/corte: madurez fisiológica y destino; no decidir sólo por color externo.
+- Postcosecha: poda, recuperación, flush y reservas; define siguiente floración.
+
+================================================================================
+9. PERFILES OFICIALES MG
+================================================================================
+
+Lista canónica:
+- mg_skip — Mango general / No sé
+- mg_01_ataulfo_manila — Ataulfo / Manila / mango miel
+- mg_02_tommy_atkins — Tommy Atkins / exportación volumen
+- mg_03_kent — Kent / tardío de calidad interna
+- mg_04_keitt — Keitt / muy tardío / ventana extendida
+- mg_05_criollo_regional — Criollo / regional / local
+
+Aliases legacy:
+MG-SKIP => mg_skip
+MG-01 => mg_01_ataulfo_manila
+MG-02 => mg_02_tommy_atkins
+MG-03 => mg_03_kent
+MG-04 => mg_04_keitt
+MG-05 => mg_05_criollo_regional
+
+9.1 mg_01_ataulfo_manila
+Botánica: Mangifera indica L., grupo Ataulfo/Manila.
+UX: Ataulfo, Manila, mango miel, amarillo, premium.
+Uso: exportación premium y mercado nacional; fruta pequeña-mediana, amarilla, pulpa cremosa/poca fibra.
+Entrada a producción orientativa: año 2-3 si injertado y bien manejado; plena año 4+.
+Floración orientativa: 25-40 días.
+Cuajado: 10-20 días posteriores a floración.
+Llenado/cosecha: 90-120 días; 4-5 meses postfloración por evento.
+Ventana MX orientativa: febrero-mayo, variable por región.
+Densidad orientativa: 200-400 árboles/ha.
+Sensibilidad: HR/lluvia en floración, aborto floral, cuajado, alternancia, daño de calidad.
+Aliases: Ataulfo, Ataúlfo, Manila, Mango miel, Honey, Champagne, Soconusco.
+
+9.2 mg_02_tommy_atkins
+UX: Tommy, Tommy Atkins, exportación volumen, mango rojo/verde de transporte.
+Uso: exportación/mercado nacional; buena resistencia de transporte, volumen.
+Entrada a producción: año 3; plena año 4+ como orientación general.
+Floración: 30-45 días.
+Cuajado: 12-25 días.
+Llenado/cosecha: 120-150 días; 5-6 meses postfloración.
+Ventana MX orientativa: marzo-junio.
+Densidad orientativa: 180-350 árboles/ha.
+Sensibilidad: déficit hídrico prolongado, exceso vegetativo por N, alternancia, antracnosis/cenicilla en flor.
+Aliases: Tommy, Tommy Atkins, Exportación, Mango rojo, Haden-like si el usuario no distingue y no hay perfil Haden dedicado.
+
+9.3 mg_03_kent
+UX: Kent, exportación tardía, calidad interna, pulpa buena.
+Uso: exportación/mercado premium; importante para ventanas tardías.
+Entrada a producción: año 3-4; plena año 5+.
+Floración: 30-45 días.
+Cuajado: 15-25 días.
+Llenado/cosecha: 140-180 días; 6-7 meses postfloración.
+Ventana MX orientativa: mayo-agosto.
+Densidad orientativa: 180-300 árboles/ha.
+Sensibilidad: estrés hídrico en llenado, HR en floración, alternancia moderada, madurez de corte.
+Aliases: Kent, Tardío, Exportación tardía, Calidad interna.
+
+9.4 mg_04_keitt
+UX: Keitt, tardío, muy tardío, exportación tardía.
+Uso: ventana extendida; fruto grande; cosecha tardía.
+Entrada a producción: año 3-4; plena año 5+.
+Floración: 35-50 días.
+Cuajado: 15-25 días.
+Llenado/cosecha: 160-200 días.
+Ventana MX orientativa: julio-octubre.
+Densidad orientativa: 150-300 árboles/ha.
+Sensibilidad: estrés hídrico acumulado, alternancia fuerte, manejo de reservas postcosecha, calibre/madurez.
+Aliases: Keitt, Muy tardío, Tardío, Exportación tardía.
+
+9.5 mg_05_criollo_regional
+UX: Criollo, regional, local, mango de patio/huerto tradicional.
+Uso: mercado local/regional; mucha variabilidad genética y de calidad.
+Entrada a producción: año 2-3 si injertado; variable si semilla/franco.
+Floración: 25-40 días.
+Cuajado: 10-20 días.
+Llenado/cosecha: 100-140 días, variable por región.
+Ventana MX orientativa: variable.
+Densidad orientativa: 200-450 árboles/ha en sistemas intensivos; huertos viejos pueden ser más amplios.
+Sensibilidad: manejo hídrico irregular, HR/sanidad, variabilidad de calidad, alternancia.
+Aliases: Criollo, Regional, Local, Manila local si no se confirma Ataulfo/Manila, patio, huerto viejo.
+
+================================================================================
+10. UX Y ONBOARDING
+================================================================================
+
+Opciones visibles:
+- No sé / Mango general
+- Ataulfo / Manila / mango miel
+- Tommy Atkins
+- Kent
+- Keitt
+- Criollo / regional
+
+Preguntas útiles:
+- ¿Tu mango es amarillo tipo Ataulfo/Manila o grande rojo/verde tipo Tommy/Kent/Keitt?
+- ¿Normalmente corta temprano, a media temporada o tarde?
+- ¿El árbol trae panículas/flor o sólo brote nuevo?
+- ¿Floreó mucho pero no amarró fruta?
+- ¿Se le cae el mango chiquito?
+- ¿La flor se pone negra o trae polvillo blanco?
+- ¿Llueve o hay mucha humedad durante la floración?
+- ¿El árbol se va a pura hoja y no florece?
+- ¿El fruto se queda chico, se raja o se quema por sol?
+- ¿Tu objetivo es mercado local o exportación?
+
+Mensajes base:
+- “En mango, mucha flor no significa cosecha segura. Lo delicado es que amarre y sostenga el fruto.”
+- “Si la panícula se pone negra o se seca con humedad, primero revisa antracnosis/cenicilla y clima; no culpes al NPK de entrada.”
+- “Un poco de estrés puede ayudar a inducir flor, pero si se pasa, tira flor y frutito. BIO-G no lo trata como receta.”
+- “Si el árbol está en puro brote tierno, puede estar vegetativo y no listo para floración.”
+- “En llenado, el potasio y el agua sostienen calibre y calidad, pero con sales o raíz dañada el árbol no lo toma bien.”
+- “Después de cosechar, el mango no termina. La postcosecha prepara la siguiente floración.”
+
+================================================================================
+11. ASSETS RECOMENDADOS
+================================================================================
+
+Ruta de etapas:
+assets/seeds/mango/
+
+- mango_stage_planting_transplant.png
+- mango_stage_root_establishment.png
+- mango_stage_juvenile_vegetative.png
+- mango_stage_dormancy.png
+- mango_stage_budbreak.png
+- mango_stage_vegetative_growth.png
+- mango_stage_flowering.png
+- mango_stage_fruit_set.png
+- mango_stage_fruit_fill.png
+- mango_stage_harvest_maturity.png
+- mango_stage_post_harvest.png
+- mango_stage_unknown.png
+
+Ruta icons:
+assets/icons/wizard/
+- ic_mango_tree.png
+- ic_mango_ataulfo_manila.png
+- ic_mango_tommy_atkins.png
+- ic_mango_kent.png
+- ic_mango_keitt.png
+- ic_mango_criollo_regional.png
+
+Reglas visuales:
+- Estilo BIO-G árbol perenne: PNG 1:1, fondo transparente, árbol completo centrado, raíces visibles si es etapa, sin texto, sin paisaje, sin personas.
+- Mango no debe parecer cítrico: hojas largas/lanceoladas, brote nuevo cobrizo/rojizo cuando aplique, panículas florales, fruto mango amarillo/verde/rojizo según etapa/perfil.
+- dormancy: árbol adulto verde, quieto, con hojas maduras y sin evento fuerte; no árbol pelón.
+- flowering: panículas visibles, no flores gigantes irreales.
+- fruit_set: frutitos pequeños en panícula.
+- fruit_fill: frutos creciendo, todavía no necesariamente color final.
+- harvest_maturity: fruto con tamaño/corte; puede ser verde/amarillo/rojizo según perfil, no naranja cítrico.
+
+================================================================================
+12. TRADUCCIÓN FUTURA A CÓDIGO
+================================================================================
+
+Archivos esperados:
+lib/core/crops/mango_tree/mango_tree_assets.dart
+lib/core/crops/mango_tree/mango_tree_catalog.dart
+lib/core/crops/mango_tree/mango_tree_crop_definition.dart
+lib/core/crops/mango_tree/mango_tree_universal_profile.dart
+lib/core/crops/mango_tree/mango_tree_yield_reference.dart
+lib/core/agro/mango_tree_agro_score_engine.dart
+lib/core/agro/mango_tree_nutrition_modifier.dart
+lib/core/plant_health/catalog/mango_tree_syndromes.dart
+
+Constantes sugeridas:
+kCropMangoTree = 'crop_mango_tree'
+kMangoTreeLegacyId = 'mango_tree'
+kMangoSkipProfileId = 'mg_skip'
+kMg01AtaulfoManila = 'mg_01_ataulfo_manila'
+kMg02TommyAtkins = 'mg_02_tommy_atkins'
+kMg03Kent = 'mg_03_kent'
+kMg04Keitt = 'mg_04_keitt'
+kMg05CriolloRegional = 'mg_05_criollo_regional'
+
+Reglas para agentes:
+- categoría tree/perennial;
+- no usar sowingDate como eje;
+- no crear StageIds nuevos;
+- cosecha/postcosecha no cierran cultivo;
+- SKIP obligatorio, conservador y migrable;
+- no inventar sensores v1;
+- no convertir inducción floral en receta;
+- no usar PBZ/nitratos/estrés como recomendación automática;
+- StageTargets finales viven en Documento 05;
+- no dejar lowMax == optimalMin ni optimalMax == highMin en suelo/ambiente sin justificación y tests;
+- no diagnosticar antracnosis/cenicilla/mosca de fruta/nutrición de forma cerrada;
+- no tratar “no floreó” como error de app ni como falta automática de fertilizante.
+
+================================================================================
+13. CASOS MÍNIMOS DE PRUEBA
+================================================================================
+
+1) mg_skip + unknown stage: no bloquear; preguntar etapa visible.
+2) mg_skip + established + no flowering: estado válido; no marcar fallo si está vegetativo.
+3) mg_01_ataulfo_manila + flowering + HR alta/lluvia: alerta sanidad/floración; no NPK primero.
+4) flowering + panícula negra/seca: sugerir condiciones compatibles con antracnosis/cenicilla; pedir revisión.
+5) fruit_set + caída de frutito: diferenciar caída normal vs estrés fuerte.
+6) fruit_set + soilMoisture bajo: priorizar agua/cuajado; no receta NPK.
+7) fruit_fill + K bajo + humedad/EC ok: alerta K/calibre/calidad sin dosis.
+8) fruit_fill + K bajo + EC alta: priorizar sales/raíz/absorción.
+9) vegetative_growth + N alto + sin floración: advertir exceso vegetativo posible.
+10) harvest_maturity + Kent/Keitt verde externo: no marcar inmaduro sólo por color.
+11) post_harvest: no cerrar cultivo; recomendar recuperación/reservas.
+12) mg_skip -> mg_03_kent: conserva memoria y recalcula sensibilidad/copy.
+
+================================================================================
+14. FUENTES CONSULTADAS Y CRITERIO
+================================================================================
+
+Alta confianza BIO-G interna:
+- Estándar BIO-G para Integración de Árboles Perennes v1.5 con addendum.
+- PDF base del usuario: PERFIL UNIVERSAL BIO-G — MANGO.
+- PDF base del usuario: PERFIL SKIP BIO-G — MANGO.
+- Documentos 01-05 de Limón, usados como patrón documental y de contrato técnico, no como agronomía de mango.
+- Revisión de lib.zip: apple_tree, orange_tree y lemon_tree ya usan paquete moderno de 9 archivos; mango_tree no existe aún.
+
+Alta confianza externa / universidades / investigación:
+- INIFAP / National Mango Board: “Convenio INIFAP-National Mango Board. Unidades de calor para mango Ataulfo, Tommy Atkins, Kent y Keitt”. https://www.mango.org/wp-content/uploads/2020/02/Unidades_De_Calor_SPN.pdf
+- INIFAP / Gobierno de México: “Determina INIFAP la madurez a cosecha del mango sin destruirlo”. https://www.gob.mx/inifap/articulos/determina-inifap-la-madurez-a-cosecha-del-mango-sin-destruirlo
+- Revista Mexicana de Ciencias Agrícolas / INIFAP-Scielo: fertilización de sitio específico en Kent y Tommy Atkins en Nayarit. https://www.scielo.org.mx/scielo.php?pid=S2007-09342014000400009&script=sci_arttext
+- Terra Latinoamericana / Scielo: enfoque de fertilización de sitio específico y productividad de mango. https://www.scielo.org.mx/scielo.php?pid=S0187-57792019000400415&script=sci_arttext
+- UF/IFAS: “Mango Growing in the Florida Home Landscape”. https://ask.ifas.ufl.edu/publication/MG216
+- UF/IFAS: manejo de antracnosis y cenicilla en mango. https://blogs.ifas.ufl.edu/stlucieco/2024/03/13/managing-anthracnose-and-powdery-mildew-on-mango-tree/
+- University of Hawai'i CTAHR: “Mango Anthracnose”. https://www.ctahr.hawaii.edu/oc/freepubs/pdf/pd-48.pdf
+- University of Hawai'i CTAHR: “Mango Powdery Mildew”. https://www.growables.org/information/TropicalFruit/documents/MangoPowderyMildew.pdf
+- Redalyc: “Flowering induction in mango tree: updates, perspectives and options”. https://www.redalyc.org/journal/2530/253068585033/html/
+- National Mango Board / revisión de floración. https://www.mango.org/wp-content/uploads/2022/12/Mango-Flowering-Review_Italo-Cavalcante-atual.pdf
+- National Mango Board / FSHS 2025: “Understanding and Managing Mango Fruit Drop”. https://www.mango.org/wp-content/uploads/2025/07/7-Mango-Fruit-Drop-Presentations-FSHS.pdf
+- SADER/SIAP/Gobierno de México: producción nacional y estados productores. https://www.gob.mx/agricultura/prensa/productores-mexicanos-baten-record-de-produccion-anual-de-mango-en-la-ultima-decada-agricultura
+
+Fuentes de productor/foros usadas sólo para lenguaje UX, NO para umbrales:
+- Reddit r/mango: casos de árbol con mucha flor y poca fruta; flor negra; caída de frutito.
+- Daleys Fruit Forum: discusiones sobre baja producción, frío/lluvia en floración y antracnosis.
+- Infojardin y grupos de productores: frases reales “floreó pero tiró todo”, “la flor se puso negra”, “se va a pura hoja”, “mango chiquito se cae”.
+
+FIN DEL DOCUMENTO 01

@@ -1,0 +1,564 @@
+[ENCABEZADO]
+BIO-G | Naranjo | Documentacion tecnica v1
+[/ENCABEZADO]
+
+BIO-G
+02. Perfil SKIP BIO-G - Naranjo
+Perfil general conservador y migrable | Cultivo: Naranjo dulce | profileId: or_skip
+
+Uso interno:
+Documento reforzado a partir del Perfil SKIP BIO-G - Naranjo entregado por el usuario, el Estandar BIO-G para integracion de arboles perennes v1.5, documentos plantilla de Nogal y revision tecnica de fuentes universitarias/extension/fitosanidad citricola.
+No sustituye analisis de suelo, agua, tejido/foliar, diagnostico fitosanitario regional ni asesoria agronomica local.
+
+================================================================================
+0. DECISION EDITORIAL
+================================================================================
+
+SKIP no significa incompleto, descanso, dormancia ni suelo sin cultivo.
+SKIP es la entrada segura cuando el usuario solo sabe que tiene un naranjo.
+El usuario no ve "SKIP"; ve:
+- Naranjo general
+- No se que tipo de naranja es
+- Naranja comun
+
+El perfil no asume:
+- Valencia;
+- Navel;
+- Hamlin/Pineapple;
+- criollo/regional;
+- clima tropical;
+- patron/portainjerto;
+- edad exacta;
+- densidad;
+- rendimiento fino;
+- destino mesa/jugo;
+- presencia o ausencia de HLB;
+- calidad Brix/acidez;
+- programa de fertilizacion.
+
+El estado real del arbol y la etapa visible corrigen el comportamiento del sistema.
+El historial no se borra si luego migra a Valencia, Navel, Temprano, Criollo o Tropical.
+El lenguaje debe ser citrico, directo y conservador: floracion, azahar, amarre, frutito, llenado, calibre, jugo, cosecha, sales, gomosis, brote tierno, hoja amarilla y recuperacion.
+
+================================================================================
+1. IDENTIDAD SKIP
+================================================================================
+
+[TABLA]
+Columnas: Campo | Valor
+Fila 1:
+- Campo: profileId
+- Valor: or_skip
+Fila 2:
+- Campo: Label tecnico
+- Valor: OR-SKIP - Naranjo general
+Fila 3:
+- Campo: Label UX
+- Valor: No se / Naranjo general
+Fila 4:
+- Campo: cropId
+- Valor: crop_orange_tree
+Fila 5:
+- Campo: alias legacy opcional
+- Valor: orange_tree
+Fila 6:
+- Campo: Nombre visible
+- Valor: Naranjo / Naranja
+Fila 7:
+- Campo: Nombre cientifico asumido
+- Valor: Citrus sinensis (L.) Osbeck
+Fila 8:
+- Campo: Familia
+- Valor: Rutaceae
+Fila 9:
+- Campo: Tipo
+- Valor: Arbol frutal perenne siempreverde, citrico
+Fila 10:
+- Campo: Organo objetivo
+- Valor: Naranja dulce como fruto comercial
+Fila 11:
+- Campo: Sistema asumido
+- Valor: Huerto a cielo abierto en condiciones generales de citricultura mexicana/subtropical
+Fila 12:
+- Campo: Confianza inicial
+- Valor: Baja-media si solo hay cultivo; media si hay estado/etapa visible; alta solo para lectura actual con sensores y etapa confirmada
+[/TABLA]
+
+================================================================================
+2. CUANDO SE ACTIVA
+================================================================================
+
+Se activa cuando:
+- el usuario no sabe si es Valencia, Navel, Hamlin, Pineapple, criollo u otra naranja;
+- solo dice "tengo naranja" o "tengo un naranjo";
+- tiene un huerto con mezcla de naranjas;
+- no sabe destino principal: mesa o jugo;
+- no conoce patron/portainjerto;
+- quiere avanzar rapido;
+- selecciona "No lo se" en variedad/perfil.
+
+Regla UX:
+Aunque el usuario no conozca la variedad, BIO-G no debe detener el onboarding.
+Primero escucha al arbol con sensores, estado y etapa visible. Despues permite migrar el perfil.
+
+================================================================================
+3. SUPUESTOS CONSERVADORES
+================================================================================
+
+[TABLA]
+Columnas: Variable | Supuesto SKIP
+Fila 1:
+- Variable: Variedad
+- Supuesto SKIP: Desconocida; sensibilidad media-conservadora.
+Fila 2:
+- Variable: Tipo comercial
+- Supuesto SKIP: No asume mesa premium ni jugo industrial; usa naranja general.
+Fila 3:
+- Variable: Estado productivo
+- Supuesto SKIP: No se inventa. Lo define el usuario: recien plantado, joven, establecido, en produccion o no se.
+Fila 4:
+- Variable: Clima
+- Supuesto SKIP: Citricultura mexicana/subtropical como base; ajustar por ubicacion/clima cuando exista.
+Fila 5:
+- Variable: Manejo
+- Supuesto SKIP: Manejo a cielo abierto; no tecnificado por defecto.
+Fila 6:
+- Variable: Rendimiento
+- Supuesto SKIP: No se promete. Se estima en Documento 03 segun edad/estado/densidad/manejo.
+Fila 7:
+- Variable: Nutricion
+- Supuesto SKIP: No receta. Usa prioridades relativas; suelo/agua/foliar primero.
+Fila 8:
+- Variable: HLB/psilido
+- Supuesto SKIP: Se maneja como riesgo regional/visual, no diagnostico por sensor.
+Fila 9:
+- Variable: Memoria
+- Supuesto SKIP: Registra estres, pero pondera conservador hasta tener historial.
+[/TABLA]
+
+================================================================================
+4. QUE NO ASUME SKIP
+================================================================================
+
+No asume que el huerto sea Valencia.
+No asume que el fruto sea de mesa o de jugo.
+No asume portainjerto tolerante a sales o Phytophthora.
+No asume edad exacta ni plena produccion.
+No asume rendimiento por hectarea ni kg/arbol.
+No asume que la falta de fruto sea problema si el arbol es joven o esta fuera del ciclo.
+No asume que cosecha termina el cultivo.
+No convierte fruit_fill en harvest_maturity.
+No diagnostica HLB por hoja amarilla.
+No diagnostica falta de N si hay pH alto, salinidad, raiz limitada o sintomas de micronutrientes.
+No recomienda pesticidas, marcas, ingredientes activos ni dosis.
+No usa dormancy como caducifolio pelon.
+
+================================================================================
+5. ETAPAS ACTIVAS EN SKIP
+================================================================================
+
+[TABLA]
+Columnas: StageId | Label UX SKIP | Politica
+Fila 1:
+- StageId: planting_transplant
+- Label UX SKIP: Plantacion / trasplante
+- Politica: Si el arbol es nuevo; raiz y cuello primero.
+Fila 2:
+- StageId: root_establishment
+- Label UX SKIP: Establecimiento de raiz
+- Politica: Raiz sensible; humedad sin saturacion; no produccion.
+Fila 3:
+- StageId: juvenile_vegetative
+- Label UX SKIP: Naranjo joven sin producir
+- Politica: Formacion, brotes, copa y raiz; no penalizar por falta de fruta.
+Fila 4:
+- StageId: dormancy
+- Label UX SKIP: Reposo relativo / baja actividad
+- Politica: No es arbol pelon; no apagar cultivo; cuidar raiz, sales y preparacion floral.
+Fila 5:
+- StageId: budbreak
+- Label UX SKIP: Brotando / brote tierno
+- Politica: Brotes nuevos; revisar psilido/minador/pulgones y balance de agua/N.
+Fila 6:
+- StageId: vegetative_growth
+- Label UX SKIP: Con hoja nueva / creciendo
+- Politica: Hoja activa y copa; balance vegetativo-reproductivo.
+Fila 7:
+- StageId: flowering
+- Label UX SKIP: Con flor / azahar
+- Politica: Floracion; agua, calor/frio, HR y reservas pesan fuerte.
+Fila 8:
+- StageId: fruit_set
+- Label UX SKIP: Frutito recien amarrado
+- Politica: Cuajado y caida fisiologica; no culpar NPK de entrada.
+Fila 9:
+- StageId: fruit_fill
+- Label UX SKIP: Naranja creciendo / llenando
+- Politica: Calibre, jugo, K, agua, hoja y salinidad; no copy de cosecha.
+Fila 10:
+- StageId: harvest_maturity
+- Label UX SKIP: Naranja madura / cosecha
+- Politica: Madurez/cosecha; calidad final, color, caida, Brix/acidez como contexto.
+Fila 11:
+- StageId: post_harvest
+- Label UX SKIP: Despues de cosecha / recuperacion
+- Politica: Etapa viva; hoja, raiz y reservas para siguiente ciclo.
+Fila 12:
+- StageId: unknown
+- Label UX SKIP: No lo se
+- Politica: Fallback seguro; preguntar realidad visible.
+[/TABLA]
+
+================================================================================
+6. CALENDARIO PROMEDIO CONSERVADOR
+================================================================================
+
+Estas ventanas son orientativas para SKIP.
+No prometen fecha exacta ni sustituyen el perfil especifico.
+En regiones tropicales o con riego, puede haber floraciones/cosechas multiples o traslapadas.
+
+[TABLA]
+Columnas: Evento | Ventana SKIP | Regla
+Fila 1:
+- Evento: Brotacion / flush
+- Ventana SKIP: variable; frecuente en primavera y despues de lluvia/riego/calor
+- Regla: Brote tierno sube riesgo de psilido/minador/pulgones.
+Fila 2:
+- Evento: Floracion
+- Ventana SKIP: 15-40 dias orientativos
+- Regla: Etapa delicada; calor, frio, agua y reservas pesan.
+Fila 3:
+- Evento: Cuajado / amarre
+- Ventana SKIP: 2-10 semanas posteriores a floracion segun definicion y clima
+- Regla: Puede haber caida fisiologica normal; alertar si el contexto es malo.
+Fila 4:
+- Evento: Crecimiento/llenado del fruto
+- Ventana SKIP: 120-210 dias conservadores; Valencia puede alargarse mas
+- Regla: Calibre, jugo, K, hoja, agua y salinidad.
+Fila 5:
+- Evento: Madurez / cosecha
+- Ventana SKIP: 6-10 meses post-floracion promedio; variable por perfil
+- Regla: Solo orientativo; usar etapa visible y perfil si existe.
+Fila 6:
+- Evento: Postcosecha
+- Ventana SKIP: despues de cortes hasta siguiente flush/floracion fuerte
+- Regla: No cerrar cultivo; recuperar hoja, raiz y reservas.
+[/TABLA]
+
+================================================================================
+7. RANGOS CONSERVADORES SKIP
+================================================================================
+
+SKIP usa bandas amplias y evita falsos criticos.
+Los targets finales por etapa se definen en Documento 05.
+
+[TABLA]
+Columnas: Metrica | Banda conservadora | Lectura
+Fila 1:
+- Metrica: soilMoisture
+- Banda conservadora: Critico bajo <40; observacion 40-55; optimo general 55-80/85; observacion alta 85-90; saturacion >90
+- Lectura: En floracion/cuajado/llenado alertar antes; saturacion aumenta raiz/gomosis.
+Fila 2:
+- Metrica: soilTemp
+- Banda conservadora: Actividad baja con suelo frio; actividad razonable >12 C; mejor absorcion en suelo templado
+- Lectura: No penalizar reposo relativo como si fuera etapa activa intensa.
+Fila 3:
+- Metrica: pH
+- Banda conservadora: Preferente 5.5-7.5; vigilancia >7.5 por Fe/Zn/Mn/P; extremos requieren analisis
+- Lectura: pH alto cambia disponibilidad; no culpar N automaticamente.
+Fila 4:
+- Metrica: EC
+- Banda conservadora: <1.2 favorable; 1.2-1.7 vigilancia; >1.7 alerta citrica; >2.5 fuerte segun contexto
+- Lectura: Metrica de salinidad/exceso; no de deficit.
+Fila 5:
+- Metrica: resistance
+- Banda conservadora: <1.8 favorable; 1.8-2.2 observacion; >2.2-2.5 alta; >2.5 critica segun suelo
+- Lectura: Raiz citrica necesita aire; compactacion + humedad alta es mala combinacion.
+Fila 6:
+- Metrica: N/P/K
+- Banda conservadora: Prioridad relativa segun etapa; no dosis
+- Lectura: SKIP no receta fertilizante.
+[/TABLA]
+
+================================================================================
+8. SENSIBILIDAD CRITICA SKIP
+================================================================================
+
+[TABLA]
+Columnas: Riesgo | Peso SKIP | Mensaje tecnico
+Fila 1:
+- Riesgo: Deficit hidrico en floracion
+- Peso SKIP: Muy alta
+- Mensaje tecnico: Puede aumentar caida de flor/frutito; revisar humedad real y clima.
+Fila 2:
+- Riesgo: Calor en floracion/cuajado
+- Peso SKIP: Muy alta
+- Mensaje tecnico: Calor fuerte puede tumbar flor/frutito aun con NPK correcto.
+Fila 3:
+- Riesgo: Salinidad / CE alta
+- Peso SKIP: Muy alta
+- Mensaje tecnico: Afecta raiz, absorcion, cuajado y calibre; no empujar fertilizante sin revisar agua/drenaje.
+Fila 4:
+- Riesgo: Exceso de humedad / anoxia / Phytophthora
+- Peso SKIP: Muy alta
+- Mensaje tecnico: Marchitez con suelo humedo no es falta de agua; revisar cuello, drenaje y raiz.
+Fila 5:
+- Riesgo: HLB / psilido asiatico como contexto regional
+- Peso SKIP: Muy alta sanitaria
+- Mensaje tecnico: No diagnosticar; si hay moteado asimetrico, brotes amarillos, fruto deforme o psilido, pedir revision tecnica.
+Fila 6:
+- Riesgo: Deficiencias Fe/Zn/Mg por pH alto o raiz limitada
+- Peso SKIP: Alta
+- Mensaje tecnico: Hoja amarilla o chica no siempre es falta de N.
+Fila 7:
+- Riesgo: Desbalance N/K
+- Peso SKIP: Media-alta
+- Mensaje tecnico: N alto puede empujar follaje; K pesa mas en calibre/llenado.
+Fila 8:
+- Riesgo: Caida fisiologica de fruto
+- Peso SKIP: Alta
+- Mensaje tecnico: Parte de la caida puede ser normal; se vuelve alerta si coincide con agua baja, calor, sales o raiz mala.
+Fila 9:
+- Riesgo: Postcosecha debil
+- Peso SKIP: Media-alta
+- Mensaje tecnico: El arbol sigue vivo; hoja/raiz/reservas impactan siguiente floracion.
+[/TABLA]
+
+================================================================================
+9. MENSAJES UX RECOMENDADOS
+================================================================================
+
+[TABLA]
+Columnas: Contexto | Copy sugerido
+Fila 1:
+- Contexto: Perfil general
+- Copy sugerido: Este es un perfil general de naranjo. Luego puedes elegir Valencia, Navel, temprana, criolla o clima calido sin perder historial.
+Fila 2:
+- Contexto: No sabe etapa
+- Copy sugerido: No pasa nada. Dime que ves: esta brotando, con flor/azahar, con frutito chico, con naranja creciendo, lista para corte o despues de cosecha.
+Fila 3:
+- Contexto: Reposo relativo
+- Copy sugerido: El naranjo no se apaga como un arbol que tira hoja. Si esta en baja actividad, aun hay que cuidar raiz, humedad y sales.
+Fila 4:
+- Contexto: Brotacion
+- Copy sugerido: Hay brote tierno. En citricos eso atrae psilido, minador y pulgones; revisa hojas nuevas antes de culpar al fertilizante.
+Fila 5:
+- Contexto: Floracion con agua baja
+- Copy sugerido: En floracion, el naranjo no perdona falta de agua. Puede tirar flor o amarrar menos fruta aunque el fertilizante este bien.
+Fila 6:
+- Contexto: Cuajado con caida de frutito
+- Copy sugerido: Algo de caida puede ser normal, pero si coincide con calor, sales o humedad baja, el amarre se puede venir abajo.
+Fila 7:
+- Contexto: Llenado con K bajo
+- Copy sugerido: En llenado, el potasio ayuda a calibre y jugo, pero primero revisa que haya agua estable y que la salinidad no este bloqueando la raiz.
+Fila 8:
+- Contexto: EC alta
+- Copy sugerido: Hay sales altas. Antes de meter mas fertilizante, revisa agua, drenaje y acumulacion de salitre en la zona de raiz.
+Fila 9:
+- Contexto: pH alto + hoja amarilla
+- Copy sugerido: Con pH alto, la hoja amarilla puede venir de hierro, zinc o raiz limitada. No lo leas automaticamente como falta de nitrogeno.
+Fila 10:
+- Contexto: Sospecha HLB
+- Copy sugerido: Estos sintomas se parecen a problemas serios de citricos. No lo cierres como diagnostico: toma foto, revisa brotes nuevos y confirma con un tecnico o sanidad local.
+Fila 11:
+- Contexto: Harvest maturity
+- Copy sugerido: Ya estas en madurez/cosecha. Vigila color, calibre, caida de fruta y calidad interna; en Valencia el color externo puede engañar.
+Fila 12:
+- Contexto: Postcosecha
+- Copy sugerido: No cierres el cultivo todavia. El naranjo usa hoja y raiz para recuperarse y preparar la siguiente floracion.
+[/TABLA]
+
+================================================================================
+10. CONFIABILIDAD SKIP
+================================================================================
+
+[TABLA]
+Columnas: Entrada disponible | Confianza | Uso
+Fila 1:
+- Entrada disponible: Solo cultivo
+- Confianza: Baja-media
+- Uso: Mostrar perfil general y pedir estado/etapa.
+Fila 2:
+- Entrada disponible: Cultivo + estado de arbol
+- Confianza: Media
+- Uso: Permite no productivo/productivo sin bloquear.
+Fila 3:
+- Entrada disponible: Cultivo + etapa visible
+- Confianza: Media-alta
+- Uso: Mejora targets y copy.
+Fila 4:
+- Entrada disponible: Cultivo + sensores + etapa
+- Confianza: Alta para lectura actual
+- Uso: No significa diagnostico varietal ni fitosanitario.
+Fila 5:
+- Entrada disponible: Cultivo + historial de 1+ ciclo
+- Confianza: Alta para memoria local
+- Uso: Permite ajustar riesgo de caida, sales, carga, HLB sospechoso, raiz y postcosecha.
+Fila 6:
+- Entrada disponible: Solo sensor NPK sin etapa
+- Confianza: Baja
+- Uso: No recomendar fertilizacion fina; pedir etapa y revisar agua/EC/pH.
+[/TABLA]
+
+================================================================================
+11. MIGRACION DESDE SKIP A PERFIL ESPECIFICO
+================================================================================
+
+Reglas:
+- No reiniciar el arbol.
+- No borrar memoria.
+- Actualizar profileId de or_skip a perfil destino.
+- Mantener perennialStateId.
+- Mantener phenologyStageId.
+- Mantener perennialAnchorDate.
+- Mantener perennialAnchorTypeId.
+- Recalcular sensibilidad, aliases, copy y rendimiento relativo desde el nuevo perfil.
+- Conservar eventos de estres: calor, frio/helada, deficit hidrico, salinidad, anoxia, pH alto, compactacion, sospecha HLB, psilido, defoliacion, caida fuerte, plaga, postcosecha debil y NPK alto/bajo.
+
+Mensaje UX:
+"Listo, ahora BIO-G va a leer tu naranjo con mas precision, conservando el historial anterior."
+
+[TABLA]
+Columnas: Origen | Destino | Disparador
+Fila 1:
+- Origen: or_skip
+- Destino: or_01_valencia_tardia
+- Disparador: Usuario identifica Valencia, Valencia Late, tardia o naranja para jugo.
+Fila 2:
+- Origen: or_skip
+- Destino: or_02_navel_mesa
+- Disparador: Usuario identifica Navel, Washington Navel, Navelina o naranja de ombligo.
+Fila 3:
+- Origen: or_skip
+- Destino: or_03_temprano_hamlin_pineapple
+- Disparador: Usuario identifica Hamlin, Pineapple, temprana o corte temprano.
+Fila 4:
+- Origen: or_skip
+- Destino: or_04_criollo_regional
+- Disparador: Usuario indica criolla, regional, comun, rancho, huerto viejo o no comercial estandar.
+Fila 5:
+- Origen: or_skip
+- Destino: or_05_tropical_calido
+- Disparador: Usuario indica clima calido/tropical, floraciones multiples o cosecha variable.
+[/TABLA]
+
+================================================================================
+12. MAPEO TECNICO SKIP
+================================================================================
+
+const String orangeTreeCropId = 'crop_orange_tree';
+const String orangeTreeLegacyId = 'orange_tree';
+const String orangeSkipProfileId = 'or_skip';
+
+// Label UX
+Naranjo general
+No se que tipo de naranja es
+Naranja comun
+
+// isGeneric
+true
+
+// migrationTargets
+or_01_valencia_tardia
+or_02_navel_mesa
+or_03_temprano_hamlin_pineapple
+or_04_criollo_regional
+or_05_tropical_calido
+
+// allowedStageIds
+planting_transplant
+root_establishment
+juvenile_vegetative
+dormancy
+budbreak
+vegetative_growth
+flowering
+fruit_set
+fruit_fill
+harvest_maturity
+post_harvest
+unknown
+
+// allowedSensorMetrics
+soilMoisture
+soilTemp
+ph
+ec
+resistance
+n
+p
+k
+
+================================================================================
+13. CASOS MINIMOS DE PRUEBA SKIP
+================================================================================
+
+1) Seleccionar Naranjo > No se > productive_season > fruit_fill:
+Esperado: app muestra "naranja creciendo/llenando", no "cosecha".
+
+2) SKIP + unknown stage:
+Esperado: no bloquea onboarding y ofrece opciones visuales: brote, flor, frutito, naranja creciendo, cosecha, postcosecha.
+
+3) SKIP + dormancy:
+Esperado: UX dice "reposo relativo/baja actividad", no "dormancia invernal" ni "arbol pelon".
+
+4) SKIP + post_harvest:
+Esperado: dashboard no apaga cultivo; habla de recuperacion, hoja activa y siguiente floracion.
+
+5) SKIP + soilMoisture apenas debajo de optimo:
+Esperado: observacion, no critico destructivo.
+
+6) SKIP + EC alta:
+Esperado: mensaje de salinidad/raiz/llenado, no "falta fertilizante".
+
+7) SKIP + pH alto + hoja amarilla:
+Esperado: contexto Fe/Zn/Mn/raiz; no diagnostico de falta de N.
+
+8) SKIP + brotacion:
+Esperado: advertencia de psilido/minador/pulgones como contexto sanitario, sin diagnosticar HLB.
+
+9) SKIP + flowering + heatStress=true:
+Esperado: copy de floracion delicada y posible caida; no culpar NPK.
+
+10) SKIP + fruit_set + fruitDropReported=true:
+Esperado: diferenciar caida fisiologica de estres; revisar agua, calor, salinidad, raiz y sanidad.
+
+11) Migrar or_skip a or_01_valencia_tardia:
+Esperado: conserva historial, stage y anclas.
+
+12) SKIP + harvest_maturity + profile unknown:
+Esperado: copy de cosecha/madurez general; no asumir Valencia/Navel.
+
+================================================================================
+14. FUENTES CONSULTADAS Y NIVEL DE CONFIANZA
+================================================================================
+
+Alta confianza:
+- Estandar BIO-G para Integracion de Arboles Perennes v1.5 con addendum. Uso: contrato de SKIP, etapas, sensores, AgroRange y runtime perenne.
+- University of Florida IFAS Extension, Florida Citrus Production Guide - Nutrition Management for Citrus Trees. Uso: nutricion, analisis foliar, N/K, HLB y eficiencia de absorcion.
+- University of Arizona Cooperative Extension, Irrigating Citrus Trees. Uso: agua, sintomas de estres hidrico, salinidad y manejo de riego.
+- University of Arizona Cooperative Extension, Oranges for Southern Arizona. Uso: Navel/Valencia, polinizacion, caida por calor, granulation y contexto de portainjertos.
+- UF/IFAS, Dooryard Citrus Guide appendices. Uso: categorias de naranja temprana/intermedia/tardia y cultivares Hamlin, Pineapple, Valencia, Navel.
+- UC IPM, Huanglongbing y Phytophthora Gummosis of Citrus. Uso: HLB, sintomas, vector, gomosis, suelo humedo, no diagnostico cerrado.
+- SENASICA, Manual Operativo de la campana contra plagas reglamentadas de los citricos. Uso: HLB, psilido, viveros certificados y manejo fitosanitario regional.
+
+Media-alta:
+- Revision cientifica sobre fruit set y desarrollo de fruto en Citrus. Uso: abscision fisiologica, crecimiento de fruto, carbohidratos y competencia.
+- Articulos mexicanos sobre HLB/psilido asiatico. Uso: importancia epidemiologica, no umbrales de sensor.
+
+Baja-media:
+- Lenguaje de productores/foros usado solo para UX: "flor se cayo", "frutito se cayo", "salitre", "gomosis", "hoja amarilla", "naranja chica", "fruta seca por dentro", "dragón amarillo", "psilido".
+No se usaron foros para fijar umbrales duros.
+
+================================================================================
+15. ESTADO DEL DOCUMENTO
+================================================================================
+
+Estado: Reforzado para servir como Documento 02 oficial de Naranjo.
+Dependencia: Documento 01 - Ficha Tecnica Universal BIO-G Naranjo.
+Pendiente para paquete completo:
+- Documento 03: Rendimiento aproximado.
+- Documento 04: Riesgos / sanidad / estres / memoria.
+- Documento 05: Fertilizacion NPK / StageTargets / StageWeights.
+
+Fin del documento.

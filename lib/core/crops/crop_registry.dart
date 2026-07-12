@@ -14,6 +14,11 @@ import 'package:bio_g/core/crops/onion/onion_crop_definition.dart';
 import 'package:bio_g/core/crops/peach_tree/peach_tree_crop_definition.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_crop_definition.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_crop_definition.dart';
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_crop_definition.dart';
+import 'package:bio_g/core/crops/orange_tree/orange_tree_crop_definition.dart';
+import 'package:bio_g/core/crops/lemon_tree/lemon_tree_crop_definition.dart';
+import 'package:bio_g/core/crops/mango_tree/mango_tree_crop_definition.dart';
+import 'package:bio_g/core/crops/avocado_tree/avocado_tree_crop_definition.dart';
 import 'package:bio_g/core/crops/spinach/spinach_crop_definition.dart';
 import 'package:bio_g/core/crops/squash/squash_crop_definition.dart';
 import 'package:bio_g/core/crops/tomato/tomato_crop_definition.dart';
@@ -41,6 +46,11 @@ class CropRegistry {
     CropKey.pearTree: PearTreeCropDefinition(),
     CropKey.peachTree: PeachTreeCropDefinition(),
     CropKey.walnutTree: WalnutTreeCropDefinition(),
+    CropKey.pistachioTree: PistachioTreeCropDefinition(),
+    CropKey.orangeTree: OrangeTreeCropDefinition(),
+    CropKey.lemonTree: LemonTreeCropDefinition(),
+    CropKey.mangoTree: MangoTreeCropDefinition(),
+    CropKey.avocadoTree: AvocadoTreeCropDefinition(),
   };
 
   static CropDefinition? byKey(CropKey key) => _definitions[key];
@@ -103,6 +113,87 @@ class CropRegistry {
         normalized == 'nuez' ||
         normalized == 'nuez pecana') {
       return _definitions[CropKey.walnutTree];
+    }
+
+    // Pistache: cropId canónico + alias legacy + aliases humanos resuelven a
+    // Pistache, alineado con CropCatalog.canonicalCropKey.
+    if (normalized == 'crop_pistachio_tree' ||
+        normalized == 'pistachio_tree' ||
+        normalized == 'pistachiotree' ||
+        normalized == 'pistachio' ||
+        normalized == 'pistache' ||
+        normalized == 'pistacho' ||
+        normalized == 'pistachero' ||
+        normalized == 'alfoncigo' ||
+        normalized == 'alfóncigo') {
+      return _definitions[CropKey.pistachioTree];
+    }
+
+    // Naranjo: cropId canónico + alias legacy + aliases humanos resuelven a
+    // Naranjo, alineado con CropCatalog.canonicalCropKey.
+    if (normalized == 'crop_orange_tree' ||
+        normalized == 'orange_tree' ||
+        normalized == 'orangetree' ||
+        normalized == 'orange' ||
+        normalized == 'naranjo' ||
+        normalized == 'naranja' ||
+        normalized == 'naranja dulce' ||
+        normalized == 'sweet orange') {
+      return _definitions[CropKey.orangeTree];
+    }
+
+    // Limón: cropId canónico + alias legacy (lime) + aliases humanos resuelven a
+    // Limón, alineado con CropCatalog.canonicalCropKey. NO cae en naranjo.
+    if (normalized == 'crop_lemon_tree' ||
+        normalized == 'lemon_tree' ||
+        normalized == 'lemontree' ||
+        normalized == 'crop_lime_tree' ||
+        normalized == 'lime_tree' ||
+        normalized == 'lemon' ||
+        normalized == 'lime' ||
+        normalized == 'limon' ||
+        normalized == 'limón' ||
+        normalized == 'limonero' ||
+        normalized == 'lima') {
+      return _definitions[CropKey.lemonTree];
+    }
+
+    // Mango: cropId canónico + alias legacy + aliases humanos resuelven a Mango,
+    // alineado con CropCatalog.canonicalCropKey. NO cae en limón/naranjo.
+    if (normalized == 'crop_mango_tree' ||
+        normalized == 'mango_tree' ||
+        normalized == 'mangotree' ||
+        normalized == 'crop_mango' ||
+        normalized == 'mango' ||
+        normalized == 'mangos' ||
+        normalized == 'mangifera' ||
+        normalized == 'mangifera_indica' ||
+        normalized == 'arbol_mango' ||
+        normalized == 'árbol_mango') {
+      return _definitions[CropKey.mangoTree];
+    }
+
+    // Aguacate: cropId canónico + alias legacy + aliases humanos resuelven a
+    // Aguacate, alineado con CropCatalog.canonicalCropKey. NO cae en mango,
+    // cítricos ni manzano.
+    if (normalized == 'crop_avocado_tree' ||
+        normalized == 'avocado_tree' ||
+        normalized == 'avocadotree' ||
+        normalized == 'crop_avocado' ||
+        normalized == 'avocado' ||
+        normalized == 'avocados' ||
+        normalized == 'aguacate' ||
+        normalized == 'aguacates' ||
+        normalized == 'aguacatero' ||
+        normalized == 'palta' ||
+        normalized == 'palto' ||
+        normalized == 'persea' ||
+        normalized == 'persea_americana' ||
+        normalized == 'arbol_aguacate' ||
+        normalized == 'árbol_aguacate' ||
+        normalized == 'arbol de aguacate' ||
+        normalized == 'árbol de aguacate') {
+      return _definitions[CropKey.avocadoTree];
     }
 
     return null;

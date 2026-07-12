@@ -1,0 +1,1281 @@
+[ENCABEZADO]
+BIO-G | Mango / Árbol de mango | Documentación técnica v1.1
+[/ENCABEZADO]
+
+BIO-G
+05. Guía de Fertilización NPK y Targets por Etapa - Mango / Árbol de mango
+Cultivo: Mango / Árbol de mango
+cropId canónico recomendado: crop_mango_tree
+CropKey esperado: mango_tree
+Alias legacy/técnicos: mango_tree, crop_mango, mango, mangos, mangifera, mangifera_indica, arbol_mango, árbol_mango
+profilePrefix: MG
+Perfil general: mg_skip
+Versión: v1.1 reforzada con PDFs del usuario, notas comerciales convertidas a lógica BIO-G y cuerpo base v1 conservado
+Formato: TXT técnico para Flutter/Dart, Codex y Claude Code
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+================================================================================
+IMPORTANTE v1.1
+================================================================================
+Este documento NO es receta local, NO sustituye análisis de suelo, agua, tejido/foliar,
+asesoría regional, laboratorio, portainjerto, historial de huerto ni normatividad de exportación.
+En BIO-G v1 la lectura NPK es una interpretación relativa de sensor y etapa; no debe
+convertirse en dosis comercial cerrada.
+
+Este addendum v1.1 refuerza el Documento 05 de Mango con:
+- PDFs técnicos del usuario: FHIA, INTA Costa Rica, IPNI/National Mango Board,
+  Intagri/ICL, fertilización tropical y revisión de literatura de Galán Saúco.
+- Nota técnica aportada por el usuario sobre programa nutricional tipo Haifa/ICL para
+  rendimiento objetivo 30-50 t/ha.
+- Reglas prácticas para traducir dosis comerciales, foliares y fertirriego a lógica BIO-G
+  sin mostrar recetas cerradas.
+- Ajustes de interpretación de N, P, K, Ca, Mg, S, B, Zn, pH, EC, análisis foliar,
+  fertirrigación, maduración y postcosecha.
+
+Regla principal:
+El sensor NPK NO reemplaza análisis foliar, suelo y agua.
+El sensor ve una lectura relativa del suelo.
+La hoja confirma si el mango lo tomó.
+El agua, raíz, pH, EC, compactación, sanidad y etapa definen si el nutriente sirve.
+
+Mensaje rector farmer-friendly v1.1:
+"En mango el fertilizante solo funciona si la raíz lo puede tomar y si la etapa lo pide.
+N ayuda a hoja, brote y recuperación, pero tarde o mal sincronizado te puede mandar el
+árbol a puro follaje. K pesa fuerte en amarre, llenado, tamaño y calidad. P se planea
+para raíz y floración. Ca, Mg, S, B y Zn no los mide el sensor, pero en mango pueden
+decidir flor, cuajado, firmeza y poscosecha."
+
+================================================================================
+0.0 ADDENDUM v1.1 - REFUERZO CON PDFs Y NOTAS NUEVAS
+================================================================================
+
+0.0.1 Fuentes nuevas incorporadas y cómo se usan en BIO-G
+---------------------------------------------------------
+
+A) Nota del usuario: programa nutricional recomendado para mango, rendimiento objetivo
+30-50 MT/ha.
+Uso BIO-G:
+- Se usa como patrón de presión nutrimental por etapa, NO como receta visible.
+- La tabla comercial concentra fórmulas con más K desde floración hasta crecimiento
+  del fruto.
+- Refuerza que en desarrollo floral de primavera se permite nutrición completa
+  N-P-K + micros; de floración a fruto y en crecimiento de fruta predomina K alto.
+- Refuerza que no debe aplicarse fertilizante con N durante la maduración en variedades
+  con cambio de color.
+- Refuerza que Ca y Mg deben corregirse por fertirrigación o foliar cuando exista
+  deficiencia confirmada.
+- Refuerza que el programa debe adaptarse al estado de planta, crecimiento y asesoría
+  local.
+
+Traducción a motor:
+- flowering / fruit_set / fruit_fill suben kPriority.
+- harvest_maturity baja tolerancia a N alto.
+- Ca/Mg se mencionan como contexto avanzado, no sensor v1.
+- "Rendimiento objetivo 30-50 t/ha" se guarda solo para modo avanzado y rendimiento,
+  no para dosis automática.
+
+B) Programa tipo Haifa/ICL incluido por el usuario.
+Patrón técnico extraído:
+- Foliar en desarrollo floral: balanceado tipo 19-19-19 + micros.
+- Foliar floración-fruto y crecimiento de fruto: K alto tipo 12-5-40 + micros.
+- Fertirriego temprano y postcosecha: N-K balanceado tipo 20-5-30.
+- Crecimiento de fruto: K muy alto tipo 10-10-43 o sulfato potásico / SOP cuando se
+  busque color y se acerca cosecha.
+- Advertencia explícita: no N durante maduración de variedades que cambian de color.
+- Total comercial citado: 310 kg/ha de 20-5-30 + 300 kg/ha de 10-10-43 por temporada
+  como ejemplo, NO hardcode.
+Uso BIO-G:
+- No mostrar marcas.
+- No mostrar kg/ha en modo simple.
+- Sí traducir a "K domina de floración a llenado; N se reduce en madurez; Ca/Mg se
+  revisan con foliar/suelo".
+- En modo técnico futuro, guardar como referencia comercial externa con baja autoridad
+  para dosis local.
+
+C) ICL / Intagri / nota de cultivo de mango.
+Aporta:
+- Mango se cultiva en tropical/subtropical sin heladas.
+- pH ideal 5.5-7.5.
+- Raíz requiere suelo profundo, mínimo orientativo 80 cm.
+- Nutrientes más consumidos: N y K; luego S, Ca, Mg; micros Fe, Mn, Zn.
+- Para 16 t/ha o 220 kg/planta se citan extracciones cercanas a 23 kg N, 3 kg P y
+  25 kg K por hectárea.
+- Eficiencias aproximadas: N 30-50%, P 15-30%, K 40-60%, dependientes de suelo y ambiente.
+- Crecimiento en flujos alternados con reposo; diferenciación floral después de reposo.
+- En trópico, floración puede inducirse por sequía y el vegetativo por lluvias.
+- N, P y K foliares suelen estar máximos antes de floración y mínimos en plena
+  floración/formación de frutos.
+- Aplicación en plantas jóvenes: salida de cosecha y después de floración.
+- Deficiencias frecuentes: S y Mg; se cita 40 kg/ha S y 30 kg/ha MgO como corrección
+  orientativa sin análisis, pero BIO-G NO debe recetarlo.
+- En pH <5.6 puede requerirse cal/enmienda; en pH >7.0 convienen fuentes de reacción
+  ácida para mejorar disponibilidad de P y micros.
+Uso BIO-G:
+- pH y profundidad/compactación suben peso antes de NPK.
+- Mg y S pasan a contexto fuerte, especialmente con baja MO o pH problemático.
+- EC/pH/agua modifican confianza de cualquier NPK.
+- No usar dosis de S/Mg sin análisis.
+
+D) FHIA Hoja Técnica No. 3.
+Aporta:
+- Mejor programa de fertilización = integración de análisis de suelo + foliar +
+  potencial productivo.
+- Muestra de suelo: inmediatamente después de cosecha, 30-40 cm, zona de fertilización
+  o proyección de copa, 15-20 submuestras.
+- Análisis foliar: final de floración, hojas de 6-7 meses, parte media del árbol,
+  hoja en zona media del último brote, 4 hojas por árbol, 20 árboles/ha.
+- Época de fertilización: inmediatamente después de cosecha y después de floración
+  cuando haya cuajado fruto.
+- Cuidado con N antes de floración porque puede estimular vegetativo y reducir producción.
+- Recomendación general: 50% de elementos después de poda y 50% después de floración
+  una vez cuajado el fruto; microelementos 40/30/30.
+- Macros al suelo; aplicación en banda desde 30 cm del tronco hasta periferia de copa.
+- Tabla orientativa gramos/árbol/año para 185 plantas/ha: en >20 años, 600-700 g N,
+  200 g P2O5 y 600-700 g K2O.
+Uso BIO-G:
+- Reforzar post_harvest como ventana fuerte de recuperación.
+- Reforzar fruit_set como segunda ventana de demanda.
+- Reforzar que N prefloración no debe empujar vegetativo.
+- Agregar muestreo de suelo/foliar en modo avanzado.
+- Dosis por árbol se conservan como referencia avanzada, NO visible en modo simple.
+
+E) "El Cultivo de Mango y su Fertilización" / Intagri.
+Aporta:
+- En México, el manejo nutricional inadecuado afecta rendimientos.
+- México: mango en 0-450 msnm, 1,200-1,500 mm, 24-27 °C, suelos profundos, textura
+  media, buen drenaje y pH 6.0-8.0 como rango observado, aunque ideal BIO-G es más
+  estrecho.
+- Buen manejo comercial puede alcanzar hasta ~40 t/ha, pero no es default.
+- N y K son los dos macronutrientes más extraídos; S y Ca similares; luego Mg; P menor.
+- Para 15.8 t/ha, 220 kg/planta, 72 árboles/ha: 23.3 kg N, 3.03 kg P, 25.3 kg K,
+  20.8 kg Ca y 11.0 kg Mg.
+- Dos periodos: formación del árbol y producción.
+- Formación: N suficiente en dosis pequeñas e intervalos cortos; riego posterior.
+- Producción: promover frutos, rendimiento regular, calidad; fertilización por restitución.
+Uso BIO-G:
+- Mantener no productivo/juvenil con N más permisivo.
+- Producción exige K/Ca/Mg/B y no solo N.
+- Rendimiento alto solo con contexto y no como objetivo estándar.
+
+F) "Nutrición y fertilización en el mango: revisión de literatura" - Galán Saúco /
+National Mango Board.
+Aporta:
+- No existe fórmula universal para mango por cultivar, suelo, clima, agua, sanidad,
+  etapa y rendimiento.
+- Análisis de suelo preplantación y periódicos; análisis foliar es herramienta central
+  para establecer programa.
+- Las cantidades extraídas cambian por cultivar, emplazamiento, edad, poda, fruta caída,
+  hojas/ramas podadas y pérdidas por lixiviación/fijación/volatilización.
+- Macronutrientes deben programarse por fenología.
+- N suele aplicarse mayormente tras recolección; micronutrientes preferentemente durante
+  floración por foliar; Fe puede ir quelatado por fertirriego.
+- Valores de suelo de referencia QDAF: pH 5.5-7.0, CE <0.2 dS/m para suelo destinado,
+  P 60-80 mg/kg, K 0.25-0.40 meq/100g, Ca 3-5, Mg 0.75-1.25 meq/100g, S >12 mg/kg.
+- Rangos foliares Quaggio: N 1.2-1.4, P 0.08-0.16, K 0.5-1.0, Ca 2.0-3.5,
+  Mg 0.25-0.5, S 0.08-0.18, B 50-100 ppm, Zn 20-40 ppm, Mn 50-100 ppm, Fe 50-200 ppm,
+  Cu 10-50 ppm.
+- Relación N/Ca: N alto y Ca bajo favorecen descomposición interna y mala vida de anaquel;
+  se sugiere mantener N/Ca <0.5 en cultivares tipo Florida.
+- N foliar >1.5 puede resultar en floración escasa o inexistente; para cultivares sensibles
+  conviene mantener N más bajo.
+- K mejora calidad, tamaño, sabor, color y vida de anaquel, pero compite con Ca/Mg.
+- QDAF destaca N, K, Ca y B como cuatro nutrientes muy críticos.
+- B es crucial para floración, germinación de polen, tubo polínico y cuajado, pero margen
+  entre deficiencia/toxicidad es estrecho.
+- Fertirrigación mejora eficiencia; cuidado con mezclas que precipitan; separar Ca de
+  fosfatos/sulfatos.
+Uso BIO-G:
+- Meter "foliar confirma" como regla obligatoria.
+- Fortalecer N/Ca, Ca, B, Mg y K como contexto avanzado.
+- No recomendar B/Ca/Zn a ciegas.
+- Usar N alto como señal de riesgo en inducción/madurez.
+- Usar K fuerte en fruit_set/fruit_fill.
+- Usar fertirriego como modo avanzado, no receta.
+
+G) "Fertilización del mango en el trópico" - Avilán.
+Aporta:
+- En trópico los programas subtropicales pueden sobredosificar, especialmente N.
+- El mango produce flujos de crecimiento alternados con reposo; máximas absorciones
+  coinciden con desarrollo vegetativo intenso.
+- En Haden se observaron tres flujos importantes: después de cosecha, antes de floración
+  y al final de fructificación.
+- N y K son de mayor extracción por fruto.
+- 16 t/ha / 220 kg/planta: 23 kg N, 3 kg P, 25 kg K.
+- Eficiencia usada en criterio: N 70%, P 20-40% según suelo, K 50% en ese modelo tropical.
+- N es "manipulador de productividad", pero su rango foliar de deficiencia/exceso es
+  estrecho; exceso con altas temperaturas induce crecimiento vegetativo continuo en
+  detrimento de producción.
+- P requerimiento bajo; en árboles >10 años, P puede aplicarse cada cuatro años en
+  pequeñas cantidades si suelo lo justifica.
+- Localización del fertilizante: P y K en zona de raíces activas, entre proyección de copa
+  y parte media; raíces activas laterales 1.5 m en texturas gruesas-medias y 2.5 m en finas,
+  y más de 1.2 m vertical si no hay limitaciones.
+- Deficiencias S/Mg son comunes; micros no descuidar en pH alto.
+Uso BIO-G:
+- No empujar N en trópico por default.
+- P no dominar adulto.
+- Resistance/compactación/profundidad pesan.
+- Ubicación de raíz se traduce a "sensor local puede no representar todo el bulbo/zona".
+
+H) INTA Costa Rica "Guía para el cultivo del mango".
+Aporta desde páginas visuales:
+- pH ideal visible en guía: 5.5-7.0; profundidad efectiva >90 cm como apta.
+- Rango foliar visual: N 1.0-1.5%, P 0.1-0.25%, K 0.3-1.2%, Ca 2.0-3.5%,
+  Mg 0.15-0.30%, Mn 50-250 ppm, B 25-100 ppm, Cu 10-50 ppm, Fe 50-200 ppm,
+  Zn 20-50 ppm.
+- Fertilización sugerida por edad en guía visual: 1 año 50/30/0, 2-4 años 200/300/100,
+  5-10 años 400/200/400, 10-15 años 600/300/600, 15-20 años 800/400/800,
+  >20 años 1000/500/1000 en N/P2O5/K2O g/árbol/año.
+- Inducción floral: estrés hídrico moderado puede estimular, pero hacerlo mal puede
+  favorecer plagas/enfermedades o baja respuesta.
+- Riego: mango es resistente a sequía, pero riego puede mejorar cuajado, desarrollo de fruta,
+  llenado y calidad; también puede causar problemas si se aplica mal.
+Uso BIO-G:
+- EC/pH/profundidad tienen guardas.
+- Se cita rango foliar alternativo, no absoluto.
+- Se refuerza que riego/inducción no se receta.
+
+================================================================================
+0.0.2 DECISIONES v1.1 QUE TIENEN PRIORIDAD SOBRE EL CUERPO BASE
+================================================================================
+
+1) Mantener NpkCaps v1, pero fortalecer lectura verbal:
+- N cap = 115.0
+- P cap = 95.0
+- K cap = 190.0
+
+Motivo:
+Los PDFs y notas nuevas refuerzan mucho K y N, pero también muestran que el mango
+castiga el exceso o mala sincronización de N. K es muy importante, pero Ca, Mg, B y EC
+modifican calidad. Por eso no subimos K cap todavía a 200 en v1 simple; dejamos opción
+futura 200 en huertos tecnificados con validación foliar/suelo.
+
+2) Nitrógeno:
+- Más permisivo en plantación, juvenil, vegetativo y postcosecha.
+- Conservador en reposo funcional / inducción floral.
+- Moderado en floración/cuajado.
+- Bajo-moderado en fruit_fill.
+- Bajo en harvest_maturity, especialmente en variedades con cambio de color.
+- N alto tarde nunca se celebra como óptimo.
+
+3) Potasio:
+- Sube fuerte desde floración/cuajado.
+- Máximo en fruit_fill.
+- Mantiene importancia en harvest_maturity por calidad, pero si EC alta se bloquea.
+- K bajo con agua/EC correctas en fruit_fill es alerta fuerte.
+- K alto con Ca/Mg/B bajos o desórdenes de fruto puede ser antagonismo, no éxito.
+
+4) Fósforo:
+- P pesa en raíz, establecimiento y prefloración/floración.
+- En adulto productivo, P es menor que N/K/Ca/Mg en extracción.
+- P bajo en madurez/cosecha no debe tumbar score si agua, K y hoja están bien.
+- P se interpreta con pH; en pH alto se puede bloquear con Ca y micros.
+
+5) Calcio:
+- Ca no es sensor v1, pero su contexto es obligatorio en mango de calidad/exportación.
+- Ca bajo + N alto = riesgo de mala firmeza, descomposición interna, poscosecha débil.
+- Relación N/Ca foliar <0.5 es una regla avanzada útil si hay análisis.
+- Ca se absorbe mejor por raíz joven y humedad funcional; foliar no siempre corrige fruto.
+
+6) Boro:
+- B no es sensor v1, pero en floración/cuajado debe mencionarse si hay foliar o historial.
+- Margen estrecho: no recomendar B a ciegas.
+- B bajo puede bajar flor, polen, tubo polínico, cuajado y deformar frutos.
+- B alto puede quemar hojas/bordes.
+
+7) Magnesio y azufre:
+- Mg fuerte para clorofila, fotosíntesis, carbohidratos, rendimiento/calidad y estrés.
+- Mg compite con K/Ca y se afecta por pH bajo, sequía y suelos arenosos.
+- S ayuda proteínas, aminoácidos, calidad y eficiencia de N; frecuente respuesta en suelos
+  bajos en materia orgánica.
+- No simular Mg/S con NPK.
+
+8) pH y fuente fertilizante:
+- pH ideal general BIO-G: 5.5-7.0; aceptable vigilado hasta 7.5.
+- pH <5.0: acidez, Al/Mn, Ca/Mg/K bajos y raíz.
+- pH >7.8: bloqueo Fe/Zn/Mn/P/B; fuentes de reacción ácida pueden ayudar en manejo
+  técnico, pero no receta visible.
+- La fuente importa: KCl en salinidad/cloruros debe tratarse con cautela; SOP/KNO3 pueden
+  tener distinta lectura técnica, pero BIO-G simple no prescribe fuente.
+
+9) Fertirrigación:
+- Es modo avanzado.
+- Permite fraccionar, mejorar eficiencia y ubicar nutrientes en zona de raíz.
+- Verificar compatibilidad: no mezclar Ca con fosfatos/sulfatos en el mismo tanque.
+- EC del agua/bulbo manda: con fertirriego mal manejado, el sensor puede mostrar "alto"
+  por acumulación de sales.
+
+10) Maduración:
+- No aplicar N en maduración de variedades con cambio de color.
+- En harvest_maturity, N alto baja confianza y genera observación.
+- K/Ca/Mg y agua estable importan más para calidad.
+
+11) Modo productor simple:
+- No mostrar kg/ha, kg/árbol, marcas comerciales ni recetas.
+- Sí mostrar prioridades y advertencias:
+  "agua primero", "sales bloquean", "N alto puede irse a follaje", "K pesa en llenado",
+  "foliar confirma".
+
+================================================================================
+0.0.3 AJUSTES DIRECTOS A STAGETARGETS v1.1
+================================================================================
+
+Reemplazar o sobreescribir estas filas respecto al cuerpo base si se implementa v1.1.
+El resto de filas del cuerpo base puede mantenerse.
+
+[TABLA]
+StageId | Ajuste v1.1 | Motivo
+dormancy | Nrel 6 / 12 / 28 / 55; Krel 22 / 45 / 70 / 88 | En reposo/inducción, N alto empuja vegetativo; K/reservas pesan.
+flowering | Nrel 10 / 22 / 42 / 66; Prel 18 / 42 / 68 / 88; Krel 34 / 60 / 84 / 96 | Floración requiere N moderado, P funcional, K alto y B/Ca contexto.
+fruit_set | Nrel 12 / 24 / 45 / 68; Krel 40 / 66 / 88 / 98 | Cuajado frágil; K y agua/EC dominan; N pesado no.
+fruit_fill | Nrel 12 / 24 / 48 / 68; Krel 45 / 70 / 92 / 99 | Llenado usa K alto; N bajo-moderado para no meter brote ni bajar calidad.
+harvest_maturity | Nrel 6 / 14 / 30 / 55; Krel 34 / 58 / 82 / 95 | No N en maduración de variedades con cambio de color; K sostiene calidad.
+post_harvest | Nrel 24 / 48 / 70 / 88; Krel 30 / 55 / 80 / 94 | Ventana fuerte de recuperación y reservas si raíz/EC/agua están bien.
+[/TABLA]
+
+Ajuste de EC v1.1:
+- flowering, fruit_set, fruit_fill: conservar optimalMax 1.1-1.2 y highMin 1.8-1.9.
+- Si EC >= 2.0 en estas etapas: bloquear recomendación agresiva de N/K/P.
+- Si EC >= 2.5: alerta fuerte de salinidad/toxicidad/absorción.
+
+Ajuste de humedad v1.1:
+- dormancy/reposo funcional: no promover riego excesivo; permitir observación baja si
+  no hay estrés severo y si se busca reposo, pero no recomendar estrés.
+- flowering/fruit_set: no permitir bajo 50 como normal; caída de flor/manguito con
+  humedad baja = agua primero.
+- fruit_fill: humedad baja + K bajo = agua primero antes de K.
+
+================================================================================
+0.0.4 TABLA FOLIAR v1.1 - RANGOS INTEGRADOS
+================================================================================
+
+NO mezclar foliar con sensor NPK.
+Foliar = absorción real.
+Sensor NPK = lectura relativa de suelo.
+Suelo/agua = disponibilidad y bloqueo.
+
+[TABLA]
+Elemento | Rango foliar base v1.1 | Rango amplio visto en PDFs | Uso BIO-G
+N (%) | 1.0-1.5 | Quaggio apropiado 1.2-1.4; exceso >1.6; cultivares sensibles ideal <1.25 | Hoja, brote, recuperación; exceso puede bajar floración y calidad.
+P (%) | 0.08-0.18 | 0.08-0.25 según fuente | Raíz/energía/floración; interpretar con pH.
+K (%) | 0.5-1.2 | 0.3-1.2 según guía; Quaggio 0.5-1.0 | Cuajado, llenado, tamaño, sabor, color, calidad.
+Ca (%) | 2.0-3.5 | 2.0-5.0 según suelo/fuente | Firmeza, pared celular, desórdenes, poscosecha; N/Ca crítico.
+Mg (%) | 0.15-0.50 | 0.15-0.40 o 0.25-1.0 según revisión Mg | Clorofila, fotosíntesis, carbohidratos, estrés.
+S (%) | 0.08-0.20 | 0.08-0.25 | Proteínas, aminoácidos, eficiencia de N.
+B (ppm) | 50-100 | 25-100 según guía; deficiente <10; tóxico >150 | Flor, polen, tubo polínico, cuajado; margen estrecho.
+Zn (ppm) | 20-100 | 20-150 o 20-50 según guía | Brote, hoja, floración; pH alto bloquea.
+Mn (ppm) | 50-250 | 50-500 según fuente | Clorosis/pH; cuidado con acidez.
+Fe (ppm) | 50-200 | 30-200 según fuente | Clorosis férrica; pH alto/raíz.
+Cu (ppm) | 10-50 | 10-20 o 10-50 | Sanidad/lignificación; exceso posible por cobres.
+Cl (%) | <0.25 | Cl 100-900 ppm apropiado; toxicidad variable | Salinidad/cloruros.
+Na (%) | <0.20 | Variable por agua/suelo | Salinidad/sodicidad.
+[/TABLA]
+
+Reglas foliares:
+- N >1.5 en reposo/inducción o antes de floración = riesgo de baja floración / vegetativo.
+- N alto + Ca bajo = riesgo de desórdenes y vida poscosecha.
+- K bajo en fruit_fill con agua/EC correctas = alerta real.
+- B bajo en floración/cuajado = contexto fuerte, pero no dosis automática.
+- Mg bajo + hoja vieja clorótica + K/Ca altos = posible antagonismo, no N automático.
+- pH alto + Zn/Fe/Mn bajos = disponibilidad, no falta simple de NPK.
+
+================================================================================
+0.0.5 EXTRACCIÓN NUTRIMENTAL v1.1 - SOLO MODO AVANZADO
+================================================================================
+
+Estas cifras sirven para coherencia técnica y futuro modo avanzado. NO son dosis.
+La dosis depende de suelo, agua, foliar, eficiencia, pérdidas, edad, densidad, poda,
+rendimiento objetivo, materia orgánica, pH, EC y manejo.
+
+A) Extracción por 16 t/ha / 220 kg planta citada en FHIA/ICL/Avilán:
+- N: 23 kg/ha
+- P: 3 kg/ha
+- K: 25 kg/ha
+
+B) Equivalente por tonelada aproximado:
+- N: 1.44 kg/t
+- P: 0.19 kg/t
+- K: 1.56 kg/t
+
+C) Extracción por tonelada de fruta, Hiroce et al. 1977 / ICL nota:
+[TABLA]
+Cultivar | N kg/t | P kg/t | K kg/t | Ca kg/t | Mg kg/t | S kg/t
+Haden | 1.221 | 0.216 | 1.818 | 0.149 | 0.174 | 0.174
+Extrema | 1.179 | 0.166 | 1.844 | 0.153 | 0.189 | 0.173
+Carlota | 1.446 | 0.182 | 2.269 | 0.249 | 0.191 | 0.131
+[/TABLA]
+
+D) Estudio amplio 14 cultivares / 15.8 t/ha:
+- N: 23.3 kg/ha
+- P: 3.03 kg/ha
+- K: 25.3 kg/ha
+- Ca: 20.8 kg/ha
+- Mg: 11.0 kg/ha
+Lectura BIO-G: N y K son los más extraídos, pero Ca/Mg también son importantes para
+calidad; P es menor en extracción, no por eso irrelevante en raíz/floración.
+
+E) Ataulfo con poda/materia seca total:
+- N 4.19 kg/t
+- P 0.79 kg/t
+- K 7.19 kg/t
+- Ca 3.67 kg/t
+- Mg 0.93 kg/t
+Lectura BIO-G: si se considera poda, hojas, fruta caída y biomasa, la demanda sube fuerte.
+No usar solo fruta cosechada para reponer todo.
+
+F) Eficiencias orientativas citadas por usuario/ICL:
+- N: 30-50 %
+- P: 15-30 %
+- K: 40-60 %
+Lectura BIO-G: una lectura baja no se traduce directo a dosis; eficiencia depende de agua,
+raíz, pH, EC, textura y fuente.
+
+================================================================================
+0.0.6 FERTIRRIGACIÓN / FOLIAR / FUENTES - TRADUCCIÓN A BIO-G
+================================================================================
+
+Modo simple:
+- No mostrar fuentes.
+- No mostrar marcas.
+- No mostrar dosis.
+- Mostrar etapa, prioridad y advertencia.
+
+Modo avanzado futuro:
+- Permitir al agrónomo configurar programa por kg/ha o kg/árbol.
+- Separar N, P, K elemental vs P2O5/K2O.
+- Documentar conversiones:
+  P2O5 a P = P2O5 x 0.4364
+  P a P2O5 = P x 2.291
+  K2O a K = K2O x 0.8301
+  K a K2O = K x 1.205
+- Registrar si el programa es suelo, fertirriego o foliar.
+- Registrar fuente y salinidad/cloruros si se usa KCl o fuentes salinas.
+- Registrar si el suelo es ácido, neutro, alcalino, arenoso, calizo o con baja CEC.
+
+Reglas de fertirriego:
+- Si EC del agua o suelo alta, no intensificar N/K sin revisar sales.
+- Separar calcio de sulfatos/fosfatos para evitar precipitados.
+- Fe quelatado por fertirriego puede ser contexto en pH alto; no sensor v1.
+- Microelementos suelen ir foliares en floración/brotes; no se simulan con NPK.
+- En goteo/microaspersión, el sensor debe estar en zona representativa del bulbo; si no,
+  la lectura puede engañar.
+
+Reglas foliares:
+- Foliar no reemplaza suelo/fertirriego para demandas grandes de macronutrientes.
+- Foliar con B/Zn/Ca/Mg/K puede apoyar etapas críticas si hay diagnóstico.
+- Foliar con N/K para inducción/floración es práctica regional; BIO-G NO la receta.
+- Si el usuario pregunta dosis: responder con análisis + técnico local.
+
+================================================================================
+0.0.7 PROGRAMACIÓN POR ETAPA v1.1
+================================================================================
+
+planting_transplant:
+- Fondo orgánico/enmiendas solo como contexto si análisis lo justifica.
+- N bajo-moderado en pequeñas dosis; P funcional para raíz; K bajo-moderado.
+- Evitar sales en raíz nueva.
+
+root_establishment:
+- Humedad estable, baja EC, pH manejable, profundidad y aireación.
+- P/K cerca de zona raíz activa; no quemar.
+
+juvenile_vegetative:
+- N más permisivo para formar copa, pero fraccionado y con riego.
+- No castigar por falta de flor/fruto.
+
+dormancy / reposo funcional / inducción:
+- Mantener hoja madura y reservas.
+- N bajo; no estimular flush si se busca floración.
+- K/P/Ca/B/Mg como contexto, no recetas.
+- Déficit hídrico leve puede ocurrir como condición regional, pero BIO-G no debe
+  recomendar estrés.
+
+budbreak / vegetative_growth:
+- N útil para nuevo tejido; cuidado con exceso.
+- Zn/Fe/Mn/Mg como contexto si hoja nueva sale chica/amarilla.
+- Si no hay flor y N alto, mensaje de "puro follaje".
+
+flowering:
+- K alto, P funcional, N moderado.
+- B/Zn/Ca contexto fuerte si hay análisis.
+- Humedad alta, lluvia, cenicilla/antracnosis y calor pueden pesar más que NPK.
+
+fruit_set:
+- K + agua estable + baja EC.
+- Ca/B contexto para cuajado y fruto temprano.
+- No culpar solo NPK si cae manguito; revisar estrés y sanidad.
+
+fruit_fill:
+- K máximo; agua y hoja funcional mandan.
+- Mg/Ca contexto para fotosíntesis/calidad/firmeza.
+- N bajo-moderado, no empujar vegetativo.
+- En programas tipo 10-10-43, leerlo como alta presión K y N bajo, no como receta.
+
+harvest_maturity:
+- No N si variedad cambia color o está cerca de corte.
+- K/Ca/Mg/calidad; EC baja.
+- Si N alto, observación por color, firmeza y poscosecha.
+
+post_harvest:
+- Ventana fuerte para recuperación: N/K moderados si agua, raíz y EC están bien.
+- Preparar siguiente brote/hoja madura para futura floración.
+- Registrar memoria si el árbol quedó defoliado, cargó mucho o hubo estrés.
+
+unknown:
+- No recomendar fino; pedir etapa visible.
+
+================================================================================
+0.0.8 MENSAJES UX NUEVOS v1.1
+================================================================================
+
+- "El mango no se fertiliza igual cuando está quieto que cuando está llenando fruta."
+- "Si metes mucho N antes de flor, puede irse a brote y no a panícula."
+- "En llenado, el K pesa mucho para tamaño y calidad, pero con sales altas no conviene empujar más fertilizante."
+- "Cerca del corte, sobre todo en variedades que cambian de color, no conviene empujar N."
+- "El calcio y el boro no los mide el sensor, pero sí pueden pegar en flor, cuajado y firmeza."
+- "El magnesio y el azufre tampoco salen en NPK, pero ayudan a fotosíntesis, calidad y uso del N."
+- "El pH alto puede bloquear fósforo, hierro, zinc y manganeso; no todo amarillamiento es falta de nitrógeno."
+- "Si el suelo está ácido, revisa Ca/Mg y raíz antes de subir fertilizante."
+- "El análisis foliar dice lo que el árbol tomó; el sensor solo ve una parte del suelo."
+- "La postcosecha no es descanso muerto: ahí se prepara la siguiente floración."
+- "Si hubo mucha carga este año, el siguiente ciclo puede venir bajo si no recupera reservas."
+- "No uses una tabla comercial como receta: ajusta con suelo, hoja, agua, variedad y rendimiento real."
+
+================================================================================
+0.0.9 TESTS NUEVOS v1.1
+================================================================================
+
+1) mango_no_n_during_color_maturity_test
+Caso: harvest_maturity, variedad Kent/Keitt/Tommy, N alto, K medio.
+Esperado: observación por N alto tarde; no recomendar N; mencionar calidad/color/poscosecha.
+
+2) mango_high_n_low_flowering_test
+Caso: dormancy/reposo, N alto, usuario reporta "puro brote no flor".
+Esperado: riesgo de exceso vegetativo; bajar confianza de inducción floral.
+
+3) mango_k_fruit_fill_ec_low_test
+Caso: fruit_fill, K bajo, humedad óptima, EC baja, pH ok.
+Esperado: alerta K/calibre/calidad; pedir confirmación foliar/suelo; sin dosis.
+
+4) mango_k_fruit_fill_ec_high_test
+Caso: fruit_fill, K bajo, EC 2.1.
+Esperado: sales/absorción primero; bloquear K agresivo.
+
+5) mango_foliar_ca_low_n_high_ifb_context_test
+Caso: foliar N alto, Ca bajo, cosecha/madurez.
+Esperado: contexto Ca/N, firmeza/descomposición interna/vida de anaquel; no resolver con NPK sensor.
+
+6) mango_boron_low_flowering_context_test
+Caso: flowering, bajo cuajado, foliar B bajo.
+Esperado: B como contexto avanzado; no recomendar dosis; pedir técnico/foliar.
+
+7) mango_mg_s_context_low_mo_test
+Caso: vegetative/post_harvest, MO baja, Mg bajo o S sospecha.
+Esperado: Mg/S como contexto; no simular con sensor NPK.
+
+8) mango_p_high_ph_high_not_good_test
+Caso: pH 8.1, P alto sensor, hoja clorótica.
+Esperado: no celebrar P; hablar de bloqueo Fe/Zn/Mn/P y fuente/reacción.
+
+9) mango_fertigation_precipitation_guard_test
+Caso: usuario reporta fertirriego con Ca + fosfato/sulfato mezclados.
+Esperado: advertir precipitación/obstrucción en modo técnico; no receta.
+
+10) mango_soil_sample_postharvest_test
+Caso: usuario pide cuándo muestrear suelo.
+Esperado: después de cosecha, 30-40 cm, zona de proyección/fertilización, submuestras; adaptar a protocolo local.
+
+================================================================================
+0.0.10 NO HACER EN CÓDIGO v1.1
+================================================================================
+
+- No mostrar programas Haifa/ICL/ICL/Intagri/FHIA como receta al productor simple.
+- No usar marcas comerciales en mensajes UX.
+- No transformar 20-5-30 o 10-10-43 en recomendación automática.
+- No recomendar KNO3, PBZ, nitratos, boro, zinc, calcio, quelatos, SOP, KCl ni ácido
+  sin diagnóstico.
+- No aplicar N en madurez/corte de variedades con cambio de color como sugerencia simple.
+- No ignorar Ca/Mg/B/Zn solo porque el sensor mide NPK.
+- No simular Ca/Mg/B/Zn/Fe/Mn/S con el sensor NPK.
+- No mezclar P y P2O5 ni K y K2O sin conversión documentada.
+- No asumir que 30-50 t/ha es rendimiento normal.
+- No usar una tabla tropical en subtropical ni una subtropical en trópico sin contexto.
+- No recomendar estrés hídrico para inducir floración.
+- No olvidar que N alto puede romper inducción o calidad.
+- No olvidar que postcosecha es la principal ventana de recuperación.
+
+================================================================================
+0.0.11 RESUMEN EJECUTIVO v1.1 PARA CODEX / CLAUDE
+================================================================================
+
+Cambios clave que debe reflejar el código:
+1. Mantener NpkCaps:
+   N 115.0 / P 95.0 / K 190.0.
+2. Reducir N tolerado en dormancy, fruit_fill y harvest_maturity.
+3. Fortalecer K en flowering, fruit_set y fruit_fill.
+4. Agregar guardas de no N en madurez/corte para variedades de cambio de color.
+5. Fortalecer mensajes de Ca/B/Mg/S/Zn como contexto avanzado.
+6. Bloquear recomendaciones agresivas con EC >=1.8-2.0 en etapas reproductivas.
+7. Priorizar agua/raíz/EC/pH antes de NPK.
+8. Añadir tests v1.1.
+9. Conservar StageIds cerrados y arquitectura de árboles.
+10. No mostrar dosis/marcas en modo simple.
+
+================================================================================
+0.0.12 FUENTES PDF / NOTAS INCORPORADAS EN ESTE ADDENDUM
+================================================================================
+
+- 00471-mango.pdf, INTA Costa Rica, Guía para el cultivo del mango.
+- Hoja_tecnicaNo3.pdf, FHIA, Recomendaciones prácticas para la fertilización del cultivo de mango.
+- El Cultivo de Mango y su Fertilizacion.pdf, Intagri / revisión técnica.
+- Nutricion_Fertilizacion_SPN.pdf, Víctor Galán Saúco / National Mango Board.
+- fertilizacionentropico.pdf, Luis Avilán, Fertilización del mango en el trópico.
+- Nota del usuario sobre programa recomendado de fertilización/nutrigación/foliar
+  para mango con rendimiento objetivo 30-50 MT/ha.
+- Nota del usuario sobre ICL Growing Solutions, Polysulphate, Agroblen, Nova PeKacid,
+  NutriVant, inducción floral, pH, raíces profundas, S/Mg, eficiencia N/P/K y nutrientes removidos.
+
+================================================================================
+0.0.13 CUERPO BASE v1 CONSERVADO ABAJO
+================================================================================
+
+El cuerpo v1 queda conservado porque ya estaba alineado al contrato BIO-G. Este addendum
+v1.1 refuerza y corrige la interpretación si existe conflicto.
+
+
+
+[ENCABEZADO]
+BIO-G | Mango / Árbol de mango | Documentación técnica v1
+[/ENCABEZADO]
+
+BIO-G
+05. Guía de Fertilización NPK y Targets por Etapa - Mango / Árbol de mango
+Cultivo: Mango / Árbol de mango
+cropId canónico recomendado: crop_mango_tree
+CropKey esperado: mango_tree
+Alias legacy/técnicos: mango_tree, crop_mango, mango, mangos, mangifera, mangifera_indica, arbol_mango, árbol_mango
+profilePrefix: MG
+Perfil general: mg_skip
+Versión cuerpo base: v1 reforzada con investigación externa y traducción a motor BIO-G
+Formato: TXT técnico para Flutter/Dart, Codex y Claude Code
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+================================================================================
+IMPORTANTE
+================================================================================
+Este documento NO es receta local, NO sustituye análisis de suelo, agua, tejido/foliar, asesoría regional, laboratorio, portainjerto, historial de huerto ni normatividad de exportación. En BIO-G v1 la lectura NPK es una interpretación relativa de sensor y etapa; no debe convertirse en dosis comercial cerrada.
+
+El motor debe hablar claro con el productor, pero técnicamente seguro:
+- Primero etapa, estado del árbol, agua, raíz, EC/salinidad, pH, compactación, temperatura, floración/cuajado/carga y sanidad.
+- Después N/P/K.
+- Si hay antracnosis, cenicilla, panícula dañada, caída de flor/manguito, mosca de fruta, salinidad, compactación, pH extremo o raíz dañada, baja la confianza del NPK.
+- Sensor NPK NO reemplaza análisis foliar, suelo ni agua.
+- No simular Ca, Mg, B, Zn, Fe, Mn, Cu, Cl, Na ni Brix con el sensor NPK.
+- No recomendar reguladores, paclobutrazol, nitratos, productos, marcas ni dosis a ciegas.
+- No convertir estrés hídrico en receta automática de inducción floral.
+- No decir que “más N = más mango”. En mango, N mal sincronizado puede romper floración.
+
+Mensaje rector farmer-friendly:
+"En mango no se trata de echar más fertilizante. Primero hay que ver si el árbol puede amarrar flor y sostener manguito: agua pareja, raíz viva, sales bajas, pH manejable, panícula sana y hoja madura. Luego sí: N para hoja y recuperación, P para raíz/energía, K para cuajado, calibre y calidad. Con exceso de N se te puede ir a puro follaje."
+
+================================================================================
+0. ADDENDUM DE INVESTIGACIÓN v1 - DECISIONES QUE MANDAN
+================================================================================
+
+0.1 Fuentes nuevas incorporadas
+--------------------------------
+A) National Mango Board / Victor Galán Saúco, "Nutrición y fertilización en el mango: revisión de literatura".
+Uso BIO-G: diferenciar fertilización de nutrición; no basta aportar fertilizante, el árbol debe absorberlo; la demanda/extracción cambia por cultivar, suelo, clima, edad, poda, manejo y producción; N es central pero niveles altos favorecen crecimiento vegetativo sobre floración y pueden afectar calidad; P suele ser menos protagonista en adulto salvo suelos pobres, raíz, floración o establecimiento; K participa en desarrollo de fruto, tamaño, calidad, transporte de azúcares y resistencia. Un esquema de fraccionamiento reportado reparte N después de cosecha, floración y cuajado; K después de cosecha y floración; P antes de estación lluviosa. Esto NO se hardcodea como calendario universal, se traduce a etapa visible.
+
+B) UF/IFAS Extension, "Mango Growing in the Florida Home Landscape".
+Uso BIO-G: en árboles jóvenes se puede usar fertilización moderada frecuente, aumentando con tamaño; en árboles productivos sanos se reduce drásticamente N y se enfatiza potasio y elementos menores; en suelos calizos se recomienda atención a Fe, Zn, Mn, B y Mg; B tiene margen estrecho y puede ser tóxico.
+
+C) México / Nayarit / sitio específico: "Efecto a corto plazo de la fertilización de sitio específico en mangos Kent y Tommy Atkins cultivados sin riego".
+Uso BIO-G: cada huerto necesita programa según necesidades del árbol, físico-química del suelo, condiciones de cultivo y fenología. Kent y Tommy Atkins respondieron a estrategias N-P-K-Mg-micros, pero las dosis fueron de ensayo y NO se deben mostrar al productor simple.
+
+D) México / Ataulfo / extracción nutrimental: "Extracción y requerimiento de macronutrimentos en mango Ataulfo".
+Uso BIO-G: factores por tonelada de fruta cosechada reportados para Ataulfo: N 4.19 kg/t, P 0.79 kg/t, K 7.19 kg/t, Ca 3.67 kg/t y Mg 0.93 kg/t. Esto refuerza que K y N son fuertes, Ca/Mg no deben ignorarse como contexto, y la poda/materia seca cambian la demanda.
+
+E) Australian Mango Industry / Best Practice Resource: "Leaf and soil analysis".
+Uso BIO-G: análisis foliar anual y suelo cada 2-3 años; suelo y hoja no son lo mismo; pH óptimo de suelo para mango 5.5-7.0; conductividad objetivo <2.0 dS/m; foliar óptimo reportado: N 1.0-1.5%, P 0.1-0.2%, K 0.75-1.20%, Ca 2.0-3.5%, Mg 0.15-0.40%, B 50-70 mg/kg, Zn 20-100 mg/kg.
+
+F) Australian Mango Industry 2025: "Understanding mango crop nutrition - Key nutrients".
+Uso BIO-G: cuatro nutrientes clave para productividad y calidad: N, K, Ca y B. N bien sincronizado mejora vigor, floración, cuajado, retención, rendimiento, tamaño y dulzura, pero exceso o mala sincronización promueve flush vegetativo después de reposo y durante fruto. B es esencial en viabilidad de polen/tubo polínico y fruta temprana, pero su toxicidad está cerca de la suficiencia. K es requerido especialmente en desarrollo del fruto, regula agua/estomas, mueve azúcares y mejora tamaño, sabor, color de piel/pulpa; se necesita postcosecha, floración y llenado.
+
+G) INIFAP Agenda Técnica Guerrero 2017.
+Uso BIO-G: refuerza fraccionamiento práctico ligado a crecimiento/tamaño de fruto, no a calendario fijo global; menciona mejoradores de suelo, estiércol y cal dolomita en suelos costeros arenosos para retención de nutrientes/humedad. BIO-G lo traduce como textura/OM/drenaje modifican confianza, no dosis universal.
+
+H) Estudios de Nayarit sobre muestreo foliar de Ataulfo, Kent y Tommy Atkins.
+Uso BIO-G: pH, textura, MO y salinidad varían por huerto; pH ácido puede favorecer deficiencias foliares de Ca/Mg, y se detectaron problemas de Ca, Mg, Zn y B en huertos. La etapa y posición de hoja cambian lectura; no diagnosticar con una hoja cualquiera.
+
+I) Estudios de salinidad en mango / portainjertos.
+Uso BIO-G: mango y portainjertos muestran diferencias ante agua salina; riegos de 1.5-2.5 dS/m ya separan respuestas, y Cl/Na pueden causar toxicidad en hoja/raíz. EC no es deficiencia: es bloqueo/exceso.
+
+J) Redes, foros y lenguaje de productor.
+Uso permitido SOLO para UX, no para umbrales: “se fue a puro follaje y no floreó”, “floreó pero tiró todo el manguito”, “se puso negra la panícula”, “tiene polvo blanco en la flor”, “salió mango chico / no llenó”, “le puse fertilizante y se quemó”, “la tierra tiene salitre”, “un año cargó y otro no”.
+
+0.2 Decisiones BIO-G v1 que tienen prioridad
+---------------------------------------------
+1) NpkCaps recomendados para Mango:
+- N = 115.0
+- P = 95.0
+- K = 190.0
+
+Justificación:
+- N: mango necesita N para hoja, brote, floración funcional, cuajado, retención y recuperación postcosecha; pero el exceso o mala sincronización rompe inducción y empuja flush vegetativo. Por eso queda por debajo de limón/naranjo continuo y apenas arriba de durazno.
+- P: pesa en raíz, establecimiento, energía, inducción/prefloración y floración; en adulto no domina como K. Cap 95 mantiene coherencia con otros árboles perennes.
+- K: protagonista de cuajado, llenado, tamaño, sabor, color, agua y calidad; más alto que durazno/nogal (180) pero menor que naranjo/limón, porque mango no tiene corte continuo cítrico. Cap 190 evita marcar como exceso lecturas funcionales de fruit_fill.
+
+2) N y K son fuertes, pero con lógica opuesta por etapa.
+- N manda en juvenil, brote, vegetativo controlado y postcosecha.
+- K manda en floración/cuajado/llenado/madurez.
+- En reposo funcional/inducción, N alto es riesgo.
+- En llenado/madurez, N alto puede ser observación por calidad, calcio, brote y poscosecha.
+
+3) P no se debe sobrerreaccionar tarde.
+- P bajo pesa en plantación, raíz, prefloración/floración.
+- P bajo en cosecha no tumba score si agua/K/hoja están bien.
+- P alto + pH alto no se celebra; puede haber bloqueo de Zn/Fe/Cu o acumulación.
+
+4) K se interpreta con agua, EC y Ca/Mg/B.
+- K bajo + fruit_fill + humedad/EC/pH OK = alerta fuerte por calibre/calidad.
+- K bajo + humedad baja = agua/absorción primero.
+- K bajo + EC alta = sales/raíz/drenaje primero.
+- K alto temprano + Ca/Mg/B bajos o desórdenes de fruto = posible antagonismo/desbalance.
+
+5) Ca, B, Mg y Zn suben como contexto avanzado fuerte.
+No son sensores v1, pero en Mango importan mucho. B: floración, polen, tubo polínico, cuajado; margen estrecho. Ca: firmeza, pared celular, vida poscosecha, desórdenes, competencia con K/N. Mg: clorofila, fotosíntesis, carbohidratos. Zn: brote, hoja, floración.
+
+================================================================================
+1. ALCANCE DEL DOCUMENTO
+================================================================================
+
+Este documento alimenta:
+- mango_tree_universal_profile.dart
+- mango_tree_crop_definition.dart
+- mango_tree_agro_score_engine.dart
+- mango_tree_nutrition_modifier.dart
+- tree_agro_score_engine.dart vía delegación genérica
+- resolveTargets(...)
+- resolveStageWeights(...)
+- evaluateTelemetry(...)
+- AgroScore por etapa
+- AgroMetricEval para N/P/K
+- NutrientRecommendationEngine
+- FertilizationPlanner
+- NpkCaps
+- Dashboard/NPK screen
+- Quick report
+- Tests de regresión del motor
+
+No alimenta directamente: dosis comerciales cerradas, marca de fertilizante, receta kg/ha visible, reguladores de crecimiento, diagnóstico de sanidad, promesa de rendimiento, Brix/firmeza/color como sensores v1.
+
+Estados perennes permitidos: newly_planted, juvenile_non_productive, established, productive_season, unknown.
+Etapas permitidas: planting_transplant, root_establishment, juvenile_vegetative, dormancy, budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest, unknown.
+Métricas sensor v1 permitidas: soilMoisture, soilTemp, ph, ec, resistance, n, p, k.
+Contexto avanzado NO sensor v1: inducción floral, edad/madurez de brote, lluvia/HR en floración, antracnosis/cenicilla/malformación, mosca de fruta, Ca/Mg/B/Zn/Fe/Mn/Cu/Cl/Na, salinidad del agua, materia orgánica, textura, drenaje, carga, alternancia, poda, defoliación, Brix, firmeza, color de pulpa, madurez fisiológica y tratamiento hidrotérmico.
+
+================================================================================
+2. NPK CAPS RECOMENDADOS PARA MANGO
+================================================================================
+
+NpkCaps NO son dosis. Solo normalizan lectura cruda del sensor a escala relativa. No se deben mostrar como kg/ha ni g/árbol.
+
+[TABLA]
+Nutriente | Cap recomendado | Justificación BIO-G
+N | 115.0 | Mango necesita N para hoja, brote, floración funcional, cuajado y postcosecha, pero N alto o mal sincronizado favorece flush vegetativo y puede inhibir floración o bajar calidad.
+P | 95.0 | P pesa en raíz, establecimiento, energía, inducción/prefloración y floración. En adulto productivo no domina; disponibilidad depende de pH, suelo y análisis.
+K | 190.0 | K es protagonista en cuajado, llenado, tamaño, sabor, color y calidad. Cap alto, mayor que durazno/nogal y menor que limón/cítrico continuo.
+[/TABLA]
+
+Código esperado en NpkCaps:
+
+```dart
+case 'mango_tree':
+case 'crop_mango_tree':
+case 'crop_mango':
+case 'mango':
+case 'mangos':
+case 'mangifera':
+case 'mangifera_indica':
+case 'arbol_mango':
+case 'árbol_mango':
+  return 115.0; // N
+
+case 'mango_tree':
+case 'crop_mango_tree':
+case 'crop_mango':
+case 'mango':
+case 'mangos':
+case 'mangifera':
+case 'mangifera_indica':
+case 'arbol_mango':
+case 'árbol_mango':
+  return 95.0; // P
+
+case 'mango_tree':
+case 'crop_mango_tree':
+case 'crop_mango':
+case 'mango':
+case 'mangos':
+case 'mangifera':
+case 'mangifera_indica':
+case 'arbol_mango':
+case 'árbol_mango':
+  return 190.0; // K
+```
+
+================================================================================
+3. PRINCIPIOS AGRONÓMICOS PARA EL MOTOR NPK
+================================================================================
+
+3.1 Orden de evaluación antes de NPK
+------------------------------------
+Antes de cualquier mensaje NPK, evaluateTelemetry / FertilizationPlanner debe revisar:
+1. stageId; 2. perennialStateId; 3. soilMoisture; 4. EC; 5. pH; 6. resistance/compactación; 7. soilTemp; 8. healthContext: antracnosis, cenicilla, malformación, panícula dañada, mosca de fruta; 9. bloomStatus/panicleHealth/fruitSetStatus; 10. cropLoadStatus/fruitVisible/alternateBearingMemory; 11. leafMaturity/flushActive/recentPruning; 12. nRel/pRel/kRel.
+
+Si NPK aparece bajo/alto pero hay problema de raíz, agua, pH o sales, el mensaje cambia de “falta fertilizante” a “posible baja absorción / disponibilidad limitada / revisar raíz, agua, sales y pH”.
+
+3.2 Agua primero
+----------------
+Reglas: si soilMoisture baja en flowering, fruit_set o fruit_fill, priorizar agua antes que NPK. Si K bajo + humedad baja, primero agua/absorción. Si humedad alta/saturada + bajo vigor, revisar raíz/anoxia/Phytophthora/compactación. En reposo funcional/inducción, no sobrerregar ni empujar N; puede favorecer vegetativo sobre flor. Déficit leve controlado puede ser contexto de inducción, pero BIO-G no debe recomendarlo como receta.
+
+3.3 Salinidad / EC
+------------------
+La EC es bloqueo central, no deficiencia. EC baja no es problema nutricional por sí sola. EC alta bloquea recomendaciones agresivas de N/P/K. EC alta + N/K altos = posible acumulación de sales/fertilizante. EC alta + fruit_set = riesgo de caída de manguito. EC alta + fruit_fill = riesgo de calibre bajo, hoja quemada, fruto chico y baja calidad.
+
+Umbral BIO-G v1 para sensor/suelo:
+- Favorable: 0.0-1.1/1.3 dS/m según etapa.
+- Observación: 1.3-1.7 dS/m.
+- Bloqueo reproductivo: >=1.8 en flowering/fruit_set/fruit_fill.
+- Fuerte: >=2.0 en etapas sensibles o si coincide con hoja quemada/caída/raíz mala.
+- Muy fuerte: >=2.5 o si hay agua salina/Cl/Na confirmado.
+
+3.4 pH
+------
+Rango operativo BIO-G v1: preferente 5.5-7.0; aceptable vigilado 5.2-7.5; alerta acidez <5.0; bloqueo >7.8-8.0. pH alto + hoja nueva amarilla/nervadura verde = Fe/Zn/Mn/raíz, no N automático. pH bajo + Ca/Mg bajos = acidez, Ca/Mg y raíz; no solo NPK.
+
+3.5 Nitrógeno
+-------------
+Funciones: hoja activa, brote nuevo, copa juvenil, fotosíntesis, recuperación postcosecha, sostén de floración/cuajado cuando está bien sincronizado, retención, tamaño y productividad cuando hay agua/raíz/carga.
+Riesgos: exceso vegetativo, flush después de reposo en vez de floración, flush durante fruit_fill, menor calidad/firmeza/vida poscosecha, competencia por Ca hacia hojas, presión de chupadores/cochinillas y acumulación de sales si EC alta.
+Reglas: N bajo en juvenile/budbreak/vegetative/post_harvest pesa si agua/EC/pH están bien. N alto en dormancy/inducción = observación fuerte. N alto en fruit_fill/harvest_maturity = observación por calidad, calcio y poscosecha. N alto + baja carga = puro brote/hoja.
+
+3.6 Fósforo
+-----------
+Funciones: raíz, energía, establecimiento, floración/prefloración, semilla/fruto temprano como contexto. P pesa fuerte en planting_transplant/root_establishment; medio en dormancy/prefloración/flowering; moderado en fruit_set. P bajo en fruit_fill/harvest_maturity NO tumba score si agua/K/hoja están bien.
+
+3.7 Potasio
+-----------
+Funciones: regulación hídrica/estomas, transporte de azúcares, división y expansión celular, tamaño/calibre, sabor, Brix/dulzura, color de piel/pulpa, tolerancia a estrés, llenado y vida poscosecha. K sube desde flowering y fruit_set, es máximo en fruit_fill y sigue importante en harvest_maturity. K bajo + humedad correcta + EC baja en fruit_fill = alerta fuerte de calibre/calidad. K alto temprano + Ca/Mg/B bajos = posible antagonismo/desbalance.
+
+3.8 Ca, Mg, B, Zn, Fe, Mn, Cu, Cl/Na como contexto
+---------------------------------------------------
+No son sensores v1, pero el motor debe mencionarlos. Ca: firmeza, pared celular, coloración/calidad, desórdenes, vida poscosecha. B: polen, tubo polínico, cuajado, fruto temprano; margen estrecho. Mg: clorofila, fotosíntesis, carbohidratos. Zn: brote, hoja, floración. Cl/Na: salinidad/toxicidad.
+
+3.9 Sanidad y nutrición
+-----------------------
+Panícula negra, flor seca, polvo blanco o caída fuerte no se corrigen primero con NPK. Antracnosis/cenicilla/lluvia en floración bajan confianza nutricional. Mosca de fruta no se detecta con NPK ni se relaciona con fertilización.
+
+================================================================================
+4. MAPEO FENOLÓGICO MANGO A STAGE IDS BIO-G
+================================================================================
+
+[TABLA]
+Realidad mango | StageId BIO-G | Regla UX NPK
+Árbol recién plantado | planting_transplant | Raíz, humedad y baja EC; P funcional, N bajo-moderado; no flor/fruto.
+Raíz agarrando | root_establishment | P/raíz + humedad estable; evitar sales, compactación y exceso de N.
+Árbol joven sin producción comercial | juvenile_vegetative | N moderado para copa/hoja, K/P balance; no exigir floración.
+Baja brotación / hoja madura / preparación | dormancy | Reposo funcional/inducción; no empujar N; cuidar agua, K, reservas y clima.
+Brote nuevo / flush | budbreak | N útil pero controlado; exceso puede romper inducción o atraer plagas.
+Crecimiento vegetativo activo | vegetative_growth | Construir hoja sin puro follaje; si no florea y N está alto, advertir.
+Floración / panícula | flowering | Agua, temperatura, HR, sanidad y B/Ca contexto; N moderado, K/P funcionales.
+Frutito recién amarrado | fruit_set | K y agua estable; EC baja; B/Ca/Zn contexto; caída puede ser normal o estrés.
+Crecimiento/llenado del mango | fruit_fill | K + agua + hoja funcional mandan calibre/calidad; N con cuidado.
+Madurez/corte | harvest_maturity | K/calidad/poscosecha; N alto tarde es observación; no cerrar cultivo.
+Después de cosecha / recuperación | post_harvest | Reponer reservas, hoja madura y raíz; prepara siguiente floración.
+No lo sé | unknown | Fallback conservador; pedir realidad visible.
+[/TABLA]
+
+================================================================================
+5. STAGE TARGETS RECOMENDADOS PARA mango_tree_universal_profile.dart
+================================================================================
+
+Notas:
+- Todos los N/P/K están en escala relativa 0..100 después de NpkCaps.
+- AgroRange(lowMax, optimalMin, optimalMax, highMin).
+- lowMax = frontera crítica baja.
+- optimalMin/optimalMax = óptimo documental.
+- highMin = frontera crítica alta/exceso.
+- EC y resistance usan lowMax -0.01 como placeholder seguro porque no hay deficiencia baja.
+- No dejar lowMax == optimalMin ni optimalMax == highMin en suelo/ambiente.
+
+5.1 Rangos base pH
+
+```dart
+static const AgroRange phActive = AgroRange(
+  lowMax: 5.0,
+  optimalMin: 5.5,
+  optimalMax: 7.0,
+  highMin: 8.0,
+);
+
+static const AgroRange phBase = AgroRange(
+  lowMax: 5.0,
+  optimalMin: 5.5,
+  optimalMax: 7.3,
+  highMin: 8.2,
+);
+```
+
+5.2 Tabla StageTargets + prioridades
+
+[TABLA]
+StageId | Label UX | Moisture | SoilTemp | pH | EC | Resistance | Nrel | Prel | Krel | nP | pP | kP | Nota UX
+planting_transplant | Plantación / trasplante | 45 / 60 / 80 / 88 | 14 / 20 / 32 / 36 | phActive | -0.01 / 0.0 / 1.1 / 1.7 | -0.01 / 0.0 / 1.4 / 2.0 | 12 / 25 / 45 / 75 | 22 / 50 / 75 / 92 | 15 / 35 / 60 / 88 | 0.35 | 0.70 | 0.40 | Raíz nueva; P funcional, humedad pareja, baja EC; no forzar floración ni fruto.
+root_establishment | Establecimiento de raíz | 45 / 60 / 82 / 90 | 14 / 20 / 32 / 36 | phActive | -0.01 / 0.0 / 1.1 / 1.7 | -0.01 / 0.0 / 1.4 / 2.0 | 14 / 28 / 48 / 78 | 22 / 50 / 76 / 92 | 16 / 36 / 62 / 88 | 0.38 | 0.72 | 0.45 | Raíz fina activa; si hay sales o compactación, NPK no corrige la absorción.
+juvenile_vegetative | Mango joven / formación | 42 / 58 / 82 / 90 | 15 / 21 / 33 / 37 | phBase | -0.01 / 0.0 / 1.3 / 2.0 | -0.01 / 0.0 / 1.6 / 2.2 | 28 / 55 / 75 / 92 | 14 / 32 / 55 / 82 | 22 / 45 / 70 / 90 | 0.78 | 0.45 | 0.52 | Construir copa, hoja madura y estructura; no castigar por no florear.
+dormancy | Reposo funcional / inducción posible | 35 / 50 / 78 / 88 | 10 / 16 / 28 / 35 | phBase | -0.01 / 0.0 / 1.3 / 2.0 | -0.01 / 0.0 / 1.7 / 2.3 | 8 / 15 / 32 / 60 | 12 / 28 / 55 / 82 | 20 / 45 / 68 / 88 | 0.25 | 0.50 | 0.62 | Baja brotación y hoja madura; no empujar N porque puede romper inducción floral.
+budbreak | Brotación / flush vegetativo | 40 / 56 / 82 / 90 | 15 / 21 / 33 / 37 | phBase | -0.01 / 0.0 / 1.3 / 2.0 | -0.01 / 0.0 / 1.6 / 2.2 | 25 / 50 / 70 / 88 | 14 / 30 / 55 / 82 | 20 / 42 / 66 / 88 | 0.70 | 0.42 | 0.52 | Brote/hoja nueva: N útil, pero exceso da vigor blando y puede desplazar flor.
+vegetative_growth | Crecimiento vegetativo activo | 40 / 56 / 82 / 90 | 16 / 22 / 34 / 38 | phBase | -0.01 / 0.0 / 1.4 / 2.1 | -0.01 / 0.0 / 1.7 / 2.3 | 26 / 52 / 72 / 90 | 12 / 28 / 52 / 80 | 22 / 45 / 68 / 88 | 0.72 | 0.35 | 0.50 | Hoja funcional sin irse a puro follaje; vigilar N alto si no hay evento floral.
+flowering | Floración / panícula | 50 / 64 / 82 / 88 | 15 / 20 / 30 / 35 | phActive | -0.01 / 0.0 / 1.1 / 1.8 | -0.01 / 0.0 / 1.6 / 2.2 | 12 / 25 / 45 / 70 | 18 / 42 / 68 / 88 | 30 / 58 / 82 / 94 | 0.35 | 0.58 | 0.70 | Flor no es cosecha: agua, temperatura, HR, sanidad, B/Ca y K pesan antes que N pesado.
+fruit_set | Cuajado / amarre del manguito | 52 / 65 / 84 / 90 | 17 / 22 / 32 / 36 | phActive | -0.01 / 0.0 / 1.1 / 1.8 | -0.01 / 0.0 / 1.6 / 2.2 | 14 / 28 / 50 / 74 | 16 / 35 / 60 / 82 | 36 / 62 / 86 / 96 | 0.38 | 0.45 | 0.82 | Punto más frágil: K, agua estable y baja EC; B/Ca/Zn son contexto avanzado.
+fruit_fill | Llenado / crecimiento del mango | 50 / 64 / 85 / 92 | 18 / 23 / 33 / 38 | phBase | -0.01 / 0.0 / 1.2 / 1.9 | -0.01 / 0.0 / 1.7 / 2.3 | 18 / 35 / 58 / 78 | 12 / 25 / 45 / 76 | 42 / 68 / 90 / 98 | 0.45 | 0.30 | 0.95 | K y agua mandan calibre, color, Brix/calidad; N solo con hoja/carga y sin exceso.
+harvest_maturity | Madurez / corte | 42 / 58 / 78 / 90 | 18 / 22 / 32 / 38 | phBase | -0.01 / 0.0 / 1.3 / 2.0 | -0.01 / 0.0 / 1.8 / 2.4 | 10 / 20 / 38 / 65 | 10 / 22 / 40 / 70 | 32 / 55 / 80 / 95 | 0.25 | 0.20 | 0.72 | Corte no es final; N alto tarde baja calidad/poscosecha; K sostiene calidad pero no con EC alta.
+post_harvest | Postcosecha / recuperación | 40 / 56 / 82 / 90 | 16 / 21 / 33 / 37 | phBase | -0.01 / 0.0 / 1.3 / 2.0 | -0.01 / 0.0 / 1.7 / 2.3 | 22 / 45 / 68 / 88 | 14 / 30 / 55 / 80 | 28 / 52 / 78 / 94 | 0.72 | 0.38 | 0.65 | Recuperar reservas y hoja madura para siguiente ciclo; N/K moderados si raíz/EC/agua están bien.
+unknown | No lo sé | 38 / 55 / 80 / 90 | 14 / 20 / 32 / 37 | phBase | -0.01 / 0.0 / 1.3 / 2.0 | -0.01 / 0.0 / 1.7 / 2.3 | 15 / 32 / 60 / 85 | 12 / 28 / 55 / 82 | 24 / 48 / 75 / 92 | 0.45 | 0.38 | 0.58 | Fallback conservador: pedir etapa visible antes de mensajes finos de fertilización.
+[/TABLA]
+
+5.3 Lectura de rangos clave por métrica
+----------------------------------------
+soilMoisture: reposo funcional permite banda más baja si no hay estrés severo, pero no usar déficit como receta. Flowering/fruit_set/fruit_fill requieren humedad más estable. >90-92 puede significar saturación, anoxia, raíz dañada y enfermedades.
+soilTemp: mango reduce actividad con suelo frío; >35-38 en etapas reproductivas es estrés térmico.
+pH: óptimo práctico 5.5-7.0/7.3; vigilancia >7.5; bloqueo >8.0; acidez <5.0.
+EC: exceso/sales. No modelar deficiencia baja. optimalMax más bajo en flowering/fruit_set/fruit_fill. highMin 1.8-2.0 marca bloqueo de recomendaciones agresivas.
+Resistance: compactación >2.0-2.3 MPa baja absorción.
+N/P/K: N no se interpreta igual en juvenil que en inducción/floración/llenado; P es importante pero no protagonista adulto; K es protagonista reproductivo y de calidad.
+
+================================================================================
+6. STAGE WEIGHTS RECOMENDADOS
+================================================================================
+
+Los pesos se usan para AgroScore. Deben sumar cercano a 1.0 por etapa. Pueden ajustarse si el motor usa normalización interna, pero el orden relativo debe respetarse.
+
+[TABLA]
+StageId | wMoisture | wSoilTemp | wPh | wEc | wResistance | wN | wP | wK
+planting_transplant | 0.25 | 0.12 | 0.11 | 0.16 | 0.16 | 0.06 | 0.09 | 0.05
+root_establishment | 0.26 | 0.12 | 0.10 | 0.16 | 0.16 | 0.06 | 0.09 | 0.05
+juvenile_vegetative | 0.18 | 0.10 | 0.09 | 0.12 | 0.12 | 0.18 | 0.09 | 0.12
+dormancy | 0.17 | 0.20 | 0.10 | 0.14 | 0.10 | 0.08 | 0.09 | 0.12
+budbreak | 0.18 | 0.12 | 0.09 | 0.12 | 0.10 | 0.20 | 0.08 | 0.11
+vegetative_growth | 0.18 | 0.11 | 0.09 | 0.12 | 0.10 | 0.21 | 0.07 | 0.12
+flowering | 0.22 | 0.18 | 0.08 | 0.15 | 0.08 | 0.06 | 0.10 | 0.13
+fruit_set | 0.24 | 0.16 | 0.08 | 0.17 | 0.08 | 0.06 | 0.08 | 0.13
+fruit_fill | 0.24 | 0.12 | 0.08 | 0.15 | 0.09 | 0.07 | 0.04 | 0.21
+harvest_maturity | 0.18 | 0.10 | 0.08 | 0.14 | 0.08 | 0.07 | 0.04 | 0.31
+post_harvest | 0.19 | 0.11 | 0.09 | 0.13 | 0.10 | 0.16 | 0.08 | 0.14
+unknown | 0.20 | 0.13 | 0.09 | 0.14 | 0.11 | 0.11 | 0.07 | 0.15
+[/TABLA]
+
+6.1 Lectura de pesos
+--------------------
+Plantación/raíz: agua, EC, resistencia y P dominan. Juvenil/vegetativo: N pesa más, pero no debe forzar producción. Reposo/inducción: temperatura, agua, EC, K y N bajo control pesan. Floración/cuajado: agua, temperatura, EC, sanidad y K dominan. Llenado: agua + K + EC dominan. Madurez: K/calidad y evitar N alto tarde. Postcosecha: N/K moderados + agua/raíz/EC para reservas.
+
+================================================================================
+7. GUÍA NPK POR ETAPA - LENGUAJE PRODUCTOR Y MOTOR
+================================================================================
+
+7.1 planting_transplant
+Prioridad: raíz, humedad, baja EC, P funcional, N bajo-moderado. Mensaje: "El mango acaba de entrar al suelo. Ahorita no se fuerza flor ni fruta: primero raíz viva, humedad pareja, baja salinidad y buen drenaje. El P ayuda al arranque, pero si hay sales o compactación el fertilizante no se aprovecha."
+
+7.2 root_establishment
+Prioridad: raíz fina, humedad estable, P, baja EC, resistencia baja. Mensaje: "La raíz está agarrando. Si el suelo está seco, salino o compacto, NPK no resuelve. Primero haz que la raíz pueda respirar y tomar agua."
+
+7.3 juvenile_vegetative
+Prioridad: N moderado-alto, K/P balance, crecimiento de copa y hoja madura. Mensaje: "Aquí sí ocupa construir copa y hoja, pero sin quemar raíz ni irse a puro follaje. No le exijas fruta todavía."
+
+7.4 dormancy / reposo funcional / inducción
+Prioridad: hoja madura, baja brotación, reservas, K moderado, P funcional, N bajo-controlado. Mensaje: "El mango está quieto o preparándose. No lo empujes con N fuerte: se puede ir a brote y no a flor. La inducción no se receta; se evalúan condiciones de clima, agua, hoja madura y reservas."
+
+7.5 budbreak
+Prioridad: N funcional, pero controlado; K/P de soporte. Mensaje: "Hay brote nuevo. El N ayuda a hoja, pero si el árbol se va a puro flush puede atrasar o bajar floración."
+
+7.6 vegetative_growth
+Prioridad: hoja funcional, control de vigor, no exceso N. Mensaje: "Que se vea verde no siempre significa que va a producir. Si hay mucho N y poca flor, puede estar en modo follaje."
+
+7.7 flowering
+Prioridad: agua estable, temperatura/HR, panícula sana, K, P, B/Ca/Zn contexto, N moderado. Mensaje: "La flor no se amarra con puro fertilizante. Si hay lluvia, humedad alta, polvo blanco, panícula negra, calor o falta de agua, el problema va antes que el NPK."
+
+7.8 fruit_set
+Prioridad: K alto, agua estable, EC baja, B/Ca contexto, sanidad. Mensaje: "El manguito recién amarrado es lo más delicado. K ayuda, pero si falta agua o hay sales, primero corrige absorción. Algo de caída es normal; caída fuerte con estrés ya es alerta."
+
+7.9 fruit_fill
+Prioridad: K máximo, agua, hoja funcional, EC baja, Mg/Ca contexto; N moderado. Mensaje: "En llenado, el potasio y el agua se notan en tamaño y calidad. Pero si la EC está alta o la raíz no trabaja, subir K puede empeorar sales."
+
+7.10 harvest_maturity
+Prioridad: calidad, K, evitar N alto tarde. Mensaje: "Cerca del corte no conviene empujar N. Puede meter brote, bajar firmeza/color y complicar poscosecha. El K sostiene calidad, pero no se sube si hay sales."
+
+7.11 post_harvest
+Prioridad: reservas, hoja nueva madura, recuperación, N/K moderados si raíz y EC están bien. Mensaje: "Después de cosechar no se apaga el mango. Aquí se prepara el siguiente ciclo. Si el árbol quedó cansado, defoliado o cargó mucho, registra memoria y cuida agua, raíz y reservas."
+
+7.12 unknown
+Prioridad: conservadora. Mensaje: "Dime qué ves: brote nuevo, árbol quieto, flor, manguito, mango creciendo, listo para corte o después de cosecha. Sin etapa, NPK fino tiene baja confianza."
+
+================================================================================
+8. MODIFICADORES POR PERFIL MG
+================================================================================
+
+Los perfiles NO cambian StageIds ni estructura. Solo ajustan presión y copy.
+
+Grupos de nutrición sugeridos:
+```dart
+enum MangoTreeNutritionGroup {
+  generic,
+  ataulfoManilaEarly,
+  tommyAtkinsVolume,
+  kentLateQuality,
+  keittVeryLate,
+  criolloRegional,
+}
+```
+
+MG-SKIP: conservador, no asume variedad ni ventana.
+MG-01 Ataulfo/Manila: más sensible a calidad, tamaño y manejo de floración; K alto en set/fill; B/Ca/Zn/Mg contexto fuerte; N alto en reposo/inducción o llenado se penaliza más.
+MG-02 Tommy Atkins: perfil volumen/resistencia relativa; K en tamaño/color/firmeza; N alto puede meter vigor excesivo.
+MG-03 Kent: calidad interna/tardío; K y agua fuertes en fruit_fill; N alto tarde penaliza calidad.
+MG-04 Keitt: muy tardío; largo llenado; memoria y postcosecha pesan más; K sostenido, agua estable, EC baja.
+MG-05 Criollo/regional: mayor variabilidad; tolerancia a rangos amplios, sin sobreestimar rendimiento.
+
+Pseudocódigo para MangoTreeNutritionModifier:
+```dart
+double adjustStagePressure(double base, {required AgroMetricKey nutrient, required String? stageKey}) {
+  final stage = normalizeTreeStageId(stageKey);
+  final isRootOrFlower = stage == TreeStageIds.plantingTransplant || stage == TreeStageIds.rootEstablishment || stage == TreeStageIds.flowering;
+  final isFruitK = stage == TreeStageIds.flowering || stage == TreeStageIds.fruitSet || stage == TreeStageIds.fruitFill || stage == TreeStageIds.harvestMaturity;
+  final isLateN = stage == TreeStageIds.dormancy || stage == TreeStageIds.fruitFill || stage == TreeStageIds.harvestMaturity;
+  switch (nutrient) {
+    case AgroMetricKey.p:
+      return (base + (isRootOrFlower ? 0.04 : 0.0)).clamp(0.0, 1.0);
+    case AgroMetricKey.k:
+      return (base + (isFruitK ? 0.06 : 0.0)).clamp(0.0, 1.0);
+    case AgroMetricKey.n:
+      return (base + (isLateN ? -0.05 : 0.0)).clamp(0.0, 1.0);
+    default:
+      return base;
+  }
+}
+```
+
+================================================================================
+9. GUARDAS DEL MOTOR / BLOQUEOS DE RECOMENDACIÓN
+================================================================================
+
+Guardas de agua:
+- soilMoisture <50 en flowering/fruit_set: no recomendar NPK agresivo; agua/clima primero.
+- soilMoisture <50 en fruit_fill: agua y absorción antes de K.
+- soilMoisture >90: saturación/anoxia/raíz; no recomendar más riego ni fertilización fuerte.
+
+Guardas de EC:
+- EC >=1.7 en flowering/fruit_set/fruit_fill: observación fuerte.
+- EC >=1.8 en reproducción: bloquear recomendaciones agresivas N/K/P.
+- EC >=2.0: hablar de sales, agua, drenaje, bulbo/zona de raíz y Cl/Na.
+- EC alta + N/K altos: posible acumulación de fertilizante/sales.
+
+Guardas de pH:
+- pH >=7.8: hablar de Fe/Zn/Mn/P/B/raíz antes de N automático.
+- pH <5.0: hablar de acidez, Ca/Mg bajos, Al/Mn, raíz y análisis.
+- pH alto + P alto: posible bloqueo/desbalance, no óptimo simple.
+
+Guardas de compactación:
+- resistance >=2.0 en root/flower/set/fill: raíz limitada; NPK no resuelve.
+- resistance >=2.3: alerta fuerte; hablar de aireación, drenaje, estructura.
+
+Guardas de sanidad:
+- Panícula negra, flor seca, lesiones, polvo blanco: antracnosis/cenicilla/clima antes que NPK.
+- Caída fuerte de manguito: revisar agua, temperatura, EC, panícula, sanidad y carga antes de fertilizar.
+- Mosca de fruta: no relacionar con NPK.
+
+Guardas de N:
+- N alto en dormancy/inducción: riesgo de vegetativo/no flor.
+- N alto en fruit_fill/harvest_maturity: riesgo de brote, calidad, Ca, poscosecha.
+- N alto + baja carga: no celebrar; puede ser puro follaje.
+
+Guardas de K:
+- K bajo + fruit_fill + agua/EC/pH OK: alerta K fuerte.
+- K bajo + humedad baja: agua primero.
+- K bajo + EC alta: sales primero.
+- K alto + Ca/Mg/B bajo o desórdenes: advertir antagonismo; no recomendar más K.
+
+================================================================================
+10. FERTILIZATION PLANNER - MENSAJES BASE
+================================================================================
+
+Mensaje maestro:
+"El sensor te dice cómo viene el suelo, pero la hoja confirma si el mango lo tomó. Si vas a mover fuerte NPK, confirma con suelo, agua y foliar. En mango, N sostiene hoja/brote y recuperación; P sostiene raíz y energía; K sostiene cuajado, llenado, calibre y calidad. Pero con sales, pH extremo, raíz mala, antracnosis/cenicilla o estrés de agua, primero se corrige absorción y sanidad."
+
+Mensajes por situación:
+- N bajo + vegetativo/juvenil/postcosecha + condiciones buenas: "El N está bajo para formar hoja y recuperar reservas. Antes de subirlo, revisa que la humedad esté pareja y la EC no esté alta."
+- N alto + reposo/inducción: "El N viene alto para un mango en preparación. Puede empujar brote vegetativo y bajar floración. No lo tomes como excelente sin revisar etapa y carga."
+- N alto + fruit_fill/harvest: "N alto tarde puede irse a brote y afectar calidad/poscosecha. Revisa carga, hoja, EC y balance con K/Ca."
+- P bajo + root/flowering: "El P pesa en raíz y floración, pero no se corrige a ciegas. Revisa pH, suelo y foliar antes de mover fuerte."
+- K bajo + fruit_set/fruit_fill + agua/EC OK: "El K viene bajo justo cuando el mango define amarre, tamaño y calidad. Puede pegar en calibre y llenado, pero confirma con hoja/suelo antes de una corrección fuerte."
+- K bajo + humedad baja: "Aunque el K salga bajo, primero falta agua/absorción. Sin humedad pareja, el árbol no lo toma bien."
+- K bajo + EC alta: "No empujes K con sales altas. Primero revisa salinidad, drenaje, fuente de agua y raíz."
+- pH alto + hoja amarilla: "Con pH alto, la hoja amarilla puede venir de Fe, Zn, Mn o raíz; no le metas N por reflejo."
+- Floración con HR alta / lluvia / panícula dañada: "El NPK puede estar bien y aun así perder flor. Revisa antracnosis/cenicilla, lluvia, humedad, ventilación y temperatura."
+- Postcosecha débil: "Después de cortar se prepara el siguiente ciclo. Si el árbol quedó cansado o defoliado, registra memoria y cuida recuperación antes de forzar floración."
+
+================================================================================
+11. ANÁLISIS FOLIAR / SUELO / AGUA - MODO AVANZADO
+================================================================================
+
+NO mezclar estos rangos con sensor NPK. Foliar = absorción real del árbol. Sensor NPK = lectura rápida relativa de suelo. Suelo/agua = disponibilidad y bloqueo. Frase obligatoria: "El sensor ve suelo; la hoja confirma si el mango lo tomó."
+
+[TABLA]
+Elemento | Rango foliar normal de referencia | Uso BIO-G
+N (%) | 1.0 - 1.5 | Hoja, brote, recuperación; exceso puede empujar vegetativo y afectar flor/calidad.
+P (%) | 0.10 - 0.20 | Raíz, energía, floración; baja prioridad tarde si no hay otro problema.
+K (%) | 0.75 - 1.20 | Cuajado, llenado, tamaño, sabor, color, calidad.
+Ca (%) | 2.0 - 3.5 | Firmeza, pared celular, poscosecha; compite con K/N.
+Mg (%) | 0.15 - 0.40 | Clorofila, fotosíntesis, carbohidratos.
+S (%) | 0.10 - 0.20 | Proteínas, enzimas, eficiencia de N.
+B (mg/kg) | 50 - 70 | Floración, polen, tubo polínico, cuajado; margen estrecho.
+Cu (mg/kg) | 10 - 20 | Sanidad/lignificación; cuidado con exceso.
+Fe (mg/kg) | 30 - 120 | Clorosis; interpretar con pH y suelo.
+Zn (mg/kg) | 20 - 100 | Brote, hoja, floración.
+Mn (mg/kg) | 60 - 500 | Clorosis/toxicidad; interpretar con pH/acidez.
+Cl (%) | <0.25 | Salinidad/toxicidad.
+Na (%) | <0.20 | Salinidad/sodicidad.
+[/TABLA]
+
+[TABLA]
+Métrica de suelo | Rango de referencia | Uso BIO-G
+pH | 5.5 - 7.0 ideal; 5.2 - 7.5 aceptable vigilado | Disponibilidad general.
+Conductividad | <2.0 dS/m | Arriba de esto baja confianza, especialmente reproducción.
+Materia orgánica / carbono orgánico | 1 - 3 % como referencia amplia | Retención, estructura, nutrientes.
+P | 60 - 80 mg/kg Colwell como referencia australiana | Interpretar por método/laboratorio.
+K | 100 - 150 mg/kg o 0.25 - 0.4 meq/100g | Interpretar por textura/CEC.
+[/TABLA]
+
+Muestreo foliar sugerido:
+- Usar laboratorio acreditado cuando sea posible.
+- Tomar hojas de edad y posición consistente según protocolo local.
+- No mezclar árboles enfermos, salinos, encharcados o con daño evidente dentro de una muestra normal.
+- Registrar variedad/perfil: Ataulfo, Tommy, Kent, Keitt, Criollo o SKIP.
+- Tomar suelo junto con hoja si se busca interpretar disponibilidad.
+- Repetir anualmente para tendencia; no cambiar todo por una sola muestra aislada.
+
+================================================================================
+12. EXTRACCIÓN NUTRIMENTAL - SOLO MODO AVANZADO
+================================================================================
+
+Estas cifras sirven para coherencia técnica y futuro modo avanzado. NO se muestran como receta automática en modo productor simple.
+
+[TABLA]
+Elemento | Extracción aproximada Ataulfo | Unidad | Lectura BIO-G
+N | 4.19 | kg/t fruta | Alto; hoja, crecimiento, productividad, recuperación.
+P | 0.79 | kg/t fruta | Menor que N/K/Ca, pero relevante en raíz/flor.
+K | 7.19 | kg/t fruta | Mayor extracción; fuerte en fruto, calibre y calidad.
+Ca | 3.67 | kg/t fruta | Alto contexto de calidad, firmeza y pared celular.
+Mg | 0.93 | kg/t fruta | Fotosíntesis y metabolismo.
+[/TABLA]
+
+Regla: extracción por tonelada NO es dosis. La dosis depende de oferta del suelo, eficiencia, pérdidas, pH, salinidad, agua, materia orgánica, densidad, edad, poda, rendimiento objetivo y análisis foliar.
+
+================================================================================
+13. TESTS NUEVOS RECOMENDADOS v1
+================================================================================
+
+1) mango_n_high_induction_not_good_test: dormancy/reposo funcional, N alto, K/P medio, humedad OK. Esperado: observación por exceso vegetativo / riesgo de no floración, no "óptimo".
+2) mango_k_low_fruit_fill_water_ok_test: fruit_fill, K bajo, humedad óptima, EC baja. Esperado: alerta K/calibre/calidad; no dosis cerrada.
+3) mango_k_low_fruit_fill_dry_soil_test: fruit_fill, K bajo, soilMoisture bajo. Esperado: priorizar agua/absorción antes que K.
+4) mango_ec_high_flowering_blocks_npk_test: flowering, EC 1.9, N/P/K dentro de rango. Esperado: sales/raíz/agua bajan confianza; bloquear fertilización agresiva.
+5) mango_ph_high_chlorosis_not_n_test: vegetative_growth, pH 8.0, N normal, hoja amarilla reportada. Esperado: Fe/Zn/Mn/pH/raíz, no N automático.
+6) mango_panicle_disease_not_npk_test: flowering, NPK óptimo, panícula negra o polvo blanco. Esperado: sanidad/clima primero; bajar confianza NPK.
+7) mango_fruit_set_drop_stress_test: fruit_set, soilMoisture bajo + EC alta + caída de manguito. Esperado: estrés agua/sales/raíz; no recomendar fertilizante como primera acción.
+8) mango_post_harvest_recovery_test: post_harvest, N/K bajos, EC baja, humedad correcta. Esperado: recuperación/reservas; N/K moderados con foliar/suelo, no cierre del cultivo.
+9) mango_leaf_vs_sensor_not_same_test: sensor K normal, foliar K bajo. Esperado: explicar suelo vs hoja; revisar absorción, raíz, agua, EC, muestreo.
+10) mango_boron_context_not_sensor_test: flowering, bajo cuajado, foliar B bajo reportado. Esperado: B como contexto avanzado; no simular B desde NPK ni recomendar dosis.
+
+================================================================================
+14. NO HACER EN CÓDIGO
+================================================================================
+
+- No usar sowingDate como eje de Mango.
+- No crear StageIds nuevos como floral_induction, panicle_emergence, fruit_drop o export_maturity.
+- No convertir dormancy en dormancia caducifolia ni árbol pelón.
+- No decir que mango florece automáticamente cada año.
+- No convertir estrés hídrico en receta de inducción floral.
+- No recomendar PBZ, KNO3, ethephon, boro, zinc, calcio, quelatos ni productos a ciegas.
+- No mostrar dosis regionales como receta universal.
+- No mezclar P elemental con P2O5 ni K elemental con K2O sin conversión documentada.
+- No asumir que N alto es bueno en reposo/inducción/llenado/cosecha.
+- No tumbar el score por P bajo en cosecha si agua/K/hoja están bien.
+- No celebrar K alto si EC alta o hay sospecha de antagonismo con Ca/Mg.
+- No diagnosticar antracnosis/cenicilla/mosca de fruta por sensor NPK.
+- No simular Ca/Mg/B/Zn/Fe/Mn con NPK.
+- No olvidar que postcosecha define el siguiente ciclo.
+- No copiar lógica de limón/naranjo/manzano; solo arquitectura.
+
+================================================================================
+15. TRADUCCIÓN FUTURA A CÓDIGO
+================================================================================
+
+Archivos esperados:
+lib/core/crops/mango_tree/mango_tree_assets.dart
+lib/core/crops/mango_tree/mango_tree_catalog.dart
+lib/core/crops/mango_tree/mango_tree_crop_definition.dart
+lib/core/crops/mango_tree/mango_tree_universal_profile.dart
+lib/core/crops/mango_tree/mango_tree_yield_reference.dart
+lib/core/agro/mango_tree_agro_score_engine.dart
+lib/core/agro/mango_tree_nutrition_modifier.dart
+lib/core/plant_health/catalog/mango_tree_syndromes.dart
+
+Funciones/entradas esperadas:
+- resolveMangoTreeTargets(stageId)
+- resolveMangoTreeStageWeights(stageId)
+- resolveMangoTreeNutritionPriorities(stageId)
+- resolveMangoTreeNutritionModifier(profileId, varietyId, alias)
+- MangoTreeAgroScoreEngine.evaluate(...)
+
+Constantes:
+- kCropMangoTree = 'crop_mango_tree'
+- kMangoTreeLegacyId = 'mango_tree'
+- kMangoSkipProfileId = 'mg_skip'
+- kMg01AtaulfoManila = 'mg_01_ataulfo_manila'
+- kMg02TommyAtkins = 'mg_02_tommy_atkins'
+- kMg03Kent = 'mg_03_kent'
+- kMg04Keitt = 'mg_04_keitt'
+- kMg05CriolloRegional = 'mg_05_criollo_regional'
+
+================================================================================
+16. FUENTES CONSULTADAS
+================================================================================
+
+Alta confianza / universitarias / extensión / investigación:
+1. National Mango Board / Galán Saúco, V. 2020. Nutrición y fertilización en el mango: revisión de literatura.
+   https://www.mango.org/wp-content/uploads/2020/02/Nutricion_Fertilizacion_SPN.pdf
+2. UF/IFAS Extension. Mango Growing in the Florida Home Landscape.
+   https://ask.ifas.ufl.edu/publication/MG216
+3. Salazar-García et al. Efecto a corto plazo de la fertilización de sitio específico en mangos Kent y Tommy Atkins cultivados sin riego. Revista Mexicana de Ciencias Agrícolas.
+   https://www.scielo.org.mx/scielo.php?pid=S2007-09342014000400009&script=sci_arttext
+4. Cruz-Barrón et al. Extracción y requerimiento de macronutrimentos en mango Ataulfo. Revista Mexicana de Ciencias Agrícolas.
+   https://www.scielo.org.mx/scielo.php?pid=S2007-09342014000200005&script=sci_arttext
+5. Australian Mango Industry. Leaf and soil analysis.
+   https://www.industry.mangoes.net.au/cmsb/media/mango-bpr-leafsoil-analysis-april2020.pdf
+6. Australian Mango Industry. Understanding mango crop nutrition - Key nutrients. 2025.
+   https://www.industry.mangoes.net.au/cmsb/uploads/understanding-mango-crop-nutrition-2025-final.pdf
+7. INIFAP. Agenda Técnica Guerrero 2017. Mango / fertilización y mejoradores de suelo.
+   https://vun.inifap.gob.mx/VUN_MEDIA/BibliotecaWeb/_media/_agendas/4130_4827_Agenda_T%C3%A9cnica_Guerrero_2017.pdf
+8. Salazar-García et al. Appropriate leaf sampling period for nutrient diagnosis in three mango cultivars. Revista Chapingo.
+   https://www.scielo.org.mx/scielo.php?pid=S1027-152X2018000300167&script=sci_arttext
+9. Durán Zuazo et al. Salt tolerance of mango rootstocks.
+   https://dialnet.unirioja.es/descarga/articulo/684556.pdf
+10. Ahmad et al. Mango fruit yield and critical quality parameters respond to combined B and Zn.
+   https://pmc.ncbi.nlm.nih.gov/articles/PMC6313875/
+
+Fuentes comerciales/técnicas usadas con menor peso:
+- Haifa Group / ICL / Intagri / notas técnicas de fertilización de mango.
+- Foros, Facebook, YouTube y grupos de productores usados únicamente para lenguaje UX.
+
+FIN DEL DOCUMENTO 05

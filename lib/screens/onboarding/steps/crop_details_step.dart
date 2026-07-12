@@ -6,6 +6,11 @@ import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_assets.dart';
+import 'package:bio_g/core/crops/orange_tree/orange_tree_assets.dart';
+import 'package:bio_g/core/crops/lemon_tree/lemon_tree_assets.dart';
+import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
+import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/widgets/onboarding/onboarding_asset_badge.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
@@ -75,11 +80,26 @@ class CropDetailsStep extends StatelessWidget {
         normalizedSelectedCropId == CropCatalog.peachTreeCropId;
     final bool isWalnutTreeSelection =
         normalizedSelectedCropId == CropCatalog.walnutTreeCropId;
+    final bool isPistachioTreeSelection =
+        normalizedSelectedCropId == CropCatalog.pistachioTreeCropId;
+    final bool isOrangeTreeSelection =
+        normalizedSelectedCropId == CropCatalog.orangeTreeCropId;
+    final bool isLemonTreeSelection =
+        normalizedSelectedCropId == CropCatalog.lemonTreeCropId;
+    final bool isMangoTreeSelection =
+        normalizedSelectedCropId == CropCatalog.mangoTreeCropId;
+    final bool isAvocadoTreeSelection =
+        normalizedSelectedCropId == CropCatalog.avocadoTreeCropId;
     final bool isTreeSelection =
         isAppleTreeSelection ||
         isPearTreeSelection ||
         isPeachTreeSelection ||
         isWalnutTreeSelection ||
+        isPistachioTreeSelection ||
+        isOrangeTreeSelection ||
+        isLemonTreeSelection ||
+        isMangoTreeSelection ||
+        isAvocadoTreeSelection ||
         CropCatalog.cropById(normalizedSelectedCropId)?.categoryId ==
             CropCatalog.treeCategoryId;
     final String resolvedCropAsset =
@@ -91,6 +111,16 @@ class CropDetailsStep extends StatelessWidget {
         ? PeachTreeAssets.cropIcon
         : isWalnutTreeSelection
         ? WalnutTreeAssets.cropIcon
+        : isPistachioTreeSelection
+        ? PistachioTreeAssets.cropIcon
+        : isOrangeTreeSelection
+        ? OrangeTreeAssets.cropIcon
+        : isLemonTreeSelection
+        ? LemonTreeAssets.cropIcon
+        : isMangoTreeSelection
+        ? MangoTreeAssets.cropIcon
+        : isAvocadoTreeSelection
+        ? AvocadoTreeAssets.cropIcon
         : (selectedCropId == 'bean' && selectedVarietyId != null)
         ? OnboardingUiAssets.assetForBeanVariety(selectedVarietyId)
         : (selectedOption?.assetPath ??
@@ -402,6 +432,21 @@ class CropDetailsStep extends StatelessWidget {
     }
     if (canonicalCropId == CropCatalog.walnutTreeCropId) {
       return walnutTreeProfileIcon(profileId);
+    }
+    if (canonicalCropId == CropCatalog.pistachioTreeCropId) {
+      return pistachioTreeProfileIcon(profileId);
+    }
+    if (canonicalCropId == CropCatalog.orangeTreeCropId) {
+      return orangeTreeProfileIcon(profileId);
+    }
+    if (canonicalCropId == CropCatalog.lemonTreeCropId) {
+      return lemonTreeProfileIcon(profileId);
+    }
+    if (canonicalCropId == CropCatalog.mangoTreeCropId) {
+      return mangoTreeProfileIcon(profileId);
+    }
+    if (canonicalCropId == CropCatalog.avocadoTreeCropId) {
+      return avocadoTreeProfileIcon(profileId);
     }
     return OnboardingUiAssets.variety;
   }

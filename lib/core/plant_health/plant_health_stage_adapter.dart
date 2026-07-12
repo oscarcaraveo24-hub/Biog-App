@@ -49,6 +49,16 @@ class PlantHealthStageAdapter {
         return _fromPeachTree(stage);
       case CropCatalog.walnutTreeCropId:
         return _fromWalnutTree(stage);
+      case CropCatalog.pistachioTreeCropId:
+        return _fromPistachioTree(stage);
+      case CropCatalog.orangeTreeCropId:
+        return _fromOrangeTree(stage);
+      case CropCatalog.lemonTreeCropId:
+        return _fromLemonTree(stage);
+      case CropCatalog.mangoTreeCropId:
+        return _fromMangoTree(stage);
+      case CropCatalog.avocadoTreeCropId:
+        return _fromAvocadoTree(stage);
     }
     return null;
   }
@@ -209,6 +219,223 @@ class PlantHealthStageAdapter {
     }
     if (_matches(stage, const <String>['harvest_maturity', 'harvest'])) {
       return PlantHealthStageBucket.grainFill;
+    }
+    return null;
+  }
+
+  /// Pistache perenne dioico (doc 04 §6): mapea los TreeStageIds del pistache a
+  /// los buckets del motor de sanidad. No reusa el mapeo del nogal.
+  ///
+  /// Decisiones clave (frutal de nuez, dioico):
+  /// - `flowering` → reproductiveEarly: prioriza falta/desfase de macho, frío
+  ///   insuficiente, helada/lluvia en floración (familia flor del pistache).
+  /// - `fruit_set` y `fruit_fill` → reproductiveMid: mantienen activos riesgos
+  ///   foliares (micronutrientes, chupadores, ácaros) JUNTO con blanks/cerrados,
+  ///   navel orangeworm, chinches, early split y estrés hídrico. La expansión/
+  ///   endurecimiento de cáscara y el llenado de kernel son subventanas de
+  ///   `fruit_fill`, no stageIds nuevos.
+  /// - `harvest_maturity` → grainFill: navel orangeworm, mummies, Alternaria,
+  ///   early split, manchado y cosecha a tiempo.
+  /// - `post_harvest`/`dormancy` → lateSeason: momias, reservas y alternancia
+  ///   (la postcosecha NO cierra el cultivo).
+  /// - `unknown` devuelve null: el motor opera conservador y con menor confianza
+  ///   (sin bono de etapa), no bloquea.
+  static PlantHealthStageBucket? _fromPistachioTree(String stage) {
+    if (_matches(stage, const <String>[
+      'planting_transplant',
+      'root_establish',
+    ])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['vegetative_growth'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['flowering'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['fruit_set', 'fruit_fill'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    // post_harvest debe evaluarse ANTES que harvest (contiene "harvest").
+    if (_matches(stage, const <String>['post_harvest', 'dormancy'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (_matches(stage, const <String>['harvest_maturity', 'harvest'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    return null;
+  }
+
+  /// Naranjo / cítrico siempreverde perenne (doc 04 §4, §8.7): mapea los
+  /// TreeStageIds del naranjo a los buckets del motor de sanidad. No reusa el
+  /// mapeo del pistache.
+  ///
+  /// Decisiones clave (cítrico siempreverde):
+  /// - `flowering` → reproductiveEarly: prioriza estrés de floración por calor/
+  ///   agua/frío, Botrytis/antracnosis en humedad y caída de flor.
+  /// - `fruit_set` y `fruit_fill` → reproductiveMid: mantienen activos riesgos
+  ///   foliares (psílido/HLB, minador, chupadores, ácaros, clorosis) JUNTO con
+  ///   caída fisiológica, salinidad, rajado, sunburn, wind scar y brown rot. El
+  ///   color break y el June drop son subventanas, no stageIds nuevos.
+  /// - `harvest_maturity` → grainFill: pudriciones de fruto/cosecha, mosca de la
+  ///   fruta, Penicillium, brown rot, Alternaria, sunburn y daño físico.
+  /// - `dormancy` y `post_harvest` → lateSeason: NO se apagan (cítrico
+  ///   siempreverde con memoria: defoliación, sales/raíz, HLB/psílido y reservas
+  ///   pesan en la siguiente floración). `dormancy` es reposo relativo, NO árbol
+  ///   pelón caducifolio.
+  /// - `unknown` devuelve null: el motor opera conservador y con menor confianza
+  ///   (sin bono de etapa), no bloquea.
+  static PlantHealthStageBucket? _fromOrangeTree(String stage) {
+    if (_matches(stage, const <String>[
+      'planting_transplant',
+      'root_establish',
+    ])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['vegetative_growth'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['flowering'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['fruit_set', 'fruit_fill'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    // post_harvest debe evaluarse ANTES que harvest (contiene "harvest") y JUNTO
+    // con dormancy: en cítricos ninguna de las dos apaga el árbol.
+    if (_matches(stage, const <String>['post_harvest', 'dormancy'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (_matches(stage, const <String>['harvest_maturity', 'harvest'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    return null;
+  }
+
+  /// Limón / cítrico siempreverde perenne (doc 04 §2.3, §4): mapea los
+  /// TreeStageIds del limón a los buckets del motor de sanidad. Espeja el mapeo
+  /// cítrico del naranjo, pero NO lo reusa: el limón es cultivo propio con
+  /// producción frecuente. `post_harvest` y `dormancy` NO apagan el árbol
+  /// (memoria y siguiente floración/corte; doc 04 §2.3, §5.10).
+  static PlantHealthStageBucket? _fromLemonTree(String stage) {
+    if (_matches(stage, const <String>[
+      'planting_transplant',
+      'root_establish',
+    ])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['vegetative_growth'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['flowering'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['fruit_set', 'fruit_fill'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    // post_harvest debe evaluarse ANTES que harvest (contiene "harvest") y JUNTO
+    // con dormancy: en cítricos ninguna de las dos apaga el árbol.
+    if (_matches(stage, const <String>['post_harvest', 'dormancy'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (_matches(stage, const <String>['harvest_maturity', 'harvest'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    return null;
+  }
+
+  /// TreeStageIds del mango a los buckets del motor de sanidad (doc 04 §2.3). El
+  /// mango NO es cítrico: es árbol propio tropical con memoria fuerte.
+  /// `dormancy` (reposo funcional/inducción), `harvest_maturity` (cosecha/
+  /// poscosecha sanitaria y pudriciones) y `post_harvest` mapean a `lateSeason`
+  /// para que NINGUNA quede como etapa apagada (memoria y siguiente floración;
+  /// doc 04 §2.3, §7). `fruit_fill` mapea a `grainFill`.
+  static PlantHealthStageBucket? _fromMangoTree(String stage) {
+    if (_matches(stage, const <String>[
+      'planting_transplant',
+      'root_establish',
+    ])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['vegetative_growth'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['flowering'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['fruit_set'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>['fruit_fill'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    // post_harvest debe evaluarse ANTES que harvest (contiene "harvest"). En
+    // mango, dormancy, harvest_maturity y post_harvest van a lateSeason: la
+    // sanidad de cosecha/poscosecha (antracnosis latente, mosca de fruta,
+    // stem-end rot) y la memoria/inducción NO se apagan.
+    if (_matches(stage, const <String>[
+      'post_harvest',
+      'dormancy',
+      'harvest_maturity',
+      'harvest',
+    ])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    return null;
+  }
+
+  /// TreeStageIds del aguacate a los buckets del motor de sanidad (doc 04 §2.5).
+  /// El aguacate NO es cítrico ni mango: es árbol propio con raíz muy sensible y
+  /// memoria fuerte. `dormancy` (reposo funcional/preparación floral, NO árbol
+  /// pelón: es siempreverde), `harvest_maturity` (cosecha/poscosecha sanitaria y
+  /// pudriciones) y `post_harvest` mapean a `lateSeason` para que NINGUNA quede
+  /// como etapa apagada (memoria y siguiente floración; doc 04 §2.5, §8).
+  /// `fruit_fill` mapea a `grainFill`.
+  static PlantHealthStageBucket? _fromAvocadoTree(String stage) {
+    if (_matches(stage, const <String>[
+      'planting_transplant',
+      'root_establish',
+    ])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['vegetative_growth'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['flowering'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['fruit_set'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>['fruit_fill'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    // post_harvest debe evaluarse ANTES que harvest (contiene "harvest"). En
+    // aguacate, dormancy, harvest_maturity y post_harvest van a lateSeason: la
+    // sanidad de cosecha/poscosecha (antracnosis latente, stem-end rot,
+    // barrenadores) y la memoria/alternancia NO se apagan.
+    if (_matches(stage, const <String>[
+      'post_harvest',
+      'dormancy',
+      'harvest_maturity',
+      'harvest',
+    ])) {
+      return PlantHealthStageBucket.lateSeason;
     }
     return null;
   }

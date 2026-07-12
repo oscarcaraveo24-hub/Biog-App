@@ -1,0 +1,307 @@
+[ENCABEZADO]
+BIO-G | Mango / Árbol de mango | Documentación técnica v1
+[/ENCABEZADO]
+
+BIO-G
+02. Perfil SKIP BIO-G - Mango / Árbol de mango
+Perfil general conservador y migrable | profileId: mg_skip
+cropId canónico recomendado: crop_mango_tree
+cropKey esperado: mango_tree
+Aliases: mango, mangos, mango_tree, crop_mango, mangifera, arbol_mango, árbol_mango
+Versión: v1 reforzada
+Formato: TXT técnico para Flutter/Dart, Codex, Claude Code y agentes IA
+
+IMPORTANTE
+Este documento no es receta agronómica local. No sustituye análisis de suelo, agua, tejido/foliar, diagnóstico fitosanitario regional, asesoría agronómica local ni normatividad de exportación. BIO-G orienta, no sentencia.
+
+================================================================================
+0. DECISIÓN EDITORIAL
+================================================================================
+
+SKIP no significa incompleto, descanso, dormancia ni suelo sin cultivo. SKIP es la entrada segura cuando el usuario sólo sabe que tiene mango.
+
+El usuario NO ve:
+- mg_skip
+- perfil incompleto
+- sin variedad
+- dato pobre
+
+El usuario ve:
+- Mango general
+- No sé qué tipo de mango es
+- Avanzar sin elegir variedad
+- Mango común
+
+El estado real del árbol y la etapa visible corrigen el comportamiento del sistema.
+
+================================================================================
+1. IDENTIDAD SKIP
+================================================================================
+
+[TABLA]
+Campo | Valor
+profileId | mg_skip
+Label técnico | MG-SKIP - Mango general
+Label UX | No sé / Mango general
+cropId | crop_mango_tree
+cropKey | mango_tree
+aliases | mango, mangos, mango_tree, crop_mango, mangifera, arbol_mango, árbol_mango
+Nombre visible | Mango / Árbol de mango
+Nombre científico asumido | Mangifera indica L.; no se define variedad hasta seleccionar perfil
+Familia | Anacardiaceae
+Tipo | Árbol frutal perenne tropical/subtropical
+Órgano objetivo | Fruto
+Sistema asumido | Huerto a cielo abierto, mango mexicano/tropical/subtropical general
+Confianza inicial | Baja-media si sólo hay cultivo; media con estado/etapa; alta para lectura actual con sensores + etapa confirmada
+[/TABLA]
+
+================================================================================
+2. CUÁNDO SE ACTIVA
+================================================================================
+
+Se activa cuando:
+- el usuario no sabe si su mango es Ataulfo, Manila, Tommy, Kent, Keitt, criollo u otro;
+- sólo dice “tengo mango” o “tengo un árbol de mango”;
+- sólo sabe que el mango es amarillo, rojo, verde o grande, pero no variedad;
+- tiene mezcla de árboles;
+- no sabe destino principal;
+- no conoce portainjerto;
+- quiere avanzar rápido;
+- selecciona “No sé”.
+
+Regla UX: BIO-G no debe detener el onboarding. Primero escucha sensores, estado y etapa visible. Después permite migrar.
+
+================================================================================
+3. SUPUESTOS CONSERVADORES
+================================================================================
+
+[TABLA]
+Variable | Supuesto SKIP
+Especie/variedad | Desconocida; Mangifera indica comercial, puede ser Ataulfo/Manila, Tommy, Kent, Keitt, criollo u otra
+Tipo comercial | No asume exportación, premium, tardío ni mercado local específico
+Estado productivo | No se inventa; lo define usuario
+Clima | Tropical/subtropical cálido como base; ajustar con ubicación si existe
+Manejo | Cielo abierto, manejo estándar
+Producción | Episódica/cuasi-anual; no se promete floración
+Rendimiento | Conservador; se cierra en Documento 03
+Nutrición | Prioridades relativas; no receta fertilizante
+Sanidad | Antracnosis, cenicilla, mosca de fruta, trips y pudriciones son riesgos, no diagnósticos por sensor
+Memoria | Activa; estrés afecta inducción, floración, cuajado, llenado y siguiente ciclo
+[/TABLA]
+
+================================================================================
+4. QUÉ NO ASUME SKIP
+================================================================================
+
+No asume que sea Ataulfo.
+No asume que sea Tommy Atkins.
+No asume que sea Kent o Keitt.
+No asume que sea criollo o de semilla.
+No asume ventana de cosecha temprana/tardía.
+No asume exportación.
+No asume madurez por color externo únicamente.
+No asume floración garantizada.
+No asume que mucha flor será mucha fruta.
+No asume edad exacta ni producción plena.
+No asume densidad ni rendimiento por hectárea.
+No asume que poca fruta sea problema si el árbol es joven.
+No asume que no florear sea falta de NPK.
+No convierte inducción floral en receta de estrés hídrico, PBZ o nitratos.
+No diagnostica antracnosis/cenicilla por foto o sensor de forma cerrada.
+No recomienda pesticidas, marcas, ingredientes activos ni dosis.
+No usa dormancy como árbol muerto.
+No borra historial al migrar a MG-01..MG-05.
+
+================================================================================
+5. ETAPAS ACTIVAS EN SKIP
+================================================================================
+
+[TABLA]
+StageId | Label UX SKIP | Política
+planting_transplant | Plantación / trasplante | Árbol nuevo; raíz primero; sin producción
+root_establishment | Establecimiento de raíz | Humedad sin saturación; no quemar con sales
+juvenile_vegetative | Mango joven / formación | Formación de copa, raíz y hoja madura; no penalizar por falta de fruto
+dormancy | Reposo funcional / preparación | Baja brotación; posible inducción si árbol adulto y sano; no árbol muerto
+budbreak | Brotando / brote tierno | Puede ser vegetativo, no flor; vigilar exceso de N, trips, ácaros y plagas
+vegetative_growth | Con hoja nueva / creciendo | Balance vegetativo-reproductivo; no empujar puro follaje
+flowering | Con flor / panícula | Etapa crítica; humedad, lluvia, cenicilla, antracnosis, calor/frío y agua pesan fuerte
+fruit_set | Frutito recién amarrado | Cuajado y caída fisiológica; no culpar NPK de entrada
+fruit_fill | Mango creciendo / llenando | Calibre, agua, K, hoja funcional y salinidad; no cosecha todavía
+harvest_maturity | Mango listo para corte | Madurez fisiológica según destino; no decidir sólo por color
+post_harvest | Después de cosecha / recuperación | Etapa viva; poda, hoja nueva, reservas, siguiente evento
+unknown | No lo sé | Fallback seguro; preguntar realidad visible
+[/TABLA]
+
+================================================================================
+6. CALENDARIO PROMEDIO CONSERVADOR
+================================================================================
+
+[TABLA]
+Evento | Ventana SKIP | Regla
+Reposo funcional / preparación | variable; antes del evento floral si clima/manejo lo permite | No prometer inducción; exceso vegetativo puede frenar flor
+Inducción floral | variable; depende de temperatura, estrés moderado, hoja madura, reservas y genética | BIO-G sólo evalúa condiciones favorables; no receta estrés/PBZ/nitratos
+Floración / panículas | 25-45 días | Etapa crítica; lluvia/HR/cenicilla/antracnosis pueden tumbar flor
+Cuajado / amarre | 10-25 días posteriores a floración | Mucha flor no asegura fruto; caída inicial puede ser normal
+Llenado | 3-6 meses | Calibre, K, agua, hoja y sanidad
+Inicio de cosecha | 4-7 meses postfloración | Variable por perfil y región
+Postcosecha | después de cosecha | No cerrar cultivo; recuperar reservas y preparar siguiente floración
+[/TABLA]
+
+Estos rangos NO prometen fechas exactas, NO sustituyen perfiles MG-01..MG-05 y SÍ permiten que BIO-G funcione sin datos finos.
+
+================================================================================
+7. RANGOS CONSERVADORES SKIP
+================================================================================
+
+[TABLA]
+Métrica | Banda conservadora | Lectura
+soilMoisture | <40 crítico bajo; 40-55 observación; 55-85 óptimo general; 85-90 alto; >90 saturación | En floración/cuajado/llenado alertar antes; en reposo adulto puede tolerar más seco sin llegar a estrés severo
+soilTemp | actividad limitada con frío; razonable >15 C; mejor con suelo/ambiente templado-cálido | No penalizar reposo igual que cuajado
+pH | 5.5-7.5 preferente; >7.5 vigilancia; extremos requieren análisis | pH alto cambia disponibilidad de micros y P
+EC | <1.2 favorable; 1.2-1.7 vigilancia; >2.0 observación fuerte; >2.5 fuerte | Salinidad/exceso, no déficit
+resistance | <1.6 favorable; 1.6-2.0 observación; >2.0-2.3 alta; >2.3 crítica | Raíz y drenaje antes que fertilizante
+N/P/K | prioridad relativa por etapa | SKIP no receta fertilizante
+[/TABLA]
+
+================================================================================
+8. SENSIBILIDAD CRÍTICA SKIP
+================================================================================
+
+[TABLA]
+Riesgo | Peso SKIP | Mensaje técnico
+Falla de inducción floral | Alto | Puede haber árbol sano sin flor si no hubo condiciones/hoja/reservas
+Exceso vegetativo / N alto | Alto | Mucha hoja/brote puede competir con floración
+Alta HR / lluvia en floración | Muy alto | Sube antracnosis/cenicilla y baja cuajado
+Cenicilla en panícula | Muy alto | Puede secar flores y reducir amarre
+Antracnosis en flor/fruto joven | Muy alto | Puede ennegrecer panículas y tirar fruto; no diagnosticar cerrado
+Déficit hídrico en floración | Muy alto | Puede abortar flor aunque NPK esté bien
+Déficit hídrico en cuajado | Muy alto | Puede aumentar caída de frutito
+Salinidad / EC alta | Alto | Afecta raíz, absorción, cuajado y calibre
+Exceso de humedad / anoxia | Alto | Marchitez con suelo húmedo no es falta de agua
+Estrés térmico prolongado | Alto | Calor/frío fuera de rango puede tumbar flor/fruto
+Alternancia productiva | Media-alta | Año cargado o estrés previo puede reducir siguiente ciclo
+Postcosecha débil | Media-alta | Hoja/raíz/reservas impactan siguiente floración
+[/TABLA]
+
+================================================================================
+9. MENSAJES UX RECOMENDADOS
+================================================================================
+
+- “Este es un perfil general de mango. Luego puedes elegir Ataulfo, Tommy, Kent, Keitt o Criollo sin perder historial.”
+- “No pasa nada si no sabes la etapa. Dime qué ves: brote nuevo, panícula/flor, frutito, mango creciendo, listo para corte o después de cosecha.”
+- “En mango, que floree mucho no asegura cosecha. Lo crítico es que amarre y sostenga el frutito.”
+- “Si la flor se pone negra, se seca o trae polvo blanco, primero revisa sanidad y clima de floración.”
+- “El mango puede irse a pura hoja. N alto o brote tierno no siempre se vuelven fruta.”
+- “Un poco de estrés puede ayudar a inducir flor en ciertos manejos, pero si se pasa puede tirar flor y frutito. No lo manejes como receta.”
+- “En cuajado, el mango no perdona falta de agua, sales altas ni calor fuerte.”
+- “En llenado, el potasio ayuda a calibre y calidad, pero primero revisa agua estable y salinidad.”
+- “Si hay sales altas, antes de meter más fertilizante revisa agua, drenaje y raíz.”
+- “Con pH alto, una hoja amarilla puede venir de hierro, zinc, manganeso o raíz, no sólo de nitrógeno.”
+- “No cierres el cultivo después de cosechar. La postcosecha prepara la siguiente floración.”
+- “Si el árbol cargó mucho o sufrió estrés este año, el siguiente ciclo puede venir más débil.”
+
+================================================================================
+10. CONFIABILIDAD SKIP
+================================================================================
+
+[TABLA]
+Entrada disponible | Confianza | Uso
+Sólo cultivo | Baja-media | Mostrar perfil general y pedir estado/etapa
+Cultivo + estado | Media | Permite no productivo/productivo
+Cultivo + etapa visible | Media-alta | Mejora targets y copy
+Cultivo + sensores + etapa | Alta para lectura actual | No equivale a diagnóstico varietal/sanitario
+Cultivo + historial | Alta para memoria local | Ajusta riesgo de floración, cuajado, alternancia, sales, raíz y postcosecha
+Sólo NPK sin etapa | Baja | No recomendar fertilización fina
+[/TABLA]
+
+================================================================================
+11. MIGRACIÓN DESDE SKIP
+================================================================================
+
+Reglas:
+- No reiniciar el árbol.
+- No borrar memoria.
+- Actualizar profileId.
+- Mantener perennialStateId, phenologyStageId, perennialAnchorDate y perennialAnchorTypeId.
+- Conservar estrés: calor, frío, déficit hídrico, salinidad, anoxia, pH alto, compactación, floración golpeada, caída de frutito, sanidad de panícula/fruto, defoliación, alternancia y postcosecha débil.
+- Recalcular sensibilidad, aliases, copy y rendimiento relativo desde el nuevo perfil.
+- No cambiar etapa automáticamente por cambiar perfil.
+- Si el usuario cambia de mg_skip a Kent o Keitt, no mover cosecha sólo por calendario; esperar ancla/etapa visible.
+
+Targets:
+mg_01_ataulfo_manila, mg_02_tommy_atkins, mg_03_kent, mg_04_keitt, mg_05_criollo_regional.
+
+================================================================================
+12. METADATOS PARA CÓDIGO
+================================================================================
+
+Constantes:
+kCropMangoTree = 'crop_mango_tree'
+kMangoTreeLegacyId = 'mango_tree'
+kMangoSkipProfileId = 'mg_skip'
+kMg01AtaulfoManila = 'mg_01_ataulfo_manila'
+kMg02TommyAtkins = 'mg_02_tommy_atkins'
+kMg03Kent = 'mg_03_kent'
+kMg04Keitt = 'mg_04_keitt'
+kMg05CriolloRegional = 'mg_05_criollo_regional'
+
+Catálogo:
+profileId: mg_skip
+labelEs: Mango general / No sé
+isGeneric: true
+cropId: crop_mango_tree
+aliases: mango, mango común, árbol de mango, mangos, mango local, no sé, desconocido
+defaultConfidence: 0.45-0.55
+migrationTargets: MG-01..MG-05
+visibleInWizard: true
+
+Assets:
+icon: assets/icons/wizard/ic_mango_tree.png
+stageAssetBasePath: assets/seeds/mango/
+
+================================================================================
+13. CASOS MÍNIMOS DE PRUEBA SKIP
+================================================================================
+
+1) mg_skip + only crop: onboarding no bloquea; pide estado/etapa.
+2) mg_skip + newly_planted + harvest_maturity: resolver incongruencia suavemente.
+3) mg_skip + established + dormancy: reposo funcional/preparación; no árbol muerto.
+4) mg_skip + established + no flowering: estado válido; no diagnosticar falta de fertilizante.
+5) mg_skip + flowering + soilMoisture bajo: alerta agua/floración; no receta NPK.
+6) mg_skip + flowering + HR alta/lluvia: alerta sanidad/ambiente; no NPK primero.
+7) mg_skip + flowering + panícula negra/seca: antracnosis/cenicilla/clima como compatibles; pedir revisión.
+8) mg_skip + fruit_set + EC alta: sales/raíz/agua antes que NPK.
+9) mg_skip + fruit_set + caída de frutitos: diferenciar caída fisiológica vs estrés.
+10) mg_skip + fruit_fill + K bajo + humedad baja: priorizar agua/absorción antes de K.
+11) mg_skip + vegetative_growth + N alto + no floración: advertir vigor vegetativo.
+12) mg_skip + harvest_maturity: no decidir madurez sólo por color externo.
+13) mg_skip + post_harvest: no cerrar cultivo; hablar de reservas/siguiente floración.
+14) mg_skip -> mg_01_ataulfo_manila: conserva memoria y recalcula copy/sensibilidad.
+
+================================================================================
+14. FUENTES CONSULTADAS
+================================================================================
+
+Alta confianza:
+- Estándar BIO-G para Integración de Árboles Perennes v1.5 con addendum.
+- PDF base del usuario: PERFIL UNIVERSAL BIO-G — MANGO.
+- PDF base del usuario: PERFIL SKIP BIO-G — MANGO.
+- Documentos 01-05 de Limón, como patrón de formato/contrato.
+- Revisión de lib.zip: apple_tree, orange_tree y lemon_tree ya tienen 9 módulos; mango_tree no existe.
+- INIFAP / National Mango Board: unidades de calor y madurez de cosecha para Ataulfo, Tommy Atkins, Kent y Keitt.
+- INIFAP/Gobierno de México: madurez a cosecha del mango sin destruirlo.
+- Revista Mexicana de Ciencias Agrícolas / Scielo: fertilización de sitio específico en Kent y Tommy Atkins.
+- UF/IFAS: Mango Growing in the Florida Home Landscape.
+- UF/IFAS: manejo de antracnosis y cenicilla.
+- University of Hawai'i CTAHR: Mango Anthracnose y Mango Powdery Mildew.
+- Redalyc: Flowering induction in mango tree.
+- National Mango Board / FSHS 2025: Understanding and Managing Mango Fruit Drop.
+- SADER/SIAP/Gobierno de México: producción nacional y principales estados productores.
+
+Foros/productores:
+Usados sólo para lenguaje UX, no para umbrales ni recomendaciones cerradas:
+- Reddit r/mango: mucha flor pero poca fruta, flor negra, no panículas, caída de frutito.
+- Daleys Fruit Forum: no fruiting, wet weather/anthracnose, frío en floración.
+- Infojardin/grupos: flor se cae, mango chiquito se cae, árbol a pura hoja.
+
+FIN DEL DOCUMENTO 02

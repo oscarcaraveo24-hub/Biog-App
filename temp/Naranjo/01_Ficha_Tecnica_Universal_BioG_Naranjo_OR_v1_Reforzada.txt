@@ -1,0 +1,826 @@
+[ENCABEZADO]
+BIO-G | Naranjo | Documentacion tecnica v1
+[/ENCABEZADO]
+
+BIO-G
+01. Ficha Tecnica Universal BIO-G - Naranjo
+Universal + Perfiles/Variedades | Cultivo: Naranjo / Naranja dulce | Prefix: OR
+
+Uso interno:
+Documento reforzado a partir del Perfil Universal BIO-G - Naranjo entregado por el usuario, el Estandar BIO-G para integracion de arboles perennes v1.5, documentos plantilla de Nogal y revision tecnica de fuentes universitarias/extension/fitosanidad citricola.
+No sustituye analisis de suelo, agua, tejido/foliar, diagnostico fitosanitario regional ni asesoria agronomica local.
+
+================================================================================
+0. CORRECCIONES Y DECISIONES DE ESTA VERSION
+================================================================================
+
+0.1. Identidad tecnica corregida
+- cropId canonico recomendado: crop_orange_tree
+- alias legacy opcional: orange_tree
+- CropKey sugerido: orangeTree / orange_tree, segun convencion real del codigo.
+- Prefix de perfiles: or
+- Perfil general obligatorio: or_skip
+- Nombre visible: Naranjo / Naranja
+- Nombre agronomico: Naranjo dulce / sweet orange
+- Nombre cientifico: Citrus sinensis (L.) Osbeck
+
+0.2. Alcance biologico
+BIO-G v1 modela NARANJO DULCE, no todos los citricos.
+No mezclar en esta ficha:
+- limon mexicano / limon persa;
+- mandarina/tangerina;
+- toronja/pomelo;
+- lima;
+- naranja agria como patron;
+- citricos ornamentales.
+
+0.3. Regla citrica principal
+El naranjo es un arbol perenne siempreverde. No tiene dormancia verdadera como manzano, durazno, nogal o pera caducifolia.
+En BIO-G, el ciclo no debe depender de sowingDate. El eje correcto es:
+estado fisiologico del arbol + etapa visible + ancla temporal + memoria del cultivo.
+
+0.4. Decision sobre etapas BIO-G
+El estandar de arboles tiene StageIds cerrados. Naranjo debe usarlos sin inventar StageIds nuevos.
+Se permite traducir lenguaje citrico a esos IDs:
+- induccion floral => contexto dentro de dormancy/reposo relativo, budbreak o flowering segun UX;
+- brotacion vegetativa / flush => budbreak o vegetative_growth;
+- floracion => flowering;
+- caida de petalos / cuajado / amarre => fruit_set;
+- crecimiento de fruto, division/expansion celular, llenado de jugo => fruit_fill;
+- cambio de color, madurez, cosecha, indice Brix/acidez => harvest_maturity;
+- recuperacion despues de cosecha, hoja activa, nuevo flush y reservas => post_harvest.
+
+0.5. Decision sobre dormancy en citricos
+El StageId dormancy NO debe pintarse como "arbol pelon" ni "dormancia invernal" en naranjo.
+Si se usa, debe etiquetarse como:
+- Reposo relativo / baja actividad
+- Prefloracion / preparacion del ciclo
+- Arbol sin flor ni fruto visible
+La hoja verde puede seguir activa. Temperatura baja o sequia pueden reducir actividad, pero no se debe tratar como descanso de suelo ni cultivo cerrado.
+
+0.6. Perfiles v1
+La ficha universal SI incluye perfiles/variedades, conforme al estandar BIO-G.
+No se crea un documento separado de perfiles.
+Los perfiles oficiales v1 quedan:
+- or_skip - Naranjo general
+- or_01_valencia_tardia - Valencia / tardia / jugo
+- or_02_navel_mesa - Navel / ombligo / mesa
+- or_03_temprano_hamlin_pineapple - Temprano / Hamlin / Pineapple
+- or_04_criollo_regional - Criollo / regional / comun
+- or_05_tropical_calido - Tropical / clima calido / multiple floracion
+
+0.7. Reglas que esta version corrige del borrador base
+- OR-AR se reemplaza por crop_orange_tree como cropId; OR queda solo como prefijo de perfiles.
+- OR-SKIP se reemplaza por or_skip para profileId cableable.
+- Se conserva la idea correcta de 5 perfiles OR-01 a OR-05, pero se convierten a IDs estables snake_case.
+- Se elimina la idea de que el calendario manda. El estado y etapa visible mandan.
+- Se mantiene que floracion y cuajado son etapas criticas, pero se agrega que en naranjo tambien pesa mucho salinidad, raiz, HLB/psilido, Phytophthora, hoja activa y calidad externa/interna.
+- No se modela numero de frutos en v1.
+- No se fuerza alternancia; se registra memoria de carga, caida de fruto y estres.
+- No se diagnostica HLB ni plagas desde sensores NPK.
+- No se convierte NPK en receta de fertilizacion.
+- No se inventan sensores: Zn, Fe, Ca, Mg, B, Cl, Na, HLB, psilido, Brix, acidez, VPD, HR y GDD son contexto avanzado, no sensores v1.
+
+================================================================================
+1. PROPOSITO Y ALCANCE
+================================================================================
+
+Esta ficha define el cultivo madre Naranjo para BIO-G.
+Entrega identidad, arquitectura perenne, etapas visibles, perfiles regionales/comerciales, aliases, ventanas fisiologicas, sensibilidad y mapeo tecnico para que Codex/Claude puedan implementar el arbol sin convertirlo en cultivo anual largo.
+
+BIO-G debe leer el naranjo como arbol vivo todo el ano:
+- puede tener flor y fruto al mismo tiempo;
+- puede tener brotes vegetativos durante el ciclo;
+- puede conservar fruto en el arbol segun variedad/mercado;
+- puede sufrir caida fisiologica de flor/frutito sin ser automaticamente falla NPK;
+- puede tener baja actividad por frio/sequia sin perder hoja;
+- puede acumular memoria de estres que afecta calibre, cuajado, calidad, floracion futura y sanidad.
+
+Limites v1:
+- no calcula Brix/acidez;
+- no calcula numero de frutos;
+- no diagnostica HLB;
+- no prescribe pesticidas;
+- no recomienda dosis cerradas de fertilizantes;
+- no separa portainjertos como perfiles de usuario;
+- no modela huertos ultra-intensivos como arquitectura distinta;
+- no integra por ahora toronja, mandarina, limon o lima dentro de este cropId.
+
+================================================================================
+2. IDENTIDAD UNIVERSAL DEL CULTIVO
+================================================================================
+
+[TABLA]
+Columnas: Campo | Valor
+Fila 1:
+- Campo: Nombre BIO-G visible
+- Valor: Naranjo / Naranja
+Fila 2:
+- Campo: Producto visible
+- Valor: Naranja dulce
+Fila 3:
+- Campo: Nombre cientifico
+- Valor: Citrus sinensis (L.) Osbeck
+Fila 4:
+- Campo: Familia botanica
+- Valor: Rutaceae
+Fila 5:
+- Campo: Tipo de cultivo
+- Valor: Arbol frutal perenne siempreverde, citrico
+Fila 6:
+- Campo: Metabolismo
+- Valor: C3
+Fila 7:
+- Campo: Organo objetivo v1
+- Valor: Fruto citrico: cascara/flavedo-albedo, pulpa, jugo, solidos solubles y acidez como contexto de calidad
+Fila 8:
+- Campo: Sistema v1 cubierto
+- Valor: Huerto a cielo abierto, citricultura de Mexico y regiones subtropicales/tropicales comparables
+Fila 9:
+- Campo: cropId canonico propuesto
+- Valor: crop_orange_tree
+Fila 10:
+- Campo: alias legacy opcional
+- Valor: orange_tree
+Fila 11:
+- Campo: prefix de perfiles
+- Valor: or
+Fila 12:
+- Campo: perfil generico obligatorio
+- Valor: or_skip
+[/TABLA]
+
+================================================================================
+3. CULTIVO ANUAL VS ARBOL PERENNE SIEMPREVERDE EN NARANJO
+================================================================================
+
+[TABLA]
+Columnas: Aspecto | Cultivo anual | Naranjo BIO-G
+Fila 1:
+- Aspecto: Eje temporal
+- Cultivo anual: Fecha de siembra/trasplante.
+- Naranjo BIO-G: Estado fisiologico + etapa visible + ancla + memoria. No usar sowingDate.
+Fila 2:
+- Aspecto: Ciclo
+- Cultivo anual: Lineal; nace, produce y termina.
+- Naranjo BIO-G: Recurrente; el arbol sigue vivo y puede cargar flor/fruto/brote simultaneamente.
+Fila 3:
+- Aspecto: Edad
+- Cultivo anual: Explica casi toda la etapa.
+- Naranjo BIO-G: Orienta estado productivo, pero la realidad visible corrige.
+Fila 4:
+- Aspecto: Dormancia
+- Cultivo anual: No aplica o termina ciclo.
+- Naranjo BIO-G: No hay dormancia verdadera. Hay reposo relativo o baja actividad.
+Fila 5:
+- Aspecto: Variedad
+- Cultivo anual: Puede cambiar duracion/cosecha.
+- Naranjo BIO-G: Ajusta ventana relativa, destino fruta, sensibilidad y copy; no cambia la estructura.
+Fila 6:
+- Aspecto: Rendimiento
+- Cultivo anual: t/ha por ciclo.
+- Naranjo BIO-G: kg/arbol + arboles/ha + t/ha + edad/estado productivo + sanidad + calibre + calidad.
+Fila 7:
+- Aspecto: Postcosecha
+- Cultivo anual: Cierre o transicion final.
+- Naranjo BIO-G: Etapa viva de recuperacion, hoja activa, reservas, raiz, nuevo flush o preparacion floral.
+Fila 8:
+- Aspecto: Memoria
+- Cultivo anual: Menor o de un ciclo.
+- Naranjo BIO-G: Fuerte: agua, sales, calor, helada, HLB, defoliacion, raiz y carga afectan ciclos futuros.
+[/TABLA]
+
+================================================================================
+4. ARQUITECTURA BIO-G PARA NARANJO
+================================================================================
+
+[TABLA]
+Columnas: Grupo | Valor permitido | Regla
+Fila 1:
+- Grupo: Cultivo madre
+- Valor permitido: crop_orange_tree
+- Regla: Entrada principal del catalogo.
+Fila 2:
+- Grupo: Categoria
+- Valor permitido: tree
+- Regla: Debe entrar por rama de arboles/perennes.
+Fila 3:
+- Grupo: Estados perennes
+- Valor permitido: newly_planted, juvenile_non_productive, established, productive_season, unknown
+- Regla: No inventar estados.
+Fila 4:
+- Grupo: Etapas cerradas
+- Valor permitido: planting_transplant, root_establishment, juvenile_vegetative, dormancy, budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest, unknown
+- Regla: Usar labels citricos sin crear IDs nuevos.
+Fila 5:
+- Grupo: Anclas
+- Valor permitido: planting, stage_start, budbreak, flowering, harvest, post_harvest, manual_stage, unknown
+- Regla: Separar plantacion de evento actual.
+Fila 6:
+- Grupo: Sensores v1
+- Valor permitido: soilMoisture, soilTemp, ph, ec, resistance, n, p, k
+- Regla: HLB, psilido, HR, VPD, Brix, acidez, Zn/Fe/Ca/Mg/B/Cl/Na son contexto, no sensores NPK v1.
+[/TABLA]
+
+================================================================================
+5. ESTADOS DE ARBOL Y POLITICAS POR ESTADO
+================================================================================
+
+[TABLA]
+Columnas: StateId | Label UX | Lectura | Politica BIO-G
+Fila 1:
+- StateId: newly_planted
+- Label UX: Recien plantado
+- Lectura: Arbol nuevo en campo, injertado o trasplantado; raiz fina en recuperacion.
+- Politica BIO-G: No exigir fruta. Prioridad raiz, humedad estable, baja salinidad, cuello sano y establecimiento.
+Fila 2:
+- StateId: juvenile_non_productive
+- Label UX: Naranjo joven que aun no produce
+- Lectura: Arbol en formacion; puede florear poco pero no tiene cosecha comercial.
+- Politica BIO-G: No inferir fracaso por poca fruta. Vigilar vigor equilibrado, raiz, sanidad, brotes y estructura.
+Fila 3:
+- StateId: established
+- Label UX: Naranjo establecido
+- Lectura: Arbol adulto o casi adulto; puede estar en reposo relativo, brote, flor, fruta o postcosecha.
+- Politica BIO-G: Permite todas las etapas visibles sin depender de edad exacta.
+Fila 4:
+- StateId: productive_season
+- Label UX: Naranjo en produccion
+- Lectura: Tiene flor, fruto, cosecha o ciclo productivo activo.
+- Politica BIO-G: Habilita floracion, cuajado, llenado, madurez/cosecha y postcosecha.
+Fila 5:
+- StateId: unknown
+- Label UX: No lo se
+- Lectura: Usuario no identifica edad/estado.
+- Politica BIO-G: No bloquear; usar SKIP/estado conservador y pedir etapa visible.
+[/TABLA]
+
+================================================================================
+6. FASES Y ETAPAS FENOLOGICAS UNIVERSALES
+================================================================================
+
+[TABLA]
+Columnas: StageId | Label citrico | Senal visible | Ventana orientativa | Cuidado principal
+Fila 1:
+- StageId: planting_transplant
+- Label citrico: Plantacion / trasplante
+- Senal visible: Arbol recien puesto, tutor, cepellon/hoyo, posible estres de trasplante.
+- Ventana orientativa: Dia 0 si es arbol nuevo.
+- Cuidado principal: Raiz, cuello, humedad, salinidad, drenaje y compactacion.
+Fila 2:
+- StageId: root_establishment
+- Label citrico: Establecimiento de raiz
+- Senal visible: Arbol joven enraizando; brotes nuevos aun irregulares.
+- Ventana orientativa: 0-12 meses orientativo, segun clima y manejo.
+- Cuidado principal: Humedad estable sin saturacion; evitar sales y cuello tapado.
+Fila 3:
+- StageId: juvenile_vegetative
+- Label citrico: Crecimiento juvenil
+- Senal visible: Formacion de copa, brotes, estructura; sin produccion comercial.
+- Ventana orientativa: anos 1-3/4 segun patron, manejo y clima.
+- Cuidado principal: Vigor sano, raiz, sanidad, no forzar fruta temprana.
+Fila 4:
+- StageId: dormancy
+- Label citrico: Reposo relativo / baja actividad
+- Senal visible: Arbol con hoja, sin floracion fuerte ni fruto activo; puede estar despues de cosecha o previo a floracion.
+- Ventana orientativa: temporada fria/seca o transicion regional.
+- Cuidado principal: No leer como caducifolio; proteger raiz, sales, frio, preparacion floral y humedad.
+Fila 5:
+- StageId: budbreak
+- Label citrico: Brotacion / flush nuevo
+- Senal visible: Brotes tiernos, hojas nuevas claras, crecimiento activo.
+- Ventana orientativa: primavera o flushes multiple segun clima tropical/subtropical.
+- Cuidado principal: Psilido/HLB, minador, pulgones, Zn/Fe/Mn contexto, agua y N moderado.
+Fila 6:
+- StageId: vegetative_growth
+- Label citrico: Crecimiento vegetativo
+- Senal visible: Hoja activa, brotes elongando, copa creciendo.
+- Ventana orientativa: durante gran parte del ano, segun clima/riego.
+- Cuidado principal: Balance vegetativo-reproductivo; evitar exceso de N, sales y sombreo.
+Fila 7:
+- StageId: flowering
+- Label citrico: Floracion
+- Senal visible: Botones, azahares abiertos, olor fuerte, caida de petalos.
+- Ventana orientativa: 15-40 dias segun perfil/clima; puede haber floraciones secundarias.
+- Cuidado principal: Agua, calor, frio/helada, HR, viento, sanidad y evitar sobrealertar NPK.
+Fila 8:
+- StageId: fruit_set
+- Label citrico: Cuajado / amarre de fruto
+- Senal visible: Frutitos recien cuajados; caida fisiologica posible.
+- Ventana orientativa: 2-10 semanas posteriores a floracion, segun definicion regional.
+- Cuidado principal: Evitar estres hidrico, salinidad, calor y competencia de brotes.
+Fila 9:
+- StageId: fruit_fill
+- Label citrico: Crecimiento y llenado del fruto
+- Senal visible: Fruto creciendo, aumento de calibre, jugo/pulpa en desarrollo.
+- Ventana orientativa: 120-240 dias segun perfil y clima.
+- Cuidado principal: Agua estable, K, hoja funcional, salinidad, calibre, rajado/granulacion y caida.
+Fila 10:
+- StageId: harvest_maturity
+- Label citrico: Madurez / cambio de color / cosecha
+- Senal visible: Fruto con color comercial o madurez interna; corte o recoleccion.
+- Ventana orientativa: variable: tempranas, intermedias y tardias.
+- Cuidado principal: Calidad externa/interna, calibre, Brix/acidez como contexto, caida, regreening de Valencia, plagas de fruto.
+Fila 11:
+- StageId: post_harvest
+- Label citrico: Postcosecha / recuperacion
+- Senal visible: Despues de cortes; arbol con hoja activa y posible nuevo flush.
+- Ventana orientativa: despues de cosecha hasta siguiente floracion fuerte.
+- Cuidado principal: Recuperacion de reservas, raiz, hoja, sanidad, nutricion moderada y memoria.
+Fila 12:
+- StageId: unknown
+- Label citrico: No lo se
+- Senal visible: Usuario no identifica etapa.
+- Ventana orientativa: cualquier momento.
+- Cuidado principal: Fallback conservador; pedir realidad visible.
+[/TABLA]
+
+================================================================================
+7. SUBFASES CITRICAS SIN CREAR IDS NUEVOS
+================================================================================
+
+BIO-G no debe crear StageIds nuevos para induccion floral, caida de junio, color break, regreening o Brix/acidez en v1.
+Se usan como sublabels, insights o tags internos opcionales.
+
+[TABLA]
+Columnas: Subfase citrica | StageId BIO-G | Lectura | Regla UX
+Fila 1:
+- Subfase citrica: Induccion floral
+- StageId BIO-G: dormancy / budbreak / flowering segun lo visible
+- Lectura: Prepara floracion; puede depender de frio suave, sequia controlada, temperatura y reservas.
+- Regla UX: No hablar de siembra; hablar de preparacion de flor y balance.
+Fila 2:
+- Subfase citrica: Brotacion vegetativa / flush
+- StageId BIO-G: budbreak o vegetative_growth
+- Lectura: Hoja nueva, brotes tiernos, alta atraccion para psilido/minador/pulgones.
+- Regla UX: Brote tierno no significa automaticamente exceso de N.
+Fila 3:
+- Subfase citrica: Floracion / antesis
+- StageId BIO-G: flowering
+- Lectura: Azahar abierto; etapa sensible a calor, frio, deficit de agua y sanidad.
+- Regla UX: Cuidar agua y clima; no culpar fertilizante sin revisar evento.
+Fila 4:
+- Subfase citrica: Caida de petalos y cuajado
+- StageId BIO-G: fruit_set
+- Lectura: Inicia amarre; muchas flores/frutitos pueden caer fisiologicamente.
+- Regla UX: Diferenciar caida normal vs estres severo, sales, calor o plaga.
+Fila 5:
+- Subfase citrica: Caida fisiologica de frutitos / June drop
+- StageId BIO-G: fruit_set
+- Lectura: Abscision natural o agravada por calor, agua, salinidad, carga o carbohidratos.
+- Regla UX: No diagnosticar solo NPK. Revisar agua, temperatura, raiz y carga.
+Fila 6:
+- Subfase citrica: Expansion y llenado de jugo
+- StageId BIO-G: fruit_fill
+- Lectura: Fruto gana calibre, jugo, solidos, acidez se transforma.
+- Regla UX: Agua/K/hoja/salinidad pesan mas.
+Fila 7:
+- Subfase citrica: Color break / cambio de color
+- StageId BIO-G: harvest_maturity
+- Lectura: Cambio externo de verde a naranja; no siempre equivale a madurez interna perfecta.
+- Regla UX: Brix/acidez son contexto avanzado; no sensor v1.
+Fila 8:
+- Subfase citrica: Regreening en Valencia
+- StageId BIO-G: harvest_maturity
+- Lectura: Valencia puede reverdecer externamente si se sostiene en arbol en clima caliente.
+- Regla UX: No confundir verde externo con fruta inmadura sin contexto.
+[/TABLA]
+
+================================================================================
+8. CALENDARIO FISIOLOGICO ORIENTATIVO
+================================================================================
+
+Cuidado:
+Estas ventanas orientan UX y validacion de coherencia. No sustituyen fenologia observada, clima local ni perfil.
+Mexico tiene citricultura tropical/subtropical con grandes diferencias entre Veracruz, Tamaulipas, San Luis Potosi, Nuevo Leon, Sonora, Puebla, Yucatan y otras regiones.
+
+[TABLA]
+Columnas: Evento visible | StageId | Ventana orientativa | Lectura BIO-G
+Fila 1:
+- Evento visible: Reposo relativo / baja actividad
+- StageId: dormancy
+- Ventana orientativa: temporada fria/seca o despues de cosecha segun region
+- Lectura BIO-G: Preparacion, raiz, reservas, no caducifolio.
+Fila 2:
+- Evento visible: Brotacion / flush
+- StageId: budbreak / vegetative_growth
+- Ventana orientativa: primavera y flushes secundarios con lluvia/riego/calor
+- Lectura BIO-G: Hoja nueva, sanidad, balance N/agua.
+Fila 3:
+- Evento visible: Floracion
+- StageId: flowering
+- Ventana orientativa: principal en primavera; puede variar por region tropical y riego
+- Lectura BIO-G: Azahar, agua, calor/frio, caida potencial.
+Fila 4:
+- Evento visible: Cuajado / amarre
+- StageId: fruit_set
+- Ventana orientativa: semanas posteriores a floracion
+- Lectura BIO-G: Frutito pequeno, competencia, caida fisiologica.
+Fila 5:
+- Evento visible: Crecimiento/llenado de fruto
+- StageId: fruit_fill
+- Ventana orientativa: 4-8 meses segun perfil
+- Lectura BIO-G: Calibre, jugo, K, agua y salinidad.
+Fila 6:
+- Evento visible: Madurez / cosecha temprana
+- StageId: harvest_maturity
+- Ventana orientativa: tempranas pueden entrar meses antes de Valencia
+- Lectura BIO-G: Cosecha de perfiles tempranos.
+Fila 7:
+- Evento visible: Madurez / cosecha tardia
+- StageId: harvest_maturity
+- Ventana orientativa: Valencia/tardias pueden sostenerse mas tiempo
+- Lectura BIO-G: Calidad final, color, caida, regreening.
+Fila 8:
+- Evento visible: Postcosecha / recuperacion
+- StageId: post_harvest
+- Ventana orientativa: despues de corte hasta siguiente ciclo fuerte
+- Lectura BIO-G: Hoja, raiz, reservas y preparacion del siguiente ciclo.
+[/TABLA]
+
+================================================================================
+9. RANGOS MEDIBLES BASE - NO SON STAGETARGETS FINALES
+================================================================================
+
+Los siguientes rangos son base universal para documentacion y validacion.
+El Documento 05 de Naranjo debe convertirlos a StageTargets por etapa usando el contrato AgroRange:
+lowMax = frontera critica baja, optimalMin/optimalMax = optimo documental, highMin = frontera critica alta.
+
+[TABLA]
+Columnas: Metrica | Rango/lectura base | Regla BIO-G
+Fila 1:
+- Metrica: soilMoisture (% agua disponible)
+- Rango/lectura base: <40 critico bajo; 40-55 bajo/observacion; 55-80/85 optimo general; 85-90 alto/observacion; >90 saturacion/anoxia
+- Regla BIO-G: En floracion, cuajado y llenado se vuelve muy sensible. Saturacion tambien es mala por Phytophthora y raiz.
+Fila 2:
+- Metrica: soilTemp
+- Rango/lectura base: Actividad baja con suelo frio; actividad razonable >12 C; mejor absorcion con suelo templado 18-30 C; calor extremo reduce funcion.
+- Regla BIO-G: En reposo relativo no penalizar igual que en floracion/cuajado.
+Fila 3:
+- Metrica: pH
+- Rango/lectura base: Preferente 5.5-7.5; vigilancia >7.5 por Fe/Zn/Mn/P; extremos fuera de 5.0-8.2 requieren confirmacion.
+- Regla BIO-G: pH alto + hoja amarilla/hoja chica no es automaticamente falta de N.
+Fila 4:
+- Metrica: EC / salinidad
+- Rango/lectura base: <1.2 dS/m favorable; 1.2-1.7 vigilancia; >1.7 inicia alerta de sensibilidad citrica; >2.5-3.0 alerta fuerte segun textura/agua/patron
+- Regla BIO-G: EC es metrica de exceso/salinidad; no modelar EC baja como deficiencia.
+Fila 5:
+- Metrica: resistance / compactacion
+- Rango/lectura base: <1.8 MPa favorable; 1.8-2.2 vigilancia; >2.2-2.5 alto; >2.5 critico segun suelo
+- Regla BIO-G: La raiz citrica necesita aireacion; compactacion + humedad alta dispara riesgo de raiz.
+Fila 6:
+- Metrica: N relativo
+- Rango/lectura base: Moderado en brotacion/vegetativo; cuidado en floracion; soporte durante llenado; moderado en postcosecha si hoja activa
+- Regla BIO-G: Mas N no significa mas naranja; exceso puede empujar follaje, sombra, cascara gruesa o desbalance con K.
+Fila 7:
+- Metrica: P relativo
+- Rango/lectura base: Peso alto en plantacion/raiz/induccion/floracion; menor como urgencia en madurez
+- Regla BIO-G: pH alto puede limitar disponibilidad; no aplicar a ciegas.
+Fila 8:
+- Metrica: K relativo
+- Rango/lectura base: Sube desde cuajado; alto peso en llenado, calibre, calidad, jugo y tolerancia a estres
+- Regla BIO-G: K bajo con agua baja se interpreta primero como problema de agua/absorcion.
+Fila 9:
+- Metrica: Zn/Fe/Mg/Ca/B/Cl/Na contexto avanzado
+- Rango/lectura base: No sensor v1
+- Regla BIO-G: Muy importantes en citricos; se documentan como banderas en Doc 05/04, no como lecturas NPK.
+[/TABLA]
+
+================================================================================
+10. SENSIBILIDAD POR ETAPA
+================================================================================
+
+[TABLA]
+Columnas: Etapa | Riesgos principales | Peso | Regla UX
+Fila 1:
+- Etapa: Plantacion / establecimiento
+- Riesgos principales: Exceso de agua, Phytophthora/gomosis, salinidad, compactacion, cuello enterrado, raiz limitada
+- Peso: Muy alta
+- Regla UX: No hablar de fruta; hablar de raiz y supervivencia.
+Fila 2:
+- Etapa: Juvenil
+- Riesgos principales: Psilido en brotes, minador, deficiencias Fe/Zn, exceso de N, sales, helada, vigor desbalanceado
+- Peso: Alta
+- Regla UX: Formar copa sana, no forzar cosecha.
+Fila 3:
+- Etapa: Reposo relativo
+- Riesgos principales: Frio, sequia, raiz, sales, preparacion floral, sanidad de tronco
+- Peso: Media-alta
+- Regla UX: No es caducifolio; no apagar alertas.
+Fila 4:
+- Etapa: Brotacion / flush
+- Riesgos principales: Psilido asiatico, HLB como riesgo regional, minador, pulgones, micronutrientes, N/agua
+- Peso: Muy alta sanitaria
+- Regla UX: Brote tierno = revisar sanidad y nutricion, no solo fertilizante.
+Fila 5:
+- Etapa: Floracion
+- Riesgos principales: Calor, frio/helada, deficit hidrico, lluvia/HR, exceso de vigor, baja reserva
+- Peso: Muy alta
+- Regla UX: La flor no perdona estres; no culpar NPK sin revisar clima/agua.
+Fila 6:
+- Etapa: Cuajado / amarre
+- Riesgos principales: Caida fisiologica, calor, salinidad, deficit hidrico, competencia vegetativa, HLB/raiz
+- Peso: Muy alta
+- Regla UX: Diferenciar caida normal de estres fuerte.
+Fila 7:
+- Etapa: Llenado / crecimiento de fruto
+- Riesgos principales: Deficit hidrico, salinidad, K bajo, acaros, trips, cochinillas, calidad/calibre, rajado/granulacion
+- Peso: Alta
+- Regla UX: Hablar de calibre, jugo, calidad y hoja activa.
+Fila 8:
+- Etapa: Madurez/cosecha
+- Riesgos principales: Caida, calidad externa, mosca de la fruta regional, trips, acaros, color, Brix/acidez, regreening de Valencia
+- Peso: Alta
+- Regla UX: Ahora si hablar de cosecha/calidad final, no de llenado temprano.
+Fila 9:
+- Etapa: Postcosecha
+- Riesgos principales: Defoliacion, raiz, sales, recuperacion de reservas, nuevo flush, HLB/psilido, estres acumulado
+- Peso: Alta
+- Regla UX: Postcosecha no cierra el cultivo; prepara el siguiente ciclo.
+[/TABLA]
+
+================================================================================
+11. PERFILES OFICIALES BIO-G PARA NARANJO
+================================================================================
+
+Decision:
+Estos perfiles cubren onboarding v1. No son recetas por vivero ni sustituyen variedad/portainjerto real.
+En produccion real, el perfil puede representar grupo fenologico/comercial mas que cultivar exacto.
+El perfil modifica sensibilidad, ventana relativa, uso/copy y confianza; no rompe la estructura.
+
+[TABLA]
+Columnas: profileId | Label | Aliases | Uso/lectura | Cosecha relativa | Sensibilidad clave | Notas
+Fila 1:
+- profileId: or_skip
+- Label: OR-SKIP - Naranjo general
+- Aliases: No se / Naranjo general / Naranja comun
+- Uso/lectura: No asume variedad, patron, destino ni precocidad.
+- Cosecha relativa: Media conservadora
+- Sensibilidad clave: Agua, salinidad, raiz, floracion-cuajado, HLB/psilido como contexto regional
+- Notas: Base segura y migrable.
+Fila 2:
+- profileId: or_01_valencia_tardia
+- Label: OR-01 - Valencia / tardia / jugo
+- Aliases: Valencia, Valencia Late, Valencia tardia, Valencia comun, naranja para jugo, Valencia de industria
+- Uso/lectura: Tardia, jugo/industria, fresco secundario.
+- Cosecha relativa: Tardia/prolongada
+- Sensibilidad clave: Salinidad, llenado/calidad de jugo, carga sostenida, regreening, caida si se deja demasiado
+- Notas: Puede sostener fruta mas tiempo; cuidado con interpretar color externo.
+Fila 3:
+- profileId: or_02_navel_mesa
+- Label: OR-02 - Navel / ombligo / mesa
+- Aliases: Navel, Washington Navel, Navelina, naranja de ombligo, ombligona, Cara Cara como alias de grupo si se decide
+- Uso/lectura: Fresco/mesa; calidad externa y calibre pesan mas.
+- Cosecha relativa: Temprana-intermedia segun zona/cultivar
+- Sensibilidad clave: Calor en flor/cuajado, calidad externa, granulation/juice sacs secos, rajado, golpe de sol
+- Notas: No necesita polinizador en general; mantener riesgo de caida por calor.
+Fila 4:
+- profileId: or_03_temprano_hamlin_pineapple
+- Label: OR-03 - Temprano / Hamlin-Pineapple
+- Aliases: Hamlin, Pineapple, Parson Brown, temprana, naranja temprana, naranja de corte temprano
+- Uso/lectura: Jugo/fresco temprano; adelanta cosecha.
+- Cosecha relativa: Temprana a media
+- Sensibilidad clave: Caida fisiologica, frio/helada segun zona, desbalance N/K, calidad de jugo
+- Notas: En algunos sistemas Hamlin se usa fuerte para jugo; Pineapple como media.
+Fila 5:
+- profileId: or_04_criollo_regional
+- Label: OR-04 - Criollo / regional / huerto viejo
+- Aliases: Criolla, regional, comun, naranja del rancho, huerto viejo, naranja local, naranja dulce regional
+- Uso/lectura: Fresco local/jugo artesanal; genetica y manejo variable.
+- Cosecha relativa: Variable
+- Sensibilidad clave: Alternancia/carga variable, baja uniformidad, raiz/sales, sanidad regional, HLB
+- Notas: Mas incertidumbre; confianza menor; usar memoria del huerto.
+Fila 6:
+- profileId: or_05_tropical_calido
+- Label: OR-05 - Tropical / clima calido / multiple floracion
+- Aliases: Tropical, naranja de clima calido, naranja de calor, floracion multiple, huasteca tropical, region calida
+- Uso/lectura: Huertos en zonas calidas/humedas o con floraciones/cosechas menos concentradas.
+- Cosecha relativa: Variable/multiple
+- Sensibilidad clave: Calor, humedad alta, enfermedades, HLB/psilido, caida fisiologica, salinidad si riego
+- Notas: Perfil de clima/sistema, no cultivar unico.
+[/TABLA]
+
+================================================================================
+12. DETALLE POR PERFIL
+================================================================================
+
+OR-01 - Valencia / tardia / jugo
+--------------------------------
+Uso: naranjo dulce tardio, comun para jugo/industria y mercado fresco secundario.
+Lectura BIO-G: la fruta puede permanecer mas tiempo en arbol y la ventana de madurez puede ser amplia. No confundir reverdecimiento externo con inmadurez absoluta.
+Ajustes permitidos:
+- harvest_maturity mas larga;
+- mayor peso de calidad interna/jugo;
+- K y agua sostenidos durante fruit_fill;
+- alerta de caida y calidad si se prolonga cosecha con calor/estres.
+No cambiar:
+- StageIds;
+- contrato perenne;
+- SKIP/migracion.
+
+OR-02 - Navel / ombligo / mesa
+------------------------------
+Uso: fruta de mesa, calibre, apariencia, facilidad de consumo y calidad externa.
+Lectura BIO-G: mas sensible a calor en floracion/cuajado y a problemas de calidad externa. Granulacion/juice sacs secos y rajado pueden tener importancia comercial.
+Ajustes permitidos:
+- harvest_maturity temprana-intermedia;
+- copy de mesa/calidad externa;
+- mayor sensibilidad a golpe de sol/rajado/granulacion.
+No cambiar:
+- no crear sensor de calidad externa en v1.
+
+OR-03 - Temprano / Hamlin-Pineapple
+----------------------------------
+Uso: grupo temprano o intermedio-temprano; jugo o fresco temprano segun region.
+Lectura BIO-G: adelanta cosecha y puede escapar de algunos riesgos tardios, pero floracion/cuajado y caida fisiologica siguen mandando.
+Ajustes permitidos:
+- ventanas mas cortas de fruit_fill/harvest_maturity;
+- copy de cosecha temprana;
+- sensibilidad a caida fisiologica y desbalance N/K.
+
+OR-04 - Criollo / regional / huerto viejo
+----------------------------------------
+Uso: huerto regional, arboles viejos, mezcla genetica o naranja local.
+Lectura BIO-G: la variedad no se conoce con precision. El historial, la etapa visible, el estado del arbol y la respuesta a riego/sanidad valen mas que el nombre.
+Ajustes permitidos:
+- confianza menor;
+- ventanas amplias;
+- mayor peso de memoria y variabilidad;
+- mensajes de validacion visual.
+
+OR-05 - Tropical / clima calido / multiple floracion
+----------------------------------------------------
+Uso: zonas calidas/humedas o sistemas donde el ciclo es menos concentrado y puede haber flor/fruto/brote simultaneo por mas tiempo.
+Lectura BIO-G: mayor importancia de HLB/psilido, humedad/enfermedades, calor, caida fisiologica y manejo de agua.
+Ajustes permitidos:
+- permitir coexistencia de etapas en UX;
+- no forzar un solo calendario anual;
+- copy de floracion/cosecha variable.
+
+================================================================================
+13. UX Y ASSETS
+================================================================================
+
+13.1 Opciones de wizard recomendadas
+- Naranjo general / No se que tipo de naranja es => or_skip
+- Valencia / tardia / jugo => or_01_valencia_tardia
+- Navel / naranja de ombligo / mesa => or_02_navel_mesa
+- Temprana / Hamlin / Pineapple => or_03_temprano_hamlin_pineapple
+- Criolla / regional / comun / huerto viejo => or_04_criollo_regional
+- Tropical / clima calido / floracion multiple => or_05_tropical_calido
+
+13.2 Lenguaje farmer-friendly
+Usar:
+- floracion / azahar
+- amarre / cuajado
+- frutito
+- naranja chica
+- llenado / calibre / jugo
+- fruta rajada
+- fruta seca por dentro / granulacion
+- salitre / sales
+- gomosis / goma en tronco
+- hoja amarilla
+- brote tierno
+- psilido / HLB como riesgo, no diagnostico
+- postcosecha / recuperacion
+
+Evitar:
+- fruto generico cuando se puede decir naranja
+- dormancia como si fuera arbol pelon
+- sembrado/cosechado como si fuera anual
+- diagnostico cerrado de HLB, Phytophthora o plagas
+- "aplica X producto"
+- "falta nitrogeno" si hay sales, pH alto, raiz limitada o HLB sospechoso
+
+13.3 Assets sugeridos - nombres tentativos
+Ruta icons wizard:
+assets/icons/wizard/
+- ic_orange_tree.png
+- ic_orange_valencia.png
+- ic_orange_navel.png
+- ic_orange_temprano.png
+- ic_orange_criollo_regional.png
+- ic_orange_tropical_calido.png
+
+Ruta etapas fenologicas:
+assets/seeds/orange_tree/
+- orange_planting_transplant.png
+- orange_root_establishment.png
+- orange_juvenile_vegetative.png
+- orange_low_activity.png
+- orange_budbreak_flush.png
+- orange_vegetative_growth.png
+- orange_flowering.png
+- orange_fruit_set.png
+- orange_fruit_fill.png
+- orange_harvest_maturity.png
+- orange_post_harvest.png
+- orange_unknown.png
+
+Nota: los nombres finales de assets deben validarse con el patron real existente de BIO-G antes de integrarlos.
+
+================================================================================
+14. TRADUCCION FUTURA A CODIGO
+================================================================================
+
+Archivos esperados:
+- lib/core/crops/orange_tree/orange_tree_catalog.dart
+- lib/core/crops/orange_tree/orange_tree_universal_profile.dart
+- lib/core/crops/orange_tree/orange_tree_crop_definition.dart
+- lib/core/crops/orange_tree/orange_tree_yield_reference.dart (Doc 03)
+- lib/core/crops/orange_tree/orange_tree_syndromes.dart o equivalente (Doc 04)
+- alta en CropKey/CropCatalog/crop_registry/onboarding assets segun patron vigente
+
+Constantes sugeridas:
+const String kCropOrangeTree = 'crop_orange_tree';
+const String kOrangeTreeLegacyId = 'orange_tree';
+const String kOrangeSkipProfileId = 'or_skip';
+
+profileIds:
+- or_skip
+- or_01_valencia_tardia
+- or_02_navel_mesa
+- or_03_temprano_hamlin_pineapple
+- or_04_criollo_regional
+- or_05_tropical_calido
+
+Reglas no negociables para Codex/Claude:
+- categoria tree/perennial.
+- no usar sowingDate como eje.
+- no crear nuevos StageIds.
+- no usar dormancy como caducifolio real.
+- cosecha y postcosecha no cierran cultivo.
+- SKIP es obligatorio, conservador y migrable.
+- variedad/perfil solo ajusta sensibilidad, fechas relativas, rendimiento y textos.
+- no inventar sensores v1.
+- StageTargets finales viven en Documento 05.
+- AgroRange debe respetar lowMax como frontera critica baja, no inicio del optimo.
+- no dejar lowMax == optimalMin ni optimalMax == highMin en suelo/ambiente sin justificacion y tests.
+
+================================================================================
+15. CASOS MINIMOS DE PRUEBA DOCUMENTAL
+================================================================================
+
+1) Naranjo adulto + or_skip + flowering:
+Esperado: copy habla de azahar/floracion, agua/calor/frio, no receta NPK.
+
+2) Naranjo + fruit_set + caida de frutitos:
+Esperado: diferenciar caida fisiologica vs estres; pedir revisar agua, calor, sales, raiz y sanidad.
+
+3) Naranjo + fruit_fill:
+Esperado: habla de calibre, llenado, jugo, K/agua/hoja, no de cosecha si no hay madurez.
+
+4) Naranjo Valencia + harvest_maturity + fruta verde externa:
+Esperado: advertir que Valencia puede mantener/reverdecer color externo; calidad interna requiere contexto.
+
+5) Naranjo + post_harvest:
+Esperado: no cerrar cultivo; hablar de recuperacion, hoja activa y siguiente floracion.
+
+6) Naranjo + dormancy:
+Esperado: label UX = reposo relativo/baja actividad, no arbol pelon.
+
+7) Naranjo + EC alta + K bajo:
+Esperado: priorizar salinidad/agua/raiz antes de recomendar K agresivo.
+
+8) Naranjo + pH alto + hoja amarilla:
+Esperado: posible Fe/Zn/Mn/disponibilidad; no diagnosticar falta de N.
+
+9) Naranjo + unknown stage:
+Esperado: no bloquear; preguntar si tiene brote nuevo, flor, frutito, fruto creciendo, naranja madura/cosecha o postcosecha.
+
+10) Migracion or_skip -> or_01_valencia_tardia:
+Esperado: conserva perennialStateId, phenologyStageId, anchors y memoria.
+
+================================================================================
+16. FUENTES CONSULTADAS Y NIVEL DE CONFIANZA
+================================================================================
+
+Alta confianza:
+- Estandar BIO-G para Integracion de Arboles Perennes v1.5 con addendum. Uso: contrato de 5 documentos, StageIds, estados, sensores, AgroRange, SKIP y runtime perenne.
+- University of Florida IFAS Extension, Florida Citrus Production Guide - Nutrition Management for Citrus Trees. Uso: nutricion, N/K, analisis foliar, HLB y eficiencia de absorcion.
+- University of Arizona Cooperative Extension, Irrigating Citrus Trees. Uso: agua, estres hidrico, salinidad, profundidad de riego, sintomas de hoja.
+- UC IPM, Huanglongbing y guias de manejo de citricos. Uso: HLB, sintomas, psilido, manejo/reglas de no diagnostico.
+- UC IPM, Phytophthora Gummosis of Citrus. Uso: gomosis, cuello, suelo humedo, raiz.
+- SENASICA, Plagas reglamentadas de los citricos / Manual operativo de campana. Uso: HLB, psilido asiatico, viveros certificados, control regional y plagas reglamentadas.
+- University of Arizona Cooperative Extension, Oranges for Southern Arizona. Uso: Navel/Valencia sin necesidad de polinizador, caida por calor, granulation, rootstocks como contexto.
+- UF/IFAS, Dooryard Citrus Guide appendices. Uso: categorias de naranja temprana/intermedia/tardia y cultivares Hamlin, Pineapple, Valencia, Navel.
+
+Media-alta:
+- Revisiones cientificas recientes sobre fruit set y desarrollo de fruto en Citrus. Uso: cuajado, abscision fisiologica, crecimiento de fruto y competencia carbohidratos.
+- Articulos mexicanos sobre HLB y psilido asiatico. Uso: importancia epidemiologica en Mexico, no umbrales de sensor.
+
+Baja-media:
+- Lenguaje de productores y foros usado solo para UX: "se cae la flor", "se cayo el frutito", "hoja amarilla", "salitre", "gomosis", "fruta seca por dentro", "naranja chica", "psilido", "dragón amarillo". No se usaron foros para fijar umbrales duros.
+
+================================================================================
+17. ESTADO DEL DOCUMENTO
+================================================================================
+
+Estado: Reforzado para servir como Documento 01 oficial de Naranjo.
+Pendiente para paquete completo:
+- Documento 03: Rendimiento aproximado.
+- Documento 04: Riesgos / sanidad / estres / memoria.
+- Documento 05: Fertilizacion NPK / StageTargets / StageWeights.
+
+Fin del documento.

@@ -2,6 +2,11 @@ import 'package:bio_g/core/crops/apple_tree/apple_tree_catalog.dart';
 import 'package:bio_g/core/crops/peach_tree/peach_tree_catalog.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_catalog.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_catalog.dart';
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_catalog.dart';
+import 'package:bio_g/core/crops/orange_tree/orange_tree_catalog.dart';
+import 'package:bio_g/core/crops/lemon_tree/lemon_tree_catalog.dart';
+import 'package:bio_g/core/crops/mango_tree/mango_tree_catalog.dart';
+import 'package:bio_g/core/crops/avocado_tree/avocado_tree_catalog.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/yield/yield_reference_catalog.dart';
 
@@ -205,6 +210,181 @@ class TreeYieldReferenceCatalog {
       confidence: YieldDataConfidence.modeled,
       sourceMethod: 'Modelo conservador por tier (nogal pecanero, sin historial)',
     ),
+
+    // Pistache (doc 03 §12): tabla minima por tier para la pantalla simple
+    // (kg de pistache seco con cascara/arbol promedio del huerto; incluye
+    // dilucion conservadora por machos cuando el usuario captura arboles
+    // totales). La referencia agronomica completa vive en
+    // pistachio_tree_yield_reference.dart.
+    'pistachio_tree_ps_skip_young': TreeYieldReference(
+      id: 'pistachio_tree_ps_skip_young',
+      cropId: kCropPistachioTree,
+      profileId: kPsSkip,
+      tier: TreeProductiveTier.young,
+      kgPerTreeLow: 0.5,
+      kgPerTreeHigh: 4,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (pistache, sin historial)',
+    ),
+    'pistachio_tree_ps_skip_first': TreeYieldReference(
+      id: 'pistachio_tree_ps_skip_first',
+      cropId: kCropPistachioTree,
+      profileId: kPsSkip,
+      tier: TreeProductiveTier.firstProduction,
+      kgPerTreeLow: 2,
+      kgPerTreeHigh: 8,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (pistache, sin historial)',
+    ),
+    'pistachio_tree_ps_skip_full': TreeYieldReference(
+      id: 'pistachio_tree_ps_skip_full',
+      cropId: kCropPistachioTree,
+      profileId: kPsSkip,
+      tier: TreeProductiveTier.full,
+      kgPerTreeLow: 6,
+      kgPerTreeHigh: 18,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (pistache, sin historial)',
+    ),
+
+    // Naranjo (doc 03 §11): tabla minima por tier para la pantalla simple (kg de
+    // naranja fresca/arbol). La referencia agronomica completa vive en
+    // orange_tree_yield_reference.dart.
+    'orange_tree_or_skip_young': TreeYieldReference(
+      id: 'orange_tree_or_skip_young',
+      cropId: kCropOrangeTree,
+      profileId: kOrSkip,
+      tier: TreeProductiveTier.young,
+      kgPerTreeLow: 5,
+      kgPerTreeHigh: 20,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (naranjo, sin historial)',
+    ),
+    'orange_tree_or_skip_first': TreeYieldReference(
+      id: 'orange_tree_or_skip_first',
+      cropId: kCropOrangeTree,
+      profileId: kOrSkip,
+      tier: TreeProductiveTier.firstProduction,
+      kgPerTreeLow: 15,
+      kgPerTreeHigh: 45,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (naranjo, sin historial)',
+    ),
+    'orange_tree_or_skip_full': TreeYieldReference(
+      id: 'orange_tree_or_skip_full',
+      cropId: kCropOrangeTree,
+      profileId: kOrSkip,
+      tier: TreeProductiveTier.full,
+      kgPerTreeLow: 35,
+      kgPerTreeHigh: 85,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (naranjo, sin historial)',
+    ),
+
+    // Limón (doc 03 §15): tabla minima por tier para la pantalla simple (kg de
+    // limón fresco/arbol). La referencia agronomica completa vive en
+    // lemon_tree_yield_reference.dart. NO hereda kg/arbol del naranjo.
+    'lemon_tree_lm_skip_young': TreeYieldReference(
+      id: 'lemon_tree_lm_skip_young',
+      cropId: kCropLemonTree,
+      profileId: kLmSkip,
+      tier: TreeProductiveTier.young,
+      kgPerTreeLow: 3,
+      kgPerTreeHigh: 15,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (limón, sin historial)',
+    ),
+    'lemon_tree_lm_skip_first': TreeYieldReference(
+      id: 'lemon_tree_lm_skip_first',
+      cropId: kCropLemonTree,
+      profileId: kLmSkip,
+      tier: TreeProductiveTier.firstProduction,
+      kgPerTreeLow: 8,
+      kgPerTreeHigh: 30,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (limón, sin historial)',
+    ),
+    'lemon_tree_lm_skip_full': TreeYieldReference(
+      id: 'lemon_tree_lm_skip_full',
+      cropId: kCropLemonTree,
+      profileId: kLmSkip,
+      tier: TreeProductiveTier.full,
+      kgPerTreeLow: 20,
+      kgPerTreeHigh: 70,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (limón, sin historial)',
+    ),
+
+    // Mango (doc 03 §15): tabla minima por tier para la pantalla simple (kg de
+    // mango fresco/arbol). La referencia agronomica completa (perfiles,
+    // densidad, alternancia, calidad) vive en mango_tree_yield_reference.dart. NO
+    // hereda kg/arbol de limón/naranjo/manzano.
+    'mango_tree_mg_skip_first': TreeYieldReference(
+      id: 'mango_tree_mg_skip_first',
+      cropId: kCropMangoTree,
+      profileId: kMgSkip,
+      tier: TreeProductiveTier.firstProduction,
+      kgPerTreeLow: 2,
+      kgPerTreeHigh: 20,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (mango, sin historial)',
+    ),
+    'mango_tree_mg_skip_young': TreeYieldReference(
+      id: 'mango_tree_mg_skip_young',
+      cropId: kCropMangoTree,
+      profileId: kMgSkip,
+      tier: TreeProductiveTier.young,
+      kgPerTreeLow: 10,
+      kgPerTreeHigh: 55,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (mango, sin historial)',
+    ),
+    'mango_tree_mg_skip_full': TreeYieldReference(
+      id: 'mango_tree_mg_skip_full',
+      cropId: kCropMangoTree,
+      profileId: kMgSkip,
+      tier: TreeProductiveTier.full,
+      kgPerTreeLow: 18,
+      kgPerTreeHigh: 90,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (mango, sin historial)',
+    ),
+
+    // Aguacate (doc 03 §12): tabla minima por tier para la pantalla simple (kg
+    // de aguacate fresco/arbol). La referencia agronomica completa (perfiles,
+    // densidad, alternancia, floracion A/B, calidad) vive en
+    // avocado_tree_yield_reference.dart. NO hereda kg/arbol de mango/limón/
+    // naranjo/manzano.
+    'avocado_tree_ag_skip_young': TreeYieldReference(
+      id: 'avocado_tree_ag_skip_young',
+      cropId: kCropAvocadoTree,
+      profileId: kAgSkip,
+      tier: TreeProductiveTier.young,
+      kgPerTreeLow: 2,
+      kgPerTreeHigh: 10,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (aguacate, sin historial)',
+    ),
+    'avocado_tree_ag_skip_first': TreeYieldReference(
+      id: 'avocado_tree_ag_skip_first',
+      cropId: kCropAvocadoTree,
+      profileId: kAgSkip,
+      tier: TreeProductiveTier.firstProduction,
+      kgPerTreeLow: 6,
+      kgPerTreeHigh: 25,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (aguacate, sin historial)',
+    ),
+    'avocado_tree_ag_skip_full': TreeYieldReference(
+      id: 'avocado_tree_ag_skip_full',
+      cropId: kCropAvocadoTree,
+      profileId: kAgSkip,
+      tier: TreeProductiveTier.full,
+      kgPerTreeLow: 18,
+      kgPerTreeHigh: 75,
+      confidence: YieldDataConfidence.modeled,
+      sourceMethod: 'Modelo conservador por tier (aguacate, sin historial)',
+    ),
   };
 
   /// Perfil SKIP/general de cada árbol, para el fallback por cultivo. Evita que
@@ -219,6 +399,16 @@ class TreeYieldReferenceCatalog {
         return kDzSkip;
       case kCropWalnutTree:
         return kNgSkip;
+      case kCropPistachioTree:
+        return kPsSkip;
+      case kCropOrangeTree:
+        return kOrSkip;
+      case kCropLemonTree:
+        return kLmSkip;
+      case kCropMangoTree:
+        return kMgSkip;
+      case kCropAvocadoTree:
+        return kAgSkip;
       default:
         return null;
     }

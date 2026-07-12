@@ -4,6 +4,11 @@ import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
+import 'package:bio_g/core/crops/pistachio_tree/pistachio_tree_assets.dart';
+import 'package:bio_g/core/crops/orange_tree/orange_tree_assets.dart';
+import 'package:bio_g/core/crops/lemon_tree/lemon_tree_assets.dart';
+import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
+import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
 
 class OnboardingUiAssets {
   static const String logo = 'assets/images/logo_bio_g.png';
@@ -135,8 +140,6 @@ class OnboardingUiAssets {
       case 'carrot':
       case 'calabacin':
         return vegetable;
-      case 'lemon_tree':
-        return tree;
       case 'crop_apple_tree':
       case 'apple_tree':
         return AppleTreeAssets.cropIcon;
@@ -163,6 +166,62 @@ class OnboardingUiAssets {
       case 'pecan':
       case 'nuez':
         return WalnutTreeAssets.cropIcon;
+      case 'crop_pistachio_tree':
+      case 'pistachio_tree':
+      case 'pistachio':
+      case 'pistachiotree':
+      case 'pistache':
+      case 'pistacho':
+      case 'pistachero':
+        return PistachioTreeAssets.cropIcon;
+      case 'crop_orange_tree':
+      case 'orange_tree':
+      case 'orange':
+      case 'orangetree':
+      case 'naranjo':
+      case 'naranja':
+        return OrangeTreeAssets.cropIcon;
+      case 'crop_lemon_tree':
+      case 'lemon_tree':
+      case 'lemontree':
+      case 'crop_lime_tree':
+      case 'lime_tree':
+      case 'lemon':
+      case 'lime':
+      case 'limon':
+      case 'limón':
+      case 'limonero':
+      case 'lima':
+        return LemonTreeAssets.cropIcon;
+      case 'crop_mango_tree':
+      case 'mango_tree':
+      case 'mangotree':
+      case 'crop_mango':
+      case 'mango':
+      case 'mangos':
+      case 'mangifera':
+      case 'mangifera_indica':
+      case 'arbol_mango':
+      case 'árbol_mango':
+        return MangoTreeAssets.cropIcon;
+      case 'crop_avocado_tree':
+      case 'avocado_tree':
+      case 'avocadotree':
+      case 'crop_avocado':
+      case 'avocado':
+      case 'avocados':
+      case 'aguacate':
+      case 'aguacates':
+      case 'aguacatero':
+      case 'palta':
+      case 'palto':
+      case 'persea':
+      case 'persea_americana':
+      case 'arbol_aguacate':
+      case 'árbol_aguacate':
+      case 'arbol de aguacate':
+      case 'árbol de aguacate':
+        return AvocadoTreeAssets.cropIcon;
       case 'rose':
       case 'cactus':
         return ornamental;

@@ -1,0 +1,1523 @@
+[ENCABEZADO]
+BIO-G | Aguacate / Árbol de aguacate | Documentación técnica v1
+[/ENCABEZADO]
+
+BIO-G
+04. Riesgos del Cultivo / Sanidad / Estrés / Memoria - Aguacate / Árbol de aguacate
+Cultivo visible: Aguacate / Árbol de aguacate
+Nombre científico: Persea americana Mill.
+Familia: Lauraceae
+cropId canónico recomendado: crop_avocado_tree
+cropKey esperado: avocado_tree
+Alias legacy/técnicos: avocado_tree, crop_avocado, avocado, aguacate, aguacatero, palta, persea, persea_americana, arbol_aguacate, árbol_aguacate
+profilePrefix: AG
+Perfil base: ag_skip
+Perfiles oficiales v1 recomendados:
+- ag_skip — Aguacate general / No sé
+- ag_01_hass — Hass / exportación dominante
+- ag_02_mendez_carmen — Méndez / Carmen / Hass temprano / Hass-Méndez
+- ag_03_criollo_mexicano — Criollo / mexicano / regional
+- ag_04_fuerte_piel_verde — Fuerte / piel verde / tipo B / polinizador
+- ag_05_antillano_tropical — Antillano / tropical / costa / clima cálido
+- ag_06_tardio_lamb_reed — Tardío / Lamb Hass / Reed / especialidad
+Documento: 04 de 05 — Riesgos del cultivo / Sanidad / Estrés / Memoria perenne
+Versión: v1 reforzada con investigación externa, foros/redes como lenguaje UX y revisión del patrón de código BIO-G
+Formato: TXT técnico para Flutter/Dart, Codex, Claude Code y agentes IA
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+================================================================================
+IMPORTANTE
+================================================================================
+
+Este documento NO es diagnóstico fitosanitario definitivo.
+No sustituye revisión de campo, laboratorio, análisis foliar/suelo/agua, diagnóstico oficial, asesoría agronómica regional, campañas fitosanitarias ni normatividad de exportación.
+BIO-G v1 debe orientar, priorizar riesgos, pedir confirmación, registrar memoria fisiológica y evitar recetas cerradas.
+BIO-G NO debe recomendar ingredientes activos, dosis de plaguicidas, cuarentenas, movimientos de fruta o tratamientos poscosecha fuera de autoridad local.
+
+BIO-G debe decir:
+- “condición favorable a…”
+- “síntomas compatibles con…”
+- “revisa…”
+- “confirma con técnico / laboratorio / sanidad local si avanza…”
+- “registra este estrés porque puede pegar en floración, cuajado, calibre o siguiente ciclo…”
+
+BIO-G NO debe decir:
+- “diagnóstico definitivo”
+- “aplique X producto”
+- “esto es Phytophthora seguro” sin revisar raíz, drenaje, patrón de marchitez y confirmación
+- “esto es barrenador seguro” sin abrir fruto/rama, revisar galerías, larvas, frass y estatus de campaña
+- “échale más fertilizante” cuando hay raíz dañada, salinidad, pH extremo, compactación, anoxia o estrés hídrico
+- “si floreó mucho entonces va a cargar mucho”
+- “el cultivo terminó” después de cosecha
+- “la caída de flor/frutito siempre es problema”
+- “más agua arregla el aguacate” cuando hay encharque o raíz asfixiada
+
+Mensaje rector farmer-friendly:
+“En aguacate, el árbol puede verse verde y aun así traer la raíz sufriendo. No todo es NPK: primero raíz, drenaje, sales, agua pareja, flor que pueda cuajar y memoria del ciclo pasado. Si la raíz está mal o hay salinidad, el fertilizante no entra; y si el árbol carga mucho un año, puede pagarla el siguiente.”
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+El aguacate en BIO-G NO debe modelarse como mango, cítrico, manzano ni cultivo anual.
+Tiene lógica propia:
+
+1. Es árbol perenne subtropical/tropical, de raíz superficial, fina y muy sensible a falta de oxígeno.
+2. No tiene dormancia verdadera como caducifolio. `dormancy` en BIO-G significa reposo funcional / baja brotación / preparación floral, no árbol dormido o pelón.
+3. La raíz manda: exceso de humedad, compactación, mal drenaje, Phytophthora, salinidad, cloruros, sodio y boro pueden explicar más que una lectura NPK.
+4. La floración es abundante pero el cuajado real es bajísimo. Mucha flor no equivale a cosecha.
+5. La flor de aguacate tiene comportamiento A/B y depende de sincronía, temperatura, polinizadores, reservas y clima. Hass es tipo A; Fuerte es tipo B y puede funcionar como polinizador/acompañante.
+6. El cuajado y el primer desarrollo del fruto son extremadamente frágiles: agua irregular, calor seco, frío, salinidad, baja hoja funcional, estrés radicular y mala polinización disparan caída.
+7. La alternancia productiva o vecería es estructural: año muy cargado + recuperación débil + estrés hídrico/salino/nutricional puede bajar floración/carga del siguiente ciclo.
+8. La fruta madura fisiológicamente en árbol, pero se suaviza después del corte. No confundir madurez comercial con “maduro para comer”.
+9. Phytophthora cinnamomi / tristeza del aguacate es eje sanitario crítico. BIO-G debe elevar riesgo con suelo mojado, drenaje pobre, raíces oscuras, copa amarilla/declinante y estrés salino.
+10. En México existen plagas reglamentadas que limitan comercialización/exportación: barrenador de ramas, barrenadores del hueso y palomilla barrenadora. BIO-G debe orientar y derivar a sanidad local; no diagnosticar por sensor.
+11. Antracnosis, pudriciones de fruto/pedúnculo, roña, trips, ácaros, chinche de encaje/lace bug, escamas/cochinillas/fumagina, cancro/muerte regresiva, golpe de sol y daño por frío/calor deben entrar como riesgos por etapa.
+12. La memoria de estrés debe afectar 1-2 ciclos: raíz dañada, salinidad, defoliación, golpe de calor, helada, floración fallida, caída fuerte y cosecha pesada no se olvidan en la siguiente lectura.
+
+Regla v1:
+BIO-G debe leer aguacate como árbol perenne sensible a raíz/sales/agua + evento reproductivo frágil + memoria multianual, no como una tabla de fertilización.
+
+================================================================================
+1. BASE TÉCNICA, FUENTES Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+1.1 Fuentes principales consultadas
+-----------------------------------
+
+Alta confianza BIO-G interno:
+- Estándar BIO-G para integración de árboles perennes v1.5 con addendum.
+- Documento 01 BIO-G Aguacate AG v1 Reforzado.
+- Documento 02 Perfil SKIP BIO-G Aguacate AG v1 Reforzado.
+- Documento 03 Rendimiento Aproximado BIO-G Aguacate AG v1 Reforzado.
+- Documentos 01-05 de Mango como patrón inmediato de formato, no como fisiología a copiar.
+- Revisión de lib.zip: contrato PlantHealthSyndrome, PlantHealthIds, PlantHealthStageBucket, plant_health_registry.dart, lemon/orange/apple/pear/peach/walnut/pistachio syndromes.
+
+Alta confianza externa:
+- UC IPM / University of California Agriculture: Avocado Pest Management Guidelines.
+- UC IPM: Phytophthora Root Rot / Avocado.
+- UC IPM: Avocado Thrips.
+- UC IPM: Persea mite, lace bug, branch canker/dieback, sunburn, sunblotch, fruit and stem-end rots.
+- UF/IFAS Extension: Avocado Growing in the Florida Home Landscape.
+- California Avocado Commission / UC material: fruit set, pollination, A/B flowering, salinity management.
+- UC Riverside / USDA ARS: rootstock salinity tolerance, chloride/sodium accumulation.
+- SENASICA / Gobierno de México: plagas reglamentadas del aguacatero y manual operativo.
+- INIFAP / Revista Mexicana de Ciencias Agrícolas / SciELO: Phytophthora cinnamomi en aguacate, tristeza del aguacate, antracnosis poscosecha, distribución de roña/trips en Michoacán.
+- CESAVE/CESAVEM/CESAVEJAL: campañas y plagas reglamentadas, usadas como contexto de sanidad oficial.
+
+Media-alta:
+- Manuales técnicos de aguacate de universidades latinoamericanas y organismos de extensión.
+- Artículos académicos sobre caída de flores/frutitos, alternancia, salinidad, cancro por Botryosphaeriaceae, antracnosis y stem-end rot.
+
+Media:
+- Notas técnicas comerciales y de asociaciones de productores, usadas sólo cuando coinciden con universidades/extensión.
+
+Baja-media:
+- Foros, Reddit, Facebook, Instagram, grupos de productores y jardineros.
+Uso permitido SOLO para lenguaje UX y preguntas reales del agricultor:
+  “se me está secando de arriba para abajo”,
+  “tiene las puntas quemadas”,
+  “floreó mucho pero no amarró”,
+  “se cae el aguacatito”,
+  “la tierra está húmeda y aun así se marchita”,
+  “le puse agua y se puso peor”,
+  “se queda chico”,
+  “se quema del sol”,
+  “se pone negro por el pedúnculo”,
+  “la rama tira aserrín”,
+  “un año cargó y otro no”,
+  “el Hass no cuaja aunque floree”.
+No usar foros para fijar umbrales, diagnósticos, ingredientes activos ni dosis.
+
+1.2 Conclusiones fuertes de fuentes externas
+--------------------------------------------
+
+- UF/IFAS reporta que el aguacate no tolera inundación o suelos mal drenados; condiciones húmedas continuas reducen crecimiento y rendimiento, generan síntomas de deficiencia, muerte regresiva e incluso muerte, y favorecen infección por Phytophthora.
+- UC IPM indica que agua de riego con salinidad alta o exceso de boro, cloruro o sodio promueve infección de raíces por Phytophthora.
+- En aguacate, menos de 1% de las flores llega a fruto; algunas variedades alternan fuertemente y un buen programa de manejo reduce tendencia a alternancia.
+- Estudios de fruit set señalan que por cada cientos de flores puede cuajar sólo un fruto; polinización, flor tipo A/B, traslape floral, temperatura y reservas de carbohidratos influyen en el cuajado.
+- La salinidad tiene dos efectos: osmótico, porque reduce absorción de agua, y toxicidad específica por cloruro/sodio; el cloruro causa quemadura foliar y también reduce crecimiento de raíz.
+- Phytophthora cinnamomi es una de las enfermedades más destructivas del aguacate y en México se asocia a tristeza del aguacate, declinamiento y pérdidas fuertes históricas.
+- Los trips de aguacate dañan principalmente fruta joven y producen cicatrices que bajan calidad comercial.
+- Sunblotch puede mostrar manchas hundidas rojas/amarillas/blancas en fruto, estrías en ramas y árboles con bajo rendimiento; también puede tener portadores asintomáticos.
+- Las pudriciones de fruto y pedúnculo suelen infectar en campo, pero muchas veces se activan después del corte, cuando la fruta empieza a suavizar.
+- En México, las plagas reglamentadas del aguacatero no son una “alerta normal” de la app: requieren seguimiento de campaña, muestreo y autoridad fitosanitaria.
+
+================================================================================
+2. LECTURA DEL CÓDIGO ACTUAL BIO-G Y PATRÓN A SEGUIR
+================================================================================
+
+2.1 Arquitectura encontrada en lib.zip
+--------------------------------------
+
+El código actual ya tiene integración moderna para árboles perennes, aunque el lib.zip revisado no trae todavía `avocado_tree` ni el Mango final. Aguacate debe seguir el patrón de los árboles ya existentes:
+
+Módulos esperados:
+- lib/core/crops/avocado_tree/avocado_tree_assets.dart
+- lib/core/crops/avocado_tree/avocado_tree_catalog.dart
+- lib/core/crops/avocado_tree/avocado_tree_crop_definition.dart
+- lib/core/crops/avocado_tree/avocado_tree_universal_profile.dart
+- lib/core/crops/avocado_tree/avocado_tree_yield_reference.dart
+- lib/core/agro/avocado_tree_agro_score_engine.dart
+- lib/core/agro/avocado_tree_nutrition_modifier.dart
+- lib/core/plant_health/catalog/avocado_tree_syndromes.dart
+
+2.2 Contrato PlantHealthSyndrome vigente
+----------------------------------------
+
+El catálogo de sanidad debe traducirse a `PlantHealthSyndrome` con estos campos:
+- id
+- cropId
+- labelEs
+- stages
+- organIds
+- primarySymptomId
+- strongSignals
+- weakSignals
+- conflictingSignals
+- probableDiagnoses
+- confirmationChecksEs
+- severity
+- urgency
+- baseActionsEs
+- disclaimerEs
+- varietyModifiers
+- favorsHighHumidity
+- favorsCoolDewyWindow
+- favorsVectorPressure
+- favorsRecentStress
+
+Regla para Aguacate:
+El catálogo debe ser propio. NO copiar mango_tree_syndromes.dart ni lemon_tree_syndromes.dart cambiando nombres.
+Sí se puede reutilizar el contrato, organIds, severities, urgencies y PlantHealthIds genéricos existentes.
+
+2.3 PlantHealthIds existentes útiles para Aguacate
+--------------------------------------------------
+
+OrganIds útiles:
+- organLeaf
+- organStem
+- organRoot
+- organCrown
+- organFruit
+- organFlower
+- organWholePlant
+
+Symptoms genéricos útiles:
+- symptomRootRotWilt
+- symptomLeafEdgeBurn
+- symptomFlowerAbortion
+- symptomFruitDeformation
+- symptomDarkSunkenLesions
+- symptomNecroticFoliarSpots
+- symptomThripsSilverScarring
+- symptomBronzingStippling
+- symptomHoneydewSootyShoots
+- symptomFruitTunnelFrass
+- symptomFruitSunkenPits
+- symptomFruitSunburnPatch
+- symptomShootDecayCanker
+- symptomMummifiedFruitRot
+- symptomInternervalChlorosisNewLeaves
+- symptomWoollyWhiteColonies
+- symptomLeafDistortion
+- symptomColdInjury
+- symptomFeedingHoles
+
+Signals genéricos útiles:
+- signalWaterlogging
+- signalRootsDarkRot
+- signalSalinityLoad
+- signalLeafEdgeBurn
+- signalHighPhCalcareous
+- signalHeatStress
+- signalDryHotWindow
+- signalColdExposure
+- signalFrostEvent
+- signalFlowerDrop
+- signalRecentStress
+- signalDenseWetCanopy
+- signalHumidWindow
+- signalCoolDewyWindow
+- signalThripsPresent
+- signalThripsSilverScarring
+- signalBronzedLeafSurface
+- signalMitesWebbing
+- signalStickyHoneydew
+- signalSootyMold
+- signalWhiteflyCloud
+- signalFrassPresent
+- signalFruitLarvae
+- signalFruitSplitAfterIrrigation
+- signalExposedFruitSouthwest
+- signalStemCanker
+- signalVascularBrowning
+- signalOneSidedWilt
+- signalFeedingHoles
+- signalHailEvent
+- signalRecentSprayOilCopper
+- signalWhiteGreenBlueMold
+
+2.4 IDs nuevos recomendados para mayor precisión
+------------------------------------------------
+
+Si Codex puede tocar `PlantHealthIds`, agregar estos IDs mejora mucho Aguacate. Si no puede, usar genéricos existentes.
+
+Symptoms nuevos sugeridos:
+- symptomAvocadoFineRootRot = 'avocado_fine_root_rot'
+- symptomAvocadoChlorideTipBurn = 'avocado_chloride_tip_burn'
+- symptomAvocadoFlowerFruitletDrop = 'avocado_flower_fruitlet_drop'
+- symptomAvocadoScabCorkyFruit = 'avocado_scab_corky_fruit'
+- symptomAvocadoSunblotchFruitStreak = 'avocado_sunblotch_fruit_streak'
+- symptomAvocadoStemEndRot = 'avocado_stem_end_rot'
+- symptomAvocadoSeedBorerDamage = 'avocado_seed_borer_damage'
+- symptomAvocadoBranchBorerFrass = 'avocado_branch_borer_frass'
+- symptomAvocadoLaceBugBlotches = 'avocado_lace_bug_blotches'
+- symptomAvocadoAmbrosiaWilt = 'avocado_ambrosia_wilt'
+
+Signals nuevos sugeridos:
+- signalAvocadoFineRootsAbsent = 'avocado_fine_roots_absent'
+- signalAvocadoCinnamonRootRotContext = 'avocado_phytophthora_context'
+- signalPoorDrainageOrHeavySoil = 'poor_drainage_or_heavy_soil'
+- signalChlorideSodiumBoronRisk = 'chloride_sodium_boron_risk'
+- signalAvocadoTipBurnOldLeaves = 'avocado_tip_burn_old_leaves'
+- signalAvocadoFlowerTypeMismatch = 'avocado_flower_type_mismatch'
+- signalNoPollinatorOrBeeActivity = 'no_pollinator_or_bee_activity'
+- signalFruitletPeaSizeDrop = 'fruitlet_pea_size_drop'
+- signalHeavyCropPreviousCycle = 'heavy_crop_previous_cycle'
+- signalAlternateBearingHistory = 'alternate_bearing_history'
+- signalAvocadoYoungFruitScarring = 'avocado_young_fruit_scarring'
+- signalCorkyRaisedFruitScab = 'corky_raised_fruit_scab'
+- signalStemEndRotStartsPeduncle = 'stem_end_rot_starts_peduncle'
+- signalSunblotchColoredDepressedStreaks = 'sunblotch_colored_depressed_streaks'
+- signalBranchFrassOrExitHoles = 'branch_frass_or_exit_holes'
+- signalSeedTunnelOrLarva = 'seed_tunnel_or_larva'
+- signalRegulatedPestArea = 'regulated_pest_area'
+- signalBlackLaceBugFrassUnderside = 'black_lace_bug_frass_underside'
+- signalAmbrosiaBeetleSugarVolcanoes = 'ambrosia_beetle_sugar_volcanoes'
+- signalPostharvestSofteningLesions = 'postharvest_softening_lesions'
+
+Recomendación práctica v1:
+- Implementar `avocado_tree_syndromes.dart` con IDs genéricos existentes para no bloquear.
+- Dejar comentarios TODO para nuevos IDs si el equipo quiere precisión.
+- No tocar PlantHealthIds si eso abre demasiada superficie de pruebas.
+
+2.5 Mapeo de StageIds a PlantHealthStageBucket
+----------------------------------------------
+
+StageIds BIO-G cerrados:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Mapeo recomendado:
+- planting_transplant, root_establishment => seedling
+- juvenile_vegetative, budbreak => vegetativeEarly
+- vegetative_growth => vegetativeMid
+- dormancy => vegetativeLate o lateSeason según adapter; recomendación Aguacate: vegetativeLate con label “reposo funcional / preparación floral”
+- flowering => reproductiveEarly
+- fruit_set => reproductiveMid
+- fruit_fill => grainFill
+- harvest_maturity => lateSeason
+- post_harvest => lateSeason
+- unknown => null / baja confianza
+
+Regla crítica:
+Para Aguacate, `dormancy` y `post_harvest` deben estar vivos:
+- `dormancy` = preparación fisiológica, reservas, baja brotación, posible inducción.
+- `post_harvest` = recuperación, poda, raíz, sales, hoja nueva, reservas y siguiente floración.
+
+================================================================================
+3. FAMILIAS UX DEL MÓDULO RIESGOS AGUACATE
+================================================================================
+
+Familia UX 1: Raíz, drenaje, Phytophthora y tristeza del aguacate
+Objetivo: evitar que BIO-G recomiende NPK cuando el problema real es raíz sin oxígeno, raíces finas podridas, salinidad, mal drenaje o Phytophthora.
+Entradas principales:
+- avocado_phytophthora_root_rot
+- root_anoxia_waterlogging_context
+- poor_drainage_compaction_root_context
+- nursery_root_bound_or_graft_problem
+- root_decline_memory
+
+Familia UX 2: Salinidad, cloruros, sodio, boro, pH y bloqueo
+Objetivo: separar punta quemada por sales/toxicidad de deficiencias simples.
+Entradas principales:
+- avocado_salinity_chloride_tip_burn
+- sodium_structure_infiltration_context
+- boron_toxicity_context
+- high_ph_micronutrient_lockout
+- ec_high_npk_block_context
+
+Familia UX 3: Floración, tipo A/B, polinización y aborto floral
+Objetivo: reconocer que mucha flor no asegura cuajado; integrar Hass tipo A, Fuerte tipo B, clima, polinizadores y reservas.
+Entradas principales:
+- avocado_low_fruit_set_pollination_context
+- avocado_flower_abortion_heat_cold
+- avocado_flower_type_overlap_context
+- poor_bee_activity_context
+- low_reserve_bloom_context
+
+Familia UX 4: Cuajado, caída de frutito, carga y alternancia
+Objetivo: separar caída fisiológica normal de estrés fuerte; registrar vecería.
+Entradas principales:
+- physiological_fruitlet_drop_context
+- avocado_fruitlet_drop_stress_complex
+- alternate_bearing_memory
+- heavy_crop_reserve_depletion_memory
+- low_leaf_function_set_loss
+
+Familia UX 5: Llenado, calibre, calidad, golpe de sol y desórdenes de fruto
+Objetivo: proteger calibre, piel, aceite/calidad y evitar fruta pequeña, asoleada, cicatrizada o con mala vida.
+Entradas principales:
+- fruit_fill_water_stress_avocado
+- low_caliber_quality_context
+- avocado_sunburn_heat_fruit_leaf
+- fruit_scarring_wind_thrips_scab_context
+- postharvest_maturity_handling_context
+
+Familia UX 6: Plagas de fruto/hoja: trips, ácaros, lace bug, escamas y chupadores
+Objetivo: proteger hoja funcional y calidad externa.
+Entradas principales:
+- avocado_thrips_fruit_scarring
+- persea_mite_bronzing_defoliation
+- avocado_lace_bug_leaf_blotches
+- scale_mealybug_sooty_mold_complex
+- whitefly_sap_sucker_context
+
+Familia UX 7: Plagas reglamentadas / barrenadores
+Objetivo: activar cautela oficial sin diagnosticar por sensor.
+Entradas principales:
+- avocado_branch_borer_regulated_context
+- avocado_seed_borer_regulated_context
+- avocado_seed_moth_regulated_context
+- frass_galleries_larvae_context
+- quarantine_movement_context
+
+Familia UX 8: Enfermedades de fruto y poscosecha
+Objetivo: separar antracnosis, stem-end rot, roña y pudriciones poscosecha.
+Entradas principales:
+- avocado_anthracnose_fruit_leaf
+- avocado_stem_end_rot_postharvest
+- avocado_fruit_rots_botryosphaeriaceae
+- avocado_scab_corky_fruit
+- postharvest_softening_decay_context
+
+Familia UX 9: Madera, cancro, muerte regresiva y ambrosiales
+Objetivo: detectar rama seca/exudados/aserrín/galerías sin confundir con NPK.
+Entradas principales:
+- branch_canker_dieback_botryosphaeria
+- bacterial_canker_context
+- ambrosia_beetle_fusarium_dieback_context
+- sunburn_branch_wound_context
+- pruning_wound_disease_context
+
+Familia UX 10: Viroides, material vegetal y problemas crónicos
+Objetivo: sunblotch/material de vivero/portainjerto/árbol de semilla.
+Entradas principales:
+- avocado_sunblotch_viroid_context
+- nursery_material_problem_context
+- rootstock_susceptibility_context
+- seedling_nonproductive_context
+
+Familia UX 11: Clima extremo, daño físico y fitotoxicidad
+Objetivo: no confundir helada, calor, granizo, viento, aplicaciones o quemadura con plaga.
+Entradas principales:
+- frost_cold_avocado_damage
+- heat_low_humidity_context
+- hail_wind_mechanical_damage
+- phytotoxicity_spray_context
+- wind_rub_fruit_scarring_context
+
+Familia UX 12: Memoria productiva y postcosecha viva
+Objetivo: conectar lo ocurrido este ciclo con el siguiente evento de floración/cuajado.
+Entradas principales:
+- postharvest_recovery_memory
+- root_salinity_memory
+- heavy_crop_off_year_memory
+- repeated_bloom_failure_memory
+- defoliation_memory
+- disease_pressure_memory
+
+================================================================================
+4. MAPEO FENOLÓGICO BIO-G PARA SANIDAD DEL AGUACATE
+================================================================================
+
+planting_transplant
+- Label UX: Plantación / trasplante
+- Riesgos: raíz enrollada, cuello enterrado, estrés por trasplante, exceso de agua, sales, sol directo, viento, planta de vivero con problema, injerto débil.
+- Lectura: no exigir flor ni fruta. Primero raíz fina, drenaje, cepellón, tutor, humedad sin saturación y protección de sol/viento.
+
+root_establishment
+- Label UX: Establecimiento de raíz
+- Riesgos: Phytophthora, anoxia, suelo pesado, compactación, salinidad/cloruros, pH extremo, riego excesivo, falta de microraíz, marchitez con suelo húmedo.
+- Lectura: en aguacate esta etapa es crítica. Árbol triste con suelo mojado no significa falta de agua; puede ser raíz sin oxígeno.
+
+juvenile_vegetative
+- Label UX: Aguacate joven / formación
+- Riesgos: quemadura de sol, viento, estrés hídrico, exceso de agua, trips/ácaros/chupadores, defoliación, salinidad, clorosis por pH alto, mal injerto.
+- Lectura: no penalizar falta de fruto. La prioridad es copa, raíz, hoja funcional y estructura.
+
+budbreak
+- Label UX: Brotación / flush
+- Riesgos: trips, ácaros, lace bug, escamas, exceso de N, brote tierno quemado por frío/calor/viento, antracnosis foliar si humedad alta.
+- Lectura: brote nuevo no es siempre señal de producción; exceso vegetativo puede competir con floración y reservas.
+
+vegetative_growth
+- Label UX: Crecimiento vegetativo activo
+- Riesgos: exceso vigor/N, salinidad, hoja con punta quemada, pH alto/clorosis, defoliación por ácaros/lace bug, cancro/ramas secas, estrés de raíz.
+- Lectura: hoja sana = fábrica de carbohidratos. Defoliación hoy puede bajar cuajado/calibre después.
+
+dormancy
+- Label UX: Reposo funcional / preparación floral
+- Riesgos: no inducción por calor/estrés/hoja inmadura, reservas bajas, salinidad acumulada, raíz dañada, postcosecha débil, exceso vegetativo.
+- Lectura: no es dormancia caducifolia. Si el árbol está quieto, revisar reservas, agua estable, raíz y clima previo.
+
+flowering
+- Label UX: Floración
+- Riesgos: aborto floral por calor/frío/viento seco, mala polinización, bajo traslape A/B, baja actividad de abejas/insectos, salinidad, estrés hídrico, humedad alta/enfermedad.
+- Lectura: etapa crítica. Mucha flor no asegura fruta. No culpar NPK de entrada.
+
+fruit_set
+- Label UX: Cuajado / amarre
+- Riesgos: caída fisiológica, caída excesiva por estrés hídrico/salino/térmico, raíz dañada, baja polinización, baja hoja funcional, alternancia, fruto pequeño abortado.
+- Lectura: algo de caída es normal; alerta si la caída es masiva, repetida o coincide con humedad baja, EC alta, calor, raíz mala o defoliación.
+
+fruit_fill
+- Label UX: Llenado / crecimiento del aguacate
+- Riesgos: déficit hídrico, salinidad, K/Ca/B/Zn como contexto, fruta chica, golpe de sol, trips/roña/cicatrices, ácaros, lace bug, cancro, antracnosis latente.
+- Lectura: calibre y calidad dependen de agua estable, raíz viva, hoja funcional, baja salinidad y carga balanceada.
+
+harvest_maturity
+- Label UX: Madurez fisiológica / corte
+- Riesgos: antracnosis, stem-end rot, pudriciones que aparecen al ablandar, sunblotch, daño mecánico, corte después de lluvia, plagas reglamentadas si hay galerías/larvas, madurez mal calculada.
+- Lectura: aguacate se corta fisiológicamente maduro y se suaviza después; no decidir por “blando” en árbol.
+
+post_harvest
+- Label UX: Postcosecha / recuperación
+- Riesgos: defoliación, estrés de raíz, sales acumuladas, poda fuerte, cancro/muerte regresiva, brote débil, recuperación insuficiente tras año cargado, alternancia siguiente.
+- Lectura: no cerrar cultivo. Esta etapa prepara la siguiente floración/cuaje.
+
+unknown
+- Label UX: No lo sé
+- Riesgos: bajar confianza y pedir realidad visible.
+- Lectura: preguntar: ¿está recién plantado, brotando, floreando, con frutito, llenando, listo para corte o ya cosechaste?
+
+================================================================================
+5. CATÁLOGO MAESTRO DE RIESGOS BIÓTICOS Y ABIÓTICOS
+================================================================================
+
+Formato:
+Riesgo | Dónde pesa más | Qué lo favorece | Clave visual | Etapa | Prioridad BIO-G | Memoria | Lectura BIO-G
+
+--------------------------------------------------------------------------------
+5.1 RAÍZ, DRENAJE, PHYTOPHTHORA Y SUELO
+--------------------------------------------------------------------------------
+
+1) avocado_phytophthora_root_rot
+Nombre UX: Tristeza / pudrición de raíz por Phytophthora
+Nombre técnico: Phytophthora cinnamomi y complejo de pudriciones de raíz.
+Dónde pesa más: root_establishment, juvenile_vegetative, vegetative_growth, flowering, fruit_set, post_harvest.
+Qué lo favorece: suelo pesado, encharque, drenaje pobre, riego excesivo, salinidad, agua contaminada, raíces heridas, compactación, árbol debilitado.
+Clave visual: copa amarilla o pálida, hojas pequeñas, decaimiento progresivo, ramas secas, poca brotación, raíz fina ausente/oscura, marchitez aunque el suelo esté húmedo.
+Etapa: todas, crítica en raíz y producción.
+Prioridad BIO-G: Crítica.
+Memoria: Muy alta; puede afectar varios ciclos y matar árbol.
+Lectura BIO-G: raíz primero. Si hay suelo mojado + árbol triste + EC alta o drenaje pobre, bloquear recomendación agresiva de NPK.
+
+2) root_anoxia_waterlogging_context
+Nombre UX: Exceso de agua / raíz sin oxígeno
+Dónde pesa más: planting_transplant, root_establishment, fruit_set, fruit_fill.
+Qué lo favorece: riego pesado, lluvia, suelo arcilloso, cama baja, compactación, mal drenaje, mulches mal manejados contra cuello.
+Clave visual: suelo húmedo, árbol decaído, hoja amarilla, raíz oscura, olor a podrido, caída de flor/frutito.
+Etapa: root_establishment, flowering, fruit_set, fruit_fill.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: en aguacate, más agua puede empeorar. Diferenciar sequía de anoxia antes de recomendar riego/fertilizante.
+
+3) poor_drainage_compaction_root_context
+Nombre UX: Compactación / drenaje flojo / raíz limitada
+Dónde pesa más: root_establishment, vegetative_growth, fruit_set, post_harvest.
+Qué lo favorece: maquinaria, suelo apretado, pendiente mal manejada, falta de materia orgánica, costra, baja infiltración.
+Clave visual: charcos, raíz superficial pobre, crecimiento lento, clorosis, respuesta débil a fertilizante.
+Etapa: todas.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: si resistencia/compactación alta, NPK puede verse presente pero no entrar al árbol.
+
+4) avocado_salinity_chloride_tip_burn
+Nombre UX: Salinidad / cloruros / sodio / punta quemada
+Dónde pesa más: vegetative_growth, flowering, fruit_set, fruit_fill, post_harvest.
+Qué lo favorece: agua salina, lixiviación insuficiente, alta evaporación, drenaje pobre, fertilización salina, suelo con sodio, clima seco.
+Clave visual: puntas y bordes de hojas viejas quemados, caída de hojas, fruto chico, cuajado débil, raíz pobre, EC alta.
+Etapa: todas, crítica en floración/cuajado/llenado.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: EC alta no es “nutriente alto bueno”; es bloqueo/toxicidad. Pedir agua/suelo/foliar antes de subir fertilizante.
+
+5) boron_toxicity_context
+Nombre UX: Boro alto / toxicidad posible
+Dónde pesa más: vegetative_growth, fruit_fill, post_harvest.
+Qué lo favorece: agua con boro, suelos áridos, fertirriego sin análisis, acumulación por baja lixiviación.
+Clave visual: bordes quemados similares a salinidad, necrosis marginal, crecimiento frenado.
+Etapa: vegetative_growth, fruit_fill.
+Prioridad BIO-G: Media-alta.
+Memoria: Media-alta.
+Lectura BIO-G: no simular B con sensor NPK. Si hay borde quemado + EC/agua sospechosa, pedir análisis.
+
+6) high_ph_micronutrient_lockout
+Nombre UX: pH alto / bloqueo de micronutrientes
+Dónde pesa más: juvenile_vegetative, vegetative_growth, post_harvest.
+Qué lo favorece: suelo calizo, agua bicarbonatada, pH >7.5, raíz dañada, exceso de cal.
+Clave visual: hojas nuevas amarillas con nervaduras verdes, brote débil, respuesta pobre al N.
+Etapa: vegetative_growth, budbreak.
+Prioridad BIO-G: Alta.
+Memoria: Media.
+Lectura BIO-G: hoja amarilla en pH alto no es N automático; revisar Fe/Zn/Mn, raíz y agua.
+
+7) nursery_root_bound_or_graft_problem
+Nombre UX: Planta de vivero / raíz enrollada / injerto débil
+Dónde pesa más: planting_transplant, root_establishment, juvenile_vegetative.
+Qué lo favorece: planta vieja en bolsa, raíz circular, injerto mal unido, material no certificado, portainjerto sensible.
+Clave visual: árbol que no arranca, cuello/injerto raro, raíz en espiral, brote débil, colapso temprano.
+Etapa: plantación y juvenil.
+Prioridad BIO-G: Alta en árbol nuevo.
+Memoria: Muy alta si no se corrige.
+Lectura BIO-G: si falla desde el inicio, no culpar NPK; revisar planta, cepellón, injerto y drenaje.
+
+--------------------------------------------------------------------------------
+5.2 FLORACIÓN, POLINIZACIÓN, CUAJADO Y ALTERNANCIA
+--------------------------------------------------------------------------------
+
+8) avocado_low_fruit_set_pollination_context
+Nombre UX: Mucha flor pero poco cuajado
+Dónde pesa más: flowering, fruit_set.
+Qué lo favorece: mal traslape A/B, poca actividad de polinizadores, clima frío/caliente durante flor, viento, lluvia, baja reserva, árbol aislado.
+Clave visual: flor abundante, panículas/inflorescencias sin frutito, pocos frutitos retenidos.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta si se repite.
+Lectura BIO-G: mucha flor no es cosecha. Revisar polinización, clima, agua, reservas y sanidad.
+
+9) avocado_flower_type_overlap_context
+Nombre UX: Sincronía floral A/B / polinización cruzada
+Dónde pesa más: flowering.
+Qué lo favorece: monocultivo sin polinizador, temperaturas que alteran apertura de flores, baja abeja, viento/frío.
+Clave visual: Hass solo con flor pero poco amarre; Fuerte o tipo B cerca puede mejorar contexto.
+Etapa: flowering.
+Prioridad BIO-G: Media-alta; alta en Hass con bajo cuajado recurrente.
+Memoria: Media.
+Lectura BIO-G: tipo A/B no es etapa, es contexto. No obligar al usuario a saberlo; usarlo como ayuda si captura variedad.
+
+10) avocado_flower_abortion_heat_cold
+Nombre UX: Aborto floral por calor/frío/viento seco
+Dónde pesa más: flowering.
+Qué lo favorece: calor seco, baja HR, viento, noches frías, heladas ligeras, lluvia/frío prolongado.
+Clave visual: flor que se seca, caída de flor, baja actividad de insectos, hoja decaída.
+Etapa: flowering.
+Prioridad BIO-G: Alta.
+Memoria: Alta si tumba evento floral.
+Lectura BIO-G: si hubo pico térmico o frío en floración, no culpar NPK primero.
+
+11) physiological_fruitlet_drop_context
+Nombre UX: Caída fisiológica normal de frutito
+Dónde pesa más: fruit_set.
+Qué lo favorece: regulación natural de carga, baja fecundación, competencia de reservas, exceso de flores.
+Clave visual: caen muchos frutitos pequeños pero quedan algunos sanos; árbol sin estrés fuerte.
+Etapa: fruit_set.
+Prioridad BIO-G: Media; no sobrealertar.
+Memoria: Baja-media si no hay estrés.
+Lectura BIO-G: algo de caída es normal en aguacate. Alertar sólo si es excesiva o coincide con estrés.
+
+12) avocado_fruitlet_drop_stress_complex
+Nombre UX: Se cae el aguacatito / no amarró
+Dónde pesa más: fruit_set, early fruit_fill.
+Qué lo favorece: raíz mala, salinidad, calor, sequía, exceso de agua, mala polinización, baja reserva, defoliación, alternancia, plagas/enfermedad.
+Clave visual: frutito amarillo/negro que cae, pedúnculo seco, árbol con punta quemada o raíz estresada.
+Etapa: fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Muy alta si reduce cosecha.
+Lectura BIO-G: revisar agua, raíz, EC, clima y polinización antes de hablar de fertilizante.
+
+13) alternate_bearing_memory
+Nombre UX: Vecería / año cargado y año bajo
+Dónde pesa más: post_harvest, dormancy, flowering, fruit_set.
+Qué lo favorece: cosecha muy pesada, defoliación, estrés hídrico/salino, poda fuerte, mala postcosecha, baja reserva.
+Clave visual: año anterior cargó mucho y este año florea/carga poco; fruta chica después de carga fuerte.
+Etapa: post_harvest, dormancy, flowering.
+Prioridad BIO-G: Alta.
+Memoria: Muy alta.
+Lectura BIO-G: registrar carga pasada. El árbol puede traer “deuda” fisiológica aunque NPK esté bien.
+
+14) heavy_crop_small_fruit_context
+Nombre UX: Mucha carga, fruta chica / calibre bajo
+Dónde pesa más: fruit_fill.
+Qué lo favorece: exceso de frutos, poca hoja funcional, estrés de agua, salinidad, K/Ca/B/Zn desbalanceados, año on.
+Clave visual: muchos frutos pero pequeños, crecimiento lento, hoja cansada, caída tardía.
+Etapa: fruit_fill.
+Prioridad BIO-G: Alta.
+Memoria: Alta si agota reservas.
+Lectura BIO-G: más kg no siempre es mejor; puede bajar calibre, calidad y siguiente ciclo.
+
+--------------------------------------------------------------------------------
+5.3 PLAGAS DE HOJA, FLOR Y FRUTO
+--------------------------------------------------------------------------------
+
+15) avocado_thrips_fruit_scarring
+Nombre UX: Trips del aguacate / cicatriz en fruto joven
+Dónde pesa más: flowering, fruit_set, fruit_fill temprano.
+Qué lo favorece: brote tierno, fruto joven, clima fresco-templado de primavera, maleza/hojarasca, historial.
+Clave visual: raspado plateado/bronceado, cicatrices corchosas en fruto joven, daño cerca de cáliz, larvas en envés/hoja joven.
+Etapa: flowering, fruit_set, fruit_fill.
+Prioridad BIO-G: Alta para calidad externa.
+Memoria: Media.
+Lectura BIO-G: daño temprano queda marcado hasta cosecha; revisar fruto joven y envés de hoja.
+
+16) persea_mite_bronzing_defoliation
+Nombre UX: Ácaro persea / bronceado / defoliación
+Dónde pesa más: vegetative_growth, fruit_fill, harvest_maturity.
+Qué lo favorece: clima seco, polvo, estrés hídrico, baja fauna benéfica, calor moderado.
+Clave visual: puntos/colonias bajo hoja, manchas bronceadas, telaraña fina, caída de hoja, fruta expuesta a sol.
+Etapa: vegetative_growth, fruit_fill.
+Prioridad BIO-G: Media-alta; alta si defolia.
+Memoria: Alta si pierde hoja.
+Lectura BIO-G: defoliación por ácaro baja fotosíntesis y expone fruta a golpe de sol.
+
+17) avocado_lace_bug_leaf_blotches
+Nombre UX: Chinche de encaje / lace bug
+Dónde pesa más: vegetative_growth, fruit_fill, post_harvest.
+Qué lo favorece: colonias en envés, clima cálido, baja vigilancia, árboles estresados.
+Clave visual: manchas cloróticas/necrosadas, puntos negros brillantes en envés, hoja seca que cae; no se alimenta directamente del fruto.
+Etapa: vegetative_growth.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta si causa defoliación.
+Lectura BIO-G: puede parecer quemadura por sal; revisar envés y puntos negros antes de diagnosticar salinidad.
+
+18) scale_mealybug_sooty_mold_complex
+Nombre UX: Escamas / cochinillas / fumagina
+Dónde pesa más: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Qué lo favorece: copa densa, hormigas, estrés, baja ventilación, baja fauna benéfica.
+Clave visual: costras o masas algodonosas, mielecilla, fumagina negra, fruta sucia, hojas pegajosas.
+Etapa: vegetative_growth, fruit_fill.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: la negrilla es consecuencia; buscar insecto chupador y hormigas.
+
+19) whitefly_sap_sucker_context
+Nombre UX: Mosca blanca / chupadores secundarios
+Dónde pesa más: juvenile_vegetative, vegetative_growth.
+Qué lo favorece: brotes tiernos, maleza, clima cálido, copa densa.
+Clave visual: nube blanca, mielecilla, fumagina, hojas pálidas.
+Etapa: vegetative_growth.
+Prioridad BIO-G: Media.
+Memoria: Baja-media; alta si defolia o debilita joven.
+Lectura BIO-G: no siempre es plaga clave; priorizar si hay hoja joven dañada o fumagina fuerte.
+
+20) caterpillars_leafrollers_fruit_scarring
+Nombre UX: Gusanos/larvas que enrollan hoja o raspan fruto
+Dónde pesa más: budbreak, flowering, fruit_set, fruit_fill.
+Qué lo favorece: hojas/frutos en contacto, copa densa, fruta en racimos, baja revisión.
+Clave visual: hojas pegadas con seda, mordidas, raspado, excremento, fruto cicatrizado donde toca hoja/fruto.
+Etapa: fruit_set, fruit_fill.
+Prioridad BIO-G: Media-alta para calidad.
+Memoria: Baja-media.
+Lectura BIO-G: daño económico cuando raspa fruto; hoja comida leve en árbol sano puede ser menor.
+
+--------------------------------------------------------------------------------
+5.4 PLAGAS REGLAMENTADAS / BARRENADORES
+--------------------------------------------------------------------------------
+
+21) avocado_branch_borer_regulated_context
+Nombre UX: Barrenador de ramas del aguacatero
+Nombre técnico regional: Macrocopturus/Copturus aguacatae según autoridad/fuente.
+Dónde pesa más: vegetative_growth, post_harvest, harvest_maturity.
+Qué lo favorece: zonas con presencia, ramas tiernas/medianas, baja vigilancia, huertas sin campaña.
+Clave visual: perforaciones, aserrín/frass, galerías, ramas que se quiebran o secan.
+Etapa: vegetative_growth, post_harvest.
+Prioridad BIO-G: Crítica-regulada donde aplique.
+Memoria: Alta de lote/región.
+Lectura BIO-G: no diagnosticar por sensor. Si hay frass/galería/rama quebradiza, pedir revisión oficial/local.
+
+22) avocado_seed_borer_regulated_context
+Nombre UX: Barrenador del hueso / larva dentro de fruto
+Nombre técnico: Conotrachelus spp., Heilipus lauri y otros según región.
+Dónde pesa más: fruit_fill, harvest_maturity.
+Qué lo favorece: zonas no libres, fruta infestada, caída de fruta, falta de muestreo.
+Clave visual: orificios, larva dentro, galería hacia semilla/hueso, fruta caída, pudrición secundaria.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Crítica-regulada.
+Memoria: Muy alta de lote/región.
+Lectura BIO-G: abrir muestra y seguir sanidad local. No mover fruta sospechosa sin lineamientos oficiales.
+
+23) avocado_seed_moth_regulated_context
+Nombre UX: Palomilla barrenadora del hueso
+Nombre técnico: Stenoma catenifer.
+Dónde pesa más: fruit_fill, harvest_maturity.
+Qué lo favorece: presencia regional, fruta en desarrollo, fruta caída, baja campaña.
+Clave visual: entrada en fruto, frass, túneles, semilla dañada, larva.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Crítica-regulada.
+Memoria: Muy alta.
+Lectura BIO-G: riesgo comercial/oficial, no diagnóstico de app. Derivar a campaña/reglamento.
+
+24) fruit_fly_or_other_internal_larvae_context
+Nombre UX: Larva dentro de fruta / riesgo interno no confirmado
+Dónde pesa más: harvest_maturity.
+Qué lo favorece: fruta sobremadura/caída, heridas, región con plaga, baja higiene.
+Clave visual: larvas o galerías internas, pudrición, fruta caída.
+Etapa: harvest_maturity.
+Prioridad BIO-G: Alta con cautela.
+Memoria: Media-alta.
+Lectura BIO-G: abrir fruta y diferenciar barrenador/larva/pudrición. No asignar especie sin confirmación.
+
+--------------------------------------------------------------------------------
+5.5 ENFERMEDADES DE FRUTO, POSCOSECHA, HOJA Y MADERA
+--------------------------------------------------------------------------------
+
+25) avocado_anthracnose_fruit_leaf
+Nombre UX: Antracnosis en aguacate
+Nombre técnico: Colletotrichum spp. y complejos regionales.
+Dónde pesa más: fruit_fill, harvest_maturity, post_harvest; también hoja/brote en humedad alta.
+Qué lo favorece: humedad, lluvia, heridas, fruta mojada, copa cerrada, material muerto, estrés.
+Clave visual: manchas negras/hundidas, lesiones que aparecen al madurar/ablandar, pudrición externa, manchas en hoja/brote.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Muy alta para calidad/poscosecha.
+Memoria: Media-alta.
+Lectura BIO-G: puede infectar antes y verse después del corte. No confundir con golpe o sunblotch.
+
+26) avocado_stem_end_rot_postharvest
+Nombre UX: Pudrición por pedúnculo / stem-end rot
+Dónde pesa más: harvest_maturity, post_harvest.
+Qué lo favorece: infección latente, ramas/cancros, heridas, cosecha con humedad, manejo poscosecha lento, fruta dañada.
+Clave visual: pudrición que inicia desde pedúnculo, manchas oscuras, pulpa café desde zona vascular, aparece al suavizar.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad.
+Memoria: Media-alta.
+Lectura BIO-G: si empieza en el pedúnculo y aparece al ablandar, pensar en stem-end rot/poscosecha, no sólo plaga.
+
+27) avocado_fruit_rots_botryosphaeriaceae
+Nombre UX: Pudriciones de fruto / Botryosphaeriaceae
+Dónde pesa más: harvest_maturity, post_harvest.
+Qué lo favorece: cancro/madera muerta, esporas por viento/lluvia, heridas, cosecha mojada, estrés.
+Clave visual: lesiones rojizas/café que se agrandan, se hunden, fruta se arruga y pudre; puede aparecer después del corte.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: conectar fruta podrida con sanidad de rama/copa y cosecha en seco.
+
+28) avocado_scab_corky_fruit
+Nombre UX: Roña / sarna / manchas corchosas en fruto
+Nombre técnico: Sphaceloma perseae / Elsinoë perseae.
+Dónde pesa más: fruit_set, fruit_fill, harvest_maturity.
+Qué lo favorece: humedad, lluvia, tejido joven susceptible, variedades sensibles, copa densa.
+Clave visual: lesiones corchosas elevadas, costras, fruta marcada, hoja con lesiones pequeñas.
+Etapa: fruit_set, fruit_fill.
+Prioridad BIO-G: Alta para calidad externa.
+Memoria: Media.
+Lectura BIO-G: daño cosmético/comercial; diferenciar de trips, viento, sunblotch y golpe.
+
+29) branch_canker_dieback_botryosphaeria
+Nombre UX: Cancro / muerte regresiva de ramas
+Nombre técnico: Botryosphaeriaceae, Lasiodiplodia/Neofusicoccum y complejos regionales.
+Dónde pesa más: vegetative_growth, post_harvest, harvest_maturity.
+Qué lo favorece: estrés hídrico, salinidad, heridas de poda, golpe de sol, alta HR, madera muerta, árboles debilitados.
+Clave visual: rama se seca desde punta, exudado rojizo que seca a polvo blanco/café, corte con tejido marrón en cuña, cancro.
+Etapa: vegetative_growth, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Muy alta si reduce copa.
+Lectura BIO-G: rama seca no es NPK. Revisar heridas, estrés, raíz y patógenos de madera.
+
+30) bacterial_canker_context
+Nombre UX: Cancro bacteriano / exudado en tronco o ramas
+Dónde pesa más: vegetative_growth, post_harvest.
+Qué lo favorece: heridas, estrés, humedad, daño físico.
+Clave visual: exudados, lesiones hundidas, grietas, ramas debilitadas.
+Etapa: vegetative_growth.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta.
+Lectura BIO-G: diferencial de cancro. Pedir confirmación; no mezclar con gomosis cítrica.
+
+31) avocado_sunblotch_viroid_context
+Nombre UX: Sunblotch / viroide del manchado del aguacate
+Nombre técnico: Avocado sunblotch viroid, ASBVd.
+Dónde pesa más: vegetative_growth, fruit_fill, harvest_maturity.
+Qué lo favorece: material vegetal infectado, injerto/semilla/portainjerto infectado, transmisión por herramientas o raíces según contexto.
+Clave visual: manchas o rayas amarillas/rojas/blancas hundidas en fruto, estrías en brotes, corteza tipo “alligator”, árbol bajo rendimiento; puede haber portadores sin síntomas.
+Etapa: fruit_fill, harvest_maturity, vegetative_growth.
+Prioridad BIO-G: Alta con cautela.
+Memoria: Muy alta/permanente.
+Lectura BIO-G: si patrón visual coincide y el bajo rendimiento es crónico, pedir diagnóstico técnico. No resolver con fertilizante.
+
+32) ambrosia_beetle_fusarium_dieback_context
+Nombre UX: Barrenillo ambrosial / muerte por Fusarium asociada
+Dónde pesa más: vegetative_growth, post_harvest.
+Qué lo favorece: presencia regional, árboles estresados, heridas, madera susceptible.
+Clave visual: pequeños orificios, “palillos” o exudados tipo azúcar/aserrín, marchitez de rama, galerías internas.
+Etapa: vegetative_growth.
+Prioridad BIO-G: Alta-regional.
+Memoria: Muy alta.
+Lectura BIO-G: riesgo emergente/regional; no diagnosticar si no hay orificios/galerías y confirmación.
+
+33) armillaria_rosellinia_root_decline_context
+Nombre UX: Pudriciones crónicas de raíz / hongo blanco
+Dónde pesa más: root_establishment, vegetative_growth, post_harvest.
+Qué lo favorece: restos leñosos, suelo húmedo, huertos replantados, árboles debilitados.
+Clave visual: declive progresivo, raíz/corona con micelio, madera podrida, árbol muere por sectores.
+Etapa: todas.
+Prioridad BIO-G: Media-alta.
+Memoria: Muy alta.
+Lectura BIO-G: diferencial de Phytophthora; necesita revisión de raíz/corona y antecedente de lote.
+
+--------------------------------------------------------------------------------
+5.6 CLIMA EXTREMO, DAÑO FÍSICO, FITOTOXICIDAD Y CALIDAD
+--------------------------------------------------------------------------------
+
+34) avocado_sunburn_heat_fruit_leaf
+Nombre UX: Golpe de sol / quemadura por calor
+Dónde pesa más: juvenile_vegetative, fruit_fill, harvest_maturity, post_harvest.
+Qué lo favorece: defoliación, poda fuerte, fruta expuesta, calor intenso, baja HR, viento seco, radiación alta.
+Clave visual: mancha pálida/amarilla en lado expuesto que puede volverse café/negra, hoja con zonas cloróticas/necrosadas, rama quemada.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta para calidad; crítica en árboles jóvenes.
+Memoria: Media-alta si defolia o quema madera.
+Lectura BIO-G: si hay fruta expuesta al suroeste/sur y calor, no diagnosticar hongo de entrada.
+
+35) frost_cold_avocado_damage
+Nombre UX: Daño por frío / helada
+Dónde pesa más: flowering, fruit_set, juvenile_vegetative, harvest_maturity.
+Qué lo favorece: temperaturas bajas, helada, viento frío, sitio bajo, árbol joven, brote tierno.
+Clave visual: flor quemada, brote negro, hojas colgando/necrosadas, fruta con daño, caída posterior.
+Etapa: flowering, fruit_set, budbreak.
+Prioridad BIO-G: Alta.
+Memoria: Alta si afecta flor/copa.
+Lectura BIO-G: esperar expresión del daño; no sobrepodar ni fertilizar agresivo sin evaluar recuperación.
+
+36) heat_low_humidity_flower_set_loss
+Nombre UX: Calor seco tumbando flor/frutito
+Dónde pesa más: flowering, fruit_set.
+Qué lo favorece: picos >32-35 C, baja HR, viento seco, raíz con baja humedad funcional.
+Clave visual: flor seca, frutito caído, hoja decaída, caída masiva después de calor.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: calor + baja humedad en cuajado puede pesar más que NPK.
+
+37) hail_wind_mechanical_damage
+Nombre UX: Granizo / viento / roce / golpe mecánico
+Dónde pesa más: fruit_fill, harvest_maturity, vegetative_growth.
+Qué lo favorece: tormenta, granizo, viento fuerte, ramas/frutos tocándose, manejo brusco.
+Clave visual: heridas lineales o golpes, cicatrices, fruta marcada en patrón físico, ramas quebradas.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta.
+Memoria: Media si abre puerta a enfermedades.
+Lectura BIO-G: diferenciar de trips/roña/antracnosis. Si hay heridas, sube riesgo de pudriciones.
+
+38) phytotoxicity_spray_context
+Nombre UX: Fitotoxicidad / quemadura por aplicación
+Dónde pesa más: budbreak, vegetative_growth, fruit_fill.
+Qué lo favorece: aceite/cobre/sales/aplicaciones con calor, mezclas incompatibles, dosis incorrecta, hoja tierna.
+Clave visual: quemadura uniforme o por gota, borde quemado, manchas después de aplicación reciente.
+Etapa: vegetative_growth, fruit_fill.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: si hubo aplicación reciente y patrón uniforme, no culpar hongo/plaga de entrada.
+
+39) postharvest_handling_decay_context
+Nombre UX: Pudrición por manejo/cosecha/poscosecha
+Dónde pesa más: harvest_maturity, post_harvest.
+Qué lo favorece: cosecha con lluvia, golpes, demora a frío/almacenamiento, fruta sobremadura, heridas.
+Clave visual: fruta aparentemente sana que se pudre al ablandar, manchas desde heridas o pedúnculo.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad comercial.
+Memoria: Baja del árbol, media del lote/manejo.
+Lectura BIO-G: no todo problema poscosecha es del árbol; registrar manejo de corte.
+
+40) defoliation_memory_context
+Nombre UX: Pérdida de hoja funcional / árbol cansado
+Dónde pesa más: fruit_fill, post_harvest, dormancy.
+Qué lo favorece: ácaros, lace bug, salinidad, Phytophthora, helada, calor, poda fuerte, cancro.
+Clave visual: copa rala, fruta expuesta, brote débil, baja floración posterior.
+Etapa: post_harvest, dormancy.
+Prioridad BIO-G: Alta.
+Memoria: Muy alta.
+Lectura BIO-G: sin hoja no hay carbohidratos; puede bajar calibre y siguiente floración.
+
+================================================================================
+6. SÍNDROMES PRIORITARIOS PARA `avocado_tree_syndromes.dart`
+================================================================================
+
+Recomendación v1: no meter 40 riesgos como 40 síndromes si la UI se satura. Implementar 16-22 síndromes fuertes y dejar contextos como diagnósticos secundarios o señales.
+
+6.1 Síndromes mínimos de alta prioridad
+--------------------------------------
+
+1. avocado_phytophthora_root_rot_syndrome
+- Label: Tristeza / pudrición de raíz en aguacate
+- Stages: seedling, vegetativeEarly, vegetativeMid, reproductiveEarly, reproductiveMid, grainFill, lateSeason
+- Organs: root, crown, wholePlant
+- Primary symptom: symptomRootRotWilt o symptomAvocadoFineRootRot
+- Strong signals: waterlogging, rootsDarkRot, poorDrainageOrHeavySoil, avocadoFineRootsAbsent
+- Weak signals: salinityLoad, recentStress, leafEdgeBurn
+- Conflicting signals: frostEvent, hailEvent
+- Diagnoses: Phytophthora cinnamomi, anoxia/agua excesiva, raíz dañada/compactación
+- Severity: critical
+- Urgency: sameDay/review24h según síntomas
+- Actions UX: revisar drenaje, raíz fina, humedad real, EC/agua, confirmar con técnico; no fertilizar agresivo.
+
+2. avocado_salinity_tip_burn_syndrome
+- Label: Salinidad / cloruros / punta quemada
+- Stages: vegetativeMid, reproductiveEarly, reproductiveMid, grainFill, lateSeason
+- Organs: leaf, root, wholePlant
+- Primary symptom: symptomLeafEdgeBurn o symptomAvocadoChlorideTipBurn
+- Strong signals: salinityLoad, leafEdgeBurn, chlorideSodiumBoronRisk, avocadoTipBurnOldLeaves
+- Weak signals: dryHotWindow, recentStress, highPhCalcareous
+- Conflicting signals: laceBugBlotches, frostEvent
+- Diagnoses: toxicidad por cloruro/sodio, estrés osmótico, boro alto, sequía fisiológica
+- Severity: high
+- Urgency: review24h/review48h
+
+3. avocado_flower_set_failure_syndrome
+- Label: Floración fuerte pero bajo cuajado
+- Stages: reproductiveEarly, reproductiveMid
+- Organs: flower, fruit, wholePlant
+- Primary symptom: symptomFlowerAbortion o symptomAvocadoFlowerFruitletDrop
+- Strong signals: flowerDrop, noPollinatorOrBeeActivity, avocadoFlowerTypeMismatch, heatStress, coldExposure
+- Weak signals: recentStress, salinityLoad, dryHotWindow
+- Conflicting signals: noneVisible if no flowering stage
+- Diagnoses: mala polinización, aborto por calor/frío, baja reserva, estrés hídrico/salino
+- Severity: high
+- Urgency: review24h
+
+4. avocado_fruitlet_drop_stress_syndrome
+- Label: Caída de frutito / no amarre
+- Stages: reproductiveMid, grainFill
+- Organs: fruit, flower, wholePlant
+- Primary symptom: symptomFruitDeformation o symptomAvocadoFlowerFruitletDrop
+- Strong signals: fruitletPeaSizeDrop, flowerDrop, salinityLoad, heatStress, waterlogging
+- Weak signals: recentStress, noPollinatorOrBeeActivity, heavyCropPreviousCycle
+- Diagnoses: caída fisiológica, estrés hídrico, salinidad, mala polinización, alternancia
+- Severity: high
+- Urgency: review24h
+
+5. avocado_thrips_scarring_syndrome
+- Label: Trips / raspado en fruto joven
+- Stages: reproductiveEarly, reproductiveMid, grainFill
+- Organs: fruit, leaf, flower
+- Primary symptom: symptomThripsSilverScarring
+- Strong signals: thripsPresent, thripsSilverScarring, avocadoYoungFruitScarring
+- Weak signals: recentStress
+- Diagnoses: trips del aguacate, trips secundarios, daño por viento/roce como diferencial
+- Severity: medium/high según fruta comercial
+- Urgency: review48h
+
+6. avocado_mite_defoliation_syndrome
+- Label: Ácaros / bronceado / defoliación
+- Stages: vegetativeMid, grainFill, lateSeason
+- Organs: leaf, wholePlant
+- Primary symptom: symptomBronzingStippling
+- Strong signals: bronzedLeafSurface, mitesWebbing
+- Weak signals: dryHotWindow, recentStress
+- Diagnoses: ácaro persea, ácaro café, seis puntos, estrés hídrico como diferencial
+- Severity: medium/high si defolia
+- Urgency: review48h
+
+7. avocado_lace_bug_syndrome
+- Label: Chinche de encaje / manchas en hoja
+- Stages: vegetativeMid, grainFill, lateSeason
+- Organs: leaf
+- Primary symptom: symptomNecroticFoliarSpots o symptomAvocadoLaceBugBlotches
+- Strong signals: blackLaceBugFrassUnderside, leafEdgeBurn interior, feedingHoles? no obligatorio
+- Weak signals: recentStress
+- Conflicting signals: salinityLoad if pure tip burn
+- Diagnoses: avocado lace bug, salinidad como diferencial, ácaros como diferencial
+- Severity: medium/high si defolia
+- Urgency: review48h
+
+8. avocado_sap_sucker_sooty_mold_syndrome
+- Label: Cochinillas/escamas/chupadores con fumagina
+- Stages: vegetativeEarly, vegetativeMid, grainFill, lateSeason
+- Organs: leaf, stem, fruit
+- Primary symptom: symptomHoneydewSootyShoots o symptomWoollyWhiteColonies
+- Strong signals: stickyHoneydew, sootyMold
+- Weak signals: whiteflyCloud, recentStress
+- Diagnoses: escamas, cochinillas, mosca blanca, hormigas asociadas
+- Severity: medium
+- Urgency: review48h/monitor72h
+
+9. avocado_regulated_borers_syndrome
+- Label: Barrenadores reglamentados / galerías en rama o hueso
+- Stages: vegetativeMid, grainFill, lateSeason
+- Organs: fruit, stem
+- Primary symptom: symptomFruitTunnelFrass o symptomAvocadoSeedBorerDamage
+- Strong signals: branchFrassOrExitHoles, seedTunnelOrLarva, frassPresent, fruitLarvae, regulatedPestArea
+- Weak signals: feedingHoles, recentStress
+- Diagnoses: barrenador de ramas, barrenador del hueso, palomilla barrenadora
+- Severity: critical
+- Urgency: immediate/sameDay
+- Actions: no mover fruta sospechosa; contactar técnico/campaña local.
+
+10. avocado_anthracnose_fruit_syndrome
+- Label: Antracnosis / manchas hundidas en fruto
+- Stages: grainFill, lateSeason
+- Organs: fruit, leaf, stem
+- Primary symptom: symptomDarkSunkenLesions
+- Strong signals: humidWindow, denseWetCanopy, postharvestSofteningLesions
+- Weak signals: hailEvent, recentStress
+- Diagnoses: Colletotrichum spp., roña, golpe, sunblotch como diferencial
+- Severity: high
+- Urgency: review24h/review48h
+
+11. avocado_stem_end_rot_syndrome
+- Label: Pudrición por pedúnculo / poscosecha
+- Stages: lateSeason
+- Organs: fruit, stem
+- Primary symptom: symptomMummifiedFruitRot o symptomAvocadoStemEndRot
+- Strong signals: stemEndRotStartsPeduncle, postharvestSofteningLesions, humidWindow
+- Weak signals: stemCanker, recentStress
+- Diagnoses: stem-end rot, Botryosphaeriaceae, Colletotrichum, manejo poscosecha
+- Severity: high
+- Urgency: review48h
+
+12. avocado_scab_fruit_syndrome
+- Label: Roña / sarna corchosa en fruto
+- Stages: reproductiveMid, grainFill, lateSeason
+- Organs: fruit, leaf
+- Primary symptom: symptomAvocadoScabCorkyFruit o symptomFruitSunkenPits
+- Strong signals: corkyRaisedFruitScab, humidWindow
+- Weak signals: denseWetCanopy
+- Conflicting signals: thripsSilverScarring, wind rub
+- Diagnoses: Sphaceloma/Elsinoë perseae, trips/roce como diferencial
+- Severity: medium/high para exportación
+- Urgency: review48h
+
+13. avocado_branch_canker_dieback_syndrome
+- Label: Cancro / muerte regresiva de rama
+- Stages: vegetativeMid, lateSeason
+- Organs: stem, wholePlant
+- Primary symptom: symptomShootDecayCanker
+- Strong signals: stemCanker, oneSidedWilt, vascularBrowning
+- Weak signals: recentStress, hailEvent, heatStress
+- Diagnoses: Botryosphaeriaceae, Lasiodiplodia/Neofusicoccum, daño por sol/herida
+- Severity: high
+- Urgency: review24h/review48h
+
+14. avocado_sunblotch_syndrome
+- Label: Sunblotch / manchado viroide
+- Stages: vegetativeMid, grainFill, lateSeason
+- Organs: fruit, stem, leaf, wholePlant
+- Primary symptom: symptomAvocadoSunblotchFruitStreak o symptomFruitSunkenPits
+- Strong signals: sunblotchColoredDepressedStreaks
+- Weak signals: lowYieldChronic, recentStress
+- Conflicting signals: thripsSilverScarring, scab, sunburn
+- Diagnoses: Avocado sunblotch viroid
+- Severity: high
+- Urgency: review24h/review48h
+- Actions: confirmar con técnico/lab; revisar origen del material.
+
+15. avocado_sunburn_heat_syndrome
+- Label: Golpe de sol / fruta u hoja quemada
+- Stages: vegetativeEarly, grainFill, lateSeason
+- Organs: fruit, leaf, stem
+- Primary symptom: symptomFruitSunburnPatch
+- Strong signals: heatStress, exposedFruitSouthwest, dryHotWindow
+- Weak signals: recentStress, defoliation
+- Diagnoses: golpe de sol, calor seco, defoliación previa
+- Severity: medium/high
+- Urgency: review48h
+
+16. avocado_cold_frost_damage_syndrome
+- Label: Daño por frío / helada
+- Stages: vegetativeEarly, reproductiveEarly, reproductiveMid, lateSeason
+- Organs: flower, leaf, fruit, stem
+- Primary symptom: symptomColdInjury
+- Strong signals: frostEvent, coldExposure
+- Weak signals: recentStress
+- Diagnoses: helada, frío subletal, daño de brote/flor
+- Severity: high si flor/cuaje, critical si árbol joven severo
+- Urgency: review24h
+
+17. avocado_phytotoxicity_syndrome
+- Label: Fitotoxicidad / quemadura por aplicación
+- Stages: vegetativeEarly, vegetativeMid, grainFill
+- Organs: leaf, fruit
+- Primary symptom: symptomLeafEdgeBurn o symptomNecroticFoliarSpots
+- Strong signals: recentSprayOilCopper, uniformLeafBurn
+- Weak signals: heatStress, dryHotWindow
+- Diagnoses: fitotoxicidad por mezcla/aplicación, salinidad, golpe de sol como diferencial
+- Severity: medium/high
+- Urgency: review48h
+
+18. avocado_alternate_bearing_memory_syndrome
+- Label: Memoria de año cargado / vecería
+- Stages: lateSeason, vegetativeLate, reproductiveEarly
+- Organs: wholePlant, flower, fruit
+- Primary symptom: symptomFlowerAbortion o symptomFruitDeformation
+- Strong signals: alternateBearingHistory, heavyCropPreviousCycle, recentStress
+- Weak signals: salinityLoad, defoliation
+- Diagnoses: vecería, reservas bajas, postcosecha débil
+- Severity: medium/high
+- Urgency: monitor72h/review48h
+
+6.2 VarietyModifiers sugeridos
+------------------------------
+
+ag_skip:
+- +0 general a la mayoría; bajar confianza.
+- No asumir Hass ni Antillano.
+
+ag_01_hass:
+- +10 en salinidad/raíz/Phytophthora si EC alta o drenaje pobre.
+- +8 en alternancia si hubo año cargado.
+- +8 en bajo cuajado si no hay polinizador/contexto.
+- +5 en trips/calidad externa de fruto joven.
+
+ag_02_mendez_carmen:
+- +8 en floración desfasada / cuajado por ventana variable.
+- +8 en alternancia/carga si historial de floraciones múltiples o cosecha extendida.
+- Misma cautela de Hass en raíz/salinidad.
+
+ag_03_criollo_mexicano:
+- +5 en variabilidad de carga/calidad.
+- -5 en salinidad si se usa como proxy de mayor rusticidad, pero requiresCaution=true porque depende de portainjerto/ecotipo.
+- +8 en material de semilla/no productivo si árbol de hueso y tarda años sin flor.
+
+ag_04_fuerte_piel_verde:
+- +10 en polinización/flower type context como tipo B.
+- +8 en alternancia.
+- +5 en fruit set si clima frío/caliente rompe traslape floral.
+
+ag_05_antillano_tropical:
+- +10 en exceso humedad/raíz/enfermedades si clima tropical húmedo.
+- +8 en antracnosis/roña si humedad alta.
+- -5 en frío si clima costa cálido, +12 si evento frío/helada porque puede ser más sensible.
+
+ag_06_tardio_lamb_reed:
+- +8 en estrés acumulado/fruit_fill largo.
+- +8 en golpe de sol si fruta grande/expuesta.
+- +6 en alternancia/carga.
+
+================================================================================
+7. MATRIZ DE RIESGO POR ETAPA
+================================================================================
+
+[TABLA]
+StageId | Riesgos críticos | Riesgos secundarios | Mensaje BIO-G
+planting_transplant | raíz enrollada, cuello enterrado, exceso agua, salinidad, sol/viento | injerto débil, planta de vivero | “No fuerces producción; primero que el árbol enraíce sin ahogarse ni salarse.”
+root_establishment | Phytophthora, anoxia, compactación, EC alta | pH alto, boro/cloruros, planta mal formada | “En aguacate la raíz fina manda; árbol triste con suelo mojado es alerta seria.”
+juvenile_vegetative | exceso agua, sol, viento, salinidad, raíz pobre | trips, ácaros, lace bug, clorosis | “No penalices por no tener fruta; protege raíz, hoja y copa.”
+budbreak | trips, ácaros, fitotoxicidad, frío/calor en brote | exceso N, chupadores | “Brote tierno es vulnerable; cuida plaga y estrés, no puro fertilizante.”
+vegetative_growth | salinidad, pH alto, defoliación, cancro, Phytophthora | cochinilla, lace bug, ácaros | “La hoja fabrica reservas; si se pierde hoja, baja cuajado/calibre.”
+dormancy | reservas bajas, salinidad acumulada, raíz dañada, exceso vegetativo | alternancia, baja inducción | “Reposo funcional no es árbol muerto; prepara floración y memoria.”
+flowering | aborto floral, calor/frío, mala polinización, A/B, estrés hídrico/salino | humedad/enfermedad, poca abeja | “Mucha flor no garantiza aguacate; el cuello de botella es cuajar.”
+fruit_set | caída fisiológica vs estrés, salinidad, raíz, agua, calor | baja hoja, alternancia | “Algo de caída es normal; caída fuerte con estrés es alerta.”
+fruit_fill | déficit hídrico, salinidad, fruta chica, golpe de sol, trips/roña | ácaros, lace bug, antracnosis latente | “Calibre = agua estable + raíz viva + hoja funcional + baja salinidad.”
+harvest_maturity | antracnosis, stem-end rot, sunblotch, barrenadores, daño mecánico | madurez mal calculada, cosecha con lluvia | “La fruta se ablanda después del corte; vigila calidad y sanidad.”
+post_harvest | recuperación débil, raíz/sales, cancro, defoliación, vecería | poda fuerte, brote débil | “La postcosecha prepara el siguiente ciclo; no cierres el árbol.”
+unknown | baja confianza | todos según señales | “Pregunta qué ve el usuario antes de emitir alerta fuerte.”
+[/TABLA]
+
+================================================================================
+8. MEMORIA PERENNE DEL AGUACATE
+================================================================================
+
+8.1 Eventos de memoria que debe guardar BIO-G
+--------------------------------------------
+
+[TABLA]
+Evento de memoria | Etapa origen | Impacto futuro | Duración sugerida
+root_rot_or_waterlogging | root_establishment/any | baja absorción, caída, declive, baja respuesta NPK | 1-3 ciclos o hasta resolver
+salinity_chloride_burn | vegetative/fruit_set/fruit_fill | cuajado débil, fruta chica, defoliación, raíz pobre | 1-2 ciclos
+severe_drought_heat | flowering/fruit_set | aborto floral, caída, bajo calibre | 1 ciclo
+frost_cold_bloom_damage | flowering/budbreak | baja carga, brote dañado | 1 ciclo
+heavy_crop_on_year | fruit_fill/harvest | alternancia/off-year, reservas bajas | 1-2 ciclos
+severe_defoliation | any | menor floración/cuaje/calibre, solburn | 1-2 ciclos
+branch_canker_dieback | vegetative/post_harvest | copa reducida, baja producción, entrada de pudriciones | 2+ ciclos
+postharvest_weak_recovery | post_harvest | baja inducción/floración siguiente | 1 ciclo
+regulated_pest_suspect | fruit_fill/harvest | restricción comercial, revisión oficial | hasta cierre por autoridad
+sunblotch_suspect | any | crónico/permanente, bajo rendimiento | permanente hasta diagnóstico
+[/TABLA]
+
+8.2 Reglas de impacto en motores
+--------------------------------
+
+- Si root_rot_or_waterlogging activo: bajar confianza de NPK, rendimiento y recomendaciones de fertilización.
+- Si salinity_chloride_burn activo: bloquear “aplicar más fertilizante” sin revisar agua/suelo.
+- Si severe_drought_heat en flowering/fruit_set: bajar rendimiento esperado aunque NPK esté óptimo.
+- Si heavy_crop_on_year + postharvest_weak_recovery: elevar riesgo de alternateBearingLowYear.
+- Si severe_defoliation: elevar golpe de sol, fruta chica y baja floración siguiente.
+- Si regulated_pest_suspect: mostrar cautela sanitaria; no estimar sólo por sensores.
+- Si sunblotch_suspect: pedir diagnóstico; no recomendar corrección nutricional como solución.
+
+8.3 Mensajes de memoria farmer-friendly
+--------------------------------------
+
+- “El aguacate sí guarda memoria: si la raíz sufrió este ciclo, el siguiente arranca con menos fuerza.”
+- “Si este año cargó pesado y no recuperó hoja/raíz después del corte, el próximo puede venir más bajo.”
+- “La punta quemada por sales no se corrige sólo metiendo más fertilizante; primero agua, drenaje y lixiviación técnica.”
+- “Si perdió mucha hoja, el fruto queda expuesto y la siguiente floración puede venir más floja.”
+- “Si la caída fue fuerte en cuajado, guarda el evento: puede explicar bajo rendimiento aunque el sensor marque NPK bonito.”
+
+================================================================================
+9. LENGUAJE UX RECOMENDADO
+================================================================================
+
+Mensajes base:
+- “En aguacate, mucha flor no significa cosecha. La parte difícil es que amarre y sostenga el frutito.”
+- “Si el suelo está húmedo y el árbol se ve triste, cuidado: puede ser raíz sin oxígeno, no falta de agua.”
+- “La punta quemada en hoja vieja puede venir de sales o cloruros; no siempre es falta de fertilizante.”
+- “Si la EC está alta, antes de subir NPK revisa agua, drenaje y raíz.”
+- “El aguacate no perdona raíces asfixiadas. El fertilizante sirve hasta que la raíz puede respirar.”
+- “Floración y cuajado son la ventana más delicada: agua pareja, temperatura, polinización y raíz viva.”
+- “Algo de caída de frutito es normal; alerta si es masiva o viene junto con calor, salinidad, raíz mala o falta de agua.”
+- “El fruto puede estar listo para corte sin estar blando; el aguacate se suaviza después de cosechar.”
+- “Si hay aserrín, galerías o larvas en fruto/rama, no lo trates como problema normal: confirma con sanidad local.”
+- “La postcosecha no es descanso muerto: ahí se recupera el árbol y se prepara la siguiente floración.”
+
+Preguntas útiles:
+- ¿El suelo se encharca o tarda mucho en drenar?
+- ¿El árbol se marchita aunque la tierra esté mojada?
+- ¿Las puntas de hojas viejas están quemadas?
+- ¿Tienes análisis de agua o sabes si hay sales/cloruros?
+- ¿Floreó mucho pero casi no amarró fruto?
+- ¿El frutito cae amarillo, negro o todavía verde?
+- ¿Hay polinizadores o sólo una variedad?
+- ¿El año pasado cargó demasiado?
+- ¿Se cayó mucha hoja o el fruto quedó expuesto al sol?
+- ¿Ves aserrín, hoyitos, larvas o galerías en ramas/fruto/hueso?
+- ¿Las manchas aparecen en el árbol o cuando el fruto empieza a ablandarse después del corte?
+- ¿Hubo helada, calor fuerte, granizo, viento o aplicación reciente?
+
+================================================================================
+10. REGLAS PARA NO CONFUNDIR DIAGNÓSTICOS
+================================================================================
+
+1. Árbol triste + suelo húmedo ≠ falta de agua automática.
+   Revisar anoxia, Phytophthora, raíz, drenaje y EC.
+
+2. Punta quemada ≠ deficiencia de N.
+   Revisar cloruros/sodio/boro, EC, sequía fisiológica y lace bug.
+
+3. Mucha flor ≠ mucha cosecha.
+   Menos de 1% de flores suele llegar a fruto; revisar polinización, clima, reservas y estrés.
+
+4. Caída de frutito ≠ siempre enfermedad.
+   Puede ser fisiológica; se vuelve alerta si coincide con salinidad, calor, baja humedad, raíz mala o defoliación.
+
+5. Fruta manchada ≠ siempre antracnosis.
+   Diferenciales: roña, trips, viento, sunblotch, golpe de sol, daño mecánico, pudrición poscosecha.
+
+6. Pudrición después del corte ≠ siempre cosecha mala.
+   Muchas infecciones son latentes y se activan cuando el fruto se suaviza.
+
+7. Ramas secas ≠ falta de fertilizante.
+   Revisar cancro, heridas, golpe de sol, barrenadores, raíz y salinidad.
+
+8. Barrenador/reglamentado ≠ diagnóstico por app.
+   Requiere muestreo, autoridad/campaña y confirmación.
+
+9. pH alto + hoja amarilla ≠ subir N.
+   Revisar Fe/Zn/Mn, raíz, carbonatos y agua.
+
+10. Postcosecha ≠ apagar alertas.
+    Es etapa de recuperación y memoria.
+
+================================================================================
+11. TESTS MÍNIMOS RECOMENDADOS
+================================================================================
+
+1) avocado_root_rot_waterlogging_test
+Caso: root_establishment + suelo húmedo alto + EC alta + raíz oscura.
+Esperado: alerta raíz/Phytophthora/anoxia; bloquear NPK agresivo; urgencia alta.
+
+2) avocado_salinity_tip_burn_test
+Caso: vegetative_growth + EC alta + puntas quemadas en hojas viejas.
+Esperado: salinidad/cloruros/sodio; no recomendar N; pedir agua/suelo.
+
+3) avocado_flowering_many_flowers_low_set_test
+Caso: ag_01_hass + flowering + mucha flor + baja abeja + calor/frío.
+Esperado: polinización/clima; no prometer rendimiento.
+
+4) avocado_fruitlet_drop_normal_vs_stress_test
+Caso A: fruit_set + caída moderada + sensores normales.
+Esperado: caída fisiológica; monitor.
+Caso B: fruit_set + caída fuerte + humedad baja/EC alta.
+Esperado: alerta estrés de cuajado.
+
+5) avocado_alternate_bearing_memory_test
+Caso: harvest previous heavy crop + post_harvest weak + flowering current low.
+Esperado: memoria de vecería; bajar rendimiento/confianza.
+
+6) avocado_thrips_young_fruit_scarring_test
+Caso: fruit_set/fruit_fill + raspado plateado/corcho en fruto joven + trips.
+Esperado: síndrome trips/calidad externa.
+
+7) avocado_lace_bug_vs_salinity_test
+Caso: hoja con manchas internas y puntos negros en envés, EC normal.
+Esperado: lace bug; no salinidad.
+
+8) avocado_sunburn_after_defoliation_test
+Caso: fruit_fill + defoliación + calor + fruta expuesta.
+Esperado: golpe de sol; memoria de defoliación.
+
+9) avocado_stem_end_rot_postharvest_test
+Caso: harvest_maturity/post_harvest + pudrición inicia en pedúnculo al ablandar.
+Esperado: stem-end rot/poscosecha; revisar cosecha en seco y madera muerta.
+
+10) avocado_anthracnose_humid_test
+Caso: fruit_fill/harvest + humedad alta + manchas negras hundidas.
+Esperado: antracnosis compatible; confirmar, no diagnóstico absoluto.
+
+11) avocado_sunblotch_chronic_low_yield_test
+Caso: fruta con estrías/depresiones amarillas/rojas + bajo rendimiento crónico.
+Esperado: sunblotch sospechoso; pedir diagnóstico técnico; no fertilizante.
+
+12) avocado_regulated_borer_test
+Caso: harvest + larva/túnel en hueso o rama con frass.
+Esperado: riesgo regulado; urgencia sameDay/immediate; contactar sanidad local.
+
+13) avocado_branch_canker_dieback_test
+Caso: vegetative/post_harvest + rama seca + exudado rojizo/blanco + tejido café en corte.
+Esperado: cancro/muerte regresiva; revisar poda/heridas/estrés.
+
+14) avocado_high_ph_chlorosis_test
+Caso: vegetative_growth + pH 8.0 + hoja nueva amarilla con nervadura verde.
+Esperado: bloqueo Fe/Zn/Mn; no N automático.
+
+15) avocado_phytotoxicity_recent_spray_test
+Caso: daño uniforme en hoja/fruto después de aplicación con calor.
+Esperado: fitotoxicidad como compatible; no hongo de entrada.
+
+16) avocado_postharvest_recovery_memory_test
+Caso: post_harvest + árbol defoliado + EC alta + carga pesada previa.
+Esperado: memoria de recuperación débil y riesgo siguiente floración.
+
+================================================================================
+12. NO HACER EN CÓDIGO
+================================================================================
+
+- No copiar riesgos de Mango, Limón o Naranjo cambiando nombres.
+- No tratar `dormancy` como dormancia caducifolia ni árbol pelón.
+- No tratar `post_harvest` como fin de cultivo.
+- No usar `sowingDate` como eje de sanidad en árbol adulto.
+- No diagnosticar Phytophthora sólo por sensor; usar contexto raíz/drenaje/humedad/declive.
+- No diagnosticar plagas reglamentadas sin señales físicas y advertencia de sanidad local.
+- No recomendar insecticidas/fungicidas, ingredientes activos, dosis o cuarentena.
+- No convertir caída de frutito en deficiencia de NPK.
+- No confundir EC alta con “nutrientes altos buenos”.
+- No recomendar fertilización agresiva con EC alta, raíz dañada, anoxia o pH extremo.
+- No simular cloruros, sodio, boro, calcio, zinc, hierro o materia seca con el sensor NPK.
+- No prometer que tipo B/polinizador resolverá por sí solo el cuajado.
+- No borrar memoria al migrar de ag_skip a un perfil específico.
+- No inflar rendimiento ni bajar riesgo sólo porque el árbol está verde.
+
+================================================================================
+13. RESUMEN EJECUTIVO PARA CODEX / CLAUDE
+================================================================================
+
+Crear:
+`lib/core/plant_health/catalog/avocado_tree_syndromes.dart`
+
+Debe incluir como mínimo:
+1. avocado_phytophthora_root_rot_syndrome
+2. avocado_salinity_tip_burn_syndrome
+3. avocado_flower_set_failure_syndrome
+4. avocado_fruitlet_drop_stress_syndrome
+5. avocado_thrips_scarring_syndrome
+6. avocado_mite_defoliation_syndrome
+7. avocado_lace_bug_syndrome
+8. avocado_sap_sucker_sooty_mold_syndrome
+9. avocado_regulated_borers_syndrome
+10. avocado_anthracnose_fruit_syndrome
+11. avocado_stem_end_rot_syndrome
+12. avocado_scab_fruit_syndrome
+13. avocado_branch_canker_dieback_syndrome
+14. avocado_sunblotch_syndrome
+15. avocado_sunburn_heat_syndrome
+16. avocado_cold_frost_damage_syndrome
+17. avocado_phytotoxicity_syndrome
+18. avocado_alternate_bearing_memory_syndrome
+
+Registro esperado:
+- plant_health_registry.dart debe incluir avocado_tree_syndromes.
+- plant_health_stage_adapter.dart debe mapear StageIds de aguacate igual que árboles perennes.
+- No crear StageIds nuevos.
+- Si no se agregan IDs nuevos a PlantHealthIds, usar genéricos existentes.
+- Agregar tests en `test/core/avocado_tree/avocado_tree_plant_health_test.dart`.
+
+Prioridad agronómica del módulo:
+1. Raíz/drenaje/Phytophthora/salinidad.
+2. Floración/cuajado/polinización/caída.
+3. Plagas de calidad de fruto: trips/roña/antracnosis/stem-end rot.
+4. Plagas reglamentadas con cautela oficial.
+5. Memoria de alternancia y postcosecha.
+
+================================================================================
+14. FUENTES CONSULTADAS
+================================================================================
+
+Fuentes BIO-G internas:
+- Estandar_BIOG_Integracion_Arboles_Perennes_v1_5_con_addendum.pdf
+- 01_Ficha_Tecnica_Universal_BioG_Aguacate_AG_v1_Reforzada.txt
+- 02_Perfil_SKIP_BioG_Aguacate_AG_SKIP_v1_Reforzado.txt
+- 03_Rendimiento_Aproximado_BioG_Aguacate_AG_v1_Reforzado.txt
+- 01-05 Mango MG v1/v1.1 como patrón de formato y arquitectura.
+- lib.zip: plant_health_models.dart, plant_health_ids.dart, plant_health_stage_bucket.dart, plant_health_registry.dart, apple_tree_syndromes.dart, orange_tree_syndromes.dart, lemon_tree_syndromes.dart, walnut_tree_syndromes.dart, pistachio_tree_syndromes.dart.
+
+Fuentes externas de alta confianza:
+- UC IPM, Avocado Pest Management Guidelines.
+- UC IPM, Phytophthora Root Rot / Avocado.
+- UC IPM, Avocado Thrips.
+- UC IPM, Persea Mite / Avocado.
+- UC IPM, Avocado Lace Bug.
+- UC IPM, Branch Canker and Dieback of Avocado.
+- UC IPM, Sunburn / Avocado.
+- UC IPM, Sunblotch / Avocado.
+- UC IPM, Fruit and Stem-End Rots / Avocado.
+- UF/IFAS Extension, Avocado Growing in the Florida Home Landscape.
+- California Avocado Commission / From the Grove, Factors Influencing Avocado Fruit Set and Yield.
+- California Avocado Commission / UC, Salinity Management in Avocado Orchards.
+- USDA ARS / UC Riverside, Salt Tolerance and Growth of 13 Avocado Rootstocks.
+- SENASICA / Gobierno de México, Manual Operativo Plagas Reglamentadas del Aguacatero.
+- SENASICA / Gobierno de México, Plagas reglamentadas del aguacatero.
+- INIFAP / Revista Mexicana de Ciencias Agrícolas / SciELO, Phytophthora cinnamomi Rands en aguacate.
+- SciELO México, Colletotrichum siamense causante de antracnosis en poscosecha de aguacate.
+- World Avocado Congress / México, Distribución de la roña y del daño por trips en aguacate.
+
+Fuentes de lenguaje UX / baja-media confianza:
+- Reddit r/avocado y r/plantclinic: flor caída, frutitos que caen, hojas con puntas quemadas, árbol de semilla sin producir.
+- Facebook/grupos de productores: tristeza/Phytophthora, flores/frutos que caen, manchas de fruto.
+- Infojardín y foros domésticos: “se seca de ramas”, “hojas quemadas”, “no produce”.
+Uso: sólo vocabulario y preguntas reales, no umbrales ni diagnósticos.
+
+================================================================================
+15. CIERRE
+================================================================================
+
+Este Documento 04 deja a Aguacate listo para sanidad BIO-G v1:
+- catálogo propio;
+- raíz/salinidad como prioridad;
+- floración/cuajado como cuello de botella;
+- plagas reglamentadas con cautela oficial;
+- poscosecha y memoria vivas;
+- lenguaje de productor sin recetas peligrosas;
+- mapeo directo a PlantHealthSyndrome.
+
+El siguiente documento debe ser:
+05_Guia_Fertilizacion_NPK_Targets_BioG_Aguacate_AG_v1_Reforzada.txt
+
+En ese Documento 05 se deben cerrar:
+- NpkCaps de Aguacate.
+- StageTargets por etapa.
+- StageWeights.
+- prioridades N/P/K.
+- guardas por EC/salinidad, raíz/Phytophthora, pH alto, humedad baja/alta, floración/cuajado y postcosecha.
+- contexto avanzado de Ca, B, Zn, Fe, Cl, Na, Boro y análisis foliar.

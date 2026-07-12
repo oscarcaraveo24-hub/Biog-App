@@ -1,0 +1,1535 @@
+BIO-G
+
+04_RIESGOS_CULTIVO_SANIDAD_ESTRES_MEMORIA_BIOG_NARANJO_OR_v1_REFORZADO
+Cultivo: Naranjo / Naranja dulce / Sweet orange
+Nombre científico: Citrus sinensis (L.) Osbeck
+Familia: Rutaceae
+cropId propuesto: crop_orange_tree
+CropKey esperado: orange_tree
+Alias legacy sugerido: orange_tree
+Prefijo de perfiles: OR
+Perfil base: OR-SKIP + OR-01 Valencia + OR-02 Navel + OR-03 Temprano + OR-04 Criollo/Regional + OR-05 Tropical/Clima cálido
+Documento: 04 de 05 — Riesgos del cultivo / Sanidad / Estrés / Memoria perenne
+Versión: v1 reforzada
+Formato: TXT técnico para Flutter/Dart, Codex y Claude Code
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código
+
+IMPORTANTE
+---------
+Este documento NO es diagnóstico fitosanitario definitivo.
+No sustituye revisión de campo, laboratorio, análisis foliar/suelo/agua, asesoría agronómica local ni normatividad vigente.
+BIO-G v1 debe orientar, priorizar riesgo, pedir confirmación, registrar memoria y evitar recetas cerradas.
+BIO-G NO debe recomendar ingredientes activos, dosis de plaguicidas ni manejo cuarentenario fuera de autoridad local.
+
+Fuentes principales consultadas para reforzar este documento:
+- Estándar BIO-G para integración de árboles perennes v1.5 con addendum.
+- Documentos 01, 02 y 03 del Naranjo OR ya preparados para BIO-G.
+- Código actual de la app BIO-G: plant_health_models.dart, plant_health_stage_adapter.dart, walnut_tree_syndromes.dart y pistachio_tree_syndromes.dart como patrón de integración.
+- UC IPM Citrus Pest Management Guidelines.
+- UC IPM Asian Citrus Psyllid and Huanglongbing Disease.
+- UF/IFAS Florida Citrus Production Guide: Phytophthora foot/crown/root rot; Nutrition; Rootstock and scion selection.
+- University of Arizona Cooperative Extension: irrigating citrus and salinity problems.
+- SENASICA / Gobierno de México: plagas reglamentadas de los cítricos, HLB y psílido asiático.
+- SciELO / Revista Mexicana de Fitopatología: situación y manejo del HLB en México.
+- Revista Mexicana de Ciencias Agrícolas: principales enfermedades de cítricos en México.
+- Literatura técnica y foros/productores: usados SOLO para lenguaje UX y confusiones reales, no para umbrales duros.
+
+================================================================================
+0. DECISIÓN EJECUTIVA
+================================================================================
+
+El naranjo NO debe modelarse como manzano, nogal o pistache con otro nombre.
+Es un árbol frutal perenne SIEMPRE VERDE, con hoja activa gran parte del año, brotes o flushes vegetativos repetidos, floración/cuajado muy sensibles, fruto que puede tardar varios meses en llenar y madurar, alta sensibilidad a salinidad relativa, y riesgos sanitarios muy ligados a brotación tierna, raíz/cuello y vectores.
+
+En BIO-G, los riesgos del naranjo se concentran en diez frentes:
+
+1. HLB / psílido asiático / sanidad regulada:
+   Huanglongbing o dragón amarillo, psílido asiático de los cítricos (Diaphorina citri), moteado asimétrico, fruto chico/deforme/amargo, caída prematura, decaimiento crónico y memoria de región. BIO-G debe tratarlo como riesgo de alta cautela, no como diagnóstico por sensor.
+
+2. Raíz, cuello, drenaje y Phytophthora:
+   Gomosis, pudrición de cuello, pudrición de raíz, anoxia por exceso de agua, compactación, salinidad y nematodos. En cítricos, marchitez con suelo húmedo NO es falta de agua.
+
+3. Salinidad, pH alto y disponibilidad:
+   Naranjo es sensible a sales acumuladas. EC alta, cloruros/sodio/boro contextuales, drenaje pobre y riego superficial pueden causar quemadura marginal, caída, bajo vigor y mala absorción de NPK. pH alto/caliza bloquea Fe/Zn/Mn y confunde al motor.
+
+4. Brotación tierna y plagas de brote:
+   Psílido, minador de la hoja, pulgones, trips, ácaros, escamas, mosca blanca/mosca prieta y cochinillas se concentran en tejido nuevo. El motor debe preguntar por brotes tiernos, envés, mielecilla y negrilla.
+
+5. Floración y cuajado:
+   Déficit de agua, calor, viento, helada, baja humedad disponible, salinidad, N/K desbalanceado, plagas en flor y estrés previo pueden causar caída de flor/fruto. BIO-G no debe culpar fertilizante si el problema fue clima o agua.
+
+6. Crecimiento, llenado y calidad del fruto:
+   Agua estable, K, Ca/Mg como contexto, salinidad baja, hoja funcional y sanidad foliar sostienen calibre, jugo, firmeza, color, Brix/acidez y calidad externa.
+
+7. Enfermedades de hoja, rama y fruto:
+   Greasy spot / mancha grasienta, melanosis, antracnosis, Alternaria, Botrytis, Septoria, gomosis, pudrición café por Phytophthora, Penicillium, Lasiodiplodia/stem-end rot y bacteriosis/reguladas como cancro cítrico según región.
+
+8. Chupadores, mielecilla, fumagina y calidad externa:
+   Escamas, cochinillas, pulgones, mosca blanca/mosca prieta y psílido excretan mielecilla. La fumagina/negrilla es consecuencia; primero buscar el insecto, no diagnosticar hongo primario.
+
+9. Desórdenes abióticos de fruto:
+   Rajado/splitting, sunburn/golpe de sol, wind scar/raspadura por viento, granizo, frío/helada, oleocelosis/daño de aceite, fitotoxicidad y daño por manejo. Muchos se confunden con enfermedad.
+
+10. Memoria perenne:
+   En naranjo, la cosecha NO cierra el cultivo. Estrés en floración/cuajado, salinidad, HLB, Phytophthora, defoliación, caída de fruto o mala postcosecha afecta brotación, floración, cuajado, calibre y producción del siguiente ciclo.
+
+Regla v1:
+BIO-G debe decir:
+- “condición favorable a…”
+- “síntomas compatibles con…”
+- “revisa…”
+- “confirma con técnico / sanidad local si avanza…”
+
+BIO-G NO debe decir:
+- “diagnóstico definitivo”
+- “aplique X producto”
+- “esto es HLB seguro”
+- “esto es falta de N” cuando hay pH alto, sales, raíz dañada o síntomas vectoriales
+- “postcosecha terminó el cultivo”
+
+================================================================================
+1. METODOLOGÍA Y CRITERIO DE CONFIABILIDAD
+================================================================================
+
+1.1 Base técnica y producto
+---------------------------
+Este documento toma como molde editorial el Documento 04 de Nogal y los catálogos de sanidad ya integrados en la librería BIO-G, especialmente:
+
+- walnut_tree_syndromes.dart
+- pistachio_tree_syndromes.dart
+- plant_health_models.dart
+- plant_health_stage_adapter.dart
+- plant_health_ids.dart
+
+La intención NO es copiar riesgos de nogal/pistache, sino mantener el mismo contrato técnico:
+
+PlantHealthSyndrome:
+- id
+- cropId
+- labelEs
+- stages
+- organIds
+- primarySymptomId
+- strongSignals
+- weakSignals
+- conflictingSignals
+- probableDiagnoses
+- confirmationChecksEs
+- severity
+- urgency
+- baseActionsEs
+- disclaimerEs
+- varietyModifiers
+- favorsHighHumidity
+- favorsCoolDewyWindow
+- favorsVectorPressure
+- favorsRecentStress
+
+Reglas de motor:
+- El perfil OR modifica sensibilidad/copy por VarietyModifier.
+- El catálogo base de naranjo es único para todos los perfiles.
+- El estado perenne y la etapa visible filtran/ponderan.
+- No usar sowingDate como eje de árbol.
+- No crear diagnósticos que dependan de sensores inexistentes.
+- No simular Zn/Fe/Mn/Ca/B/Cl/Na desde NPK; sólo usarlos como contexto avanzado.
+
+1.2 Criterio de fuentes
+-----------------------
+Alta confianza:
+- Universidades, extensión agrícola, IPM oficial, SENASICA/fitosanidad, INIFAP, SciELO, revistas revisadas.
+
+Media-alta:
+- Manuales técnicos regionales, guías productivas y documentos de sanidad vegetal.
+
+Media:
+- Guías comerciales o viveros sólo si coinciden con fuentes universitarias.
+
+Baja-media:
+- Foros, grupos de productores, jardinería y lenguaje de campo. Uso permitido sólo para UX: cómo lo dice el usuario real.
+
+1.3 Lenguaje de campo detectado para UX
+---------------------------------------
+Usar este lenguaje para preguntas y alertas, no para diagnóstico duro:
+
+- “la hoja está pegajosa”
+- “le salió negrilla / fumagina”
+- “la hoja se puso amarilla por partes”
+- “tiene manchas como aceite / grasa”
+- “se está rajando la naranja”
+- “la naranja se cae chiquita”
+- “floreó mucho pero no amarró”
+- “el fruto salió chico, amargo o deformado”
+- “tiene goma en el tronco”
+- “se secan ramas de arriba”
+- “las hojas nuevas salen retorcidas”
+- “hay caminito/mina en la hoja”
+- “la fruta se quemó del sol”
+- “la hoja se quema de las orillas”
+- “el árbol se ve triste aunque sí lo regué”
+- “tengo agua salada / pozo salino”
+
+================================================================================
+2. RESUMEN EJECUTIVO PARA PRODUCTO
+================================================================================
+
+Recién plantado / establecimiento:
+- Pesa raíz, drenaje, salinidad, compactación, Phytophthora, gomosis, nematodos, estrés por trasplante y calidad de planta de vivero.
+- No proyectar problema por no producir.
+- No empujar fertilizante si raíz o EC están mal.
+
+Juvenil no productivo:
+- Pesa brotación sana, minador, psílido, pulgones, ácaros, escamas, N moderado, Fe/Zn/Mn como contexto y formación de copa.
+- El objetivo es estructura, raíz y hoja funcional.
+
+Reposo relativo / baja actividad:
+- Naranjo no entra en dormancia caducifolia real; puede tener baja actividad por frío/sequía/manejo.
+- Usar `dormancy` como “reposo relativo / baja actividad”, no “árbol pelón”.
+
+Brotación / flush:
+- Etapa clave para psílido asiático, minador, pulgones, trips, ácaros y micronutrientes.
+- Si hay HLB en región, brotación tierna sube presión vectorial.
+
+Crecimiento vegetativo:
+- Pesa vigor, hoja funcional, salinidad, pH alto, Fe/Zn/Mn, plagas chupadoras, fumagina y estrés hídrico.
+
+Floración:
+- Etapa crítica. Pesa agua, calor, frío, viento, nutrición previa, salinidad, polinización/autoamarre según variedad y estrés acumulado.
+- No culpar NPK si hubo helada/calor o déficit hídrico.
+
+Cuajado / amarre:
+- Pesa déficit hídrico, calor, salinidad, estrés de raíz, trips, ácaros y caída fisiológica.
+- La caída temprana puede ser natural, por estrés o por sanidad; no diagnosticar por una sola señal.
+
+Crecimiento / llenado de fruto:
+- Pesa agua estable, K, hoja funcional, control de salinidad, plagas de fruto/cáscara, ácaros, escamas y calidad externa.
+- Fruto rajado puede venir de estrés hídrico irregular, calor, variedad sensible o K/Ca contextual.
+
+Madurez / cosecha:
+- Pesa color, calibre, Brix/acidez como contexto, caída precosecha, pudriciones de fruto, mosca de la fruta, Penicillium, brown rot, Alternaria, sunburn y daños mecánicos.
+
+Postcosecha / recuperación:
+- No cerrar cultivo. Pesa hoja activa, raíces, reservas, salinidad, brotes nuevos, plagas remanentes, Phytophthora y memoria para siguiente floración.
+
+Errores que BIO-G debe evitar:
+1. Ver negrilla y diagnosticar hongo sin buscar pulgón/escama/psílido/mosca blanca.
+2. Ver amarillamiento y diagnosticar falta de N si el patrón es asimétrico tipo HLB o clorosis por pH alto.
+3. Ver marchitez con suelo húmedo y pedir más riego.
+4. Ver caída de fruto y culpar fertilizante si hubo calor, estrés hídrico, salinidad o HLB.
+5. Ver hoja nueva deformada y culpar herbicida sin revisar minador/psílido/trips.
+6. Usar `dormancy` como si el naranjo caducara.
+7. Tratar HLB/cancro/leprosis como diagnóstico cerrado o receta.
+8. Apagar postcosecha.
+9. Crear etapas nuevas como `color_break`, `june_drop` o `flower_induction`; usar sublabels, no StageIds.
+10. Convertir el documento 04 en recetario de plaguicidas.
+
+================================================================================
+3. FAMILIAS UX DEL MÓDULO RIESGOS NARANJO
+================================================================================
+
+Familia UX 1: HLB, psílido asiático y riesgos regulados
+Objetivo: detectar señales compatibles, pedir confirmación, bajar confianza de inferencias NPK y elevar cautela sanitaria.
+Entradas principales:
+- huanglongbing_hlb_context
+- asian_citrus_psyllid_vector
+- asymmetric_blotchy_mottle
+- small_lopsided_bitter_fruit
+- premature_fruit_drop_hlb_context
+- citrus_canker_regulated_context
+- citrus_leprosis_regional_context
+- tristeza_virus_context
+
+Familia UX 2: Raíz, cuello, drenaje y Phytophthora
+Objetivo: proteger raíz funcional y vida del árbol.
+Entradas principales:
+- phytophthora_gummosis_foot_rot
+- phytophthora_root_rot
+- root_crown_rot_anoxia_complex
+- citrus_nematode_root_stress
+- soil_compaction_root_stress
+- salinity_root_stress_context
+- poor_drainage_decline_context
+- nursery_or_rootstock_problem_context
+
+Familia UX 3: Brotación tierna y plagas de brote
+Objetivo: proteger flush nuevo, que es clave para vigor y también para vectores.
+Entradas principales:
+- citrus_leafminer
+- asian_citrus_psyllid_direct_damage
+- aphid_flush_complex
+- citrus_thrips
+- broad_mite_bud_mite_context
+- flush_deformation_complex
+
+Familia UX 4: Chupadores, mielecilla, fumagina y ácaros
+Objetivo: proteger hoja funcional, fotosíntesis y calidad externa.
+Entradas principales:
+- soft_scale_armored_scale_complex
+- mealybug_complex
+- whitefly_blackfly_complex
+- aphids_honeydew_complex
+- sooty_mold_honeydew_complex
+- citrus_rust_mite
+- citrus_red_mite_spider_mite_complex
+- ants_chupador_protection_context
+
+Familia UX 5: Floración, cuajado y caída temprana
+Objetivo: separar caída fisiológica de estrés y de plaga/enfermedad.
+Entradas principales:
+- flowering_heat_water_stress
+- frost_bloom_damage
+- fruit_set_drop_stress_complex
+- salinity_fruit_set_drop
+- low_leaf_area_carbohydrate_competition
+- navel_orange_fruit_drop_context
+- hail_wound_bloom_fruit_context
+
+Familia UX 6: Enfermedades foliares y de copa
+Objetivo: proteger hoja activa y evitar defoliación que afecte calibre y siguiente ciclo.
+Entradas principales:
+- greasy_spot_mycosphaerella
+- melanose_diaporthe
+- anthracnose_colletotrichum
+- alternaria_brown_spot_rot_context
+- citrus_scab_regional
+- septoria_leaf_fruit_spot
+- bacterial_blast_context
+- dieback_lasiodiplodia_context
+
+Familia UX 7: Enfermedades y daños de fruto/cáscara
+Objetivo: proteger calidad comercial y reducir pérdidas de cosecha/postcosecha.
+Entradas principales:
+- brown_rot_phytophthora_fruit
+- penicillium_blue_green_mold
+- alternaria_black_rot_navel
+- botrytis_flower_fruit_rot
+- anthracnose_fruit_tearstain
+- septoria_fruit_spot
+- stem_end_rot_lasiodiplodia
+- fruit_fly_maggot_context
+
+Familia UX 8: Desórdenes abióticos de fruto
+Objetivo: no confundir estrés físico/fisiológico con patógeno.
+Entradas principales:
+- fruit_splitting_cracking
+- sunburn_fruit_leaf
+- wind_scarring_rind
+- frost_fruit_damage
+- hail_fruit_leaf_damage
+- phytotoxicity_oil_copper_herbicide
+- oleocellosis_oil_spotting_context
+- puff_crease_rind_quality_context
+
+Familia UX 9: Nutrición y disponibilidad aparente
+Objetivo: distinguir falta real de nutriente vs raíz, pH, sales o HLB.
+Entradas principales:
+- nitrogen_deficiency_context
+- nitrogen_excess_vigor_flush_context
+- potassium_low_fruit_quality_context
+- iron_chlorosis_high_ph
+- zinc_manganese_context
+- magnesium_leaf_chlorosis_context
+- calcium_boron_rind_quality_context
+- salinity_chloride_boron_leaf_burn
+
+Familia UX 10: Postcosecha y memoria perenne
+Objetivo: guardar estreses que afectan siguiente floración, cuajado y calibre.
+Entradas principales:
+- post_harvest_leaf_loss_memory
+- post_harvest_root_salinity_memory
+- heavy_crop_reserve_depletion_context
+- hlb_chronic_decline_memory
+- phytophthora_chronic_root_loss_memory
+- recurrent_fruit_drop_memory
+
+================================================================================
+4. MAPEO FENOLÓGICO BIO-G PARA SANIDAD
+================================================================================
+
+StageIds cerrados BIO-G:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Traducción UX específica Naranjo:
+
+planting_transplant
+- Label UX: Plantación / trasplante
+- Riesgos: raíz, sales, Phytophthora, planta de vivero, estrés por trasplante.
+
+root_establishment
+- Label UX: Establecimiento de raíz
+- Riesgos: exceso de humedad, salinidad, compactación, Phytophthora, nematodos, baja absorción.
+
+juvenile_vegetative
+- Label UX: Naranjo joven / formación
+- Riesgos: minador, psílido, pulgones, escamas, ácaros, salinidad, clorosis, crecimiento débil.
+
+dormancy
+- Label UX: Reposo relativo / baja actividad
+- Regla: no significa árbol pelón ni dormancia caducifolia. Sirve para baja actividad por frío, sequía controlada o después de cosecha.
+
+budbreak
+- Label UX: Brotación / flush nuevo
+- Riesgos: psílido, minador, pulgones, trips, ácaros, Zn/Fe/Mn como contexto, HLB por vector.
+
+vegetative_growth
+- Label UX: Crecimiento vegetativo activo
+- Riesgos: chupadores, fumagina, minador, clorosis, salinidad, exceso de N, vigor blando.
+
+flowering
+- Label UX: Floración
+- Riesgos: calor/frío, déficit de agua, salinidad, trips, Botrytis/anthracnose en humedad, caída de flor.
+
+fruit_set
+- Label UX: Cuajado / amarre de naranja
+- Riesgos: caída fisiológica, estrés hídrico, calor, salinidad, baja hoja, HLB, trips/ácaros.
+
+fruit_fill
+- Label UX: Crecimiento y llenado de fruto
+- Riesgos: agua, K, salinidad, ácaros, escamas, negrilla, rajado, sunburn, wind scar, brown rot si humedad.
+
+harvest_maturity
+- Label UX: Madurez / color / cosecha
+- Riesgos: caída precosecha, pudriciones, mosca de fruta, Penicillium, brown rot, Alternaria, daño físico, calidad.
+
+post_harvest
+- Label UX: Postcosecha / recuperación / preparación de siguiente floración
+- Riesgos: hoja activa, raíz, salinidad, Phytophthora, plagas remanentes, reservas, siguiente brotación.
+
+Mapeo sugerido a PlantHealthStageBucket:
+
+planting_transplant, root_establishment => seedling
+juvenile_vegetative, budbreak => vegetativeEarly
+vegetative_growth => vegetativeMid
+flowering => reproductiveEarly
+fruit_set => reproductiveMid
+fruit_fill => grainFill o reproductiveMid según decisión de adapter; recomendación: grainFill para peso de fruto/calidad, pero incluir foliarStages que atraviesen reproductiveMid + grainFill.
+harvest_maturity => lateSeason o grainFill; recomendación: lateSeason si el catálogo incluye pudriciones/cosecha.
+dormancy, post_harvest => lateSeason
+unknown => null, no bloquear, baja confianza
+
+Regla crítica:
+Para Naranjo, `post_harvest` y `dormancy` deben tener cobertura sanitaria. No deben apagar el árbol.
+
+================================================================================
+5. CATÁLOGO MAESTRO DE RIESGOS BIÓTICOS
+================================================================================
+
+Formato:
+Riesgo | Dónde pesa más | Qué lo favorece | Clave visual | Etapa | Prioridad BIO-G | Memoria | Lectura BIO-G
+
+--------------------------------------------------------------------------------
+5.1 HLB, PSÍLIDO Y RIESGOS REGULADOS
+--------------------------------------------------------------------------------
+
+1) huanglongbing_hlb_context
+Nombre UX: HLB / dragón amarillo / citrus greening
+Nombre técnico: Candidatus Liberibacter spp. asociado a HLB
+Dónde pesa más: todas las etapas, especialmente brotación, crecimiento vegetativo, cuajado, llenado y cosecha.
+Qué lo favorece: presencia regional de HLB, presencia de psílido asiático, brotes tiernos continuos, material vegetal no certificado, huertos abandonados, manejo regional débil.
+Clave visual: moteado amarillo asimétrico en hojas, sectores amarillos, árbol decaído, brotación irregular, fruto chico/deforme/ladeado, color irregular, sabor amargo, caída prematura.
+Etapa: budbreak, vegetative_growth, fruit_set, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Crítica con cautela.
+Memoria: Muy alta; riesgo crónico, de región y de árbol completo.
+Lectura BIO-G: BIO-G nunca confirma HLB por sensor ni por una foto suelta. Si hay moteado asimétrico + fruto chico/deforme + caída + región con psílido, elevar urgencia de revisión y recomendar confirmar con sanidad/técnico/laboratorio. Bajar confianza de recomendaciones NPK porque HLB también da síntomas parecidos a deficiencias.
+
+2) asian_citrus_psyllid_vector
+Nombre UX: Psílido asiático de los cítricos / PAC
+Nombre técnico: Diaphorina citri
+Dónde pesa más: brotación/flush nuevo, brotes tiernos y huertos con HLB/región citrícola.
+Qué lo favorece: brotes nuevos, clima cálido, árboles sin monitoreo, huertos vecinos/traspatios, hormigas, material vegetal movido.
+Clave visual: insecto pequeño café con postura inclinada, ninfas amarillas/naranjas, túbulos cerosos blancos, mielecilla, brotes deformados, hojas nuevas retorcidas.
+Etapa: budbreak, vegetative_growth, flowering si hay flush, post_harvest si rebrotó.
+Prioridad BIO-G: Muy alta como vector.
+Memoria: Alta regional; marca presión de vector y riesgo HLB.
+Lectura BIO-G: si se ve psílido, no diagnosticar HLB automáticamente, pero sí subir vectorPressure y pedir revisión de brotes tiernos. En regiones productoras, sugerir seguimiento con campaña/asesoría local.
+
+3) citrus_canker_regulated_context
+Nombre UX: Cancro de los cítricos / lesiones corchosas con halo
+Nombre técnico: Xanthomonas citri subsp. citri
+Dónde pesa más: hojas, tallos y fruto en zonas donde esté presente o bajo vigilancia.
+Qué lo favorece: lluvia, viento, heridas, material contaminado, tormentas, tejidos jóvenes.
+Clave visual: lesiones elevadas/corchosas en hoja/fruto/tallo, margen acuoso y halo amarillo; lesiones ásperas que no se limpian.
+Etapa: budbreak, vegetative_growth, fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta-regulada donde aplique.
+Memoria: Alta de región/lote.
+Lectura BIO-G: no activar universalmente como diagnóstico. Si hay lesiones elevadas con halo y contexto regional, pedir confirmación fitosanitaria. No recomendar productos.
+
+4) tristeza_virus_context
+Nombre UX: Virus de la tristeza de los cítricos / decaimiento
+Nombre técnico: Citrus tristeza virus, CTV
+Dónde pesa más: huertos con portainjertos sensibles, pulgón café u otros áfidos vectores, árboles que declinan.
+Qué lo favorece: material propagativo infectado, vectores, portainjertos susceptibles, huertos viejos.
+Clave visual: decaimiento, bajo vigor, hojas pequeñas/cloróticas, muerte rápida en combinaciones sensibles, stem pitting en algunos casos.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Muy alta si se confirma.
+Lectura BIO-G: BIO-G sólo lo maneja como diferencial de decaimiento crónico. Requiere diagnóstico técnico; no confundir con sales, Phytophthora, HLB o nutrición.
+
+5) citrus_leprosis_regional_context
+Nombre UX: Leprosis de los cítricos / manchas localizadas en hoja/fruto/rama
+Nombre técnico: Citrus leprosis virus, asociado a ácaros Brevipalpus spp.
+Dónde pesa más: regiones con presencia/vigilancia; hojas, frutos y ramas.
+Qué lo favorece: ácaros vectores, material infectado, focos localizados.
+Clave visual: lesiones circulares cloróticas/necróticas en hojas y fruto, manchas localizadas, muerte de ramillas si severa.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta regional.
+Memoria: Alta en lote/foco.
+Lectura BIO-G: no activar si no hay contexto regional o síntomas claros. Si aparece, pedir revisión técnica y monitoreo de ácaros.
+
+--------------------------------------------------------------------------------
+5.2 RAÍZ, CUELLO, SUELO Y MADERA
+--------------------------------------------------------------------------------
+
+6) phytophthora_gummosis_foot_rot
+Nombre UX: Gomosis / pudrición de cuello por Phytophthora
+Nombre técnico: Phytophthora spp.
+Dónde pesa más: tronco bajo, cuello, injerto, suelos pesados, zonas con salpicadura y drenaje pobre.
+Qué lo favorece: humedad alta en cuello, riego pegado al tronco, suelo saturado, mal drenaje, heridas, portainjerto sensible, pH/caliza según contexto.
+Clave visual: goma/ámbar en tronco, corteza oscura o hundida, lesión en cuello, decaimiento de copa, hojas amarillas, baja respuesta al riego/fertilizante.
+Etapa: planting_transplant, root_establishment, vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Muy alta; reduce vida del árbol y producción futura.
+Lectura BIO-G: si hay goma en tronco bajo + humedad/salpicadura/suelo pesado, priorizar cuello/raíz. No recomendar más riego ni fertilizante como primera acción.
+
+7) phytophthora_root_rot
+Nombre UX: Pudrición de raíz por Phytophthora
+Nombre técnico: Phytophthora nicotianae, P. palmivora u otras spp.
+Dónde pesa más: raíces finas, árboles debilitados, suelos húmedos/pesados, interacción con HLB.
+Qué lo favorece: saturación, raíces nuevas infectables, drenaje pobre, HLB que reduce raíz fina, riego frecuente sin aireación.
+Clave visual: árbol triste con suelo húmedo, hojas pálidas, copa rala, caída, bajo vigor, raíz fina marrón/necrosada, respuesta pobre al NPK.
+Etapa: root_establishment, vegetative_growth, fruit_set, fruit_fill, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Muy alta; compromete absorción y reduce confianza de sensores NPK.
+Lectura BIO-G: si soilMoisture alta + resistance alta + bajo vigor, clasificar como riesgo raíz, no déficit hídrico. HLB puede agravar daño de raíz; bajar confianza.
+
+8) root_crown_rot_anoxia_complex
+Nombre UX: Raíz asfixiada / anoxia por exceso de agua
+Dónde pesa más: suelo pesado, zonas bajas, riego excesivo, árboles jóvenes.
+Qué lo favorece: soilMoisture alta, drenaje deficiente, compactación, riegos largos, lluvia acumulada.
+Clave visual: marchitez con suelo húmedo, olor a podrido, raíz oscura, amarillamiento, baja respuesta al fertilizante.
+Etapa: planting_transplant, root_establishment, vegetative_growth, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: “Que esté marchito no significa que le falte agua”. Revisar drenaje y raíz antes de regar.
+
+9) citrus_nematode_root_stress
+Nombre UX: Nematodos / raíz debilitada
+Nombre técnico: Tylenchulus semipenetrans y otros nematodos asociados a cítricos
+Dónde pesa más: huertos establecidos, replantaciones, suelos arenosos o con historial, árboles con bajo vigor crónico.
+Qué lo favorece: historial del sitio, raíces susceptibles, estrés hídrico, manejo irregular.
+Clave visual: árbol bajo, hoja pálida, fruta chica, raíz pobre; síntomas parecidos a sequía o deficiencia.
+Etapa: root_establishment, vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta de sitio.
+Lectura BIO-G: si el bajo vigor es crónico por zonas y no cuadra con agua/NPK, sugerir análisis de suelo/raíz.
+
+10) soil_compaction_root_stress
+Nombre UX: Compactación / raíz sin aire
+Dónde pesa más: calles de maquinaria, suelos arcillosos, riegos pesados, huertos viejos o nuevos mal preparados.
+Qué lo favorece: tránsito, suelo trabajado húmedo, baja materia orgánica, capas endurecidas.
+Clave visual: bajo vigor por líneas, charcos, raíz superficial, respuesta pobre a riego/fertilizante.
+Etapa: todas, especialmente establecimiento y postcosecha.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: resistance alta + humedad irregular + bajo vigor = suelo/raíz primero, NPK después.
+
+11) salinity_root_stress_context
+Nombre UX: Estrés salino en raíz
+Dónde pesa más: zonas áridas/semiáridas, riego con pozo salino, mal drenaje, calor.
+Qué lo favorece: EC alta, acumulación de sales por riegos superficiales, drenaje pobre, agua con sales, compactación, fertilización concentrada.
+Clave visual: borde de hoja quemado, defoliación, crecimiento pobre, fruta chica, caída, síntomas de sequía aunque se riegue.
+Etapa: root_establishment, vegetative_growth, flowering, fruit_set, fruit_fill, post_harvest.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta.
+Lectura BIO-G: si EC está alta, bloquear recomendaciones agresivas de NPK. Salinidad + humedad baja = estrés osmótico fuerte.
+
+12) wood_dieback_lasiodiplodia_context
+Nombre UX: Secamiento de ramas / muerte regresiva
+Nombre técnico: Lasiodiplodia theobromae y otros complejos de decaimiento
+Dónde pesa más: ramas debilitadas, estrés hídrico/salino, heridas, calor, poda, fruta en cosecha/postcosecha.
+Qué lo favorece: estrés, heridas, ramas debilitadas, alta temperatura, mala sanidad de copa.
+Clave visual: ramas que se secan desde punta, cancros, madera oscura, fruto con pudrición de extremo del pedúnculo en postcosecha.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta.
+Lectura BIO-G: separar de HLB/Phytophthora/salinidad. Si hay heridas o estrés reciente, subir `favorsRecentStress`.
+
+13) poor_nursery_rootstock_context
+Nombre UX: Problema de planta de vivero / portainjerto / injerto
+Dónde pesa más: plantación y primeros años.
+Qué lo favorece: planta no certificada, raíz enrollada, injerto débil, incompatibilidad, enfermedades de vivero, mala plantación.
+Clave visual: falla desde el inicio, árbol que no arranca, brotación irregular, cuello/injerto con problema, raíces deformes.
+Etapa: planting_transplant, root_establishment, juvenile_vegetative.
+Prioridad BIO-G: Alta en árbol nuevo.
+Memoria: Muy alta.
+Lectura BIO-G: si el árbol falla desde plantación y sensores no explican, preguntar origen de planta, injerto y raíces.
+
+--------------------------------------------------------------------------------
+5.3 BROTACIÓN TIERNA Y PLAGAS DE BROTE
+--------------------------------------------------------------------------------
+
+14) citrus_leafminer
+Nombre UX: Minador de la hoja de los cítricos
+Nombre técnico: Phyllocnistis citrella
+Dónde pesa más: brotes tiernos y hojas nuevas, árboles jóvenes o flush fuerte.
+Qué lo favorece: brotación continua, clima cálido, tejido nuevo, árboles jóvenes.
+Clave visual: galerías plateadas/serpenteadas en hojas nuevas, hojas enrolladas o deformadas, brote tierno dañado.
+Etapa: budbreak, vegetative_growth, juvenile_vegetative, post_harvest si hay flush.
+Prioridad BIO-G: Alta en jóvenes; media en adultos.
+Memoria: Media; puede afectar formación y entrada de patógenos.
+Lectura BIO-G: si hay “caminos” en hoja nueva, no diagnosticar hongo ni deficiencia. Preguntar por brotación tierna.
+
+15) aphid_flush_complex
+Nombre UX: Pulgones en brote tierno
+Dónde pesa más: brotes nuevos, primavera/flush, juveniles.
+Qué lo favorece: hoja tierna, exceso de N, baja presencia de enemigos naturales, hormigas.
+Clave visual: colonias en brotes, hojas enrolladas, mielecilla pegajosa, negrilla posterior.
+Etapa: budbreak, vegetative_growth, flowering si brotes tiernos.
+Prioridad BIO-G: Media-alta.
+Memoria: Media si deforma brotes o induce negrilla.
+Lectura BIO-G: hoja pegajosa + brote enrollado = revisar pulgón/chupador antes que hongo.
+
+16) citrus_thrips
+Nombre UX: Trips de los cítricos / cicatriz en fruto joven
+Nombre técnico: Scirtothrips citri y complejos regionales
+Dónde pesa más: floración, caída de pétalos, fruto recién cuajado.
+Qué lo favorece: brotes/flor/fruto tierno, clima seco/cálido, historial.
+Clave visual: cicatrices plateadas/corchosas en cáscara, anillos o raspaduras cerca del cáliz, fruta marcada desde chica.
+Etapa: flowering, fruit_set, early fruit_fill.
+Prioridad BIO-G: Alta para calidad externa.
+Memoria: Media.
+Lectura BIO-G: si la marca nace desde fruta chica, separar de wind scar, trips y daño físico.
+
+17) broad_mite_bud_mite_context
+Nombre UX: Ácaros de brote / deformación de brote y fruto
+Dónde pesa más: brotes tiernos, botones, fruta pequeña.
+Qué lo favorece: alta humedad relativa o microclima favorable, brote tierno, canopia densa.
+Clave visual: hojas nuevas deformadas, brotes atrofiados, fruta con daño superficial o deformaciones.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad BIO-G: Media regional.
+Memoria: Baja-media.
+Lectura BIO-G: si hay deformación sin minas claras y con brote tierno, revisar ácaros/trips/fitotoxicidad.
+
+--------------------------------------------------------------------------------
+5.4 CHUPADORES, MIELECILLA, FUMAGINA Y ÁCAROS
+--------------------------------------------------------------------------------
+
+18) soft_scale_armored_scale_complex
+Nombre UX: Escamas / conchuelas de cítricos
+Dónde pesa más: hojas, ramas y fruto; huertos densos o con plagas recurrentes.
+Qué lo favorece: canopia densa, hormigas, baja presencia de enemigos naturales, estrés, manejo no selectivo.
+Clave visual: costras pegadas en hojas/ramas/fruto, mielecilla en algunas especies, manchas, negrilla, fruta demeritada.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad y vigor.
+Memoria: Media-alta.
+Lectura BIO-G: si la costra no se mueve y está pegada, pensar escama. Si hay negrilla, buscar insecto productor de miel.
+
+19) mealybug_complex
+Nombre UX: Cochinilla algodonosa / piojo harinoso
+Dónde pesa más: frutos, cáliz, ramas, zonas protegidas de copa.
+Qué lo favorece: hormigas, canopia densa, fruta en racimos o contacto, clima cálido.
+Clave visual: masas blancas algodonosas, mielecilla, negrilla, fruta manchada.
+Etapa: fruit_set, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad.
+Memoria: Media.
+Lectura BIO-G: revisar debajo del cáliz, uniones de fruta y ramas. No confundir con hongo blanco si son colonias algodonosas.
+
+20) whitefly_blackfly_complex
+Nombre UX: Mosca blanca / mosca prieta de los cítricos
+Nombre técnico: Aleurocanthus woglumi y otros complejos regionales
+Dónde pesa más: envés de hojas, brotación y canopia densa.
+Qué lo favorece: humedad/canopia densa, baja ventilación, hormigas, baja regulación biológica.
+Clave visual: ninfas/escamas en envés, vuelos de mosquita al mover hoja, mielecilla, fumagina negra.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta; alta si hay negrilla fuerte.
+Memoria: Media.
+Lectura BIO-G: negrilla + envés con ninfas = chupador. No tratar fumagina como causa primaria.
+
+21) sooty_mold_honeydew_complex
+Nombre UX: Fumagina / negrilla sobre mielecilla
+Dónde pesa más: hojas y fruta donde hay chupadores.
+Qué lo favorece: pulgones, escamas, cochinillas, mosca blanca, psílido, canopia densa.
+Clave visual: capa negra superficial que puede rasparse, hoja/fruto pegajoso, fruta sucia o demeritada.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para calidad; media para vigor si cubre mucha hoja.
+Memoria: Media.
+Lectura BIO-G: la negrilla es consecuencia. Confirmar chupador antes de hablar de enfermedad.
+
+22) citrus_rust_mite
+Nombre UX: Ácaro de la roya / bronceado de fruto
+Dónde pesa más: fruto en desarrollo y hojas; clima cálido.
+Qué lo favorece: poblaciones de ácaros, fruta expuesta, falta de monitoreo.
+Clave visual: piel bronceada/oxidada, russeting, textura áspera o demeritada, fruta café/bronce según especie.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta para calidad externa.
+Memoria: Media.
+Lectura BIO-G: daño externo bronceado sin pudrición puede ser ácaro, no “fruta quemada” únicamente.
+
+23) citrus_red_mite_spider_mite_complex
+Nombre UX: Ácaros / araña roja / punteado
+Dónde pesa más: hojas y fruta en calor/sequía/polvo.
+Qué lo favorece: clima caliente y seco, polvo, estrés hídrico, baja humedad, desequilibrio de enemigos naturales.
+Clave visual: punteado, bronceado, telaraña fina en algunos ácaros, defoliación si severo.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta si defolia antes de floración o postcosecha.
+Lectura BIO-G: revisar envés/lupa; diferenciar de salinidad, golpe de sol y deficiencias.
+
+24) ants_chupador_protection_context
+Nombre UX: Hormigas protegiendo chupadores
+Dónde pesa más: brotes, ramas y frutos con pulgón/cochinilla/escama.
+Qué lo favorece: mielecilla, hormigueros, canopia baja, fruta cerca de suelo.
+Clave visual: hormigas subiendo al árbol, chupadores persistentes, negrilla.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Baja-media como modificador.
+Memoria: Baja.
+Lectura BIO-G: no es el problema principal del árbol, pero explica por qué se mantiene el chupador.
+
+--------------------------------------------------------------------------------
+5.5 FLORACIÓN, CUAJADO Y CAÍDA TEMPRANA
+--------------------------------------------------------------------------------
+
+25) flowering_heat_water_stress
+Nombre UX: Estrés de floración por calor/agua
+Dónde pesa más: floración y cuajado temprano.
+Qué lo favorece: calor >35 C, viento seco, baja humedad del suelo, raíz dañada, salinidad, baja HR.
+Clave visual: flor seca, caída de flores, poco amarre, hoja algo caída en horas de calor.
+Etapa: flowering, fruit_set.
+Prioridad BIO-G: Muy alta.
+Memoria: Alta para rendimiento del año.
+Lectura BIO-G: si coincide con calor y humedad baja, el mensaje debe hablar de agua/temperatura primero, no fertilizante.
+
+26) frost_bloom_damage
+Nombre UX: Daño por frío/helada en flor o fruto pequeño
+Dónde pesa más: brotes, flores y fruto recién cuajado.
+Qué lo favorece: heladas, noches frías, zonas bajas, brotación/floración expuesta.
+Clave visual: flor café/negra, fruto pequeño dañado o que cae, hojas tiernas quemadas.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad BIO-G: Alta donde aplique.
+Memoria: Alta.
+Lectura BIO-G: si hubo helada, no culpar NPK por bajo amarre. Registrar evento climático.
+
+27) fruit_set_drop_stress_complex
+Nombre UX: Caída de fruto recién amarrado
+Dónde pesa más: fruit_set y primeras semanas de fruit_fill.
+Qué lo favorece: competencia carbohidratos hoja/fruto, estrés de agua, calor, salinidad, HLB, baja hoja, exceso de carga, daño de plagas.
+Clave visual: frutos pequeños en suelo, cuajado bajo, árbol con floración previa fuerte pero poca retención.
+Etapa: fruit_set, early fruit_fill.
+Prioridad BIO-G: Muy alta para rendimiento.
+Memoria: Alta.
+Lectura BIO-G: caída leve puede ser natural. Si es fuerte, cruzar agua, calor, salinidad, HLB, hoja funcional y plagas.
+
+28) low_leaf_area_carbohydrate_competition
+Nombre UX: Poca hoja para sostener fruto / competencia hoja-fruto
+Dónde pesa más: cuajado y llenado.
+Qué lo favorece: defoliación previa, plagas, HLB, poda fuerte, exceso de fruto, estrés postcosecha.
+Clave visual: fruto que se cae o queda chico, copa rala, brotes débiles, baja hoja activa.
+Etapa: fruit_set, fruit_fill, post_harvest.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: “mucha flor no asegura cosecha”. Si no hay hoja funcional, fertilizar no resuelve todo.
+
+29) navel_orange_fruit_drop_context
+Nombre UX: Caída fuerte en Navel / ombligo
+Dónde pesa más: perfil OR-02 Navel.
+Qué lo favorece: fisiología de navel, competencia, estrés de agua/calor, carga, condiciones de post-floración.
+Clave visual: caída importante posterior a cuajado en Navel; fruta secundaria interna puede influir.
+Etapa: fruit_set, early fruit_fill.
+Prioridad BIO-G: Media-alta para OR-02.
+Memoria: Media.
+Lectura BIO-G: modifier para `or_02_navel`; no generalizar a todos los naranjos.
+
+30) hail_wound_bloom_fruit_context
+Nombre UX: Daño por granizo en flor/fruto/hoja
+Dónde pesa más: flor, fruta y brotes.
+Qué lo favorece: evento de granizo, viento fuerte, heridas abiertas y humedad posterior.
+Clave visual: golpes, cicatrices, hojas rotas, fruta marcada, caída.
+Etapa: flowering, fruit_set, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta si evento reciente.
+Memoria: Media-alta.
+Lectura BIO-G: guardar como evento extremo; sube riesgo de pudriciones y descarte de calidad.
+
+--------------------------------------------------------------------------------
+5.6 ENFERMEDADES FOLIARES Y DE COPA
+--------------------------------------------------------------------------------
+
+31) greasy_spot_mycosphaerella
+Nombre UX: Mancha grasienta / greasy spot
+Nombre técnico: Mycosphaerella citri / Zasmidium citri-griseum según taxonomía
+Dónde pesa más: hojas maduras, climas húmedos/cálidos, canopia densa.
+Qué lo favorece: humedad prolongada, hojarasca, mala ventilación, lluvia/rocío.
+Clave visual: manchas amarillas que luego se ven cafés/negras y con aspecto grasoso, más visibles en envés, defoliación si severo.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Alta en regiones húmedas.
+Memoria: Alta si defolia.
+Lectura BIO-G: si hay humedad alta + manchas grasosas + defoliación, activar foliar disease. No confundir con HLB ni deficiencia por patrón.
+
+32) melanose_diaporthe
+Nombre UX: Melanosis / manchado áspero de hoja y fruta
+Nombre técnico: Diaporthe citri / Phomopsis citri
+Dónde pesa más: hojas/frutos jóvenes, madera muerta como fuente, humedad.
+Qué lo favorece: lluvia, madera muerta, tejido joven, salpicadura.
+Clave visual: puntos ásperos/corchosos en fruta y hoja; patrón de “lágrima” o escurrimiento en fruta.
+Etapa: budbreak, fruit_set, fruit_fill.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: si manchas ásperas de cáscara no penetran y hubo lluvia, separar de trips, wind scar y cancro.
+
+33) anthracnose_colletotrichum
+Nombre UX: Antracnosis / manchado y secamiento
+Nombre técnico: Colletotrichum spp.
+Dónde pesa más: flor, fruto y ramas bajo humedad o estrés.
+Qué lo favorece: alta humedad, tejido debilitado, estrés, daños de insecto/mecánicos, postcosecha.
+Clave visual: manchas oscuras, tearstain en fruta, muerte de brotes, pudrición blanda en cosecha/postcosecha.
+Etapa: flowering, fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta si causa dieback o pudrición.
+Lectura BIO-G: diferenciar de Alternaria, Septoria, Phytophthora y daño físico.
+
+34) alternaria_brown_spot_rot_context
+Nombre UX: Alternaria / pudrición negra o mancha parda
+Nombre técnico: Alternaria spp.
+Dónde pesa más: Navel y fruta madura/almacenamiento; también hojas/fruto en algunas variedades.
+Qué lo favorece: heridas, estrés, fruto susceptible, humedad, almacenamiento.
+Clave visual: pudrición oscura que puede avanzar hacia el centro; en Navel puede verse como black rot.
+Etapa: fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta para calidad.
+Memoria: Media.
+Lectura BIO-G: si pudrición se ve en cosecha/postcosecha y no hay salpicadura de suelo, considerar Alternaria/Penicillium/Lasiodiplodia según patrón.
+
+35) citrus_scab_regional
+Nombre UX: Sarna / costra de cítricos
+Nombre técnico: Elsinoë fawcettii y otros según cítrico
+Dónde pesa más: hojas, brotes y fruto joven en regiones húmedas.
+Qué lo favorece: humedad, lluvia, tejido joven, variedades sensibles.
+Clave visual: lesiones corchosas, verrugosas o costrosas, deformación de fruto/hoja.
+Etapa: budbreak, fruit_set, fruit_fill.
+Prioridad BIO-G: Media regional.
+Memoria: Media.
+Lectura BIO-G: activar en regiones húmedas y tejido joven; diferenciar de cancro, trips y melanosis.
+
+36) septoria_leaf_fruit_spot
+Nombre UX: Septoria / mancha de hoja y fruta
+Dónde pesa más: fruto madurando y hojas bajo humedad/frío.
+Qué lo favorece: lluvia, humedad, fruta próxima a madurez, heridas.
+Clave visual: manchas pequeñas hundidas en cáscara, tearstaining, manchas en hoja.
+Etapa: fruit_fill, harvest_maturity, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Media.
+Lectura BIO-G: si aparece después de lluvia y al madurar, considerar Septoria/anthracnose.
+
+37) bacterial_blast_context
+Nombre UX: Bacteriosis / blast de cítricos
+Nombre técnico: Pseudomonas syringae u otros complejos
+Dónde pesa más: brotes, hojas, flores y fruta bajo frío/humedad/viento.
+Qué lo favorece: frío, lluvia, viento, heridas, tejido tierno.
+Clave visual: hojas/twigs muertos, manchas negras en fruta, muerte de brotes, daño asociado a clima frío-húmedo.
+Etapa: budbreak, flowering, fruit_set.
+Prioridad BIO-G: Media regional.
+Memoria: Media.
+Lectura BIO-G: usar como diferencial si hubo ventana fría-húmeda y daño de brote/flor.
+
+--------------------------------------------------------------------------------
+5.7 ENFERMEDADES Y DAÑOS DE FRUTO / CÁSCARA / COSECHA
+--------------------------------------------------------------------------------
+
+38) brown_rot_phytophthora_fruit
+Nombre UX: Pudrición café de fruto / brown rot
+Nombre técnico: Phytophthora spp.
+Dónde pesa más: fruta baja/cerca de suelo, temporada de lluvia, cosecha.
+Qué lo favorece: salpicadura de suelo, lluvia, humedad, fruta cerca del piso, drenaje pobre.
+Clave visual: pudrición café blanda principalmente en lado inferior del fruto, fruta cerca del suelo afectada.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta en humedad.
+Memoria: Media-alta.
+Lectura BIO-G: si fruit rot viene de abajo y hubo lluvia/salpicadura, conectar con Phytophthora y suelo, no sólo postcosecha.
+
+39) penicillium_blue_green_mold
+Nombre UX: Moho verde/azul de cosecha y postcosecha
+Nombre técnico: Penicillium digitatum / P. italicum
+Dónde pesa más: fruta herida, cosecha, almacenamiento.
+Qué lo favorece: heridas, manejo brusco, humedad, fruta madura.
+Clave visual: mancha acuosa que desarrolla micelio blanco y esporas verdes/azules.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Alta para postcosecha/calidad.
+Memoria: Baja-media.
+Lectura BIO-G: se asocia a heridas y manejo; no confundir con problemas de árbol completo.
+
+40) botrytis_flower_fruit_rot
+Nombre UX: Botrytis / moho gris en flor o fruto joven
+Nombre técnico: Botrytis cinerea
+Dónde pesa más: floración y fruto joven bajo condiciones frescas/húmedas.
+Qué lo favorece: clima fresco-húmedo, flores muertas, canopia densa.
+Clave visual: moho gris/pelusa, flores muertas, cicatrices o pudrición en fruto joven.
+Etapa: flowering, fruit_set, fruit_fill.
+Prioridad BIO-G: Media.
+Memoria: Baja-media.
+Lectura BIO-G: activar con alta humedad/cool dewy window; separar de daño por trips o viento.
+
+41) stem_end_rot_lasiodiplodia
+Nombre UX: Pudrición del extremo del pedúnculo / stem-end rot
+Nombre técnico: Lasiodiplodia theobromae y otros complejos
+Dónde pesa más: fruta madura/cosecha/postcosecha y árboles estresados.
+Qué lo favorece: calor, estrés, heridas, manejo postcosecha, ramas infectadas.
+Clave visual: pudrición que inicia en extremo del tallo/pedúnculo, oscurecimiento, fruta pierde calidad.
+Etapa: harvest_maturity, post_harvest.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: si inicia en pedúnculo, separar de Penicillium y brown rot.
+
+42) fruit_fly_maggot_context
+Nombre UX: Mosca de la fruta / larvas en fruto
+Nombre técnico: Anastrepha spp. u otros según región
+Dónde pesa más: fruta madura o cercana a cosecha.
+Qué lo favorece: fruta madura, fruta caída, presencia regional, falta de monitoreo/trampeo, huertos vecinos.
+Clave visual: picaduras, fruta caída, larvas internas, pudrición secundaria.
+Etapa: harvest_maturity.
+Prioridad BIO-G: Alta regional y normativa.
+Memoria: Media-alta de lote/región.
+Lectura BIO-G: no diagnosticar sin abrir fruta/muestra. Si hay larvas o picaduras y región con campaña, recomendar seguimiento con sanidad local.
+
+--------------------------------------------------------------------------------
+5.8 DESÓRDENES ABIÓTICOS DE FRUTO Y HOJA
+--------------------------------------------------------------------------------
+
+43) fruit_splitting_cracking
+Nombre UX: Rajado / partido de naranja
+Dónde pesa más: fruta en expansión y madurez.
+Qué lo favorece: estrés hídrico seguido de exceso de agua, riego irregular, calor, viento seco, variedades sensibles, K/Ca/B contextual, cáscara débil.
+Clave visual: grietas desde extremo estilar o lateral, fruto abierto, entrada de hongos/insectos.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta para calidad.
+Memoria: Media-alta si recurrente.
+Lectura BIO-G: no es siempre hongo. Revisar patrón de riego, calor, K y carga. Guardar como estrés hídrico/calidad.
+
+44) sunburn_fruit_leaf
+Nombre UX: Golpe de sol / fruta quemada
+Dónde pesa más: fruta expuesta y hojas en lado sur/oeste o zonas de alta radiación.
+Qué lo favorece: calor extremo, radiación, poda fuerte, copa abierta, déficit hídrico, baja cobertura foliar.
+Clave visual: parches amarillos/café coriáceos, lado expuesto, hojas con manchas cloróticas/necróticas.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta; alta en calor extremo.
+Memoria: Media.
+Lectura BIO-G: si daño está del lado expuesto, no confundir con pudrición o plaga.
+
+45) wind_scarring_rind
+Nombre UX: Cicatriz por viento / raspadura de cáscara
+Dónde pesa más: fruta joven a llenado.
+Qué lo favorece: viento, ramas/espinas rozando, canopia abierta, fruta expuesta.
+Clave visual: cicatrices superficiales alargadas o corchosas donde fruta rozó con rama/espina.
+Etapa: fruit_set, fruit_fill.
+Prioridad BIO-G: Media para calidad externa.
+Memoria: Baja-media.
+Lectura BIO-G: daño físico. Separar de trips, melanosis y cancro.
+
+46) frost_fruit_damage
+Nombre UX: Daño por frío/helada en fruta
+Dónde pesa más: fruta madura o en desarrollo durante heladas.
+Qué lo favorece: temperaturas bajo cero o cercanas, exposición, zonas bajas.
+Clave visual: pulpa seca/deshidratada, manchas café externas, caída, sabor/calidad afectada.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta donde hay heladas.
+Memoria: Media-alta.
+Lectura BIO-G: registrar evento climático y calidad; no culpar salinidad/NPK primero.
+
+47) phytotoxicity_oil_copper_herbicide
+Nombre UX: Fitotoxicidad / quemadura por aplicación o deriva
+Dónde pesa más: hojas y fruto después de aplicaciones.
+Qué lo favorece: aceites, cobre, herbicidas, aplicación con calor, mezcla incompatible, deriva, gota concentrada.
+Clave visual: patrón de salpicadura o lado expuesto, manchas después de aplicación, hojas quemadas uniformes o fruta marcada.
+Etapa: vegetative_growth, fruit_fill, harvest_maturity.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: preguntar aplicaciones recientes. No confundir con enfermedad si el patrón coincide con aspersión/deriva.
+
+48) leaf_edge_burn_salinity_boron_chloride
+Nombre UX: Borde de hoja quemado por sales / cloruros / boro
+Dónde pesa más: hojas maduras, zonas con agua salina, calor.
+Qué lo favorece: EC alta, cloruros, sodio, boro, poca lixiviación, sequía, drenaje pobre.
+Clave visual: quemadura marginal/tip burn, defoliación, baja vigor, síntomas que parecen K/calor.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Muy alta en zonas con salinidad.
+Memoria: Alta.
+Lectura BIO-G: si EC alta o agua salina, no decir “falta K” de inmediato. Priorizar sales/agua/drenaje.
+
+--------------------------------------------------------------------------------
+5.9 NUTRICIÓN Y DISPONIBILIDAD APARENTE
+--------------------------------------------------------------------------------
+
+49) iron_chlorosis_high_ph
+Nombre UX: Clorosis férrica por pH alto/caliza
+Dónde pesa más: hojas nuevas, suelos alcalinos/calizos, exceso de humedad o mala raíz.
+Qué lo favorece: pH alto, bicarbonatos, caliza, compactación, encharcamiento, raíz dañada.
+Clave visual: hojas nuevas amarillas con nervaduras verdes, brotes pálidos.
+Etapa: budbreak, vegetative_growth.
+Prioridad BIO-G: Alta en pH alto.
+Memoria: Media-alta.
+Lectura BIO-G: no diagnosticar falta de N si la clorosis es internerval en hoja nueva y pH alto. Fe/Zn/Mn son contexto, no sensor.
+
+50) nitrogen_deficiency_context
+Nombre UX: N bajo / hoja pálida / bajo vigor
+Dónde pesa más: brotación, crecimiento vegetativo y recuperación postcosecha.
+Qué lo favorece: baja disponibilidad, raíz dañada, lixiviación, bajo manejo, HLB/Phytophthora que limita absorción.
+Clave visual: hojas viejas pálidas/generalizadas, bajo crecimiento, copa rala.
+Etapa: budbreak, vegetative_growth, post_harvest.
+Prioridad BIO-G: Media-alta si agua/raíz/EC están bien.
+Memoria: Media.
+Lectura BIO-G: antes de recomendar N, revisar humedad, raíz, EC, pH y HLB. N bajo con raíz enferma no se resuelve sólo con fertilizante.
+
+51) nitrogen_excess_vigor_flush_context
+Nombre UX: Exceso de N / mucho follaje y brote tierno
+Dónde pesa más: crecimiento vegetativo, baja carga, brotación fuera de balance.
+Qué lo favorece: fertilización alta, riego alto, baja carga, poda fuerte.
+Clave visual: brotes largos/tiernos, copa densa, sombra, más plagas chupadoras/minador/psílido.
+Etapa: vegetative_growth, fruit_set, fruit_fill.
+Prioridad BIO-G: Media-alta.
+Memoria: Media.
+Lectura BIO-G: N alto no siempre es bueno. Puede disparar brote tierno y presión de psílido/minador.
+
+52) potassium_low_fruit_quality_context
+Nombre UX: K bajo / riesgo de calibre, jugo y cáscara
+Dónde pesa más: llenado y madurez.
+Qué lo favorece: alta carga, estrés hídrico, baja disponibilidad, salinidad, raíz limitada.
+Clave visual: fruta chica, llenado pobre, mayor sensibilidad a estrés, posible rajado con otros factores.
+Etapa: fruit_fill, harvest_maturity.
+Prioridad BIO-G: Alta si agua/EC/pH están correctos.
+Memoria: Media.
+Lectura BIO-G: K bajo en llenado pesa; pero si humedad baja o EC alta, primero corregir agua/sales.
+
+53) magnesium_leaf_chlorosis_context
+Nombre UX: Mg bajo / amarillamiento en hojas maduras
+Dónde pesa más: hojas maduras, árboles con alta carga o suelos con antagonismos.
+Qué lo favorece: baja disponibilidad, antagonismo con K/Ca, suelos arenosos, carga alta.
+Clave visual: clorosis en hojas viejas con patrón característico, defoliación si severa.
+Etapa: vegetative_growth, fruit_fill, post_harvest.
+Prioridad BIO-G: Media.
+Memoria: Media.
+Lectura BIO-G: contexto avanzado. No simular Mg desde NPK.
+
+54) calcium_boron_rind_quality_context
+Nombre UX: Ca/B y calidad de cáscara / cuajado
+Dónde pesa más: floración, cuajado, crecimiento de fruto y rajado.
+Qué lo favorece: desbalance, estrés hídrico, pH/salinidad, baja transpiración, exceso/deficiencia de B.
+Clave visual: caída, cáscara débil, rajado, fruta sensible; síntomas no específicos.
+Etapa: flowering, fruit_set, fruit_fill.
+Prioridad BIO-G: Media como contexto.
+Memoria: Media.
+Lectura BIO-G: no recomendar B/Ca sin análisis; B también puede ser tóxico.
+
+--------------------------------------------------------------------------------
+5.10 POSTCOSECHA Y MEMORIA
+--------------------------------------------------------------------------------
+
+55) post_harvest_leaf_loss_memory
+Nombre UX: Defoliación postcosecha / poca hoja para siguiente floración
+Dónde pesa más: después de cosecha y antes de siguiente brotación.
+Qué lo favorece: ácaros, chupadores, HLB, salinidad, Phytophthora, sequía, helada, manchas foliares.
+Clave visual: caída de hoja, copa rala, brotes débiles, menor floración siguiente.
+Etapa: post_harvest, dormancy, budbreak siguiente.
+Prioridad BIO-G: Alta.
+Memoria: Muy alta.
+Lectura BIO-G: guardar evento; impacta siguiente ciclo. No apagar alertas después de cosecha.
+
+56) post_harvest_root_salinity_memory
+Nombre UX: Raíz/sales arrastradas después de cosecha
+Dónde pesa más: postcosecha, reposo relativo y arranque siguiente.
+Qué lo favorece: EC alta, riego irregular, sequía, exceso de fertilizante, drenaje pobre.
+Clave visual: bajo vigor siguiente, brotación débil, clorosis, caída temprana.
+Etapa: post_harvest, dormancy, budbreak.
+Prioridad BIO-G: Alta.
+Memoria: Alta.
+Lectura BIO-G: si EC quedó alta al cierre, advertir que el siguiente flush/floración puede salir débil.
+
+57) heavy_crop_reserve_depletion_context
+Nombre UX: Carga alta / reservas bajas para el siguiente ciclo
+Dónde pesa más: producción alta, postcosecha y siguiente floración.
+Qué lo favorece: carga alta, cosecha larga, defoliación, baja nutrición, estrés hídrico.
+Clave visual: árbol cansado, brotación débil, menor floración o cuajado posterior.
+Etapa: harvest_maturity, post_harvest, flowering siguiente.
+Prioridad BIO-G: Media-alta.
+Memoria: Alta.
+Lectura BIO-G: en perfiles Valencia y tropical con cosecha extendida, cuidar postcosecha y hoja activa.
+
+================================================================================
+6. MODIFICADORES POR PERFIL OR
+================================================================================
+
+OR-SKIP — Naranjo general
+- Sensibilidad media-conservadora.
+- No asume destino mesa/jugo, ciclo, clima ni variedad.
+- Si hay riesgo HLB/psílido, no bajar importancia por desconocer variedad.
+
+OR-01 Valencia / tardía / jugo
+- Mayor ventana de fruto en árbol y cosecha extendida.
+- Subir riesgo de: caída precosecha, HLB en fruta/copa, Phytophthora si riego prolongado, postcosecha/reservas, salinidad por ciclo largo.
+- Modificador sugerido: +8 para `premature_fruit_drop_hlb_context`, +5 para `post_harvest_root_salinity_memory`, +5 para `brown_rot_phytophthora_fruit` en humedad.
+
+OR-02 Navel / mesa
+- Calidad externa y caída fisiológica importan más.
+- Subir riesgo de: fruit drop navel, rajado, Alternaria black rot, sunburn, wind scar, trips/cicatriz.
+- Modificador sugerido: +10 para `navel_orange_fruit_drop_context`, +8 para `alternaria_brown_spot_rot_context`, +8 para `fruit_splitting_cracking`.
+
+OR-03 Temprano
+- Fruta y floración temprana; riesgo de calor/estrés temprano y cuajado irregular.
+- Subir riesgo de: caída temprana, estrés hídrico, trips/ácaros si fruta joven coincide con calor.
+- Modificador sugerido: +6 para `fruit_set_drop_stress_complex`, +5 para `flowering_heat_water_stress`.
+
+OR-04 Criollo / regional
+- Genética y manejo variables; confianza más baja.
+- Subir riesgo de: HLB/psílido si hay huertos/traspatios mixtos, plagas mixtas, salinidad/raíz si manejo irregular.
+- Modificador sugerido: +5 para `asian_citrus_psyllid_vector`, +5 para `salinity_root_stress_context`; `requiresCaution=true`.
+
+OR-05 Tropical / clima cálido
+- Brotes frecuentes y posible presión de psílido/minador/chupadores todo el año.
+- Subir riesgo de: HLB/vector, minador, ácaros, caída por calor, fruit splitting por lluvias/estrés hídrico alternante.
+- Modificador sugerido: +8 para `asian_citrus_psyllid_vector`, +8 para `citrus_leafminer`, +6 para `flowering_heat_water_stress`.
+
+================================================================================
+7. REGLAS DE MOTOR PARA BIO-G
+================================================================================
+
+7.1 Priorización por señales
+----------------------------
+Si hay:
+- moteado asimétrico + fruta chica/deforme + caída => HLB context sube, pero no diagnóstico.
+- túbulos cerosos/ninfas/insecto inclinado en brote => psílido sube.
+- goma en cuello + humedad/salpicadura => Phytophthora gummosis sube.
+- marchitez + suelo húmedo => anoxia/raíz sube; no recomendar más riego.
+- EC alta + borde quemado => salinidad sube; no diagnosticar K primero.
+- negrilla + hoja pegajosa => chupador sube; fumagina como consecuencia.
+- minas plateadas en hoja nueva => minador sube.
+- cicatrices superficiales en fruto joven => trips/wind scar/melanosis según patrón y etapa.
+- fruta rajada => fruit splitting/estrés hídrico y K/Ca contextual; no hongo primario.
+- pudrición café en fruta baja tras lluvia => brown rot/Phytophthora sube.
+- moho verde/azul postcosecha => Penicillium y heridas/manejo.
+
+7.2 Bloqueos de interpretación
+------------------------------
+- HLB sospechado bloquea conclusiones simples de NPK.
+- EC alta bloquea fertilización agresiva.
+- Resistance alta + humedad alta bloquea recomendación de más agua.
+- pH alto + clorosis en hoja nueva bloquea diagnóstico directo de N.
+- Postcosecha con hoja activa mantiene sanidad y memoria activas.
+
+7.3 Severidad sugerida
+----------------------
+Crítica:
+- HLB compatible fuerte.
+- Phytophthora severa en cuello/raíz con decaimiento.
+- Cancro/leprosis/regulada compatible en zona donde aplique.
+- Salinidad severa con defoliación/bajo vigor.
+
+Alta:
+- Psílido presente.
+- Caída fuerte de fruto en cuajado.
+- Brown rot cerca de cosecha con humedad.
+- Defoliación fuerte por ácaros/chupadores/manchas.
+- Fruit splitting extendido.
+
+Media:
+- Minador moderado en adulto.
+- Negrilla superficial sin defoliación.
+- Wind scar/sunburn parcial.
+- Mancha foliar localizada.
+
+Baja:
+- Daño cosmético leve sin avance.
+- Plaga baja sin estrés ni etapa crítica.
+
+7.4 Urgencia sugerida
+---------------------
+immediate:
+- sospecha fuerte de HLB/regulada + región citrícola.
+- árbol colapsando por Phytophthora/anoxia severa.
+
+sameDay:
+- psílido activo en brotes tiernos.
+- gomosis en cuello con avance.
+- caída masiva de fruto o fruta con larvas/pudrición fuerte.
+
+review24h:
+- síntomas avanzando en floración/cuajado.
+- EC alta + estrés visible.
+- daño por granizo/helada reciente.
+
+review48h:
+- plagas de hoja/fruto moderadas.
+- mancha foliar con humedad.
+
+monitor72h:
+- daño leve o duda visual.
+
+7.5 Memoria por evento
+----------------------
+Guardar:
+- stressType
+- severity
+- stageId
+- durationDays si se conoce
+- organ
+- profileId OR
+- environmentalContext
+- sensorSnapshot: soilMoisture, soilTemp, pH, EC, resistance, N/P/K relativo
+- visualSignals
+- confidence
+- futureImpact
+
+Eventos de memoria fuerte:
+- suspected_hlb_or_psyllid_pressure
+- phytophthora_root_loss
+- salinity_high_period
+- flowering_heat_water_stress
+- fruit_set_drop_high
+- defoliation_during_fruit_fill
+- post_harvest_leaf_loss
+- fruit_splitting_recurrent
+- harvest_rot_or_fruit_fly_context
+
+================================================================================
+8. IDS Y CAMPOS SUGERIDOS PARA CÓDIGO
+================================================================================
+
+8.1 Archivo esperado
+--------------------
+lib/core/plant_health/catalog/orange_tree_syndromes.dart
+
+8.2 Import esperado
+-------------------
+import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/orange_tree/orange_tree_catalog.dart';
+import 'package:bio_g/core/plant_health/plant_health_ids.dart';
+import 'package:bio_g/core/plant_health/plant_health_models.dart';
+import 'package:bio_g/core/plant_health/plant_health_stage_bucket.dart';
+
+8.3 Lista esperada
+------------------
+final List<PlantHealthSyndrome> orangeTreeSyndromes = <PlantHealthSyndrome>[ ... ];
+
+8.4 Nuevos síntomas sugeridos en PlantHealthIds
+-----------------------------------------------
+Agregar sólo si no existe equivalente genérico adecuado:
+
+// Naranjo / cítricos
+symptomCitrusBlotchyMottle = 'citrus_blotchy_mottle'
+symptomCitrusPsyllidNymphs = 'citrus_psyllid_nymphs'
+symptomCitrusLeafMines = 'citrus_leaf_mines'
+symptomCitrusGummosisTrunk = 'citrus_gummosis_trunk'
+symptomCitrusSootyHoneydew = 'citrus_sooty_honeydew'
+symptomCitrusSmallLopsidedFruit = 'citrus_small_lopsided_fruit'
+symptomCitrusPrematureFruitDrop = 'citrus_premature_fruit_drop'
+symptomCitrusSplitFruit = 'citrus_split_fruit'
+symptomCitrusRindScarring = 'citrus_rind_scarring'
+symptomCitrusSunburnPatch = 'citrus_sunburn_patch'
+symptomCitrusRaisedCorkyHaloLesions = 'citrus_raised_corky_halo_lesions'
+
+8.5 Nuevas señales sugeridas
+----------------------------
+
+signalAsymmetricMottle = 'asymmetric_mottle'
+signalPsyllidWaxyTubules = 'psyllid_waxy_tubules'
+signalFlushNewGrowth = 'flush_new_growth'
+signalFruitBitterMisshapen = 'fruit_bitter_misshapen'
+signalGumAtTrunkBase = 'gum_at_trunk_base'
+signalRindScarsNearCalyx = 'rind_scars_near_calyx'
+signalFruitSplitAfterIrrigation = 'fruit_split_after_irrigation'
+signalFruitLowCanopyRainSplash = 'fruit_low_canopy_rain_splash'
+signalWhiteGreenBlueMold = 'white_green_blue_mold'
+signalRecentSprayOilCopper = 'recent_spray_oil_copper'
+signalWaterSalinityKnown = 'water_salinity_known'
+signalFruitLarvae = 'fruit_larvae'
+
+8.6 Usar IDs existentes cuando sea suficiente
+---------------------------------------------
+- organLeaf
+- organStem
+- organRoot
+- organCrown
+- organFruit
+- organFlower
+- organWholePlant
+- symptomLeafMines
+- symptomBronzingStippling
+- symptomRootRotWilt
+- symptomLeafEdgeBurn
+- symptomFruitDeformation
+- symptomColdInjury
+- symptomHoneydewSootyShoots
+- symptomInternervalChlorosisNewLeaves
+- signalStickyHoneydew
+- signalSootyMold
+- signalWhitePowderGrowth
+- signalWaterlogging
+- signalHighPhCalcareous
+- signalFrostEvent
+- signalHailEvent
+- signalFrassPresent
+- signalThripsPresent
+- signalMitesWebbing
+- signalBronzedLeafSurface
+- signalRecentStress
+
+8.7 PlantHealthStageAdapter
+---------------------------
+Agregar caso:
+
+case CropCatalog.orangeTreeCropId:
+  return _fromOrangeTree(stage);
+
+Mapeo sugerido:
+
+static PlantHealthStageBucket? _fromOrangeTree(String stage) {
+  if (_matches(stage, const <String>['planting_transplant', 'root_establish'])) {
+    return PlantHealthStageBucket.seedling;
+  }
+  if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
+    return PlantHealthStageBucket.vegetativeEarly;
+  }
+  if (_matches(stage, const <String>['vegetative_growth'])) {
+    return PlantHealthStageBucket.vegetativeMid;
+  }
+  if (_matches(stage, const <String>['flowering'])) {
+    return PlantHealthStageBucket.reproductiveEarly;
+  }
+  if (_matches(stage, const <String>['fruit_set'])) {
+    return PlantHealthStageBucket.reproductiveMid;
+  }
+  if (_matches(stage, const <String>['fruit_fill'])) {
+    return PlantHealthStageBucket.grainFill;
+  }
+  if (_matches(stage, const <String>['post_harvest', 'harvest_maturity', 'dormancy'])) {
+    return PlantHealthStageBucket.lateSeason;
+  }
+  return null;
+}
+
+Comentario obligatorio:
+- `dormancy` en naranjo significa reposo relativo / baja actividad, NO caducifolio pelón.
+- `post_harvest` debe seguir activo.
+
+================================================================================
+9. MENSAJES UX RECOMENDADOS
+================================================================================
+
+Perfil general:
+“Este es un perfil general de naranjo. Luego puedes elegir Valencia, Navel, temprano, criollo o tropical sin perder historial.”
+
+No sabe etapa:
+“No pasa nada. Dime qué ves: brotes nuevos, flor, fruto recién amarrado, naranja creciendo, naranja cambiando de color, cosecha o después de cosecha.”
+
+HLB compatible:
+“Esto se parece a un problema de alto cuidado en cítricos. No lo cierres como diagnóstico: revisa si el moteado es disparejo, si hay psílido y si la fruta sale chica, ladeada o amarga. Confirma con técnico o sanidad local.”
+
+Psílido:
+“Revisa los brotes tiernos. El psílido se mete donde hay hoja nueva; si ves ninfas o tubitos blancos, sube el riesgo de vector.”
+
+Negrilla:
+“La negrilla casi siempre viene por mielecilla. Busca pulgón, escama, cochinilla, mosca blanca o psílido antes de pensar en hongo principal.”
+
+Gomosis:
+“Si hay goma en la base del tronco, no es sólo falta de fertilizante. Revisa cuello, humedad, salpicadura, drenaje y raíz.”
+
+Marchitez con suelo húmedo:
+“Marchito con suelo mojado no significa que le falte agua. Puede ser raíz asfixiada, pudrición o sales.”
+
+Salinidad:
+“Si la EC está alta, la lectura de NPK se vuelve engañosa. El naranjo puede tener nutrientes presentes, pero no aprovecharlos bien por sales.”
+
+Floración/cuajado:
+“En floración y cuajado el naranjo no perdona estrés. Agua, calor, viento, raíz y sales pueden tirar flor o fruto aunque el árbol se vea verde.”
+
+Fruto rajado:
+“Cuando la naranja se raja, muchas veces viene de riego irregular, calor o cáscara débil. No lo trates como hongo sin revisar el patrón.”
+
+Postcosecha:
+“No cierres el cultivo todavía. El naranjo sigue con hoja y raíz activa: lo que pase después de cosecha pesa en la siguiente floración.”
+
+================================================================================
+10. CASOS MÍNIMOS DE PRUEBA
+================================================================================
+
+1) orange_hlb_not_n_deficiency_test
+Caso:
+pH alto, hoja con moteado asimétrico, fruta chica/deforme, caída.
+Esperado:
+BIO-G eleva HLB context, pide confirmación; NO diagnostica falta de N.
+
+2) orange_psyllid_flush_test
+Caso:
+stage budbreak, brotes tiernos, ninfas/tubitos blancos, mielecilla.
+Esperado:
+vectorPressure=true; probableDiagnosis psílido; mensaje de revisar brotes y sanidad local.
+
+3) orange_gummosis_waterlogging_test
+Caso:
+stage vegetative_growth, soilMoisture alta, goma en tronco bajo, copa rala.
+Esperado:
+Phytophthora/gomosis alta; no recomendar más riego.
+
+4) orange_high_ec_leaf_burn_test
+Caso:
+EC alta, borde de hoja quemado, K bajo relativo.
+Esperado:
+priorizar salinidad/agua/drenaje; no decir sólo “falta potasio”.
+
+5) orange_sooty_mold_honeydew_test
+Caso:
+hoja pegajosa + negrilla + escamas/cochinilla.
+Esperado:
+familia chupadores/fumagina; fumagina consecuencia, buscar insecto.
+
+6) orange_leafminer_not_fungus_test
+Caso:
+budbreak, hojas nuevas con minas serpenteadas.
+Esperado:
+minador; no hongo/deficiencia.
+
+7) orange_flowering_heat_water_drop_test
+Caso:
+flowering/fruit_set, soilMoisture baja, temperatura alta, caída de flor/fruto.
+Esperado:
+mensaje de estrés hídrico/calor; memoria de cuajado.
+
+8) orange_split_fruit_irrigation_test
+Caso:
+fruit_fill/harvest_maturity, fruta rajada después de periodo seco + riego/lluvia.
+Esperado:
+fruit splitting abiótico; revisar riego/K/Ca contextual; no hongo primario.
+
+9) orange_brown_rot_low_fruit_test
+Caso:
+fruto bajo con pudrición café tras lluvia/salpicadura.
+Esperado:
+brown rot/Phytophthora fruta; conectar con suelo/lluvia.
+
+10) orange_post_harvest_active_test
+Caso:
+post_harvest, hoja activa, ácaros/defoliación.
+Esperado:
+no apagar cultivo; guardar memoria para siguiente ciclo.
+
+11) orange_navel_drop_modifier_test
+Caso:
+profileId=or_02_navel, fruit_set, caída fuerte de fruto.
+Esperado:
+subir navel fruit drop context sin generalizar a Valencia.
+
+12) orange_unknown_stage_safe_test
+Caso:
+stage unknown, síntomas hoja pegajosa/negrilla.
+Esperado:
+no bloquear; diagnóstico chupador/fumagina con menor confianza.
+
+================================================================================
+11. NO HACER EN CÓDIGO
+================================================================================
+
+- No crear StageIds nuevos para `flower_induction`, `color_break`, `june_drop`, `fruit_drop`, `regreening`, `brix_acidity` o `flush`; usar sublabels/tags internos.
+- No usar `sowingDate` como eje de sanidad del naranjo.
+- No tratar `dormancy` como caída de hoja o árbol muerto.
+- No apagar sanidad en postcosecha.
+- No diagnosticar HLB por sensor NPK, pH o una foto aislada.
+- No recomendar ingredientes activos ni dosis de plaguicidas.
+- No usar foros como fuente de umbrales o decisiones duras.
+- No convertir salinidad en “falta de agua” automáticamente.
+- No interpretar negrilla como hongo primario sin buscar chupadores.
+- No diagnosticar falta de N si hay pH alto + clorosis internerval de hoja nueva.
+- No confundir fruit_fill con harvest_maturity: en fruit_fill se habla de crecimiento/llenado/calibre; en harvest_maturity de color, cosecha, pudriciones y calidad final.
+- No prometer que el árbol se recupera de HLB/Phytophthora; BIO-G sólo orienta y pide confirmación.
+
+================================================================================
+12. REFERENCIAS CONSULTADAS Y NIVEL DE CONFIANZA
+================================================================================
+
+Alta confianza / uso principal:
+
+1. UC IPM — Citrus Pest Management Guidelines.
+Uso: lista de plagas/enfermedades, etapas IPM, categorías de insectos, ácaros, enfermedades, nematodos y manejo integrado.
+URL: https://ipm.ucanr.edu/agriculture/citrus/
+
+2. UC IPM — Asian Citrus Psyllid and Huanglongbing Disease.
+Uso: HLB, psílido, síntomas compatibles, vector, importancia de brotes tiernos, no cura conocida.
+URL: https://ipm.ucanr.edu/home-and-landscape/asian-citrus-psyllid-and-huanglongbing-disease/
+
+3. UF/IFAS — Florida Citrus Production Guide: Phytophthora Foot Rot, Crown Rot, and Root Rot.
+Uso: Phytophthora, raíz/cuello, interacción con HLB, importancia de drenaje, raíz y monitoreo.
+URL: https://ask.ifas.ufl.edu/publication/CG009
+
+4. UF/IFAS — Florida Citrus Production Guide: Nutrition Management for Citrus Trees.
+Uso: hoja/raíz/nutrición, HLB reduce eficiencia por daño de raíz, no interpretar NPK aislado.
+URL: https://ask.ifas.ufl.edu/publication/CG091
+
+5. UF/IFAS — Rootstock and Scion Selection.
+Uso: portainjerto, tolerancia relativa a Phytophthora y contexto HLB.
+URL: https://ask.ifas.ufl.edu/publication/HS1308
+
+6. University of Arizona Cooperative Extension — Irrigating Citrus Trees.
+Uso: riego, problemas de salinidad, sales acumuladas, drenaje y quemadura por sales.
+URL: https://extension.arizona.edu/publication/irrigating-citrus-trees
+
+7. UC IPM — Citrus: Identifying Diseases and Disorders of Fruit.
+Uso: brown rot por Phytophthora, Alternaria, Penicillium, anthracnose, Botrytis, Septoria, sooty mold, sunburn, wind scarring, split fruit y fitotoxicidad.
+URL: https://ipm.ucanr.edu/PMG/C107/m107bpfruitdis.html
+
+8. SENASICA / Gobierno de México — Plagas reglamentadas de los cítricos.
+Uso: HLB, psílido asiático, plagas reguladas y cautela normativa.
+URL: https://www.gob.mx/senasica/documentos/plagas-reglamentadas-de-los-citricos-110863
+
+9. Mora-Aguilera et al., Revista Mexicana de Fitopatología / SciELO — Situación Actual y Perspectivas del Manejo del HLB de los Cítricos.
+Uso: HLB en México, vector Diaphorina citri, estrategias de manejo regional, riesgo epidemiológico.
+URL: https://www.scielo.org.mx/scielo.php?pid=S0185-33092014000200108&script=sci_arttext
+
+10. Sáenz Pérez et al., Revista Mexicana de Ciencias Agrícolas / SciELO — Main diseases in citrus.
+Uso: enfermedades principales en cítricos de México: Phytophthora spp., Mycosphaerella citri, Lasiodiplodia theobromae, Candidatus Liberibacter spp. y virus de tristeza de los cítricos.
+URL: https://www.scielo.org.mx/scielo.php?pid=S2007-09342019000701653&script=sci_arttext&tlng=en
+
+Media / apoyo fisiológico y UX:
+
+11. UF/IFAS — Citrus Problems in the Home Landscape.
+Uso: fruit drop, canker symptoms y problemas comunes; apoyo de lenguaje visual.
+URL: https://ask.ifas.ufl.edu/publication/HS141
+
+12. UC IPM — Splitting of Citrus Fruit.
+Uso: rajado de fruta por estrés hídrico/temperatura/K como desorden abiótico.
+URL: https://ipm.ucanr.edu/PMG/GARDEN/FRUIT/ENVIRON/fruitsplit.html
+
+13. Literatura y foros/productores.
+Uso: únicamente frases UX y confusiones reales. No se usaron para umbrales, diagnóstico ni reglas duras.
+
+================================================================================
+13. CIERRE TÉCNICO
+================================================================================
+
+Este Documento 04 deja al Naranjo listo para alimentar:
+
+- orange_tree_syndromes.dart
+- plant_health_registry.dart
+- plant_health_stage_adapter.dart
+- plant_health_ids.dart
+- orange_tree_crop_definition.dart
+- orange_tree_universal_profile.dart
+- dashboard / Plant Health UX / NPK messages
+- memoria multianual perenne
+
+La decisión central es:
+
+NARANJO = cítrico siempreverde con raíz/salinidad/vector como ejes críticos.
+
+BIO-G debe proteger:
+1. brotación tierna;
+2. floración y cuajado;
+3. raíz y cuello;
+4. salinidad y disponibilidad;
+5. hoja funcional;
+6. calidad externa e interna del fruto;
+7. memoria del siguiente ciclo.
+

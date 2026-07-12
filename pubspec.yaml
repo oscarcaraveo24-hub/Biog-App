@@ -77,7 +77,6 @@ flutter:
     - assets/icons/plant_health/
     - assets/seeds/bean/
     - assets/seeds/Oat/
-    - assets/seeds/Maize/
     - assets/seeds/barley/
     - assets/seeds/wheat/
     - assets/seeds/tomato/
@@ -93,6 +92,11 @@ flutter:
     - assets/seeds/peach/
     - assets/seeds/pear/
     - assets/seeds/walnut/
+    - assets/seeds/pistachio/
+    - assets/seeds/orange/
+    - assets/seeds/lemon/
+    - assets/seeds/mango/
+    - assets/seeds/avocado/
 
   fonts:
     - family: Inter

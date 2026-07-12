@@ -1,0 +1,1570 @@
+BIO-G
+
+03_RENDIMIENTO_APROXIMADO_BIOG_NARANJO_OR_V1_REFORZADO
+Cultivo: Naranjo / Naranja dulce
+Nombre cientifico: Citrus sinensis (L.) Osbeck
+CropId recomendado: crop_orange_tree
+Alias legacy sugerido: orange_tree
+Prefijo de perfiles: OR
+Perfil general: or_skip
+Version: v1 reforzada
+Uso: documento fuente para `orange_tree_yield_reference.dart` y alta minima en `TreeYieldReferenceCatalog`.
+Formato: TXT tecnico para Flutter/Dart, Codex y Claude Code.
+Estado: listo para revision agronomica, auditoria tecnica y traduccion a codigo.
+
+================================================================================
+0. DECISIONES EJECUTIVAS Y CORRECCIONES
+================================================================================
+
+0.1. Enfoque correcto
+Este documento modela rendimiento de NARANJO DULCE, no citricos en general.
+Para BIO-G v1, "Naranjo" significa Citrus sinensis: Valencia, Navel, tempranas,
+criollas/regionales y grupos de clima calido.
+
+No modela limon, mandarina, toronja, lima ni naranja agria como cultivo principal.
+Esos pueden compartir arquitectura citrica futura, pero no deben contaminar el
+rendimiento base de naranjo.
+
+0.2. Unidad principal
+La salida principal de rendimiento es:
+
+- kg de naranja fresca por arbol
+- toneladas de naranja fresca por hectarea
+- kg totales de naranja fresca si el usuario captura numero de arboles
+
+La salida NO debe ser numero exacto de frutos, cajas, bultos, bins, precio, jugo,
+solidos solubles ni rentabilidad. Esos pueden aparecer como contexto o modo
+avanzado, pero no como salida principal de BIO-G v1.
+
+0.3. No prometer cosecha
+La proyeccion BIO-G es aproximada. Entrega rango bajo / esperado / alto y
+confianza. El rendimiento real puede moverse fuerte por:
+
+- edad/estado productivo;
+- variedad/perfil;
+- portainjerto;
+- densidad y poda;
+- riego y salinidad;
+- calor/helada/viento;
+- floracion, cuajado y caida fisiologica;
+- HLB/cancro/gomosis/Phytophthora donde aplique;
+- nutricion N/K/Ca/Mg y micronutrientes;
+- sanidad de raiz y hoja;
+- mercado fresco vs jugo;
+- cosecha tardia o fruto retenido demasiado tiempo.
+
+0.4. Diferencia contra nogal, pistache, manzano, pera y durazno
+El naranjo es un arbol perenne siempreverde. No tiene dormancia caducifolia real
+como nogal/manzano/durazno/pera. Puede tener reposo relativo o baja actividad,
+pero conserva hoja y puede sostener fruta, brotes y floracion con traslapes.
+
+Por eso el rendimiento no se estima desde `sowingDate` ni desde una sola fecha de
+floracion. Se estima desde:
+
+kg/arbol base del perfil x estado productivo x densidad x manejo x riego x cuajado/carga x memoria de estres.
+
+0.5. Regla BIO-G no negociable
+No usar `sowingDate` como eje de rendimiento.
+El eje correcto para arboles sigue siendo:
+
+estado perenne + etapa visible + ancla + memoria + perfil + manejo.
+
+La cosecha no cierra el cultivo. Postcosecha o recuperacion sigue activa porque
+alimenta la siguiente brotacion/floracion y la capacidad de sostener carga futura.
+
+0.6. Relacion con el motor actual revisado en lib.zip
+La libreria actual ya tiene dos capas de rendimiento para arboles:
+
+A) Capa minima global:
+`core/yield/tree_yield_reference_catalog.dart`
+- Usa `TreeYieldReference`.
+- Estima kg totales = kg/arbol x numero de arboles.
+- Trabaja por `TreeProductiveTier`.
+- No persiste densidad ni modifica Supabase.
+- Sirve para pantalla simple.
+
+B) Capa completa por arbol:
+`core/crops/apple_tree/apple_tree_yield_reference.dart`
+`core/crops/pear_tree/pear_tree_yield_reference.dart`
+`core/crops/peach_tree/peach_tree_yield_reference.dart`
+`core/crops/walnut_tree/walnut_tree_yield_reference.dart`
+`core/crops/pistachio_tree/pistachio_tree_yield_reference.dart`
+
+Cada archivo completo usa el patron:
+- `YieldRange(low, expected, high)`
+- `fullKgPerTree`
+- `expectedTonPerHa`
+- `ProductionState`
+- `ManagementLevel`
+- `IrrigationLevel`
+- `StressMemory`
+- `DensitySystem`
+- conversiones `treesPerHaFromSpacing`, `tonHaFromKgTree`, `kgTreeFromTonHa`
+- resolver tipo `resolve[Tree]Yield(...)`
+
+Para Naranjo se recomienda replicar esa arquitectura con:
+`core/crops/orange_tree/orange_tree_yield_reference.dart`
+
+0.7. Decision de calibracion BIO-G
+BIO-G v1 debe ser conservador. En Mexico, la naranja nacional puede rondar 12-15
+t/ha en estadisticas amplias, con regiones de riego y mejor tecnologia entre 15-30
+t/ha y productores sobresalientes arriba de 40 t/ha. Por eso:
+
+- SKIP no debe mostrar 35-40 t/ha por defecto.
+- Perfil especifico + densidad conocida + riego estable + manejo alto si puede
+  permitir rango alto.
+- >40 t/ha debe tratarse como potencial alto/tecnico, no como promesa normal.
+- <8 t/ha en arbol productivo no se etiqueta como fracaso; se orienta a revisar
+  agua, cuajado, sanidad, salinidad, edad, carga y memoria.
+
+================================================================================
+1. OBJETIVO DEL DOCUMENTO
+================================================================================
+
+Este documento define la referencia de rendimiento aproximado para Naranjo en
+BIO-G. Debe permitir que Codex/Claude implementen una proyeccion conservadora,
+cableable y coherente con el motor actual de arboles perennes.
+
+Debe responder:
+
+- Cuanto puede producir un naranjo por arbol segun estado productivo.
+- Cuanto puede producir una hectarea segun densidad y manejo.
+- Como afecta el perfil OR: Valencia, Navel, temprano, criollo/regional y tropical.
+- Como castigar rendimiento por bajo manejo, temporal seco, riego irregular,
+  salinidad, calor, helada, mala floracion/cuajado, caida de fruto, HLB/gomosis,
+  Phytophthora y memoria de estres.
+- Como mapear un porcentaje de cuidado del usuario a factor de rendimiento.
+- Como mantener una salida honesta: kg/arbol, t/ha, kg total y confianza.
+
+No debe responder:
+
+- Precio de la naranja.
+- Rentabilidad financiera completa.
+- Receta exacta de fertilizacion.
+- Numero exacto de frutos por arbol.
+- Prediccion comercial garantizada.
+- Contrato de compra, empaque, grados Brix, ratio o clasificacion de exportacion.
+
+================================================================================
+2. BASE AGRONOMICA DE REFERENCIA
+================================================================================
+
+2.1. Referencias fuertes usadas
+
+A) Mexico / SIAP / SADER / SENASICA / FIRA
+
+- Estadisticas SIAP citadas por SENASICA para 2021 reportan naranja con 331,438 ha
+  cosechadas, 4,595,129 t producidas y rendimiento obtenido de 13.86 t/ha.
+- Documento SADER 2024 de escenario mensual de naranja reporta un cambio de
+  13.16 t/ha en 2023 a 12.49 t/ha en 2024 en su escenario.
+- Analisis de Agro Productividad con datos SIACON/SIAP muestra 11.87 t/ha en 2004
+  y 14.50 t/ha en 2018, con aumento de rendimiento en el periodo.
+- FIRA Tamaulipas documenta promedio de 15-18 t/ha y productores con rendimientos
+  mayores a 40 t/ha en sistemas con riego.
+- Documento de costos/rentabilidad de citricos en Mexico resume que con mejor
+  tecnologia los rendimientos van de 12 a 30 t/ha, con productores sobresalientes
+  mayores a 40 t/ha; en regiones con menor tecnologia/temporal, 7 a 20 t/ha.
+
+B) California / UC Davis / UC ANR / CDFA
+
+- UC Davis/UC ANR en un estudio de costos de Navel/Cara Cara describe plantacion
+  double density 10 x 20 ft = 218 arboles/acre, equivalente aproximado a 539
+  arboles/ha. A esa densidad se puede iniciar cosecha en ano 3 o 4.
+- El mismo estudio indica que en ano 8 o 9 se alcanza madurez plena y se empieza a
+  podar/intervenir cada otro arbol para convertir el huerto hacia 20 x 20 ft,
+  equivalente aproximado a 269 arboles/ha, con objetivo de maximizar rendimiento
+  en huerto maduro.
+- Documentos de California indican que los rendimientos de naranja han aumentado
+  historicamente y que Navel y Valencia pueden diferir por ano, aunque el promedio
+  es similar y Valencia tiende a ser ligeramente mas productiva.
+
+C) Investigacion y extension internacional
+
+- Estudios recientes en Valencia muestran que el deficit de riego severo/reduccion
+  fuerte de volumen puede bajar tamano de fruto y rendimiento de jugo. Para BIO-G,
+  esto refuerza que el agua afecta kg y calidad, no solo color del sensor.
+- Informacion tecnica sobre naranjo maduro suele ubicar arboles sanos con cientos
+  de frutos por temporada; sin embargo, BIO-G no usa numero de frutos como salida
+  porque depende de calibre, variedad, densidad y manejo.
+
+D) Foros, productores y lenguaje de campo
+
+Los foros y lenguaje de productor se usaron solo para UX, nunca para fijar umbrales
+duros. Frases utiles para BIO-G:
+
+- "se le cayo la naranja chiquita"
+- "floreo bonito pero no amarro"
+- "dio pura hoja y poca naranja"
+- "la naranja salio chica"
+- "la naranja salio seca / con poco jugo"
+- "se amarillea por partes"
+- "esta enfermo de raiz"
+- "se quemo con sales"
+- "no agarro calibre"
+- "se quedo verde"
+- "tiene gomosis"
+- "trae HLB / greening"
+
+Regla: usar estas frases para mensajes, no para diagnosticar ni calcular por si solas.
+
+2.2. Decision BIO-G de rango base t/ha
+
+Para BIO-G v1, el rendimiento de naranjo debe calibrarse asi:
+
+- Huerto no productivo / recien plantado: 0 t/ha
+- Entrada a produccion: 2 a 8 t/ha segun densidad y manejo
+- Huerto joven productivo: 6 a 18 t/ha
+- SKIP comercial conservador: 8 a 22 t/ha
+- Comercial promedio Mexico: 12 a 16 t/ha
+- Buen manejo con riego: 18 a 30 t/ha
+- Muy buen manejo / alta densidad / fertirriego: 30 a 40 t/ha
+- Sobresaliente: >40 t/ha, solo con perfil, densidad y manejo validados
+
+2.3. Decision BIO-G de rango base kg/arbol
+
+La salida por arbol depende de densidad. Un arbol amplio puede dar mas kg/arbol,
+pero si hay muchos arboles por ha, cada arbol individual carga menos. Para evitar
+sobreestimacion, se usan caps por densidad.
+
+Rangos utiles para arbol adulto antes de factores:
+
+- SKIP: 25-45-75 kg/arbol
+- Valencia: 35-60-95 kg/arbol
+- Navel: 30-55-85 kg/arbol
+- Temprano: 25-50-80 kg/arbol
+- Criollo/regional: 15-35-65 kg/arbol
+- Tropical/clima calido: 25-55-90 kg/arbol
+
+Estos rangos son para fruta fresca total, no fruta empacada ni jugo.
+
+2.4. Regla de no sobreestimar
+
+Si BIO-G no conoce densidad, estado productivo ni perfil, usar OR-SKIP conservador.
+No mostrar 35-40 t/ha como expectativa por defecto.
+
+================================================================================
+3. ENTRADAS MINIMAS PARA BIO-G
+================================================================================
+
+3.1. Entradas recomendadas para pantalla simple
+
+- Cultivo: Naranjo
+- Perfil: or_skip u OR-01 a OR-05
+- Estado perenne: newly_planted, juvenile_non_productive, established,
+  productive_season, unknown
+- Etapa fenologica: planting_transplant, root_establishment, juvenile_vegetative,
+  dormancy, budbreak, vegetative_growth, flowering, fruit_set, fruit_fill,
+  harvest_maturity, post_harvest, unknown
+- Numero de arboles, si el usuario lo sabe
+
+3.2. Entradas recomendadas para calculo completo
+
+- Hectareas
+- Arboles por hectarea o marco de plantacion
+- Numero total de arboles
+- Perfil OR
+- Estado productivo
+- Nivel de manejo
+- Nivel de riego
+- Calidad de floracion/cuajado si existe
+- Carga visible de fruto
+- Memoria de estres
+
+3.3. Entradas opcionales futuras
+
+- Uso principal: jugo, fresco/mesa, local, mixto
+- Calibre comercial
+- % fruta comercializable
+- Brix/acidez/ratio
+- % jugo
+- Fruta caida antes de cosecha
+- HLB/canopy density score
+- Portainjerto
+- % arboles faltantes
+- edad exacta
+- salinidad del agua
+- analisis foliar/suelo/agua
+
+Estas entradas futuras no deben bloquear v1.
+
+================================================================================
+4. ESTADOS PRODUCTIVOS PARA RENDIMIENTO
+================================================================================
+
+El estado productivo es propio del rendimiento. No debe inventar nuevos TreeStateIds
+globales. Puede existir como enum local en `orange_tree_yield_reference.dart`.
+
+Tabla recomendada:
+
+| Estado rendimiento | Descripcion BIO-G | Salida |
+|---|---|---|
+| nonProductive | Recien plantado, establecimiento o juvenil sin cosecha comercial | 0 kg/arbol |
+| firstBearing | Primeras cosechas ligeras | 5-35% del potencial adulto |
+| youngBearing | Produccion joven, arbol aun creciendo | 30-85% del potencial adulto |
+| fullBearing | Produccion plena o adulta | 75-120% del potencial adulto |
+| lowSetOrDropYear | Baja carga por floracion/cuajado/caida/HLB/estres | 15-75% del potencial adulto |
+| oldDeclining | Arbol viejo o huerto en declive | 30-85% del potencial adulto |
+| unknown | El usuario no sabe; estimar conservador | 25-85% del potencial adulto |
+
+4.1. Multiplicadores sugeridos para codigo
+
+```dart
+enum OrangeProductionState {
+  nonProductive,
+  firstBearing,
+  youngBearing,
+  fullBearing,
+  lowSetOrDropYear,
+  oldDeclining,
+  unknown,
+}
+
+({double low, double expected, double high}) _productionStateFactors(
+  OrangeProductionState state,
+) {
+  return switch (state) {
+    OrangeProductionState.nonProductive => (low: 0, expected: 0, high: 0),
+    OrangeProductionState.firstBearing => (low: 0.05, expected: 0.18, high: 0.35),
+    OrangeProductionState.youngBearing => (low: 0.30, expected: 0.60, high: 0.85),
+    OrangeProductionState.fullBearing => (low: 0.75, expected: 1.00, high: 1.20),
+    OrangeProductionState.lowSetOrDropYear => (
+      low: 0.15,
+      expected: 0.45,
+      high: 0.75,
+    ),
+    OrangeProductionState.oldDeclining => (low: 0.30, expected: 0.60, high: 0.85),
+    OrangeProductionState.unknown => (low: 0.25, expected: 0.55, high: 0.85),
+  };
+}
+```
+
+4.2. Inferencia desde estado perenne
+
+- newly_planted => nonProductive
+- juvenile_non_productive => nonProductive
+- established => unknown o firstBearing si el usuario reporta fruta
+- productive_season => fullBearing por defecto si hay fruit_fill/harvest/post_harvest
+- unknown => unknown
+
+4.3. Etapas que bloquean rendimiento
+
+Si la etapa es:
+
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+
+Entonces BIO-G proyecta 0 kg/arbol, con mensaje:
+
+"Todavia no proyectamos cosecha. En naranjo joven importa mas formar raiz, copa,
+hoja sana y estructura antes que forzar produccion."
+
+4.4. Diferencia por edad orientativa
+
+No usar edad como motor principal, pero puede orientar:
+
+- Ano 0-2: normalmente sin cosecha comercial.
+- Ano 3-4: posible primera cosecha si huerto intensivo/buen manejo.
+- Ano 5-7: produccion joven creciente.
+- Ano 8-9+: produccion plena en sistemas bien manejados.
+- Huertos viejos: pueden seguir produciendo, pero requieren poda, sanidad, riego y
+  renovacion. No asumir alto rendimiento solo por edad.
+
+================================================================================
+5. DENSIDAD Y MARCO DE PLANTACION
+================================================================================
+
+5.1. Formula
+
+`arbolesPorHa = 10000 / (distanciaEntreHileras_m * distanciaEntreArboles_m)`
+
+`tonHa = (kgPorArbol * arbolesPorHa) / 1000`
+
+`kgPorArbol = (tonHa * 1000) / arbolesPorHa`
+
+5.2. Densidades orientativas
+
+| Marco | Arboles/ha aprox. | Lectura BIO-G |
+|---|---:|---|
+| 10 x 10 m | 100 | Muy amplio / huerto viejo / baja densidad |
+| 8 x 8 m | 156 | Tradicional amplio |
+| 7 x 7 m | 204 | Tradicional |
+| 6 x 6 m | 278 | Tradicional-comercial |
+| 6 x 5 m | 333 | Comercial intermedio |
+| 5 x 5 m | 400 | Comercial intensivo moderado |
+| 6 x 4 m | 417 | Comercial intensivo |
+| 5 x 4 m | 500 | Alta densidad manejada |
+| 4.5 x 4.5 m | 494 | Alta densidad manejada |
+| 4 x 4 m | 625 | Muy alta densidad; requiere poda/portainjerto/sistema |
+| 10 x 20 ft | 539 | Doble densidad tipo UC; cosecha temprana, requiere conversion/poda |
+| 20 x 20 ft | 269 | Marco maduro despues de conversion en UC |
+
+5.3. Regla de copa y sombreo
+
+Un naranjo en marco amplio puede producir mas kg por arbol. Pero si se plantan
+muchos arboles por hectarea, cada arbol debe cargar menos por competencia de luz,
+agua, espacio y manejo de copa. El cap evita que BIO-G multiplique kg/arbol como si
+cada arbol de alta densidad fuera un arbol grande aislado.
+
+5.4. Sistemas de densidad sugeridos para codigo
+
+```dart
+class OrangeDensitySystem {
+  const OrangeDensitySystem(this.id, this.kgPerTreeCap);
+
+  final String id;
+  final double kgPerTreeCap;
+
+  static const OrangeDensitySystem extensive = OrangeDensitySystem(
+    'extensive_or_old_spacing',
+    160,
+  );
+  static const OrangeDensitySystem traditional = OrangeDensitySystem(
+    'traditional_200_300_trees_ha',
+    125,
+  );
+  static const OrangeDensitySystem commercialModerate = OrangeDensitySystem(
+    'commercial_300_450_trees_ha',
+    100,
+  );
+  static const OrangeDensitySystem highDensityManaged = OrangeDensitySystem(
+    'high_density_450_650_trees_ha',
+    75,
+  );
+  static const OrangeDensitySystem veryHighDensity = OrangeDensitySystem(
+    'very_high_density_over_650_trees_ha',
+    55,
+  );
+
+  static OrangeDensitySystem fromTreesPerHa(double treesPerHa) {
+    if (treesPerHa < 200) return extensive;
+    if (treesPerHa < 300) return traditional;
+    if (treesPerHa < 450) return commercialModerate;
+    if (treesPerHa < 650) return highDensityManaged;
+    return veryHighDensity;
+  }
+}
+```
+
+5.5. Por que se usan caps
+
+Ejemplo:
+
+- 90 kg/arbol x 278 arboles/ha = 25.0 t/ha.
+- 90 kg/arbol x 625 arboles/ha = 56.3 t/ha.
+
+El segundo resultado solo seria real si cada arbol de alta densidad se comportara
+como arbol amplio, lo cual no es correcto. Por eso el sistema capea kg/arbol segun
+densidad.
+
+================================================================================
+6. REFERENCIA BASE POR PERFIL OR
+================================================================================
+
+Todos los rangos son aproximados, para naranja fresca total. `fullKgPerTree`
+representa un arbol adulto con condiciones productivas razonables antes de aplicar
+estado, manejo, riego, cuajado/carga, estres y densidad.
+
+| Perfil | Label | kg/arbol adulto bajo | kg/arbol esperado | kg/arbol alto | t/ha bajo | t/ha esperado | t/ha alto | Confianza |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| or_skip | OR-SKIP - Naranjo general | 25 | 45 | 75 | 8 | 16 | 28 | 0.48 |
+| or_01_valencia | OR-01 - Valencia / tardia / jugo | 35 | 60 | 95 | 12 | 22 | 40 | 0.68 |
+| or_02_navel | OR-02 - Navel / ombligo / mesa | 30 | 55 | 85 | 10 | 20 | 35 | 0.62 |
+| or_03_temprano | OR-03 - Temprano / Hamlin-Pineapple | 25 | 50 | 80 | 8 | 18 | 32 | 0.55 |
+| or_04_criollo_regional | OR-04 - Criollo / regional | 15 | 35 | 65 | 5 | 12 | 24 | 0.38 |
+| or_05_tropical_calido | OR-05 - Tropical / clima calido | 25 | 55 | 90 | 9 | 20 | 35 | 0.50 |
+
+6.1. Lectura por perfil
+
+OR-SKIP
+- Perfil conservador.
+- No asume Valencia, Navel, densidad, portainjerto, riego ni manejo intensivo.
+- Debe dar confianza media-baja.
+
+OR-01 Valencia / tardia / jugo
+- Perfil fuerte para naranja de jugo y ciclo largo.
+- Valencia puede sostener fruta mas tiempo en arbol, pero cosecha tardia puede
+  interferir con floracion/siguiente carga si se maneja mal.
+- Potencial alto con riego y buena sanidad, pero no prometer >40 t/ha.
+
+OR-02 Navel / ombligo / mesa
+- Perfil de mesa/fresco, con prioridad de calibre, apariencia y calidad externa.
+- La fruta comercializable puede bajar aunque los kg biologicos sean buenos si hay
+  golpe de sol, rajado, mala coloracion, roces o sanidad.
+- No mezclar con mandarina.
+
+OR-03 Temprano
+- Hamlin/Pineapple u otras tempranas.
+- Puede entrar antes al mercado, pero la ventana de floracion/cuajado y caida
+  temprana pesa mucho.
+- Evitar sobreestimar si hay bajo calibre o caida fisiologica.
+
+OR-04 Criollo / regional
+- Muy variable: huerto viejo, naranja comun, regional, traspatio, mezcla genetica.
+- Rango amplio y confianza baja.
+- Puede tener buena rusticidad pero menor uniformidad y menor manejo.
+
+OR-05 Tropical / clima calido
+- Perfil para zonas calidas con cosechas variables, brotes frecuentes y traslape de
+  etapas.
+- Puede tener cosechas multiples o extendidas.
+- Riesgo mayor de calor, deficit hidrico, HLB/psilido, plagas y floraciones
+  irregulares segun zona.
+
+================================================================================
+7. MODIFICADORES DE MANEJO
+================================================================================
+
+7.1. Nivel de manejo tipo enum
+
+```dart
+enum OrangeManagementLevel { low, medium, good, high, exceptional }
+
+double _managementFactor(OrangeManagementLevel? level) => switch (level) {
+  null => 1.0,
+  OrangeManagementLevel.low => 0.55,
+  OrangeManagementLevel.medium => 0.85,
+  OrangeManagementLevel.good => 1.05,
+  OrangeManagementLevel.high => 1.18,
+  OrangeManagementLevel.exceptional => 1.30,
+};
+```
+
+Lectura humana:
+
+- low: manejo irregular, poca poda, poco monitoreo, nutricion desordenada, sanidad
+  reactiva, maleza/competencia, riego malo.
+- medium: manejo promedio, riego y fertilizacion funcionales, sanidad variable.
+- good: huerto bien manejado, riego estable, poda, nutricion y sanidad razonables.
+- high: fertirriego/monitoreo/poda/sanidad/cosecha ordenada.
+- exceptional: solo huertas tecnificadas con datos confiables. No usar por defecto.
+
+7.2. Porcentaje de cuidado del usuario
+
+Si BIO-G recibe un porcentaje de cuidado/manejo `carePercent` de 0 a 120, se
+recomienda convertirlo a factor. Esto responde a la pregunta practica: "si lo cuide
+al 100%, cuanto puede dar".
+
+Regla conceptual:
+
+- 100% cuidado = manejo correcto para el potencial base del perfil.
+- 100% NO significa cosecha maxima teorica.
+- 120% puede representar manejo alto/tecnico, pero se capea por densidad y estres.
+- <60% baja fuerte el rendimiento esperado aunque el arbol este adulto.
+
+Tabla recomendada:
+
+| carePercent | Factor | Lectura |
+|---:|---:|---|
+| 0-30 | 0.40 | Abandono/estrés fuerte |
+| 31-50 | 0.60 | Manejo bajo |
+| 51-70 | 0.78 | Manejo irregular |
+| 71-90 | 0.90 | Manejo medio funcional |
+| 91-105 | 1.00 | Cuidado correcto / base esperada |
+| 106-115 | 1.12 | Manejo alto |
+| 116-125 | 1.22 | Muy alto, con datos |
+| >125 | 1.25 | Cap maximo por seguridad |
+
+Codigo sugerido si se usa porcentaje:
+
+```dart
+double _carePercentFactor(double? carePercent) {
+  if (carePercent == null) return 1.0;
+  final p = carePercent.clamp(0, 130).toDouble();
+  if (p <= 30) return 0.40;
+  if (p <= 50) return 0.60;
+  if (p <= 70) return 0.78;
+  if (p <= 90) return 0.90;
+  if (p <= 105) return 1.00;
+  if (p <= 115) return 1.12;
+  if (p <= 125) return 1.22;
+  return 1.25;
+}
+```
+
+Decision BIO-G:
+Si existen `managementLevel` y `carePercent`, no multiplicar ambos agresivamente.
+Usar uno como principal y el otro como ajuste suave, o tomar el menor para no
+sobreestimar.
+
+7.3. Nivel de riego
+
+```dart
+enum OrangeIrrigationLevel {
+  rainfedHumid,
+  rainfedDry,
+  irregular,
+  stable,
+  fertigation,
+}
+
+double _irrigationFactor(OrangeIrrigationLevel? level) => switch (level) {
+  null => 1.0,
+  OrangeIrrigationLevel.rainfedHumid => 0.75,
+  OrangeIrrigationLevel.rainfedDry => 0.50,
+  OrangeIrrigationLevel.irregular => 0.72,
+  OrangeIrrigationLevel.stable => 1.02,
+  OrangeIrrigationLevel.fertigation => 1.12,
+};
+```
+
+Regla citrica:
+
+En naranjo, el agua pesa todo el ano, pero se vuelve critica en floracion, cuajado,
+caida fisiologica y llenado de fruto. Riego estable no significa saturar: significa
+humedad suficiente sin asfixiar raiz ni subir salinidad.
+
+7.4. Floracion / cuajado / amarre
+
+El naranjo puede ser autofertil o no depender fuertemente de polinizador como pera
+pistache. Por eso el factor no debe llamarse `pollinationFactor` como en pistache.
+Debe modelar calidad de floracion y cuajado.
+
+```dart
+enum OrangeBloomSetStatus {
+  unknown,
+  goodBloomGoodSet,
+  goodBloomPoorSet,
+  weakBloom,
+  frostHeatRainSetLoss,
+  fruitSetConfirmed,
+}
+
+double _bloomSetFactor(OrangeBloomSetStatus? status) => switch (status) {
+  null || OrangeBloomSetStatus.unknown => 1.0,
+  OrangeBloomSetStatus.goodBloomGoodSet => 1.08,
+  OrangeBloomSetStatus.fruitSetConfirmed => 1.03,
+  OrangeBloomSetStatus.goodBloomPoorSet => 0.72,
+  OrangeBloomSetStatus.weakBloom => 0.65,
+  OrangeBloomSetStatus.frostHeatRainSetLoss => 0.55,
+};
+```
+
+7.5. Carga visible de fruto
+
+```dart
+enum OrangeCropLoadStatus { noneVisible, light, balanced, heavy, unknown }
+
+double _cropLoadFactor(OrangeCropLoadStatus? status) => switch (status) {
+  null || OrangeCropLoadStatus.unknown => 1.0,
+  OrangeCropLoadStatus.noneVisible => 0.20,
+  OrangeCropLoadStatus.light => 0.55,
+  OrangeCropLoadStatus.balanced => 1.0,
+  OrangeCropLoadStatus.heavy => 1.05,
+};
+```
+
+Regla:
+Carga heavy puede subir kg biologicos, pero puede bajar calibre/calidad comercial.
+La calidad comercial se maneja como nota o factor aparte, no como kg total.
+
+7.6. Factor de calidad comercial opcional
+
+```dart
+enum OrangeCommercialQualityRisk { none, mild, moderate, severe }
+
+double _commercialQualityFactor(OrangeCommercialQualityRisk? risk) => switch (risk) {
+  null || OrangeCommercialQualityRisk.none => 1.0,
+  OrangeCommercialQualityRisk.mild => 0.92,
+  OrangeCommercialQualityRisk.moderate => 0.78,
+  OrangeCommercialQualityRisk.severe => 0.55,
+};
+```
+
+Este factor NO debe borrar kg biologicos. Sirve para nota UX:
+"Puede haber kilos, pero no toda la fruta va a entrar como fruta comercial de buena
+calidad. Revisa calibre, color, daño de cascara, golpe de sol, plagas y caida."
+
+================================================================================
+8. MEMORIA DE ESTRES
+================================================================================
+
+8.1. Por que memoria pesa en naranjo
+
+El naranjo es siempreverde y puede sostener hoja/fruta durante mucho tiempo. Un
+estres de raiz, salinidad, HLB, gomosis, defoliacion, caida de fruto o cosecha tardia
+puede afectar no solo la cosecha actual, sino tambien brotacion, floracion, cuajado,
+calibre y reservas del siguiente ciclo.
+
+8.2. Enum sugerido
+
+```dart
+enum OrangeStressSeverity { none, mild, moderate, severe }
+```
+
+8.3. Clase sugerida
+
+```dart
+class OrangeTreeStressMemory {
+  const OrangeTreeStressMemory({
+    this.floweringHeatOrFrost = OrangeStressSeverity.none,
+    this.fruitSetDrop = OrangeStressSeverity.none,
+    this.fruitFillWaterStress = OrangeStressSeverity.none,
+    this.salinityOrSodicityStress = OrangeStressSeverity.none,
+    this.phytophthoraOrRootDecline = OrangeStressSeverity.none,
+    this.hlbOrCanopyDecline = OrangeStressSeverity.none,
+    this.nutritionOrLeafStress = OrangeStressSeverity.none,
+    this.pestOrDiseaseFruitLoss = OrangeStressSeverity.none,
+    this.windHailOrSunburnDamage = OrangeStressSeverity.none,
+    this.postHarvestReserveRisk = OrangeStressSeverity.none,
+  });
+
+  final OrangeStressSeverity floweringHeatOrFrost;
+  final OrangeStressSeverity fruitSetDrop;
+  final OrangeStressSeverity fruitFillWaterStress;
+  final OrangeStressSeverity salinityOrSodicityStress;
+  final OrangeStressSeverity phytophthoraOrRootDecline;
+  final OrangeStressSeverity hlbOrCanopyDecline;
+  final OrangeStressSeverity nutritionOrLeafStress;
+  final OrangeStressSeverity pestOrDiseaseFruitLoss;
+  final OrangeStressSeverity windHailOrSunburnDamage;
+  final OrangeStressSeverity postHarvestReserveRisk;
+}
+```
+
+8.4. Factor de estres sugerido
+
+Usar el peor cuello de botella, igual que otros arboles del codigo. No multiplicar
+todos los estreses porque se desploma demasiado y puede sonar falso.
+
+```dart
+double factorFor(OrangeStressSeverity s) => switch (s) {
+  OrangeStressSeverity.none => 1.0,
+  OrangeStressSeverity.mild => 0.88,
+  OrangeStressSeverity.moderate => 0.65,
+  OrangeStressSeverity.severe => 0.35,
+};
+```
+
+Ajuste especial:
+
+- `floweringHeatOrFrost.severe`, `fruitSetDrop.severe`,
+  `phytophthoraOrRootDecline.severe` o `hlbOrCanopyDecline.severe` pueden justificar
+  factor 0.25 si el motor sanitario confirma dano fuerte.
+- HLB/cancro/gomosis no deben diagnosticarse solo por rendimiento bajo. El factor se
+  activa con observacion visual, historial o Plant Health.
+
+8.5. Mensajes humanos
+
+- "La proyeccion baja por memoria de estres. En naranjo, una floracion golpeada o
+  una raiz enferma puede pegarle al cuajado y al calibre."
+- "No es que el naranjo no sirva; probablemente viene arrastrando agua, raiz,
+  salinidad, sanidad o baja hoja funcional."
+- "Si hubo mucha flor pero no amarro, revisa calor, viento, lluvia, falta de agua,
+  salinidad, raiz y sanidad antes de culpar solo al fertilizante."
+- "Si hay fruta pero esta chica, revisa carga, agua, K, salinidad, hoja activa y raiz."
+
+================================================================================
+9. CALIDAD: NO TODO ES KG
+================================================================================
+
+9.1. Salida principal v1
+
+La salida principal sigue siendo kg/arbol y t/ha.
+
+9.2. Calidad como notas / confianza
+
+BIO-G puede mostrar notas de calidad sin cambiar el motor:
+
+- calibre bajo por carga alta, agua irregular o K/raiz limitados;
+- fruta seca o con poco jugo;
+- fruta con mala coloracion o reverdizado;
+- golpe de sol;
+- rajado;
+- daño de cascara;
+- caida pre-cosecha;
+- fruta para jugo vs fruta para mesa.
+
+9.3. Decisiones por perfil
+
+- Valencia: salida puede enfocarse en kg y jugo; calidad incluye jugo, Brix/acidez,
+  madurez y cosecha tardia.
+- Navel: salida debe advertir fruta comercializable; una cosecha alta con mala
+  apariencia externa no equivale a buena cosecha de mesa.
+- Temprano: salida debe vigilar calibre, color y caida temprana.
+- Criollo/regional: salida debe ser amplia y conservadora.
+- Tropical/calido: salida debe vigilar traslape de etapas, calor, agua y plagas.
+
+9.4. Regla UI
+
+Si kg esperado es alto pero hay estres en agua, salinidad, HLB/canopy decline,
+raiz, caida de fruto o carga excesiva, el mensaje no debe decir solo "alto rendimiento".
+Debe decir:
+
+"Puede haber carga, pero revisa calibre y calidad. En naranjo, mas fruta no siempre
+significa mejor venta: agua, hoja, raiz y sanidad definen cuanto termina como fruta
+buena."
+
+================================================================================
+10. FORMULA OFICIAL BIO-G PARA NARANJO
+================================================================================
+
+10.1. Formula conceptual
+
+`kgArbol = fullKgPerTree(profile) x factorEstadoProductivo x factorManejo x factorRiego x factorFloracionCuajado x factorCarga x factorMemoria`
+
+`kgArbol = min(kgArbol, capKgPorArbolSegunDensidad)`
+
+`tonHa = kgArbol x arbolesPorHa / 1000`
+
+`totalKg = kgArbol x numeroArboles`
+
+10.2. Confianza
+
+Base:
+
+- OR-SKIP: 0.48
+- Valencia: 0.68
+- Navel: 0.62
+- Temprano: 0.55
+- Criollo/regional: 0.38
+- Tropical/calido: 0.50
+
+Penalizaciones:
+
+- Sin densidad ni arboles/ha: -0.15
+- Estado productivo unknown: -0.10
+- Etapa unknown: -0.05
+- Perfil SKIP: ya viene baja, no castigar doble salvo que falte todo
+- Memoria de estres activa: -0.10
+- Floracion/cuajado desconocido en etapa reproductiva: -0.05
+- Riego desconocido en fruit_set/fruit_fill: -0.05
+- Criollo/regional: confianza max 0.55
+
+Bonos prudentes:
+
+- Densidad o marco capturado: +0.05
+- Perfil especifico confirmado: ya viene en base
+- Carga visible confirmada en fruit_fill/harvest: +0.05
+- Historial de 1+ ciclo: +0.05
+
+Clamp final: 0.05 a 0.95.
+
+10.3. Rango sano para no mentir
+
+Si el resultado da mas de 40 t/ha:
+
+- Permitido como alto teorico solo con perfil especifico, densidad conocida, manejo
+  alto, riego/fertirriego y sanidad fuerte.
+- Agregar nota obligatoria:
+  "Proyeccion alta. En naranjo, confirma densidad real, arboles faltantes, calibre,
+  fruta comercializable, riego y sanidad antes de tomarlo como expectativa."
+
+Si el resultado da menos de 8 t/ha en productive_season:
+
+- No decir "fracaso".
+- Decir:
+  "Proyeccion baja. Revisa edad real, floracion/cuajado, agua, salinidad, raiz,
+  HLB/gomosis/Phytophthora, carga visible, defoliacion y manejo de postcosecha."
+
+================================================================================
+11. TABLA MINIMA PARA TreeYieldReferenceCatalog
+================================================================================
+
+El motor actual tiene una tabla minima por tier para la pantalla simple. Para
+Naranjo se recomienda agregar estas entradas con perfil SKIP.
+
+```dart
+// Naranjo (doc 03): tabla minima por tier para la pantalla simple.
+// La referencia agronomica completa vive en orange_tree_yield_reference.dart.
+'orange_tree_or_skip_young': TreeYieldReference(
+  id: 'orange_tree_or_skip_young',
+  cropId: kCropOrangeTree,
+  profileId: kOrSkip,
+  tier: TreeProductiveTier.young,
+  kgPerTreeLow: 5,
+  kgPerTreeHigh: 20,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (naranjo, sin historial)',
+),
+'orange_tree_or_skip_first': TreeYieldReference(
+  id: 'orange_tree_or_skip_first',
+  cropId: kCropOrangeTree,
+  profileId: kOrSkip,
+  tier: TreeProductiveTier.firstProduction,
+  kgPerTreeLow: 15,
+  kgPerTreeHigh: 45,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (naranjo, sin historial)',
+),
+'orange_tree_or_skip_full': TreeYieldReference(
+  id: 'orange_tree_or_skip_full',
+  cropId: kCropOrangeTree,
+  profileId: kOrSkip,
+  tier: TreeProductiveTier.full,
+  kgPerTreeLow: 35,
+  kgPerTreeHigh: 85,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (naranjo, sin historial)',
+),
+```
+
+Agregar en `_skipProfileForCrop`:
+
+```dart
+case kCropOrangeTree:
+  return kOrSkip;
+```
+
+Agregar import:
+
+```dart
+import 'package:bio_g/core/crops/orange_tree/orange_tree_catalog.dart';
+```
+
+================================================================================
+12. TABLA COMPLETA SUGERIDA PARA orange_tree_yield_reference.dart
+================================================================================
+
+12.1. Constantes esperadas del catalogo
+
+```dart
+const String kCropOrangeTree = 'crop_orange_tree';
+const String kCropOrangeTreeLegacy = 'orange_tree';
+const String kOrSkip = 'or_skip';
+const String kOr01Valencia = 'or_01_valencia';
+const String kOr02Navel = 'or_02_navel';
+const String kOr03Temprano = 'or_03_temprano';
+const String kOr04CriolloRegional = 'or_04_criollo_regional';
+const String kOr05TropicalCalido = 'or_05_tropical_calido';
+```
+
+12.2. Clase base
+
+```dart
+class YieldRange {
+  const YieldRange(this.low, this.expected, this.high);
+
+  final double low;
+  final double expected;
+  final double high;
+
+  YieldRange scale(double factor) =>
+      YieldRange(low * factor, expected * factor, high * factor);
+
+  YieldRange scaleEach(double fLow, double fExp, double fHigh) =>
+      YieldRange(low * fLow, expected * fExp, high * fHigh);
+
+  YieldRange cappedAt(double cap) => YieldRange(
+    low > cap ? cap : low,
+    expected > cap ? cap : expected,
+    high > cap ? cap : high,
+  );
+
+  static const YieldRange zero = YieldRange(0, 0, 0);
+}
+```
+
+12.3. Referencia por perfil
+
+```dart
+class OrangeTreeYieldReference {
+  const OrangeTreeYieldReference({
+    required this.profileId,
+    required this.fullKgPerTree,
+    required this.expectedTonPerHa,
+    required this.confidenceBase,
+    this.commercialFruitPct = const YieldRange(65, 78, 88),
+    this.notesEs = const <String>[],
+  });
+
+  final String profileId;
+  final YieldRange fullKgPerTree;
+  final YieldRange expectedTonPerHa;
+  final double confidenceBase;
+
+  /// Contexto de calidad comercial. NO entra al calculo de kg biologicos.
+  final YieldRange commercialFruitPct;
+  final List<String> notesEs;
+}
+```
+
+12.4. Tabla por perfil
+
+```dart
+const Map<String, OrangeTreeYieldReference>
+orangeYieldReferenceByProfile = <String, OrangeTreeYieldReference>{
+  kOrSkip: OrangeTreeYieldReference(
+    profileId: kOrSkip,
+    fullKgPerTree: YieldRange(25, 45, 75),
+    expectedTonPerHa: YieldRange(8, 16, 28),
+    confidenceBase: 0.48,
+    commercialFruitPct: YieldRange(60, 75, 85),
+    notesEs: <String>[
+      'Perfil general: no asume Valencia, Navel, densidad, portainjerto, riego '
+          'ni manejo intensivo. El promedio nacional mexicano es conservador.',
+    ],
+  ),
+  kOr01Valencia: OrangeTreeYieldReference(
+    profileId: kOr01Valencia,
+    fullKgPerTree: YieldRange(35, 60, 95),
+    expectedTonPerHa: YieldRange(12, 22, 40),
+    confidenceBase: 0.68,
+    commercialFruitPct: YieldRange(65, 78, 88),
+    notesEs: <String>[
+      'Valencia: perfil tardio/de jugo, buen potencial con riego y sanidad; '
+          'vigilar cosecha tardia, caida, calibre y calidad de jugo.',
+    ],
+  ),
+  kOr02Navel: OrangeTreeYieldReference(
+    profileId: kOr02Navel,
+    fullKgPerTree: YieldRange(30, 55, 85),
+    expectedTonPerHa: YieldRange(10, 20, 35),
+    confidenceBase: 0.62,
+    commercialFruitPct: YieldRange(70, 82, 92),
+    notesEs: <String>[
+      'Navel/ombligo: perfil de mesa; el rendimiento debe leerse junto con '
+          'calibre, color, dano externo y porcentaje comercializable.',
+    ],
+  ),
+  kOr03Temprano: OrangeTreeYieldReference(
+    profileId: kOr03Temprano,
+    fullKgPerTree: YieldRange(25, 50, 80),
+    expectedTonPerHa: YieldRange(8, 18, 32),
+    confidenceBase: 0.55,
+    commercialFruitPct: YieldRange(62, 76, 88),
+    notesEs: <String>[
+      'Temprano/Hamlin-Pineapple: ventana temprana; vigilar caida temprana, '
+          'calibre, color y balance vegetativo-reproductivo.',
+    ],
+  ),
+  kOr04CriolloRegional: OrangeTreeYieldReference(
+    profileId: kOr04CriolloRegional,
+    fullKgPerTree: YieldRange(15, 35, 65),
+    expectedTonPerHa: YieldRange(5, 12, 24),
+    confidenceBase: 0.38,
+    commercialFruitPct: YieldRange(50, 68, 82),
+    notesEs: <String>[
+      'Criollo/regional: muy variable por genetica, edad, manejo y zona. '
+          'Confianza baja; no sobreestimar huertos viejos o de temporal.',
+    ],
+  ),
+  kOr05TropicalCalido: OrangeTreeYieldReference(
+    profileId: kOr05TropicalCalido,
+    fullKgPerTree: YieldRange(25, 55, 90),
+    expectedTonPerHa: YieldRange(9, 20, 35),
+    confidenceBase: 0.50,
+    commercialFruitPct: YieldRange(58, 74, 86),
+    notesEs: <String>[
+      'Tropical/clima calido: puede tener etapas traslapadas y cosecha variable; '
+          'vigilar calor, agua, HLB/psilido, caida y sanidad de raiz.',
+    ],
+  ),
+};
+```
+
+12.5. Normalizacion de aliases de perfil
+
+```dart
+String? _normalizeOrangeProfileId(String? profileId) {
+  final id = profileId?.trim().toLowerCase();
+  if (id == null || id.isEmpty) return id;
+  if (id == 'or_skip' || id == 'orange_skip') return kOrSkip;
+  if (id == 'or_01_valencia_late' || id == 'or_01_tardia') {
+    return kOr01Valencia;
+  }
+  if (id == 'or_02_ombligo' || id == 'or_02_washington_navel') {
+    return kOr02Navel;
+  }
+  if (id == 'or_03_hamlin' || id == 'or_03_pineapple') {
+    return kOr03Temprano;
+  }
+  if (id == 'or_04_criolla' || id == 'or_04_regional') {
+    return kOr04CriolloRegional;
+  }
+  if (id == 'or_05_tropical' || id == 'or_05_clima_calido') {
+    return kOr05TropicalCalido;
+  }
+  return id;
+}
+```
+
+================================================================================
+13. RESOLVER SUGERIDO
+================================================================================
+
+```dart
+OrangeTreeYieldProjection resolveOrangeTreeYield({
+  required String? profileId,
+  required String? perennialStateId,
+  required String? phenologyStageId,
+  double? treesPerHa,
+  double? hectares,
+  int? treeCount,
+  OrangeProductionState? productionState,
+  OrangeManagementLevel? managementLevel,
+  double? carePercent,
+  OrangeIrrigationLevel? irrigationLevel,
+  OrangeBloomSetStatus? bloomSetStatus,
+  OrangeCropLoadStatus? cropLoadStatus,
+  OrangeCommercialQualityRisk? commercialQualityRisk,
+  OrangeTreeStressMemory? stressMemory,
+}) {
+  final stateId = normalizeTreeStateId(perennialStateId);
+  final stageId = normalizeTreeStageId(phenologyStageId);
+  final ref =
+      orangeYieldReferenceByProfile[_normalizeOrangeProfileId(profileId)] ??
+      orangeYieldReferenceByProfile[kOrSkip]!;
+
+  // 1. Bloqueo no productivo.
+  if (_blocksYield(stateId, stageId)) {
+    return OrangeTreeYieldProjection.zero(
+      profileId: ref.profileId,
+      confidence: 0.85,
+      notesEs: const <String>[
+        'Todavia no proyectamos cosecha: el naranjo esta en formacion. Importa '
+            'mas formar raiz, copa, hoja sana y estructura que forzar produccion.',
+      ],
+    );
+  }
+
+  final state = _inferProductionState(
+    stateId: stateId,
+    stageId: stageId,
+    explicit: productionState,
+  );
+  if (state == OrangeProductionState.nonProductive) {
+    return OrangeTreeYieldProjection.zero(
+      profileId: ref.profileId,
+      confidence: 0.85,
+    );
+  }
+
+  // 2. Densidad efectiva.
+  final density =
+      treesPerHa ??
+      ((treeCount != null && hectares != null && hectares > 0)
+          ? treeCount / hectares
+          : null);
+
+  // 3. Modificadores.
+  final sf = _productionStateFactors(state);
+  final mgmt = _managementFactor(managementLevel);
+  final care = _carePercentFactor(carePercent);
+  final managementCombined = carePercent == null ? mgmt : care;
+  final irr = _irrigationFactor(irrigationLevel);
+  final set = _bloomSetFactor(bloomSetStatus);
+  final load = _cropLoadFactor(cropLoadStatus);
+  final stress = stressMemory?.yieldFactor01 ?? 1.0;
+  final commonFactor = managementCombined * irr * set * load * stress;
+
+  // 4. kg/arbol con factores de estado + comunes, luego tope por densidad.
+  YieldRange kgTree = ref.fullKgPerTree
+      .scaleEach(sf.low, sf.expected, sf.high)
+      .scale(commonFactor);
+  if (density != null) {
+    kgTree = kgTree.cappedAt(
+      OrangeDensitySystem.fromTreesPerHa(density).kgPerTreeCap,
+    );
+  }
+
+  // 5. t/ha desde kg/arbol y densidad.
+  final tonHa = density == null
+      ? null
+      : YieldRange(
+          tonHaFromKgTree(kgTree.low, density),
+          tonHaFromKgTree(kgTree.expected, density),
+          tonHaFromKgTree(kgTree.high, density),
+        );
+
+  // 6. Total kg si hay numero de arboles.
+  final totalKg = treeCount == null ? null : kgTree.scale(treeCount.toDouble());
+
+  // 7. Calidad comercial como contexto.
+  final commercialQualityFactor = _commercialQualityFactor(commercialQualityRisk);
+  final commercialFruitPct = ref.commercialFruitPct.scale(commercialQualityFactor);
+
+  // 8. Confianza.
+  double confidence = ref.confidenceBase;
+  if (density == null) confidence -= 0.15;
+  if (state == OrangeProductionState.unknown) confidence -= 0.10;
+  if (stageId == TreeStageIds.unknown) confidence -= 0.05;
+  if (stressMemory != null && stressMemory.hasAnyStress) confidence -= 0.10;
+  if (irrigationLevel == null &&
+      (stageId == TreeStageIds.fruitSet || stageId == TreeStageIds.fruitFill)) {
+    confidence -= 0.05;
+  }
+  if ((stageId == TreeStageIds.flowering || stageId == TreeStageIds.fruitSet) &&
+      bloomSetStatus == null) {
+    confidence -= 0.05;
+  }
+  if (ref.profileId == kOr04CriolloRegional && confidence > 0.55) {
+    confidence = 0.55;
+  }
+  confidence = confidence.clamp(0.05, 0.95);
+
+  // 9. Notas.
+  final notes = <String>[...ref.notesEs];
+  if (ref.profileId == kOrSkip) {
+    notes.add(
+      'Este calculo usa un perfil general de naranjo. Puede mejorar si eliges '
+      'Valencia, Navel, temprano, criollo/regional o tropical/clima calido.',
+    );
+  }
+  if (density == null) {
+    notes.add(
+      'Sin densidad ni numero de arboles no estimamos t/ha con precision; indica '
+      'arboles/ha o marco de plantacion para mejorar la proyeccion.',
+    );
+  }
+  if (commercialQualityRisk != null &&
+      commercialQualityRisk != OrangeCommercialQualityRisk.none) {
+    notes.add(
+      'Puede haber kg biologicos, pero parte de la fruta puede bajar de categoria '
+      'por calibre, color, dano externo, caida o sanidad.',
+    );
+  }
+  if (tonHa != null && tonHa.expected > 40) {
+    notes.add(
+      'Proyeccion alta: confirma densidad real, arboles faltantes, manejo, riego, '
+      'calibre, fruta comercializable y sanidad antes de tomarlo como expectativa.',
+    );
+  }
+  if (tonHa != null && tonHa.expected < 8 && state == OrangeProductionState.fullBearing) {
+    notes.add(
+      'Proyeccion baja para arbol productivo: revisar floracion/cuajado, agua, '
+      'salinidad, raiz, HLB/gomosis/Phytophthora, defoliacion y postcosecha.',
+    );
+  }
+
+  return OrangeTreeYieldProjection(
+    isProductive: true,
+    profileId: ref.profileId,
+    productionState: state,
+    confidence01: confidence,
+    kgPerTree: kgTree,
+    tonPerHa: tonHa,
+    totalKg: totalKg,
+    commercialFruitPct: commercialFruitPct,
+    notesEs: notes,
+  );
+}
+```
+
+================================================================================
+14. EJEMPLOS DE CALCULO PARA VALIDACION AGRONOMICA
+================================================================================
+
+14.1. OR-SKIP, 100% cuidado, 350 arboles/ha, productivo
+
+Base SKIP esperado: 45 kg/arbol.
+Estado fullBearing esperado: x1.00.
+Cuidado 100%: x1.00.
+Riego estable: x1.02.
+Cuajado desconocido: x1.00.
+Carga unknown: x1.00.
+Sin estres: x1.00.
+
+Resultado esperado:
+45 x 1.02 = 45.9 kg/arbol.
+45.9 x 350 / 1000 = 16.1 t/ha.
+
+Lectura UX:
+"Con perfil general y cuidado correcto, la proyeccion cae en rango comercial
+conservador. Para subir confianza, indica variedad, densidad, riego y carga visible."
+
+14.2. OR-01 Valencia, manejo alto, fertirriego, 400 arboles/ha, fullBearing
+
+Base Valencia esperado: 60 kg/arbol.
+Estado full: x1.00.
+Manejo alto: x1.18.
+Fertirriego: x1.12.
+Buen cuajado: x1.08.
+Carga balanceada: x1.00.
+Sin estres: x1.00.
+
+60 x 1.18 x 1.12 x 1.08 = 85.6 kg/arbol.
+Cap por 400 arboles/ha = 100 kg/arbol, no capea.
+85.6 x 400 / 1000 = 34.2 t/ha.
+
+Lectura UX:
+"Potencial alto, todavia dentro de rango tecnico. Revisar calibre y calidad de jugo."
+
+14.3. OR-02 Navel, 500 arboles/ha, carga pesada, calidad externa moderada
+
+Base Navel esperado: 55 kg/arbol.
+Manejo bueno: x1.05.
+Riego estable: x1.02.
+Carga heavy: x1.05.
+
+55 x 1.05 x 1.02 x 1.05 = 61.8 kg/arbol.
+Cap por 500 arboles/ha = 75 kg/arbol, no capea.
+61.8 x 500 / 1000 = 30.9 t/ha.
+
+Pero calidad comercial moderada puede bajar porcentaje comercializable.
+Mensaje: "Hay kg, pero en Navel importa calibre, color y cascara. Revisa fruta
+comercializable, no solo tonelaje."
+
+14.4. OR-SKIP, temporal seco, manejo bajo, productive_season
+
+Base esperado: 45 kg/arbol.
+Manejo bajo: x0.55.
+Temporal seco: x0.50.
+Estres de llenado moderado: x0.65.
+
+45 x 0.55 x 0.50 x 0.65 = 8.0 kg/arbol.
+Con 300 arboles/ha = 2.4 t/ha.
+
+Mensaje: "Proyeccion baja. No se arregla solo con fertilizante: revisar agua,
+raiz, salinidad, hoja funcional y carga real."
+
+14.5. Valencia con 700 arboles/ha y resultado inflado
+
+Si el calculo da 95 kg/arbol en 700 arboles/ha:
+95 x 700 / 1000 = 66.5 t/ha.
+
+BIO-G debe aplicar cap por densidad >650:
+cap = 55 kg/arbol.
+55 x 700 / 1000 = 38.5 t/ha.
+
+Mensaje: "Alta densidad detectada. Se limita kg/arbol para evitar sobreestimar
+como si cada arbol fuera de marco amplio."
+
+================================================================================
+15. MENSAJES UX RECOMENDADOS
+================================================================================
+
+15.1. Perfil general
+"Este es un perfil general de naranjo. Luego puedes elegir Valencia, Navel,
+temprano, criollo o tropical sin perder historial."
+
+15.2. Arbol joven
+"Todavia no proyectamos cosecha fuerte. En naranjo joven primero importa raiz,
+copa, hoja sana y estructura."
+
+15.3. Cuidado 100%
+"Con cuidado correcto, BIO-G estima el rango base del perfil. Para acercarte al
+rango alto tambien cuentan densidad, riego estable, cuajado, sanidad y calidad."
+
+15.4. Floracion buena pero poco amarre
+"Si floreo bien pero no amarro, no culpes de inmediato al fertilizante. Revisa calor,
+viento, lluvia, agua, salinidad, raiz y sanidad."
+
+15.5. Fruta chica
+"La carga puede estar, pero el calibre se juega con agua, hoja activa, potasio, raiz y
+salinidad. Mas fruta no siempre significa mejor cosecha."
+
+15.6. Riego irregular
+"En naranjo, el riego irregular pega fuerte en cuajado, caida y calibre. No es solo
+que el arbol siga verde."
+
+15.7. Salinidad
+"Si hay sales, la proyeccion baja aunque el sensor marque nutrientes. El problema
+puede ser absorcion y raiz, no falta de abono."
+
+15.8. HLB/gomosis/raiz
+"BIO-G no diagnostica HLB o gomosis por rendimiento bajo. Si hay amarillamiento,
+fruta deformada, gomosis o decaimiento por ramas, revisa sanidad con tecnico."
+
+15.9. Proyeccion alta
+"Proyeccion alta. Confirma densidad real, arboles faltantes, riego, calibre y fruta
+comercializable antes de tomarlo como expectativa."
+
+15.10. Postcosecha
+"No cierres el cultivo. Despues de cosecha el naranjo sigue recuperando hoja, raiz y
+reservas para la siguiente floracion."
+
+================================================================================
+16. CASOS MINIMOS DE PRUEBA
+================================================================================
+
+1) orange_young_tree_zero_yield_test
+Caso:
+perennialState=newly_planted, stage=root_establishment.
+Esperado:
+0 kg/arbol, mensaje de raiz/copa, no rendimiento.
+
+2) orange_skip_full_simple_catalog_test
+Caso:
+TreeYieldReferenceCatalog, crop_orange_tree, or_skip, full, treeCount=100.
+Esperado:
+kgLow=3500, kgHigh=8500.
+
+3) orange_100_percent_care_skip_test
+Caso:
+or_skip, 350 arboles/ha, fullBearing, carePercent=100, riego estable.
+Esperado:
+~16 t/ha expected, confianza media si densidad conocida.
+
+4) orange_valencia_high_management_test
+Caso:
+or_01_valencia, 400 arboles/ha, high management, fertigation, goodBloomGoodSet.
+Esperado:
+~30-35 t/ha expected; nota de potencial alto y confirmacion.
+
+5) orange_high_density_cap_test
+Caso:
+or_01_valencia, 700 arboles/ha, kg/arbol calculado >55.
+Esperado:
+kg/arbol capeado a 55 max segun densidad; no permitir 60+ t/ha sin control.
+
+6) orange_low_care_penalty_test
+Caso:
+carePercent=40, fullBearing, riego irregular.
+Esperado:
+baja fuerte de kg/arbol; mensaje no culpa fertilizante solamente.
+
+7) orange_fruit_drop_stress_test
+Caso:
+fruit_set o fruit_fill con fruitSetDrop=severe.
+Esperado:
+factor de memoria fuerte; nota de caida/cuajado.
+
+8) orange_salinity_blocks_expectation_test
+Caso:
+fruit_fill, salinityOrSodicityStress=moderate/severe.
+Esperado:
+baja rendimiento y nota de sales/absorcion/raiz.
+
+9) orange_hlb_context_not_diagnosis_test
+Caso:
+canopy decline reportado + bajo rendimiento.
+Esperado:
+mensaje de posible sanidad/HLB como contexto a confirmar; no diagnostico cerrado.
+
+10) orange_navel_quality_not_only_kg_test
+Caso:
+Navel, heavy crop, commercialQualityRisk=moderate.
+Esperado:
+kg puede ser medio-alto, pero nota de calibre/color/fruta comercializable.
+
+11) orange_fruit_fill_not_harvest_test
+Caso:
+stage=fruit_fill.
+Esperado:
+copy habla de crecimiento/llenado/calibre; no de cosecha cerrada.
+
+12) orange_post_harvest_alive_test
+Caso:
+stage=post_harvest.
+Esperado:
+no cerrar cultivo; hablar de recuperacion, hoja, raiz y proxima floracion.
+
+================================================================================
+17. NO HACER EN CODIGO
+================================================================================
+
+- No usar `sowingDate` como eje de rendimiento.
+- No usar naranja como sinonimo de todos los citricos.
+- No mezclar limon/mandarina/toronja con crop_orange_tree.
+- No usar numero exacto de frutos como salida principal.
+- No prometer precio ni rentabilidad.
+- No mostrar >40 t/ha como default.
+- No asumir que cuidado 100% significa rendimiento maximo.
+- No multiplicar todos los estreses severos y desplomar a cero sin criterio.
+- No diagnosticar HLB, gomosis, cancro o Phytophthora solo por bajo rendimiento.
+- No cerrar el cultivo en cosecha.
+- No ignorar densidad: alta densidad necesita cap kg/arbol.
+- No confundir fruit_fill con harvest_maturity.
+- No decir "falta fertilizante" si el limitante real es agua, salinidad, raiz o sanidad.
+
+================================================================================
+18. ARCHIVOS DE CODIGO ESPERADOS
+================================================================================
+
+Archivo nuevo principal:
+`lib/core/crops/orange_tree/orange_tree_yield_reference.dart`
+
+Archivos relacionados que deben tocarse cuando se implemente:
+
+- `lib/core/yield/tree_yield_reference_catalog.dart`
+  - importar orange_tree_catalog.dart
+  - agregar entradas OR-SKIP young/first/full
+  - agregar case kCropOrangeTree => kOrSkip
+
+- `lib/core/crops/orange_tree/orange_tree_catalog.dart`
+  - exponer kCropOrangeTree, kOrSkip y perfiles OR
+
+- `lib/screens/yield/yield_projection_setup_screen.dart`
+  - verificar que crop_orange_tree entre como arbol con tiers
+
+- Tests sugeridos:
+  - `test/core/orange_tree/orange_tree_yield_reference_test.dart`
+  - `test/core/yield/tree_yield_reference_catalog_test.dart`
+
+================================================================================
+19. FUENTES CONSULTADAS Y NIVEL DE CONFIANZA
+================================================================================
+
+Alta confianza:
+
+1. SIAP/SENASICA. Estadisticas agricolas de citricos en Mexico 2021.
+Uso BIO-G: rendimiento nacional de naranja, superficie, produccion, t/ha.
+Confianza: alta para contexto nacional.
+
+2. SADER/SIAP. Escenario mensual de productos agroalimentarios: Naranja 2024.
+Uso BIO-G: rendimiento nacional reciente/proyectado y tendencia.
+Confianza: alta para contexto nacional, no para potencial agronomico de huerta.
+
+3. UC Davis / UC ANR. 2021 Sample Costs to Establish and Produce Navel Oranges,
+San Joaquin Valley South.
+Uso BIO-G: densidad 10x20 ft, 218 arboles/acre; cosecha ano 3-4; madurez ano 8-9;
+conversion a 20x20 ft.
+Confianza: alta para sistema californiano tecnificado; usar como referencia, no como
+receta Mexico.
+
+4. CDFA / California citrus production overview.
+Uso BIO-G: navel/valencia, yield history, Valencia ligeramente mas productiva en
+promedio.
+Confianza: alta-media para comparativo.
+
+5. FIRA. Naranja Tamaulipas rentabilidad/costos.
+Uso BIO-G: rendimiento regional 15-18 t/ha y productores >40 t/ha.
+Confianza: media-alta; documento antiguo pero util para rangos mexicanos de riego.
+
+6. Costos de produccion y rentabilidad de citricos en Mexico.
+Uso BIO-G: rangos 12-30 t/ha en tecnologia mejor; 7-20 t/ha en regiones de menor
+tecnologia/temporal; productores sobresalientes >40 t/ha.
+Confianza: media-alta; usar como calibrador historico.
+
+Media-alta:
+
+7. Agro Productividad 2020. Mercado mexicano de naranja, datos SIAP/SIACON.
+Uso BIO-G: rendimiento 2004 vs 2018 y tendencia.
+Confianza: media-alta.
+
+8. UF/IFAS Florida Citrus Production Guide.
+Uso BIO-G: contexto de PGR, fruit drop/HLB, efectos de manejo en rendimiento y
+riesgo de bajas por aplicaciones mal programadas.
+Confianza: alta para fisiologia/Florida; usar como contexto, no como receta local.
+
+9. Articulos de investigacion en Valencia bajo riego deficitario.
+Uso BIO-G: agua afecta tamano, jugo y rendimiento.
+Confianza: media-alta; no usar como regla universal.
+
+Media:
+
+10. Wikifarmer y fuentes divulgativas.
+Uso BIO-G: lenguaje general de kg/frutos por arbol; no definir umbrales duros.
+Confianza: media-baja para calibracion, util para UX.
+
+Baja-media:
+
+11. Foros, grupos y comentarios de productores.
+Uso BIO-G: frases reales y sintomas reportados por productores.
+Confianza: baja para datos numericos; no se usan para targets ni factores.
+
+================================================================================
+20. RESUMEN DE IMPLEMENTACION PARA CODEX/CLAUDE
+================================================================================
+
+Crear `orange_tree_yield_reference.dart` replicando el patron de pistache/nogal,
+pero adaptado a citrico siempreverde:
+
+- kg/arbol fresco y t/ha.
+- perfiles OR: or_skip, or_01_valencia, or_02_navel, or_03_temprano,
+  or_04_criollo_regional, or_05_tropical_calido.
+- `OrangeProductionState` local.
+- `OrangeManagementLevel` y opcional `carePercent`.
+- `OrangeIrrigationLevel`.
+- `OrangeBloomSetStatus` en lugar de pollination central.
+- `OrangeCropLoadStatus`.
+- `OrangeTreeStressMemory`.
+- caps por densidad.
+- no crear nuevos TreeStateIds ni StageIds.
+- integrar tabla minima en `TreeYieldReferenceCatalog`.
+
+Regla final:
+Naranjo debe dar una orientacion honesta, no una promesa. Si el productor solo dice
+"naranjo", BIO-G usa SKIP conservador. Si captura variedad, densidad, etapa, riego y
+carga visible, el rango mejora.

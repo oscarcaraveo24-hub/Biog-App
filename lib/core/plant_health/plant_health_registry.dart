@@ -13,6 +13,11 @@ import 'package:bio_g/core/plant_health/catalog/onion_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/peach_tree_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/pear_tree_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/walnut_tree_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/pistachio_tree_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/orange_tree_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/lemon_tree_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/mango_tree_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/avocado_tree_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/spinach_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/squash_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/tomato_syndromes.dart';
@@ -60,6 +65,16 @@ class PlantHealthRegistry {
         return peachTreeSyndromes;
       case CropCatalog.walnutTreeCropId:
         return walnutTreeSyndromes;
+      case CropCatalog.pistachioTreeCropId:
+        return pistachioTreeSyndromes;
+      case CropCatalog.orangeTreeCropId:
+        return orangeTreeSyndromes;
+      case CropCatalog.lemonTreeCropId:
+        return lemonTreeSyndromes;
+      case CropCatalog.mangoTreeCropId:
+        return mangoTreeSyndromes;
+      case CropCatalog.avocadoTreeCropId:
+        return avocadoTreeSyndromes;
       default:
         return const <PlantHealthSyndrome>[];
     }

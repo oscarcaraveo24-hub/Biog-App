@@ -449,6 +449,59 @@ _CropFamily _resolveFamily(String crop) {
     case 'pecan':
     case 'nuez':
     case 'nuez pecana':
+    case 'crop_pistachio_tree':
+    case 'pistachio_tree':
+    case 'pistachiotree':
+    case 'pistachio':
+    case 'pistache':
+    case 'pistacho':
+    case 'pistachero':
+    case 'alfoncigo':
+    case 'alfóncigo':
+    case 'crop_orange_tree':
+    case 'orange_tree':
+    case 'orangetree':
+    case 'orange':
+    case 'naranjo':
+    case 'naranja':
+    case 'naranja dulce':
+    case 'sweet orange':
+    case 'crop_lemon_tree':
+    case 'lemon_tree':
+    case 'lemontree':
+    case 'crop_lime_tree':
+    case 'lime_tree':
+    case 'lemon':
+    case 'lime':
+    case 'limon':
+    case 'limón':
+    case 'limonero':
+    case 'lima':
+    case 'crop_mango_tree':
+    case 'mango_tree':
+    case 'mangotree':
+    case 'crop_mango':
+    case 'mango':
+    case 'mangos':
+    case 'mangifera':
+    case 'mangifera_indica':
+    case 'arbol_mango':
+    case 'árbol_mango':
+    case 'crop_avocado_tree':
+    case 'avocado_tree':
+    case 'avocadotree':
+    case 'crop_avocado':
+    case 'avocado':
+    case 'avocados':
+    case 'aguacate':
+    case 'aguacates':
+    case 'aguacatero':
+    case 'palta':
+    case 'palto':
+    case 'persea':
+    case 'persea_americana':
+    case 'arbol_aguacate':
+    case 'árbol_aguacate':
       return _CropFamily.tree;
     case 'tomato':
     case 'tomate':

@@ -1,0 +1,1237 @@
+[ENCABEZADO]
+BIO-G | Mango / Árbol de mango | Documentación técnica v1
+[/ENCABEZADO]
+
+BIO-G
+03. Rendimiento Aproximado BIO-G - Mango / Árbol de mango
+Cultivo visible: Mango / Árbol de mango
+cropId canónico recomendado: crop_mango_tree
+cropKey esperado: mango_tree
+Alias compatibles: mango, mangos, mango_tree, crop_mango, mangifera, mangifera_indica, arbol_mango, árbol_mango
+profilePrefix: MG
+Perfil general: mg_skip
+Versión: v1 reforzada
+Uso: documento fuente para `mango_tree_yield_reference.dart`, pantalla de rendimiento aproximado y alta mínima en `TreeYieldReferenceCatalog`.
+Formato: TXT técnico para Flutter/Dart, Codex, Claude Code y agentes IA.
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código.
+
+IMPORTANTE
+Este documento NO es una promesa de cosecha, NO es receta comercial, NO estima precio, NO sustituye análisis de suelo/agua/foliar, asesoría local, sanidad vegetal ni datos históricos del productor. BIO-G debe entregar rangos bajo / esperado / alto, confianza y notas. En mango, el rendimiento cambia fuerte por variedad, edad productiva, densidad, poda, floración, cuajado, caída de fruto, alternancia, riego, sanidad, calibre, madurez de corte, calidad comercial y memoria de estrés.
+
+================================================================================
+0. DECISIONES EJECUTIVAS Y CORRECCIONES
+================================================================================
+
+0.1. Enfoque correcto
+Este documento modela rendimiento de MANGO / ÁRBOL DE MANGO como cultivo comercial BIO-G, no como cítrico, no como cultivo anual y no como nogal caducifolio.
+
+Incluye perfiles MG:
+- mg_skip — Mango general / No sé.
+- mg_01_ataulfo_manila — Ataulfo / Manila / miel.
+- mg_02_tommy_atkins — Tommy Atkins / exportación volumen.
+- mg_03_kent — Kent / exportación tardía / calidad interna.
+- mg_04_keitt — Keitt / muy tardío / ventana extendida.
+- mg_05_criollo_regional — Criollo / regional / mercado local.
+
+No modela aguacate, cítricos, guayaba, nogal ni otros frutales. No heredar kg/árbol de limón, naranjo, manzano o nogal. Mango tiene fisiología propia: inducción floral variable, floración sensible, cuajado frágil, caída natural y caída por estrés, alternancia productiva, y fuerte dependencia de reservas/postcosecha.
+
+0.2. Corrección de cropId
+El cropId canónico recomendado es `crop_mango_tree`.
+Regla de compatibilidad:
+- crop_mango_tree = canónico recomendado.
+- mango_tree = cropKey esperado / legacy técnico.
+- mango, mangos, crop_mango, mangifera, mangifera_indica, arbol_mango, árbol_mango = aliases compatibles.
+- Los profileIds MG no cambian aunque se agreguen aliases regionales.
+
+0.3. Unidad principal
+La salida principal de rendimiento debe ser:
+- kg de mango fresco por árbol;
+- toneladas de mango fresco por hectárea;
+- kg totales de mango fresco si el usuario captura número de árboles.
+
+La salida NO debe ser:
+- número exacto de frutos;
+- cajas, rejas, arpillas, bins o pallets;
+- precio o rentabilidad;
+- grados Brix, acidez, materia seca o color de pulpa como rendimiento;
+- porcentaje exacto de exportación;
+- calibre exacto;
+- predicción comercial garantizada;
+- receta de paclobutrazol, nitratos, estrés hídrico u otro inductor.
+
+BIO-G puede mostrar porcentaje comercializable como contexto, pero no debe confundir kg biológicos con fruta vendible de primera/exportación. En mango se puede cargar mucho kg y aun así perder valor por antracnosis, mosca de fruta, golpe de sol, mala madurez, fibra, manchas, bajo calibre o corte inmaduro.
+
+0.4. Motor real de la librería BIO-G revisada
+La librería revisada muestra dos capas de rendimiento para árboles:
+
+A) Capa mínima global:
+`lib/core/yield/tree_yield_reference_catalog.dart`
+- Usa `TreeYieldReference`.
+- Estima kg totales = kg/árbol x número de árboles.
+- Trabaja por `TreeProductiveTier`.
+- Es conservadora y sirve como fallback/pantalla simple.
+
+B) Capa completa por árbol:
+`lib/core/crops/[tree]/[tree]_yield_reference.dart`
+- Usa `YieldRange(low, expected, high)`.
+- Usa `fullKgPerTree`.
+- Convierte con `treesPerHaFromSpacing`, `tonHaFromKgTree`, `kgTreeFromTonHa`.
+- Maneja `ProductionState`, `ManagementLevel`, `IrrigationLevel`, `StressMemory`, `DensitySystem`, carga visible, calidad comercial y confianza.
+- Limón ya implementa `resolveLemonTreeYield(...)` y Naranjo ya implementa `resolveOrangeTreeYield(...)`; Mango debe seguir ese patrón de código, pero con fisiología propia.
+
+Corrección a la intuición del usuario:
+Sí, el motor completo se apoya mucho en árboles/ha, pero el eje más limpio es:
+
+kg de mango fresco por árbol x árboles por hectárea = toneladas por hectárea
+
+La pantalla simple puede calcular kg totales con número de árboles. La pantalla completa debe usar densidad o marco de plantación para evitar inflar t/ha.
+
+0.5. Regla no negociable BIO-G
+No usar `sowingDate` como eje de rendimiento de Mango.
+
+El eje correcto es:
+estado perenne + etapa visible + perfil MG + densidad + manejo + riego + inducción/floración/cuajado + carga visible + calidad comercial + memoria de estrés.
+
+El mango NO florece automáticamente cada año. La ausencia de floración es un estado válido. La cosecha no cierra el cultivo: la postcosecha define reservas, brote maduro, inducción futura y el siguiente potencial de rendimiento.
+
+0.6. Decisión de calibración v1
+BIO-G v1 debe ser conservador:
+- Si el usuario sólo dice “mango”, usar `mg_skip` conservador.
+- Si no hay densidad o número de árboles, no prometer t/ha fino.
+- Si no hay estado productivo ni carga visible, bajar confianza.
+- Si hay no-floración, floración débil, caída de frutito, antracnosis, cenicilla, salinidad, estrés hídrico, calor, frío, mala postcosecha o poda fuerte, bajar rendimiento aunque NPK esté “bien”.
+- Resultados >25-30 t/ha deben etiquetarse como huerta buena/tecnificada o año fuerte, no como default.
+- Resultados >40 t/ha sólo deben aparecer con perfil específico, densidad real, manejo alto, poda/control de copa, riego estable/fertirriego, baja memoria de estrés y carga confirmada.
+- Resultados >50-60 t/ha deben tratarse como potencial intensivo/validado localmente, no expectativa normal.
+
+0.7. Decisión sobre inducción floral y reguladores
+El motor puede registrar “inducción favorable”, “inducción insuficiente”, “inducción manejada” o “inducción fallida”. Pero NO debe recomendar estrés hídrico, paclobutrazol, nitrato de potasio, nitrato de amonio, poda o químicos como receta. Esos manejos existen y pueden alterar floración/rendimiento, pero requieren técnico, variedad, edad, clima, dosis, historial y normatividad.
+
+Mensaje BIO-G:
+“Que el mango floree no garantiza cosecha. Primero hay que ver si la flor cuajó, si el árbol trae agua, raíz, hoja madura y sanidad. Un estrés moderado puede ayudar a inducir, pero si se pasa tira flor y frutito.”
+
+================================================================================
+1. OBJETIVO DEL DOCUMENTO
+================================================================================
+
+Este documento debe permitir implementar `mango_tree_yield_reference.dart` y alimentar la pantalla de rendimiento aproximado.
+
+Debe responder:
+- Cuánto puede producir un mango por árbol según perfil y estado productivo.
+- Cuánto puede producir una hectárea según densidad/marco de plantación.
+- Cómo ajustar por riego, manejo, cuidado, inducción/floración/cuajado, carga visible, calidad comercial y memoria de estrés.
+- Cómo tratar Ataulfo/Manila, Tommy Atkins, Kent, Keitt, Criollo/Regional y SKIP.
+- Cómo evitar sobreestimación en alta densidad.
+- Cómo reflejar alternancia: año cargado / año bajo.
+- Cómo mantener una salida honesta para productor: rango, confianza y advertencias.
+
+No debe responder:
+- Precio de venta.
+- Rentabilidad completa.
+- Dosis de fertilización.
+- Número exacto de frutos.
+- Recomendaciones de inducir estrés hídrico o usar reguladores como receta.
+- Diagnóstico sanitario definitivo.
+- Predicción por mercado/exportación.
+- Garantía de calibre o calidad poscosecha.
+
+================================================================================
+2. BASE AGRONÓMICA Y CRITERIO DE CONFIANZA
+================================================================================
+
+2.1. Fuentes de alta confianza usadas para calibración
+
+A) BIO-G interno:
+- Estándar BIO-G para integración de árboles perennes v1.5 con addendum.
+- PDF base Universal BIO-G Mango.
+- PDF base Perfil SKIP BIO-G Mango.
+- Documento 03 de Limón LM, como patrón de rendimiento por kg/árbol, t/ha, densidad, manejo, riego, carga, calidad y memoria.
+- Revisión de `lib.zip`, especialmente `lemon_tree_yield_reference.dart`, `orange_tree_yield_reference.dart`, `apple_tree_yield_reference.dart`, `tree_yield_reference_catalog.dart` y `yield_projection_setup_screen.dart`.
+
+B) México / instituciones / extensión:
+- SADER/SIAP: rendimiento promedio nacional de mango en México alrededor de 10.85 t/ha para 2023 y contexto de producción nacional.
+- SADER-DGSIAP/estadísticas 2024: producción alrededor de 2.35 millones de toneladas y rendimiento promedio cercano a 11.0 t/ha como referencia agregada conservadora.
+- INIFAP / National Mango Board: unidades calor y madurez para Ataulfo, Tommy Atkins, Kent y Keitt. Útil para etapa `harvest_maturity`, calendario y confianza de cosecha, no para prometer rendimiento.
+- INIFAP / Revista Mexicana de Ciencias Agrícolas / SciELO: extracción y requerimiento de macronutrimentos en mango Ataulfo, y referencias de rendimiento objetivo/producción en México.
+- Plan Rector del Sistema Producto Mango: cultivares relevantes en México: Manila, Ataulfo, Haden, Kent, Tommy Atkins, Keitt, Sensation, Zill, Irwin, etc. Para BIO-G v1 se agrupan por perfiles MG.
+
+C) Universidades/extensión internacional:
+- UF/IFAS Mango Growing in the Florida Home Landscape: árboles injertados producen 3-5 años después de plantados; árboles maduros pueden producir 100-150 kg/árbol en Florida; desarrollo flor-fruto 100-150 días.
+- UF/IFAS rentabilidad de mango en Florida: supuestos de huerto establecido con 80 árboles/acre y 275 lb/árbol (~125 kg/árbol), además de pack-out promedio de 85%. Útil como límite de árbol adulto manejado, no como default mexicano.
+- CTAHR Hawaii: mango puede iniciar producción 2-4 años después de plantación y seguir productivo por muchos años bajo buen manejo.
+- Queensland/Australia: investigación de alta densidad muestra que aumentar densidad puede elevar t/ha temprano, pero baja kg/árbol por competencia y exige poda/entrenamiento.
+- Mango Industry Australia / Queensland: en sistemas convencionales de baja densidad se reportan valores como 35-70 kg/árbol y 7-13 t/ha para Kensington Pride; intensificación puede elevar potencial.
+- Estudios de Menzel y otros sobre alta densidad: muestran rangos de 26-107 kg/árbol y fuerte alternancia según año, árbol y cultivar.
+
+D) Investigación aplicada sobre floración/alternancia:
+- Acta Horticulturae / ISHS / Bally et al.: estrés hídrico controlado de varias semanas puede promover floración en condiciones tropicales, pero su efecto depende del ambiente y cultivar. BIO-G no lo convierte en receta.
+- Scielo/Biotecnia México: nitratos y paclobutrazol pueden inducir floración en Tommy Atkins bajo condiciones experimentales. BIO-G no prescribe reguladores ni dosis.
+- Estudios sobre alternancia: la floración/carga de un año afecta reservas, inducción y rendimiento del siguiente; en mango esto es estructural.
+
+E) Foros, productores, grupos y redes sociales:
+Uso permitido SOLO para lenguaje UX y preguntas reales del agricultor. NO se usan para fijar umbrales duros.
+Frases detectadas/útiles:
+- “floreó mucho pero tiró todo”
+- “cuajó pero se cayó chiquito”
+- “se fue a pura hoja”
+- “no quiso florear este año”
+- “trae mucho mango pero está chico”
+- “le faltó llenado”
+- “se manchó por antracnosis”
+- “se pudrió en cosecha”
+- “lo cortaron verde y salió desabrido”
+- “el año pasado cargó mucho y este año nada”
+- “le metieron químico para florear y quedó cansado”
+- “se quemó del sol”
+- “se cayó por viento/lluvia”
+
+Regla: los foros ayudan al copy farmer-friendly, no al cálculo.
+
+2.2. Lectura crítica de los datos encontrados
+
+Los datos de rendimiento de mango varían muchísimo. No existe un único número correcto.
+
+Ejemplos que afectan la calibración:
+- Datos oficiales agregados de México rondan 10-11 t/ha, pero mezclan temporal, riego, edades, variedades, densidades, regiones, huertos viejos, años bajos, sanidad y manejo.
+- En huertos convencionales amplios puede haber árboles adultos con 70-150 kg/árbol, pero si hay pocos árboles/ha el t/ha no se dispara.
+- En alta densidad, la hectárea puede producir más, pero cada árbol debe tener cap menor por competencia de luz, agua y volumen de copa.
+- Algunos sistemas intensivos reportan o modelan >40-60 t/ha, pero no deben ser default en BIO-G porque exigen diseño de copa, poda, riego, nutrición, cultivar, sanidad y historial.
+- En mango, un año de carga fuerte puede bajar el siguiente si no hay reservas/postcosecha. No basta multiplicar kg/árbol por densidad.
+- La floración no equivale a rendimiento: panícula abundante puede perderse por antracnosis, cenicilla, alta humedad, lluvia, frío/calor, mala polinización/cuajado, estrés hídrico o caída fisiológica.
+- El peso de fruto cambia mucho entre Ataulfo/Manila, Tommy, Kent, Keitt y criollos. Por eso NO conviene calcular por “número de mangos” como salida principal.
+
+Conclusión BIO-G:
+El motor debe calcular por kg/árbol y árboles/ha, con caps por densidad y factores de etapa/manejo/memoria. La salida debe ser rango + confianza + notas, no promesa.
+
+================================================================================
+3. DECISIÓN BIO-G DE RANGOS BASE t/ha
+================================================================================
+
+3.1. Rangos generales para BIO-G v1
+
+[TABLA]
+Sistema/estado | Rango t/ha BIO-G | Lectura
+Huerto no productivo / recién plantado | 0 | No proyectar cosecha comercial
+Primeras cosechas | 0.5-6 | Depende de árbol injertado, variedad, riego, poda y cuajado
+Joven productivo | 3-14 | Árbol aún creciendo; no plena copa ni carga estable
+SKIP conservador | 4-20 | Usuario no sabe perfil; no prometer alto
+Promedio nacional/agregado México | 8-12 | Referencia realista amplia, no potencial de huerta cuidada
+Convencional funcional | 8-18 | Huerta con manejo básico/medio y densidad tradicional
+Comercial bueno con riego/poda | 15-28 | Perfil claro, manejo ordenado, buen cuajado y sanidad
+Año cargado / buen manejo | 22-35 | Posible con carga confirmada, riego, sanidad y densidad funcional
+Alta densidad/intensivo validado | 30-45 | Sólo con diseño, poda, riego, manejo alto y baja memoria de estrés
+Sobresaliente / experimental | >45-60 | No default; requiere historial local, densidad real y validación técnica
+[/TABLA]
+
+3.2. Regla de no sobreestimar
+
+Si BIO-G no conoce perfil, densidad, edad productiva, riego, floración/cuajado ni carga visible, usar `mg_skip` conservador. No mostrar 30-45 t/ha como expectativa por defecto.
+
+3.3. Interpretación de alto rendimiento
+
+- >20 t/ha: buen resultado para muchos sistemas mexicanos.
+- >30 t/ha: alto; pedir confirmar densidad, poda, riego, carga y porcentaje comercializable.
+- >40 t/ha: intensivo/tecnificado; no mostrar sin manejo alto, densidad real y carga visible.
+- >50 t/ha: potencial muy alto; requiere historial, sistema intensivo, cultivar adecuado y validación local.
+
+================================================================================
+4. DECISIÓN BIO-G DE RANGOS BASE kg/ÁRBOL
+================================================================================
+
+Todos los rangos son fruta fresca total por árbol adulto antes de aplicar estado, manejo, riego, inducción/floración/cuajado, carga, estrés y densidad.
+
+[TABLA]
+Perfil | Label | kg/árbol adulto bajo | kg/árbol esperado | kg/árbol alto | t/ha bajo | t/ha esperado | t/ha alto | Confianza base
+mg_skip | MG-SKIP - Mango general | 18 | 48 | 90 | 4 | 10.5 | 20 | 0.44
+mg_01_ataulfo_manila | MG-01 - Ataulfo / Manila | 18 | 45 | 85 | 5 | 12 | 24 | 0.62
+mg_02_tommy_atkins | MG-02 - Tommy Atkins | 30 | 70 | 120 | 7 | 17 | 30 | 0.66
+mg_03_kent | MG-03 - Kent | 32 | 75 | 130 | 8 | 19 | 32 | 0.62
+mg_04_keitt | MG-04 - Keitt | 35 | 80 | 140 | 8 | 20 | 35 | 0.58
+mg_05_criollo_regional | MG-05 - Criollo / regional | 15 | 40 | 85 | 3.5 | 9 | 20 | 0.46
+[/TABLA]
+
+4.1. Lectura por perfil
+
+MG-SKIP
+- Conservador.
+- No asume Ataulfo, Tommy, Kent, Keitt ni criollo.
+- No asume densidad, riego, poda, portainjerto ni manejo técnico.
+- Útil para onboarding rápido.
+- No promete floración cada año.
+
+MG-01 Ataulfo / Manila
+- Perfil temprano y premium en México.
+- Fruto más pequeño/mediano y de alto valor, por lo que kg/árbol puede ser menor que cultivares de fruto grande, aunque el número de frutos sea alto.
+- Sensible a mala madurez de corte, calidad externa, floración/cuajado y alternancia.
+- No convertir “premium” en más toneladas; premium puede significar mejor precio/calidad, no más kg.
+
+MG-02 Tommy Atkins
+- Perfil de volumen/exportación, fruto más grande, resistencia relativa a manejo/transporte.
+- Buen potencial kg/árbol con riego y copa manejada.
+- Puede tener calidad interna menor frente a otros perfiles, pero eso no siempre baja kg biológico.
+- N alto y exceso vegetativo pueden afectar inducción/floración.
+
+MG-03 Kent
+- Perfil intermedio-tardío/exportación, buena calidad interna.
+- Llenado más largo; puede sostener buen kg/árbol si hay agua y sanidad.
+- Sensible a floración bajo humedad, caída, madurez de corte y alternancia moderada.
+
+MG-04 Keitt
+- Perfil tardío/muy tardío, fruto grande, ventana extendida.
+- Puede tener kg/árbol alto, pero requiere sostener agua/hoja/sanidad durante más tiempo.
+- Fuerte riesgo de confundir “fruta presente por más tiempo” con garantía de rendimiento; el riesgo de estrés acumulado y calidad debe pesar.
+
+MG-05 Criollo / regional
+- Perfil variable.
+- Puede ser rústico, de mercado local y con mezcla genética.
+- Calidad, tamaño y ventana son más variables.
+- No asumir rendimiento alto por árbol grande viejo; muchos árboles criollos tienen poca poda, alternancia y calidad irregular.
+
+================================================================================
+5. ENTRADAS MÍNIMAS PARA BIO-G
+================================================================================
+
+5.1. Pantalla simple
+- Cultivo: Mango / Árbol de mango.
+- Perfil: mg_skip o MG-01..MG-05.
+- Estado perenne: newly_planted, juvenile_non_productive, established, productive_season, unknown.
+- Etapa visible: planting_transplant, root_establishment, juvenile_vegetative, dormancy, budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest, unknown.
+- Número de árboles, si el usuario lo sabe.
+
+5.2. Cálculo completo
+- Hectáreas.
+- Árboles por hectárea o marco de plantación.
+- Número total de árboles.
+- Perfil MG.
+- Estado productivo.
+- Manejo/cuidado.
+- Riego.
+- Inducción/floración/cuajado.
+- Carga visible.
+- Calidad comercial.
+- Memoria de estrés.
+
+5.3. Entradas futuras opcionales
+- Edad exacta.
+- Portainjerto.
+- Árboles faltantes.
+- Porcentaje de copa viva.
+- Porcentaje exportable/primera/segunda.
+- Calibre.
+- Peso promedio de fruto.
+- Materia seca.
+- Color de pulpa.
+- Brix/acidez.
+- Número de cortes.
+- Meses de cosecha.
+- Historial de t/ha.
+- Historial de alternancia.
+- Floración inducida por manejo técnico.
+- Antracnosis/cenicilla confirmada.
+- Mosca de fruta o daño de fruto.
+- Salinidad de agua.
+- Análisis foliar/suelo/agua.
+
+No bloquear v1 por no tener estas entradas.
+
+================================================================================
+6. ESTADOS PRODUCTIVOS PARA RENDIMIENTO
+================================================================================
+
+El estado productivo es local del motor de rendimiento. No inventar nuevos TreeStateIds globales.
+
+[TABLA]
+Estado rendimiento | Descripción BIO-G | Salida
+nonProductive | Recién plantado, raíz, juvenil sin cosecha comercial | 0 kg/árbol
+firstBearing | Primeras cosechas ligeras | 5-35% del potencial adulto
+youngBearing | Árbol joven en producción creciente | 25-85% del potencial adulto
+fullBearing | Producción plena o adulta | 70-120% del potencial adulto
+lowFloweringYear | Inducción/floración débil o no uniforme | 8-55% del potencial adulto
+lowSetOrDropYear | Floró, pero cuajó mal o tiró frutito | 10-65% del potencial adulto
+alternateBearingHighYear | Año cargado / on-year | 85-135% del potencial adulto; posible menor calibre/calidad
+alternateBearingLowYear | Año bajo / off-year | 5-55% del potencial adulto
+inducedBloomManaged | Inducción/desfase manejado con técnico | 40-110% del potencial adulto; no prometer más anual
+inducedBloomStressFailure | Inducción/estrés mal aplicado | 5-55% del potencial adulto
+oldDeclining | Árbol viejo/declinante | 25-85% del potencial adulto
+unknown | Usuario no sabe | 20-80% del potencial adulto
+[/TABLA]
+
+6.1. Multiplicadores sugeridos
+
+```dart
+enum MangoProductionState {
+  nonProductive,
+  firstBearing,
+  youngBearing,
+  fullBearing,
+  lowFloweringYear,
+  lowSetOrDropYear,
+  alternateBearingHighYear,
+  alternateBearingLowYear,
+  inducedBloomManaged,
+  inducedBloomStressFailure,
+  oldDeclining,
+  unknown,
+}
+
+({double low, double expected, double high}) _productionStateFactors(
+  MangoProductionState state,
+) {
+  return switch (state) {
+    MangoProductionState.nonProductive => (low: 0, expected: 0, high: 0),
+    MangoProductionState.firstBearing => (low: 0.05, expected: 0.18, high: 0.35),
+    MangoProductionState.youngBearing => (low: 0.25, expected: 0.55, high: 0.85),
+    MangoProductionState.fullBearing => (low: 0.70, expected: 1.00, high: 1.20),
+    MangoProductionState.lowFloweringYear => (low: 0.08, expected: 0.30, high: 0.55),
+    MangoProductionState.lowSetOrDropYear => (low: 0.10, expected: 0.35, high: 0.65),
+    MangoProductionState.alternateBearingHighYear => (low: 0.85, expected: 1.10, high: 1.35),
+    MangoProductionState.alternateBearingLowYear => (low: 0.05, expected: 0.25, high: 0.55),
+    MangoProductionState.inducedBloomManaged => (low: 0.40, expected: 0.80, high: 1.10),
+    MangoProductionState.inducedBloomStressFailure => (low: 0.05, expected: 0.25, high: 0.55),
+    MangoProductionState.oldDeclining => (low: 0.25, expected: 0.55, high: 0.85),
+    MangoProductionState.unknown => (low: 0.20, expected: 0.50, high: 0.80),
+  };
+}
+```
+
+6.2. Inferencia desde estado perenne
+
+- newly_planted => nonProductive.
+- juvenile_non_productive => nonProductive.
+- established + unknown stage => unknown.
+- established + flowering => lowFloweringYear o unknown si no hay cuajado confirmado.
+- established + fruit_set => lowSetOrDropYear o youngBearing si el árbol es joven.
+- productive_season + flowering => unknown / lowFloweringYear si no hay carga confirmada.
+- productive_season + fruit_set => lowSetOrDropYear o youngBearing.
+- productive_season + fruit_fill/harvest_maturity => fullBearing por defecto conservador.
+- post_harvest => fullBearing si hay historial de cosecha; unknown si no hay carga/cosecha registrada.
+- unknown => unknown.
+
+6.3. Etapas que bloquean rendimiento
+
+Si la etapa es:
+- planting_transplant;
+- root_establishment;
+- juvenile_vegetative;
+
+o si el estado es newly_planted / juvenile_non_productive, BIO-G proyecta 0 kg/árbol.
+
+Mensaje:
+“Todavía no proyectamos cosecha fuerte. En mango joven primero importa raíz, copa, hoja madura y estructura antes que forzar floración.”
+
+6.4. Edad orientativa
+
+No usar edad como motor principal, pero puede orientar:
+- 0-1 años: establecimiento, normalmente 0 comercial.
+- 2-3 años: posible primera cosecha ligera si es injertado y bien manejado.
+- 3-5 años: producción joven creciente.
+- 5-8 años: puede entrar a plena producción según variedad, copa, densidad y manejo.
+- 8-15 años: plena producción en sistemas bien manejados.
+- 15+ años: puede seguir plena o declinar según poda, copa, raíz, salinidad, sanidad y alternancia.
+
+================================================================================
+7. DENSIDAD Y MARCO DE PLANTACIÓN
+================================================================================
+
+7.1. Fórmulas
+
+`arbolesPorHa = 10000 / (distanciaEntreHileras_m * distanciaEntreArboles_m)`
+
+`tonHa = (kgPorArbol * arbolesPorHa) / 1000`
+
+`kgPorArbol = (tonHa * 1000) / arbolesPorHa`
+
+7.2. Densidades orientativas
+
+[TABLA]
+Marco | Árboles/ha aprox. | Lectura BIO-G
+10 x 10 m | 100 | Tradicional amplio / árboles grandes
+9 x 9 m | 123 | Tradicional amplio
+8 x 8 m | 156 | Tradicional-comercial amplio
+8 x 6 m | 208 | Comercial moderado / comparable a densidades bajas de ensayos
+7 x 7 m | 204 | Tradicional moderado
+7 x 5 m | 286 | Comercial intermedio
+6 x 6 m | 278 | Comercial intermedio
+6 x 5 m | 333 | Comercial intermedio-intensivo
+5 x 5 m | 400 | Comercial intensivo moderado
+5 x 4 m | 500 | Intensivo con poda
+4 x 4 m | 625 | Alta densidad manejada
+4 x 3 m | 833 | Alta densidad fuerte
+3 x 3 m | 1111 | Muy alta densidad; exige sistema de copa
+3 x 2 m | 1667 | Ultra alta densidad/espaldera; no default BIO-G v1
+[/TABLA]
+
+7.3. Caps por densidad
+
+La densidad no sólo multiplica. A mayor densidad, cada árbol tiene menos espacio, luz y volumen de copa. El motor debe capear kg/árbol para no inflar t/ha.
+
+```dart
+class MangoDensitySystem {
+  const MangoDensitySystem(this.id, this.kgPerTreeCap);
+
+  final String id;
+  final double kgPerTreeCap;
+
+  static const MangoDensitySystem extensive = MangoDensitySystem(
+    'extensive_or_old_spacing_under_150_trees_ha',
+    190,
+  );
+  static const MangoDensitySystem traditional = MangoDensitySystem(
+    'traditional_150_250_trees_ha',
+    155,
+  );
+  static const MangoDensitySystem commercialModerate = MangoDensitySystem(
+    'commercial_250_450_trees_ha',
+    115,
+  );
+  static const MangoDensitySystem intensiveManaged = MangoDensitySystem(
+    'intensive_450_800_trees_ha',
+    80,
+  );
+  static const MangoDensitySystem highDensityManaged = MangoDensitySystem(
+    'high_density_800_1250_trees_ha',
+    50,
+  );
+  static const MangoDensitySystem ultraHighDensity = MangoDensitySystem(
+    'ultra_high_density_over_1250_trees_ha',
+    38,
+  );
+
+  static MangoDensitySystem fromTreesPerHa(double treesPerHa) {
+    if (treesPerHa < 150) return extensive;
+    if (treesPerHa < 250) return traditional;
+    if (treesPerHa < 450) return commercialModerate;
+    if (treesPerHa < 800) return intensiveManaged;
+    if (treesPerHa < 1250) return highDensityManaged;
+    return ultraHighDensity;
+  }
+}
+```
+
+7.4. Justificación de caps
+
+Ejemplo sin cap:
+- Keitt alto: 140 kg/árbol x 1111 árboles/ha = 155 t/ha.
+Eso no es una expectativa razonable de v1.
+
+Con cap alta densidad:
+- cap 50 kg/árbol x 1111 árboles/ha = 55.5 t/ha.
+Aun así es alto y debe requerir manejo intensivo/historial.
+
+Con cap ultra alta densidad:
+- cap 38 kg/árbol x 1667 árboles/ha = 63.3 t/ha.
+Esto sólo debe aparecer como potencial intensivo con advertencia fuerte, no como expectativa simple.
+
+Regla de mensaje:
+“En alta densidad no puedes multiplicar el árbol como si estuviera solo. Hay más árboles por hectárea, pero cada copa carga menos y exige poda, luz, riego y sanidad.”
+
+================================================================================
+8. MODIFICADORES DE MANEJO
+================================================================================
+
+8.1. Manejo
+
+```dart
+enum MangoManagementLevel { low, medium, good, high, exceptional }
+
+double _managementFactor(MangoManagementLevel? level) => switch (level) {
+  null => 1.0,
+  MangoManagementLevel.low => 0.55,
+  MangoManagementLevel.medium => 0.85,
+  MangoManagementLevel.good => 1.05,
+  MangoManagementLevel.high => 1.18,
+  MangoManagementLevel.exceptional => 1.30,
+};
+```
+
+Lectura:
+- low: poca poda, riego irregular, sanidad reactiva, alternancia fuerte, mala postcosecha.
+- medium: manejo funcional promedio.
+- good: poda, riego, nutrición, sanidad y cosecha ordenadas.
+- high: monitoreo, riego/fertirriego, control de copa, sanidad de flor/fruto y cosecha por madurez.
+- exceptional: sólo con datos confiables, no default.
+
+8.2. Porcentaje de cuidado
+
+100% cuidado = manejo correcto para el potencial base. No significa máximo teórico.
+
+```dart
+double _carePercentFactor(double? carePercent) {
+  if (carePercent == null) return 1.0;
+  final p = carePercent.clamp(0, 130).toDouble();
+  if (p <= 30) return 0.38;
+  if (p <= 50) return 0.58;
+  if (p <= 70) return 0.76;
+  if (p <= 90) return 0.90;
+  if (p <= 105) return 1.00;
+  if (p <= 115) return 1.12;
+  if (p <= 125) return 1.20;
+  return 1.25;
+}
+```
+
+Si existen `managementLevel` y `carePercent`, no multiplicar ambos agresivamente. Usar `carePercent` como principal o tomar el menor.
+
+8.3. Riego
+
+```dart
+enum MangoIrrigationLevel {
+  rainfedHumid,
+  rainfedDry,
+  irregular,
+  stable,
+  fertigation,
+  managedDeficitForInduction,
+}
+
+double _irrigationFactor(MangoIrrigationLevel? level) => switch (level) {
+  null => 1.0,
+  MangoIrrigationLevel.rainfedHumid => 0.78,
+  MangoIrrigationLevel.rainfedDry => 0.48,
+  MangoIrrigationLevel.irregular => 0.68,
+  MangoIrrigationLevel.stable => 1.03,
+  MangoIrrigationLevel.fertigation => 1.12,
+  MangoIrrigationLevel.managedDeficitForInduction => 0.95,
+};
+```
+
+Regla mango:
+El déficit leve/controlado puede favorecer inducción floral en ciertos contextos, pero el déficit severo en floración/cuajado/llenado tumba rendimiento. Por eso el factor de riego no debe “premiar” el estrés por sí solo; la respuesta se modela con `MangoBloomSetStatus` y con memoria.
+
+================================================================================
+9. INDUCCIÓN, FLORACIÓN, CUAJADO, CARGA Y ALTERNANCIA
+================================================================================
+
+9.1. Calidad de inducción/floración/cuajado
+
+En mango, el cuello de botella principal NO es sólo NPK. El rendimiento se decide entre inducción floral, panícula, sanidad de flor, polinización/cuajado, caída de frutito y retención inicial.
+
+```dart
+enum MangoBloomSetStatus {
+  unknown,
+  inductionLikely,
+  noFloweringLikely,
+  goodBloomGoodSet,
+  goodBloomPoorSet,
+  weakBloom,
+  heatColdRainSetLoss,
+  anthracnosePowderyMildewBloomLoss,
+  fruitSetConfirmed,
+  inducedBloomManaged,
+  inducedBloomStressFailure,
+  alternateOffNoBloom,
+}
+
+double _bloomSetFactor(MangoBloomSetStatus? status) => switch (status) {
+  null || MangoBloomSetStatus.unknown => 1.0,
+  MangoBloomSetStatus.inductionLikely => 1.02,
+  MangoBloomSetStatus.fruitSetConfirmed => 1.05,
+  MangoBloomSetStatus.goodBloomGoodSet => 1.10,
+  MangoBloomSetStatus.inducedBloomManaged => 1.05,
+  MangoBloomSetStatus.goodBloomPoorSet => 0.65,
+  MangoBloomSetStatus.weakBloom => 0.55,
+  MangoBloomSetStatus.heatColdRainSetLoss => 0.40,
+  MangoBloomSetStatus.anthracnosePowderyMildewBloomLoss => 0.40,
+  MangoBloomSetStatus.inducedBloomStressFailure => 0.35,
+  MangoBloomSetStatus.noFloweringLikely => 0.20,
+  MangoBloomSetStatus.alternateOffNoBloom => 0.15,
+};
+```
+
+9.2. Carga visible
+
+```dart
+enum MangoCropLoadStatus { noneVisible, light, balanced, heavy, veryHeavy, unknown }
+
+double _cropLoadFactor(MangoCropLoadStatus? status) => switch (status) {
+  null || MangoCropLoadStatus.unknown => 1.0,
+  MangoCropLoadStatus.noneVisible => 0.15,
+  MangoCropLoadStatus.light => 0.50,
+  MangoCropLoadStatus.balanced => 1.0,
+  MangoCropLoadStatus.heavy => 1.08,
+  MangoCropLoadStatus.veryHeavy => 1.12,
+};
+```
+
+Carga heavy/veryHeavy puede subir kg biológicos pero bajar calibre, color, dulzor, uniformidad y reservas para el siguiente ciclo. No premiar sin revisar calidad y memoria de alternancia.
+
+9.3. Calidad comercial
+
+```dart
+enum MangoCommercialQualityRisk { none, mild, moderate, severe }
+
+double _commercialQualityFactor(MangoCommercialQualityRisk? risk) => switch (risk) {
+  null || MangoCommercialQualityRisk.none => 1.0,
+  MangoCommercialQualityRisk.mild => 0.92,
+  MangoCommercialQualityRisk.moderate => 0.76,
+  MangoCommercialQualityRisk.severe => 0.50,
+};
+```
+
+Este factor NO debe borrar kg biológicos. Sirve para `commercialFruitPct` y notas UX.
+
+9.4. Porcentaje comercializable base
+
+[TABLA]
+Perfil | % comercializable bajo | esperado | alto | Lectura
+mg_skip | 45 | 65 | 82 | Conservador; no sabe perfil ni destino
+mg_01_ataulfo_manila | 50 | 72 | 88 | Premium; calidad/madurez/mancha importan mucho
+mg_02_tommy_atkins | 58 | 75 | 90 | Exportación/volumen; pack-out puede ser alto con sanidad
+mg_03_kent | 55 | 76 | 90 | Calidad interna/exportación; cuidar madurez y sanidad
+mg_04_keitt | 52 | 72 | 88 | Tardío; largo llenado aumenta exposición a estrés/plagas
+mg_05_criollo_regional | 40 | 60 | 78 | Mercado local; calidad y uniformidad variables
+[/TABLA]
+
+9.5. Alternancia productiva
+
+Regla clave:
+En mango, un año cargado puede agotar reservas y reducir la inducción/floración del siguiente ciclo. BIO-G debe registrar memoria, no sólo la cosecha actual.
+
+Memoria de alternancia:
+- heavyCropLastCycle: mild/moderate/severe.
+- weakPostHarvestRecovery: mild/moderate/severe.
+- lowFloweringThisCycle: mild/moderate/severe.
+- alternateOffNoBloom: estado o bloomSet.
+
+Mensaje:
+“Si el año pasado cargó mucho y después no recuperó hoja/raíz/reservas, este año puede entrar bajo. No todo se arregla con NPK: la postcosecha manda.”
+
+================================================================================
+10. MEMORIA DE ESTRÉS
+================================================================================
+
+10.1. Por qué pesa en mango
+
+El mango tiene memoria fuerte de 1-2 ciclos. Estrés en postcosecha, brote inmaduro, poda fuerte, calor/frío en inducción, humedad alta en floración, antracnosis/cenicilla, caída de cuajado, salinidad o sequía en llenado pueden afectar el rendimiento actual y el siguiente.
+
+10.2. Enum y clase sugeridos
+
+```dart
+enum MangoStressSeverity { none, mild, moderate, severe }
+
+class MangoTreeStressMemory {
+  const MangoTreeStressMemory({
+    this.inductionFailure = MangoStressSeverity.none,
+    this.floweringHeatColdOrRain = MangoStressSeverity.none,
+    this.anthracnoseOrPowderyMildewBloomLoss = MangoStressSeverity.none,
+    this.fruitSetDrop = MangoStressSeverity.none,
+    this.fruitFillWaterStress = MangoStressSeverity.none,
+    this.salinityOrSodicityStress = MangoStressSeverity.none,
+    this.rootDeclineOrWaterlogging = MangoStressSeverity.none,
+    this.nutritionOrLeafStress = MangoStressSeverity.none,
+    this.pestOrDiseaseFruitLoss = MangoStressSeverity.none,
+    this.windHailSunburnOrRindDamage = MangoStressSeverity.none,
+    this.postHarvestReserveRisk = MangoStressSeverity.none,
+    this.heavyCropAlternateBearingRisk = MangoStressSeverity.none,
+    this.inducedStressMismanaged = MangoStressSeverity.none,
+    this.excessVegetativeFlushOrPruning = MangoStressSeverity.none,
+  });
+
+  final MangoStressSeverity inductionFailure;
+  final MangoStressSeverity floweringHeatColdOrRain;
+  final MangoStressSeverity anthracnoseOrPowderyMildewBloomLoss;
+  final MangoStressSeverity fruitSetDrop;
+  final MangoStressSeverity fruitFillWaterStress;
+  final MangoStressSeverity salinityOrSodicityStress;
+  final MangoStressSeverity rootDeclineOrWaterlogging;
+  final MangoStressSeverity nutritionOrLeafStress;
+  final MangoStressSeverity pestOrDiseaseFruitLoss;
+  final MangoStressSeverity windHailSunburnOrRindDamage;
+  final MangoStressSeverity postHarvestReserveRisk;
+  final MangoStressSeverity heavyCropAlternateBearingRisk;
+  final MangoStressSeverity inducedStressMismanaged;
+  final MangoStressSeverity excessVegetativeFlushOrPruning;
+}
+```
+
+10.3. Factor de estrés
+
+Usar el peor cuello de botella. No multiplicar todos los estreses porque se desploma demasiado.
+
+```dart
+double factorFor(MangoStressSeverity s) => switch (s) {
+  MangoStressSeverity.none => 1.0,
+  MangoStressSeverity.mild => 0.88,
+  MangoStressSeverity.moderate => 0.65,
+  MangoStressSeverity.severe => 0.35,
+};
+```
+
+Ajuste especial:
+- inducción fallida severa;
+- floración golpeada severa;
+- antracnosis/cenicilla severa en panícula;
+- caída severa de frutito;
+- estrés inducido mal aplicado severo;
+pueden justificar cap hard a 0.20-0.25.
+
+================================================================================
+11. TABLA DE REFERENCIA POR PERFIL PARA CÓDIGO
+================================================================================
+
+```dart
+class MangoTreeYieldReference {
+  const MangoTreeYieldReference({
+    required this.profileId,
+    required this.fullKgPerTree,
+    required this.expectedTonPerHa,
+    required this.confidenceBase,
+    this.commercialFruitPct = const YieldRange(45, 65, 82),
+    this.notesEs = const <String>[],
+  });
+
+  final String profileId;
+  final YieldRange fullKgPerTree;
+  final YieldRange expectedTonPerHa;
+  final double confidenceBase;
+  final YieldRange commercialFruitPct;
+  final List<String> notesEs;
+}
+
+const Map<String, MangoTreeYieldReference> mangoYieldReferenceByProfile =
+  <String, MangoTreeYieldReference>{
+    kMgSkip: MangoTreeYieldReference(
+      profileId: kMgSkip,
+      fullKgPerTree: YieldRange(18, 48, 90),
+      expectedTonPerHa: YieldRange(4, 10.5, 20),
+      confidenceBase: 0.44,
+      commercialFruitPct: YieldRange(45, 65, 82),
+      notesEs: <String>[
+        'Perfil general: no asume Ataulfo, Tommy, Kent, Keitt, criollo, densidad, riego, poda, portainjerto ni manejo técnico. No prometer floración anual.',
+      ],
+    ),
+    kMg01AtaulfoManila: MangoTreeYieldReference(
+      profileId: kMg01AtaulfoManila,
+      fullKgPerTree: YieldRange(18, 45, 85),
+      expectedTonPerHa: YieldRange(5, 12, 24),
+      confidenceBase: 0.62,
+      commercialFruitPct: YieldRange(50, 72, 88),
+      notesEs: <String>[
+        'Ataulfo/Manila: perfil temprano/premium; más cuidado con madurez de corte, calidad externa, floración, cuajado y alternancia. Premium no significa más toneladas.',
+      ],
+    ),
+    kMg02TommyAtkins: MangoTreeYieldReference(
+      profileId: kMg02TommyAtkins,
+      fullKgPerTree: YieldRange(30, 70, 120),
+      expectedTonPerHa: YieldRange(7, 17, 30),
+      confidenceBase: 0.66,
+      commercialFruitPct: YieldRange(58, 75, 90),
+      notesEs: <String>[
+        'Tommy Atkins: volumen/exportación; buen potencial con riego, copa manejada y sanidad. Vigilar exceso vegetativo, floración y calidad interna.',
+      ],
+    ),
+    kMg03Kent: MangoTreeYieldReference(
+      profileId: kMg03Kent,
+      fullKgPerTree: YieldRange(32, 75, 130),
+      expectedTonPerHa: YieldRange(8, 19, 32),
+      confidenceBase: 0.62,
+      commercialFruitPct: YieldRange(55, 76, 90),
+      notesEs: <String>[
+        'Kent: intermedio-tardío, buena calidad interna; requiere agua y sanidad durante llenado largo. Vigilar madurez y alternancia.',
+      ],
+    ),
+    kMg04Keitt: MangoTreeYieldReference(
+      profileId: kMg04Keitt,
+      fullKgPerTree: YieldRange(35, 80, 140),
+      expectedTonPerHa: YieldRange(8, 20, 35),
+      confidenceBase: 0.58,
+      commercialFruitPct: YieldRange(52, 72, 88),
+      notesEs: <String>[
+        'Keitt: tardío/muy tardío, fruto grande; buen potencial, pero el largo llenado aumenta exposición a estrés hídrico, plagas, sanidad y calidad.',
+      ],
+    ),
+    kMg05CriolloRegional: MangoTreeYieldReference(
+      profileId: kMg05CriolloRegional,
+      fullKgPerTree: YieldRange(15, 40, 85),
+      expectedTonPerHa: YieldRange(3.5, 9, 20),
+      confidenceBase: 0.46,
+      commercialFruitPct: YieldRange(40, 60, 78),
+      notesEs: <String>[
+        'Criollo/regional: muy variable; puede ser rústico, de mercado local o árbol viejo. No asumir rendimiento alto por tamaño del árbol.',
+      ],
+    ),
+  };
+```
+
+================================================================================
+12. NORMALIZACIÓN DE PROFILE ID Y ALIASES
+================================================================================
+
+```dart
+String? _normalizeMangoProfileId(String? profileId) {
+  final id = profileId?.trim().toLowerCase();
+  if (id == null || id.isEmpty) return id;
+
+  if (id == 'mg_01_ataulfo' ||
+      id == 'mg_01_manila' ||
+      id == 'mg_01_mango_miel' ||
+      id == 'mg_01_champagne' ||
+      id == 'mg_01_premium') {
+    return kMg01AtaulfoManila;
+  }
+  if (id == 'mg_02_tommy' ||
+      id == 'mg_02_tommy_atkins' ||
+      id == 'mg_02_exportacion' ||
+      id == 'mg_02_volumen') {
+    return kMg02TommyAtkins;
+  }
+  if (id == 'mg_03_kent' ||
+      id == 'mg_03_exportacion_tardia' ||
+      id == 'mg_03_calidad_interna') {
+    return kMg03Kent;
+  }
+  if (id == 'mg_04_keitt' ||
+      id == 'mg_04_tardio' ||
+      id == 'mg_04_muy_tardio' ||
+      id == 'mg_04_ventana_extendida') {
+    return kMg04Keitt;
+  }
+  if (id == 'mg_05_criollo' ||
+      id == 'mg_05_regional' ||
+      id == 'mg_05_local' ||
+      id == 'mg_05_huerto_viejo') {
+    return kMg05CriolloRegional;
+  }
+  return id;
+}
+```
+
+Aliases futuros que deben resolver a MG pero NO abrir perfil v1:
+- haden, haden_like, palmer, irwin, sensation, zill, manilita, manila criollo, otra variedad.
+
+Regla:
+Haden puede mapear a `mg_skip` o a un futuro `mg_06_haden_palmer_irwin` si el equipo decide expandir. No meterlo dentro de Kent/Keitt sin decisión explícita.
+
+================================================================================
+13. RESOLVER DE RENDIMIENTO PROPUESTO
+================================================================================
+
+13.1. Función principal esperada
+
+```dart
+MangoTreeYieldProjection resolveMangoTreeYield({
+  required String? profileId,
+  required String? perennialStateId,
+  required String? phenologyStageId,
+  double? treesPerHa,
+  double? hectares,
+  int? treeCount,
+  MangoProductionState? productionState,
+  MangoManagementLevel? managementLevel,
+  double? carePercent,
+  MangoIrrigationLevel? irrigationLevel,
+  MangoBloomSetStatus? bloomSetStatus,
+  MangoCropLoadStatus? cropLoadStatus,
+  MangoCommercialQualityRisk? commercialQualityRisk,
+  MangoTreeStressMemory? stressMemory,
+})
+```
+
+13.2. Pasos del cálculo
+
+1. Normalizar stateId y stageId con helpers de `tree_lifecycle.dart`.
+2. Resolver perfil por `_normalizeMangoProfileId(profileId)`; fallback `kMgSkip`.
+3. Si etapa/estado bloquea rendimiento, devolver cero con nota.
+4. Inferir estado productivo si no viene explícito.
+5. Determinar densidad:
+   - usar `treesPerHa` si existe;
+   - si no, `treeCount / hectares` si ambos existen;
+   - si no hay densidad, calcular sólo kg/árbol y bajar confianza.
+6. Aplicar factores:
+   - producción;
+   - manejo/cuidado;
+   - riego;
+   - inducción/floración/cuajado;
+   - carga visible;
+   - memoria de estrés.
+7. Aplicar cap por densidad.
+8. Convertir a t/ha.
+9. Calcular kg totales si hay número de árboles.
+10. Ajustar porcentaje comercializable por riesgo de calidad.
+11. Calcular confianza.
+12. Agregar notas farmer-friendly.
+
+13.3. Reglas de confianza
+
+Base:
+- usar `confidenceBase` del perfil.
+
+Bajar confianza:
+- sin densidad: -0.15.
+- estado productivo unknown: -0.10.
+- stage unknown: -0.05.
+- flowering/fruit_set sin bloomSetStatus: -0.05.
+- fruit_fill sin riego informado: -0.05.
+- perfil SKIP: cap máximo 0.60 salvo historial real.
+- inducción/desfase sin riego ni bloomSet: -0.10.
+- memoria de estrés presente: -0.10.
+- calidad comercial severa: -0.05.
+- alta densidad sin management high/exceptional: -0.10.
+
+Subir confianza:
+- densidad + etapa visible + carga balanced/heavy: +0.05.
+- perfil específico + riego estable + carga visible: +0.05.
+- historial de cosecha del productor: +0.05 futuro.
+
+Clamp:
+- mínimo 0.05.
+- máximo 0.95.
+- `mg_skip` máximo 0.60.
+- alta densidad sin historial máximo 0.70.
+
+================================================================================
+14. MENSAJES UX FARMER-FRIENDLY
+================================================================================
+
+14.1. Mensajes por situación
+
+Sin densidad:
+“Te puedo dar kg por árbol, pero para toneladas por hectárea necesito árboles/ha o marco de plantación.”
+
+Árbol joven:
+“Todavía no proyectamos cosecha fuerte. En mango joven primero va raíz, copa y hoja madura; forzar floración temprano puede cansar el árbol.”
+
+SKIP:
+“Este cálculo usa Mango general. Si luego eliges Ataulfo, Tommy, Kent, Keitt o Criollo, BIO-G recalcula sin borrar historial.”
+
+No floración:
+“El mango puede no florear un ciclo. No es falla automática: revisa edad, hoja madura, exceso de vigor, clima fresco/seco, poda y reservas.”
+
+Floración buena pero mal cuajado:
+“Florear mucho no significa cosechar mucho. Si tiró flor o frutito, el rendimiento baja aunque el árbol se vea cargado de panícula.”
+
+Frutito cayendo:
+“Algo de caída es normal, pero si coincide con calor, lluvia, sales, falta de agua, antracnosis o cenicilla, el amarre se viene abajo.”
+
+Carga pesada:
+“Traer mucho mango sube kg, pero puede bajar calibre y cansar el siguiente ciclo si no recupera bien.”
+
+Alta densidad:
+“En alta densidad no se multiplica como árbol aislado. La hectárea puede subir, pero cada árbol carga menos y necesita poda, luz y riego parejo.”
+
+Keitt/Kent llenado largo:
+“Este perfil sostiene el fruto más tiempo. Si falla agua, sanidad o hoja, se pega en calibre, madurez y fruta comercializable.”
+
+Ataulfo:
+“Ataulfo puede valer más por calidad, pero eso no significa más toneladas. Cuida madurez, mancha, calibre y cosecha.”
+
+Postcosecha:
+“No cierres el cultivo. Después de cosechar, el mango repone reservas y prepara el siguiente ciclo.”
+
+14.2. Mensajes de no promesa
+
+- “Este rango es aproximado; no es garantía de cosecha.”
+- “Si no hay floración o amarre confirmado, baja la confianza.”
+- “Si hay antracnosis, cenicilla, mosca de fruta o daño de cáscara, puede haber kg pero menos fruta comercial.”
+- “No recomendamos inducir floración sin técnico; un estrés mal aplicado puede bajar el cuajado.”
+
+================================================================================
+15. INTEGRACIÓN CON `TreeYieldReferenceCatalog`
+================================================================================
+
+La capa mínima global debe tener una entrada conservadora para `crop_mango_tree` y aliases.
+
+Sugerencia conceptual:
+
+```dart
+case 'crop_mango_tree':
+case 'mango_tree':
+case 'mango':
+case 'mangos':
+case 'crop_mango':
+case 'mangifera':
+case 'mangifera_indica':
+case 'arbol_mango':
+case 'árbol_mango':
+  return TreeYieldReference(
+    cropId: 'crop_mango_tree',
+    labelEs: 'Mango',
+    yieldUnit: 'kg de mango fresco',
+    productiveTiers: <TreeProductiveTier, YieldRange>{
+      TreeProductiveTier.nonProductive: YieldRange(0, 0, 0),
+      TreeProductiveTier.firstBearing: YieldRange(2, 8, 20),
+      TreeProductiveTier.youngBearing: YieldRange(10, 28, 55),
+      TreeProductiveTier.fullBearing: YieldRange(18, 48, 90),
+      TreeProductiveTier.declining: YieldRange(8, 25, 55),
+    },
+    notesEs: <String>[
+      'Referencia mínima conservadora. Para perfiles, densidad, alternancia y calidad, usar mango_tree_yield_reference.dart.',
+    ],
+  );
+```
+
+Si `TreeProductiveTier` no tiene esos nombres exactos, Codex debe adaptar al enum existente sin crear arquitectura nueva.
+
+================================================================================
+16. CASOS MÍNIMOS DE PRUEBA
+================================================================================
+
+1) mango_skip_only_crop_test
+Caso: crop_mango_tree + mg_skip + no stage + sin densidad.
+Esperado: kg/árbol conservador, sin t/ha fino, confianza baja-media, pedir etapa/densidad.
+
+2) mango_non_productive_zero_test
+Caso: newly_planted + planting_transplant.
+Esperado: 0 kg/árbol; mensaje raíz/copa antes que floración.
+
+3) mango_juvenile_no_yield_test
+Caso: juvenile_non_productive + juvenile_vegetative.
+Esperado: 0 kg/árbol; no penalizar por no tener fruta.
+
+4) mango_ataulfo_premium_not_more_ton_test
+Caso: mg_01_ataulfo_manila + fullBearing + densidad media.
+Esperado: rango razonable; nota “premium no significa más toneladas”.
+
+5) mango_tommy_full_bearing_density_test
+Caso: mg_02_tommy_atkins + fullBearing + 250 árboles/ha.
+Esperado: t/ha desde kg/árbol x densidad, cap si aplica.
+
+6) mango_keitt_high_density_cap_test
+Caso: mg_04_keitt + fullBearing + 1111 árboles/ha.
+Esperado: cap por densidad; advertencia alta densidad.
+
+7) mango_no_flowering_low_yield_test
+Caso: productive_season + dormancy/vegetative_growth + bloomSet noFloweringLikely.
+Esperado: baja fuerte; no prometer cosecha.
+
+8) mango_flower_but_poor_set_test
+Caso: flowering + goodBloomPoorSet.
+Esperado: reducir rendimiento; mensaje “flor no es cosecha”.
+
+9) mango_anthracnose_bloom_loss_test
+Caso: flowering + anthracnosePowderyMildewBloomLoss.
+Esperado: bajar rendimiento y calidad; pedir sanidad, no NPK primero.
+
+10) mango_fruit_set_drop_test
+Caso: fruit_set + fruitSetDrop severe.
+Esperado: factor bajo/cap hard; memoria para ciclo.
+
+11) mango_heavy_crop_quality_memory_test
+Caso: heavy crop + alternateBearingHighYear.
+Esperado: kg sube, pero nota calibre/reservas y siguiente ciclo.
+
+12) mango_alternate_low_year_test
+Caso: alternateBearingLowYear + postHarvestReserveRisk previous severe.
+Esperado: bajar rendimiento; mensaje de alternancia.
+
+13) mango_irregular_irrigation_fruit_fill_test
+Caso: fruit_fill + irrigation irregular + stress water moderate.
+Esperado: bajar rendimiento; mensaje calibre/llenado.
+
+14) mango_commercial_quality_severe_test
+Caso: harvest_maturity + commercialQualityRisk severe.
+Esperado: kg biológicos no se borran, pero % comercializable baja.
+
+15) mango_induced_stress_failure_test
+Caso: inducedBloomStressFailure.
+Esperado: bajar fuerte; no recomendar reguladores.
+
+16) mango_unknown_density_no_ton_ha_test
+Caso: treeCount null, hectares null, treesPerHa null.
+Esperado: kg/árbol sí, t/ha null, nota de densidad.
+
+17) mango_total_kg_tree_count_test
+Caso: kg/árbol calculado + treeCount 100.
+Esperado: totalKg = kg/árbol x 100.
+
+18) mango_high_projection_warning_test
+Caso: tonHa.expected > 30.
+Esperado: nota de proyección alta.
+
+19) mango_extreme_projection_warning_test
+Caso: tonHa.expected > 45.
+Esperado: nota de intensivo/validado localmente.
+
+20) mango_skip_confidence_cap_test
+Caso: mg_skip con datos muy buenos.
+Esperado: confianza no pasa de 0.60 salvo decisión futura con historial.
+
+================================================================================
+17. NO HACER EN CÓDIGO
+================================================================================
+
+- No usar `sowingDate` como eje del rendimiento.
+- No copiar lemon_tree_yield_reference.dart cambiando “limón” por “mango” sin adaptar fisiología.
+- No copiar naranjo como si Mango fuera cítrico.
+- No crear nuevos TreeStateIds globales.
+- No crear StageIds nuevos como floral_induction, panicle, fruit_drop, off_year o export_maturity.
+- No prometer floración cada año.
+- No asumir que floración abundante = cosecha alta.
+- No calcular por número exacto de mangos como salida principal.
+- No ignorar alternancia.
+- No ignorar postcosecha.
+- No multiplicar kg/árbol alto por densidad alta sin cap.
+- No mostrar >40 t/ha como default.
+- No recomendar paclobutrazol, nitrato de potasio, estrés hídrico o químicos como receta.
+- No usar foros para umbrales.
+- No borrar historial al migrar de mg_skip a MG-01..MG-05.
+- No convertir calidad comercial en kg biológicos; manejarlo como porcentaje comercializable/nota.
+- No confundir madurez de corte con fruta lista para consumo.
+- No usar datos de Florida/Australia/India como default mexicano sin ajustar a México.
+
+================================================================================
+18. FUENTES CONSULTADAS Y USO EN BIO-G
+================================================================================
+
+Alta confianza / fuentes institucionales y académicas:
+
+1) SADER / Gobierno de México. “Productores mexicanos baten récord de producción anual de mango en la última década”.
+Uso: rendimiento promedio nacional 10.85 t/ha y contexto agregado mexicano.
+URL: https://www.gob.mx/agricultura/prensa/productores-mexicanos-baten-record-de-produccion-anual-de-mango-en-la-ultima-decada-agricultura
+
+2) SADER-DGSIAP / SIAP vía estadísticas agrícolas 2024.
+Uso: referencia agregada 2024 de producción nacional y rendimiento cercano a 11 t/ha. Se usa como piso realista, no como potencial.
+URL de consulta secundaria: https://blogagricultura.com/estadisticas-mango-mexico/
+
+3) INIFAP / National Mango Board. Validación de unidades calor para cosecha de mango Ataulfo, Tommy Atkins, Kent y Keitt.
+Uso: madurez/cosecha, no rendimiento. Refuerza perfiles MG y diferencias de ventana.
+URL: https://www.mango.org/wp-content/uploads/2020/02/Unidades_De_Calor_SPN.pdf
+
+4) INIFAP / NMB. Informe diagnóstico de madurez y cosecha.
+Uso: cosecha objetiva, calidad y madurez; no prometer rendimiento.
+URL: https://www.mango.org/wp-content/uploads/2020/02/Informe_Diagn%C3%B3stico_Eng.pdf
+
+5) Cruz-Barrón et al. 2014. “Extracción y requerimiento de macronutrimentos en mango Ataulfo”. Revista Mexicana de Ciencias Agrícolas / SciELO / Redalyc.
+Uso: contexto de manejo, macronutrimentos y rendimiento objetivo; se reserva más para Documento 05, pero informa rendimiento potencial.
+URL: https://www.scielo.org.mx/pdf/remexca/v5n2/v5n2a5.pdf
+
+6) UF/IFAS. “Mango Growing in the Florida Home Landscape”.
+Uso: entrada a producción de árboles injertados, rendimiento maduro 100-150 kg/árbol, flor-fruto 100-150 días; límite biológico/manejo, no default México.
+URL: https://ask.ifas.ufl.edu/publication/MG216
+
+7) UF/IFAS. “Profitability and Cost Estimates for Producing Mango in South Florida”.
+Uso: supuestos comerciales de 80 árboles/acre, 275 lb/árbol y pack-out; calibración de adulto manejado.
+URL: https://ask.ifas.ufl.edu/publication/FE1115
+
+8) CTAHR Hawaii. “Mangifera indica (mango)”.
+Uso: entrada a producción 2-4 años y longevidad productiva; solo edad orientativa.
+URL: https://gms.ctahr.hawaii.edu/gs/handler/getmedia.ashx?dt=3&g=12&moid=3072
+
+9) Menzel et al. / Queensland. “Can the productivity of mango orchards be increased by using high-density plantings?”
+Uso: alternancia, kg/árbol, densidad y límites de extrapolación.
+URL: https://era.dpi.qld.gov.au/id/eprint/5655/1/Can%20the%20productivity%20of%20mango%20orchards%20be%20increased%20by%20using%20high-density%20plantings.pdf
+
+10) Ibell et al. 2024. “The Effects of Planting Density, Training System and Cultivar on Young Mango Trees”. Horticulturae.
+Uso: densidades 208, 416 y 1250 árboles/ha; aumento de t/ha temprano con alta densidad, pero menor producción por árbol por competencia.
+URL: https://www.mdpi.com/2311-7524/10/9/937
+
+11) Mango Industry Australia / Queensland. “Making the change to high density mango orchards”.
+Uso: referencia de 35-70 kg/árbol y 7-13 t/ha en convencional, y potencial de intensificación.
+URL: https://www.industry.mangoes.net.au/cmsb/media/4-bpr-final_making-the-change-to-high-density_upload.pdf
+
+12) Bally / ISHS / Acta Horticulturae. “Effect of water stress on mango flowering and yield”.
+Uso: estrés hídrico controlado puede favorecer floración en ciertos contextos; BIO-G no lo convierte en receta.
+URL: https://ishs.org/ishs-article/509_31/
+
+13) Morales-Martínez et al. 2020. “Effect of nitrates alone or with paclobutrazol on flowering induction in mango cv. Tommy Atkins”.
+Uso: existe inducción con nitratos/PBZ en investigación; BIO-G no prescribe reguladores.
+URL: https://www.scielo.org.mx/scielo.php?pid=S1665-14562020000200020&script=sci_arttext
+
+14) Plan Rector Nacional Sistema Producto Mango.
+Uso: cultivares relevantes de México y agrupación de perfiles.
+URL: https://sursureste.org.mx/wp-content/uploads/2022/08/Plan-Rector-del-Sistema-Producto-Mango-2012.pdf
+
+Foros/productores/redes:
+Uso exclusivo para lenguaje UX: frases de campo, problemas reales y copy. No se usan para rangos.
+
+FIN DEL DOCUMENTO 03

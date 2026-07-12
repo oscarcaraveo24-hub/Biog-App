@@ -1,0 +1,1197 @@
+[ENCABEZADO]
+BIO-G | Limón / Limonero | Documentación técnica v1
+[/ENCABEZADO]
+
+BIO-G
+03. Rendimiento Aproximado BIO-G - Limón / Limonero
+Cultivo visible: Limón / Limonero
+cropId canónico recomendado: crop_lemon_tree
+cropKey esperado: lemon_tree
+Alias compatibles: crop_lime_tree, lime_tree, lime, lemon, limón, limon, limonero, lima
+profilePrefix: LM
+Perfil general: lm_skip
+Versión: v1 reforzada
+Uso: documento fuente para `lemon_tree_yield_reference.dart`, pantalla de rendimiento aproximado y alta mínima en `TreeYieldReferenceCatalog`.
+Formato: TXT técnico para Flutter/Dart, Codex, Claude Code y agentes IA.
+Estado: listo para revisión agronómica, auditoría técnica y traducción a código.
+
+IMPORTANTE
+Este documento NO es una promesa de cosecha, NO es receta comercial, NO estima precio, NO sustituye análisis de suelo/agua/foliar, asesoría local, sanidad vegetal ni datos históricos del productor. BIO-G debe entregar rangos bajo / esperado / alto, confianza y notas. En limón, el rendimiento cambia fuerte por especie/perfil, edad productiva, densidad, riego, salinidad, HLB, raíz, floración/cuajado, número de cortes, calibre y calidad comercial.
+
+================================================================================
+0. DECISIONES EJECUTIVAS Y CORRECCIONES
+================================================================================
+
+0.1. Enfoque correcto
+Este documento modela rendimiento de LIMÓN / LIMONERO como cultivo comercial BIO-G, no un cítrico genérico.
+
+Incluye perfiles LM:
+- lm_skip — Limón general / No sé.
+- lm_01_persa_tahiti — Limón Persa / Tahití / sin semilla.
+- lm_02_mexicano_colima — Limón Mexicano / Colima / criollo / con semilla.
+- lm_03_amarillo_eureka_lisbon — Limón amarillo / italiano / Eureka / Lisbon.
+- lm_04_tropical_continuo — Tropical / producción continua.
+- lm_05_desfase_inducido — Desfase / inducido / “de invierno” / ventana cara.
+
+No modela naranjo, mandarina, toronja, lima dulce, naranja agria ni ornamental. Naranjo ya tiene su propio `crop_orange_tree`; sus kg/arbol y t/ha NO deben heredarse como si fueran limón.
+
+0.2. Corrección de cropId
+Los PDFs base usaban `LM-AR (crop_lime_tree)` para limón verde mexicano. Para BIO-G v1 se recomienda usar `crop_lemon_tree` como cropId canónico porque el usuario mexicano ve “Limón / Limonero” y los perfiles cubren tanto limes botánicos como true lemon amarillo.
+
+Regla de compatibilidad:
+- crop_lemon_tree = canónico recomendado.
+- lemon_tree = cropKey esperado.
+- crop_lime_tree, lime_tree, lime = aliases compatibles.
+- Los profileIds LM no cambian aunque internamente se acepte lime/lemon.
+
+0.3. Unidad principal
+La salida principal de rendimiento debe ser:
+- kg de limón fresco por árbol;
+- toneladas de limón fresco por hectárea;
+- kg totales de limón fresco si el usuario captura número de árboles.
+
+La salida NO debe ser:
+- número exacto de frutos;
+- cajas, rejas, costales, bins o arpillas;
+- precio o rentabilidad;
+- Brix/acidez;
+- porcentaje exacto de exportación;
+- calibre exacto;
+- jugo industrial;
+- predicción comercial garantizada.
+
+BIO-G puede mostrar porcentaje comercializable como contexto, pero no debe confundir kg biológicos con fruta vendible de primera.
+
+0.4. Motor real de la librería
+La `lib.zip` revisada muestra dos capas de rendimiento para árboles:
+
+A) Capa mínima global:
+`lib/core/yield/tree_yield_reference_catalog.dart`
+- Usa `TreeYieldReference`.
+- Estima kg totales = kg/arbol x número de árboles.
+- Trabaja por `TreeProductiveTier`.
+- Es conservadora y sirve como fallback/pantalla simple.
+
+B) Capa completa por árbol:
+`lib/core/crops/[tree]/[tree]_yield_reference.dart`
+- Usa `YieldRange(low, expected, high)`.
+- Usa `fullKgPerTree`.
+- Convierte con `treesPerHaFromSpacing`, `tonHaFromKgTree`, `kgTreeFromTonHa`.
+- Maneja `ProductionState`, `ManagementLevel`, `IrrigationLevel`, `StressMemory` y `DensitySystem`.
+- Naranjo ya implementa `resolveOrangeTreeYield(...)` y es el patrón cítrico más cercano.
+
+Corrección a la intuición del usuario:
+Sí, vas bien: el motor completo se apoya mucho en árboles/ha, pero el eje más limpio es **kg/arbol fresco + árboles/ha = t/ha**. La pantalla simple puede calcular kg totales con número de árboles. La pantalla completa debe usar densidad o marco de plantación para evitar inflar t/ha.
+
+0.5. Regla no negociable BIO-G
+No usar `sowingDate` como eje de rendimiento del limón.
+
+El eje correcto es:
+estado perenne + etapa visible + perfil LM + densidad + manejo + riego + floración/cuajado + carga visible + memoria de estrés.
+
+El limón puede tener flor, frutito, fruto en llenado y fruto listo para corte al mismo tiempo. La cosecha no cierra el cultivo.
+
+0.6. Decisión de calibración v1
+BIO-G v1 debe ser conservador:
+- Si el usuario sólo dice “limón”, usar lm_skip conservador.
+- Si no hay densidad o número de árboles, no prometer t/ha fino.
+- Si no hay estado productivo ni carga visible, bajar confianza.
+- Si hay HLB, raíz dañada, salinidad o floración golpeada, bajar rendimiento aunque NPK esté “bien”.
+- Resultados >35-40 t/ha sólo deben aparecer con perfil específico, densidad real, manejo alto/fertirriego y baja memoria de estrés.
+- Resultados >45-50 t/ha se deben etiquetar como potencial alto/tecnificado, no expectativa normal.
+
+================================================================================
+1. OBJETIVO DEL DOCUMENTO
+================================================================================
+
+Este documento debe permitir implementar `lemon_tree_yield_reference.dart` y alimentar la pantalla de rendimiento aproximado.
+
+Debe responder:
+- Cuánto puede producir un limonero por árbol según perfil y estado productivo.
+- Cuánto puede producir una hectárea según densidad/marco de plantación.
+- Cómo ajustar por riego, manejo, cuidado, floración/cuajado, carga visible, calidad comercial y memoria de estrés.
+- Cómo tratar limón persa, mexicano, amarillo, tropical y desfase.
+- Cómo evitar sobreestimación en alta densidad.
+- Cómo mantener una salida honesta para productor: rango, confianza y advertencias.
+
+No debe responder:
+- Precio de venta.
+- Rentabilidad completa.
+- Dosis de fertilización.
+- Número exacto de frutos.
+- Recomendaciones de inducir estrés hídrico o anillado como receta.
+- Diagnóstico sanitario.
+- Predicción por mercado.
+
+================================================================================
+2. BASE AGRONÓMICA Y CRITERIO DE CONFIANZA
+================================================================================
+
+2.1. Fuentes de alta confianza usadas para calibración
+
+A) BIO-G interno:
+- Estándar BIO-G para integración de árboles perennes v1.5 con addendum.
+- PDF base Universal BIO-G Limón.
+- PDF base Perfil SKIP BIO-G Limón.
+- Documento 03 de Naranjo OR, como patrón de rendimiento por kg/arbol, t/ha, densidad, manejo, riego, carga y memoria.
+- Revisión de `lib.zip`, especialmente `orange_tree_yield_reference.dart`, `tree_yield_reference_catalog.dart` y `yield_projection_setup_screen.dart`.
+
+B) México / instituciones / extensión:
+- SADER/SIAP, escenario mensual de limón 2024: referencia de rendimiento nacional agregado conservador.
+- INIFAP, altas densidades en limón Persa: densidades 357, 666, 800 y 1000 árboles/ha; rendimientos convencionales y de alta densidad.
+- INIFAP, manejo integral de limón mexicano con alta incidencia de HLB: rendimiento posible 15-25 t/ha con manejo, riego, nutrición y densidad, aunque con enfermedad.
+- SENASICA / análisis de impacto económico de cancro: tabla de productividad por edad de limón persa usada en simulación oficial.
+- Chapingo / DICEA: producción y agronomía de limón persa en Misantla, Veracruz.
+- ASyD 2022: sustentabilidad de limón persa en Martínez de la Torre, Veracruz.
+
+C) Universidades/extensión internacional:
+- UF/IFAS, Tahiti/Persian lime: producción por árbol según edad; útil como límite biológico, NO como promedio mexicano de huerto.
+- UF/IFAS, Key lime/Mexican lime: entrada a producción y producción por árbol; útil para comparar limón mexicano/Key lime, pero no para sustituir datos mexicanos de huerto.
+
+D) Investigación aplicada:
+- Trabajos sobre limón persa en Morelos: rendimiento por árbol, t/ha, programación de cosecha y efecto de nutrición/manejo.
+- Trabajos sobre producción en época de oferta escasa: útiles para LM-05 desfase/inducido.
+
+E) Foros y lenguaje de productor:
+Se usaron sólo para UX y frases de campo, NO para umbrales duros.
+Frases detectadas/útiles:
+- “floreó mucho pero tiró el limoncito”
+- “trae mucho limón pero no agarra tamaño”
+- “sale seco / sin jugo”
+- “está verde pero ya lo cortan”
+- “se raja”
+- “se amarillea por partes”
+- “se quemó de la orilla”
+- “tiene goma en el tronco”
+- “se fue a pura hoja”
+- “lo desfasé pero no amarró”
+
+Regla: los foros ayudan al copy farmer-friendly, no al cálculo.
+
+2.2. Lectura crítica de los datos encontrados
+
+Los datos de rendimiento de limón varían muchísimo. No existe un único número correcto.
+
+Ejemplos que afectan la calibración:
+- Datos oficiales agregados pueden verse bajos porque mezclan temporal, regiones, edades, condición sanitaria, superficie joven y variabilidad anual.
+- En limón Persa convencional de Veracruz/zonas productoras, rangos de 18-25 t/ha son razonables con manejo.
+- En alta densidad bien manejada de limón Persa, INIFAP reporta potenciales cercanos a 38-50 t/ha a siete años con 666-1000 árboles/ha.
+- En limón mexicano con HLB, INIFAP reporta que un paquete de manejo puede sostener 15-25 t/ha dependiendo de densidad y manejo, pero eso no significa que HLB no reduzca potencial.
+- En estudios de limón Persa, árboles de 7-11 años pueden reportar 80-140 kg/arbol o más, pero eso depende de portainjerto, temporada, edad y manejo.
+- UF/IFAS reporta árboles Tahiti/Tahití grandes con kg/arbol muy altos; BIO-G debe tratarlos como límite biológico de árbol grande, no como default por hectárea.
+
+Conclusión BIO-G:
+El motor debe calcular por kg/arbol y árboles/ha, pero con caps por densidad. Un árbol aislado puede cargar mucho; una hectárea densa no puede asumir que cada árbol se comporta como árbol aislado.
+
+================================================================================
+3. DECISIÓN BIO-G DE RANGOS BASE t/ha
+================================================================================
+
+3.1. Rangos generales para BIO-G v1
+
+[TABLA]
+Sistema/estado | Rango t/ha BIO-G | Lectura
+Huerto no productivo / recién plantado | 0 | No proyectar cosecha comercial
+Entrada a producción | 1-8 | Primeras cosechas ligeras; depende de injerto, manejo y densidad
+Joven productivo | 5-18 | Árbol aún creciendo; puede tener varios cortes, pero no plena carga
+SKIP conservador | 5-24 | Usuario no sabe perfil; no prometer alto
+Promedio nacional/agregado conservador | 7-15 | Útil como piso/realidad amplia, no como potencial de huerta cuidada
+Persa comercial convencional | 12-25 | Riego/manejo funcional; 357-500 árboles/ha
+Mexicano comercial con manejo | 10-25 | Variable por HLB, densidad, riego y región
+Buen manejo con riego/fertirriego | 20-35 | Perfil, densidad y sanidad más claros
+Alta densidad Persa validada | 35-50 | Sólo con densidad, poda, riego, sanidad y manejo técnico
+Sobresaliente | >50 | No default; requiere validación local e historial
+[/TABLA]
+
+3.2. Regla de no sobreestimar
+
+Si BIO-G no conoce perfil, densidad, edad productiva, riego ni carga, usar `lm_skip` conservador. No mostrar 35-50 t/ha como expectativa por defecto.
+
+3.3. Interpretación de alto rendimiento
+
+- >30 t/ha: alto para muchos sistemas, pero posible en huertas buenas.
+- >40 t/ha: potencial técnico/alta densidad; pedir confirmar densidad, árboles faltantes, riego, poda, sanidad y porcentaje comercializable.
+- >50 t/ha: sólo con historial/datos; mostrar cautela fuerte.
+
+================================================================================
+4. DECISIÓN BIO-G DE RANGOS BASE kg/árbol
+================================================================================
+
+Todos los rangos son fruta fresca total por árbol adulto antes de aplicar estado, manejo, riego, cuajado/carga, estrés y densidad.
+
+[TABLA]
+Perfil | Label | kg/arbol adulto bajo | kg/arbol esperado | kg/arbol alto | t/ha bajo | t/ha esperado | t/ha alto | Confianza base
+lm_skip | LM-SKIP - Limón general | 15 | 35 | 65 | 5 | 12 | 24 | 0.44
+lm_01_persa_tahiti | LM-01 - Persa / Tahití / sin semilla | 35 | 70 | 115 | 10 | 24 | 42 | 0.68
+lm_02_mexicano_colima | LM-02 - Mexicano / Colima / criollo | 20 | 45 | 80 | 7 | 16 | 30 | 0.62
+lm_03_amarillo_eureka_lisbon | LM-03 - Amarillo / Eureka / Lisbon | 30 | 60 | 100 | 8 | 20 | 36 | 0.54
+lm_04_tropical_continuo | LM-04 - Tropical / continuo | 20 | 50 | 90 | 6 | 18 | 35 | 0.50
+lm_05_desfase_inducido | LM-05 - Desfase / inducido | 18 | 40 | 80 | 5 | 16 | 32 | 0.42
+[/TABLA]
+
+4.1. Lectura por perfil
+
+LM-SKIP
+- Conservador.
+- No asume Persa ni Mexicano.
+- No asume densidad, riego, portainjerto ni manejo técnico.
+- Útil para onboarding rápido.
+
+LM-01 Persa/Tahití
+- Perfil de mayor importancia exportadora.
+- Fruto grande, verde comercial, generalmente sin semilla.
+- Alto potencial con riego, poda, densidad y sanidad.
+- Alta densidad puede subir t/ha, pero cada árbol carga menos; aplicar caps por densidad.
+
+LM-02 Mexicano/Colima/Criollo
+- Fruto chico, muy ácido, con semilla, cosecha frecuente.
+- Puede ser muy productivo por hectárea si hay densidad y manejo.
+- Más sensible a frío y con fuerte contexto HLB/psílido en México.
+- No usar UF/IFAS Key lime como único dato porque huertas mexicanas intensivas pueden superar kg/arbol de paisajismo.
+
+LM-03 Amarillo/Eureka/Lisbon
+- True lemon/limón amarillo.
+- Menos dominante en México; confianza menor.
+- Puede tener buen potencial, pero BIO-G debe evitar asumir mercado amplio o manejo típico de Persa.
+
+LM-04 Tropical/continuo
+- No es necesariamente especie distinta; es comportamiento productivo en zonas cálidas con floraciones/cortes repetidos.
+- Puede dar producción frecuente, pero también acumula estrés, plagas de brote, salinidad y agotamiento.
+
+LM-05 Desfase/inducido
+- Perfil de comportamiento/manejo, no especie botánica.
+- No debe prometer más rendimiento anual: busca mover ventanas de cosecha.
+- Estrés mal manejado puede bajar cuajado y rendimiento total.
+- Idealmente futuro: modelar como modificador sobre LM-01 o LM-02. En v1 puede existir como perfil conservador.
+
+================================================================================
+5. ENTRADAS MÍNIMAS PARA BIO-G
+================================================================================
+
+5.1. Pantalla simple
+- Cultivo: Limón / Limonero.
+- Perfil: lm_skip o LM-01..LM-05.
+- Estado perenne: newly_planted, juvenile_non_productive, established, productive_season, unknown.
+- Etapa visible: planting_transplant, root_establishment, juvenile_vegetative, dormancy, budbreak, vegetative_growth, flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest, unknown.
+- Número de árboles, si el usuario lo sabe.
+
+5.2. Cálculo completo
+- Hectáreas.
+- Árboles por hectárea o marco de plantación.
+- Número total de árboles.
+- Perfil LM.
+- Estado productivo.
+- Manejo/cuidado.
+- Riego.
+- Floración/cuajado.
+- Carga visible.
+- Calidad comercial.
+- Memoria de estrés.
+
+5.3. Entradas futuras opcionales
+- Edad exacta.
+- Portainjerto.
+- Árboles faltantes.
+- Porcentaje de copa viva.
+- Porcentaje exportable/primera/segunda.
+- Calibre.
+- Número de cortes por año.
+- Meses de corte.
+- HLB confirmado o sospecha.
+- Salinidad de agua.
+- Análisis foliar/suelo/agua.
+- Historial de t/ha.
+
+No bloquear v1 por no tener estas entradas.
+
+================================================================================
+6. ESTADOS PRODUCTIVOS PARA RENDIMIENTO
+================================================================================
+
+El estado productivo es local del motor de rendimiento. No inventar nuevos TreeStateIds globales.
+
+[TABLA]
+Estado rendimiento | Descripción BIO-G | Salida
+nonProductive | Recién plantado, raíz, juvenil sin cosecha comercial | 0 kg/arbol
+firstBearing | Primeras cosechas ligeras | 8-45% del potencial adulto
+youngBearing | Árbol joven en producción creciente | 35-90% del potencial adulto
+fullBearing | Producción plena o adulta | 75-120% del potencial adulto
+lowSetOrDropYear | Baja carga por floración/cuajado/caída/HLB/estrés | 15-75% del potencial adulto
+offSeasonInduced | Desfase/inducción fuera de pico; puede concentrar cosecha pero no siempre subir total anual | 20-95% del potencial adulto
+oldDeclining | Árbol viejo/declinante | 30-85% del potencial adulto
+unknown | Usuario no sabe | 25-85% del potencial adulto
+[/TABLA]
+
+6.1. Multiplicadores sugeridos
+
+```dart
+enum LemonProductionState {
+  nonProductive,
+  firstBearing,
+  youngBearing,
+  fullBearing,
+  lowSetOrDropYear,
+  offSeasonInduced,
+  oldDeclining,
+  unknown,
+}
+
+({double low, double expected, double high}) _productionStateFactors(
+  LemonProductionState state,
+) {
+  return switch (state) {
+    LemonProductionState.nonProductive => (low: 0, expected: 0, high: 0),
+    LemonProductionState.firstBearing => (low: 0.08, expected: 0.25, high: 0.45),
+    LemonProductionState.youngBearing => (low: 0.35, expected: 0.65, high: 0.90),
+    LemonProductionState.fullBearing => (low: 0.75, expected: 1.00, high: 1.20),
+    LemonProductionState.lowSetOrDropYear => (low: 0.15, expected: 0.45, high: 0.75),
+    LemonProductionState.offSeasonInduced => (low: 0.20, expected: 0.55, high: 0.95),
+    LemonProductionState.oldDeclining => (low: 0.30, expected: 0.60, high: 0.85),
+    LemonProductionState.unknown => (low: 0.25, expected: 0.55, high: 0.85),
+  };
+}
+```
+
+6.2. Inferencia desde estado perenne
+
+- newly_planted => nonProductive.
+- juvenile_non_productive => nonProductive.
+- established => unknown o firstBearing si el usuario reporta fruta.
+- productive_season + fruit_fill/harvest_maturity/post_harvest => fullBearing por defecto conservador.
+- productive_season + flowering/fruit_set => youngBearing o unknown si no hay carga confirmada.
+- unknown => unknown.
+
+6.3. Etapas que bloquean rendimiento
+
+Si la etapa es:
+- planting_transplant;
+- root_establishment;
+- juvenile_vegetative;
+
+o si el estado es newly_planted / juvenile_non_productive, BIO-G proyecta 0 kg/arbol.
+
+Mensaje:
+“Todavía no proyectamos cosecha fuerte. En limonero joven primero importa raíz, copa, hoja sana y estructura antes que forzar producción.”
+
+6.4. Edad orientativa
+
+No usar edad como motor principal, pero puede orientar:
+- 0-1 años: establecimiento, normalmente 0 comercial.
+- 2-3 años: posible primera cosecha si injertado y bien manejado.
+- 4-5 años: producción joven a plena según perfil, densidad y manejo.
+- 6-8 años: plena producción en sistemas bien manejados.
+- 9+ años: puede ser plena o declinar según poda, raíz, HLB, salinidad y copa.
+
+================================================================================
+7. DENSIDAD Y MARCO DE PLANTACIÓN
+================================================================================
+
+7.1. Fórmulas
+
+`arbolesPorHa = 10000 / (distanciaEntreHileras_m * distanciaEntreArboles_m)`
+
+`tonHa = (kgPorArbol * arbolesPorHa) / 1000`
+
+`kgPorArbol = (tonHa * 1000) / arbolesPorHa`
+
+7.2. Densidades orientativas
+
+[TABLA]
+Marco | Árboles/ha aprox. | Lectura BIO-G
+8 x 8 m | 156 | Amplio / tradicional viejo
+7 x 7 m | 204 | Tradicional amplio
+7 x 5 m | 286 | Tradicional-comercial
+7 x 4 m | 357 | Convencional Persa Veracruz/INIFAP citado
+6 x 5 m | 333 | Comercial intermedio
+6 x 4 m | 417 | Comercial intensivo moderado
+5 x 5 m | 400 | Comercial moderado
+5 x 4 m | 500 | Comercial intensivo
+5 x 3 m | 667 | Alta densidad
+4 x 3 m | 833 | Alta densidad fuerte
+4 x 2.5 m | 1000 | Muy alta densidad; exige poda/riego/manejo
+[/TABLA]
+
+7.3. Caps por densidad
+
+La densidad no sólo multiplica. A mayor densidad, cada árbol tiene menos espacio, luz y volumen de copa. El motor debe capear kg/arbol para no inflar t/ha.
+
+```dart
+class LemonDensitySystem {
+  const LemonDensitySystem(this.id, this.kgPerTreeCap);
+
+  final String id;
+  final double kgPerTreeCap;
+
+  static const extensive = LemonDensitySystem(
+    'extensive_or_old_spacing_under_250_trees_ha',
+    180,
+  );
+  static const traditional = LemonDensitySystem(
+    'traditional_250_400_trees_ha',
+    130,
+  );
+  static const commercialModerate = LemonDensitySystem(
+    'commercial_400_650_trees_ha',
+    95,
+  );
+  static const highDensityManaged = LemonDensitySystem(
+    'high_density_650_900_trees_ha',
+    55,
+  );
+  static const veryHighDensity = LemonDensitySystem(
+    'very_high_density_over_900_trees_ha',
+    50,
+  );
+
+  static LemonDensitySystem fromTreesPerHa(double treesPerHa) {
+    if (treesPerHa < 250) return extensive;
+    if (treesPerHa < 400) return traditional;
+    if (treesPerHa < 650) return commercialModerate;
+    if (treesPerHa < 900) return highDensityManaged;
+    return veryHighDensity;
+  }
+}
+```
+
+7.4. Justificación de caps
+
+Ejemplo sin cap:
+- Persa alto: 115 kg/arbol x 1000 arboles/ha = 115 t/ha.
+Eso no es una expectativa razonable de v1.
+
+Con cap muy alta densidad:
+- cap 50 kg/arbol x 1000 arboles/ha = 50 t/ha.
+Ese resultado ya coincide mejor con rangos técnicos de alta densidad reportados para Persa, pero sigue siendo alto y debe pedir confirmación.
+
+================================================================================
+8. MODIFICADORES DE MANEJO
+================================================================================
+
+8.1. Manejo
+
+```dart
+enum LemonManagementLevel { low, medium, good, high, exceptional }
+
+double _managementFactor(LemonManagementLevel? level) => switch (level) {
+  null => 1.0,
+  LemonManagementLevel.low => 0.55,
+  LemonManagementLevel.medium => 0.85,
+  LemonManagementLevel.good => 1.05,
+  LemonManagementLevel.high => 1.18,
+  LemonManagementLevel.exceptional => 1.28,
+};
+```
+
+Lectura:
+- low: manejo irregular, poca poda, riego malo, sanidad reactiva, baja nutrición.
+- medium: manejo funcional promedio.
+- good: riego, poda, nutrición y sanidad ordenadas.
+- high: fertirriego/monitoreo/poda/sanidad/cortes ordenados.
+- exceptional: sólo con datos confiables, no default.
+
+8.2. Porcentaje de cuidado
+
+100% cuidado = manejo correcto para el potencial base. No significa máximo teórico.
+
+```dart
+double _carePercentFactor(double? carePercent) {
+  if (carePercent == null) return 1.0;
+  final p = carePercent.clamp(0, 130).toDouble();
+  if (p <= 30) return 0.40;
+  if (p <= 50) return 0.60;
+  if (p <= 70) return 0.78;
+  if (p <= 90) return 0.90;
+  if (p <= 105) return 1.00;
+  if (p <= 115) return 1.12;
+  if (p <= 125) return 1.20;
+  return 1.25;
+}
+```
+
+Si existen `managementLevel` y `carePercent`, no multiplicar ambos agresivamente. Usar `carePercent` como principal o tomar el menor.
+
+8.3. Riego
+
+```dart
+enum LemonIrrigationLevel {
+  rainfedHumid,
+  rainfedDry,
+  irregular,
+  stable,
+  fertigation,
+}
+
+double _irrigationFactor(LemonIrrigationLevel? level) => switch (level) {
+  null => 1.0,
+  LemonIrrigationLevel.rainfedHumid => 0.75,
+  LemonIrrigationLevel.rainfedDry => 0.45,
+  LemonIrrigationLevel.irregular => 0.70,
+  LemonIrrigationLevel.stable => 1.02,
+  LemonIrrigationLevel.fertigation => 1.12,
+};
+```
+
+Regla limonero:
+El agua pesa todo el año. En floración/cuajado tumba amarre; en llenado tumba calibre/jugo; en salinidad cambia absorción; en exceso da raíz/Phytophthora/gomosis.
+
+================================================================================
+9. FLORACIÓN, CUAJADO, CARGA Y DESFASE
+================================================================================
+
+9.1. Calidad de floración/cuajado
+
+En limón no se modela “polinización” como pistache. El cuello de botella suele ser floración/cuajado bajo estrés: agua, calor, frío, salinidad, raíz, HLB, reservas y manejo.
+
+```dart
+enum LemonBloomSetStatus {
+  unknown,
+  goodBloomGoodSet,
+  goodBloomPoorSet,
+  weakBloom,
+  heatDroughtSetLoss,
+  fruitSetConfirmed,
+  inducedBloomManaged,
+  inducedBloomStressFailure,
+}
+
+double _bloomSetFactor(LemonBloomSetStatus? status) => switch (status) {
+  null || LemonBloomSetStatus.unknown => 1.0,
+  LemonBloomSetStatus.goodBloomGoodSet => 1.08,
+  LemonBloomSetStatus.fruitSetConfirmed => 1.03,
+  LemonBloomSetStatus.goodBloomPoorSet => 0.70,
+  LemonBloomSetStatus.weakBloom => 0.60,
+  LemonBloomSetStatus.heatDroughtSetLoss => 0.50,
+  LemonBloomSetStatus.inducedBloomManaged => 1.05,
+  LemonBloomSetStatus.inducedBloomStressFailure => 0.50,
+};
+```
+
+9.2. Carga visible
+
+```dart
+enum LemonCropLoadStatus { noneVisible, light, balanced, heavy, unknown }
+
+double _cropLoadFactor(LemonCropLoadStatus? status) => switch (status) {
+  null || LemonCropLoadStatus.unknown => 1.0,
+  LemonCropLoadStatus.noneVisible => 0.20,
+  LemonCropLoadStatus.light => 0.55,
+  LemonCropLoadStatus.balanced => 1.0,
+  LemonCropLoadStatus.heavy => 1.05,
+};
+```
+
+Carga heavy puede subir kg biológicos pero bajar calibre/calidad comercial. No premiar sin revisar tamaño, jugo y porcentaje vendible.
+
+9.3. Calidad comercial
+
+```dart
+enum LemonCommercialQualityRisk { none, mild, moderate, severe }
+
+double _commercialQualityFactor(LemonCommercialQualityRisk? risk) => switch (risk) {
+  null || LemonCommercialQualityRisk.none => 1.0,
+  LemonCommercialQualityRisk.mild => 0.92,
+  LemonCommercialQualityRisk.moderate => 0.78,
+  LemonCommercialQualityRisk.severe => 0.55,
+};
+```
+
+Este factor NO debe borrar kg biológicos. Sirve para `commercialFruitPct` y notas UX.
+
+9.4. Porcentaje comercializable base
+
+[TABLA]
+Perfil | % comercializable bajo | esperado | alto | Lectura
+lm_skip | 45 | 62 | 78 | Conservador; no sabe destino ni perfil
+lm_01_persa_tahiti | 55 | 72 | 88 | Exportación/fresco; calidad externa pesa mucho
+lm_02_mexicano_colima | 50 | 68 | 84 | Mercado nacional; tamaño/jugo/sanidad pesa
+lm_03_amarillo_eureka_lisbon | 55 | 72 | 88 | Fresco/nicho; color/calidad importa
+lm_04_tropical_continuo | 45 | 62 | 78 | Más cortes/estrés/plagas; calidad variable
+lm_05_desfase_inducido | 45 | 65 | 85 | Puede mejorar precio/ventana, no necesariamente kg
+[/TABLA]
+
+================================================================================
+10. MEMORIA DE ESTRÉS
+================================================================================
+
+10.1. Por qué pesa en limón
+
+El limonero produce en eventos recurrentes. Un estrés puede no matar el árbol, pero sí bajar la siguiente floración, cuajado, calibre, continuidad de cortes y porcentaje comercial.
+
+10.2. Enum y clase sugeridos
+
+```dart
+enum LemonStressSeverity { none, mild, moderate, severe }
+
+class LemonTreeStressMemory {
+  const LemonTreeStressMemory({
+    this.floweringHeatOrDrought = LemonStressSeverity.none,
+    this.fruitSetDrop = LemonStressSeverity.none,
+    this.fruitFillWaterStress = LemonStressSeverity.none,
+    this.salinityOrSodicityStress = LemonStressSeverity.none,
+    this.phytophthoraOrRootDecline = LemonStressSeverity.none,
+    this.hlbOrCanopyDecline = LemonStressSeverity.none,
+    this.nutritionOrLeafStress = LemonStressSeverity.none,
+    this.pestOrDiseaseFruitLoss = LemonStressSeverity.none,
+    this.windHailSunburnOrRindDamage = LemonStressSeverity.none,
+    this.inducedStressMismanaged = LemonStressSeverity.none,
+    this.postHarvestReserveRisk = LemonStressSeverity.none,
+  });
+
+  final LemonStressSeverity floweringHeatOrDrought;
+  final LemonStressSeverity fruitSetDrop;
+  final LemonStressSeverity fruitFillWaterStress;
+  final LemonStressSeverity salinityOrSodicityStress;
+  final LemonStressSeverity phytophthoraOrRootDecline;
+  final LemonStressSeverity hlbOrCanopyDecline;
+  final LemonStressSeverity nutritionOrLeafStress;
+  final LemonStressSeverity pestOrDiseaseFruitLoss;
+  final LemonStressSeverity windHailSunburnOrRindDamage;
+  final LemonStressSeverity inducedStressMismanaged;
+  final LemonStressSeverity postHarvestReserveRisk;
+}
+```
+
+10.3. Factor de estrés
+
+Usar el peor cuello de botella. No multiplicar todos los estreses porque se desploma demasiado.
+
+```dart
+double factorFor(LemonStressSeverity s) => switch (s) {
+  LemonStressSeverity.none => 1.0,
+  LemonStressSeverity.mild => 0.88,
+  LemonStressSeverity.moderate => 0.65,
+  LemonStressSeverity.severe => 0.35,
+};
+```
+
+Ajuste especial:
+- HLB/copa severo;
+- Phytophthora/raíz severa;
+- floración/cuajado severamente golpeados;
+- estrés inducido mal aplicado severo;
+pueden justificar cap hard a 0.25.
+
+================================================================================
+11. TABLA DE REFERENCIA POR PERFIL PARA CÓDIGO
+================================================================================
+
+```dart
+class LemonTreeYieldReference {
+  const LemonTreeYieldReference({
+    required this.profileId,
+    required this.fullKgPerTree,
+    required this.expectedTonPerHa,
+    required this.confidenceBase,
+    this.commercialFruitPct = const YieldRange(45, 62, 78),
+    this.notesEs = const <String>[],
+  });
+
+  final String profileId;
+  final YieldRange fullKgPerTree;
+  final YieldRange expectedTonPerHa;
+  final double confidenceBase;
+  final YieldRange commercialFruitPct;
+  final List<String> notesEs;
+}
+
+const Map<String, LemonTreeYieldReference> lemonYieldReferenceByProfile =
+  <String, LemonTreeYieldReference>{
+    kLmSkip: LemonTreeYieldReference(
+      profileId: kLmSkip,
+      fullKgPerTree: YieldRange(15, 35, 65),
+      expectedTonPerHa: YieldRange(5, 12, 24),
+      confidenceBase: 0.44,
+      commercialFruitPct: YieldRange(45, 62, 78),
+      notesEs: <String>[
+        'Perfil general: no asume Persa, Mexicano, Amarillo, densidad, riego, portainjerto ni manejo técnico. No sobreestimar.',
+      ],
+    ),
+    kLm01PersaTahiti: LemonTreeYieldReference(
+      profileId: kLm01PersaTahiti,
+      fullKgPerTree: YieldRange(35, 70, 115),
+      expectedTonPerHa: YieldRange(10, 24, 42),
+      confidenceBase: 0.68,
+      commercialFruitPct: YieldRange(55, 72, 88),
+      notesEs: <String>[
+        'Persa/Tahití: buen potencial con riego, poda, sanidad y densidad; vigilar exportable, calibre, color verde comercial, salinidad y raíz.',
+      ],
+    ),
+    kLm02MexicanoColima: LemonTreeYieldReference(
+      profileId: kLm02MexicanoColima,
+      fullKgPerTree: YieldRange(20, 45, 80),
+      expectedTonPerHa: YieldRange(7, 16, 30),
+      confidenceBase: 0.62,
+      commercialFruitPct: YieldRange(50, 68, 84),
+      notesEs: <String>[
+        'Mexicano/Colima: cosecha frecuente, fruto chico y ácido; vigilar frío, HLB/psílido, caída de frutito, agua y salinidad.',
+      ],
+    ),
+    kLm03AmarilloEurekaLisbon: LemonTreeYieldReference(
+      profileId: kLm03AmarilloEurekaLisbon,
+      fullKgPerTree: YieldRange(30, 60, 100),
+      expectedTonPerHa: YieldRange(8, 20, 36),
+      confidenceBase: 0.54,
+      commercialFruitPct: YieldRange(55, 72, 88),
+      notesEs: <String>[
+        'Amarillo/Eureka/Lisbon: menor presencia relativa en México; leer con clima, heladas, humedad y calidad comercial.',
+      ],
+    ),
+    kLm04TropicalContinuo: LemonTreeYieldReference(
+      profileId: kLm04TropicalContinuo,
+      fullKgPerTree: YieldRange(20, 50, 90),
+      expectedTonPerHa: YieldRange(6, 18, 35),
+      confidenceBase: 0.50,
+      commercialFruitPct: YieldRange(45, 62, 78),
+      notesEs: <String>[
+        'Tropical/continuo: puede tener cortes y floraciones repetidas; vigilar agotamiento, plagas de brote, salinidad y estrés acumulado.',
+      ],
+    ),
+    kLm05DesfaseInducido: LemonTreeYieldReference(
+      profileId: kLm05DesfaseInducido,
+      fullKgPerTree: YieldRange(18, 40, 80),
+      expectedTonPerHa: YieldRange(5, 16, 32),
+      confidenceBase: 0.42,
+      commercialFruitPct: YieldRange(45, 65, 85),
+      notesEs: <String>[
+        'Desfase/inducido: busca mover ventana de cosecha, no prometer más toneladas. Estrés mal aplicado puede bajar amarre.',
+      ],
+    ),
+  };
+```
+
+================================================================================
+12. NORMALIZACIÓN DE PROFILE IDS Y ALIASES
+================================================================================
+
+```dart
+String? _normalizeLemonProfileId(String? profileId) {
+  final id = profileId?.trim().toLowerCase();
+  if (id == null || id.isEmpty) return id;
+  if (id == 'lm_01_persa' ||
+      id == 'lm_01_tahiti' ||
+      id == 'lm_01_persian_lime' ||
+      id == 'lm_01_sin_semilla') {
+    return kLm01PersaTahiti;
+  }
+  if (id == 'lm_02_mexicano' ||
+      id == 'lm_02_colima' ||
+      id == 'lm_02_criollo' ||
+      id == 'lm_02_key_lime' ||
+      id == 'lm_02_agrio') {
+    return kLm02MexicanoColima;
+  }
+  if (id == 'lm_03_amarillo' ||
+      id == 'lm_03_italiano' ||
+      id == 'lm_03_eureka' ||
+      id == 'lm_03_lisbon' ||
+      id == 'lm_03_lisboa') {
+    return kLm03AmarilloEurekaLisbon;
+  }
+  if (id == 'lm_04_tropical' ||
+      id == 'lm_04_continuo' ||
+      id == 'lm_04_de_calor') {
+    return kLm04TropicalContinuo;
+  }
+  if (id == 'lm_05_desfase' ||
+      id == 'lm_05_inducido' ||
+      id == 'lm_05_invierno' ||
+      id == 'lm_05_programado') {
+    return kLm05DesfaseInducido;
+  }
+  return id;
+}
+```
+
+================================================================================
+13. RESOLVER DE RENDIMIENTO — LÓGICA COMPLETA
+================================================================================
+
+13.1. Función esperada
+
+```dart
+LemonTreeYieldProjection resolveLemonTreeYield({
+  required String? profileId,
+  required String? perennialStateId,
+  required String? phenologyStageId,
+  double? treesPerHa,
+  double? hectares,
+  int? treeCount,
+  LemonProductionState? productionState,
+  LemonManagementLevel? managementLevel,
+  double? carePercent,
+  LemonIrrigationLevel? irrigationLevel,
+  LemonBloomSetStatus? bloomSetStatus,
+  LemonCropLoadStatus? cropLoadStatus,
+  LemonCommercialQualityRisk? commercialQualityRisk,
+  LemonTreeStressMemory? stressMemory,
+})
+```
+
+13.2. Orden de cálculo
+
+1. Normalizar stateId y stageId.
+2. Resolver profileId; fallback a lm_skip.
+3. Si estado/etapa bloquea rendimiento, devolver 0.
+4. Inferir LemonProductionState.
+5. Resolver densidad:
+   - usar treesPerHa si existe;
+   - si no, treeCount / hectares;
+   - si no, dejar ton/ha como null o usar expectedTonPerHa sólo como orientación.
+6. Aplicar factores:
+   - estado productivo;
+   - manejo/cuidado;
+   - riego;
+   - floración/cuajado;
+   - carga visible;
+   - memoria de estrés.
+7. Calcular kg/arbol.
+8. Aplicar cap por densidad.
+9. Convertir a t/ha.
+10. Calcular totalKg si hay treeCount.
+11. Calcular commercialFruitPct como contexto.
+12. Calcular confianza.
+13. Agregar notas.
+
+13.3. Cálculo base
+
+```dart
+final sf = _productionStateFactors(state);
+final mgmt = _managementFactor(managementLevel);
+final care = _carePercentFactor(carePercent);
+final managementCombined = carePercent == null ? mgmt : care;
+final irr = _irrigationFactor(irrigationLevel);
+final set = _bloomSetFactor(bloomSetStatus);
+final load = _cropLoadFactor(cropLoadStatus);
+final stress = stressMemory?.yieldFactor01 ?? 1.0;
+final commonFactor = managementCombined * irr * set * load * stress;
+
+YieldRange kgTree = ref.fullKgPerTree
+    .scaleEach(sf.low, sf.expected, sf.high)
+    .scale(commonFactor);
+
+if (density != null) {
+  kgTree = kgTree.cappedAt(
+    LemonDensitySystem.fromTreesPerHa(density).kgPerTreeCap,
+  );
+}
+```
+
+================================================================================
+14. CONFIANZA
+================================================================================
+
+14.1. Reglas
+
+Base por perfil:
+- lm_skip: 0.44
+- lm_01_persa_tahiti: 0.68
+- lm_02_mexicano_colima: 0.62
+- lm_03_amarillo_eureka_lisbon: 0.54
+- lm_04_tropical_continuo: 0.50
+- lm_05_desfase_inducido: 0.42
+
+Ajustes:
+- sin densidad: -0.15
+- estado productivo unknown: -0.10
+- stage unknown: -0.05
+- estrés registrado: -0.10
+- flowering/fruit_set sin bloomSetStatus: -0.05
+- fruit_fill sin riego informado: -0.05
+- lm_05_desfase_inducido sin bloomSetStatus/irrigationLevel: -0.10 adicional
+- densidad + carga visible balanceada/heavy + stage confirmada: +0.05
+- perfil lm_skip nunca pasar de 0.60 salvo historial real
+- lm_05 nunca pasar de 0.58 sin perfil base/historial
+
+Clamp: 0.05 a 0.95.
+
+14.2. Mensajes de confianza
+
+- Alta: perfil + densidad + estado + etapa + riego + carga + bajo estrés.
+- Media: perfil o densidad parcial, etapa visible, sin historial.
+- Baja: SKIP, sin densidad, sin etapa, sin estado, o estrés/sanidad fuerte.
+
+================================================================================
+15. TABLA MÍNIMA PARA TreeYieldReferenceCatalog
+================================================================================
+
+Para la capa simple global, agregar sólo SKIP conservador.
+
+```dart
+'lemon_tree_lm_skip_young': TreeYieldReference(
+  id: 'lemon_tree_lm_skip_young',
+  cropId: kCropLemonTree,
+  profileId: kLmSkip,
+  tier: TreeProductiveTier.young,
+  kgPerTreeLow: 3,
+  kgPerTreeHigh: 15,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (limón, sin historial)',
+),
+'lemon_tree_lm_skip_first': TreeYieldReference(
+  id: 'lemon_tree_lm_skip_first',
+  cropId: kCropLemonTree,
+  profileId: kLmSkip,
+  tier: TreeProductiveTier.firstProduction,
+  kgPerTreeLow: 8,
+  kgPerTreeHigh: 30,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (limón, sin historial)',
+),
+'lemon_tree_lm_skip_full': TreeYieldReference(
+  id: 'lemon_tree_lm_skip_full',
+  cropId: kCropLemonTree,
+  profileId: kLmSkip,
+  tier: TreeProductiveTier.full,
+  kgPerTreeLow: 20,
+  kgPerTreeHigh: 70,
+  confidence: YieldDataConfidence.modeled,
+  sourceMethod: 'Modelo conservador por tier (limón, sin historial)',
+),
+```
+
+Y en `_skipProfileForCrop`:
+
+```dart
+case kCropLemonTree:
+  return kLmSkip;
+```
+
+================================================================================
+16. EJEMPLOS DE CÁLCULO
+================================================================================
+
+16.1. Persa convencional bien manejado
+
+Entrada:
+- profileId: lm_01_persa_tahiti
+- producción plena
+- 357 árboles/ha
+- manejo good
+- riego stable
+- carga balanced
+
+Base esperado: 70 kg/arbol.
+Estado full expected: x1.00.
+Manejo good: x1.05.
+Riego stable: x1.02.
+Carga balanced: x1.00.
+Resultado esperado aprox: 70 x 1.05 x 1.02 = 75 kg/arbol.
+Cap densidad 357 = 130 kg/arbol, no limita.
+75 x 357 / 1000 = 26.8 t/ha.
+
+Mensaje:
+“Buen potencial para Persa. Confirma porcentaje comercializable, calibre, riego, salinidad y raíz.”
+
+16.2. Persa alta densidad 800 árboles/ha
+
+Base alto puede intentar 115 kg/arbol.
+Sin cap: 115 x 800 / 1000 = 92 t/ha, inflado.
+Cap 650-900 árboles/ha: 55 kg/arbol.
+55 x 800 / 1000 = 44 t/ha.
+
+Mensaje:
+“Alta densidad detectada. Se limita kg/arbol para no tratar cada árbol como si estuviera en marco amplio.”
+
+16.3. Mexicano/Colima con manejo funcional y 416 árboles/ha
+
+Base esperado: 45 kg/arbol.
+Manejo medium: x0.85.
+Riego stable: x1.02.
+Resultado: 39 kg/arbol.
+39 x 416 / 1000 = 16.2 t/ha.
+
+Mensaje:
+“Rango funcional para limón mexicano. Si hay HLB, caída de frutito o salinidad, baja confianza y revisar sanidad/raíz.”
+
+16.4. SKIP temporal seco con estrés de llenado
+
+Base esperado: 35 kg/arbol.
+Manejo low: x0.55.
+RainfedDry: x0.45.
+Estrés moderado: x0.65.
+Resultado: 35 x 0.55 x 0.45 x 0.65 = 5.6 kg/arbol.
+Con 300 árboles/ha = 1.7 t/ha.
+
+Mensaje:
+“Proyección baja. No se arregla sólo con fertilizante: revisar agua, salinidad, raíz, hoja y carga real.”
+
+16.5. Desfase mal aplicado
+
+Base esperado lm_05: 40 kg/arbol.
+Estado offSeasonInduced expected: x0.55.
+InducedBloomStressFailure: x0.50.
+Riego irregular: x0.70.
+Resultado: 40 x 0.55 x 0.50 x 0.70 = 7.7 kg/arbol.
+
+Mensaje:
+“El desfase no garantiza producción. Si el estrés se pasó, puede inducir flor pero perder cuajado.”
+
+================================================================================
+17. MENSAJES UX RECOMENDADOS
+================================================================================
+
+17.1. Perfil general
+“Este es un perfil general de limón. Luego puedes elegir Persa, Mexicano, Amarillo, Tropical o Desfase sin perder historial.”
+
+17.2. Árbol joven
+“Todavía no proyectamos cosecha fuerte. En limonero joven primero importa raíz, copa, hoja sana y estructura.”
+
+17.3. kg vs calidad
+“Puede haber kilos, pero no toda la fruta entra como buena. Revisa calibre, jugo, cáscara, daño externo y sanidad.”
+
+17.4. Persa exportación
+“En Persa no basta con toneladas. Importan calibre, color verde comercial, cáscara limpia, corte y porcentaje exportable.”
+
+17.5. Mexicano
+“El limón mexicano puede cortar seguido, pero si hay HLB, salinidad o caída de frutito, la continuidad baja aunque el árbol siga verde.”
+
+17.6. Floración buena pero poco amarre
+“Si floreó bonito pero no amarró, no culpes de inmediato al fertilizante. Revisa agua, calor, viento, sales, raíz y sanidad.”
+
+17.7. Fruto chico o seco
+“El calibre y el jugo se juegan con agua estable, hoja activa, potasio, raíz sana y baja salinidad.”
+
+17.8. Salinidad
+“Si hay sales, el rendimiento baja aunque el sensor marque nutrientes. El problema puede ser absorción y raíz, no falta de abono.”
+
+17.9. HLB/gomosis/raíz
+“BIO-G no diagnostica HLB ni gomosis por rendimiento bajo. Si hay amarillamiento por ramas, fruta deformada, goma o decaimiento, confirma con técnico.”
+
+17.10. Desfase
+“Desfasar no es castigar el árbol a ciegas. Un estrés mal aplicado puede dar flor y perder cuajado.”
+
+17.11. Proyección alta
+“Proyección alta. Confirma densidad real, árboles faltantes, poda, riego, salinidad, calibre y fruta comercializable antes de tomarlo como expectativa.”
+
+================================================================================
+18. NO HACER EN CÓDIGO
+================================================================================
+
+- No usar `sowingDate` como eje de rendimiento.
+- No usar kg/arbol de naranjo para limón.
+- No mezclar Persa, Mexicano y Amarillo como si tuvieran el mismo rendimiento.
+- No prometer t/ha exactas.
+- No calcular número exacto de frutos.
+- No usar foros para umbrales.
+- No recomendar anillado, urea, estrés hídrico o poda como receta automática.
+- No decir que fruta verde siempre está inmadura: en Persa/Mexicano puede ser corte comercial.
+- No cerrar cultivo en cosecha: hay postcosecha/entre cortes.
+- No premiar N alto si hay mucho follaje y poca fruta.
+- No ignorar HLB/psílido, Phytophthora, salinidad o raíz.
+- No dejar proyecciones >40 t/ha sin nota de alta densidad/manejo.
+- No permitir >50 t/ha como default sin datos/historial.
+- No borrar historial al migrar de lm_skip a LM-01..LM-05.
+
+================================================================================
+19. TESTS RECOMENDADOS
+================================================================================
+
+1) lemon_non_productive_zero_test
+Caso: newly_planted + planting_transplant.
+Esperado: 0 kg/arbol; nota de raíz/copa/estructura.
+
+2) lemon_skip_conservative_no_density_test
+Caso: lm_skip, productive_season, fruit_fill, sin densidad.
+Esperado: kg/arbol conservador; ton/ha nulo o baja confianza; pedir densidad.
+
+3) lemon_persa_conventional_density_test
+Caso: lm_01_persa_tahiti, fullBearing, 357 árboles/ha, manejo good, riego stable.
+Esperado: rango aprox en zona 20-30 t/ha; no alerta de sobreestimación.
+
+4) lemon_persa_high_density_cap_test
+Caso: lm_01, fullBearing, 800 árboles/ha, high kg/arbol.
+Esperado: cap de kg/arbol; t/ha alto pero no inflado; nota de alta densidad.
+
+5) lemon_mexicano_hlb_stress_test
+Caso: lm_02, fullBearing, 416 árboles/ha, HLB/canopy stress moderate/severe.
+Esperado: baja rendimiento/confianza; no decir “falta fertilizante”.
+
+6) lemon_low_set_drop_year_test
+Caso: floración buena, cuajado pobre, heatDroughtSetLoss.
+Esperado: factor bajo; mensaje agua/calor/sales/raíz.
+
+7) lemon_drought_rainfed_test
+Caso: lm_skip, rainfedDry, fruit_fill stress moderate.
+Esperado: proyección baja; priorizar agua/raíz/salinidad.
+
+8) lemon_desfase_not_magic_test
+Caso: lm_05, inducedBloomStressFailure.
+Esperado: bajar proyección; advertir que desfase mal aplicado baja cuajado.
+
+9) lemon_green_maturity_test
+Caso: lm_01 o lm_02 harvest_maturity.
+Esperado: no exigir color amarillo; verde puede ser corte comercial.
+
+10) lemon_commercial_quality_risk_test
+Caso: kg bueno pero commercialQualityRisk severe.
+Esperado: kg biológicos se mantienen; commercialFruitPct baja y nota de calidad.
+
+11) lemon_tree_yield_catalog_fallback_test
+Caso: crop_lemon_tree + profile desconocido + tier full.
+Esperado: fallback lm_skip, no apple/orange skip.
+
+12) lemon_alias_crop_lime_tree_test
+Caso: crop_lime_tree/lime_tree.
+Esperado: canonicalCropKey resuelve a lemon_tree/crop_lemon_tree.
+
+================================================================================
+20. RESUMEN DE IMPLEMENTACIÓN PARA CODEX/CLAUDE
+================================================================================
+
+Crear:
+`lib/core/crops/lemon_tree/lemon_tree_yield_reference.dart`
+
+Con:
+- `YieldRange` si no se reutiliza globalmente.
+- `LemonTreeYieldReference`.
+- `LemonProductionState`.
+- `LemonManagementLevel`.
+- `LemonIrrigationLevel`.
+- `LemonBloomSetStatus`.
+- `LemonCropLoadStatus`.
+- `LemonCommercialQualityRisk`.
+- `LemonStressSeverity`.
+- `LemonTreeStressMemory`.
+- `LemonDensitySystem`.
+- conversiones `treesPerHaFromSpacing`, `tonHaFromKgTree`, `kgTreeFromTonHa`.
+- `resolveLemonTreeYield(...)`.
+
+Conectar:
+- `yield_projection_setup_screen.dart`: rama específica `if (cropId == CropCatalog.lemonTreeCropId)`.
+- `tree_yield_reference_catalog.dart`: tabla mínima SKIP y fallback.
+- `crop_catalog.dart`: constantes kCropLemonTree/kLmSkip y canonical crop key.
+
+Regla final:
+Limón debe dar orientación honesta. Si el productor sólo dice “limón”, BIO-G usa LM-SKIP conservador. Si captura perfil, densidad, etapa, riego, carga y bajo estrés, el rango mejora. Si hay salinidad, raíz, HLB o mala floración/cuajado, el rendimiento baja aunque el NPK parezca correcto.
+
+================================================================================
+21. FUENTES Y NOTAS DE TRAZABILIDAD
+================================================================================
+
+Fuentes internas BIO-G:
+- Estandar_BIOG_Integracion_Arboles_Perennes_v1_5_con_addendum.pdf
+- 01_Ficha_Tecnica_Universal_BioG_Limon_LM_v1_Reforzada.txt
+- 02_Perfil_SKIP_BioG_Limon_LM_SKIP_v1_Reforzado.txt
+- 03_Rendimiento_Aproximado_BioG_Naranjo_OR_v1_Reforzado.txt
+- lib.zip revisado: orange_tree_yield_reference.dart, tree_yield_reference_catalog.dart, yield_projection_setup_screen.dart
+
+Fuentes externas principales:
+- SADER/SIAP. Escenario mensual de productos agroalimentarios: Limón, julio 2024.
+- INIFAP. Altas densidades de población en huertas de limón Persa. 2025.
+- INIFAP. Manejo integral del cultivo de limón mexicano en un escenario de alta incidencia de HLB.
+- UF/IFAS. Growing 'Tahiti' Limes in the Home Landscape. HS8/CH093.
+- UF/IFAS. Key Lime Growing in the Florida Home Landscape. FC47/CH092.
+- Delgado et al. La dosis de fertilización afecta el rendimiento y calidad en limón Persa. Revista mexicana / Dialnet.
+- Cervantes et al. Producción de limón persa en época de oferta escasa.
+- ASyD 2022. Evaluación de sustentabilidad en producción de limón persa en Martínez de la Torre, Veracruz.
+- SENASICA. Análisis de impacto económico ante cancro de los cítricos; tabla de edad y productividad de limón persa.
+- Chapingo/DICEA. Producción y agronomía; datos de limón persa en Misantla, Veracruz.
+
+Nivel de confianza del documento:
+- Alto para arquitectura BIO-G y fórmula kg/arbol + árboles/ha.
+- Medio-alto para limón Persa en México.
+- Medio para limón Mexicano por variabilidad HLB/densidad/región.
+- Medio para limón amarillo por menor presencia relativa en México.
+- Medio-bajo para LM-05 como perfil independiente; idealmente futuro overlay sobre Persa/Mexicano.
+
+FIN DEL DOCUMENTO

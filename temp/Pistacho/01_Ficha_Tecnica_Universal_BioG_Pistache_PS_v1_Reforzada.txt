@@ -1,0 +1,909 @@
+01_FICHA_TECNICA_UNIVERSAL_BIOG_PISTACHE_PS_V1_REFORZADA
+======================================================================
+BIO-G | Documento 01 oficial para árbol perenne
+Cultivo: Pistache / Pistacho
+Nombre científico: Pistacia vera L.
+cropId recomendado: crop_pistachio_tree
+Alias legacy sugerido: pistachio_tree
+Prefijo de perfiles: PS
+Perfil general obligatorio: ps_skip
+Versión: v1 reforzada
+Uso: documento fuente para `pistachio_tree_catalog.dart`, `pistachio_tree_universal_profile.dart`, `pistachio_tree_crop_definition.dart`, assets, onboarding, NPK/UI y futuras reglas de rendimiento/sanidad.
+
+IMPORTANTE
+Este documento NO sustituye análisis de suelo, agua, tejido/foliar, asesoría agronómica regional, validación local ni normatividad vigente. BIO-G v1 debe orientar, ponderar riesgo, mejorar lectura de sensores y pedir confirmación. No debe prometer rendimiento ni recetar fertilizantes o plaguicidas.
+
+Fuentes base revisadas para esta versión:
+- Base entregada por usuario: PERFIL UNIVERSAL BIO-G — PISTACHE.
+- Base entregada por usuario: PERFIL SKIP BIO-G — PISTACHE.
+- Estándar BIO-G para integración de árboles perennes v1.5.
+- UC ANR / UC Davis: Climate & Cultivars, Pistachio cultivars, Golden Hills, Lost Hills, Kerman, Peters, Randy.
+- UC IPM: Year-round pistachio IPM, budbreak through bloom, fruit development, preharvest, harvest, postharvest, navel orangeworm, Botryosphaeria, Alternaria y otros riesgos.
+- UC ANR: salinidad, calidad de agua, suelo, pistachio rootstocks, manejo de salinidad y déficit hídrico.
+- California Agriculture / Kallsen et al.: nuevos cultivares UC con mejor calidad y cosecha más temprana que Kerman.
+- UC Davis 2026: investigación reciente sobre hull split / integridad de hull/cáscara.
+- NMSU / Western SARE: pistachio production and cultivar context for zonas áridas.
+- CIAD México: contexto regional de pistache en México y relevancia de Chihuahua.
+- Fuentes comerciales y foros/productores: usados SOLO para aliases, lenguaje UX y dudas frecuentes; NO para umbrales duros.
+
+======================================================================
+0. CORRECCIONES Y DECISIONES DE ESTA VERSIÓN
+======================================================================
+
+0.1. Identidad técnica cerrada
+Para BIO-G v1, Pistache se modela como:
+- cropId canónico: crop_pistachio_tree
+- alias legacy opcional: pistachio_tree
+- categoría: tree
+- prefix: ps
+- perfil genérico: ps_skip
+- cultivo madre: Pistache / Pistacho
+- especie base: Pistacia vera L.
+
+No usar `crop_pistachio`, `crop_pistachio_nut`, `crop_pistache` ni otros IDs nuevos sin migración/test.
+
+0.2. No modelarlo como nogal con otro nombre
+Pistache comparte con nogal la lógica de árbol caducifolio de nuez, dormancia, llenado, cosecha y postcosecha. Pero NO debe copiarse como nogal. Diferencias clave:
+- Pistache es dioico: hay árboles hembra y árboles macho.
+- La producción depende de sincronía macho-hembra y viento.
+- El fruto comercial depende de porcentaje de abiertos, vacíos/blanks, cerrados, manchado y calidad de kernel.
+- La alternancia puede ser muy marcada.
+- Pistache tolera salinidad mejor que muchos frutales, pero no tolera mal drenaje/asfixia radicular.
+- En baja acumulación de frío puede haber brotación/floración extendida, nutlet drop, nueces vacías y mala sincronía.
+- En preharvest/hull split, insectos y hongos pueden entrar con más facilidad si el hull/cascarilla se abre temprano.
+
+0.3. Universal + perfiles en el mismo documento
+Este Documento 01 incluye la ficha universal y la ficha de perfiles/variedades. No se crea un documento separado de variedades. Esto respeta el estándar BIO-G v1.5 y el patrón usado en manzano/nogal.
+
+0.4. Variedad, macho y portainjerto ajustan; no mandan la arquitectura
+La variedad hembra, variedad macho/polinizador, portainjerto, proporción macho:hembra, vigor, época de cosecha y mercado ajustan sensibilidad, ventanas relativas, rendimiento, calidad y copy UX. No cambian los IDs fenológicos base.
+
+0.5. El usuario no está obligado a saber macho/hembra
+BIO-G no debe bloquear el onboarding si el productor no sabe si trae Kerman/Peters, Golden Hills/Randy, Lost Hills/Randy, Sirora, Larnaka, Mateur u otro. En ese caso usa ps_skip y pregunta la realidad visible.
+
+0.6. Fruit_fill no es harvest_maturity
+Regla v1.5 estricta:
+- fruit_fill = crecimiento de fruto, expansión/endurecimiento de cáscara, desarrollo de kernel, llenado y calidad interna.
+- harvest_maturity = madurez comercial, alto porcentaje de abiertos, hull/cascarilla que se suelta, cosecha o pre-cosecha cercana.
+- post_harvest = hoja activa, reservas, sanidad, saneamiento y preparación del siguiente ciclo.
+
+Queda prohibido que fruit_fill genere copy de cosecha/madurez como identidad de etapa. Puede hablar de “llenado”, “kernel”, “nuez cerrada/vacía”, “calibre”, “porcentaje de apertura futuro”, “agua”, “K” y “reservas”, pero no tratar al árbol como ya listo para cortar.
+
+0.7. No convertir salinidad tolerada en salinidad buena
+Pistache es de los frutales comerciales más tolerantes a suelos moderadamente salinos y calizos, pero BIO-G no debe celebrar EC alta. EC alta sigue siendo riesgo de estrés osmótico, bloqueo, mala infiltración, reducción de crecimiento y calidad si se acumula. El mensaje correcto es:
+“Pistache aguanta más sales que otros árboles, pero si la EC sube, el llenado y la raíz se empiezan a pagar.”
+
+0.8. Lenguaje UX pistachero
+No hablar solamente de “fruto” como genérico. Usar lenguaje de campo:
+- pistache
+- nuez
+- cáscara abierta / pistache abierto
+- cáscara cerrada / pistache cerrado
+- nuez vacía / blank
+- kernel / grano
+- cascarilla / hull / ruezno externo
+- manchado
+- llenado
+- cuajado
+- macho/hembra
+- polen por viento
+- alternancia / un año carga y otro descansa
+
+======================================================================
+1. PROPÓSITO Y ALCANCE
+======================================================================
+
+Este documento define el cultivo madre Pistache para BIO-G. Su objetivo es entregar identidad, arquitectura perenne, etapas visibles, perfiles oficiales, aliases, ventanas fisiológicas, sensibilidad, assets y mapeo técnico para que Codex/Claude integren el árbol sin convertirlo en cultivo anual largo ni en copia de nogal.
+
+Alcance v1:
+- Huertos a cielo abierto.
+- Árboles aislados, pequeños huertos, huertos comerciales y proyectos en zonas áridas/semiáridas.
+- Compatible con sensor BIO-G de suelo: soilMoisture, soilTemp, ph, ec, resistance, n, p, k.
+- Compatible con contexto climático externo: frío, temperatura, lluvia, humedad relativa, viento y eventos extremos.
+- Pensado para México y regiones comparables: Chihuahua, Sonora, Durango, Coahuila, Baja California, Nuevo México, California, zonas mediterráneas secas y valles con inviernos fríos.
+
+Limitaciones v1:
+- No calcula horas frío exactas ni Dynamic Model.
+- No calcula GDD exactos.
+- No decide proporción macho:hembra exacta.
+- No identifica sexo del árbol por imagen.
+- No modela número de frutos por panícula.
+- No receta fertilización en kg/ha.
+- No diagnostica plagas/enfermedades de forma cerrada.
+- No promete porcentaje de abiertos ni rendimiento.
+
+======================================================================
+2. IDENTIDAD UNIVERSAL DEL CULTIVO
+======================================================================
+
+Nombre BIO-G visible:
+- Pistache / Pistacho
+
+Producto visible:
+- Pistache con cáscara / kernel de pistache
+
+Nombre científico:
+- Pistacia vera L.
+
+Familia botánica:
+- Anacardiaceae
+
+Tipo de cultivo:
+- Árbol frutal perenne caducifolio
+- Frutal de nuez / semilla comestible
+- C3
+- Dioico: árboles macho y árboles hembra separados
+
+Órgano objetivo BIO-G v1:
+- Fruto seco comercial: pistache con cáscara y kernel/grano.
+
+Sistema v1 cubierto:
+- Huerto a cielo abierto en clima seco, verano cálido-largo e invierno con frío suficiente.
+
+cropId canónico:
+- crop_pistachio_tree
+
+Alias legacy opcional:
+- pistachio_tree
+
+Prefix perfiles:
+- ps
+
+Perfil genérico obligatorio:
+- ps_skip
+
+Perfiles específicos oficiales v1:
+- ps_01_kerman_peters
+- ps_02_golden_hills_randy
+- ps_03_lost_hills_randy
+- ps_04_sirora_compatible
+- ps_05_larnaka_mateur_low_chill
+
+Asset principal sugerido:
+- assets/icons/wizard/ic_pistachio_tree.png
+- assets/icons/wizard/ic_pistachio_kerman.png
+- assets/icons/wizard/ic_pistachio_golden_hills.png
+- assets/icons/wizard/ic_pistachio_lost_hills.png
+- assets/icons/wizard/ic_pistachio_sirora.png
+- assets/icons/wizard/ic_pistachio_mediterranean_low_chill.png
+
+Assets de etapas sugeridos:
+- assets/seeds/pistachio/pistachio_stage_planting_transplant.png
+- assets/seeds/pistachio/pistachio_stage_root_establishment.png
+- assets/seeds/pistachio/pistachio_stage_juvenile_vegetative.png
+- assets/seeds/pistachio/pistachio_stage_dormancy.png
+- assets/seeds/pistachio/pistachio_stage_budbreak.png
+- assets/seeds/pistachio/pistachio_stage_vegetative_growth.png
+- assets/seeds/pistachio/pistachio_stage_flowering.png
+- assets/seeds/pistachio/pistachio_stage_fruit_set.png
+- assets/seeds/pistachio/pistachio_stage_fruit_fill.png
+- assets/seeds/pistachio/pistachio_stage_harvest_maturity.png
+- assets/seeds/pistachio/pistachio_stage_post_harvest.png
+- assets/seeds/pistachio/pistachio_stage_unknown.png
+
+======================================================================
+3. CULTIVO ANUAL VS ÁRBOL PERENNE EN PISTACHE
+======================================================================
+
+Tabla conceptual:
+
+Aspecto | Cultivo anual | Pistache BIO-G
+---|---|---
+Eje temporal | Fecha de siembra/trasplante | Estado fisiológico + etapa visible + ancla temporal + memoria
+Ciclo | Lineal: nace, produce y termina | Recurrente: dormancia, brotación, floración, cuajado, llenado, madurez, cosecha, postcosecha
+Edad | Explica gran parte del ciclo | Orienta estado productivo, pero no manda el motor
+Sexo | Normalmente irrelevante | Clave: hembra produce, macho poliniza
+Variedad | Puede cambiar duración/cosecha | Ajusta frío, floración relativa, cosecha, calidad, alternancia y polinizador
+Rendimiento | t/ha por ciclo | kg/árbol + árboles/ha + estado productivo + porcentaje de abiertos/vacíos como contexto futuro
+Postcosecha | Cierre | Etapa activa de reservas, sanidad y saneamiento
+Memoria | Menor o de un ciclo | Alta: carga alta, estrés hídrico, defoliación, frío insuficiente y baja postcosecha afectan el siguiente ciclo
+
+Regla BIO-G:
+La UX debe preguntar cosas visibles y prácticas:
+- ¿Está recién plantado?
+- ¿Aún no produce?
+- ¿Ya produce?
+- ¿Se ven flores, racimos, pistaches pequeños, pistaches llenándose o pistaches abiertos?
+- ¿Sabes si tienes macho y hembra?
+
+La UX NO debe obligar al usuario a saber:
+- horas frío exactas;
+- GDD exactos;
+- variedad macho exacta;
+- proporción macho:hembra;
+- portainjerto;
+- edad exacta;
+- número de frutos por árbol.
+
+======================================================================
+4. ARQUITECTURA BIO-G PARA PISTACHE
+======================================================================
+
+Jerarquía:
+
+Cultivo madre:
+- Pistache / crop_pistachio_tree
+
+Categoría:
+- tree
+
+Estados perennes permitidos:
+- newly_planted
+- juvenile_non_productive
+- established
+- productive_season
+- unknown
+
+Etapas fenológicas cerradas:
+- planting_transplant
+- root_establishment
+- juvenile_vegetative
+- dormancy
+- budbreak
+- vegetative_growth
+- flowering
+- fruit_set
+- fruit_fill
+- harvest_maturity
+- post_harvest
+- unknown
+
+Anclas permitidas:
+- planting
+- stage_start
+- budbreak
+- flowering
+- harvest
+- post_harvest
+- manual_stage
+- unknown
+
+Sensores BIO-G v1 permitidos:
+- soilMoisture
+- soilTemp
+- ph
+- ec
+- resistance
+- n
+- p
+- k
+
+Contexto climático/modelado, no sensor directo v1:
+- horas frío / chill portions
+- lluvia en floración
+- viento en floración
+- humedad relativa
+- VPD
+- GDD / acumulación de calor
+- helada
+- ola de calor
+
+Regla de compatibilidad:
+- newly_planted puede usar planting_transplant o root_establishment.
+- juvenile_non_productive puede usar juvenile_vegetative, root_establishment o unknown.
+- established puede usar dormancy, budbreak, vegetative_growth o unknown.
+- productive_season puede usar flowering, fruit_set, fruit_fill, harvest_maturity, post_harvest y también dormancy/budbreak si el usuario lo observa.
+- unknown debe usar ps_skip y pedir etapa visible.
+
+======================================================================
+5. ESTADOS DEL ÁRBOL Y UX RECOMENDADA
+======================================================================
+
+5.1 Estados permitidos
+
+StateId: newly_planted
+Label UX: Recién plantado
+Lectura: Árbol injertado o plantón colocado recientemente en campo.
+Política BIO-G: No exigir producción. Priorizar raíz, humedad estable, EC baja-moderada, drenaje y protección de tronco/injerto.
+Rendimiento: 0 kg/árbol.
+Confianza: Alta si hay fecha de plantación; media si sólo hay observación.
+
+StateId: juvenile_non_productive
+Label UX: Pistache joven que aún no produce
+Lectura: Árbol en formación. Puede tener hojas y crecimiento, pero no cosecha comercial.
+Política BIO-G: Formar estructura y raíz. No penalizar por falta de pistache. Vigilar vigor, salinidad, compactación, heladas y portainjerto como contexto.
+Rendimiento: 0 kg/árbol o primera producción futura.
+
+StateId: established
+Label UX: Pistache establecido
+Lectura: Árbol vivo con estructura formada, pero el usuario no confirma producción activa.
+Política BIO-G: Permitir etapa visible. No proyectar alto rendimiento si no hay carga confirmada.
+
+StateId: productive_season
+Label UX: Pistache en producción
+Lectura: Árbol con ciclo productivo anual activo: flor, cuajado, racimos, llenado, madurez, cosecha o postcosecha.
+Política BIO-G: Etapa visible manda. Activar sensibilidad crítica por frío, polinización, agua, salinidad, alternancia y postcosecha.
+
+StateId: unknown
+Label UX: No lo sé
+Lectura: Usuario no sabe edad/estado.
+Política BIO-G: No bloquear. Usar PS-SKIP, confianza baja-media y preguntas visuales simples.
+
+5.2 Pregunta UX recomendada para estado
+
+Pregunta:
+“¿Cómo está tu pistache actualmente?”
+
+Opciones:
+1. Recién plantado
+2. Aún no produce
+3. Ya produce esta temporada
+4. Está establecido, pero no sé si va a producir
+5. No lo sé
+
+Mapeo:
+- Recién plantado -> newly_planted
+- Aún no produce -> juvenile_non_productive
+- Ya produce esta temporada -> productive_season
+- Está establecido... -> established
+- No lo sé -> unknown
+
+5.3 Pregunta UX recomendada si YA PRODUCE
+
+Pregunta:
+“¿Qué se ve en el árbol ahorita?”
+
+Opciones visibles:
+- Pelón / sin hojas -> dormancy
+- Brotando -> budbreak
+- Lleno de hojas / creciendo -> vegetative_growth
+- Con flor -> flowering
+- Flor tirando / pistachito recién cuajado -> fruit_set
+- Racimos con pistache verde creciendo -> fruit_fill
+- Pistache llenándose / grano formándose -> fruit_fill
+- Pistache abriendo / listo para cosecha -> harvest_maturity
+- Después de cosecha -> post_harvest
+- No lo sé -> unknown
+
+5.4 Pregunta UX recomendada sobre macho/hembra
+
+Pregunta opcional:
+“¿Sabes si tienes árboles macho y hembra?”
+
+Opciones:
+- Sí, tengo macho y hembra / huerto con polinizadores
+- No sé
+- Solo tengo uno o pocos árboles
+- Creo que no tengo macho
+
+Regla:
+No bloquear. Si el usuario no sabe, BIO-G guarda riesgo de polinización y baja confianza en floración/cuajado. Si dice “solo tengo uno” o “no tengo macho”, BIO-G no debe prometer cosecha.
+
+======================================================================
+6. ETAPAS FENOLÓGICAS BIO-G DEL PISTACHE
+======================================================================
+
+StageId: planting_transplant
+Label pistachero: Plantación / trasplante
+Señal visible: Árbol recién puesto en suelo definitivo o reposición.
+Ancla preferida: planting
+Cuidado principal: Raíz, injerto, humedad sin saturar, salinidad, compactación.
+Regla: No proyectar cosecha.
+
+StageId: root_establishment
+Label pistachero: Establecimiento de raíz
+Señal visible: Árbol agarrando; brotes iniciales; raíz sensible.
+Ventana orientativa: 0-12 meses según calidad del árbol, portainjerto, suelo y clima.
+Cuidado principal: Drenaje, oxígeno, humedad estable y baja presión salina.
+Regla: En pistache, exceso de agua puede ser más peligroso que un déficit leve.
+
+StageId: juvenile_vegetative
+Label pistachero: Crecimiento juvenil
+Señal visible: Árbol formando estructura, sin producción comercial.
+Ventana orientativa: años 1-4/6 según portainjerto, variedad, manejo y sitio.
+Cuidado principal: Vigor equilibrado, estructura, raíces profundas, evitar helada/daño invernal.
+Regla: No penalizar por falta de pistache.
+
+StageId: dormancy
+Label pistachero: Dormancia invernal
+Señal visible: Árbol caducifolio sin hoja o con actividad mínima.
+Ventana: invierno.
+Cuidado principal: Frío efectivo, madera, yemas, humedad de suelo sin saturación, sanidad y memoria.
+Regla: El árbol no está muerto ni apagado. No sobreinterpretar NPK.
+
+StageId: budbreak
+Label pistachero: Brotación
+Señal visible: Yemas abren, brotes y hojas nuevas.
+Ventana: primavera temprana.
+Cuidado principal: Frío cumplido + temperatura; helada tardía; arranque parejo.
+Regla: Brote disparejo puede venir de frío insuficiente, no sólo nutrición.
+
+StageId: vegetative_growth
+Label pistachero: Desarrollo vegetativo
+Señal visible: Hojas activas, brotes, estructura, sombra y crecimiento.
+Ventana: primavera-verano.
+Cuidado principal: Hoja sana para sostener carga, sin exceso de vigor blando.
+Regla: N alto con baja carga puede irse a puro follaje y sombra.
+
+StageId: flowering
+Label pistachero: Floración macho/hembra
+Señal visible: Inflorescencias; posible polen en machos; flores femeninas receptivas.
+Ventana: primavera; 15-30 días orientativos.
+Cuidado principal: Sincronía macho-hembra, viento, lluvia, humedad, heladas, reservas.
+Regla: Etapa crítica. No culpar NPK si el problema real fue frío, lluvia, viento o falta de macho.
+
+StageId: fruit_set
+Label pistachero: Polinización / cuajado
+Señal visible: Frutitos recién cuajados, racimos pequeños, caída inicial posible.
+Ventana: 7-21 días posteriores a floración, variable.
+Cuidado principal: Amarre, caída temprana, clima, polinización, humedad estable.
+Regla: Baja carga después de floración puede venir de polinización o frío, no sólo fertilización.
+
+StageId: fruit_fill
+Label pistachero: Crecimiento y llenado del pistache
+Señal visible: Racimos con pistache verde creciendo; expansión de cáscara; endurecimiento; kernel/grano llenándose.
+Ventana: primavera tardía a verano; 110-170 días según perfil/zona.
+Cuidado principal: Agua, K, hoja sana, calor, salinidad, plagas de fruto, blanks/cerrados como riesgo futuro.
+Regla v1.5: NO usar copy de cosecha/madurez como identidad. Hablar de llenado, kernel, apertura futura y calidad.
+
+StageId: harvest_maturity
+Label pistachero: Madurez / pistache abriendo / cosecha
+Señal visible: Alto porcentaje de pistaches abiertos; hull/cascarilla se suelta; color de hull cambia; cosecha próxima o en curso.
+Ventana: agosto-octubre según perfil, zona y altitud.
+Cuidado principal: Calidad final, manchado, navel orangeworm, hongos, early split, retraso de cosecha, secado/proceso.
+Regla: Ahora sí puede hablar de cosecha, apertura, porcentaje de abiertos, cerrados, vacíos, manchado y calidad comercial.
+
+StageId: post_harvest
+Label pistachero: Postcosecha / reservas
+Señal visible: Árbol después de cosecha, con hoja activa o cerrando ciclo.
+Ventana: de cosecha a caída de hoja.
+Cuidado principal: Reservas, sanidad de hoja, saneamiento, mummies, ramas enfermas, estrés tardío.
+Regla: No cerrar cultivo. La postcosecha impacta la carga del siguiente ciclo.
+
+StageId: unknown
+Label pistachero: No lo sé
+Señal visible: Usuario no identifica etapa.
+Cuidado principal: Fallback conservador y preguntas visuales.
+
+======================================================================
+7. SUBFASES PISTACHERAS SIN CREAR IDs NUEVOS
+======================================================================
+
+BIO-G v1 NO debe crear nuevos StageIds para cada subfase. Puede usar sublabels/insights internos.
+
+Subfase pistachera | StageId BIO-G | Lectura | Regla UX
+---|---|---|---
+Flor macho soltando polen | flowering | El árbol macho libera polen; depende de viento y sincronía | No prometer si no hay hembra receptiva
+Flor hembra receptiva | flowering | Inflorescencia femenina lista para recibir polen | Riesgo si hay lluvia/humedad/viento bajo
+Cuajado inicial | fruit_set | Fruto pequeño retenido después de floración | Baja carga puede ser polinización/frío
+Expansión de fruto/cáscara | fruit_fill | Tamaño externo crece | Agua y hoja importan
+Endurecimiento de cáscara | fruit_fill | Cáscara interna se endurece | Evitar estrés fuerte; no cosecha
+Kernel fill | fruit_fill | El grano/kernel se desarrolla | K, agua, hoja y calor pesan
+Early split | harvest_maturity o alerta preharvest | Hull y cáscara se abren temprano en árbol | Riesgo de insectos, mohos, manchado/aflatoxina; no confundir con madurez normal
+Hull slip / cascarilla suelta | harvest_maturity | Señal de madurez comercial | Ahora sí hablar de cosecha
+Mummies / frutos remanentes | post_harvest | Frutos no cosechados en árbol/suelo | Saneamiento; riesgo de navel orangeworm y enfermedades
+
+======================================================================
+8. CALENDARIO FISIOLÓGICO ORIENTATIVO
+======================================================================
+
+Cuidado: estas ventanas sólo orientan UX y coherencia. No sustituyen clima local, altitud, frío, variedad, macho, portainjerto ni observación real.
+
+Regiones áridas/semiáridas con invierno frío como referencia:
+
+Etapa visible | StageId | Ventana orientativa | Lectura BIO-G
+---|---|---|---
+Dormancia | dormancy | invierno | Frío efectivo, yemas, sanidad, memoria
+Brotación | budbreak | final de invierno / primavera temprana | Arranque tras frío + temperatura
+Floración | flowering | primavera | Sincronía macho-hembra, viento, lluvia, helada
+Cuajado | fruit_set | primavera | Amarre, caída temprana, polinización
+Crecimiento de fruto | fruit_fill | primavera tardía-verano | Tamaño, cáscara, agua, hoja
+Llenado de kernel | fruit_fill | verano | Kernel, K, agua, salinidad, calor
+Madurez/cosecha | harvest_maturity | agosto-octubre | Abiertos, hull slip, calidad, NOW/hongos
+Postcosecha | post_harvest | después de cosecha-caída de hoja | Reservas, saneamiento, sanidad de hoja
+
+Por perfil:
+- Kerman/Peters: más tardío; cosecha usualmente más tarde que Golden Hills/Lost Hills.
+- Golden Hills/Randy: florece y madura antes que Kerman; suele tener mejor porcentaje de abiertos y menos blanks que Kerman bajo condiciones adecuadas.
+- Lost Hills/Randy: similar a Golden Hills en precocidad relativa; suele destacar por calibre grande y menos cerrados/blanks que Kerman.
+- Sirora: intermedio; usar confianza media por variabilidad de fuentes y zonas.
+- Larnaka/Mateur: temprano/mediterráneo; útil cuando se busca menor requerimiento relativo de frío, pero no significa que el frío deje de importar.
+
+======================================================================
+9. RANGOS MEDIBLES BASE — NO SON StageTargets FINALES
+======================================================================
+
+Estos rangos son base universal para monitoreo y UX. Los StageTargets finos por etapa van en Documento 05.
+
+9.1 Humedad de suelo / soilMoisture
+Interpretación preferida:
+- % de agua disponible o escala normalizada por textura.
+
+Bandas universales BIO-G:
+- crítico bajo: <35-40% AW
+- observación baja: 40-50% AW
+- operativo general: 50-80% AW
+- óptimo etapa activa: 55-75/80% AW según etapa y suelo
+- observación alta: 80-88% AW
+- saturación/exceso: >88-90% AW o lectura alta persistente con mala aireación
+
+Regla pistache:
+Pistache aguanta déficit moderado mejor que muchos frutales, pero para rendimiento/calidad necesita agua funcional en cuajado, expansión de fruto y llenado de kernel. Exceso de humedad/anoxia en raíz no debe ser celebrado.
+
+9.2 Temperatura de suelo / soilTemp
+- baja actividad radicular: <8 °C
+- absorción lenta: 8-12 °C
+- funcional: 12-28 °C
+- observación calor: 28-32 °C si humedad baja
+- estrés: >32-35 °C con humedad baja o salinidad alta
+
+9.3 pH
+- óptimo operativo amplio: 6.5-7.8
+- aceptable en suelos calizos: 7.8-8.2 con vigilancia de micronutrientes
+- observación baja: 5.8-6.5
+- observación alta: 8.2-8.5
+- alerta: <5.5 o >8.5
+
+Regla:
+Pistache tolera alcalinidad, pero pH alto puede bloquear Fe/Zn/Mn/P. No decir sólo “falta nutriente”; hablar de disponibilidad.
+
+9.4 EC / salinidad
+Nota técnica:
+EC de sensor de campo no siempre equivale a ECe de laboratorio. BIO-G debe tratar EC como bandera de tendencia/salinidad, no como diagnóstico definitivo.
+
+Bandas base:
+- baja/preferente: <2.0 dS/m
+- observación: 2.0-3.5 dS/m
+- alerta moderada: 3.5-5.0 dS/m
+- alerta fuerte: >5.0-6.0 dS/m
+- crítica: >6.0 dS/m o tendencia ascendente con estrés visual
+
+Regla:
+Pistache es tolerante relativo, pero si EC está alta + humedad baja, el árbol siente sequía fisiológica aunque se esté regando. Si EC alta + N/K altos, revisar acumulación de sales/fertilizantes.
+
+9.5 Resistencia / compactación
+- favorable: <1.5 MPa
+- observación: 1.5-2.2 MPa
+- alerta: 2.2-2.8 MPa
+- crítica: >2.8-3.0 MPa
+
+Regla:
+Pistache necesita raíz profunda y suelo con oxígeno. Compactación + humedad alta = riesgo de raíz. Compactación + humedad baja = raíz sin acceso real a agua.
+
+9.6 N/P/K relativo
+Escala de sensor normalizada:
+- 0.00-0.20 = muy bajo
+- 0.20-0.35 = bajo
+- 0.35-0.50 = bajo-moderado
+- 0.50-0.65 = suficiente/moderado
+- 0.65-0.80 = alto útil según etapa
+- 0.80-1.00 = alto/posible exceso según etapa
+
+Reglas:
+- N no es más pistache por sí solo.
+- P pesa en raíz, brotación, floración y energía.
+- K pesa en llenado, kernel, apertura, calidad y estrés hídrico.
+- Alto puede ser útil o riesgoso según etapa, humedad, EC y carga.
+
+======================================================================
+10. SENSIBILIDAD POR ETAPA
+======================================================================
+
+Etapa | Agua | Frío/temp | pH/EC | Compactación | NPK | Riesgo externo clave
+---|---|---|---|---|---|---
+planting_transplant | Alta | Media | Alta | Alta | P alto, N bajo | raíz/injerto
+root_establishment | Alta | Media | Alta | Muy alta | P alto | anoxia/sales
+juvenile_vegetative | Media-alta | Media | Media-alta | Alta | N moderado | vigor/helada
+_dormancy | Baja-media | Muy alta | Media | Baja | Bajo | frío insuficiente
+budbreak | Media | Alta | Media | Media | N/P moderados | brotación irregular
+vegetative_growth | Media | Media | Media | Media | N/K moderados | vigor excesivo/sombra
+flowering | Media | Muy alta | Media-alta | Media | P/K contexto | macho-hembra, lluvia, viento, helada
+fruit_set | Alta | Alta | Alta | Media | K/P/N balance | caída, baja polinización
+fruit_fill | Muy alta | Alta | Muy alta | Media | K alto, N moderado | blanks/cerrados, NOW, calor
+harvest_maturity | Media | Media | Alta | Baja-media | K medio, N bajo | early split, manchado, hongos, NOW
+post_harvest | Media | Media | Media-alta | Media | N/K moderados si hoja activa | reservas, mummies, sanidad
+unknown | Media | Media | Media | Media | conservador | pedir etapa visible
+
+======================================================================
+11. PERFILES / VARIEDADES OFICIALES PS
+======================================================================
+
+Decisión:
+Los perfiles representan grupos útiles para UX y código, no fichas cerradas por cada marca o vivero. En pistache, cada perfil puede implicar un polinizador recomendado, pero BIO-G no debe forzar que el usuario lo sepa.
+
+Campo común por perfil:
+- profileId
+- label técnico
+- label UX
+- aliases
+- hembra base
+- macho/polinizador típico
+- floración relativa
+- cosecha relativa
+- requerimiento de frío relativo
+- sensibilidad particular
+- rendimiento/calidad relativo
+- confianza
+- ajuste permitido
+
+---------------------------------------------------------------------
+PS-SKIP — Pistache general
+---------------------------------------------------------------------
+profileId: ps_skip
+Label técnico: PS-SKIP - Pistache general
+Label UX: No sé / Pistache general
+Hembra base: desconocida
+Macho/polinizador: desconocido
+Floración relativa: desconocida / media conservadora
+Cosecha relativa: agosto-octubre orientativo
+Frío relativo: medio-alto conservador
+Sensibilidad: polinización, frío, agua en llenado, salinidad, alternancia
+Rendimiento/calidad: conservador
+Confianza: baja si sólo hay cultivo; media si hay estado/etapa; media-alta si hay etapa + sensor estable
+Aliases: pistache, pistacho, alfóncigo, no sé qué variedad, árbol de pistache, pistachero
+Ajuste permitido: no cambia estructura; sólo baja confianza y usa rangos amplios.
+
+---------------------------------------------------------------------
+PS-01 — Kerman / Peters
+---------------------------------------------------------------------
+profileId: ps_01_kerman_peters
+Label técnico: PS-01 - Kerman / Peters
+Label UX: Kerman tradicional
+Hembra base: Kerman
+Macho/polinizador típico: Peters como referencia clásica; cuidado con baja sincronía si frío insuficiente.
+Tipo de mercado: snack / mercado general / modelo California tradicional
+Floración relativa: media-tardía a tardía
+Cosecha relativa: tardía, usualmente después de Golden Hills/Lost Hills
+Frío relativo: alto; muy sensible a inviernos insuficientes
+Sensibilidad particular:
+- alternancia fuerte;
+- blanks/nueces vacías en años problemáticos;
+- cerrados/non-split;
+- cosecha tardía con mayor exposición a plagas de preharvest;
+- baja sincronía Peters/Kerman si el invierno no satisface reposo.
+Rendimiento/calidad relativo: alto potencial, pero variable por alternancia y calidad.
+Confianza: alta como perfil técnico porque es estándar histórico ampliamente documentado.
+Aliases: Kerman, Peters, pistache americano, tradicional, California, tardío, Kerman/Peters.
+Ajuste permitido: fechas más tardías, mayor peso de frío, mayor riesgo de alternancia/cerrados/blanks.
+
+---------------------------------------------------------------------
+PS-02 — Golden Hills / Randy
+---------------------------------------------------------------------
+profileId: ps_02_golden_hills_randy
+Label técnico: PS-02 - Golden Hills / Randy
+Label UX: Golden Hills temprano
+Hembra base: Golden Hills
+Macho/polinizador típico: Randy
+Tipo de mercado: snack premium, alto valor por abiertos y calidad visual
+Floración relativa: más temprana que Kerman
+Cosecha relativa: aproximadamente una semana antes que Kerman en referencias UC; puede variar por zona
+Frío relativo: medio-alto, posiblemente menos problemático que Kerman en algunos sitios, pero no “sin frío”
+Sensibilidad particular:
+- sincronía con Randy;
+- no usar hull tatter como única señal de cosecha;
+- si el frío fue bajo, bloom puede extenderse y complicar cosecha;
+- manejo de cosecha para no cortar demasiado temprano.
+Rendimiento/calidad relativo: alto; UC reporta menos blanks y mayor porcentaje de abiertos que Kerman bajo ensayos.
+Confianza: alta-media; fuerte evidencia UC, pero validar regionalmente.
+Aliases: Golden Hills, GH, Golden, temprano, Randy, Golden/Randy.
+Ajuste permitido: madurez más temprana; copy de calidad/open split; no convertirlo en bajo-frío universal.
+
+---------------------------------------------------------------------
+PS-03 — Lost Hills / Randy
+---------------------------------------------------------------------
+profileId: ps_03_lost_hills_randy
+Label técnico: PS-03 - Lost Hills / Randy
+Label UX: Lost Hills calibre grande
+Hembra base: Lost Hills
+Macho/polinizador típico: Randy
+Tipo de mercado: snack, calibre grande, cáscara clara
+Floración relativa: más temprana que Kerman, similar a Golden Hills según referencias UC
+Cosecha relativa: antes que Kerman; alrededor de 10 días antes en referencias UC
+Frío relativo: medio-alto
+Sensibilidad particular:
+- sincronía con Randy;
+- calibre grande exige agua/hoja funcional;
+- manejo de carga y reservas;
+- riesgo de calidad si se retrasa cosecha.
+Rendimiento/calidad relativo: alto; referencias UC reportan menos blanks y más abiertos que Kerman, con kernel grande.
+Confianza: alta-media por fuentes UC; validar sitio.
+Aliases: Lost Hills, LH, calibre grande, Lost, Randy, Lost/Randy.
+Ajuste permitido: cosecha anticipada vs Kerman, copy de calibre y abiertos, fuerte enfoque en llenado.
+
+---------------------------------------------------------------------
+PS-04 — Sirora / compatible
+---------------------------------------------------------------------
+profileId: ps_04_sirora_compatible
+Label técnico: PS-04 - Sirora / polinizador compatible
+Label UX: Sirora intermedio
+Hembra base: Sirora
+Macho/polinizador típico: compatible según zona/vivero; no hardcodear Peters/Randy si no está confirmado.
+Tipo de mercado: snack / industria según calibre y porcentaje de abiertos
+Floración relativa: intermedia
+Cosecha relativa: septiembre-octubre según zona
+Frío relativo: medio
+Sensibilidad particular:
+- información técnica regional variable;
+- sincronía de polinizador;
+- lluvia/humedad en floración;
+- estrés hídrico en llenado.
+Rendimiento/calidad relativo: medio-alto con manejo correcto.
+Confianza: media; muchas fuentes son comerciales/regionales, por lo que BIO-G debe ser conservador.
+Aliases: Sirora, pistache australiano, intermedio, adaptable, otra variedad intermedia.
+Ajuste permitido: ventanas medias, mensajes conservadores, no prometer bajo-frío ni rendimiento.
+
+---------------------------------------------------------------------
+PS-05 — Larnaka / Mateur / Mediterráneo bajo-frío relativo
+---------------------------------------------------------------------
+profileId: ps_05_larnaka_mateur_low_chill
+Label técnico: PS-05 - Larnaka/Mateur bajo-frío relativo
+Label UX: Mediterráneo / bajo-frío relativo
+Hembra base: Larnaka, Mateur u otro grupo mediterráneo temprano
+Macho/polinizador típico: compatible por zona; no hardcodear sin ficha regional.
+Tipo de mercado: regional, industria o snack según calidad
+Floración relativa: temprana
+Cosecha relativa: temprana, agosto-septiembre en zonas favorables
+Frío relativo: menor que Kerman en muchas referencias, pero sigue necesitando reposo/frío suficiente
+Sensibilidad particular:
+- helada tardía por brotar/florecer temprano;
+- polinizador compatible;
+- baja calidad si se planta fuera de zona;
+- no confundir “bajo-frío relativo” con tropical.
+Rendimiento/calidad relativo: variable.
+Confianza: media-baja a media; requiere validación local.
+Aliases: Larnaka, Mateur, mediterráneo, temprano, bajo frío, regional, otra variedad temprana.
+Ajuste permitido: baja el requerimiento relativo de frío y adelanta ventanas; no elimina riesgo de frío.
+
+11.1 Perfil futuro opcional — Regional México / Chihuahua
+No se crea como perfil oficial v1 porque la evidencia varietal local pública es limitada y el cultivo aún es pequeño en México. Puede agregarse como alias/fallback dentro de ps_skip o como PS-06 futuro si el usuario junta datos locales.
+
+Posible futuro:
+- ps_06_regional_chihuahua
+- label: Regional México / Chihuahua
+- condición: requiere evidencia de variedad, macho, rendimiento y fenología local.
+
+======================================================================
+12. UX Y ASSETS
+======================================================================
+
+12.1 Opciones de wizard para perfil
+
+Pregunta:
+“¿Qué tipo de pistache tienes?”
+
+Opciones:
+1. No sé / Pistache general -> ps_skip
+2. Kerman tradicional -> ps_01_kerman_peters
+3. Golden Hills -> ps_02_golden_hills_randy
+4. Lost Hills -> ps_03_lost_hills_randy
+5. Sirora -> ps_04_sirora_compatible
+6. Larnaka / Mateur / Mediterráneo temprano -> ps_05_larnaka_mateur_low_chill
+7. Otro -> ps_skip con alias “otra variedad”
+
+12.2 Copy de ayuda
+- “No pasa nada si no sabes la variedad. Pistache sí puede avanzar como general, pero la app bajará la confianza en floración y cuajado si no sabe macho/hembra.”
+- “En pistache la flor no se amarra sola: necesita macho, hembra, viento y buen clima.”
+- “Pistache abierto y pistache lleno no son lo mismo: uno habla de madurez/cosecha, el otro de calidad interna.”
+
+12.3 Assets finales sugeridos
+
+Wizard icons:
+- assets/icons/wizard/ic_pistachio_tree.png
+- assets/icons/wizard/ic_pistachio_tree_generic.png
+- assets/icons/wizard/ic_pistachio_kerman.png
+- assets/icons/wizard/ic_pistachio_golden_hills.png
+- assets/icons/wizard/ic_pistachio_lost_hills.png
+- assets/icons/wizard/ic_pistachio_sirora.png
+- assets/icons/wizard/ic_pistachio_mediterranean_low_chill.png
+
+Stage assets:
+- assets/seeds/pistachio/pistachio_stage_planting_transplant.png
+- assets/seeds/pistachio/pistachio_stage_root_establishment.png
+- assets/seeds/pistachio/pistachio_stage_juvenile_vegetative.png
+- assets/seeds/pistachio/pistachio_stage_dormancy.png
+- assets/seeds/pistachio/pistachio_stage_budbreak.png
+- assets/seeds/pistachio/pistachio_stage_vegetative_growth.png
+- assets/seeds/pistachio/pistachio_stage_flowering.png
+- assets/seeds/pistachio/pistachio_stage_fruit_set.png
+- assets/seeds/pistachio/pistachio_stage_fruit_fill.png
+- assets/seeds/pistachio/pistachio_stage_harvest_maturity.png
+- assets/seeds/pistachio/pistachio_stage_post_harvest.png
+- assets/seeds/pistachio/pistachio_stage_unknown.png
+
+======================================================================
+13. MAPEO TÉCNICO FUTURO A CÓDIGO
+======================================================================
+
+Archivos esperados:
+- lib/core/crops/pistachio_tree/pistachio_tree_catalog.dart
+- lib/core/crops/pistachio_tree/pistachio_tree_universal_profile.dart
+- lib/core/crops/pistachio_tree/pistachio_tree_crop_definition.dart
+- lib/core/crops/pistachio_tree/pistachio_tree_yield_reference.dart
+- lib/core/crops/pistachio_tree/pistachio_tree_plant_health_syndromes.dart
+- lib/core/crops/pistachio_tree/pistachio_tree_nutrition_modifier.dart
+- test/core/pistachio_tree/pistachio_tree_universal_profile_test.dart
+- test/core/pistachio_tree/pistachio_tree_agro_score_engine_test.dart
+- test/core/pistachio_tree/pistachio_tree_catalog_test.dart
+
+IDs de perfiles:
+- ps_skip
+- ps_01_kerman_peters
+- ps_02_golden_hills_randy
+- ps_03_lost_hills_randy
+- ps_04_sirora_compatible
+- ps_05_larnaka_mateur_low_chill
+
+Reglas no negociables para Codex/Claude:
+- No usar sowingDate como eje.
+- No crear etapas nuevas.
+- No crear sensores nuevos.
+- No bloquear si el usuario no sabe variedad o macho.
+- No borrar historial al migrar de ps_skip a perfil específico.
+- No usar `isLate` para copy UX si mezcla fruit_fill con harvest_maturity.
+- No decir cosecha/madurez en fruit_fill como identidad.
+- Postcosecha sigue viva.
+- EC alta bloquea recomendaciones agresivas de fertilización aunque pistache tolere sales.
+
+======================================================================
+14. CASOS MÍNIMOS DE REGRESIÓN RECOMENDADOS
+======================================================================
+
+1) ps_skip + flowering + maleUnknown
+Esperado:
+- baja confianza en cuajado;
+- mensaje sobre macho/hembra y viento;
+- no bloquear onboarding.
+
+2) ps_01_kerman_peters + lowChillContext + flowering
+Esperado:
+- riesgo de floración extendida/desincronía;
+- no culpar NPK como causa primaria.
+
+3) ps_02_golden_hills_randy + harvest_maturity
+Esperado:
+- copy de abiertos/hull slip/cosecha;
+- no esperar hull tatter como única señal.
+
+4) fruit_fill + N alto/exceso
+Esperado:
+- puede advertir vigor/carga/sombra;
+- NO debe contener “cosecha”, “madurez” o “listo para cortar” como identidad.
+
+5) harvest_maturity + N alto/exceso
+Esperado:
+- sí puede hablar de cosecha, madurez, calidad final, manchado, abiertos/cerrados.
+
+6) post_harvest + hoja activa + estrés de agua previo
+Esperado:
+- hablar de reservas y siguiente ciclo;
+- no cerrar cultivo.
+
+7) EC alta + K alto + fruit_fill
+Esperado:
+- no celebrar K alto;
+- advertir sales/acumulación y disponibilidad.
+
+8) soilMoisture apenas debajo de optimalMin
+Esperado:
+- low/watch/observación, no critical.
+
+9) soilMoisture apenas encima de optimalMax
+Esperado:
+- high/watch/observación, no saturación crítica.
+
+10) onlyOneTree + flowering
+Esperado:
+- riesgo alto de polinización si no hay macho/hembra compatible cerca;
+- no prometer cosecha.
+
+======================================================================
+15. FUENTES Y TRAZABILIDAD
+======================================================================
+
+Fuentes de alta confianza:
+- UC ANR / UC Davis: Pistachio Climate & Cultivars.
+- UC IPM: Pistachio Pest Management Guidelines y Year-Round IPM.
+- UC ANR: Pistachio cultivars in California; Golden Hills; new pistachio cultivars; salinity and water management.
+- UC Davis / UC ANR: estudios recientes de hull split y calidad.
+- NMSU / Western SARE: pistachio production resources for zonas áridas.
+- CIAD México: contexto de pistache en México y Chihuahua.
+
+Fuentes de media confianza:
+- Viveros y empresas con fichas de variedades Golden Hills, Lost Hills, Sirora, Larnaka/Mateur.
+- Literatura técnica de España/mediterráneo para comparación de variedades.
+
+Fuentes de baja-media:
+- Foros, redes y productores: usados sólo para lenguaje UX, aliases y dudas reales. No se usaron para fijar rangos agronómicos.
+
+CIERRE
+Este Documento 01 deja listo el cultivo madre Pistache para BIO-G: identidad, arquitectura perenne, perfiles, aliases, UX, assets, etapas y reglas técnicas. Los targets finos de NPK, StageTargets y StageWeights se cierran en el Documento 05.

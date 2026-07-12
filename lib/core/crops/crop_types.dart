@@ -19,5 +19,10 @@ enum CropKey {
   pearTree,
   peachTree,
   walnutTree,
+  pistachioTree,
+  orangeTree,
+  lemonTree,
+  mangoTree,
+  avocadoTree,
   generic,
 }

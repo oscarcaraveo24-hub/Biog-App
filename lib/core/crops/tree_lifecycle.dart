@@ -424,7 +424,8 @@ String treeStageDisplayName(String? phenologyStageId) {
 /// [treeStageDisplayName] (generico), por lo que manzano/pera/durazno NO cambian.
 String treeStageDisplayNameForCrop(String? cropId, String? phenologyStageId) {
   final stageId = normalizeTreeStageId(phenologyStageId);
-  if (CropCatalog.canonicalCropKey(cropId) == CropCatalog.walnutTreeCropId) {
+  final canonicalCrop = CropCatalog.canonicalCropKey(cropId);
+  if (canonicalCrop == CropCatalog.walnutTreeCropId) {
     return switch (stageId) {
       TreeStageIds.dormancy => 'Pelón / en reposo',
       TreeStageIds.budbreak => 'Brotación',
@@ -434,6 +435,93 @@ String treeStageDisplayNameForCrop(String? cropId, String? phenologyStageId) {
       TreeStageIds.fruitFill => 'Llenado de nuez / almendra',
       TreeStageIds.harvestMaturity => 'Ruezno abriendo / cosecha',
       TreeStageIds.postHarvest => 'Postcosecha / reservas',
+      _ => treeStageDisplayName(stageId),
+    };
+  }
+  // Pistache: lenguaje pistachero (macho/hembra, amarre, llenado de kernel,
+  // pistache abriendo) SIN cambiar los StageIds globales (doc 01 §6, §0.8).
+  if (canonicalCrop == CropCatalog.pistachioTreeCropId) {
+    return switch (stageId) {
+      TreeStageIds.dormancy => 'Pelón / dormancia',
+      TreeStageIds.budbreak => 'Brotación',
+      TreeStageIds.vegetativeGrowth => 'Con hoja / creciendo',
+      TreeStageIds.flowering => 'Floración macho/hembra',
+      TreeStageIds.fruitSet => 'Cuajado / amarre',
+      TreeStageIds.fruitFill => 'Llenado de pistache / kernel',
+      TreeStageIds.harvestMaturity => 'Pistache abriendo / cosecha',
+      TreeStageIds.postHarvest => 'Postcosecha / reservas',
+      _ => treeStageDisplayName(stageId),
+    };
+  }
+  // Naranjo: lenguaje cítrico siempreverde (azahar, amarre, llenado de naranja)
+  // SIN cambiar los StageIds globales (doc 01 §6, doc 05 §4). Reglas cítricas:
+  // `dormancy` es reposo relativo/baja actividad (NO árbol pelón) y `fruit_fill`
+  // habla de llenado/calibre/jugo, NUNCA de cosecha.
+  if (canonicalCrop == CropCatalog.orangeTreeCropId) {
+    return switch (stageId) {
+      TreeStageIds.dormancy => 'Reposo relativo / baja actividad',
+      TreeStageIds.budbreak => 'Brotación / flush',
+      TreeStageIds.vegetativeGrowth => 'Con hoja / creciendo',
+      TreeStageIds.flowering => 'Floración / azahar',
+      TreeStageIds.fruitSet => 'Cuajado / amarre',
+      TreeStageIds.fruitFill => 'Naranja creciendo / llenando',
+      TreeStageIds.harvestMaturity => 'Naranja madura / cosecha',
+      TreeStageIds.postHarvest => 'Postcosecha / recuperación',
+      _ => treeStageDisplayName(stageId),
+    };
+  }
+  // Limón: lenguaje cítrico siempreverde de producción frecuente (azahar,
+  // amarre del limoncito, llenado) SIN cambiar los StageIds globales (doc 01 §5,
+  // doc 05 §4). `dormancy` es reposo relativo / entre cortes (NO árbol pelón);
+  // `fruit_fill` habla de llenado/calibre/jugo (NUNCA cosecha); `harvest` puede
+  // ser corte verde comercial; `post_harvest` es entre cortes (no cierra).
+  if (canonicalCrop == CropCatalog.lemonTreeCropId) {
+    return switch (stageId) {
+      TreeStageIds.dormancy => 'Reposo relativo / entre cortes',
+      TreeStageIds.budbreak => 'Brotación / flush',
+      TreeStageIds.vegetativeGrowth => 'Con hoja / creciendo',
+      TreeStageIds.flowering => 'Floración / azahar',
+      TreeStageIds.fruitSet => 'Cuajado / amarre del limoncito',
+      TreeStageIds.fruitFill => 'Limón creciendo / llenando',
+      TreeStageIds.harvestMaturity => 'Limón listo para corte',
+      TreeStageIds.postHarvest => 'Postcosecha / entre cortes',
+      _ => treeStageDisplayName(stageId),
+    };
+  }
+  // Mango: lenguaje propio (reposo funcional/inducción, panícula, manguito,
+  // llenado) SIN cambiar los StageIds globales (doc 01 §5, §6). Reglas mango:
+  // `dormancy` es reposo funcional / preparación / posible inducción (NO árbol
+  // pelón), `flowering` es panícula, `fruit_fill` es llenado/calibre (NUNCA
+  // cosecha) y `post_harvest` prepara la siguiente floración.
+  if (canonicalCrop == CropCatalog.mangoTreeCropId) {
+    return switch (stageId) {
+      TreeStageIds.dormancy => 'Reposo funcional / preparación',
+      TreeStageIds.budbreak => 'Brotación / flush',
+      TreeStageIds.vegetativeGrowth => 'Con hoja / creciendo',
+      TreeStageIds.flowering => 'Floración / panícula',
+      TreeStageIds.fruitSet => 'Cuajado / amarre del manguito',
+      TreeStageIds.fruitFill => 'Mango creciendo / llenando',
+      TreeStageIds.harvestMaturity => 'Madurez / corte',
+      TreeStageIds.postHarvest => 'Postcosecha / recuperación',
+      _ => treeStageDisplayName(stageId),
+    };
+  }
+  // Aguacate: lenguaje propio (reposo funcional/preparación floral, cuajado del
+  // aguacatito, llenado) SIN cambiar los StageIds globales (doc 01 §5, §6).
+  // Reglas aguacate: `dormancy` es reposo funcional / preparación / posible
+  // inducción (NO árbol pelón: es siempreverde), `flowering` es floración A/B,
+  // `fruit_fill` es llenado/calibre (NUNCA cosecha; madura después del corte) y
+  // `post_harvest` prepara la siguiente floración.
+  if (canonicalCrop == CropCatalog.avocadoTreeCropId) {
+    return switch (stageId) {
+      TreeStageIds.dormancy => 'Reposo funcional / preparación',
+      TreeStageIds.budbreak => 'Brotación / yema activa',
+      TreeStageIds.vegetativeGrowth => 'Con hoja nueva / creciendo',
+      TreeStageIds.flowering => 'Floración',
+      TreeStageIds.fruitSet => 'Cuajado / amarre del aguacatito',
+      TreeStageIds.fruitFill => 'Aguacate creciendo / llenando',
+      TreeStageIds.harvestMaturity => 'Madurez fisiológica / corte',
+      TreeStageIds.postHarvest => 'Postcosecha / recuperación',
       _ => treeStageDisplayName(stageId),
     };
   }
@@ -487,6 +575,11 @@ String _treeGenericProfileDisplayName(String cropId) {
     CropCatalog.pearTreeCropId => 'Pera general',
     CropCatalog.peachTreeCropId => 'Durazno general',
     CropCatalog.walnutTreeCropId => 'Nogal general',
+    CropCatalog.pistachioTreeCropId => 'Pistache general',
+    CropCatalog.orangeTreeCropId => 'Naranjo general',
+    CropCatalog.lemonTreeCropId => 'Limón general',
+    CropCatalog.mangoTreeCropId => 'Mango general',
+    CropCatalog.avocadoTreeCropId => 'Aguacate general',
     _ => 'Perfil general',
   };
 }

@@ -1,0 +1,387 @@
+[ENCABEZADO]
+BIO-G | Aguacate / Arbol de aguacate | Documentacion tecnica v1
+[/ENCABEZADO]
+
+BIO-G
+02. Perfil SKIP BIO-G - Aguacate / Arbol de aguacate
+Perfil general conservador y migrable | profileId: ag_skip
+cropId canonico recomendado: crop_avocado_tree
+cropKey esperado: avocado_tree
+Aliases: aguacate, aguacates, avocado, avocado_tree, crop_avocado, persea, persea_americana, arbol_aguacate, árbol_aguacate, palta, palto
+Version: v1 reforzada
+Formato: TXT tecnico para Flutter/Dart, Codex, Claude Code y agentes IA
+Estado: listo para revision agronomica, auditoria tecnica y traduccion a codigo.
+
+IMPORTANTE
+Este documento NO es receta agronomica local. No sustituye analisis de suelo, agua, tejido/foliar, diagnostico fitosanitario regional, asesoria tecnica ni normatividad de exportacion. BIO-G orienta, no sentencia. SKIP permite avanzar cuando el usuario solo sabe que tiene aguacate.
+
+================================================================================
+0. DECISION EDITORIAL
+================================================================================
+
+SKIP no significa incompleto, descanso, dormancia ni suelo sin cultivo. SKIP es la entrada segura cuando el usuario solo sabe que tiene aguacate, palta o un arbol de avocado.
+
+El usuario NO ve:
+- ag_skip
+- perfil incompleto
+- sin variedad
+- dato pobre
+- baja calidad
+
+El usuario ve:
+- Aguacate general
+- No se que tipo de aguacate es
+- Avanzar sin elegir variedad
+- Aguacate comun
+- Palta general, si la region usa ese nombre
+
+Regla editorial:
+En aguacate, SKIP debe ser mas cuidadoso que en varios frutales porque no saber la variedad tambien significa no saber tipo floral A/B, ventana de cosecha, comportamiento de piel, sensibilidad a frio/calor, potencial de alternancia, destino comercial ni raiz/portainjerto.
+
+Pero BIO-G NO debe bloquear el onboarding. Primero escucha estado, etapa visible, sensores y memoria. Despues permite migrar a Hass, Mendez/Carmen, Criollo, Fuerte, Antillano/Tropical o Tardio.
+
+================================================================================
+1. IDENTIDAD SKIP
+================================================================================
+
+[TABLA]
+Campo | Valor
+profileId | ag_skip
+Label tecnico | AG-SKIP - Aguacate general
+Label UX | No se / Aguacate general
+cropId | crop_avocado_tree
+cropKey | avocado_tree
+aliases | aguacate, aguacates, avocado, avocados, palta, palto, persea, persea_americana, arbol_aguacate, árbol_aguacate
+Nombre visible | Aguacate / Arbol de aguacate
+Nombre cientifico asumido | Persea americana Mill.; no se define variedad hasta seleccionar perfil
+Familia | Lauraceae
+Tipo | Arbol frutal perenne subtropical/tropical
+Organo objetivo | Fruto
+Sistema asumido | Huerto a cielo abierto o arbol individual; manejo mexicano/subtropical/tropical general
+Confianza inicial | Baja-media si solo hay cultivo; media con estado/etapa; alta para lectura actual si sensores + etapa confirmada
+[/TABLA]
+
+================================================================================
+2. CUANDO SE ACTIVA
+================================================================================
+
+Se activa cuando:
+- el usuario no sabe si su aguacate es Hass, Mendez, Carmen, Criollo, Fuerte, Antillano, Reed, Lamb Hass u otro;
+- solo dice "tengo aguacate" o "tengo un arbol de aguacate";
+- usa la palabra palta/palto/avocado sin variedad;
+- sabe que es negro, verde, grande o criollo, pero no puede confirmarlo;
+- tiene mezcla de arboles;
+- no conoce tipo floral A/B;
+- no conoce portainjerto;
+- no sabe si es injertado o de semilla;
+- quiere avanzar rapido;
+- selecciona "No se".
+
+Regla UX:
+BIO-G no debe detener al usuario por no saber variedad. Debe preguntar lo visible:
+- ¿Es arbol joven o productivo?
+- ¿Trae brote nuevo, flor, frutito, fruta creciendo, fruta lista para corte o ya cosechaste?
+- ¿El suelo esta seco, normal o se queda mojado?
+- ¿Hay puntas de hoja quemadas?
+- ¿Se cae flor/frutito?
+
+================================================================================
+3. SUPUESTOS CONSERVADORES
+================================================================================
+
+[TABLA]
+Variable | Supuesto SKIP
+Especie/variedad | Persea americana comercial o local; no se define Hass/Criollo/Fuerte/etc.
+Tipo floral | Desconocido; no asumir A ni B.
+Raza/grupo | Desconocido: puede ser mexicano, guatemalteco, antillano o hibrido.
+Destino | No asume exportacion, mercado nacional, regional ni patio.
+Estado productivo | No se inventa; lo define usuario.
+Clima | Subtropical/tropical general; ajustar con ubicacion si existe.
+Manejo | Cielo abierto, manejo estandar, sin tecnificacion asumida.
+Produccion | Cuasi-anual/variable; no se promete floracion ni cuajado.
+Rendimiento | Conservador; se cierra en Documento 03.
+Nutricion | Prioridades relativas; no receta fertilizante.
+Sanidad | Raiz/Phytophthora, salinidad, trips/acaros/roña/antracnosis/barrenadores son riesgos, no diagnosticos por sensor.
+Memoria | Activa; estres afecta cuajado, calibre, alternancia y ciclos futuros.
+[/TABLA]
+
+================================================================================
+4. QUE NO ASUME SKIP
+================================================================================
+
+No asume que sea Hass.
+No asume que sea Mendez/Carmen.
+No asume que sea Fuerte tipo B.
+No asume que sea Criollo.
+No asume que sea Antillano/Tropical.
+No asume que sea Lamb Hass/Reed/tardio.
+No asume portainjerto.
+No asume si es injertado o semilla/franco.
+No asume tipo floral A/B.
+No asume que hay polinizador cerca.
+No asume exportacion.
+No asume ventana de cosecha.
+No asume que color externo define madurez.
+No asume que la fruta madura para comer en el arbol.
+No asume floracion garantizada.
+No asume que mucha flor sera mucha fruta.
+No asume edad exacta ni produccion plena.
+No asume densidad ni rendimiento por hectarea.
+No asume que poca fruta sea problema si el arbol es joven.
+No asume que no cuajar sea falta de fertilizante.
+No convierte estres hidrico, anillado, podas, fosfitos o reguladores en receta.
+No diagnostica Phytophthora, antracnosis, roña o plagas de forma cerrada.
+No recomienda pesticidas, ingredientes activos, marcas ni dosis.
+No usa dormancy como arbol muerto.
+No borra historial al migrar a AG-01..AG-06.
+
+================================================================================
+5. ETAPAS ACTIVAS EN SKIP
+================================================================================
+
+[TABLA]
+StageId | Label UX SKIP | Politica
+planting_transplant | Plantacion / trasplante | Arbol nuevo; raiz primero; sin produccion; cuidar cuello, drenaje, EC baja.
+root_establishment | Establecimiento de raiz | Humedad sin saturacion; evitar sales/fertilizante fuerte; observar raiz fina.
+juvenile_vegetative | Aguacate joven / formacion | Formacion de copa y raiz; no penalizar por falta de fruto.
+dormancy | Reposo funcional / preparacion | Baja brotacion; posible preparacion floral; no dormancia real ni arbol muerto.
+budbreak | Brotando / yema activa | Puede ser brote vegetativo o floral; pedir realidad visible si no se distingue.
+vegetative_growth | Con hoja nueva / creciendo | Balance vegetativo-reproductivo; exceso de vigor puede competir con flor/fruto.
+flowering | Con flor | Etapa critica; tipo A/B desconocido; clima, polinizadores, agua y raiz pesan fuerte.
+fruit_set | Frutito recien amarrado | Cuajado y caida fisiologica; no culpar NPK de entrada.
+fruit_fill | Aguacate creciendo / llenando | Calibre, agua, K, hoja, raiz y salinidad; no madurez de consumo.
+harvest_maturity | Listo para corte / madurez fisiologica | No decidir solo por color; fruto puede estar duro y madurar despues del corte.
+post_harvest | Despues de cosecha / recuperacion | Etapa viva; poda, raiz, hoja nueva, reservas y siguiente floracion.
+unknown | No lo se | Fallback seguro; preguntar realidad visible.
+[/TABLA]
+
+================================================================================
+6. CALENDARIO PROMEDIO CONSERVADOR
+================================================================================
+
+[TABLA]
+Evento | Ventana SKIP | Regla
+Reposo funcional / preparacion | variable antes de evento floral | No prometer induccion; no usar dormancia caducifolia.
+Floracion | 30-45 dias como promedio conservador | Tipo A/B desconocido; clima puede cambiar sincronizacion.
+Cuajado / amarre | 10-25 dias postfloracion | Mucha flor no asegura fruto; caida inicial puede ser normal.
+Llenado/desarrollo | 6-9 meses promedio conservador | Puede ser 4-11 meses segun perfil y region.
+Madurez/corte | 8-10 meses postfloracion como referencia Hass-like | No usar como fecha exacta; fruta madura de comer despues del corte.
+Postcosecha | despues de corte | No cerrar cultivo; recuperar reservas y preparar siguiente ciclo.
+[/TABLA]
+
+Estos rangos NO prometen fechas exactas, NO sustituyen perfiles AG-01..AG-06 y SI permiten que BIO-G funcione sin datos finos.
+
+================================================================================
+7. RANGOS CONSERVADORES SKIP
+================================================================================
+
+[TABLA]
+Metrica | Banda conservadora | Lectura
+soilMoisture | <40 critico bajo; 40-55 observacion; 55-80/85 optimo general; 85-90 alto; >90 saturacion | En aguacate saturacion sostenida es alerta fuerte por raiz; en floracion/cuajado no permitir deficit severo.
+soilTemp | actividad baja con frio; razonable >12-15 C; mejor templado; calor alto agrava estres | Temperatura modifica floracion y cuajado.
+ph | 5.5-6.8 preferente; >7.2 vigilancia; >7.8 bloqueo probable; <5.0 acidez/raiz | pH alto cambia disponibilidad de Fe/Zn/Mn/P.
+ec | <1.0 favorable; 1.0-1.3 vigilancia; 1.3-1.8 observacion fuerte; >2.0 critica en raiz/reproduccion | Salinidad/exceso, no deficit. EC no distingue cloruro/sodio/boro.
+resistance | <1.6 favorable; 1.6-2.0 observacion; >2.0-2.3 alta; >2.3 critica | Compactacion bloquea raiz superficial y oxigeno.
+N/P/K | prioridad relativa por etapa | SKIP no receta fertilizante. Agua/raiz/EC/pH primero.
+[/TABLA]
+
+================================================================================
+8. SENSIBILIDAD CRITICA SKIP
+================================================================================
+
+[TABLA]
+Riesgo | Peso SKIP | Mensaje tecnico
+Exceso de humedad / raiz asfixiada | Muy alto | Aguacate no tolera suelo saturado; revisar drenaje antes de fertilizar.
+Phytophthora / pudricion de raiz compatible | Muy alto | Sensor no diagnostica; condiciones mojadas + decaimiento elevan sospecha.
+Salinidad / cloruros / sodio / boro | Muy alto | EC alta puede quemar hoja y bloquear absorcion; no meter mas fertilizante por reflejo.
+Deficit hidrico en floracion | Muy alto | Puede bajar polinizacion, aborto floral y cuajado.
+Deficit hidrico en cuajado | Extremo | Puede tirar frutito y bajar calibre futuro.
+Calor/frio en floracion | Alto | Desordena fases A/B y baja viabilidad/cuajado.
+Falta de polinizacion/insectos | Media-alta | Mucha flor no asegura amarre; tipo A/B desconocido baja confianza.
+Caida fisiologica de fruto | Media | Algo de caida es normal; alerta si es masiva o con estres.
+Alternancia productiva | Media-alta | Ano cargado puede traer ano bajo si no recupera reservas.
+Postcosecha debil | Media-alta | Define hoja, raiz y siguiente floracion.
+Desbalance N/K/Ca/Mg/B/Zn | Media-alta | No simular micros con NPK; pedir foliar/suelo/agua.
+Poda fuerte / defoliacion | Media-alta | Puede reducir siguiente ciclo.
+[/TABLA]
+
+================================================================================
+9. VENTANAS FISIOLOGICAS SKIP
+================================================================================
+
+Ventana critica:
+- flowering -> fruit_set
+- Se evalua con mas peso: agua estable, temperatura, viento, HR, salinidad, raiz, polinizacion, carga y memoria.
+
+Ventana hidrica:
+- vegetative_growth -> fruit_fill
+- Agua estable importa, pero sin saturacion. En aguacate, exceso sostenido puede enfermar raiz.
+
+Ventana nutricional:
+- juvenile_vegetative
+- prefloracion/reposo funcional
+- fruit_set/fruit_fill
+- post_harvest
+
+Regla:
+El sensor NPK ayuda, pero la hoja/raiz/agua/EC/pH explican si el arbol puede tomar nutrientes.
+
+================================================================================
+10. ESTADO DEL CULTIVO - OUTPUT BIO-G
+================================================================================
+
+BIO-G puede devolver:
+- Indice general: 0-100.
+- Subindices: agua, temperatura, suelo/raiz, salinidad/EC, nutricion, etapa/memoria.
+- Estado: Optimo / Observacion / Alerta.
+- Tendencia: Mejorando / Estable / Deteriorando.
+- Confianza: baja / media / alta.
+
+Regla:
+Floracion y cuajado pesan mas, pero sin sobrealertar si el usuario esta en SKIP y no confirmo etapa. Raiz y EC deben tener peso alto en todas las etapas.
+
+================================================================================
+11. ALERTAS POSIBLES - LENGUAJE HUMANO
+================================================================================
+
+- "Riesgo de estres hidrico en floracion. Cuida agua pareja, sin encharcar."
+- "Riesgo de bajo cuajado. Mucha flor no siempre se vuelve fruta."
+- "Exceso de humedad en zona radicular. En aguacate esto puede pegar mas fuerte que una falta ligera de fertilizante."
+- "Salinidad en aumento. Si hay puntas quemadas, revisa agua, sales y drenaje antes de subir fertilizante."
+- "El arbol podria estar tirando frutito por estres, calor, sales, raiz o polinizacion baja."
+- "El fruto puede estar listo para corte aunque siga duro. El aguacate madura despues del corte."
+- "Si cargo mucho el ciclo pasado, este ciclo puede venir mas bajo si no recupero reservas."
+- "Perfil general activo. Para mas precision puedes elegir Hass, Mendez/Carmen, Criollo, Fuerte, Antillano o Tardio."
+
+================================================================================
+12. PREGUNTAS UX RECOMENDADAS
+================================================================================
+
+Preguntas cortas para usuario:
+- ¿Tu aguacate es Hass negro/rugoso o piel verde?
+- ¿Es arbol joven o ya produce?
+- ¿Esta recien plantado, con brote nuevo, con flor, con frutito, con fruta creciendo, listo para corte o despues de cosecha?
+- ¿Se le cae mucha flor o frutito?
+- ¿El suelo se queda mojado despues de regar o llover?
+- ¿Las hojas tienen puntas quemadas?
+- ¿Tienes agua salada/salitre/EC alta?
+- ¿Cargo mucho el ano pasado?
+- ¿Tienes otro aguacate cerca que floree al mismo tiempo?
+- ¿Es injertado o de semilla?
+
+Regla de UX:
+No abrumar en onboarding. Hacer 1-2 preguntas clave segun etapa.
+
+================================================================================
+13. MIGRACION DESDE SKIP
+================================================================================
+
+Reglas:
+- No reiniciar el arbol.
+- No borrar memoria.
+- Actualizar profileId.
+- Mantener perennialStateId, phenologyStageId, perennialAnchorDate y perennialAnchorTypeId.
+- Conservar estres: deficit/exceso de agua, salinidad, compactacion, pH alto, calor/frio, floracion golpeada, caida de frutito, raiz sospechosa, defoliacion, alternancia, postcosecha debil.
+- No cambiar etapa automaticamente por cambiar perfil.
+- Recalcular sensibilidad, aliases, copy y rendimiento relativo desde el nuevo perfil.
+
+Targets de migracion:
+- ag_01_hass
+- ag_02_mendez_carmen
+- ag_03_criollo_mexicano
+- ag_04_fuerte_piel_verde
+- ag_05_antillano_tropical
+- ag_06_tardio_lamb_reed
+
+Reglas especiales:
+- ag_skip -> ag_01_hass: activar Hass/tipo A/ventana amplia/exportacion como contexto.
+- ag_skip -> ag_02_mendez_carmen: activar posible floracion/cosecha desfasada, sin crear StageId.
+- ag_skip -> ag_04_fuerte_piel_verde: activar tipo B/polinizador como contexto, no como garantia de cuajado.
+- ag_skip -> ag_05_antillano_tropical: ajustar frio/calor/aceite/mercado; no comparar directo con Hass.
+
+================================================================================
+14. METADATOS PARA CODIGO
+================================================================================
+
+Constantes:
+
+kCropAvocadoTree = 'crop_avocado_tree'
+kAvocadoTreeLegacyId = 'avocado_tree'
+kAvocadoSkipProfileId = 'ag_skip'
+kAg01Hass = 'ag_01_hass'
+kAg02MendezCarmen = 'ag_02_mendez_carmen'
+kAg03CriolloMexicano = 'ag_03_criollo_mexicano'
+kAg04FuertePielVerde = 'ag_04_fuerte_piel_verde'
+kAg05AntillanoTropical = 'ag_05_antillano_tropical'
+kAg06TardioLambReed = 'ag_06_tardio_lamb_reed'
+
+Catalogo:
+profileId: ag_skip
+labelEs: Aguacate general / No se
+isGeneric: true
+cropId: crop_avocado_tree
+cropKey: avocado_tree
+aliases: aguacate, aguacate comun, arbol de aguacate, palta, palto, avocado, no se, desconocido
+defaultConfidence: 0.42-0.55
+migrationTargets: AG-01..AG-06
+visibleInWizard: true
+
+Assets:
+icon: assets/icons/wizard/ic_avocado_tree.png
+stageAssetBasePath: assets/seeds/avocado/
+
+================================================================================
+15. CASOS MINIMOS DE PRUEBA SKIP
+================================================================================
+
+1) ag_skip + only crop: onboarding no bloquea; pide estado/etapa.
+2) ag_skip + unknown stage: no bloquear; preguntar realidad visible.
+3) ag_skip + newly_planted + harvest_maturity: resolver incongruencia suavemente.
+4) ag_skip + juvenile_non_productive + no fruit: no penalizar falta de fruta.
+5) ag_skip + established + dormancy: reposo funcional/preparacion; no arbol muerto.
+6) ag_skip + flowering + soilMoisture bajo: alerta agua/floracion; no receta NPK.
+7) ag_skip + flowering + temperatura extrema: riesgo de bajo cuajado/polinizacion.
+8) ag_skip + flowering + tipo floral desconocido: bajar confianza; no recomendar variedad sin contexto.
+9) ag_skip + fruit_set + caida de frutitos: diferenciar caida fisiologica vs estres.
+10) ag_skip + fruit_set + EC alta: sales/raiz/agua antes que fertilizante.
+11) ag_skip + fruit_fill + K bajo + humedad baja: priorizar agua/absorcion antes de K.
+12) ag_skip + fruit_fill + EC alta + puntas quemadas: sales/cloruros/sodio/boro compatibles; pedir confirmacion.
+13) ag_skip + vegetative_growth + N alto + sin floracion: advertir vigor vegetativo posible sin sentencia.
+14) ag_skip + harvest_maturity: no decidir madurez solo por color externo.
+15) ag_skip + harvest_maturity + fruta dura: recordar que madura despues del corte.
+16) ag_skip + post_harvest: no cerrar cultivo; hablar de reservas, raiz y siguiente floracion.
+17) ag_skip -> ag_01_hass: conserva memoria y recalcula copy/sensibilidad.
+18) ag_skip -> ag_04_fuerte_piel_verde: conserva memoria y activa contexto tipo B.
+
+================================================================================
+16. FUENTES CONSULTADAS Y CRITERIO
+================================================================================
+
+Alta confianza BIO-G interna:
+- Estandar BIO-G para Integracion de Arboles Perennes v1.5 con addendum.
+- PDF base del usuario: PERFIL UNIVERSAL BIO-G - AGUACATE.
+- PDF base del usuario: PERFIL SKIP BIO-G - AGUACATE.
+- Documentos 01-05 de Mango como patron de formato y contrato tecnico.
+- Revision de lib.zip para patrones de arboles existentes.
+
+Alta confianza externa / universidades / extension:
+- UF/IFAS Extension, Avocado Growing in the Florida Home Landscape.
+- UC IPM, Phytophthora Root Rot / Avocado.
+- UC ANR Topics in Subtropics, Avocados, Flowers, Bees, Pollination and Fruit.
+- UC Riverside Avocado Variety Collection.
+- Scielo / Agrociencia, Phenology of Mendez avocado in southern Jalisco, Mexico.
+- SADER/SIAP Michoacan, contexto de produccion nacional y superficie.
+- FIRA Panorama Agroalimentario Aguacate 2024, referencia comercial por variedades.
+
+Foros, redes y lenguaje productor:
+Uso permitido SOLO para UX, no para umbrales:
+- "se cae el aguacatito"
+- "florea mucho pero no amarra"
+- "esta triste aunque lo riego"
+- "se le queman las puntas"
+- "tiene salitre"
+- "cargo mucho y luego descanso"
+- "no se si es Hass o criollo"
+- "el aguacate sigue duro en el arbol"
+
+FIN DEL DOCUMENTO 02.

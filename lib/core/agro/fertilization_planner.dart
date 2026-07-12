@@ -213,6 +213,41 @@ class FertilizationPlanner {
           stageKey: stageKey,
         );
       }
+      if (_isPistachioTreeCrop(crop)) {
+        return _pistachioTreeConservativeGuide(
+          nutrient: nutrient,
+          label: label,
+          stageKey: stageKey,
+        );
+      }
+      if (_isOrangeTreeCrop(crop)) {
+        return _orangeTreeConservativeGuide(
+          nutrient: nutrient,
+          label: label,
+          stageKey: stageKey,
+        );
+      }
+      if (_isLemonTreeCrop(crop)) {
+        return _lemonTreeConservativeGuide(
+          nutrient: nutrient,
+          label: label,
+          stageKey: stageKey,
+        );
+      }
+      if (_isMangoTreeCrop(crop)) {
+        return _mangoTreeConservativeGuide(
+          nutrient: nutrient,
+          label: label,
+          stageKey: stageKey,
+        );
+      }
+      if (_isAvocadoTreeCrop(crop)) {
+        return _avocadoTreeConservativeGuide(
+          nutrient: nutrient,
+          label: label,
+          stageKey: stageKey,
+        );
+      }
       if ((crop == 'barley' || crop == 'cebada') &&
           nutrient == AgroMetricKey.n &&
           _isBarleyMalt(profileId)) {
@@ -240,6 +275,46 @@ class FertilizationPlanner {
 
     if (_isWalnutTreeCrop(crop)) {
       return _walnutTreeConservativeGuide(
+        nutrient: nutrient,
+        label: label,
+        stageKey: stageKey,
+      );
+    }
+
+    if (_isPistachioTreeCrop(crop)) {
+      return _pistachioTreeConservativeGuide(
+        nutrient: nutrient,
+        label: label,
+        stageKey: stageKey,
+      );
+    }
+
+    if (_isOrangeTreeCrop(crop)) {
+      return _orangeTreeConservativeGuide(
+        nutrient: nutrient,
+        label: label,
+        stageKey: stageKey,
+      );
+    }
+
+    if (_isLemonTreeCrop(crop)) {
+      return _lemonTreeConservativeGuide(
+        nutrient: nutrient,
+        label: label,
+        stageKey: stageKey,
+      );
+    }
+
+    if (_isMangoTreeCrop(crop)) {
+      return _mangoTreeConservativeGuide(
+        nutrient: nutrient,
+        label: label,
+        stageKey: stageKey,
+      );
+    }
+
+    if (_isAvocadoTreeCrop(crop)) {
+      return _avocadoTreeConservativeGuide(
         nutrient: nutrient,
         label: label,
         stageKey: stageKey,
@@ -533,6 +608,463 @@ class FertilizationPlanner {
         stage.contains('budbreak') ||
         stage.contains('flower')) {
       return 'En raíz, brotación y floración, corrige poco a poco; cuida zinc contextual y que el suelo no esté frío, seco o con sales.';
+    }
+    return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
+  }
+
+  static bool _isPistachioTreeCrop(String crop) {
+    return crop == 'pistachio_tree' ||
+        crop == 'crop_pistachio_tree' ||
+        crop == 'pistachio' ||
+        crop == 'pistachiotree' ||
+        crop == 'pistache' ||
+        crop == 'pistacho' ||
+        crop == 'pistachero';
+  }
+
+  static bool _isOrangeTreeCrop(String crop) {
+    return crop == 'orange_tree' ||
+        crop == 'crop_orange_tree' ||
+        crop == 'orange' ||
+        crop == 'orangetree' ||
+        crop == 'naranjo' ||
+        crop == 'naranja';
+  }
+
+  static bool _isLemonTreeCrop(String crop) {
+    return crop == 'lemon_tree' ||
+        crop == 'crop_lemon_tree' ||
+        crop == 'lemontree' ||
+        crop == 'lime_tree' ||
+        crop == 'crop_lime_tree' ||
+        crop == 'lemon' ||
+        crop == 'lime' ||
+        crop == 'limon' ||
+        crop == 'limón' ||
+        crop == 'limonero' ||
+        crop == 'lima';
+  }
+
+  static bool _isMangoTreeCrop(String crop) {
+    return crop == 'mango_tree' ||
+        crop == 'crop_mango_tree' ||
+        crop == 'mangotree' ||
+        crop == 'crop_mango' ||
+        crop == 'mango' ||
+        crop == 'mangos' ||
+        crop == 'mangifera' ||
+        crop == 'mangifera_indica' ||
+        crop == 'arbol_mango' ||
+        crop == 'árbol_mango';
+  }
+
+  static bool _isAvocadoTreeCrop(String crop) {
+    return crop == 'avocado_tree' ||
+        crop == 'crop_avocado_tree' ||
+        crop == 'avocadotree' ||
+        crop == 'crop_avocado' ||
+        crop == 'avocado' ||
+        crop == 'avocados' ||
+        crop == 'aguacate' ||
+        crop == 'aguacates' ||
+        crop == 'aguacatero' ||
+        crop == 'palta' ||
+        crop == 'palto' ||
+        crop == 'persea' ||
+        crop == 'persea_americana' ||
+        crop == 'arbol_aguacate' ||
+        crop == 'árbol_aguacate' ||
+        crop == 'arbol de aguacate' ||
+        crop == 'árbol de aguacate';
+  }
+
+  static NutrientDoseGuide _pistachioTreeConservativeGuide({
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required String? stageKey,
+  }) {
+    final bool isHigh =
+        label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation;
+    final nutrientName = switch (nutrient) {
+      AgroMetricKey.n => 'nitrógeno',
+      AgroMetricKey.p => 'fósforo',
+      AgroMetricKey.k => 'potasio',
+      _ => 'nutriente',
+    };
+    final opening = isHigh
+        ? '$nutrientName alto en pistache. BioG detecta más $nutrientName del necesario para esta etapa.'
+        : '$nutrientName bajo en pistache. BioG detecta menos $nutrientName del que pide esta etapa.';
+
+    return NutrientDoseGuide(
+      doseGuideEs:
+          '$opening ${_pistachioTreeNutrientGuide(nutrient, isHigh: isHigh)} ${_pistachioTreeStageGuide(stageKey)}',
+      fertilizerEquivalentEs:
+          'El pistache no se fertiliza a ciegas: manda primero agua, raíz, salinidad (EC) y pH. Aguanta más sal que otros frutales, pero EC alta sigue bloqueando. El boro y el zinc son contexto clave pero no los mide este sensor. Si vas a mover fuerte N, P o K, confirma con análisis de suelo, agua y hoja.',
+      requiresConfirmation: true,
+    );
+  }
+
+  static String _pistachioTreeNutrientGuide(
+    AgroMetricKey nutrient, {
+    required bool isHigh,
+  }) {
+    if (isHigh) {
+      return switch (nutrient) {
+        AgroMetricKey.n =>
+          'No apliques más nitrógeno por ahora: en pistache más N no es más pistache, con baja carga se va a puro follaje.',
+        AgroMetricKey.p =>
+          'Pausa fósforo extra: en adulto el P no se aplica por costumbre y en suelo calizo puede bloquear zinc/hierro.',
+        AgroMetricKey.k =>
+          'No subas más potasio por ahora: con sales altas el K puede sumar estrés osmótico y desbalancear magnesio/calcio.',
+        _ => 'Pausa este nutriente y sigue la tendencia de BioG.',
+      };
+    }
+    return switch (nutrient) {
+      AgroMetricKey.n =>
+        'Corrige N de forma ligera y por carga si la hoja se ve débil; evita N tardío que retrase la latencia o favorezca helada.',
+      AgroMetricKey.p =>
+        'Corrige P con mesura y análisis, sobre todo en raíz, brotación o floración; en pistache no es protagonista adulto.',
+      AgroMetricKey.k =>
+        'Refuerza K de forma gradual en la zona mojada: ayuda al kernel, la apertura (split) y la calidad; cuida el riego parejo y la EC.',
+      _ => 'Ajusta este nutriente de forma gradual y revisa la respuesta del árbol.',
+    };
+  }
+
+  static String _pistachioTreeStageGuide(String? stageKey) {
+    final stage = (stageKey ?? '').trim().toLowerCase();
+    if (stage.contains('post_harvest')) {
+      return 'En postcosecha, solo corrige si el pistache sigue con hoja activa y riego parejo: la hoja carga reservas para el siguiente ciclo. No todo huerto necesita N postcosecha.';
+    }
+    if (stage.contains('fruit_fill')) {
+      return 'En llenado de kernel, el potasio y el agua mandan; no empujes N que se vaya a follaje. (Esto es llenado, todavía no cosecha.)';
+    }
+    if (stage.contains('fruit_set') || stage.contains('harvest_maturity')) {
+      return 'En amarre y madurez/apertura, mantén riego parejo y evita N tardío; si no amarró, revisa macho/hembra, frío y clima antes de fertilizar.';
+    }
+    if (stage.contains('root') ||
+        stage.contains('planting') ||
+        stage.contains('budbreak') ||
+        stage.contains('flower')) {
+      return 'En raíz, brotación y floración, corrige poco a poco; cuida boro/zinc contextual y que el suelo no esté frío, seco o con sales. En floración manda macho/hembra y clima, no el NPK.';
+    }
+    return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
+  }
+
+  static NutrientDoseGuide _orangeTreeConservativeGuide({
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required String? stageKey,
+  }) {
+    final bool isHigh =
+        label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation;
+    final nutrientName = switch (nutrient) {
+      AgroMetricKey.n => 'nitrógeno',
+      AgroMetricKey.p => 'fósforo',
+      AgroMetricKey.k => 'potasio',
+      _ => 'nutriente',
+    };
+    final opening = isHigh
+        ? '$nutrientName alto en naranjo. BioG detecta más $nutrientName del necesario para esta etapa.'
+        : '$nutrientName bajo en naranjo. BioG detecta menos $nutrientName del que pide esta etapa.';
+
+    return NutrientDoseGuide(
+      doseGuideEs:
+          '$opening ${_orangeTreeNutrientGuide(nutrient, isHigh: isHigh)} ${_orangeTreeStageGuide(stageKey)}',
+      fertilizerEquivalentEs:
+          'El naranjo no se fertiliza a ciegas: manda primero agua, raíz, salinidad (EC) y pH. Es sensible a sales, así que EC alta bloquea la lectura. El hierro, zinc y manganeso son contexto clave con pH alto, pero no los mide este sensor. Si vas a mover fuerte N, P o K, confirma con análisis de suelo, agua y hoja.',
+      requiresConfirmation: true,
+    );
+  }
+
+  static String _orangeTreeNutrientGuide(
+    AgroMetricKey nutrient, {
+    required bool isHigh,
+  }) {
+    if (isHigh) {
+      return switch (nutrient) {
+        AgroMetricKey.n =>
+          'No apliques más nitrógeno por ahora: en naranjo más N no es más naranja, con baja carga se va a follaje, cáscara gruesa y retraso de color.',
+        AgroMetricKey.p =>
+          'Pausa fósforo extra: en adulto el P no se aplica por costumbre y en suelo calizo puede bloquear zinc/hierro.',
+        AgroMetricKey.k =>
+          'No subas más potasio por ahora: con sales altas el K puede sumar estrés osmótico y desbalancear magnesio/calcio.',
+        _ => 'Pausa este nutriente y sigue la tendencia de BioG.',
+      };
+    }
+    return switch (nutrient) {
+      AgroMetricKey.n =>
+        'Corrige N de forma ligera y por carga si la hoja se ve débil; evita N tardío que retrase el color o engrose la cáscara.',
+      AgroMetricKey.p =>
+        'Corrige P con mesura y análisis, sobre todo en raíz, arranque o floración; en naranjo adulto no es protagonista.',
+      AgroMetricKey.k =>
+        'Refuerza K de forma gradual en la zona mojada: ayuda al calibre, el jugo y la calidad; cuida el riego parejo y la EC.',
+      _ => 'Ajusta este nutriente de forma gradual y revisa la respuesta del árbol.',
+    };
+  }
+
+  static String _orangeTreeStageGuide(String? stageKey) {
+    final stage = (stageKey ?? '').trim().toLowerCase();
+    if (stage.contains('post_harvest')) {
+      return 'En postcosecha, solo corrige si el naranjo sigue con hoja activa y riego parejo: la hoja carga reservas para la siguiente floración. La cosecha no apaga el árbol.';
+    }
+    if (stage.contains('fruit_fill')) {
+      return 'En llenado, el potasio y el agua mandan calibre y jugo; no empujes N que se vaya a follaje. (Esto es llenado, todavía no cosecha.)';
+    }
+    if (stage.contains('fruit_set')) {
+      return 'En cuajado/amarre, mantén riego parejo y evita el estrés: si se cae el frutito, revisa calor, agua, sales y raíz antes de fertilizar.';
+    }
+    if (stage.contains('harvest_maturity')) {
+      return 'En madurez/cosecha cuida color, calibre, jugo y calidad; no empujes N tardío. En Valencia el color externo puede engañar.';
+    }
+    if (stage.contains('dormancy')) {
+      return 'En reposo relativo el naranjo sigue verde (no es árbol pelón): baja la presión de NPK y cuida raíz, humedad y sales.';
+    }
+    if (stage.contains('root') ||
+        stage.contains('planting') ||
+        stage.contains('budbreak') ||
+        stage.contains('flower')) {
+      return 'En raíz, brotación y floración, corrige poco a poco; cuida Fe/Zn/Mn contextual y que el suelo no esté frío, seco o con sales. En floración manda el agua y el clima, no el NPK.';
+    }
+    return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
+  }
+
+  static NutrientDoseGuide _lemonTreeConservativeGuide({
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required String? stageKey,
+  }) {
+    final bool isHigh =
+        label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation;
+    final nutrientName = switch (nutrient) {
+      AgroMetricKey.n => 'nitrógeno',
+      AgroMetricKey.p => 'fósforo',
+      AgroMetricKey.k => 'potasio',
+      _ => 'nutriente',
+    };
+    final opening = isHigh
+        ? '$nutrientName alto en limón. BioG detecta más $nutrientName del necesario para esta etapa.'
+        : '$nutrientName bajo en limón. BioG detecta menos $nutrientName del que pide esta etapa.';
+
+    return NutrientDoseGuide(
+      doseGuideEs:
+          '$opening ${_lemonTreeNutrientGuide(nutrient, isHigh: isHigh)} ${_lemonTreeStageGuide(stageKey)}',
+      fertilizerEquivalentEs:
+          'El limón no se fertiliza a ciegas: manda primero agua, raíz, salinidad (EC) y pH. Es sensible a sales, así que EC alta bloquea la lectura. El hierro, zinc, manganeso, magnesio y azufre son contexto clave (pH alto/HLB), pero no los mide este sensor. Con HLB, gomosis o raíz dañada baja la confianza del NPK. Si vas a mover fuerte N, P o K, confirma con análisis de suelo, agua y hoja.',
+      requiresConfirmation: true,
+    );
+  }
+
+  static String _lemonTreeNutrientGuide(
+    AgroMetricKey nutrient, {
+    required bool isHigh,
+  }) {
+    if (isHigh) {
+      return switch (nutrient) {
+        AgroMetricKey.n =>
+          'No apliques más nitrógeno por ahora: en limón más N no es más limón, con baja carga se va a puro brote tierno y atrae psílido/minador.',
+        AgroMetricKey.p =>
+          'Pausa fósforo extra: en adulto el P no se aplica por costumbre y en suelo calizo puede bloquear zinc/hierro.',
+        AgroMetricKey.k =>
+          'No subas más potasio por ahora: con sales altas el K puede sumar estrés osmótico y desbalancear magnesio/calcio.',
+        _ => 'Pausa este nutriente y sigue la tendencia de BioG.',
+      };
+    }
+    return switch (nutrient) {
+      AgroMetricKey.n =>
+        'Corrige N de forma ligera y por carga si la hoja se ve débil; evita N tardío que dé brote blando, caída o baje calidad.',
+      AgroMetricKey.p =>
+        'Corrige P con mesura y análisis, sobre todo en raíz, arranque o floración; en limón adulto no es protagonista.',
+      AgroMetricKey.k =>
+        'Refuerza K de forma gradual en la zona mojada: manda calibre, jugo y calidad; cuida el riego parejo y la EC (el limón es sensible a sales).',
+      _ => 'Ajusta este nutriente de forma gradual y revisa la respuesta del árbol.',
+    };
+  }
+
+  static String _lemonTreeStageGuide(String? stageKey) {
+    final stage = (stageKey ?? '').trim().toLowerCase();
+    if (stage.contains('post_harvest')) {
+      return 'En postcosecha/entre cortes, solo corrige si el limón sigue con hoja activa y riego parejo: la hoja carga reservas para la siguiente floración o corte. La cosecha no apaga el árbol.';
+    }
+    if (stage.contains('fruit_fill')) {
+      return 'En llenado, el potasio y el agua mandan calibre y jugo; no empujes N que se vaya a brote tierno. (Esto es llenado, todavía no cosecha.)';
+    }
+    if (stage.contains('fruit_set')) {
+      return 'En cuajado/amarre del limoncito, mantén riego parejo y evita el estrés: si se cae el frutito, revisa calor, agua, sales y raíz antes de fertilizar.';
+    }
+    if (stage.contains('harvest_maturity')) {
+      return 'Cerca del corte cuida calibre, jugo y calidad; no empujes N tardío. En persa/mexicano el limón comercial puede seguir verde.';
+    }
+    if (stage.contains('dormancy')) {
+      return 'En reposo relativo/entre cortes el limón sigue verde (no es árbol pelón): baja la presión de NPK y cuida raíz, humedad y sales.';
+    }
+    if (stage.contains('root') ||
+        stage.contains('planting') ||
+        stage.contains('budbreak') ||
+        stage.contains('flower')) {
+      return 'En raíz, brotación y floración, corrige poco a poco; cuida Fe/Zn/Mn contextual y que el suelo no esté frío, seco o con sales. En floración manda el agua y el clima, no el NPK. El brote tierno atrae psílido/minador.';
+    }
+    return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
+  }
+
+  static NutrientDoseGuide _mangoTreeConservativeGuide({
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required String? stageKey,
+  }) {
+    final bool isHigh =
+        label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation;
+    final nutrientName = switch (nutrient) {
+      AgroMetricKey.n => 'nitrógeno',
+      AgroMetricKey.p => 'fósforo',
+      AgroMetricKey.k => 'potasio',
+      _ => 'nutriente',
+    };
+    final opening = isHigh
+        ? '$nutrientName alto en mango. BioG detecta más $nutrientName del necesario para esta etapa.'
+        : '$nutrientName bajo en mango. BioG detecta menos $nutrientName del que pide esta etapa.';
+
+    return NutrientDoseGuide(
+      doseGuideEs:
+          '$opening ${_mangoTreeNutrientGuide(nutrient, isHigh: isHigh)} ${_mangoTreeStageGuide(stageKey)}',
+      fertilizerEquivalentEs:
+          'El mango no se fertiliza a ciegas: manda primero agua, raíz, salinidad (EC) y pH. Es sensible a sales, así que EC alta bloquea la lectura. El calcio, boro, magnesio, azufre y zinc son contexto clave (flor, cuajado, firmeza, poscosecha), pero no los mide este sensor. La sanidad (antracnosis, cenicilla, mosca de fruta) baja la confianza del NPK. Si vas a mover fuerte N, P o K, confirma con análisis de suelo, agua y hoja. La inducción floral no se receta.',
+      requiresConfirmation: true,
+    );
+  }
+
+  static String _mangoTreeNutrientGuide(
+    AgroMetricKey nutrient, {
+    required bool isHigh,
+  }) {
+    if (isHigh) {
+      return switch (nutrient) {
+        AgroMetricKey.n =>
+          'No apliques más nitrógeno por ahora: en mango más N no es más mango; en reposo/inducción empuja brote y rompe la floración, y tarde mete follaje y baja calidad.',
+        AgroMetricKey.p =>
+          'Pausa fósforo extra: en adulto el P no se aplica por costumbre y en suelo calizo puede bloquear zinc/hierro.',
+        AgroMetricKey.k =>
+          'No subas más potasio por ahora: con sales altas el K puede sumar estrés osmótico y desbalancear magnesio/calcio.',
+        _ => 'Pausa este nutriente y sigue la tendencia de BioG.',
+      };
+    }
+    return switch (nutrient) {
+      AgroMetricKey.n =>
+        'Corrige N de forma ligera y por carga si la hoja se ve débil; evita N tardío que meta brote o baje color/firmeza. En reposo/inducción, un N bajo no es problema.',
+      AgroMetricKey.p =>
+        'Corrige P con mesura y análisis, sobre todo en raíz, arranque o floración; en mango adulto no es protagonista.',
+      AgroMetricKey.k =>
+        'Refuerza K de forma gradual en la zona mojada: manda amarre, calibre y calidad; cuida el riego parejo y la EC (el mango es sensible a sales).',
+      _ => 'Ajusta este nutriente de forma gradual y revisa la respuesta del árbol.',
+    };
+  }
+
+  static String _mangoTreeStageGuide(String? stageKey) {
+    final stage = (stageKey ?? '').trim().toLowerCase();
+    if (stage.contains('post_harvest')) {
+      return 'En postcosecha, solo corrige si el mango sigue con hoja activa y riego parejo: es la ventana fuerte de reservas para la siguiente floración. La cosecha no apaga el árbol.';
+    }
+    if (stage.contains('fruit_fill')) {
+      return 'En llenado, el potasio y el agua mandan calibre y calidad; no empujes N que se vaya a brote. (Esto es llenado, todavía no cosecha.)';
+    }
+    if (stage.contains('fruit_set')) {
+      return 'En cuajado/amarre del manguito, mantén riego parejo y evita el estrés: si se cae el frutito, revisa calor, agua, sales, sanidad de panícula y raíz antes de fertilizar.';
+    }
+    if (stage.contains('harvest_maturity')) {
+      return 'Cerca del corte cuida calibre, madurez y calidad; no empujes N tardío. No decidas la madurez solo por el color externo (Kent/Keitt pueden verse verdes).';
+    }
+    if (stage.contains('dormancy')) {
+      return 'En reposo funcional/inducción el mango sigue verde (no es árbol pelón): baja la presión de N (empuja brote y rompe flor) y cuida raíz, humedad y sales. La inducción no se receta.';
+    }
+    if (stage.contains('root') ||
+        stage.contains('planting') ||
+        stage.contains('budbreak') ||
+        stage.contains('flower')) {
+      return 'En raíz, brotación y floración, corrige poco a poco; cuida Ca/B/Fe/Zn contextual y que el suelo no esté frío, seco o con sales. En floración mandan agua, HR, sanidad de panícula y clima, no el NPK.';
+    }
+    return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
+  }
+
+  static NutrientDoseGuide _avocadoTreeConservativeGuide({
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required String? stageKey,
+  }) {
+    final bool isHigh =
+        label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation;
+    final nutrientName = switch (nutrient) {
+      AgroMetricKey.n => 'nitrógeno',
+      AgroMetricKey.p => 'fósforo',
+      AgroMetricKey.k => 'potasio',
+      _ => 'nutriente',
+    };
+    final opening = isHigh
+        ? '$nutrientName alto en aguacate. BioG detecta más $nutrientName del necesario para esta etapa.'
+        : '$nutrientName bajo en aguacate. BioG detecta menos $nutrientName del que pide esta etapa.';
+
+    return NutrientDoseGuide(
+      doseGuideEs:
+          '$opening ${_avocadoTreeNutrientGuide(nutrient, isHigh: isHigh)} ${_avocadoTreeStageGuide(stageKey)}',
+      fertilizerEquivalentEs:
+          'El aguacate no se fertiliza a ciegas: manda primero raíz, drenaje, agua, salinidad (EC) y pH. Es MUY sensible a sales, cloruros, sodio y boro, así que EC alta o suelo saturado bloquean la lectura y pueden empeorar el árbol. El calcio, boro, magnesio, azufre y zinc son contexto clave (flor, cuajado, firmeza, poscosecha), pero no los mide este sensor. La sanidad (Phytophthora, antracnosis, roña) baja la confianza del NPK. Si vas a mover fuerte N, P o K, confirma con análisis de suelo, agua y hoja. La inducción floral no se receta.',
+      requiresConfirmation: true,
+    );
+  }
+
+  static String _avocadoTreeNutrientGuide(
+    AgroMetricKey nutrient, {
+    required bool isHigh,
+  }) {
+    if (isHigh) {
+      return switch (nutrient) {
+        AgroMetricKey.n =>
+          'No apliques más nitrógeno por ahora: en aguacate más N no es más aguacate; en reposo/inducción empuja brote y compite con la floración, y tarde mete follaje y baja calidad/poscosecha.',
+        AgroMetricKey.p =>
+          'Pausa fósforo extra: en adulto el P no se aplica por costumbre y en suelo calizo puede bloquear zinc/hierro.',
+        AgroMetricKey.k =>
+          'No subas más potasio por ahora: con sales/cloruros altos el K suma estrés osmótico y desbalancea magnesio/calcio. En floración el K aún no manda: primero cuaja.',
+        _ => 'Pausa este nutriente y sigue la tendencia de BioG.',
+      };
+    }
+    return switch (nutrient) {
+      AgroMetricKey.n =>
+        'Corrige N de forma ligera y por carga si la hoja se ve débil; evita N tardío que meta brote o complique la poscosecha. En reposo/inducción, un N bajo no es problema.',
+      AgroMetricKey.p =>
+        'Corrige P con mesura y análisis, sobre todo en raíz, arranque o floración; en aguacate adulto no es protagonista.',
+      AgroMetricKey.k =>
+        'Refuerza K de forma gradual en la zona mojada: manda amarre, calibre y calidad; cuida el riego parejo y la EC (el aguacate es muy sensible a sales/cloruros).',
+      _ => 'Ajusta este nutriente de forma gradual y revisa la respuesta del árbol.',
+    };
+  }
+
+  static String _avocadoTreeStageGuide(String? stageKey) {
+    final stage = (stageKey ?? '').trim().toLowerCase();
+    if (stage.contains('post_harvest')) {
+      return 'En postcosecha, solo corrige si el aguacate sigue con hoja activa y riego parejo: es la ventana viva de reservas para la siguiente floración. La cosecha no apaga el árbol.';
+    }
+    if (stage.contains('fruit_fill')) {
+      return 'En llenado, el potasio y el agua mandan calibre y materia seca; no empujes N que se vaya a brote. (Esto es llenado, todavía no cosecha; madura después del corte.)';
+    }
+    if (stage.contains('fruit_set')) {
+      return 'En cuajado/amarre del aguacatito, mantén riego parejo, baja EC y raíz oxigenada: si se cae el frutito, revisa calor, agua, sales, polinización y raíz antes de fertilizar. Ca/B/Zn son contexto.';
+    }
+    if (stage.contains('harvest_maturity')) {
+      return 'Cerca del corte cuida madurez fisiológica, materia seca y calidad; no empujes N tardío. No decidas la madurez solo por el color externo (el aguacate madura después del corte).';
+    }
+    if (stage.contains('dormancy')) {
+      return 'En reposo funcional/inducción el aguacate sigue verde (es siempreverde, no árbol pelón): baja la presión de N (empuja brote y compite con la flor) y cuida raíz, humedad y sales. La inducción no se receta.';
+    }
+    if (stage.contains('flower')) {
+      return 'En floración manda agua, temperatura, polinización (tipo A/B) y Ca/B/Zn contextual, no el NPK. El K aún no va al máximo: primero cuaja. Corrige poco a poco.';
+    }
+    if (stage.contains('root') ||
+        stage.contains('planting') ||
+        stage.contains('budbreak')) {
+      return 'En raíz, plantación y brotación corrige poco a poco; la raíz fina del aguacate no tolera sales ni saturación. Cuida drenaje, EC baja y Ca/B/Fe/Zn contextual.';
     }
     return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
   }
