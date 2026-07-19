@@ -15,6 +15,10 @@ import 'package:bio_g/core/crops/orange_tree/orange_tree_assets.dart';
 import 'package:bio_g/core/crops/lemon_tree/lemon_tree_assets.dart';
 import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
 import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
+import 'package:bio_g/core/crops/cactus/cactus_assets.dart';
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
+import 'package:bio_g/core/crops/succulent/succulent_assets.dart';
+import 'package:bio_g/core/crops/aloe/aloe_assets.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/onboarding/onboarding_draft.dart';
@@ -85,6 +89,14 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   bool get _isLastStep => _currentStep == _steps.last;
   bool get _isTreeDraft =>
       isTreeCrop(cropId: _draft.cropId, cropCategoryId: _draft.cropCategory);
+  /// Ornamental de establecimiento + mantenimiento (cactus, suculenta…).
+  bool get _isOrnamentalDraft => isEstablishmentMaintenanceCrop(
+    cropId: _draft.cropId,
+    cropCategoryId: _draft.cropCategory,
+  );
+
+  /// cropId canónico de la ornamental seleccionada (para textos y assets).
+  String? get _ornamentalCropId => ornamentalCropIdOrNull(_draft.cropId);
   bool get _isTreeUnknownStageSelection =>
       _isTreeDraft &&
       (normalizeTreeProductionStatusId(_draft.treeProductionStatusId) ==
@@ -484,7 +496,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   Future<void> _openCropSelector() async {
     if (_draft.cropCategory != CropCatalog.grainCategoryId &&
         _draft.cropCategory != CropCatalog.vegetableCategoryId &&
-        _draft.cropCategory != CropCatalog.treeCategoryId) {
+        _draft.cropCategory != CropCatalog.treeCategoryId &&
+        _draft.cropCategory != CropCatalog.ornamentalCategoryId) {
       return;
     }
 
@@ -505,6 +518,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                   crop.subtitle ??
                   (crop.enabled ? 'Disponible ahora' : 'Próximamente'),
               iconPath: _cropIconPath(crop.cropId),
+              fallbackAsset:
+                  isEstablishmentMaintenanceCrop(cropId: crop.cropId)
+                  ? kOrnamentalGenericPlantFallback
+                  : 'assets/icons/wizard/ic_tree.png',
               enabled: crop.enabled,
             ),
           )
@@ -536,6 +553,15 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     // Árboles usan perfiles (AP-SKIP/AP-01..05), no variedades de semilla.
     if (isTreeCrop(cropId: cropId, cropCategoryId: _draft.cropCategory)) {
       await _openTreeProfileSelector();
+      return;
+    }
+
+    // Las ornamentales usan perfiles (CA-* / SU-*) mostrados como "tipos".
+    if (isEstablishmentMaintenanceCrop(
+      cropId: cropId,
+      cropCategoryId: _draft.cropCategory,
+    )) {
+      await _openOrnamentalProfileSelector();
       return;
     }
 
@@ -675,8 +701,11 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     if (profiles.isEmpty) return;
     final defaultProfileId = CropCatalog.resolveProfileId(cropId: cropId);
 
-    // Perfil general/SKIP al final; pregunta humana de "variedad".
-    final orderedProfiles = TreeProfilePresentation.genericLast(profiles, cropId);
+    // Perfiles ornamentales canónicos, con la opción general primero.
+    final orderedProfiles = TreeProfilePresentation.genericLast(
+      profiles,
+      cropId,
+    );
 
     final result = await showWizardSelectionSheet<String>(
       context: context,
@@ -714,6 +743,51 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     _animateToStep(OnboardingStep.cropStage);
   }
 
+  /// Selector de tipo para las ornamentales. El perfil general va AL FINAL de la
+  /// lista (el catálogo ya lo ordena así) y NUNCA se muestra "SKIP" ni el id.
+  Future<void> _openOrnamentalProfileSelector() async {
+    final cropId = _draft.cropId;
+    if (cropId == null) return;
+
+    final profiles = CropCatalog.profilesForCrop(cropId, enabledOnly: false);
+    if (profiles.isEmpty) return;
+    final defaultProfileId = CropCatalog.resolveProfileId(cropId: cropId);
+
+    final result = await showWizardSelectionSheet<String>(
+      context: context,
+      title: ornamentalTypeQuestion(cropId),
+      options: profiles
+          .map(
+            (profile) => WizardSheetOption<String>(
+              value: profile.id,
+              title: profile.label,
+              subtitle: profile.id == defaultProfileId
+                  ? ornamentalGeneralProfileHint(cropId)
+                  : (profile.subtitle ?? 'Disponible'),
+              iconPath: ornamentalProfileIcon(cropId, profile.id),
+              fallbackAsset: kOrnamentalGenericPlantFallback,
+              enabled: true,
+            ),
+          )
+          .toList(growable: false),
+    );
+
+    if (result == null) return;
+
+    _updateDraft(
+      _draft.copyWith(
+        // En una ornamental, "variedad/tipo" es el perfil (CA-* / SU-*).
+        varietyId: result,
+        varietyAlias: result,
+        stage: null,
+        selectedDate: null,
+        useFlexibleDate: false,
+      ),
+    );
+
+    _animateToStep(OnboardingStep.cropStage);
+  }
+
   String _treeProfileTitle(
     String cropId,
     String profileId,
@@ -729,11 +803,25 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
   void _onSelectStage(String value) {
     final bool isRestStage = value == 'fallow' || value == 'skip';
+    final bool isOrnamental = _isOrnamentalDraft;
+    final bool ornamentalFutureIntent =
+        isOrnamental &&
+        ornamentalSetupIntentRequiresFutureDate(_ornamentalCropId, value);
     _updateDraft(
       _draft.copyWith(
         stage: value,
-        selectedDate: isRestStage ? null : _draft.selectedDate,
-        useFlexibleDate: isRestStage ? true : _draft.useFlexibleDate,
+        selectedDate: isRestStage
+            ? null
+            : isOrnamental
+            ? (ornamentalFutureIntent
+                  ? DateTime.now().add(const Duration(days: 1))
+                  : DateTime.now())
+            : _draft.selectedDate,
+        useFlexibleDate: isRestStage
+            ? true
+            : isOrnamental
+            ? false
+            : _draft.useFlexibleDate,
       ),
     );
 
@@ -878,6 +966,14 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
     final profile = CropCatalog.profileByAny(cropId, value);
     if (profile != null) {
+      // Las ornamentales usan etiquetas humanas directas del catálogo (sin
+      // códigos CA-/SU-).
+      if (isEstablishmentMaintenanceCrop(
+        cropId: cropId,
+        cropCategoryId: _draft.cropCategory,
+      )) {
+        return profile.label;
+      }
       return TreeProfilePresentation.displayLabel(
         cropId,
         profile.id,
@@ -889,6 +985,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   }
 
   String get _dateQuestionTitle {
+    if (_isOrnamentalDraft) {
+      return ornamentalDateQuestionTitle(_ornamentalCropId, _draft.stage);
+    }
     if (_draft.cropCategory == CropCatalog.treeCategoryId) {
       if (_draft.stage == 'planned') {
         return '¿Tienes una fecha\nestimada para plantar?';
@@ -905,11 +1004,17 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   }
 
   String get _dateFlexibleLabel {
+    if (_isOrnamentalDraft) {
+      return ornamentalDateFlexibleLabel(_ornamentalCropId, _draft.stage);
+    }
     if (_draft.stage == 'planned') return 'No tengo fecha aún';
     return 'No lo recuerdo muy bien';
   }
 
   String get _dateFlexibleDescription {
+    if (_isOrnamentalDraft) {
+      return ornamentalDateFlexibleDescription(_ornamentalCropId, _draft.stage);
+    }
     if (_draft.stage == 'planned') {
       return 'Bio-G usará una referencia flexible y podrás actualizarla después.';
     }
@@ -917,6 +1022,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   }
 
   String get _dateHelperText {
+    if (_isOrnamentalDraft) {
+      return ornamentalDateHelperText(_ornamentalCropId, _draft.stage);
+    }
     if (_draft.stage == 'planned') {
       return 'Indicar una fecha nos ayuda a ajustar mejor las recomendaciones de Bio-G. Puede cambiarse en cualquier momento.';
     }
@@ -971,6 +1079,12 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return MangoTreeAssets.cropIcon;
       case CropCatalog.avocadoTreeCropId:
         return AvocadoTreeAssets.cropIcon;
+      case CropCatalog.cactusCropId:
+        return CactusAssets.cropIcon;
+      case CropCatalog.succulentCropId:
+        return SucculentAssets.cropIcon;
+      case CropCatalog.aloeCropId:
+        return AloeAssets.cropIcon;
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }
@@ -1189,10 +1303,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             child: _wizardPill(
               iconPath: ConfigureSeedWizardAssets.categoryOrnamental,
               title: 'Planta ornamental',
-              subtitle: 'Cactus, rosa, helecho...',
+              subtitle: 'Cactus, suculentas y sábila · más ornamentales próximamente',
               selected: category == 'ornamental',
-              enabled: false,
-              onTap: null,
+              enabled: true,
+              onTap: () => _onSelectCategory('ornamental'),
             ),
           ),
           const SizedBox(height: 14),
@@ -1282,6 +1396,11 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             varietyId: selectedVariety?.id ?? _draft.varietyAlias,
             label: selectedVariety?.label ?? selectedVarietyLabel,
           )
+        : _isOrnamentalDraft
+        ? ornamentalProfileIcon(
+            _ornamentalCropId,
+            _draft.varietyId ?? _draft.varietyAlias,
+          )
         : cropId != null &&
               isTreeCrop(cropId: cropId, cropCategoryId: _draft.cropCategory)
         ? _treeProfileIcon(cropId, _draft.varietyId ?? _draft.varietyAlias)
@@ -1314,6 +1433,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             child: Text(
               _draft.cropCategory == CropCatalog.treeCategoryId
                   ? 'Selecciona el cultivo y su perfil perenne.'
+                  : _isOrnamentalDraft
+                  ? ornamentalVarietyFlowSubtitle(_ornamentalCropId)
                   : 'Selecciona el cultivo y la variedad o perfil de semilla.',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -1341,13 +1462,17 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               iconPath: cropId == null
                   ? ConfigureSeedWizardAssets.categoryGeneric
                   : _cropIconPath(cropId),
+              fallbackAsset: _isOrnamentalDraft
+                  ? kOrnamentalGenericPlantFallback
+                  : 'assets/icons/wizard/ic_tree.png',
               title: 'Cultivo',
               value: cropLabel,
               selected: cropId != null,
               onTap:
                   (_draft.cropCategory == CropCatalog.grainCategoryId ||
                       _draft.cropCategory == CropCatalog.vegetableCategoryId ||
-                      _draft.cropCategory == CropCatalog.treeCategoryId)
+                      _draft.cropCategory == CropCatalog.treeCategoryId ||
+                      _draft.cropCategory == CropCatalog.ornamentalCategoryId)
                   ? _openCropSelector
                   : null,
             ),
@@ -1357,11 +1482,16 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             delay: 205,
             child: _selectionPill(
               iconPath: selectedVarietyIconPath,
-              title: cropId != null &&
-                      isTreeCrop(
-                        cropId: cropId,
-                        cropCategoryId: _draft.cropCategory,
-                      )
+              fallbackAsset: _isOrnamentalDraft
+                  ? kOrnamentalGenericPlantFallback
+                  : 'assets/icons/wizard/ic_tree.png',
+              title: _isOrnamentalDraft
+                  ? 'Perfil'
+                  : cropId != null &&
+                        isTreeCrop(
+                          cropId: cropId,
+                          cropCategoryId: _draft.cropCategory,
+                        )
                   ? 'Variedad'
                   : 'Variedad / perfil',
               value: selectedVarietyLabel,
@@ -1373,7 +1503,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           StaggerIn(
             delay: 255,
             child: Text(
-              'Usar perfil genérico (recomendado si no sabes la variedad).',
+              _isOrnamentalDraft
+                  ? ornamentalVarietyFlowHelper(_ornamentalCropId)
+                  : 'Usar perfil genérico (recomendado si no sabes la variedad).',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.6,
@@ -1390,6 +1522,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   Widget _buildStagePage() {
     if (_draft.cropCategory == CropCatalog.treeCategoryId) {
       return _buildTreeStagePage();
+    }
+    if (_isOrnamentalDraft) {
+      return _buildOrnamentalStagePage();
     }
 
     final stage = _draft.stage;
@@ -1449,6 +1584,65 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               selected: stage == 'skip' || stage == 'fallow',
               enabled: true,
               onTap: () => _onSelectStage('fallow'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Intención de alta de una ornamental. SOLO dos opciones: la voy a plantar /
+  /// ya está plantada. "Cambio de maceta" NO es una forma de dar de alta una
+  /// planta, y estrés, esqueje o juventud no son estados de alta.
+  Widget _buildOrnamentalStagePage() {
+    final stage = _draft.stage;
+    final String? cropId = _ornamentalCropId;
+    return CenteredWizardPage(
+      horizontalPadding: 4,
+      topPadding: 8,
+      child: Column(
+        children: [
+          const BrandMark(width: 274),
+          const SizedBox(height: 22),
+          StaggerIn(
+            delay: 0,
+            child: Text(
+              ornamentalStateQuestion(cropId),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 22,
+                height: 1.18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
+                color: Color(0xFF293533),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Los MISMOS iconos de wizard que usa el grano (no imágenes de etapa).
+          StaggerIn(
+            delay: 90,
+            child: _wizardPill(
+              iconPath: 'assets/icons/wizard/ic_aun_no_siembro.png',
+              title: ornamentalPlannedOptionTitle(cropId),
+              subtitle: '',
+              selected: stage == kOrnamentalIntentPlannedPlant,
+              enabled: true,
+              fallbackAsset: kOrnamentalGenericPlantFallback,
+              onTap: () => _onSelectStage(kOrnamentalIntentPlannedPlant),
+            ),
+          ),
+          const SizedBox(height: 14),
+          StaggerIn(
+            delay: 145,
+            child: _wizardPill(
+              iconPath: 'assets/icons/wizard/ic_ya_sembrado.png',
+              title: ornamentalPlantedOptionTitle(cropId),
+              subtitle: '',
+              selected: stage == kOrnamentalIntentAlreadyPlanted,
+              enabled: true,
+              fallbackAsset: kOrnamentalGenericPlantFallback,
+              onTap: () => _onSelectStage(kOrnamentalIntentAlreadyPlanted),
             ),
           ),
         ],
@@ -1795,7 +1989,50 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       return _buildTreeAnchorPage();
     }
 
-    final selectedDate = _draft.selectedDate ?? DateTime.now();
+    final today = DateTime.now();
+    // Ornamental: "la voy a plantar" pide una fecha FUTURA; "ya está plantada"
+    // solo admite una fecha pasada (o ninguna).
+    final isOrnamentalDate = _isOrnamentalDraft;
+    final ornamentalFutureIntent =
+        isOrnamentalDate &&
+        ornamentalSetupIntentRequiresFutureDate(
+          _ornamentalCropId,
+          _draft.stage,
+        );
+    final ornamentalFirstDate = isOrnamentalDate && !ornamentalFutureIntent
+        ? DateTime(1900)
+        : isOrnamentalDate
+        ? DateTime(
+            today.year,
+            today.month,
+            today.day,
+          ).add(const Duration(days: 1))
+        : DateTime(2020);
+    final ornamentalLastDate = isOrnamentalDate && !ornamentalFutureIntent
+        ? DateTime(today.year, today.month, today.day)
+        : DateTime(2100);
+    final rawSelectedDate =
+        _draft.selectedDate ??
+        (ornamentalFutureIntent
+            ? DateTime.now().add(const Duration(days: 1))
+            : DateTime.now());
+    final firstDate = isOrnamentalDate
+        ? ornamentalFirstDate
+        : rawSelectedDate.isBefore(ornamentalFirstDate)
+        ? rawSelectedDate
+        : ornamentalFirstDate;
+    final lastDate = isOrnamentalDate
+        ? ornamentalLastDate
+        : rawSelectedDate.isAfter(ornamentalLastDate)
+        ? rawSelectedDate
+        : ornamentalLastDate;
+    final selectedDate = !isOrnamentalDate
+        ? rawSelectedDate
+        : rawSelectedDate.isBefore(firstDate)
+        ? firstDate
+        : rawSelectedDate.isAfter(lastDate)
+        ? lastDate
+        : rawSelectedDate;
 
     return CenteredWizardPage(
       scrollable: true,
@@ -1835,8 +2072,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                 ),
                 child: BioGWheelDatePicker(
                   initialDate: selectedDate,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2100),
+                  firstDate: firstDate,
+                  lastDate: lastDate,
                   onDateChanged: (DateTime value) {
                     _updateDraft(
                       _draft.copyWith(
@@ -2039,6 +2276,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     required bool selected,
     required bool enabled,
     required VoidCallback? onTap,
+    String fallbackAsset = 'assets/icons/wizard/ic_tree.png',
   }) {
     final borderColor = selected
         ? const Color(0xFF8EB07C)
@@ -2067,6 +2305,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                 imageHeight: 44,
                 scale: _iconScale,
                 offsetX: -10,
+                fallbackAsset: fallbackAsset,
               ),
               const SizedBox(width: 18),
               Expanded(
@@ -2121,6 +2360,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     required String value,
     required bool selected,
     required VoidCallback? onTap,
+    String fallbackAsset = 'assets/icons/wizard/ic_tree.png',
   }) {
     final selectedBg = const Color(0xFFF0F7EE).withValues(alpha: 0.96);
     final normalBg = const Color(0xFFF7F8F8).withValues(alpha: 0.94);
@@ -2140,6 +2380,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             children: [
               WizardAssetIcon(
                 assetPath: iconPath,
+                fallbackAsset: fallbackAsset,
                 slotWidth: 44,
                 slotHeight: 44,
                 imageWidth: 44,

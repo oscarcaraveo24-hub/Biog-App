@@ -33,7 +33,10 @@ class CropContextSupabaseSync {
     try {
       await _client
           .from(_table)
-          .upsert(_toRow(userId, context), onConflict: 'user_id,device_id');
+          .upsert(
+            toRowForSync(userId, context),
+            onConflict: 'user_id,device_id',
+          );
     } catch (_) {
       // Best-effort — local storage is the primary source.
     }
@@ -46,7 +49,7 @@ class CropContextSupabaseSync {
     if (contexts.isEmpty) return;
 
     try {
-      final rows = contexts.values.map((c) => _toRow(userId, c)).toList();
+      final rows = contexts.values.map((c) => toRowForSync(userId, c)).toList();
       await _client.from(_table).upsert(rows, onConflict: 'user_id,device_id');
     } catch (_) {
       // Best-effort.
@@ -74,7 +77,7 @@ class CropContextSupabaseSync {
         if (deviceId == null || deviceId.isEmpty) continue;
 
         try {
-          result[deviceId] = _fromRow(m);
+          result[deviceId] = fromRowForSync(m);
         } catch (_) {
           // Skip malformed rows.
         }
@@ -106,7 +109,16 @@ class CropContextSupabaseSync {
   // Row mapping
   // ---------------------------------------------------------------------------
 
-  Map<String, dynamic> _toRow(String userId, DeviceCropContext c) {
+  /// Visible for the directed persistence contract test. The live table does
+  /// not yet expose dedicated ornamental columns, so the ornamentals (cactus,
+  /// suculenta) use the existing nullable perennial compatibility slots. The
+  /// `crop_id` column keeps them apart, so each plant decodes back into its own
+  /// domain. Trees and annual crops retain their exact mapping.
+  ///
+  /// DEUDA TÉCNICA CONOCIDA (guía de ornamentales §9): conviene crear columnas
+  /// ornamentales propias antes de que un perenne futuro choque aquí.
+  Map<String, dynamic> toRowForSync(String userId, DeviceCropContext c) {
+    final isCactus = _isOrnamentalCropId(c.cropId);
     return <String, dynamic>{
       'user_id': userId,
       'device_id': c.deviceId,
@@ -119,16 +131,25 @@ class CropContextSupabaseSync {
       'lifecycle_status': c.lifecycleStatus.name,
       'sowing_date': c.sowingDate?.toIso8601String(),
       'planned_sowing_date': c.plannedSowingDate?.toIso8601String(),
-      'sowing_date_confidence': c.sowingDateConfidence.name,
+      'sowing_date_confidence': isCactus
+          ? (c.ornamentalAnchorDateConfidence ?? DateConfidence.unknown).name
+          : c.sowingDateConfidence.name,
       'sowing_mode_id': c.sowingModeId,
       'timezone': c.timezone,
       'region_code': c.regionCode,
       'cycle_label': c.cycleLabel,
-      // Contexto perenne (árboles). NULL para anuales: no altera su semántica.
-      'perennial_state_id': c.perennialStateId,
-      'phenology_stage_id': c.phenologyStageId,
-      'perennial_anchor_date': c.perennialAnchorDate?.toIso8601String(),
-      'perennial_anchor_type_id': c.perennialAnchorTypeId,
+      // Puente compatible de Cactus hasta que la tabla tenga columnas
+      // ornamentales propias. Nunca se mezclan ambos dominios en el modelo al
+      // decodificar: para Cactus vuelven a ornamental*, para árboles a
+      // perennial*/phenology*.
+      'perennial_state_id': isCactus ? c.ornamentalStageId : c.perennialStateId,
+      'phenology_stage_id': isCactus ? null : c.phenologyStageId,
+      'perennial_anchor_date':
+          (isCactus ? c.ornamentalAnchorDate : c.perennialAnchorDate)
+              ?.toIso8601String(),
+      'perennial_anchor_type_id': isCactus
+          ? c.ornamentalAnchorTypeId
+          : c.perennialAnchorTypeId,
       'catalog_version': c.catalogVersion,
       'source': c.source.name,
       'configured_at': c.configuredAt.toIso8601String(),
@@ -136,31 +157,60 @@ class CropContextSupabaseSync {
     };
   }
 
-  DeviceCropContext _fromRow(Map<String, dynamic> row) {
+  /// Visible for the directed persistence contract test.
+  DeviceCropContext fromRowForSync(Map<String, dynamic> row) {
+    final cropId = row['crop_id'] as String;
+    // El puente perenne es compartido por las ornamentales; `crop_id` es lo que
+    // las separa al decodificar (cactus vuelve a cactus, suculenta a suculenta).
+    final String? ornamentalCropId = _ornamentalCropIdOrNull(cropId);
+    final bool isCactus = ornamentalCropId != null;
+    final String resolvedCropId = ornamentalCropId ?? cropId;
+    final lifecycle = _lifecycleFromName(row['lifecycle_status'] as String?);
+    final dateConfidence = _dateConfidenceFromName(
+      row['sowing_date_confidence'] as String?,
+    );
     return DeviceCropContext(
       deviceId: row['device_id'] as String,
-      cropCategoryId: (row['crop_category_id'] as String?) ?? 'grain',
-      cropId: row['crop_id'] as String,
+      cropCategoryId: isCactus
+          ? 'ornamental'
+          : (row['crop_category_id'] as String?) ?? 'grain',
+      cropId: resolvedCropId,
       profileId: (row['profile_id'] as String?) ?? '',
       varietyId: row['variety_id'] as String?,
       varietyAlias: row['variety_alias'] as String?,
       calendarTypeId: row['calendar_type_id'] as String?,
-      lifecycleStatus: _lifecycleFromName(row['lifecycle_status'] as String?),
-      sowingDate: _parseDate(row['sowing_date']),
-      plannedSowingDate: _parseDate(row['planned_sowing_date']),
-      sowingDateConfidence: _dateConfidenceFromName(
-        row['sowing_date_confidence'] as String?,
-      ),
-      sowingModeId: row['sowing_mode_id'] as String?,
+      lifecycleStatus: isCactus && lifecycle == CropLifecycleStatus.fallow
+          ? CropLifecycleStatus.planted
+          : lifecycle,
+      sowingDate: isCactus ? null : _parseDate(row['sowing_date']),
+      plannedSowingDate: isCactus
+          ? null
+          : _parseDate(row['planned_sowing_date']),
+      sowingDateConfidence: isCactus ? DateConfidence.unknown : dateConfidence,
+      sowingModeId: isCactus ? null : row['sowing_mode_id'] as String?,
       timezone: row['timezone'] as String?,
       regionCode: row['region_code'] as String?,
       cycleLabel: row['cycle_label'] as String?,
       // Contexto perenne (árboles). Filas antiguas/anuales no traen estas claves
       // y quedan null de forma segura.
-      perennialStateId: row['perennial_state_id'] as String?,
-      phenologyStageId: row['phenology_stage_id'] as String?,
-      perennialAnchorDate: _parseDate(row['perennial_anchor_date']),
-      perennialAnchorTypeId: row['perennial_anchor_type_id'] as String?,
+      perennialStateId: isCactus ? null : row['perennial_state_id'] as String?,
+      phenologyStageId: isCactus ? null : row['phenology_stage_id'] as String?,
+      perennialAnchorDate: isCactus
+          ? null
+          : _parseDate(row['perennial_anchor_date']),
+      perennialAnchorTypeId: isCactus
+          ? null
+          : row['perennial_anchor_type_id'] as String?,
+      lifecycleModeId: isCactus ? 'establishment_maintenance' : null,
+      ornamentalStageId: isCactus ? row['perennial_state_id'] as String? : null,
+      ornamentalAnchorDate: isCactus
+          ? _parseDate(row['perennial_anchor_date'])
+          : null,
+      ornamentalAnchorTypeId: isCactus
+          ? row['perennial_anchor_type_id'] as String?
+          : null,
+      ornamentalAnchorDateConfidence: isCactus ? dateConfidence : null,
+      ornamentalStageConfidence: isCactus ? 0.25 : null,
       catalogVersion: (row['catalog_version'] as String?) ?? 'v1',
       source: _sourceFromName(row['source'] as String?),
       configuredAt: _parseDate(row['configured_at']) ?? DateTime.now().toUtc(),
@@ -199,4 +249,28 @@ class CropContextSupabaseSync {
     if (value == null) return null;
     return DateTime.tryParse(value.toString());
   }
+
+  /// Ornamentales de establecimiento + mantenimiento que viajan por el puente
+  /// perenne. Devuelve el cropId canónico, o `null` si no es una de ellas.
+  String? _ornamentalCropIdOrNull(String? value) {
+    final normalized = value?.trim().toLowerCase();
+    if (normalized == 'crop_cactus' || normalized == 'cactus') {
+      return 'crop_cactus';
+    }
+    if (normalized == 'crop_succulent' ||
+        normalized == 'succulent' ||
+        normalized == 'suculenta') {
+      return 'crop_succulent';
+    }
+    if (normalized == 'crop_aloe' ||
+        normalized == 'aloe' ||
+        normalized == 'sabila' ||
+        normalized == 'sábila') {
+      return 'crop_aloe';
+    }
+    return null;
+  }
+
+  bool _isOrnamentalCropId(String? value) =>
+      _ornamentalCropIdOrNull(value) != null;
 }

@@ -1,4 +1,8 @@
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/crops/cactus/cactus_crop_definition.dart';
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
+import 'package:bio_g/core/crops/succulent/succulent_crop_definition.dart';
+import 'package:bio_g/core/crops/aloe/aloe_crop_definition.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/crop_presentation_resolver.dart';
@@ -41,8 +45,9 @@ class CropRuntimeResolver {
       normalizedContext?.cropId ?? effectiveSeed?.cropKey,
     );
 
-    final CropDefinition? definition =
-        cropKeyName.isEmpty ? null : CropRegistry.byKeyName(cropKeyName);
+    final CropDefinition? definition = cropKeyName.isEmpty
+        ? null
+        : CropRegistry.byKeyName(cropKeyName);
 
     final CropProfile? profile = _resolveProfile(
       seed: effectiveSeed,
@@ -63,8 +68,19 @@ class CropRuntimeResolver {
       category: definition?.category,
     );
 
-    final bool isPlanted = sowingStatus == SowingStatus.planted &&
-        (isPerennialRuntime || plantedDate != null);
+    // Ornamental de establecimiento/mantenimiento (cactus, suculenta…): el eje
+    // NO es la siembra; la etapa se resuelve por estado guardado o por la fecha
+    // de plantación. No hay rendimiento ni cosecha. La pregunta es por el MODO
+    // DE CICLO, no por una planta concreta.
+    final bool isOrnamentalRuntime = isEstablishmentMaintenanceCrop(
+      cropId: cropKeyName,
+      cropCategoryId: normalizedContext?.cropCategoryId,
+      category: definition?.category,
+    );
+
+    final bool isPlanted =
+        sowingStatus == SowingStatus.planted &&
+        (isPerennialRuntime || isOrnamentalRuntime || plantedDate != null);
 
     final bool isPlanned = sowingStatus == SowingStatus.planned;
 
@@ -81,7 +97,48 @@ class CropRuntimeResolver {
     DateTime? engineSowingDate;
     AlertsState nextAlertsState = alertsState;
 
-    if (isPerennialRuntime &&
+    if (isOrnamentalRuntime &&
+        (sowingStatus == SowingStatus.planted ||
+            sowingStatus == SowingStatus.planned) &&
+        normalizedContext != null) {
+      // Ornamental: etapa por estado guardado o por fecha (sin cosecha ni
+      // rendimiento). NO se invoca YieldProjection.
+      stageResult = resolveOrnamentalStageResult(
+        context: normalizedContext,
+        today: today,
+      );
+
+      if (definition != null && profile != null) {
+        targets = definition is CactusCropDefinition
+            ? definition.resolveTargetsForProfile(
+                stageResult,
+                profileId: profile.id,
+              )
+            : definition is SucculentCropDefinition
+            ? definition.resolveTargetsForProfile(
+                stageResult,
+                profileId: profile.id,
+              )
+            : definition is AloeCropDefinition
+            ? definition.resolveTargetsForProfile(
+                stageResult,
+                profileId: profile.id,
+              )
+            : definition.resolveTargets(stageResult);
+
+        if (sowingStatus == SowingStatus.planted && live != null) {
+          final out = definition.evaluateTelemetry(
+            telemetry: live,
+            stage: stageResult,
+            profile: profile,
+            targetsOverride: targets,
+            alertsState: alertsState,
+          );
+          eval = out.eval;
+          nextAlertsState = out.nextAlertsState;
+        }
+      }
+    } else if (isPerennialRuntime &&
         sowingStatus == SowingStatus.planted &&
         normalizedContext != null) {
       stageResult = PerennialStageResolver.resolve(
@@ -105,6 +162,7 @@ class CropRuntimeResolver {
         }
       }
     } else if (!isPerennialRuntime &&
+        !isOrnamentalRuntime &&
         isPlanted &&
         definition != null &&
         profile != null) {
@@ -186,17 +244,34 @@ class CropRuntimeResolver {
     if (cropKeyName.isEmpty) return null;
     if (sowingStatus == SowingStatus.skip) return null;
 
-    final String? rawVarietyValue =
-        cropContext?.varietyId ?? cropContext?.varietyAlias ?? seed?.varietyAlias;
+    final bool isOrnamental = isEstablishmentMaintenanceCrop(
+      cropId: cropKeyName,
+      cropCategoryId: cropContext?.cropCategoryId,
+      category: definition.category,
+    );
+    final String? ornamentalSelectionId = isOrnamental
+        ? _resolveOrnamentalSelectionId(
+            cropId: cropKeyName,
+            profileId: cropContext?.profileId ?? seed?.profileId,
+            varietyId: cropContext?.varietyId,
+            varietyAlias: cropContext?.varietyAlias ?? seed?.varietyAlias,
+          )
+        : null;
+
+    final String? rawVarietyValue = isOrnamental
+        ? ornamentalSelectionId
+        : cropContext?.varietyId ??
+              cropContext?.varietyAlias ??
+              seed?.varietyAlias;
 
     final String? resolvedVarietyId = CropCatalog.resolveVarietyId(
       cropId: cropKeyName,
       rawValue: rawVarietyValue,
     );
 
-    final String? explicitProfileId = _normalizeNullable(
-      cropContext?.profileId ?? seed?.profileId,
-    );
+    final String? explicitProfileId = isOrnamental
+        ? ornamentalSelectionId
+        : _normalizeNullable(cropContext?.profileId ?? seed?.profileId);
 
     final String resolvedProfileId = CropCatalog.resolveProfileId(
       cropId: cropKeyName,
@@ -278,6 +353,9 @@ class CropRuntimeResolver {
     }
 
     if (sowingStatus == SowingStatus.planned) {
+      if (stageResult != null) {
+        return stageResult.stageLabelEs;
+      }
       return 'Pre-siembra';
     }
 
@@ -293,37 +371,58 @@ class CropRuntimeResolver {
     }
 
     final cropEntry = CropCatalog.cropById(cropId);
-    // Resolver categoría en orden: explícita del contexto → catálogo del cultivo.
-    // Antes se caía a `grainCategoryId` en silencio, lo que marcaba como grano
-    // cualquier cultivo cuyo catálogo aún no estuviera registrado (ej. tomate
-    // antes de wire-up). Ahora preservamos lo que venga en el contexto si no
-    // hay catálogo disponible, o devolvemos cadena vacía para que capas
-    // superiores decidan (mejor fallar visible que clasificar mal).
     final String cropCategoryId =
         _normalizeNullable(cropContext.cropCategoryId) ??
-            cropEntry?.categoryId ??
-            '';
+        cropEntry?.categoryId ??
+        CropCatalog.grainCategoryId;
 
-    final bool isFallow = cropContext.lifecycleStatus == CropLifecycleStatus.fallow;
-    final String? rawVarietyValue =
-        isFallow ? null : (cropContext.varietyId ?? cropContext.varietyAlias);
+    final bool isOrnamental = isEstablishmentMaintenanceCrop(
+      cropId: cropId,
+      cropCategoryId: cropCategoryId,
+    );
+    final bool isFallow =
+        cropContext.lifecycleStatus == CropLifecycleStatus.fallow &&
+        !isOrnamental;
+    final CropLifecycleStatus normalizedLifecycleStatus =
+        isOrnamental && cropContext.lifecycleStatus == CropLifecycleStatus.fallow
+        ? CropLifecycleStatus.planted
+        : cropContext.lifecycleStatus;
+    final String? ornamentalSelectionId = isOrnamental
+        ? _resolveOrnamentalSelectionId(
+            cropId: cropId,
+            profileId: cropContext.profileId,
+            varietyId: cropContext.varietyId,
+            varietyAlias: cropContext.varietyAlias,
+          )
+        : null;
+    final String? rawVarietyValue = isFallow
+        ? null
+        : (isOrnamental
+              ? ornamentalSelectionId
+              : (cropContext.varietyId ?? cropContext.varietyAlias));
 
     final String? resolvedVarietyId = isFallow
         ? null
+        : isOrnamental
+        ? ornamentalSelectionId
         : CropCatalog.resolveVarietyId(
             cropId: cropId,
             rawValue: rawVarietyValue,
           );
 
-    final String resolvedProfileId = CropCatalog.resolveProfileId(
-      cropId: cropId,
-      varietyId: resolvedVarietyId,
-      explicitProfileId: isFallow ? null : _normalizeNullable(cropContext.profileId),
-    );
+    final String resolvedProfileId = isOrnamental
+        ? (ornamentalSelectionId ?? ornamentalDefaultProfileId(cropId))
+        : CropCatalog.resolveProfileId(
+            cropId: cropId,
+            varietyId: resolvedVarietyId,
+            explicitProfileId: isFallow
+                ? null
+                : _normalizeNullable(cropContext.profileId),
+          );
 
     final resolvedVarietyAlias = _resolvedVarietyAlias(
       cropId: cropId,
-      lifecycleStatus: cropContext.lifecycleStatus,
+      lifecycleStatus: normalizedLifecycleStatus,
       rawVarietyAlias: cropContext.varietyAlias,
       resolvedVarietyId: resolvedVarietyId,
       resolvedProfileId: resolvedProfileId,
@@ -333,6 +432,7 @@ class CropRuntimeResolver {
       cropCategoryId: cropCategoryId,
       cropId: cropId,
       profileId: resolvedProfileId,
+      lifecycleStatus: normalizedLifecycleStatus,
       brandId: _resolveBrandId(
         cropId: cropId,
         explicitBrandId: isFallow ? null : cropContext.brandId,
@@ -340,18 +440,47 @@ class CropRuntimeResolver {
       ),
       varietyId: resolvedVarietyId,
       varietyAlias: resolvedVarietyAlias,
+      lifecycleModeId: isOrnamental
+          ? ornamentalLifecycleMode(cropId)
+          : cropContext.lifecycleModeId,
+      ornamentalStageId: isOrnamental
+          ? normalizeOrnamentalStageId(
+              cropId,
+              cropContext.ornamentalStageId ?? cropContext.perennialStateId,
+            )
+          : cropContext.ornamentalStageId,
+      ornamentalAnchorDate: isOrnamental
+          ? cropContext.ornamentalAnchorDate ?? cropContext.perennialAnchorDate
+          : cropContext.ornamentalAnchorDate,
+      ornamentalAnchorTypeId: isOrnamental
+          ? cropContext.ornamentalAnchorTypeId ??
+                cropContext.perennialAnchorTypeId
+          : cropContext.ornamentalAnchorTypeId,
+      perennialStateId: isOrnamental ? null : cropContext.perennialStateId,
+      phenologyStageId: isOrnamental ? null : cropContext.phenologyStageId,
+      perennialAnchorDate: isOrnamental ? null : cropContext.perennialAnchorDate,
+      perennialAnchorTypeId: isOrnamental
+          ? null
+          : cropContext.perennialAnchorTypeId,
+      cultivationScaleId: isOrnamental ? null : cropContext.cultivationScaleId,
       calendarTypeId: CropCatalog.resolveCalendarId(
         cropId: cropId,
         requested: cropContext.calendarTypeId,
       ),
-      sowingDate: cropContext.lifecycleStatus == CropLifecycleStatus.planted
+      sowingDate:
+          !isOrnamental &&
+              cropContext.lifecycleStatus == CropLifecycleStatus.planted
           ? cropContext.sowingDate
           : null,
-      plannedSowingDate: cropContext.lifecycleStatus == CropLifecycleStatus.planned
+      plannedSowingDate:
+          !isOrnamental &&
+              cropContext.lifecycleStatus == CropLifecycleStatus.planned
           ? cropContext.plannedSowingDate
           : null,
-      sowingModeId: _normalizeNullable(cropContext.sowingModeId) ??
-          _defaultSowingModeId(cropContext.lifecycleStatus),
+      sowingModeId: isOrnamental
+          ? null
+          : _normalizeNullable(cropContext.sowingModeId) ??
+                _defaultSowingModeId(cropContext.lifecycleStatus),
     );
   }
 
@@ -371,8 +500,9 @@ class CropRuntimeResolver {
     final normalizedExplicit = _normalizeNullable(explicitBrandId);
     if (normalizedExplicit == null) return null;
 
-    final valid = CropCatalog.brandsForCrop(cropId)
-        .any((brand) => brand.id == normalizedExplicit);
+    final valid = CropCatalog.brandsForCrop(
+      cropId,
+    ).any((brand) => brand.id == normalizedExplicit);
     return valid ? normalizedExplicit : null;
   }
 
@@ -385,6 +515,11 @@ class CropRuntimeResolver {
   }) {
     if (lifecycleStatus == CropLifecycleStatus.fallow) {
       return 'generic';
+    }
+
+    if (isEstablishmentMaintenanceCrop(cropId: cropId)) {
+      return CropCatalog.profileByAny(cropId, resolvedProfileId)?.label ??
+          ornamentalGeneralProfileLabel(cropId);
     }
 
     if (resolvedVarietyId != null) {
@@ -414,5 +549,29 @@ class CropRuntimeResolver {
     final normalized = value?.trim();
     if (normalized == null || normalized.isEmpty) return null;
     return normalized;
+  }
+
+  /// Resuelve la selección visible de una ornamental (cactus, suculenta…).
+  ///
+  /// Una selección específica superviviente REPARA un perfil general heredado:
+  /// si el usuario eligió "Suculenta colgante" y un roundtrip dejó `su_skip` en
+  /// `profileId`, la selección se recupera de `varietyId`/`varietyAlias`.
+  static String? _resolveOrnamentalSelectionId({
+    required String cropId,
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+  }) {
+    final fromProfile = CropCatalog.profileByAny(cropId, profileId);
+    final fromVariety = CropCatalog.profileByAny(cropId, varietyId);
+    final fromAlias = CropCatalog.profileByAny(cropId, varietyAlias);
+
+    final String generalProfileId = ornamentalDefaultProfileId(cropId);
+    for (final entry in [fromVariety, fromProfile, fromAlias]) {
+      if (entry != null && entry.id != generalProfileId) {
+        return entry.id;
+      }
+    }
+    return fromProfile?.id ?? fromVariety?.id ?? fromAlias?.id;
   }
 }

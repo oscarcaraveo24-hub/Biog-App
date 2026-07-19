@@ -14,6 +14,7 @@ import 'package:bio_g/core/crops/orange_tree/orange_tree_assets.dart';
 import 'package:bio_g/core/crops/lemon_tree/lemon_tree_assets.dart';
 import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
 import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -81,6 +82,18 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   bool get _isTreeWizard =>
       isTreeCrop(cropId: _crop, cropCategoryId: _category);
 
+  /// Ornamental (establishment_maintenance): mismo flujo sencillo que el
+  /// onboarding (categoría → planta → tipo → estado → fecha).
+  bool get _isOrnamentalWizard =>
+      isEstablishmentMaintenanceCrop(cropId: _crop, cropCategoryId: _category);
+
+  /// cropId canónico de la ornamental (para textos y assets con su género).
+  String? get _ornamentalCropId => ornamentalCropIdOrNull(_crop);
+
+  bool get _isOrnamentalFutureIntent =>
+      _isOrnamentalWizard &&
+      ornamentalSetupIntentRequiresFutureDate(_ornamentalCropId, _stage);
+
   int get _totalSteps => _isTreeWizard ? 5 : (_cropUsesBrands ? 5 : 4);
 
   @override
@@ -123,6 +136,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
 
     final crop = _normalizeCropId(cropContext.cropId);
     final isTreeContext = isTreeCrop(cropId: crop, cropCategoryId: category);
+    final isOrnamentalCtx = isEstablishmentMaintenanceCrop(
+      cropId: crop,
+      cropCategoryId: category,
+    );
 
     String? stage;
     DateTime selectedDate = DateTime.now();
@@ -130,22 +147,50 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
 
     switch (cropContext.lifecycleStatus) {
       case CropLifecycleStatus.fallow:
-        stage = 'skip';
-        flexibleDate = false;
+        // Compatibilidad de entrada: una ornamental legacy en fallow se restaura
+        // como planta activa con datos por confirmar, nunca como descanso.
+        if (isOrnamentalCtx) {
+          stage = kOrnamentalIntentAlreadyPlanted;
+          selectedDate = cropContext.ornamentalAnchorDate ?? DateTime.now();
+          flexibleDate = cropContext.ornamentalAnchorDate == null;
+        } else {
+          stage = 'skip';
+          flexibleDate = false;
+        }
         break;
       case CropLifecycleStatus.planned:
-        stage = 'planned';
-        selectedDate = cropContext.plannedSowingDate ?? DateTime.now();
-        flexibleDate =
-            cropContext.sowingDateConfidence != DateConfidence.exact ||
-            cropContext.plannedSowingDate == null;
+        stage = isOrnamentalCtx ? kOrnamentalIntentPlannedPlant : 'planned';
+        selectedDate =
+            (isOrnamentalCtx
+                ? cropContext.ornamentalAnchorDate
+                : cropContext.plannedSowingDate) ??
+            DateTime.now();
+        if (isOrnamentalCtx && !selectedDate.isAfter(DateTime.now())) {
+          selectedDate = DateTime.now().add(const Duration(days: 1));
+        }
+        flexibleDate = isOrnamentalCtx
+            ? cropContext.ornamentalAnchorDateConfidence !=
+                      DateConfidence.exact ||
+                  cropContext.ornamentalAnchorDate == null
+            : cropContext.sowingDateConfidence != DateConfidence.exact ||
+                  cropContext.plannedSowingDate == null;
         break;
       case CropLifecycleStatus.planted:
-        stage = 'planted';
-        selectedDate = isTreeContext
+        if (isOrnamentalCtx) {
+          // Un contexto guardado con `repot` se reabre como "ya está plantada":
+          // un cambio de maceta no es una forma de dar de alta la planta.
+          stage = kOrnamentalIntentAlreadyPlanted;
+        } else {
+          stage = 'planted';
+        }
+        selectedDate = isOrnamentalCtx
+            ? (cropContext.ornamentalAnchorDate ?? DateTime.now())
+            : isTreeContext
             ? (cropContext.perennialAnchorDate ?? DateTime.now())
             : (cropContext.sowingDate ?? DateTime.now());
-        flexibleDate = isTreeContext
+        flexibleDate = isOrnamentalCtx
+            ? cropContext.ornamentalAnchorDate == null
+            : isTreeContext
             ? cropContext.perennialAnchorDate == null
             : cropContext.sowingDateConfidence != DateConfidence.exact;
         break;
@@ -240,6 +285,9 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   }
 
   String get _dateQuestionTitle {
+    if (_isOrnamentalWizard) {
+      return ornamentalDateQuestionTitle(_ornamentalCropId, _stage);
+    }
     if (_stage == 'planned') {
       return '¿Tienes una fecha\nestimada para sembrar?';
     }
@@ -250,6 +298,9 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   }
 
   String get _dateFlexibleLabel {
+    if (_isOrnamentalWizard) {
+      return ornamentalDateFlexibleLabel(_ornamentalCropId, _stage);
+    }
     if (_stage == 'planned') {
       return 'No tengo fecha aún';
     }
@@ -260,6 +311,9 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   }
 
   String get _dateFlexibleDescription {
+    if (_isOrnamentalWizard) {
+      return ornamentalDateFlexibleDescription(_ornamentalCropId, _stage);
+    }
     if (_stage == 'planned') {
       return 'Bio-G usará una referencia flexible y podrás actualizarla después.';
     }
@@ -270,6 +324,9 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   }
 
   String get _dateHelperText {
+    if (_isOrnamentalWizard) {
+      return ornamentalDateHelperText(_ornamentalCropId, _stage);
+    }
     if (_stage == 'planned') {
       return 'Indicar una fecha nos ayuda a ajustar mejor las recomendaciones de Bio-G. Puede cambiarse en cualquier momento.';
     }
@@ -376,17 +433,23 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           cropEnabled:
               _category == CropCatalog.grainCategoryId ||
               _category == CropCatalog.vegetableCategoryId ||
-              _category == CropCatalog.treeCategoryId,
+              _category == CropCatalog.treeCategoryId ||
+              _category == CropCatalog.ornamentalCategoryId,
           isTreeFlow: _isTreeWizard,
+          isOrnamentalFlow: _isOrnamentalWizard,
+          ornamentalCropId: _ornamentalCropId,
           cropUsesBrands: _cropUsesBrands,
           cropIconPath: _resolvedCropIconPath,
-          varietyIconPath: _isTreeWizard || _varietyId != null
+          varietyIconPath:
+              _isTreeWizard || _isOrnamentalWizard || _varietyId != null
               ? _resolvedVarietyIconPath
               : null,
           summary: _buildSelectionSummary(),
           onTapCrop: _openCropSelector,
           onTapVariety: _isTreeWizard
               ? _openTreeProfileSelector
+              : _isOrnamentalWizard
+              ? _openOrnamentalProfileSelector
               : (_cropUsesBrands ? _openBrandSelector : _openVarietySelector),
         );
 
@@ -413,6 +476,8 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return StagePage(
           key: const ValueKey('stage'),
           stage: _stage,
+          ornamentalMode: _isOrnamentalWizard,
+          ornamentalCropId: _ornamentalCropId,
           summary: _buildSelectionSummary(),
           onSelect: _onSelectStage,
         );
@@ -429,6 +494,14 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           cropIconPath: _resolvedCropIconPath,
           summary: _buildSelectionSummary(),
           saving: _saving,
+          firstDate: _isOrnamentalWizard
+              ? (_isOrnamentalFutureIntent
+                    ? _dateOnly(DateTime.now()).add(const Duration(days: 1))
+                    : DateTime(1900))
+              : null,
+          lastDate: _isOrnamentalWizard && !_isOrnamentalFutureIntent
+              ? _dateOnly(DateTime.now())
+              : null,
           onDateChanged: (value) {
             setState(() {
               _selectedDate = value;
@@ -555,7 +628,8 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   void _onSelectCategory(String value) {
     if (value != CropCatalog.grainCategoryId &&
         value != CropCatalog.vegetableCategoryId &&
-        value != CropCatalog.treeCategoryId) {
+        value != CropCatalog.treeCategoryId &&
+        value != CropCatalog.ornamentalCategoryId) {
       return;
     }
 
@@ -582,7 +656,8 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   Future<void> _openCropSelector() async {
     if (_category != CropCatalog.grainCategoryId &&
         _category != CropCatalog.vegetableCategoryId &&
-        _category != CropCatalog.treeCategoryId) {
+        _category != CropCatalog.treeCategoryId &&
+        _category != CropCatalog.ornamentalCategoryId) {
       return;
     }
 
@@ -603,6 +678,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
                   crop.subtitle ??
                   (crop.enabled ? 'Disponible ahora' : 'Próximamente'),
               iconPath: _cropIconPath(crop.cropId),
+              fallbackAsset:
+                  isEstablishmentMaintenanceCrop(cropId: crop.cropId)
+                  ? kOrnamentalGenericPlantFallback
+                  : 'assets/icons/wizard/ic_tree.png',
               enabled: crop.enabled,
             ),
           )
@@ -666,7 +745,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     final defaultProfileId = CropCatalog.resolveProfileId(cropId: cropId);
 
     // El perfil general/SKIP va al final y la pregunta habla de "variedad".
-    final orderedProfiles = TreeProfilePresentation.genericLast(profiles, cropId);
+    final orderedProfiles = TreeProfilePresentation.genericLast(
+      profiles,
+      cropId,
+    );
 
     final result = await showWizardSelectionSheet<String>(
       context: context,
@@ -675,11 +757,7 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           .map(
             (profile) => WizardSheetOption<String>(
               value: profile.id,
-              title: _treeProfileOptionTitle(
-                cropId,
-                profile.id,
-                profile.label,
-              ),
+              title: _treeProfileOptionTitle(cropId, profile.id, profile.label),
               subtitle: profile.id == defaultProfileId
                   ? TreeProfilePresentation.genericOptionSubtitle
                   : (profile.subtitle ?? 'Disponible'),
@@ -709,12 +787,69 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     _animateToPage(WizardPage.treeState);
   }
 
+  /// Selector de tipo de la ornamental. El perfil general va AL FINAL (así lo
+  /// ordena el catálogo) y nunca se muestran códigos ni "SKIP".
+  Future<void> _openOrnamentalProfileSelector() async {
+    final cropId = _normalizeCropId(_crop);
+    if (cropId == null ||
+        !isEstablishmentMaintenanceCrop(
+          cropId: cropId,
+          cropCategoryId: _category,
+        )) {
+      return;
+    }
+
+    final profiles = CropCatalog.profilesForCrop(cropId, enabledOnly: false);
+    if (profiles.isEmpty) return;
+    final defaultProfileId = CropCatalog.resolveProfileId(cropId: cropId);
+
+    final result = await showWizardSelectionSheet<String>(
+      context: context,
+      title: ornamentalTypeQuestion(cropId),
+      options: profiles
+          .map(
+            (profile) => WizardSheetOption<String>(
+              value: profile.id,
+              title: profile.label,
+              subtitle: profile.id == defaultProfileId
+                  ? ornamentalGeneralProfileHint(cropId)
+                  : (profile.subtitle ?? 'Disponible'),
+              iconPath: ornamentalProfileIcon(cropId, profile.id),
+              fallbackAsset: kOrnamentalGenericPlantFallback,
+              enabled: true,
+            ),
+          )
+          .toList(growable: false),
+    );
+
+    if (result == null) return;
+
+    setState(() {
+      _varietyId = result;
+      _stage = null;
+      _selectedDate = DateTime.now();
+      _useFlexibleDate = false;
+    });
+
+    _animateToPage(WizardPage.stage);
+  }
+
   Future<void> _openVarietySelector() async {
     final cropId = _crop;
     if (cropId == null) return;
 
-    if (_isTreeWizard || isTreeCrop(cropId: cropId, cropCategoryId: _category)) {
+    if (_isTreeWizard ||
+        isTreeCrop(cropId: cropId, cropCategoryId: _category)) {
       await _openTreeProfileSelector();
+      return;
+    }
+
+    if (_isOrnamentalWizard ||
+        isEstablishmentMaintenanceCrop(
+          cropId: cropId,
+          cropCategoryId: _category,
+        )) {
+      await _openOrnamentalProfileSelector();
       return;
     }
 
@@ -854,7 +989,14 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
       _stage = value;
       _useFlexibleDate = false;
       if (value != 'skip') {
-        _selectedDate = DateTime.now();
+        _selectedDate =
+            _isOrnamentalWizard &&
+                ornamentalSetupIntentRequiresFutureDate(
+                  _ornamentalCropId,
+                  value,
+                )
+            ? _dateOnly(DateTime.now()).add(const Duration(days: 1))
+            : DateTime.now();
       }
     });
 
@@ -1206,20 +1348,84 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
       } else if (_stage == 'skip') {
         await store.setSeedSkipForDevice(device.id, cropKey: resolvedCropId);
       } else {
-        final isPlanned = _stage == 'planned';
+        final String? ornamentalIntentId = _isOrnamentalWizard
+            ? normalizeOrnamentalSetupIntentId(_ornamentalCropId, _stage)
+            : null;
+        final isPlanned = _isOrnamentalWizard
+            ? ornamentalIntentId == kOrnamentalIntentPlannedPlant
+            : _stage == 'planned';
         final lifecycleStatus = isPlanned
             ? CropLifecycleStatus.planned
             : CropLifecycleStatus.planted;
 
-        final dateConfidence = isPlanned
+        DateTime? selectedDate;
+        if (_isOrnamentalWizard) {
+          final today = _dateOnly(now);
+          final pickedDay = _dateOnly(_selectedDate);
+          final requiresFuture = ornamentalSetupIntentRequiresFutureDate(
+            _ornamentalCropId,
+            ornamentalIntentId,
+          );
+          final validDate = requiresFuture
+              ? pickedDay.isAfter(today)
+              : !pickedDay.isAfter(today);
+          selectedDate = !_useFlexibleDate && validDate ? _selectedDate : null;
+        } else {
+          // Los anuales conservan su comportamiento previo.
+          selectedDate = isPlanned
+              ? (_useFlexibleDate ? null : _selectedDate)
+              : _selectedDate;
+        }
+
+        final bool preserveExistingOrnamentalAnchor =
+            _isOrnamentalWizard &&
+            ornamentalIntentId == kOrnamentalIntentAlreadyPlanted &&
+            selectedDate == null &&
+            previous?.ornamentalAnchorDate != null;
+        final DateTime? effectiveOrnamentalAnchorDate =
+            preserveExistingOrnamentalAnchor
+            ? previous!.ornamentalAnchorDate
+            : selectedDate;
+
+        final dateConfidence = _isOrnamentalWizard
+            ? preserveExistingOrnamentalAnchor
+                  ? previous!.ornamentalAnchorDateConfidence ??
+                        DateConfidence.unknown
+                  : selectedDate == null
+                  ? DateConfidence.unknown
+                  : ornamentalIntentId == kOrnamentalIntentAlreadyPlanted
+                  ? DateConfidence.estimated
+                  : DateConfidence.exact
+            : isPlanned
             ? (_useFlexibleDate ? DateConfidence.unknown : DateConfidence.exact)
             : (_useFlexibleDate
                   ? DateConfidence.estimated
                   : DateConfidence.exact);
 
-        final selectedDate = isPlanned
-            ? (_useFlexibleDate ? null : _selectedDate)
-            : _selectedDate;
+        String? ornamentalStageId;
+        String? ornamentalAnchorTypeId;
+        double? ornamentalStageConfidence;
+        if (_isOrnamentalWizard) {
+          // Misma FUENTE ÚNICA que el onboarding. Si esta pantalla vuelve a
+          // resolver la etapa por su cuenta, se desincroniza (ya pasó: "ya está
+          // plantada" daba 'unknown' → "Etapa por confirmar" eterna).
+          final estimate = resolveOrnamentalSetupStage(
+            cropId: _ornamentalCropId,
+            intentId: ornamentalIntentId,
+            plantingDate: effectiveOrnamentalAnchorDate,
+            now: now,
+            profileId: _varietyId,
+            previousStageId: previous?.ornamentalStageId,
+          );
+          ornamentalStageId = estimate.stageId;
+          ornamentalStageConfidence = estimate.confidence;
+          ornamentalAnchorTypeId = preserveExistingOrnamentalAnchor
+              ? normalizeOrnamentalAnchorTypeId(
+                  _ornamentalCropId,
+                  previous?.ornamentalAnchorTypeId,
+                )
+              : estimate.anchorTypeId;
+        }
 
         final resolvedContext = _contextResolver.resolve(
           deviceId: device.id,
@@ -1234,7 +1440,18 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           previous: previous,
           brandId: _brandId,
           varietyId: _varietyId,
+          varietyAlias: _isOrnamentalWizard ? _varietyId : null,
           selectedDate: selectedDate,
+          timezone: previous?.timezone,
+          cultivationScaleId: _isOrnamentalWizard
+              ? null
+              : previous?.cultivationScaleId,
+          ornamentalStageId: ornamentalStageId,
+          ornamentalAnchorDate: _isOrnamentalWizard
+              ? effectiveOrnamentalAnchorDate
+              : null,
+          ornamentalAnchorTypeId: ornamentalAnchorTypeId,
+          ornamentalStageConfidence: ornamentalStageConfidence,
         );
 
         await store.saveCropContext(resolvedContext);
@@ -1268,7 +1485,8 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     DeviceCropContext cropContext,
     String normalizedCropId,
   ) {
-    if (isTreeCrop(cropId: normalizedCropId)) {
+    if (isTreeCrop(cropId: normalizedCropId) ||
+        isEstablishmentMaintenanceCrop(cropId: normalizedCropId)) {
       final profile =
           CropCatalog.profileByAny(normalizedCropId, cropContext.profileId) ??
           CropCatalog.profileByAny(normalizedCropId, cropContext.varietyId) ??
@@ -1340,6 +1558,9 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
     return CropCatalog.canonicalCropKeyOrNull(value);
   }
 
+  static DateTime _dateOnly(DateTime value) =>
+      DateTime(value.year, value.month, value.day);
+
   String _categoryLabel(String? value) {
     return CropCatalog.categoryById(value)?.label ?? 'Seleccionar';
   }
@@ -1367,6 +1588,15 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
       if (profile != null) {
         return _treeProfileOptionTitle(cropId, profile.id, profile.label);
       }
+    }
+
+    // Ornamentales: etiqueta humana directa del catálogo (sin códigos CA-/SU-).
+    if (isEstablishmentMaintenanceCrop(
+      cropId: cropId,
+      cropCategoryId: _category,
+    )) {
+      final profile = CropCatalog.profileByAny(cropId, varietyId);
+      if (profile != null) return profile.label;
     }
 
     final variety = CropCatalog.varietyById(cropId, varietyId);
@@ -1423,6 +1653,12 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   }
 
   String _stageLabel(String? value) {
+    if (_isOrnamentalWizard) {
+      return normalizeOrnamentalSetupIntentId(_ornamentalCropId, value) ==
+              kOrnamentalIntentPlannedPlant
+          ? ornamentalPlannedOptionTitle(_ornamentalCropId)
+          : ornamentalPlantedOptionTitle(_ornamentalCropId);
+    }
     switch (value) {
       case 'planned':
         return 'Aún no siembro';
@@ -1483,6 +1719,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
         return MangoTreeAssets.cropIcon;
       case CropCatalog.avocadoTreeCropId:
         return AvocadoTreeAssets.cropIcon;
+      case CropCatalog.cactusCropId:
+      case CropCatalog.succulentCropId:
+      case CropCatalog.aloeCropId:
+        return ornamentalCropIcon(CropCatalog.canonicalCropKey(cropId));
       default:
         return _genericCropIconPath;
     }
@@ -1552,8 +1792,16 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
 
   String get _resolvedVarietyIconPath {
     final cropId = _crop;
-    if (cropId != null && isTreeCrop(cropId: cropId, cropCategoryId: _category)) {
+    if (cropId != null &&
+        isTreeCrop(cropId: cropId, cropCategoryId: _category)) {
       return _treeProfileIcon(cropId, _varietyId);
+    }
+    if (cropId != null &&
+        isEstablishmentMaintenanceCrop(
+          cropId: cropId,
+          cropCategoryId: _category,
+        )) {
+      return ornamentalProfileIcon(_ornamentalCropId, _varietyId);
     }
     return _resolvedCropIconPath;
   }

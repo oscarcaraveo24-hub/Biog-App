@@ -186,6 +186,35 @@ class NpkCaps {
           case 'arbol de aguacate':
           case 'árbol de aguacate':
             return 120.0;
+          // Cactus (ornamental xerófito). Planta de BAJA demanda: cap N=60. El
+          // exceso de N es activamente dañino (tejido blando, propenso a
+          // pudrición), no solo "desperdicio". Cap bajo para que una lectura de
+          // 40-50 mg/kg ya se lea como alta, no como normal.
+          case 'cactus':
+          case 'crop_cactus':
+          case 'cacto':
+          case 'cactos':
+            return 60.0;
+          // Suculenta (ornamental no cactácea). Demanda baja-moderada: cap N=70,
+          // algo mayor que cactus porque su crecimiento activo sí usa N, pero
+          // muy por debajo de un cultivo de rendimiento. El exceso de N alarga y
+          // ablanda el tejido (Doc B §5). El cap NO es una dosis.
+          case 'succulent':
+          case 'crop_succulent':
+          case 'suculenta':
+          case 'suculentas':
+            return 70.0;
+          // Sábila / Aloe. La ornamental de mayor demanda de las tres: cap N=85
+          // (cactus 60 · suculenta 70 · sábila 85), porque es la única con una
+          // respuesta a N medida (150 kg N/ha maximizó rendimiento, Doc B §4.6,
+          // §5). Sigue muy por debajo de un cultivo de rendimiento. NO es dosis.
+          case 'aloe':
+          case 'crop_aloe':
+          case 'sabila':
+          case 'sábila':
+          case 'zabila':
+          case 'zábila':
+            return 85.0;
           default:
             return 120.0;
         }
@@ -334,6 +363,30 @@ class NpkCaps {
           case 'arbol de aguacate':
           case 'árbol de aguacate':
             return 95.0;
+          // Cactus: demanda baja de P (raíz, espinas). Cap 55 mg/kg.
+          case 'cactus':
+          case 'crop_cactus':
+          case 'cacto':
+          case 'cactos':
+            return 55.0;
+          // Suculenta: demanda baja-moderada de P (raíz y arraigo). Cap 60 mg/kg
+          // (Doc B §5). La sonda económica tiene baja confianza en P: pesos
+          // bajos y nunca una dosis.
+          case 'succulent':
+          case 'crop_succulent':
+          case 'suculenta':
+          case 'suculentas':
+            return 60.0;
+          // Sábila / Aloe: cap P=65 (cactus 55 · suculenta 60 · sábila 65).
+          // Demanda moderada; la sonda económica tiene baja confianza en P, así
+          // que pesos bajos y nunca una dosis (Doc B §4.7, §5).
+          case 'aloe':
+          case 'crop_aloe':
+          case 'sabila':
+          case 'sábila':
+          case 'zabila':
+          case 'zábila':
+            return 65.0;
           default:
             return 80.0;
         }
@@ -496,6 +549,33 @@ class NpkCaps {
           case 'arbol de aguacate':
           case 'árbol de aguacate':
             return 200.0;
+          // Cactus: el K es el nutriente que SÍ importa (turgencia, pared
+          // celular, espinas, aguante al calor y al frío). Cap 220 mg/kg, más
+          // alto que N y P, de modo que el óptimo (65-150) caiga a media escala.
+          case 'cactus':
+          case 'crop_cactus':
+          case 'cacto':
+          case 'cactos':
+            return 220.0;
+          // Suculenta: el K conserva relevancia moderada (regulación del agua y
+          // firmeza de la hoja). Cap 240 mg/kg (Doc B §5): mayor que N y P, para
+          // que el óptimo (70-150) caiga a media escala. NO es una dosis.
+          case 'succulent':
+          case 'crop_succulent':
+          case 'suculenta':
+          case 'suculentas':
+            return 240.0;
+          // Sábila / Aloe: cap K=270 (cactus 220 · suculenta 240 · sábila 270).
+          // El K conserva relevancia por la regulación hídrica y la firmeza de
+          // hoja, y por la selectividad K/Na bajo estrés salino (Doc B §4.8,
+          // §5). Mayor que N y P; el óptimo (88-180) cae a media escala.
+          case 'aloe':
+          case 'crop_aloe':
+          case 'sabila':
+          case 'sábila':
+          case 'zabila':
+          case 'zábila':
+            return 270.0;
           default:
             return 140.0;
         }

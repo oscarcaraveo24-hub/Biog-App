@@ -4,6 +4,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_cycle_display_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
@@ -167,6 +168,13 @@ class _SeedsScreenState extends State<SeedsScreen>
           cropId: resolvedCropId,
           cropCategoryId: cropContext?.cropCategoryId,
         );
+    // Ornamental (cactus, suculenta…): cultivo NO cíclico, sin cosecha.
+    final bool isOrnamentalRuntime =
+        isEstablishmentMaintenanceContext(cropContext) ||
+        isEstablishmentMaintenanceCrop(cropId: resolvedCropId);
+    final String? ornamentalCropId =
+        ornamentalCropIdOrNull(cropContext?.cropId) ??
+        ornamentalCropIdOrNull(resolvedCropId);
 
     final bool isGenericProfile = runtime.isGenericMode || !hasConfiguredCrop;
 
@@ -223,8 +231,71 @@ class _SeedsScreenState extends State<SeedsScreen>
     String? heroAsset;
     String? dayValueText;
     bool showGrowthRows = true;
+    // Etiqueta de la fila de ventana. Los cultivos cíclicos hablan de "ventana"
+    // (floración, llenado…); el cactus no tiene ventanas de ciclo, así que la
+    // fila se reutiliza para la prioridad de cuidado.
+    String windowLabel = 'Ventana actual:';
 
-    if (isTreeRuntime && runtime.isPlanted && cropContext != null) {
+    // Ornamental: mismo patrón que el árbol (cultivo NO cíclico). Sin cosecha ni
+    // rendimiento, pero CON los mismos datos vivos que frijol: etapa resuelta,
+    // día desde la plantación, cuidado y prioridad.
+    if (isOrnamentalRuntime &&
+        (runtime.isPlanted || runtime.isPlanned) &&
+        cropContext != null) {
+      // La etapa se toma del RUNTIME RESUELTO, no del campo crudo del contexto.
+      // Leer `cropContext.ornamentalStageId` a pelo era el bug: un contexto
+      // guardado con 'unknown' dejaba la pantalla clavada en "Etapa por
+      // confirmar" aunque el usuario hubiera dado la fecha. El resolver, además,
+      // se auto-repara.
+      final String stageId = normalizeOrnamentalStageId(
+        ornamentalCropId,
+        runtime.stageResult?.stageKey ?? cropContext.ornamentalStageId,
+      );
+      final String? criticalLabel = ornamentalCriticalWindowLabel(
+        ornamentalCropId,
+        stageId,
+      );
+      final int? daysSincePlanting = runtime.stageResult?.daySinceSowing;
+
+      stageTitle = ornamentalStageDisplayName(ornamentalCropId, stageId);
+      statusChip = runtime.isPlanned
+          ? 'Planeado'
+          : criticalLabel != null
+          ? 'Ventana activa'
+          : ornamentalCropDisplayName(ornamentalCropId);
+      topSubtitle = activeDevice?.locationName ?? 'Monitoreo continuo';
+
+      if (runtime.isPlanned) {
+        dayPrefix = 'Estado:';
+        dayValue = 0;
+        dayValueText = 'Pendiente';
+        daySuffix = 'aún no la plantas';
+      } else if (daysSincePlanting != null) {
+        // Igual que frijol: "Día: 72 desde que la plantaste".
+        dayPrefix = 'Día:';
+        dayValue = math.max(1, daysSincePlanting);
+        dayValueText = null;
+        daySuffix = 'desde que la plantaste';
+      } else {
+        dayPrefix = 'Estado:';
+        dayValue = 0;
+        dayValueText = 'Activo';
+        daySuffix = 'sin fecha de plantación';
+      }
+
+      harvestLabel = 'Cuidado:';
+      harvestText = ornamentalStageCareNoteEs(ornamentalCropId, stageId);
+      windowLabel = 'Prioridad:';
+      windowText =
+          criticalLabel ??
+          ornamentalStagePriorityText(ornamentalCropId, stageId);
+      estHeightCm = 0;
+      growthCmPerWeek = 0;
+      heroAsset = runtime.stageResult?.heroAsset.trim().isNotEmpty == true
+          ? runtime.stageResult!.heroAsset
+          : ornamentalStageImage(ornamentalCropId, stageId);
+      showGrowthRows = false;
+    } else if (isTreeRuntime && runtime.isPlanted && cropContext != null) {
       final String stageId = normalizeTreeStageId(cropContext.phenologyStageId);
       final String? criticalLabel = treeCriticalWindowLabel(stageId);
 
@@ -570,6 +641,7 @@ class _SeedsScreenState extends State<SeedsScreen>
                         daySuffix: daySuffix,
                         harvestLabel: harvestLabel,
                         harvestText: harvestText,
+                        windowLabel: windowLabel,
                         windowText: windowText,
                         progress: hasCropCareScore ? (cropScore! / 100.0) : 0.0,
                         headerSize: SeedsScreenLayout.careHeaderSize,
@@ -1193,6 +1265,9 @@ class SeedsScreenLogic {
       if (cropId == CropCatalog.onionCropId) {
         return '$cropDisplayName - Cebolla genérica';
       }
+      if (isEstablishmentMaintenanceCrop(cropId: cropId)) {
+        return '$cropDisplayName – ${ornamentalGeneralShortLabel(cropId)}';
+      }
       return '$cropDisplayName – Perfil genérico';
     }
 
@@ -1380,6 +1455,11 @@ class SeedsScreenLogic {
     }
 
     add(primaryAsset);
+
+    if (isEstablishmentMaintenanceCrop(cropId: cropId)) {
+      add(ornamentalStageUnknownImage(cropId));
+      add(ornamentalCropIcon(cropId));
+    }
 
     if (cropId == CropCatalog.cucumberCropId) {
       for (final asset in SeedsScreenLayout.cucumberHeroFallbackAssets) {
@@ -2049,6 +2129,7 @@ class _CareCardInner extends StatelessWidget {
 
   final String harvestLabel;
   final String harvestText;
+  final String windowLabel;
   final String windowText;
   final double progress;
 
@@ -2086,6 +2167,7 @@ class _CareCardInner extends StatelessWidget {
     required this.daySuffix,
     required this.harvestLabel,
     required this.harvestText,
+    this.windowLabel = 'Ventana actual:',
     required this.windowText,
     required this.progress,
     required this.headerSize,
@@ -2226,7 +2308,7 @@ class _CareCardInner extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               _LineRow(
-                label: 'Ventana actual:',
+                label: windowLabel,
                 value: windowText,
                 labelSize: lineLabelSize,
                 valueSize: lineValueSize,

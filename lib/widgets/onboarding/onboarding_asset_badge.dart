@@ -224,6 +224,14 @@ class OnboardingUiAssets {
         return AvocadoTreeAssets.cropIcon;
       case 'rose':
       case 'cactus':
+      case 'crop_cactus':
+      case 'succulent':
+      case 'crop_succulent':
+      case 'suculenta':
+      case 'aloe':
+      case 'crop_aloe':
+      case 'sabila':
+      case 'sábila':
         return ornamental;
       default:
         return assetForCategory(category);

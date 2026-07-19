@@ -19,6 +19,9 @@ import 'package:bio_g/core/crops/orange_tree/orange_tree_crop_definition.dart';
 import 'package:bio_g/core/crops/lemon_tree/lemon_tree_crop_definition.dart';
 import 'package:bio_g/core/crops/mango_tree/mango_tree_crop_definition.dart';
 import 'package:bio_g/core/crops/avocado_tree/avocado_tree_crop_definition.dart';
+import 'package:bio_g/core/crops/cactus/cactus_crop_definition.dart';
+import 'package:bio_g/core/crops/succulent/succulent_crop_definition.dart';
+import 'package:bio_g/core/crops/aloe/aloe_crop_definition.dart';
 import 'package:bio_g/core/crops/spinach/spinach_crop_definition.dart';
 import 'package:bio_g/core/crops/squash/squash_crop_definition.dart';
 import 'package:bio_g/core/crops/tomato/tomato_crop_definition.dart';
@@ -51,6 +54,9 @@ class CropRegistry {
     CropKey.lemonTree: LemonTreeCropDefinition(),
     CropKey.mangoTree: MangoTreeCropDefinition(),
     CropKey.avocadoTree: AvocadoTreeCropDefinition(),
+    CropKey.cactus: CactusCropDefinition(),
+    CropKey.succulent: SucculentCropDefinition(),
+    CropKey.aloe: AloeCropDefinition(),
   };
 
   static CropDefinition? byKey(CropKey key) => _definitions[key];
@@ -194,6 +200,47 @@ class CropRegistry {
         normalized == 'arbol de aguacate' ||
         normalized == 'árbol de aguacate') {
       return _definitions[CropKey.avocadoTree];
+    }
+
+    // Cactus: cropId canónico + alias legacy + aliases humanos resuelven a
+    // Cactus, alineado con CropCatalog.canonicalCropKey. Primera ornamental
+    // oficial; ids provisionales previos (cactus_generic/mini/columnar) también
+    // resuelven al cultivo cactus.
+    if (normalized == 'crop_cactus' ||
+        normalized == 'cactus' ||
+        normalized == 'cactos' ||
+        normalized == 'cacto' ||
+        normalized == 'cactus_generic' ||
+        normalized == 'cactus_mini' ||
+        normalized == 'cactus_columnar') {
+      return _definitions[CropKey.cactus];
+    }
+
+    // Suculenta: cropId canónico + alias legacy + aliases humanos resuelven a
+    // Suculenta, alineado con CropCatalog.canonicalCropKey. Segunda ornamental
+    // oficial. NO cae en cactus: comparten modo de ciclo, no biología.
+    if (normalized == 'crop_succulent' ||
+        normalized == 'succulent' ||
+        normalized == 'succulents' ||
+        normalized == 'suculenta' ||
+        normalized == 'suculentas' ||
+        normalized == 'planta suculenta' ||
+        normalized == 'planta crasa' ||
+        normalized == 'crasa') {
+      return _definitions[CropKey.succulent];
+    }
+
+    // Sábila / Aloe: tercera ornamental oficial. cropId canónico + alias legacy
+    // + aliases humanos resuelven a Sábila. NO cae en suculenta ni cactus:
+    // comparten modo de ciclo, no biología.
+    if (normalized == 'crop_aloe' ||
+        normalized == 'aloe' ||
+        normalized == 'sabila' ||
+        normalized == 'sábila' ||
+        normalized == 'zabila' ||
+        normalized == 'zábila' ||
+        normalized == 'aloe vera') {
+      return _definitions[CropKey.aloe];
     }
 
     return null;

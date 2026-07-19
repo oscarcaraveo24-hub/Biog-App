@@ -97,6 +97,9 @@ flutter:
     - assets/seeds/lemon/
     - assets/seeds/mango/
     - assets/seeds/avocado/
+    - assets/seeds/cactus/
+    - assets/seeds/succulent/
+    - assets/seeds/Aloe/
 
   fonts:
     - family: Inter

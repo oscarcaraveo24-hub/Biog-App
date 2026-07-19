@@ -36,8 +36,7 @@ class ConfigureSeedWizardAssets {
       'assets/icons/wizard/ic_exact_date_calendar_clock.png';
   static const String treeDormantLeafless =
       'assets/icons/wizard/ic_tree_dormant_leafless.png';
-  static const String treeBudding =
-      'assets/icons/wizard/ic_tree_budding.png';
+  static const String treeBudding = 'assets/icons/wizard/ic_tree_budding.png';
   static const String treeFullFoliage =
       'assets/icons/wizard/ic_tree_full_foliage.png';
   static const String treeFlowering =
@@ -130,8 +129,7 @@ class ConfigureSeedWizardAssets {
 
   // Cebolla (cultivo madre crop_onion). El genérico usa el ícono ON-GEN.
   static const String cropOnion = 'assets/icons/wizard/ic_onion_generic.png';
-  static const String onionGeneric =
-      'assets/icons/wizard/ic_onion_generic.png';
+  static const String onionGeneric = 'assets/icons/wizard/ic_onion_generic.png';
   static const String onionWhite = 'assets/icons/wizard/ic_onion_white.png';
   static const String onionYellow = 'assets/icons/wizard/ic_onion_yellow.png';
   static const String onionPurple = 'assets/icons/wizard/ic_onion_purple.png';
@@ -144,12 +142,10 @@ class ConfigureSeedWizardAssets {
   static const String cropGarlic = 'assets/icons/wizard/ic_garlic.png';
   static const String garlicGeneric =
       'assets/icons/wizard/ic_garlic_generic.png';
-  static const String garlicWhite =
-      'assets/icons/wizard/ic_garlic_white.png';
+  static const String garlicWhite = 'assets/icons/wizard/ic_garlic_white.png';
   static const String garlicJaspeado =
       'assets/icons/wizard/ic_garlic_jaspeado.png';
-  static const String garlicPurple =
-      'assets/icons/wizard/ic_garlic_purple.png';
+  static const String garlicPurple = 'assets/icons/wizard/ic_garlic_purple.png';
   static const String garlicCreole =
       'assets/icons/wizard/ic_garlic_criollo.png';
   static const String garlicChinese =
@@ -585,10 +581,7 @@ class ConfigureSeedWizardAssets {
     return cropEggplant;
   }
 
-  static String squashTypedIconForVariety({
-    String? varietyId,
-    String? label,
-  }) {
+  static String squashTypedIconForVariety({String? varietyId, String? label}) {
     final raw = '${varietyId ?? ''} ${label ?? ''}'.toLowerCase();
     if (raw.contains('ca-01') ||
         raw.contains('ca01') ||
@@ -646,10 +639,7 @@ class ConfigureSeedWizardAssets {
     return cropSquash;
   }
 
-  static String lettuceTypedIconForVariety({
-    String? varietyId,
-    String? label,
-  }) {
+  static String lettuceTypedIconForVariety({String? varietyId, String? label}) {
     final raw = '${varietyId ?? ''} ${label ?? ''}'.toLowerCase();
     if (raw.contains('le-01') ||
         raw.contains('le01') ||
@@ -696,10 +686,7 @@ class ConfigureSeedWizardAssets {
     return cropLettuce;
   }
 
-  static String spinachTypedIconForVariety({
-    String? varietyId,
-    String? label,
-  }) {
+  static String spinachTypedIconForVariety({String? varietyId, String? label}) {
     final raw = '${varietyId ?? ''} ${label ?? ''}'.toLowerCase();
     if (raw.contains('sp-gen') ||
         raw.contains('spgen') ||
@@ -754,10 +741,7 @@ class ConfigureSeedWizardAssets {
     return cropSpinach;
   }
 
-  static String onionTypedIconForVariety({
-    String? varietyId,
-    String? label,
-  }) {
+  static String onionTypedIconForVariety({String? varietyId, String? label}) {
     final raw = '${varietyId ?? ''} ${label ?? ''}'.toLowerCase();
     if (raw.contains('on-gen') ||
         raw.contains('ongen') ||
@@ -822,10 +806,7 @@ class ConfigureSeedWizardAssets {
     return cropOnion;
   }
 
-  static String garlicTypedIconForVariety({
-    String? varietyId,
-    String? label,
-  }) {
+  static String garlicTypedIconForVariety({String? varietyId, String? label}) {
     final raw = '${varietyId ?? ''} ${label ?? ''}'.toLowerCase();
     if (raw.contains('ag-gen') ||
         raw.contains('aggen') ||
@@ -1085,6 +1066,7 @@ class WizardLongPill extends StatelessWidget {
     required this.selected,
     required this.enabled,
     required this.onTap,
+    this.fallbackAsset = 'assets/icons/wizard/ic_tree.png',
   });
 
   final String iconPath;
@@ -1093,6 +1075,7 @@ class WizardLongPill extends StatelessWidget {
   final bool selected;
   final bool enabled;
   final VoidCallback? onTap;
+  final String fallbackAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -1123,6 +1106,7 @@ class WizardLongPill extends StatelessWidget {
                 imageHeight: 44,
                 scale: 1.95,
                 offsetX: -10,
+                fallbackAsset: fallbackAsset,
               ),
               const SizedBox(width: 18),
               Expanded(
@@ -1180,6 +1164,7 @@ class SelectionPill extends StatelessWidget {
     required this.value,
     required this.selected,
     required this.onTap,
+    this.fallbackAsset = 'assets/icons/wizard/ic_tree.png',
   });
 
   final String iconPath;
@@ -1187,6 +1172,7 @@ class SelectionPill extends StatelessWidget {
   final String value;
   final bool selected;
   final VoidCallback? onTap;
+  final String fallbackAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -1208,6 +1194,7 @@ class SelectionPill extends StatelessWidget {
             children: [
               WizardAssetIcon(
                 assetPath: iconPath,
+                fallbackAsset: fallbackAsset,
                 slotWidth: 44,
                 slotHeight: 44,
                 imageWidth: 44,
@@ -1391,6 +1378,7 @@ class WizardSheetOption<T> {
     required this.subtitle,
     required this.iconPath,
     required this.enabled,
+    this.fallbackAsset = 'assets/icons/wizard/ic_tree.png',
   });
 
   final T value;
@@ -1398,6 +1386,7 @@ class WizardSheetOption<T> {
   final String subtitle;
   final String iconPath;
   final bool enabled;
+  final String fallbackAsset;
 }
 
 class WizardSheetSelectionTile<T> extends StatelessWidget {
@@ -1431,6 +1420,7 @@ class WizardSheetSelectionTile<T> extends StatelessWidget {
                 imageHeight: 40,
                 scale: 1.75,
                 offsetX: -8,
+                fallbackAsset: option.fallbackAsset,
               ),
               const SizedBox(width: 16),
               Expanded(

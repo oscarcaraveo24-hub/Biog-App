@@ -11,6 +11,7 @@ import 'package:bio_g/core/crops/orange_tree/orange_tree_assets.dart';
 import 'package:bio_g/core/crops/lemon_tree/lemon_tree_assets.dart';
 import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
 import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/widgets/onboarding/onboarding_asset_badge.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
@@ -42,7 +43,14 @@ class CropDetailsStep extends StatelessWidget {
     this.showContinueButton = true,
   });
 
-  bool get _canContinue => selectedCropId?.isNotEmpty ?? false;
+  bool get _canContinue {
+    final hasCrop = selectedCropId?.isNotEmpty ?? false;
+    // En una ornamental el perfil es obligatorio: aunque sea el general.
+    if (isEstablishmentMaintenanceCrop(cropId: selectedCropId)) {
+      return hasCrop && (selectedVarietyId?.isNotEmpty ?? false);
+    }
+    return hasCrop;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +98,9 @@ class CropDetailsStep extends StatelessWidget {
         normalizedSelectedCropId == CropCatalog.mangoTreeCropId;
     final bool isAvocadoTreeSelection =
         normalizedSelectedCropId == CropCatalog.avocadoTreeCropId;
+    final bool isOrnamentalSelection = isEstablishmentMaintenanceCrop(
+      cropId: normalizedSelectedCropId,
+    );
     final bool isTreeSelection =
         isAppleTreeSelection ||
         isPearTreeSelection ||
@@ -102,8 +113,7 @@ class CropDetailsStep extends StatelessWidget {
         isAvocadoTreeSelection ||
         CropCatalog.cropById(normalizedSelectedCropId)?.categoryId ==
             CropCatalog.treeCategoryId;
-    final String resolvedCropAsset =
-        isAppleTreeSelection
+    final String resolvedCropAsset = isAppleTreeSelection
         ? AppleTreeAssets.cropIcon
         : isPearTreeSelection
         ? PearTreeAssets.cropIcon
@@ -125,7 +135,7 @@ class CropDetailsStep extends StatelessWidget {
         ? OnboardingUiAssets.assetForBeanVariety(selectedVarietyId)
         : (selectedOption?.assetPath ??
               OnboardingUiAssets.assetForCategory(cropCategory));
-    final String resolvedVarietyAsset = isTreeSelection
+    final String resolvedVarietyAsset = isTreeSelection || isOrnamentalSelection
         ? _profileIconForCrop(normalizedSelectedCropId, selectedVarietyId)
         : OnboardingUiAssets.variety;
 
@@ -155,7 +165,7 @@ class CropDetailsStep extends StatelessWidget {
               ),
               const Divider(height: 20, color: Color(0x1F76828A)),
               _SummaryRow(
-                label: 'Variedad',
+                label: isOrnamentalSelection ? 'Perfil' : 'Variedad',
                 value: varietySummaryLabel,
                 assetPath: resolvedVarietyAsset,
               ),
@@ -182,9 +192,9 @@ class CropDetailsStep extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text(
-                  'Variedad',
-                  style: TextStyle(
+                Text(
+                  isOrnamentalSelection ? 'Perfil' : 'Variedad',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF334149),
@@ -270,6 +280,9 @@ class CropDetailsStep extends StatelessWidget {
   }
 
   static String _titleForSelection(String? scale, String? category) {
+    if (category == CropCatalog.ornamentalCategoryId) {
+      return '¿Qué vas a monitorear?';
+    }
     final String scaleLabel = _scaleLabel(scale);
     if (category == CropCatalog.grainCategoryId && scale == 'field') {
       return '¿Qué vas a sembrar en tu campo?';
@@ -285,6 +298,8 @@ class CropDetailsStep extends StatelessWidget {
         return 'Selecciona la especie y variedad más cercana a tu árbol.';
       case 'vegetable':
         return 'Selecciona la planta principal que quieres monitorear.';
+      case 'ornamental':
+        return 'Selecciona tu planta y el perfil que mejor la describe.';
       default:
         return 'Selecciona cultivo, tipo y variedad.';
     }
@@ -312,8 +327,12 @@ class CropDetailsStep extends StatelessWidget {
           enabledOnly: false,
         ).map(_fromCatalogTreeCrop).toList(growable: false);
       case 'ornamental':
-        return const <_DetailOption>[
-          _DetailOption(
+        final ornamentalOptions = CropCatalog.cropsByCategory(
+          CropCatalog.ornamentalCategoryId,
+          enabledOnly: false,
+        ).map(_fromCatalogOrnamentalCrop).toList(growable: false);
+        return <_DetailOption>[
+          const _DetailOption(
             cropId: 'rose',
             title: 'Rosa',
             subtitle: 'Planta ornamental de flor',
@@ -325,18 +344,7 @@ class CropDetailsStep extends StatelessWidget {
               _VarietyOption(id: 'rose_generic', label: 'Genérico'),
             ],
           ),
-          _DetailOption(
-            cropId: 'cactus',
-            title: 'Cactus',
-            subtitle: 'Ornamental de bajo riego',
-            typeLabel: 'Suculenta',
-            assetPath: OnboardingUiAssets.ornamental,
-            varieties: <_VarietyOption>[
-              _VarietyOption(id: 'cactus_columnar', label: 'Columnar'),
-              _VarietyOption(id: 'cactus_mini', label: 'Mini'),
-              _VarietyOption(id: 'cactus_generic', label: 'Genérico'),
-            ],
-          ),
+          ...ornamentalOptions,
         ];
       default:
         return const <_DetailOption>[
@@ -419,6 +427,39 @@ class CropDetailsStep extends StatelessWidget {
     );
   }
 
+  static _DetailOption _fromCatalogOrnamentalCrop(CropCatalogEntry crop) {
+    // Perfiles (CA-*/SU-*) como "tipos", en el orden canónico del catálogo: los
+    // concretos primero y el general AL FINAL. Nunca se exponen códigos ni SKIP.
+    final profiles = CropCatalog.profilesForCrop(
+      crop.cropId,
+      enabledOnly: false,
+    );
+
+    return _DetailOption(
+      cropId: crop.cropId,
+      title: crop.label,
+      subtitle: crop.subtitle ?? 'Planta ornamental',
+      typeLabel: 'Ornamental',
+      assetPath: ornamentalCropIcon(crop.cropId),
+      varieties: profiles.isEmpty
+          ? <_VarietyOption>[
+              _VarietyOption(
+                id: ornamentalDefaultProfileId(crop.cropId),
+                label: ornamentalGeneralProfileLabel(crop.cropId),
+              ),
+            ]
+          : profiles
+                .map(
+                  (profile) => _VarietyOption(
+                    id: profile.id,
+                    label: profile.label,
+                    assetPath: ornamentalProfileIcon(crop.cropId, profile.id),
+                  ),
+                )
+                .toList(growable: false),
+    );
+  }
+
   static String _profileIconForCrop(String? cropId, String? profileId) {
     final canonicalCropId = CropCatalog.canonicalCropKey(cropId);
     if (canonicalCropId == CropCatalog.appleTreeCropId) {
@@ -448,6 +489,9 @@ class CropDetailsStep extends StatelessWidget {
     if (canonicalCropId == CropCatalog.avocadoTreeCropId) {
       return avocadoTreeProfileIcon(profileId);
     }
+    if (isEstablishmentMaintenanceCrop(cropId: canonicalCropId)) {
+      return ornamentalProfileIcon(canonicalCropId, profileId);
+    }
     return OnboardingUiAssets.variety;
   }
 
@@ -470,11 +514,7 @@ class _VarietyOption {
   final String label;
   final String? assetPath;
 
-  const _VarietyOption({
-    required this.id,
-    required this.label,
-    this.assetPath,
-  });
+  const _VarietyOption({required this.id, required this.label, this.assetPath});
 }
 
 class _DetailOption {

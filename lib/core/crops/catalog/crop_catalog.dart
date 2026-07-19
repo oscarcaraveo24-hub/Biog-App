@@ -21,6 +21,9 @@ import 'package:bio_g/core/crops/orange_tree/orange_tree_catalog.dart';
 import 'package:bio_g/core/crops/lemon_tree/lemon_tree_catalog.dart';
 import 'package:bio_g/core/crops/mango_tree/mango_tree_catalog.dart';
 import 'package:bio_g/core/crops/avocado_tree/avocado_tree_catalog.dart';
+import 'package:bio_g/core/crops/cactus/cactus_catalog.dart';
+import 'package:bio_g/core/crops/succulent/succulent_catalog.dart';
+import 'package:bio_g/core/crops/aloe/aloe_catalog.dart';
 import 'package:bio_g/core/crops/spinach/spinach_catalog.dart';
 import 'package:bio_g/core/crops/squash/squash_catalog.dart';
 import 'package:bio_g/core/crops/tomato/tomato_catalog.dart';
@@ -41,6 +44,7 @@ class CropCatalog {
   static const String grainCategoryId = 'grain';
   static const String vegetableCategoryId = 'vegetable';
   static const String treeCategoryId = 'tree';
+  static const String ornamentalCategoryId = 'ornamental';
 
   static const String maizeCropId = 'maize';
   static const String wheatCropId = 'wheat';
@@ -65,6 +69,9 @@ class CropCatalog {
   static const String lemonTreeCropId = kCropLemonTree;
   static const String mangoTreeCropId = kCropMangoTree;
   static const String avocadoTreeCropId = kCropAvocadoTree;
+  static const String cactusCropId = kCropCactus;
+  static const String succulentCropId = kCropSucculent;
+  static const String aloeCropId = kCropAloe;
 
   static const String tomatoDefaultProfileId = 'tm_gen';
   static const String tomatoDefaultCalendarId = 'tomato_default';
@@ -115,6 +122,21 @@ class CropCatalog {
   // es cítrico, NO es manzano.
   static const String avocadoTreeDefaultProfileId = kAgSkip;
 
+  // Cactus (ornamental, establishment_maintenance) — perfil general/seguro
+  // CA-SKIP. No es fallow ni promete floración/cosecha.
+  static const String cactusDefaultProfileId = kCaSkip;
+
+  // Suculenta (ornamental, establishment_maintenance) — perfil general/seguro
+  // SU-SKIP. No es fallow ni promete floración/cosecha. Comparte el modo del
+  // cactus, NO sus targets.
+  static const String succulentDefaultProfileId = kSuSkip;
+
+  // Sábila / Aloe (ornamental, establishment_maintenance) — perfil general/seguro
+  // SA-SKIP. No es fallow ni promete floración/cosecha. Comparte el modo del
+  // cactus y la suculenta, NO sus targets (banda hídrica más húmeda, tolera más
+  // sal, responde a N).
+  static const String aloeDefaultProfileId = kSaSkip;
+
   // ── Maize catalog constants ─────────────────────────────────────────────────
   static const String maizeDemoVarietyId = 'dk_2069';
   static const String maizeGenericVarietyId = 'generic_maize';
@@ -149,6 +171,15 @@ class CropCatalog {
       id: treeCategoryId,
       label: 'Árboles',
       subtitle: 'Frutales y perennes',
+      enabled: true,
+    ),
+    // Categoría Ornamental habilitada: Cactus y Suculenta. El runtime ornamental
+    // (establishment_maintenance), el wizard y el onboarding ya las soportan.
+    // Otras ornamentales (sábila, maguey, rosal…) permanecen "Próximamente".
+    CropCategoryEntry(
+      id: ornamentalCategoryId,
+      label: 'Planta ornamental',
+      subtitle: 'Cactus, suculentas y sábila (más ornamentales próximamente)',
       enabled: true,
     ),
   ];
@@ -817,6 +848,52 @@ class CropCatalog {
       enabled: true,
       defaultProfileId: avocadoTreeDefaultProfileId,
       profiles: avocadoTreeProfileEntries,
+    ),
+    // ── Ornamentales ─────────────────────────────────────────────────────────
+    // Cactus habilitado: primera ornamental oficial. Sin calendarios: el cactus
+    // no usa fecha de siembra ni ciclo anual que termina; el anclaje ornamental
+    // (plantación / cambio de maceta) vive en los campos ornamentales de
+    // DeviceCropContext, separado del estado fenológico de los árboles. NO
+    // tiene rendimiento ni cosecha.
+    CropCatalogEntry(
+      cropId: cactusCropId,
+      categoryId: ornamentalCategoryId,
+      label: 'Cactus',
+      subtitle: 'Planta ornamental xerófita · establecimiento y mantenimiento',
+      enabled: true,
+      defaultProfileId: cactusDefaultProfileId,
+      profiles: cactusProfileEntries,
+    ),
+    // Suculenta: segunda ornamental oficial. Mismo modo de ciclo que el cactus
+    // (establecimiento → mantenimiento abierto), biología PROPIA: usa una banda
+    // hídrica algo mayor, no tolera helada por defecto y su NPK pesa más en
+    // crecimiento. Sin rendimiento y sin cosecha.
+    CropCatalogEntry(
+      cropId: succulentCropId,
+      categoryId: ornamentalCategoryId,
+      label: 'Suculenta',
+      subtitle:
+          'Planta ornamental de hojas o tallos carnosos · establecimiento y '
+          'mantenimiento',
+      enabled: true,
+      defaultProfileId: succulentDefaultProfileId,
+      profiles: succulentProfileEntries,
+    ),
+    // Sábila / Aloe: tercera ornamental oficial. Mismo modo de ciclo que cactus
+    // y suculenta (establecimiento → mantenimiento abierto), biología PROPIA:
+    // banda hídrica ~2 puntos más húmeda, tolera mucha más sal, es indiferente
+    // al pH y su NPK pesa más en crecimiento. Sin rendimiento y sin cosecha
+    // (cortar hojas para gel es un evento, no cosecha).
+    CropCatalogEntry(
+      cropId: aloeCropId,
+      categoryId: ornamentalCategoryId,
+      label: 'Sábila',
+      subtitle:
+          'Planta ornamental de hojas carnosas con gel · establecimiento y '
+          'mantenimiento',
+      enabled: true,
+      defaultProfileId: aloeDefaultProfileId,
+      profiles: aloeProfileEntries,
     ),
   ];
 
@@ -1687,6 +1764,48 @@ class CropCatalog {
       'aguacate hass' ||
       'aguacate criollo' ||
       'aguacate fuerte' => avocadoTreeCropId,
+      // Cactus (ornamental). cropId canónico + alias legacy + aliases humanos.
+      // Los ids provisionales previos del wizard (cactus_generic/mini/columnar)
+      // resuelven al cultivo cactus; el perfil específico se resuelve aparte.
+      'crop_cactus' ||
+      'cactus' ||
+      'cactos' ||
+      'cacto' ||
+      'cactus ornamental' ||
+      'cactus desertico' ||
+      'cactus desértico' ||
+      'cactaceae' ||
+      'cactacea' ||
+      'cactácea' ||
+      'cactus_generic' ||
+      'cactus_mini' ||
+      'cactus_columnar' => cactusCropId,
+      // Suculenta (ornamental). cropId canónico + alias legacy + aliases humanos.
+      // NO se mezcla con cactus: son cultivos distintos con targets distintos.
+      'crop_succulent' ||
+      'succulent' ||
+      'succulents' ||
+      'suculenta' ||
+      'suculentas' ||
+      'planta suculenta' ||
+      'plantas suculentas' ||
+      'planta crasa' ||
+      'crasa' ||
+      'crasas' ||
+      'suculenta ornamental' => succulentCropId,
+      // Sábila / Aloe (ornamental). cropId canónico + alias legacy + aliases
+      // humanos. NO se mezcla con suculenta ni cactus: cultivos distintos con
+      // targets distintos.
+      'crop_aloe' ||
+      'aloe' ||
+      'aloe vera' ||
+      'sabila' ||
+      'sábila' ||
+      'zabila' ||
+      'zábila' ||
+      'sabila ornamental' ||
+      'planta de sabila' ||
+      'planta de sábila' => aloeCropId,
       _ => value,
     };
   }
@@ -1725,6 +1844,9 @@ class CropCatalog {
       lemonTreeCropId => 'Limón',
       mangoTreeCropId => 'Mango',
       avocadoTreeCropId => 'Aguacate',
+      cactusCropId => 'Cactus',
+      succulentCropId => 'Suculenta',
+      aloeCropId => 'Sábila',
       _ => 'Cultivo',
     };
   }

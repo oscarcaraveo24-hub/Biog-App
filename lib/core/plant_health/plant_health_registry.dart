@@ -2,6 +2,9 @@ import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/plant_health/catalog/apple_tree_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/barley_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/bean_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/cactus_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/succulent_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/aloe_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/chili_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/maize_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/cucumber_syndromes.dart';
@@ -39,6 +42,12 @@ class PlantHealthRegistry {
         return barleySyndromes;
       case CropCatalog.beanCropId:
         return beanSyndromes;
+      case CropCatalog.cactusCropId:
+        return cactusSyndromes;
+      case CropCatalog.succulentCropId:
+        return succulentSyndromes;
+      case CropCatalog.aloeCropId:
+        return aloeSyndromes;
       case CropCatalog.tomatoCropId:
         return tomatoSyndromes;
       case CropCatalog.cucumberCropId:
@@ -80,5 +89,6 @@ class PlantHealthRegistry {
     }
   }
 
-  static bool isSupportedCrop(String cropId) => catalogForCrop(cropId).isNotEmpty;
+  static bool isSupportedCrop(String cropId) =>
+      catalogForCrop(cropId).isNotEmpty;
 }

@@ -1776,6 +1776,20 @@ String _diagnosisTypeLabel(String? type) {
       return 'Estrés';
     case 'bacteria':
       return 'Bacteria';
+    case 'condition_compatible':
+      return 'Condición compatible';
+    case 'visual_concern':
+      return 'Observación por confirmar';
+    case 'benign_differential':
+      return 'Diferencial visual';
+    case 'hydric_observation':
+      return 'Observación hídrica';
+    case 'pest_suspected':
+      return 'Plaga por confirmar';
+    case 'abiotic_condition_compatible':
+      return 'Condición ambiental';
+    case 'safety_concern':
+      return 'Seguridad';
     default:
       return 'Diagnóstico';
   }

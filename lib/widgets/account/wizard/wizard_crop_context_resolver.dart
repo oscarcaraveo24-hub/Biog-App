@@ -1,3 +1,4 @@
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
@@ -44,17 +45,22 @@ class WizardCropContextResolver {
     DateTime? perennialAnchorDate,
     String? perennialAnchorTypeId,
     DateTime? treePlantingDate,
+    String? ornamentalStageId,
+    DateTime? ornamentalAnchorDate,
+    String? ornamentalAnchorTypeId,
+    double? ornamentalStageConfidence,
   }) {
     final normalizedCropId = _canonicalCropKey(
       cropId.trim().isEmpty ? CropCatalog.maizeCropId : cropId,
     );
 
-    final bool sameCrop = previous != null &&
+    final bool sameCrop =
+        previous != null &&
         _canonicalCropKey(previous.cropId) == normalizedCropId;
 
     final normalizedCropCategoryId = cropCategoryId.trim().isEmpty
         ? (CropCatalog.cropById(normalizedCropId)?.categoryId ??
-            CropCatalog.grainCategoryId)
+              CropCatalog.grainCategoryId)
         : cropCategoryId.trim();
 
     final isTreeContext = isTreeCrop(
@@ -62,9 +68,21 @@ class WizardCropContextResolver {
       cropCategoryId: normalizedCropCategoryId,
     );
 
-    final bool isFallow = lifecycleStatus == CropLifecycleStatus.fallow;
-    final String? rawVarietySelection =
-        isFallow ? null : _normalizeVarietyAlias(varietyAlias);
+    // Ornamental de establecimiento/mantenimiento (cactus, suculenta…). Usa
+    // campos propios de etapa/ancla/confianza; no reutiliza fenología ni estado
+    // de árboles.
+    final bool isOrnamentalContext = isEstablishmentMaintenanceCrop(
+      cropId: normalizedCropId,
+      cropCategoryId: normalizedCropCategoryId,
+    );
+
+    // Un contexto ornamental histórico en fallow se migra a plantado; nunca
+    // expone descanso del suelo ni borra su perfil al normalizarlo.
+    final bool isFallow =
+        lifecycleStatus == CropLifecycleStatus.fallow && !isOrnamentalContext;
+    final String? rawVarietySelection = isFallow
+        ? null
+        : _normalizeVarietyAlias(varietyAlias);
 
     final String? resolvedVarietyId = isFallow
         ? null
@@ -78,7 +96,9 @@ class WizardCropContextResolver {
         ? null
         : _resolveExplicitProfileId(
             cropId: normalizedCropId,
-            varietyId: isTreeCrop(cropId: normalizedCropId)
+            varietyId:
+                isTreeCrop(cropId: normalizedCropId) ||
+                    isEstablishmentMaintenanceCrop(cropId: normalizedCropId)
                 ? _normalizeNullable(varietyId)
                 : resolvedVarietyId,
             varietyAlias: rawVarietySelection,
@@ -104,7 +124,10 @@ class WizardCropContextResolver {
       rawValue: rawVarietySelection,
       resolvedVarietyId: resolvedVarietyId,
       resolvedProfileId: resolvedProfileId,
-      lifecycleStatus: lifecycleStatus,
+      lifecycleStatus:
+          isOrnamentalContext && lifecycleStatus == CropLifecycleStatus.fallow
+          ? CropLifecycleStatus.planted
+          : lifecycleStatus,
     );
 
     final String? resolvedCalendarTypeId = CropCatalog.resolveCalendarId(
@@ -119,13 +142,70 @@ class WizardCropContextResolver {
     final String resolvedRegionCode =
         (regionCode ?? previous?.regionCode ?? 'MX').trim();
 
-    final resolvedScaleId = cultivationScaleId?.trim().isNotEmpty == true
+    final resolvedScaleId = isOrnamentalContext
+        ? null
+        : cultivationScaleId?.trim().isNotEmpty == true
         ? cultivationScaleId!.trim()
         : previous?.cultivationScaleId;
 
     // Memoria de plantación (edad) heredada al reconfigurar el mismo árbol.
-    final DateTime? carriedTreeSowingDate =
-        sameCrop ? previous.sowingDate : null;
+    final DateTime? carriedTreeSowingDate = sameCrop
+        ? previous.sowingDate
+        : null;
+
+    // Ancla ornamental: fecha de plantación/alta (planned o planted).
+    final DateTime? ornamentalAnchor = isOrnamentalContext
+        ? (ornamentalAnchorDate ??
+              selectedDate ??
+              (dateConfidence != DateConfidence.unknown && sameCrop
+                  ? previous?.ornamentalAnchorDate
+                  : null))
+        : null;
+    final OrnamentalStageEstimate? ornamentalEstimate = isOrnamentalContext
+        ? estimateOrnamentalStageFromDate(
+            cropId: normalizedCropId,
+            plantingDate: ornamentalAnchor,
+            now: now,
+            profileId: resolvedProfileId,
+          )
+        : null;
+    final bool preservePreviousOrnamentalStage =
+        isOrnamentalContext &&
+        sameCrop &&
+        dateConfidence != DateConfidence.unknown &&
+        ornamentalStageId == null &&
+        previous?.ornamentalAnchorDate == ornamentalAnchor;
+    final String? ornamentalStateId = isOrnamentalContext
+        ? normalizeOrnamentalStageId(
+            normalizedCropId,
+            ornamentalStageId ??
+                (preservePreviousOrnamentalStage
+                    ? previous?.ornamentalStageId
+                    : null) ??
+                ornamentalEstimate?.stageId,
+          )
+        : null;
+    final String? ornamentalAnchorType = isOrnamentalContext
+        ? normalizeOrnamentalAnchorTypeId(
+            normalizedCropId,
+            ornamentalAnchorTypeId ??
+                (preservePreviousOrnamentalStage
+                    ? previous?.ornamentalAnchorTypeId
+                    : null) ??
+                ornamentalEstimate?.anchorTypeId,
+          )
+        : null;
+    final double? ornamentalConfidence = isOrnamentalContext
+        ? (ornamentalStageConfidence ??
+              (preservePreviousOrnamentalStage
+                  ? previous?.ornamentalStageConfidence
+                  : null) ??
+              ornamentalEstimate?.confidence)
+        : null;
+    final CropLifecycleStatus effectiveLifecycleStatus =
+        isOrnamentalContext && lifecycleStatus == CropLifecycleStatus.fallow
+        ? CropLifecycleStatus.planted
+        : lifecycleStatus;
 
     return DeviceCropContext(
       deviceId: deviceId,
@@ -136,30 +216,50 @@ class WizardCropContextResolver {
       varietyId: resolvedVarietyId,
       varietyAlias: resolvedVarietyAlias,
       calendarTypeId: resolvedCalendarTypeId,
-      lifecycleStatus: lifecycleStatus,
+      lifecycleStatus: effectiveLifecycleStatus,
       // Para árboles, sowingDate es el eje MEMORIA/EDAD (fecha de plantación),
       // distinto de perennialAnchorDate (evento de etapa). Si no llega una
       // fecha de plantación nueva, se conserva la del contexto previo para que
       // la edad sobreviva a transiciones de etapa/producción (#4, #14).
-      sowingDate: lifecycleStatus == CropLifecycleStatus.planted
+      // Cactus/ornamental NO usa sowingDate como eje: la fecha vive en
+      // ornamentalAnchorDate. Solo árboles y anuales usan sowingDate.
+      sowingDate: effectiveLifecycleStatus == CropLifecycleStatus.planted
           ? (isTreeContext
-              ? (treePlantingDate ?? carriedTreeSowingDate)
-              : selectedDate)
+                ? (treePlantingDate ?? carriedTreeSowingDate)
+                : (isOrnamentalContext ? null : selectedDate))
           : null,
       plannedSowingDate:
-          !isTreeContext && lifecycleStatus == CropLifecycleStatus.planned
+          !isTreeContext &&
+              !isOrnamentalContext &&
+              lifecycleStatus == CropLifecycleStatus.planned
           ? selectedDate
           : null,
-      sowingDateConfidence: dateConfidence,
+      sowingDateConfidence: isOrnamentalContext
+          ? DateConfidence.unknown
+          : dateConfidence,
       cultivationScaleId: resolvedScaleId,
-      sowingModeId: sowingModeId ?? _sowingModeIdFromLifecycle(lifecycleStatus),
+      sowingModeId: isOrnamentalContext
+          ? null
+          : (sowingModeId ??
+                _sowingModeIdFromLifecycle(effectiveLifecycleStatus)),
       timezone: resolvedTimezone,
       regionCode: resolvedRegionCode,
       cycleLabel: cycleLabel ?? previous?.cycleLabel,
       perennialStateId: isTreeContext ? perennialStateId : null,
+      // Las ornamentales no usan fenología productiva.
       phenologyStageId: isTreeContext ? phenologyStageId : null,
       perennialAnchorDate: isTreeContext ? perennialAnchorDate : null,
       perennialAnchorTypeId: isTreeContext ? perennialAnchorTypeId : null,
+      lifecycleModeId: isOrnamentalContext
+          ? ornamentalLifecycleMode(normalizedCropId)
+          : null,
+      ornamentalStageId: ornamentalStateId,
+      ornamentalAnchorDate: ornamentalAnchor,
+      ornamentalAnchorTypeId: ornamentalAnchorType,
+      ornamentalAnchorDateConfidence: isOrnamentalContext
+          ? dateConfidence
+          : null,
+      ornamentalStageConfidence: ornamentalConfidence,
       catalogVersion: CropCatalog.version,
       source: CropConfigSource.wizard,
       configuredAt: previous?.configuredAt ?? now,
@@ -172,6 +272,16 @@ class WizardCropContextResolver {
     required String? varietyId,
     required String? varietyAlias,
   }) {
+    // En las ornamentales la selección visible vive en el catálogo de perfiles,
+    // pero también se persiste como varietyId para que la identidad elegida
+    // viaje completa por wizard -> storage -> runtime. No la descartamos solo
+    // porque no exista una fila en el catálogo de variedades anuales.
+    if (isEstablishmentMaintenanceCrop(cropId: cropId)) {
+      return (CropCatalog.profileByAny(cropId, varietyId) ??
+              CropCatalog.profileByAny(cropId, varietyAlias))
+          ?.id;
+    }
+
     final normalizedVarietyId = _normalizeNullable(varietyId);
     if (normalizedVarietyId != null) {
       final direct = CropCatalog.varietyById(cropId, normalizedVarietyId);
@@ -191,6 +301,13 @@ class WizardCropContextResolver {
   }) {
     if (lifecycleStatus == CropLifecycleStatus.fallow) {
       return 'generic';
+    }
+
+    if (isEstablishmentMaintenanceCrop(cropId: cropId)) {
+      final profile =
+          CropCatalog.profileByAny(cropId, resolvedProfileId) ??
+          CropCatalog.profileByAny(cropId, rawValue);
+      return profile?.label ?? ornamentalGeneralProfileLabel(cropId);
     }
 
     if (isTreeCrop(cropId: cropId)) {
@@ -232,6 +349,12 @@ class WizardCropContextResolver {
           CropCatalog.profileByAny(cropId, varietyId) ??
           CropCatalog.profileByAny(cropId, varietyAlias);
       return profile?.id;
+    }
+
+    if (isEstablishmentMaintenanceCrop(cropId: cropId)) {
+      return (CropCatalog.profileByAny(cropId, varietyId) ??
+              CropCatalog.profileByAny(cropId, varietyAlias))
+          ?.id;
     }
 
     if (cropId == CropCatalog.maizeCropId) {

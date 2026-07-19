@@ -261,10 +261,11 @@ CropCycleDisplayLine resolveCycleDisplayLine({
     );
   }
 
-  // Ornamentales (cuando se incorporen).
+  // Ornamentales (cactus): no son cíclicas, no hay cosecha. Se muestra el
+  // estado de la planta en lenguaje de agricultor, no "estado ornamental".
   if (family == _CropFamily.ornamental) {
     return CropCycleDisplayLine(
-      label: 'Estado ornamental:',
+      label: 'Estado de la planta:',
       value: stageLabel?.trim().isNotEmpty == true
           ? stageLabel!.trim()
           : 'Pendiente',
@@ -394,6 +395,16 @@ enum _CropFamily {
 
 _CropFamily _resolveFamily(String crop) {
   switch (crop) {
+    case 'crop_cactus':
+    case 'cactus':
+    case 'crop_succulent':
+    case 'succulent':
+    case 'suculenta':
+    case 'crop_aloe':
+    case 'aloe':
+    case 'sabila':
+    case 'sábila':
+      return _CropFamily.ornamental;
     case 'lettuce':
     case 'lechuga':
     case 'spinach':

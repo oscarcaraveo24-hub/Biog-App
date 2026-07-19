@@ -59,6 +59,72 @@ class PlantHealthIds {
   static const String symptomFlowerAbortion = 'flower_abortion';
   static const String symptomFruitDeformation = 'fruit_deformation';
   static const String symptomColdInjury = 'cold_injury';
+  // Cactus ornamental: observaciones visuales, no diagnósticos.
+  static const String symptomCactusRootCollarDeterioration =
+      'cactus_root_collar_deterioration';
+  static const String symptomCactusSoftWaterSoakedTissue =
+      'cactus_soft_water_soaked_tissue';
+  static const String symptomCactusDryFirmCorking = 'cactus_dry_firm_corking';
+  static const String symptomCactusWrinklingTurgorLoss =
+      'cactus_wrinkling_turgor_loss';
+  static const String symptomCactusWhiteCottonyMaterial =
+      'cactus_white_cottony_material';
+  static const String symptomCactusSunburnPatch = 'cactus_sunburn_patch';
+  static const String symptomCactusColdTissueChange =
+      'cactus_cold_tissue_change';
+  static const String symptomCactusLeaningCollapse = 'cactus_leaning_collapse';
+  // Suculenta ornamental (Doc C §13.3): observaciones visuales, NUNCA
+  // diagnósticos. La sonda no ve hojas, insectos ni tejido: estos síntomas los
+  // reporta el usuario.
+  static const String symptomSucculentRootCollarDeterioration =
+      'succulent_root_collar_deterioration';
+  static const String symptomSucculentSoftWaterSoakedTissue =
+      'succulent_soft_water_soaked_tissue';
+  static const String symptomSucculentWrinklingTurgorLoss =
+      'succulent_wrinkling_turgor_loss';
+  static const String symptomSucculentEdemaCorkyBlisters =
+      'succulent_edema_corky_blisters';
+  static const String symptomSucculentEtiolatedGrowth =
+      'succulent_etiolated_growth';
+  static const String symptomSucculentSunburnPatch = 'succulent_sunburn_patch';
+  static const String symptomSucculentColdTissueChange =
+      'succulent_cold_tissue_change';
+  static const String symptomSucculentPowderySurfaceGrowth =
+      'succulent_powdery_surface_growth';
+  static const String symptomSucculentLeafSpotGrayMold =
+      'succulent_leaf_spot_gray_mold';
+  static const String symptomSucculentCottonWaxScale =
+      'succulent_cotton_wax_scale';
+  static const String symptomSucculentStipplingWebbing =
+      'succulent_stippling_webbing_distortion';
+  static const String symptomSucculentSaltLeafBurn = 'succulent_salt_leaf_burn';
+  static const String symptomSucculentChemicalSprayBurn =
+      'succulent_chemical_spray_burn';
+  static const String symptomSucculentFungusGnatIndicator =
+      'succulent_fungus_gnat_indicator';
+  // Sábila / Aloe ornamental (Doc C §6): observaciones visuales, NUNCA
+  // diagnósticos. La sonda no ve hojas, insectos ni tejido: estos síntomas los
+  // reporta el usuario. v1 NO incluye perforaciones/barrenado (SA-SYN-010).
+  static const String symptomAloeRootCollarCondition =
+      'aloe_root_collar_condition';
+  static const String symptomAloeSoftWaterSoakedTissue =
+      'aloe_soft_water_soaked_tissue';
+  static const String symptomAloeWartyGallDistortion =
+      'aloe_warty_gall_distortion';
+  static const String symptomAloeColdTissueChange = 'aloe_cold_tissue_change';
+  static const String symptomAloeSunburnPatch = 'aloe_sunburn_patch';
+  static const String symptomAloeDryHardLeafSpot = 'aloe_dry_hard_leaf_spot';
+  static const String symptomAloeWetAdvancingLesion =
+      'aloe_wet_advancing_lesion';
+  static const String symptomAloeMealybugScaleSooty =
+      'aloe_mealybug_scale_sooty';
+  static const String symptomAloeSpiderMiteStippling =
+      'aloe_spider_mite_stippling';
+  static const String symptomAloeSaltLeafBurn = 'aloe_salt_leaf_burn';
+  static const String symptomAloeSprayInjury = 'aloe_spray_injury';
+  static const String symptomAloeEtiolatedGrowth = 'aloe_etiolated_growth';
+  static const String symptomAloeWrinklingTurgorLoss =
+      'aloe_wrinkling_turgor_loss';
   // Cebolla / bulbo
   static const String symptomThripsSilverScarring = 'thrips_silver_scarring';
   static const String symptomDownyFuzzyGrowth = 'downy_fuzzy_growth';
@@ -85,8 +151,7 @@ class PlantHealthIds {
   static const String symptomPoorCuringNeckMoist = 'poor_curing_neck_moist';
   static const String symptomPoorCloveDifferentiation =
       'poor_clove_differentiation';
-  static const String symptomExposedClovesBrooming =
-      'exposed_cloves_brooming';
+  static const String symptomExposedClovesBrooming = 'exposed_cloves_brooming';
   static const String symptomStorageSprouting = 'storage_sprouting';
   static const String symptomSunscaldOuterScales = 'sunscald_outer_scales';
   static const String symptomBulbMiteScars = 'bulb_mite_scars';
@@ -114,7 +179,8 @@ class PlantHealthIds {
   static const String symptomNutShuckTunnels = 'nut_shuck_tunnels';
   static const String symptomKernelDarkSpots = 'kernel_dark_spots';
   static const String symptomRosetteLittleLeaf = 'rosette_little_leaf';
-  static const String symptomShuckDiebackBlackening = 'shuck_dieback_blackening';
+  static const String symptomShuckDiebackBlackening =
+      'shuck_dieback_blackening';
   static const String symptomPrematureNutDrop = 'premature_nut_drop';
 
   // Pistache (frutal de nuez, dioico) — síntomas propios (doc 04 §5, §6, §8).
@@ -187,8 +253,7 @@ class PlantHealthIds {
   static const String signalSalinityLoad = 'salinity_load';
   static const String signalLeafMines = 'leaf_mines';
   static const String signalFeedingHoles = 'feeding_holes';
-  static const String signalPurpleDownySporulation =
-      'purple_downy_sporulation';
+  static const String signalPurpleDownySporulation = 'purple_downy_sporulation';
   static const String signalCrownDistortion = 'crown_distortion';
   static const String signalBoltingStem = 'bolting_stem';
   static const String signalTanPaperySpots = 'tan_papery_spots';
@@ -200,6 +265,92 @@ class PlantHealthIds {
   static const String signalPoorEmergence = 'poor_emergence';
   static const String signalColdExposure = 'cold_exposure';
   static const String signalRecentStress = 'recent_stress';
+  // Cactus ornamental: comprobaciones visuales/táctiles normalizadas.
+  static const String signalCactusSoftOrWatery = 'cactus_soft_or_watery';
+  static const String signalCactusFirmDry = 'cactus_firm_dry';
+  static const String signalCactusProgressing = 'cactus_progressing';
+  static const String signalCactusStable = 'cactus_stable';
+  static const String signalCactusDarkExudate = 'cactus_dark_exudate';
+  static const String signalCactusAbnormalOdor = 'cactus_abnormal_odor';
+  static const String signalCactusCottonWaxScale = 'cactus_cotton_wax_scale';
+  static const String signalCactusFineWebbing = 'cactus_fine_webbing';
+  static const String signalCactusSunnySide = 'cactus_sunny_side';
+  static const String signalCactusChangedSunExposure =
+      'cactus_changed_sun_exposure';
+  static const String signalCactusWrinkling = 'cactus_wrinkling';
+  static const String signalCactusNewLeaning = 'cactus_new_leaning';
+  static const String signalCactusLossOfSupport = 'cactus_loss_of_support';
+  // Suculenta ornamental (Doc C §13.5): comprobaciones visuales/táctiles
+  // normalizadas. Sirven para DESCARTAR, no para diagnosticar.
+  static const String signalSucculentSoftOrWatery = 'succulent_soft_or_watery';
+  static const String signalSucculentFirmDry = 'succulent_firm_dry';
+  static const String signalSucculentProgressing = 'succulent_progressing';
+  static const String signalSucculentStable = 'succulent_stable';
+  static const String signalSucculentAbnormalOdor = 'succulent_abnormal_odor';
+  static const String signalSucculentWrinkling = 'succulent_wrinkling';
+  static const String signalSucculentElongatedPaleGrowth =
+      'succulent_elongated_pale_growth';
+  static const String signalSucculentRosetteOpening =
+      'succulent_rosette_opening';
+  static const String signalSucculentChangedSunExposure =
+      'succulent_changed_sun_exposure';
+  static const String signalSucculentSunnySide = 'succulent_sunny_side';
+  static const String signalSucculentUniformWaxyBloom =
+      'succulent_uniform_waxy_bloom';
+  static const String signalSucculentPowderyPatches =
+      'succulent_powdery_patches';
+  static const String signalSucculentCottonWaxInsects =
+      'succulent_cotton_wax_insects';
+  static const String signalSucculentScaleBodies = 'succulent_scale_bodies';
+  static const String signalSucculentFineWebbing = 'succulent_fine_webbing';
+  static const String signalSucculentRaisedBlisters =
+      'succulent_raised_blisters';
+  static const String signalSucculentCorkyScabs = 'succulent_corky_scabs';
+  static const String signalSucculentRecentSpray = 'succulent_recent_spray';
+  static const String signalSucculentDropletPattern =
+      'succulent_droplet_pattern';
+  static const String signalSucculentFungusGnats = 'succulent_fungus_gnats';
+  static const String signalSucculentLowerLeavesOnly =
+      'succulent_lower_leaves_only';
+  static const String signalSucculentLossOfSupport =
+      'succulent_loss_of_support';
+  // Sábila / Aloe ornamental (Doc C §4): señales de apoyo que el usuario
+  // reporta. Las marcadas ★ son exclusivas de la sábila (ácaro de agalla).
+  static const String signalAloeSoftOrWatery = 'aloe_soft_or_watery';
+  static const String signalAloeFirmDry = 'aloe_firm_dry';
+  static const String signalAloeProgressing = 'aloe_progressing';
+  static const String signalAloeStable = 'aloe_stable';
+  static const String signalAloeAbnormalOdor = 'aloe_abnormal_odor';
+  static const String signalAloeLossOfSupport = 'aloe_loss_of_support';
+  static const String signalAloeWrinkling = 'aloe_wrinkling';
+  static const String signalAloeWartyGrowth = 'aloe_warty_growth'; // ★
+  static const String signalAloeCrookedFlowerStalk =
+      'aloe_crooked_flower_stalk'; // ★
+  static const String signalAloeTouchingAnotherAloe =
+      'aloe_touching_another_aloe'; // ★
+  static const String signalAloeGlassyTranslucent = 'aloe_glassy_translucent';
+  static const String signalAloeReddishBrownBase = 'aloe_reddish_brown_base';
+  static const String signalAloeChangedSunExposure =
+      'aloe_changed_sun_exposure';
+  static const String signalAloeSunnySide = 'aloe_sunny_side';
+  static const String signalAloeDryHardSpots = 'aloe_dry_hard_spots';
+  static const String signalAloeWetAdvancingLesion =
+      'aloe_wet_advancing_lesion';
+  static const String signalAloeCottonWaxInsects = 'aloe_cotton_wax_insects';
+  static const String signalAloeScaleBodies = 'aloe_scale_bodies';
+  static const String signalAloeStickySooty = 'aloe_sticky_sooty';
+  static const String signalAloeFineStippling = 'aloe_fine_stippling';
+  static const String signalAloeFineWebbing = 'aloe_fine_webbing';
+  static const String signalAloeWhiteCrustSubstrate =
+      'aloe_white_crust_substrate';
+  static const String signalAloeRecentFertilizer = 'aloe_recent_fertilizer';
+  static const String signalAloeRecentSpray = 'aloe_recent_spray';
+  static const String signalAloeDropletPattern = 'aloe_droplet_pattern';
+  static const String signalAloeElongatedPaleGrowth =
+      'aloe_elongated_pale_growth';
+  static const String signalAloeLowerLeavesOnly = 'aloe_lower_leaves_only';
+  static const String signalAloeFungusGnats = 'aloe_fungus_gnats';
+  static const String signalAloeLeafCutRecent = 'aloe_leaf_cut_recent';
   // Cebolla / bulbo
   static const String signalThripsSilverScarring = 'thrips_silver_scarring';
   static const String signalThripsInNeckFolds = 'thrips_in_neck_folds';
@@ -233,8 +384,7 @@ class PlantHealthIds {
   static const String signalDistortedSpongyBulb = 'distorted_spongy_bulb';
   static const String signalPoorCloveDifferentiation =
       'poor_clove_differentiation';
-  static const String signalExposedClovesBrooming =
-      'exposed_cloves_brooming';
+  static const String signalExposedClovesBrooming = 'exposed_cloves_brooming';
   static const String signalUnexpectedScape = 'unexpected_scape';
   static const String signalLateGreenExcessVigor = 'late_green_excess_vigor';
   static const String signalStorageSprouting = 'storage_sprouting';
@@ -342,9 +492,66 @@ class PlantHealthIds {
     symptomFlowerAbortion: 'Caida de flor o mal cuaje',
     symptomFruitDeformation: 'Fruto deforme o mal llenado',
     symptomColdInjury: 'Dano por frio o arranque frenado',
+    symptomCactusRootCollarDeterioration:
+        'Base o raiz con cambio de color, firmeza o soporte',
+    symptomCactusSoftWaterSoakedTissue: 'Tejido blando, acuoso o hundido',
+    symptomCactusDryFirmCorking: 'Zona seca, firme y corchosa',
+    symptomCactusWrinklingTurgorLoss:
+        'Arrugas, contraccion o perdida de volumen',
+    symptomCactusWhiteCottonyMaterial:
+        'Material blanco algodonoso, ceroso o escamas adheridas',
+    symptomCactusSunburnPatch: 'Mancha seca o decolorada del lado soleado',
+    symptomCactusColdTissueChange:
+        'Cambio de color, firmeza o soporte después de frio',
+    symptomCactusLeaningCollapse:
+        'Inclinacion nueva, hundimiento o perdida de soporte',
+    // Suculenta: lenguaje natural, sin nombres de patógeno ni jerga.
+    symptomSucculentRootCollarDeterioration:
+        'Base o raiz con cambio de color, firmeza o soporte',
+    symptomSucculentSoftWaterSoakedTissue:
+        'Hoja o tallo blando, acuoso o traslucido',
+    symptomSucculentWrinklingTurgorLoss: 'Hojas arrugadas o menos firmes',
+    symptomSucculentEdemaCorkyBlisters:
+        'Ampollas o costras corchosas, sobre todo en hojas bajas',
+    symptomSucculentEtiolatedGrowth: 'Crecimiento nuevo estirado o palido',
+    symptomSucculentSunburnPatch: 'Mancha seca o blanqueada del lado soleado',
+    symptomSucculentColdTissueChange:
+        'Cambio de tejido despues de frio o helada',
+    symptomSucculentPowderySurfaceGrowth: 'Capa o parches blancos en la planta',
+    symptomSucculentLeafSpotGrayMold:
+        'Manchas humedas, tejido cafe o moho gris',
+    symptomSucculentCottonWaxScale:
+        'Material blanco algodonoso o escamas adheridas',
+    symptomSucculentStipplingWebbing:
+        'Punteado, bronceado, telarana fina o deformacion',
+    symptomSucculentSaltLeafBurn:
+        'Puntas o bordes quemados con costra blanca en el sustrato',
+    symptomSucculentChemicalSprayBurn:
+        'Mancha o quemadura despues de aplicar un producto',
+    symptomSucculentFungusGnatIndicator: 'Mosquitas alrededor del sustrato',
+    // Sábila / Aloe: lenguaje natural, sin nombres de patógeno ni jerga.
+    symptomAloeRootCollarCondition:
+        'Base o raiz con cambio de color, firmeza o soporte',
+    symptomAloeSoftWaterSoakedTissue:
+        'Hoja o tallo blando, acuoso o traslucido',
+    symptomAloeWartyGallDistortion:
+        'Crecimiento deforme con verrugas o masas rugosas',
+    symptomAloeColdTissueChange: 'Cambio de tejido despues de frio o helada',
+    symptomAloeSunburnPatch: 'Mancha seca o blanqueada del lado soleado',
+    symptomAloeDryHardLeafSpot: 'Manchas secas y duras en la hoja',
+    symptomAloeWetAdvancingLesion: 'Manchas empapadas que avanzan',
+    symptomAloeMealybugScaleSooty:
+        'Material blanco algodonoso, escamas o superficie pegajosa',
+    symptomAloeSpiderMiteStippling: 'Punteado fino, bronceado o telarana',
+    symptomAloeSaltLeafBurn:
+        'Puntas o bordes quemados con costra blanca en el sustrato',
+    symptomAloeSprayInjury: 'Mancha o quemadura despues de aplicar un producto',
+    symptomAloeEtiolatedGrowth: 'Crecimiento nuevo estirado o palido',
+    symptomAloeWrinklingTurgorLoss: 'Hojas arrugadas o menos firmes',
     symptomThripsSilverScarring: 'Plateado o bronceado por trips',
     symptomDownyFuzzyGrowth: 'Moho velloso gris/blanco/morado en hoja',
-    symptomPurpleConcentricLesions: 'Lesiones purpuras con anillos concentricos',
+    symptomPurpleConcentricLesions:
+        'Lesiones purpuras con anillos concentricos',
     symptomDarkOliveLeafBlight: 'Manchas oscuras oliva-negro en hoja',
     symptomWhiteSunkenLeafSpots: 'Manchas blancas hundidas con halo',
     symptomPinkRoots: 'Raices rosadas, rojas o purpuras',
@@ -370,7 +577,8 @@ class PlantHealthIds {
     symptomBulbMiteScars: 'Cicatrices o dano de acaro en bulbo',
     symptomBlightedBlossomsShoots:
         'Racimos florales o brotes quemados / ennegrecidos',
-    symptomVelvetyOliveSpots: 'Manchas oliva-negras aterciopeladas en hoja/fruto',
+    symptomVelvetyOliveSpots:
+        'Manchas oliva-negras aterciopeladas en hoja/fruto',
     symptomFruitTunnelFrass: 'Perforacion en fruto con galeria o aserrin',
     symptomWoollyWhiteColonies: 'Masas blancas algodonosas en ramas o tronco',
     symptomFruitSunkenPits: 'Puntos oscuros hundidos en el fruto',
@@ -404,8 +612,7 @@ class PlantHealthIds {
     symptomBlankClosedNut: 'Pistache vano (blank) o cerrado / no abre',
     symptomCitrusBlotchyMottle:
         'Hoja con moteado amarillo asimétrico/disparejo (posible HLB)',
-    symptomCitrusSmallLopsidedFruit:
-        'Naranja chica, ladeada, deforme o amarga',
+    symptomCitrusSmallLopsidedFruit: 'Naranja chica, ladeada, deforme o amarga',
     symptomCitrusGummosisTrunk: 'Goma en la base del tronco o cuello (gomosis)',
     symptomCitrusSplitFruit: 'Naranja rajada o partida',
     symptomCitrusRindScarring:
@@ -455,7 +662,8 @@ class PlantHealthIds {
     signalRootGalls: 'Las raices traen agallas o nudos',
     signalStemCanker: 'Hay cancros en tallo, peciolo o fruto',
     signalUndersideSporulation: 'Hay envés activo con esporulacion',
-    signalSeedlingNeckCollapse: 'El cuello de la plantula esta vencido o podrido',
+    signalSeedlingNeckCollapse:
+        'El cuello de la plantula esta vencido o podrido',
     signalWaterlogging: 'Hubo exceso de agua, encharque o drenaje flojo',
     signalRootsDarkRot: 'La raiz o el cuello se ven oscuros o podridos',
     signalHeatStress: 'Hubo calor fuerte o pico termico',
@@ -478,6 +686,96 @@ class PlantHealthIds {
     signalPoorEmergence: 'Hubo nacencia pobre o plantulas desuniformes',
     signalColdExposure: 'Hubo frio, noche fria o trasplante expuesto',
     signalRecentStress: 'La planta viene de estres reciente',
+    signalCactusSoftOrWatery: 'La zona esta blanda, acuosa o cede al tacto',
+    signalCactusFirmDry: 'La zona esta firme, seca o dura',
+    signalCactusProgressing: 'La zona aumenta o cambia entre revisiones',
+    signalCactusStable: 'La zona permanece estable y no aumenta',
+    signalCactusDarkExudate: 'Hay liquido oscuro o exudado',
+    signalCactusAbnormalOdor: 'Hay olor anormal reportado',
+    signalCactusCottonWaxScale:
+        'Se distinguen cuerpos, escamas, cera o algodon en areolas y uniones',
+    signalCactusFineWebbing: 'Hay telarana muy fina u organismos con lupa',
+    signalCactusSunnySide: 'La zona afectada mira hacia el lado soleado',
+    signalCactusChangedSunExposure:
+        'Hubo cambio reciente de orientacion o exposicion al sol',
+    signalCactusWrinkling: 'Se contraen costillas o se pierde volumen',
+    signalCactusNewLeaning: 'La inclinacion es nueva o esta aumentando',
+    signalCactusLossOfSupport: 'La base o un segmento pierde soporte',
+    // Suculenta: preguntas de descarte, en lenguaje del agricultor.
+    signalSucculentSoftOrWatery: 'La zona esta blanda, acuosa o cede al tacto',
+    signalSucculentFirmDry: 'La zona esta firme y seca',
+    signalSucculentProgressing: 'El cambio aumenta entre revisiones',
+    signalSucculentStable: 'El cambio esta estable y no aumenta',
+    signalSucculentAbnormalOdor: 'Hay olor anormal reportado',
+    signalSucculentWrinkling: 'Las hojas se ven arrugadas o menos firmes',
+    signalSucculentElongatedPaleGrowth:
+        'El crecimiento nuevo sale largo, separado o palido',
+    signalSucculentRosetteOpening:
+        'La roseta se abrio o las hojas se aplanaron',
+    signalSucculentChangedSunExposure: 'La planta recibio mas sol que antes',
+    signalSucculentSunnySide: 'La zona afectada mira hacia el lado soleado',
+    signalSucculentUniformWaxyBloom:
+        'La capa blanca es uniforme desde que nacio la hoja',
+    signalSucculentPowderyPatches:
+        'Los parches blancos aumentan o pasan a hojas nuevas',
+    signalSucculentCottonWaxInsects:
+        'Se distinguen cuerpos o insectos dentro del material blanco',
+    signalSucculentScaleBodies: 'Hay escamas adheridas o melaza pegajosa',
+    signalSucculentFineWebbing: 'Hay telarana muy fina u organismos con lupa',
+    signalSucculentRaisedBlisters:
+        'Hay bultos o ampollas, sobre todo en el enves',
+    signalSucculentCorkyScabs: 'Los bultos se volvieron beige o corchosos',
+    signalSucculentRecentSpray:
+        'Se aplico un producto o remedio en los ultimos dias',
+    signalSucculentDropletPattern:
+        'La mancha tiene forma de gotas o escurrimiento',
+    signalSucculentFungusGnats: 'Hay mosquitas saliendo del sustrato',
+    signalSucculentLowerLeavesOnly:
+        'Solo afecta una o dos hojas inferiores viejas',
+    signalSucculentLossOfSupport: 'La planta se afloja o pierde soporte',
+    // Sábila / Aloe (Doc C §4): señales que el usuario reporta al confirmar.
+    signalAloeSoftOrWatery: 'La zona esta blanda, acuosa o cede al tacto',
+    signalAloeFirmDry: 'La zona esta firme y seca',
+    signalAloeProgressing: 'El cambio aumenta entre revisiones',
+    signalAloeStable: 'El cambio esta estable y no aumenta',
+    signalAloeAbnormalOdor: 'Hay olor anormal reportado',
+    signalAloeLossOfSupport: 'La planta se afloja o pierde soporte',
+    signalAloeWrinkling: 'Las hojas se ven arrugadas o menos firmes',
+    signalAloeWartyGrowth:
+        'Hay verrugas, masas rugosas o crecimiento deforme que avanza',
+    signalAloeCrookedFlowerStalk:
+        'La vara floral salio torcida, crespa o deforme',
+    signalAloeTouchingAnotherAloe:
+        'La planta toca o esta junto a otra sabila o aloe',
+    signalAloeGlassyTranslucent:
+        'La zona se ve vidriosa o traslucida, como congelada',
+    signalAloeReddishBrownBase:
+        'La base tomo un color rojizo o cafe despues de frio',
+    signalAloeChangedSunExposure: 'La planta recibio mas sol que antes',
+    signalAloeSunnySide: 'La zona afectada mira hacia el lado soleado',
+    signalAloeDryHardSpots: 'Las manchas se sienten secas y duras al tacto',
+    signalAloeWetAdvancingLesion:
+        'La mancha se siente empapada y va creciendo',
+    signalAloeCottonWaxInsects:
+        'Se distinguen cuerpos o insectos dentro del material blanco',
+    signalAloeScaleBodies: 'Hay escamas adheridas a la hoja',
+    signalAloeStickySooty:
+        'Hay melaza pegajosa o una capa negra sobre la hoja',
+    signalAloeFineStippling: 'Hay punteado muy fino o bronceado en la hoja',
+    signalAloeFineWebbing: 'Hay telarana muy fina u organismos con lupa',
+    signalAloeWhiteCrustSubstrate:
+        'Hay costra blanca de sales en el sustrato o el borde de la maceta',
+    signalAloeRecentFertilizer:
+        'Se fertilizo o se regó con abono en los ultimos dias',
+    signalAloeRecentSpray:
+        'Se aplico un producto o remedio en los ultimos dias',
+    signalAloeDropletPattern: 'La mancha tiene forma de gotas o escurrimiento',
+    signalAloeElongatedPaleGrowth:
+        'El crecimiento nuevo sale estirado, palido o inclinado a la luz',
+    signalAloeLowerLeavesOnly: 'Solo afecta una o dos hojas inferiores viejas',
+    signalAloeFungusGnats: 'Hay mosquitas saliendo del sustrato',
+    signalAloeLeafCutRecent:
+        'Se corto una hoja para gel hace poco en esa zona',
     signalThripsSilverScarring: 'Hay plateado/bronceado y raspado por trips',
     signalThripsInNeckFolds: 'Hay trips escondidos en cuello y pliegues',
     signalDownyFuzzyGrowth: 'Hay crecimiento velloso gris/blanco/morado',
@@ -519,7 +817,8 @@ class PlantHealthIds {
     signalHailEvent: 'Hubo granizo o heridas por golpe',
     signalGallsOnWoodRoots: 'Hay agallas o deformaciones en madera/raiz',
     signalHighPhCalcareous: 'El suelo es de pH alto o calcareo',
-    signalExposedFruitSouthwest: 'El fruto esta expuesto al sol (lado suroeste)',
+    signalExposedFruitSouthwest:
+        'El fruto esta expuesto al sol (lado suroeste)',
     signalSpringWetFoliage: 'Primavera humeda con mojado foliar prolongado',
     signalPsyllaNymphsShoots: 'Hay ninfas/insectos pequenos en brotes y enves',
     signalNoPollinatorNearby:
@@ -535,11 +834,13 @@ class PlantHealthIds {
         'Gusano/larva en la nuez con frass o telaraña (gusano del ombligo)',
     signalMummyNuts: 'Hay momias (nueces viejas pegadas) en árbol o suelo',
     signalEarlyHullSplit: 'La cascarilla/hull se abrió antes de tiempo',
-    signalAsymmetricMottle: 'El amarillamiento es disparejo/asimétrico en la hoja',
+    signalAsymmetricMottle:
+        'El amarillamiento es disparejo/asimétrico en la hoja',
     signalPsyllidWaxyTubules:
         'Hay ninfas o tubitos cerosos blancos en los brotes (psílido)',
     signalFlushNewGrowth: 'Hay brote tierno / flush nuevo',
-    signalFruitBitterMisshapen: 'La fruta sale chica, ladeada, deforme o amarga',
+    signalFruitBitterMisshapen:
+        'La fruta sale chica, ladeada, deforme o amarga',
     signalGumAtTrunkBase: 'Hay goma/exudado en la base del tronco o cuello',
     signalRindScarsNearCalyx:
         'Hay cicatrices o anillos cerca del cáliz en fruta chica',

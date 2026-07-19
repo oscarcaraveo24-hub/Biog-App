@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -289,10 +290,52 @@ class BioGStore extends ChangeNotifier {
       if (existing == null) {
         result[entry.key] = entry.value;
       } else if (entry.value.updatedAt.isAfter(existing.updatedAt)) {
-        result[entry.key] = entry.value;
+        result[entry.key] = _preserveUnsyncedOrnamentalFields(
+          remoteWinner: entry.value,
+          localExisting: existing,
+        );
       }
     }
     return result;
+  }
+
+  /// La tabla remota todavía no tiene columnas ornamentales propias: la etapa
+  /// viaja en los slots perennes. Si el remoto gana por `updatedAt` pero llega
+  /// sin los campos ornamentales, se conservan los locales.
+  DeviceCropContext _preserveUnsyncedOrnamentalFields({
+    required DeviceCropContext remoteWinner,
+    required DeviceCropContext localExisting,
+  }) {
+    if (!isEstablishmentMaintenanceContext(remoteWinner) ||
+        !isEstablishmentMaintenanceContext(localExisting)) {
+      return remoteWinner;
+    }
+
+    return remoteWinner.copyWith(
+      lifecycleModeId:
+          remoteWinner.lifecycleModeId ?? localExisting.lifecycleModeId,
+      ornamentalStageId:
+          remoteWinner.ornamentalStageId ??
+          remoteWinner.perennialStateId ??
+          localExisting.ornamentalStageId,
+      ornamentalAnchorDate:
+          remoteWinner.ornamentalAnchorDate ??
+          remoteWinner.perennialAnchorDate ??
+          localExisting.ornamentalAnchorDate,
+      ornamentalAnchorTypeId:
+          remoteWinner.ornamentalAnchorTypeId ??
+          remoteWinner.perennialAnchorTypeId ??
+          localExisting.ornamentalAnchorTypeId,
+      ornamentalAnchorDateConfidence:
+          remoteWinner.ornamentalAnchorDateConfidence ??
+          localExisting.ornamentalAnchorDateConfidence,
+      ornamentalStageConfidence:
+          remoteWinner.ornamentalStageId == localExisting.ornamentalStageId
+          ? localExisting.ornamentalStageConfidence ??
+                remoteWinner.ornamentalStageConfidence
+          : remoteWinner.ornamentalStageConfidence ??
+                localExisting.ornamentalStageConfidence,
+    );
   }
 
   /// Last-write-wins merge for yield projection configs by `updatedAt`.
@@ -338,6 +381,7 @@ class BioGStore extends ChangeNotifier {
   YieldProjectionConfig? get activeYieldProjectionConfig {
     final device = activeDevice;
     if (device == null) return null;
+    if (isEstablishmentMaintenanceContext(_cropByDevice[device.id])) return null;
     return _yieldByDevice[device.id];
   }
 
@@ -357,6 +401,7 @@ class BioGStore extends ChangeNotifier {
   }
 
   YieldProjectionConfig? yieldProjectionForDevice(String deviceId) {
+    if (isEstablishmentMaintenanceContext(_cropByDevice[deviceId])) return null;
     return _yieldByDevice[deviceId];
   }
 
@@ -404,8 +449,14 @@ class BioGStore extends ChangeNotifier {
         nextCropId != null &&
         previousCropId != nextCropId;
 
+    if (isEstablishmentMaintenanceContext(normalized) ||
+        isEstablishmentMaintenanceContext(previous)) {
+      _cropCareAvgByDevice.remove(normalized.deviceId);
+    }
+
     if (cropChanged ||
-        normalized.lifecycleStatus == CropLifecycleStatus.fallow) {
+        normalized.lifecycleStatus == CropLifecycleStatus.fallow ||
+        isEstablishmentMaintenanceContext(normalized)) {
       await clearYieldProjectionConfig(normalized.deviceId, notify: false);
     }
 
@@ -456,6 +507,13 @@ class BioGStore extends ChangeNotifier {
     if (normalizedCropId != contextCropId) {
       throw StateError(
         'YieldProjectionConfig.cropId no coincide con el cultivo activo del dispositivo.',
+      );
+    }
+
+    if (isEstablishmentMaintenanceContext(context)) {
+      throw StateError(
+        'Las plantas ornamentales no admiten proyección de rendimiento ni '
+        'cosecha.',
       );
     }
 
@@ -630,9 +688,10 @@ class BioGStore extends ChangeNotifier {
   }
 
   void _dropYieldConfigsWithoutCropContext() {
-    final orphanIds = _yieldByDevice.keys
-        .where((deviceId) => !_cropByDevice.containsKey(deviceId))
-        .toList();
+    final orphanIds = _yieldByDevice.keys.where((deviceId) {
+      final context = _cropByDevice[deviceId];
+      return context == null || isEstablishmentMaintenanceContext(context);
+    }).toList();
 
     if (orphanIds.isEmpty) return;
 
@@ -907,45 +966,84 @@ class BioGStore extends ChangeNotifier {
     if (cropId.isEmpty) return context;
 
     final cropEntry = CropCatalog.cropById(cropId);
-    final bool isFallow = context.lifecycleStatus == CropLifecycleStatus.fallow;
-
     final String cropCategoryId =
         _normalizeNullable(context.cropCategoryId) ??
         cropEntry?.categoryId ??
         CropCatalog.grainCategoryId;
+    final bool isOrnamental = isEstablishmentMaintenanceCrop(
+      cropId: cropId,
+      cropCategoryId: cropCategoryId,
+    );
+    final bool isFallow =
+        context.lifecycleStatus == CropLifecycleStatus.fallow && !isOrnamental;
+    final CropLifecycleStatus lifecycleStatus =
+        isOrnamental && context.lifecycleStatus == CropLifecycleStatus.fallow
+        ? CropLifecycleStatus.planted
+        : context.lifecycleStatus;
 
+    final String? ornamentalSelectionId = isOrnamental
+        ? _resolveOrnamentalSelectionId(
+            cropId: cropId,
+            profileId: context.profileId,
+            varietyId: context.varietyId,
+            varietyAlias: context.varietyAlias,
+          )
+        : null;
     final String? rawVarietyValue = isFallow
         ? null
-        : (context.varietyId ?? context.varietyAlias);
+        : (isOrnamental
+              ? ornamentalSelectionId
+              : (context.varietyId ?? context.varietyAlias));
 
     final String? resolvedVarietyId = isFallow
         ? null
+        : isOrnamental
+        ? ornamentalSelectionId
         : CropCatalog.resolveVarietyId(
             cropId: cropId,
             rawValue: rawVarietyValue,
           );
 
-    final String resolvedProfileId = CropCatalog.resolveProfileId(
-      cropId: cropId,
-      varietyId: resolvedVarietyId,
-      explicitProfileId: isFallow
-          ? null
-          : _normalizeNullable(context.profileId),
-    );
+    final String resolvedProfileId = isOrnamental
+        ? (ornamentalSelectionId ?? ornamentalDefaultProfileId(cropId))
+        : CropCatalog.resolveProfileId(
+            cropId: cropId,
+            varietyId: resolvedVarietyId,
+            explicitProfileId: isFallow
+                ? null
+                : _normalizeNullable(context.profileId),
+          );
+
+    final DateTime? ornamentalAnchorDate = isOrnamental
+        ? context.ornamentalAnchorDate ??
+              context.perennialAnchorDate ??
+              context.sowingDate
+        : context.ornamentalAnchorDate;
+    final OrnamentalStageEstimate? ornamentalEstimate = isOrnamental
+        ? estimateOrnamentalStageFromDate(
+            cropId: cropId,
+            plantingDate: ornamentalAnchorDate,
+            now: DateTime.now(),
+            profileId: resolvedProfileId,
+          )
+        : null;
 
     return context.copyWith(
-      cropCategoryId: cropCategoryId,
+      cropCategoryId: isOrnamental
+          ? CropCatalog.ornamentalCategoryId
+          : cropCategoryId,
       cropId: cropId,
       profileId: resolvedProfileId,
+      lifecycleStatus: lifecycleStatus,
       brandId: _resolveBrandId(
         cropId: cropId,
-        explicitBrandId: isFallow ? null : context.brandId,
+        explicitBrandId: isFallow || isOrnamental ? null : context.brandId,
         varietyId: resolvedVarietyId,
       ),
       varietyId: resolvedVarietyId,
       varietyAlias: _resolvedVarietyAlias(
         cropId: cropId,
-        lifecycleStatus: context.lifecycleStatus,
+        lifecycleStatus: lifecycleStatus,
         rawVarietyAlias: context.varietyAlias,
         resolvedVarietyId: resolvedVarietyId,
         resolvedProfileId: resolvedProfileId,
@@ -954,15 +1052,56 @@ class BioGStore extends ChangeNotifier {
         cropId: cropId,
         requested: context.calendarTypeId,
       ),
-      sowingDate: context.lifecycleStatus == CropLifecycleStatus.planted
+      sowingDate:
+          !isOrnamental && context.lifecycleStatus == CropLifecycleStatus.planted
           ? context.sowingDate
           : null,
-      plannedSowingDate: context.lifecycleStatus == CropLifecycleStatus.planned
+      plannedSowingDate:
+          !isOrnamental && context.lifecycleStatus == CropLifecycleStatus.planned
           ? context.plannedSowingDate
           : null,
-      sowingModeId:
-          _normalizeNullable(context.sowingModeId) ??
-          _defaultSowingModeId(context.lifecycleStatus),
+      cultivationScaleId: isOrnamental ? null : context.cultivationScaleId,
+      sowingModeId: isOrnamental
+          ? null
+          : _normalizeNullable(context.sowingModeId) ??
+                _defaultSowingModeId(context.lifecycleStatus),
+      perennialStateId: isOrnamental ? null : context.perennialStateId,
+      phenologyStageId: isOrnamental ? null : context.phenologyStageId,
+      perennialAnchorDate: isOrnamental ? null : context.perennialAnchorDate,
+      perennialAnchorTypeId: isOrnamental
+          ? null
+          : context.perennialAnchorTypeId,
+      lifecycleModeId: isOrnamental
+          ? ornamentalLifecycleMode(cropId)
+          : context.lifecycleModeId,
+      ornamentalStageId: isOrnamental
+          ? normalizeOrnamentalStageId(
+              cropId,
+              context.ornamentalStageId ??
+                  context.perennialStateId ??
+                  ornamentalEstimate?.stageId,
+            )
+          : context.ornamentalStageId,
+      ornamentalAnchorDate: ornamentalAnchorDate,
+      ornamentalAnchorTypeId: isOrnamental
+          ? normalizeOrnamentalAnchorTypeId(
+              cropId,
+              context.ornamentalAnchorTypeId ??
+                  context.perennialAnchorTypeId ??
+                  ornamentalEstimate?.anchorTypeId,
+            )
+          : context.ornamentalAnchorTypeId,
+      ornamentalAnchorDateConfidence: isOrnamental
+          ? context.ornamentalAnchorDateConfidence ??
+                (ornamentalAnchorDate == null
+                    ? DateConfidence.unknown
+                    : context.sowingDateConfidence)
+          : context.ornamentalAnchorDateConfidence,
+      ornamentalStageConfidence: isOrnamental
+          ? context.ornamentalStageConfidence ??
+                ornamentalEstimate?.confidence ??
+                0.25
+          : context.ornamentalStageConfidence,
     );
   }
 
@@ -1010,6 +1149,11 @@ class BioGStore extends ChangeNotifier {
       return 'generic';
     }
 
+    if (isEstablishmentMaintenanceCrop(cropId: cropId)) {
+      return CropCatalog.profileByAny(cropId, resolvedProfileId)?.label ??
+          ornamentalGeneralProfileLabel(cropId);
+    }
+
     if (resolvedVarietyId != null) {
       final variety = CropCatalog.varietyById(cropId, resolvedVarietyId);
       if (variety != null) {
@@ -1023,6 +1167,26 @@ class BioGStore extends ChangeNotifier {
     }
 
     return _normalizeNullable(rawVarietyAlias);
+  }
+
+  /// Una selección específica superviviente repara un perfil general heredado.
+  String? _resolveOrnamentalSelectionId({
+    required String cropId,
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+  }) {
+    final fromProfile = CropCatalog.profileByAny(cropId, profileId);
+    final fromVariety = CropCatalog.profileByAny(cropId, varietyId);
+    final fromAlias = CropCatalog.profileByAny(cropId, varietyAlias);
+
+    final String generalProfileId = ornamentalDefaultProfileId(cropId);
+    for (final entry in [fromVariety, fromProfile, fromAlias]) {
+      if (entry != null && entry.id != generalProfileId) {
+        return entry.id;
+      }
+    }
+    return fromProfile?.id ?? fromVariety?.id ?? fromAlias?.id;
   }
 
   String _defaultSowingModeId(CropLifecycleStatus status) {

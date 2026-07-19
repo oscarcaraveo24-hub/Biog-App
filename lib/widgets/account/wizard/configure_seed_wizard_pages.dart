@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_components.dart';
@@ -101,10 +102,10 @@ class CategoryPage extends StatelessWidget {
             child: WizardLongPill(
               iconPath: ConfigureSeedWizardAssets.categoryOrnamental,
               title: 'Planta ornamental',
-              subtitle: 'Cactus, rosa, helecho...',
+              subtitle: 'Cactus, suculentas y sábila · más ornamentales próximamente',
               selected: category == 'ornamental',
-              enabled: false,
-              onTap: null,
+              enabled: true,
+              onTap: () => onSelect('ornamental'),
             ),
           ),
           const SizedBox(height: 14),
@@ -139,6 +140,8 @@ class CropVarietyPage extends StatelessWidget {
     required this.varietySelected,
     required this.cropEnabled,
     this.isTreeFlow = false,
+    this.isOrnamentalFlow = false,
+    this.ornamentalCropId,
     this.cropUsesBrands = false,
     this.cropIconPath,
     this.varietyIconPath,
@@ -154,6 +157,12 @@ class CropVarietyPage extends StatelessWidget {
   final bool varietySelected;
   final bool cropEnabled;
   final bool isTreeFlow;
+
+  /// Flujo ornamental (cactus, suculenta…): la "variedad" es un PERFIL.
+  final bool isOrnamentalFlow;
+
+  /// cropId canónico de la ornamental, para textos con el género correcto.
+  final String? ornamentalCropId;
   final bool cropUsesBrands;
   final String? cropIconPath;
   final String? varietyIconPath;
@@ -162,6 +171,9 @@ class CropVarietyPage extends StatelessWidget {
   final VoidCallback onTapVariety;
 
   String get _subtitleText {
+    if (isOrnamentalFlow) {
+      return ornamentalVarietyFlowSubtitle(ornamentalCropId);
+    }
     if (isTreeFlow) {
       return 'Selecciona el árbol y su variedad.';
     }
@@ -178,6 +190,9 @@ class CropVarietyPage extends StatelessWidget {
   }
 
   String get _varietyPillTitle {
+    if (isOrnamentalFlow) {
+      return 'Perfil';
+    }
     if (isTreeFlow) {
       return 'Variedad';
     }
@@ -198,6 +213,9 @@ class CropVarietyPage extends StatelessWidget {
   bool get _isEggplantCrop => cropLabel.trim().toLowerCase() == 'berenjena';
 
   String get _helperText {
+    if (isOrnamentalFlow) {
+      return ornamentalVarietyFlowHelper(ornamentalCropId);
+    }
     if (isTreeFlow) {
       return 'Si no sabes la variedad, usa la opción general. Es migrable, no descanso del suelo.';
     }
@@ -268,6 +286,9 @@ class CropVarietyPage extends StatelessWidget {
             delay: 150,
             child: SelectionPill(
               iconPath: cropIconPath ?? _cropIconPath(cropLabel),
+              fallbackAsset: isOrnamentalFlow
+                  ? kOrnamentalGenericPlantFallback
+                  : 'assets/icons/wizard/ic_tree.png',
               title: 'Cultivo',
               value: cropLabel,
               selected: cropSelected,
@@ -279,6 +300,9 @@ class CropVarietyPage extends StatelessWidget {
             delay: 205,
             child: SelectionPill(
               iconPath: varietyIconPath ?? ConfigureSeedWizardAssets.variety,
+              fallbackAsset: isOrnamentalFlow
+                  ? kOrnamentalGenericPlantFallback
+                  : 'assets/icons/wizard/ic_tree.png',
               title: _varietyPillTitle,
               value: varietyLabel,
               selected: varietySelected,
@@ -536,11 +560,20 @@ class StagePage extends StatelessWidget {
     required this.stage,
     required this.summary,
     required this.onSelect,
+    this.ornamentalMode = false,
+    this.ornamentalCropId,
   });
 
   final String? stage;
   final Widget? summary;
   final ValueChanged<String> onSelect;
+
+  /// Modo ornamental (cactus, suculenta…): SOLO dos intenciones de alta.
+  /// NO muestra cosecha ni descanso del suelo.
+  final bool ornamentalMode;
+
+  /// cropId canónico de la ornamental, para textos con el género correcto.
+  final String? ornamentalCropId;
 
   @override
   Widget build(BuildContext context) {
@@ -550,12 +583,14 @@ class StagePage extends StatelessWidget {
         children: [
           const BrandMark(),
           const SizedBox(height: 22),
-          const StaggerIn(
+          StaggerIn(
             delay: 0,
             child: Text(
-              '¿En qué etapa está tu cultivo?',
+              ornamentalMode
+                  ? ornamentalStateQuestion(ornamentalCropId)
+                  : '¿En qué etapa está tu cultivo?',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 22,
                 height: 1.18,
                 fontWeight: FontWeight.w600,
@@ -565,15 +600,25 @@ class StagePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
+          // Ornamental: SOLO dos opciones (la voy a plantar / ya está plantada) y
+          // los MISMOS iconos de wizard que usa el grano. Nunca imágenes de
+          // etapa, que no son iconos de menú.
           StaggerIn(
             delay: 90,
             child: WizardLongPill(
               iconPath: ConfigureSeedWizardAssets.stagePlanned,
-              title: 'Aún no siembro /\nestoy por sembrar',
+              title: ornamentalMode
+                  ? ornamentalPlannedOptionTitle(ornamentalCropId)
+                  : 'Aún no siembro /\nestoy por sembrar',
               subtitle: '',
-              selected: stage == 'planned',
+              selected: ornamentalMode
+                  ? stage == kOrnamentalIntentPlannedPlant
+                  : stage == 'planned',
               enabled: true,
-              onTap: () => onSelect('planned'),
+              fallbackAsset: 'assets/icons/wizard/ic_tree.png',
+              onTap: () => onSelect(
+                ornamentalMode ? kOrnamentalIntentPlannedPlant : 'planned',
+              ),
             ),
           ),
           const SizedBox(height: 14),
@@ -581,25 +626,34 @@ class StagePage extends StatelessWidget {
             delay: 145,
             child: WizardLongPill(
               iconPath: ConfigureSeedWizardAssets.stagePlanted,
-              title: 'Ya sembrado y creciendo',
+              title: ornamentalMode
+                  ? ornamentalPlantedOptionTitle(ornamentalCropId)
+                  : 'Ya sembrado y creciendo',
               subtitle: '',
-              selected: stage == 'planted',
+              selected: ornamentalMode
+                  ? stage == kOrnamentalIntentAlreadyPlanted
+                  : stage == 'planted',
               enabled: true,
-              onTap: () => onSelect('planted'),
+              fallbackAsset: 'assets/icons/wizard/ic_tree.png',
+              onTap: () => onSelect(
+                ornamentalMode ? kOrnamentalIntentAlreadyPlanted : 'planted',
+              ),
             ),
           ),
-          const SizedBox(height: 14),
-          StaggerIn(
-            delay: 200,
-            child: WizardLongPill(
-              iconPath: ConfigureSeedWizardAssets.stageSkip,
-              title: 'Ya coseché / descanso del suelo',
-              subtitle: '',
-              selected: stage == 'skip',
-              enabled: true,
-              onTap: () => onSelect('skip'),
+          if (!ornamentalMode) ...[
+            const SizedBox(height: 14),
+            StaggerIn(
+              delay: 200,
+              child: WizardLongPill(
+                iconPath: ConfigureSeedWizardAssets.stageSkip,
+                title: 'Ya coseché / descanso del suelo',
+                subtitle: '',
+                selected: stage == 'skip',
+                enabled: true,
+                onTap: () => onSelect('skip'),
+              ),
             ),
-          ),
+          ],
           if (summary != null) ...[
             const SizedBox(height: 18),
             StaggerIn(delay: 250, child: summary!),
@@ -625,6 +679,8 @@ class DatePage extends StatelessWidget {
     required this.onDateChanged,
     required this.onFlexibleChanged,
     required this.onSave,
+    this.firstDate,
+    this.lastDate,
   });
 
   final String title;
@@ -639,9 +695,31 @@ class DatePage extends StatelessWidget {
   final ValueChanged<DateTime> onDateChanged;
   final ValueChanged<bool> onFlexibleChanged;
   final VoidCallback? onSave;
+  final DateTime? firstDate;
+  final DateTime? lastDate;
 
   @override
   Widget build(BuildContext context) {
+    final defaultFirstDate = DateTime(2020);
+    final defaultLastDate = DateTime(2100);
+    final effectiveFirstDate =
+        firstDate ??
+        (selectedDate.isBefore(defaultFirstDate)
+            ? selectedDate
+            : defaultFirstDate);
+    final effectiveLastDate =
+        lastDate ??
+        (selectedDate.isAfter(defaultLastDate)
+            ? selectedDate
+            : defaultLastDate);
+    final hasExplicitBounds = firstDate != null || lastDate != null;
+    final effectiveSelectedDate = !hasExplicitBounds
+        ? selectedDate
+        : selectedDate.isBefore(effectiveFirstDate)
+        ? effectiveFirstDate
+        : selectedDate.isAfter(effectiveLastDate)
+        ? effectiveLastDate
+        : selectedDate;
     return CenteredWizardPage(
       scrollable: true,
       topPadding: 4,
@@ -678,9 +756,9 @@ class DatePage extends StatelessWidget {
                   ),
                 ),
                 child: BioGWheelDatePicker(
-                  initialDate: selectedDate,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2100),
+                  initialDate: effectiveSelectedDate,
+                  firstDate: effectiveFirstDate,
+                  lastDate: effectiveLastDate,
                   onDateChanged: onDateChanged,
                 ),
               ),

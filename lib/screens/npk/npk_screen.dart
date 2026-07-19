@@ -431,7 +431,8 @@ class NpkScreen extends StatelessWidget {
                             cropContext,
                           );
 
-                          NutrientInterpretationResult? interpretNutrientFallback({
+                          NutrientInterpretationResult?
+                          interpretNutrientFallback({
                             required AgroMetricKey nutrient,
                             required double rawPpm,
                             required double? trendPct,
@@ -701,10 +702,10 @@ class NpkScreen extends StatelessWidget {
                                   stageLabel: stageLabel,
                                   insight: insightN,
                                   tone: _toneForNutrient(
-                                    evalMetric: nEvalMetric,
-                                    interpretation: nInterpretation,
-                                    cropKey: runtime.cropKeyName,
-                                  ),
+                                          evalMetric: nEvalMetric,
+                                          interpretation: nInterpretation,
+                                          cropKey: runtime.cropKeyName,
+                                        ),
                                   windowLabel: windowN,
                                   actionText: actionN,
                                   doseGuideText: nDoseGuide,
@@ -731,10 +732,10 @@ class NpkScreen extends StatelessWidget {
                                   stageLabel: stageLabel,
                                   insight: insightP,
                                   tone: _toneForNutrient(
-                                    evalMetric: pEvalMetric,
-                                    interpretation: pInterpretation,
-                                    cropKey: runtime.cropKeyName,
-                                  ),
+                                          evalMetric: pEvalMetric,
+                                          interpretation: pInterpretation,
+                                          cropKey: runtime.cropKeyName,
+                                        ),
                                   windowLabel: windowP,
                                   actionText: actionP,
                                   doseGuideText: pDoseGuide,
@@ -761,10 +762,10 @@ class NpkScreen extends StatelessWidget {
                                   stageLabel: stageLabel,
                                   insight: insightK,
                                   tone: _toneForNutrient(
-                                    evalMetric: kEvalMetric,
-                                    interpretation: kInterpretation,
-                                    cropKey: runtime.cropKeyName,
-                                  ),
+                                          evalMetric: kEvalMetric,
+                                          interpretation: kInterpretation,
+                                          cropKey: runtime.cropKeyName,
+                                        ),
                                   windowLabel: windowK,
                                   actionText: actionK,
                                   doseGuideText: kDoseGuide,

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/profile/profile_repository.dart';
@@ -111,6 +112,112 @@ DeviceCropContext resolveOnboardingTreeDraftContext({
     perennialAnchorDate: anchorDate,
     perennialAnchorTypeId: selection.perennialAnchorTypeId,
     treePlantingDate: treePlantingDate,
+  );
+}
+
+/// Resuelve el contexto ORNAMENTAL del onboarding (cactus, suculenta…). Espejo
+/// de [resolveOnboardingTreeDraftContext] pero para el modo
+/// `establishment_maintenance`. Solo hay dos intenciones: la voy a plantar / ya
+/// está plantada. Ninguna fecha se interpreta como evidencia biológica.
+@visibleForTesting
+DeviceCropContext resolveOnboardingOrnamentalDraftContext({
+  required String deviceId,
+  required OnboardingDraft draft,
+  required String cropId,
+  required String stage,
+  DeviceCropContext? previous,
+  DateTime? now,
+  WizardCropContextResolver contextResolver = const WizardCropContextResolver(),
+}) {
+  final DateTime effectiveNow = now ?? DateTime.now();
+  final String categoryId =
+      draft.cropCategory ??
+      previous?.cropCategoryId ??
+      CropCatalog.ornamentalCategoryId;
+
+  final String intentId = normalizeOrnamentalSetupIntentId(cropId, stage);
+  final bool isPlannedPlant = intentId == kOrnamentalIntentPlannedPlant;
+
+  final DateTime today = DateTime(
+    effectiveNow.year,
+    effectiveNow.month,
+    effectiveNow.day,
+  );
+  final DateTime? rawDate = draft.useFlexibleDate ? null : draft.selectedDate;
+  DateTime? selectedDate;
+  if (rawDate != null) {
+    final pickedDay = DateTime(rawDate.year, rawDate.month, rawDate.day);
+    final requiresFuture = ornamentalSetupIntentRequiresFutureDate(
+      cropId,
+      intentId,
+    );
+    final valid = requiresFuture
+        ? pickedDay.isAfter(today)
+        : !pickedDay.isAfter(today);
+    if (valid) selectedDate = rawDate;
+  }
+
+  final bool preserveExistingAnchor =
+      intentId == kOrnamentalIntentAlreadyPlanted &&
+      selectedDate == null &&
+      previous?.ornamentalAnchorDate != null;
+  final DateTime? effectiveAnchorDate = preserveExistingAnchor
+      ? previous!.ornamentalAnchorDate
+      : selectedDate;
+
+  late final DateConfidence dateConfidence;
+  if (preserveExistingAnchor) {
+    dateConfidence =
+        previous!.ornamentalAnchorDateConfidence ?? DateConfidence.unknown;
+  } else if (selectedDate == null) {
+    dateConfidence = DateConfidence.unknown;
+  } else if (intentId == kOrnamentalIntentAlreadyPlanted) {
+    dateConfidence = DateConfidence.estimated;
+  } else {
+    dateConfidence = DateConfidence.exact;
+  }
+
+  // FUENTE ÚNICA de la etapa (la misma que usa el wizard de cuenta). Si se
+  // duplica la lógica aquí, las dos pantallas se desincronizan.
+  final OrnamentalStageEstimate stageEstimate = resolveOrnamentalSetupStage(
+    cropId: cropId,
+    intentId: intentId,
+    plantingDate: effectiveAnchorDate,
+    now: effectiveNow,
+    profileId: draft.varietyId,
+    previousStageId: previous?.ornamentalStageId,
+  );
+
+  final String ornamentalStageId = stageEstimate.stageId;
+  final double ornamentalStageConfidence = stageEstimate.confidence;
+  final String ornamentalAnchorTypeId = preserveExistingAnchor
+      ? normalizeOrnamentalAnchorTypeId(
+          cropId,
+          previous?.ornamentalAnchorTypeId,
+        )
+      : stageEstimate.anchorTypeId;
+
+  return contextResolver.resolve(
+    deviceId: deviceId,
+    cropCategoryId: categoryId,
+    cropId: cropId,
+    lifecycleStatus: isPlannedPlant
+        ? CropLifecycleStatus.planned
+        : CropLifecycleStatus.planted,
+    dateConfidence: dateConfidence,
+    now: effectiveNow,
+    previous: previous,
+    varietyId: draft.varietyId,
+    varietyAlias: draft.varietyAlias,
+    selectedDate: selectedDate,
+    timezone: draft.timezone ?? previous?.timezone,
+    // El flujo ornamental no pregunta ubicación/maceta/jardín. El contexto
+    // queda desconocido hasta que exista una edición no bloqueante posterior.
+    cultivationScaleId: null,
+    ornamentalStageId: ornamentalStageId,
+    ornamentalAnchorDate: effectiveAnchorDate,
+    ornamentalAnchorTypeId: ornamentalAnchorTypeId,
+    ornamentalStageConfidence: ornamentalStageConfidence,
   );
 }
 
@@ -259,6 +366,26 @@ class _BootstrapGateState extends State<BootstrapGate> {
         cropId: cropId,
         stage: stage,
       );
+      return;
+    }
+
+    // Ornamentales (cactus, suculenta…): plantar o registrar una planta que ya
+    // existe. Nunca van a descanso del suelo (fallow) y nunca se infiere una
+    // etapa solo por antigüedad.
+    if (isEstablishmentMaintenanceCrop(
+      cropId: cropId,
+      cropCategoryId: draft.cropCategory,
+    )) {
+      final DeviceCropContext? previous = store.cropContextForDevice(device.id);
+      final resolved = resolveOnboardingOrnamentalDraftContext(
+        deviceId: device.id,
+        draft: draft,
+        cropId: cropId,
+        stage: stage,
+        previous: previous,
+        contextResolver: _contextResolver,
+      );
+      await store.saveCropContext(resolved);
       return;
     }
 

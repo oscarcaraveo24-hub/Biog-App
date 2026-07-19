@@ -59,6 +59,33 @@ class PlantHealthStageAdapter {
         return _fromMangoTree(stage);
       case CropCatalog.avocadoTreeCropId:
         return _fromAvocadoTree(stage);
+      case CropCatalog.cactusCropId:
+      case CropCatalog.succulentCropId:
+      case CropCatalog.aloeCropId:
+        // Las ornamentales de establecimiento + mantenimiento comparten las
+        // MISMAS etapas (instalación → raíz → crecimiento → estable ↔ reposo),
+        // así que traducen igual a los buckets del motor de sanidad. Lo que
+        // cambia entre plantas son los targets y los síndromes, no las etapas.
+        return _fromEstablishmentMaintenance(stage);
+    }
+    return null;
+  }
+
+  static PlantHealthStageBucket? _fromEstablishmentMaintenance(String stage) {
+    if (_matches(stage, const <String>[
+      'installation_establishment',
+      'root_establishment',
+    ])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['active_growth'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['maintenance'])) {
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (_matches(stage, const <String>['rest'])) {
+      return PlantHealthStageBucket.lateSeason;
     }
     return null;
   }
@@ -67,7 +94,10 @@ class PlantHealthStageAdapter {
   /// `daySinceSowing` (sowingDate no es el eje). Se mapean los TreeStageIds a
   /// los buckets genéricos del motor de sanidad. `unknown` no fuerza bucket.
   static PlantHealthStageBucket? _fromAppleTree(String stage) {
-    if (_matches(stage, const <String>['planting_transplant', 'root_establish'])) {
+    if (_matches(stage, const <String>[
+      'planting_transplant',
+      'root_establish',
+    ])) {
       return PlantHealthStageBucket.seedling;
     }
     if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
@@ -106,7 +136,10 @@ class PlantHealthStageAdapter {
   /// - `unknown` devuelve null: el motor opera conservador y con menor confianza
   ///   (sin bono de etapa), no bloquea.
   static PlantHealthStageBucket? _fromPearTree(String stage) {
-    if (_matches(stage, const <String>['planting_transplant', 'root_establish'])) {
+    if (_matches(stage, const <String>[
+      'planting_transplant',
+      'root_establish',
+    ])) {
       return PlantHealthStageBucket.seedling;
     }
     if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
@@ -152,7 +185,10 @@ class PlantHealthStageAdapter {
   /// - `unknown` devuelve null: el motor opera conservador y con menor confianza
   ///   (sin bono de etapa), no bloquea.
   static PlantHealthStageBucket? _fromPeachTree(String stage) {
-    if (_matches(stage, const <String>['planting_transplant', 'root_establish'])) {
+    if (_matches(stage, const <String>[
+      'planting_transplant',
+      'root_establish',
+    ])) {
       return PlantHealthStageBucket.seedling;
     }
     if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
@@ -198,7 +234,10 @@ class PlantHealthStageAdapter {
   /// - `unknown` devuelve null: el motor opera conservador y con menor confianza
   ///   (sin bono de etapa), no bloquea.
   static PlantHealthStageBucket? _fromWalnutTree(String stage) {
-    if (_matches(stage, const <String>['planting_transplant', 'root_establish'])) {
+    if (_matches(stage, const <String>[
+      'planting_transplant',
+      'root_establish',
+    ])) {
       return PlantHealthStageBucket.seedling;
     }
     if (_matches(stage, const <String>['juvenile', 'budbreak'])) {
@@ -512,7 +551,11 @@ class PlantHealthStageAdapter {
     if (_matches(stage, const <String>['induccion', 'pre_bulb', 'prebulb'])) {
       return PlantHealthStageBucket.vegetativeLate;
     }
-    if (_matches(stage, const <String>['iniciobulbo', 'bulb_init', 'initiation'])) {
+    if (_matches(stage, const <String>[
+      'iniciobulbo',
+      'bulb_init',
+      'initiation',
+    ])) {
       return PlantHealthStageBucket.reproductiveEarly;
     }
     if (_matches(stage, const <String>['llenado', 'bulb_fill', 'fill'])) {
@@ -528,7 +571,12 @@ class PlantHealthStageAdapter {
     ])) {
       return PlantHealthStageBucket.grainFill;
     }
-    if (_matches(stage, const <String>['espig', 'bolting', 'seedstalk', 'senesc'])) {
+    if (_matches(stage, const <String>[
+      'espig',
+      'bolting',
+      'seedstalk',
+      'senesc',
+    ])) {
       return PlantHealthStageBucket.lateSeason;
     }
     if (_matches(stage, const <String>['vegetativo', 'vegetative', 'foliar'])) {

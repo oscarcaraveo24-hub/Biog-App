@@ -7,7 +7,10 @@ import 'package:bio_g/core/crops/orange_tree/orange_tree_assets.dart';
 import 'package:bio_g/core/crops/lemon_tree/lemon_tree_assets.dart';
 import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
 import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
+import 'package:bio_g/core/crops/cactus/cactus_assets.dart';
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -161,8 +164,7 @@ class CropPresentationResolver {
       'assets/icons/wizard/ic_lettuce_butterhead.png';
   static const String _lettuceLooseLeafIconAsset =
       'assets/icons/wizard/ic_lettuce_loose_leaf.png';
-  static const String _spinachIconAsset =
-      'assets/icons/wizard/ic_spinach.png';
+  static const String _spinachIconAsset = 'assets/icons/wizard/ic_spinach.png';
   static const String _spinachGenericIconAsset =
       'assets/icons/wizard/ic_spinach_generic.png';
   static const String _spinachSavoySummerIconAsset =
@@ -190,8 +192,7 @@ class CropPresentationResolver {
   static const String _onionCambrayIconAsset =
       'assets/icons/wizard/ic_onion_cambray.png';
   // Icono del cultivo madre Ajo (sin variedad/perfil). AG-GEN usa el generico.
-  static const String _garlicIconAsset =
-      'assets/icons/wizard/ic_garlic.png';
+  static const String _garlicIconAsset = 'assets/icons/wizard/ic_garlic.png';
   static const String _garlicGenericIconAsset =
       'assets/icons/wizard/ic_garlic_generic.png';
   static const String _garlicWhiteIconAsset =
@@ -231,6 +232,15 @@ class CropPresentationResolver {
         headlineLabel: 'Sin cultivo configurado',
         runtimeLabel: 'Sin cultivo configurado',
         iconAsset: _genericPlantIconAsset,
+      );
+    }
+
+    if (isEstablishmentMaintenanceCrop(cropId: cropId)) {
+      return _resolveOrnamental(
+        cropId: cropId,
+        cropContext: cropContext,
+        seed: seed,
+        definition: definition,
       );
     }
 
@@ -360,9 +370,10 @@ class CropPresentationResolver {
         seed?.varietyAlias;
 
     final normalizedProfile = (profileId ?? '').trim().toLowerCase();
-    final defaultProfileId = (CropCatalog.cropById(cropId)?.defaultProfileId ?? '')
-        .toLowerCase();
-    final isGeneric = normalizedProfile.isEmpty ||
+    final defaultProfileId =
+        (CropCatalog.cropById(cropId)?.defaultProfileId ?? '').toLowerCase();
+    final isGeneric =
+        normalizedProfile.isEmpty ||
         normalizedProfile == defaultProfileId ||
         normalizedProfile.endsWith('_skip');
 
@@ -391,6 +402,62 @@ class CropPresentationResolver {
         cropContext: cropContext,
         seed: seed,
       ),
+    );
+  }
+
+  /// Presentación compartida de las ornamentales de establecimiento +
+  /// mantenimiento (cactus, suculenta…). La "variedad" visible es el PERFIL, y
+  /// una selección específica superviviente gana sobre el perfil general.
+  static CropPresentationData _resolveOrnamental({
+    required String cropId,
+    required DeviceCropContext? cropContext,
+    required SeedInstall? seed,
+    CropDefinition? definition,
+  }) {
+    final cropDisplayName =
+        CropCatalog.cropById(cropId)?.label ??
+        definition?.displayName ??
+        ornamentalCropDisplayName(cropId);
+    final String generalProfileId = ornamentalDefaultProfileId(cropId);
+
+    final candidates = <CropProfileEntry?>[
+      CropCatalog.profileByAny(cropId, cropContext?.varietyId),
+      CropCatalog.profileByAny(cropId, cropContext?.profileId),
+      CropCatalog.profileByAny(cropId, cropContext?.varietyAlias),
+      CropCatalog.profileByAny(cropId, seed?.profileId),
+      CropCatalog.profileByAny(cropId, seed?.varietyAlias),
+    ];
+    CropProfileEntry? profile;
+    for (final candidate in candidates) {
+      if (candidate != null && candidate.id != generalProfileId) {
+        profile = candidate;
+        break;
+      }
+    }
+    if (profile == null) {
+      for (final candidate in candidates) {
+        if (candidate != null) {
+          profile = candidate;
+          break;
+        }
+      }
+    }
+    profile ??= CropCatalog.profileByAny(cropId, generalProfileId);
+    final profileId = profile?.id ?? generalProfileId;
+    final profileLabel =
+        profile?.label ?? ornamentalGeneralProfileLabel(cropId);
+    final isGeneric = profileId == generalProfileId;
+
+    return CropPresentationData(
+      hasConfiguredCrop: true,
+      isFallowMode: false,
+      isGenericSelection: isGeneric,
+      cropId: cropId,
+      cropDisplayName: cropDisplayName,
+      varietyLabel: profileLabel,
+      headlineLabel: '$cropDisplayName · $profileLabel',
+      runtimeLabel: '$cropDisplayName ($profileLabel)',
+      iconAsset: ornamentalProfileIcon(cropId, profileId),
     );
   }
 
@@ -525,6 +592,24 @@ class CropPresentationResolver {
         return _resolveOnionIcon(rawVarietyValue);
       case CropCatalog.garlicCropId:
         return _resolveGarlicIcon(rawVarietyValue);
+      case CropCatalog.cactusCropId:
+        return CactusAssets.profileIcon(
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.succulentCropId:
+        // La suculenta guarda el perfil SU en `profileId`. Se prioriza sobre el
+        // alias visible, que no mapea a icono.
+        return ornamentalProfileIcon(
+          CropCatalog.succulentCropId,
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.aloeCropId:
+        // La sábila guarda el perfil SA en `profileId`. Se prioriza sobre el
+        // alias visible, que no mapea a icono.
+        return ornamentalProfileIcon(
+          CropCatalog.aloeCropId,
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
       case CropCatalog.appleTreeCropId:
         // El manzano guarda la variedad/perfil en `profileId` (AP-01..AP-05),
         // no en varietyId. Tras normalizar, `varietyAlias` puede traer una

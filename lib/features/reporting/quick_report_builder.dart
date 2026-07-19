@@ -5,6 +5,7 @@ import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/screens/history/history_series_builder.dart';
@@ -202,6 +203,16 @@ class QuickReportBuilder {
     final String canonicalCrop = CropCatalog.canonicalCropKey(
       runtime.cropKeyName,
     );
+    // Ornamentales (cactus, suculenta…): el perfil ES la identidad visible. El
+    // reporte comparte plantilla con el resto de cultivos y NO lleva rendimiento.
+    if (isEstablishmentMaintenanceCrop(cropId: canonicalCrop)) {
+      final token =
+          runtime.cropContext?.profileId ??
+          runtime.profile?.id ??
+          runtime.seed?.profileId;
+      return CropCatalog.profileByAny(canonicalCrop, token)?.label ??
+          ornamentalGeneralProfileLabel(canonicalCrop);
+    }
     if (_isFruitTreeCrop(canonicalCrop)) {
       final String? profileToken =
           runtime.profile?.id ??
@@ -212,8 +223,9 @@ class QuickReportBuilder {
           runtime.seed?.varietyAlias;
       final profile = CropCatalog.profileByAny(canonicalCrop, profileToken);
       final String? resolvedProfileId = profile?.id ?? profileToken;
-      final String? defaultProfileId =
-          CropCatalog.cropById(canonicalCrop)?.defaultProfileId;
+      final String? defaultProfileId = CropCatalog.cropById(
+        canonicalCrop,
+      )?.defaultProfileId;
 
       if (resolvedProfileId == null || resolvedProfileId.trim().isEmpty) {
         return _fruitTreeGenericProfileLabel(canonicalCrop);

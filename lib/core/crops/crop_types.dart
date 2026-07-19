@@ -24,5 +24,8 @@ enum CropKey {
   lemonTree,
   mangoTree,
   avocadoTree,
+  cactus,
+  succulent,
+  aloe,
   generic,
 }

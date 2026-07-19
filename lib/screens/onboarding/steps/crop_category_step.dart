@@ -118,7 +118,7 @@ class CropCategoryStep extends StatelessWidget {
     const _CategoryOption(
       id: 'ornamental',
       title: 'Planta ornamental',
-      subtitle: 'Cactus, rosa, helecho...',
+      subtitle: 'Cactus, suculentas y sábila · más ornamentales próximamente',
       assetPath: OnboardingUiAssets.ornamental,
     ),
     const _CategoryOption(
@@ -165,11 +165,11 @@ class _CategoryCard extends StatelessWidget {
       radius: 22,
       padding: const EdgeInsets.fromLTRB(18, 13, 16, 13),
       backgroundColor: selected
-          ? const Color(0xFFF0F7EE).withValues(alpha:0.96)
-          : const Color(0xFFF7F8F8).withValues(alpha:0.94),
+          ? const Color(0xFFF0F7EE).withValues(alpha: 0.96)
+          : const Color(0xFFF7F8F8).withValues(alpha: 0.94),
       borderColor: selected
           ? const Color(0xFF8EB07C)
-          : Colors.white.withValues(alpha:0.94),
+          : Colors.white.withValues(alpha: 0.94),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -203,7 +203,7 @@ class _CategoryCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13.6,
                         height: 1.35,
-                        color: Colors.black.withValues(alpha:0.44),
+                        color: Colors.black.withValues(alpha: 0.44),
                       ),
                     ),
                   ],

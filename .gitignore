@@ -49,3 +49,6 @@ app.*.map.json
 
 .claude/
 .vscode/
+
+# Archivos de trabajo temporales (no son parte de la app)
+/temp/

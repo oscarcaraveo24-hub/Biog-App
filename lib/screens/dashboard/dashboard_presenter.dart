@@ -8,6 +8,8 @@ import 'package:bio_g/core/agro/agronomic_event.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
 import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart'; // <-- IMPORTANTE: Lo usamos para las dosis en vivo
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
+import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
+import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
@@ -133,7 +135,9 @@ class _DashboardNpkCandidate {
   final NutrientInterpretationResult? interpretation;
 
   String get labelEs =>
-      evalMetric?.labelEs ?? interpretation?.labelEs ?? AgroBand.unknown.labelEs;
+      evalMetric?.labelEs ??
+      interpretation?.labelEs ??
+      AgroBand.unknown.labelEs;
 
   String? get doseGuideEs =>
       evalMetric?.doseGuideEs ?? interpretation?.doseGuideEs;
@@ -175,10 +179,24 @@ class DashboardScreenPresenter {
     final bool isPlanned = runtime.isPlanned;
     final bool isGenericMode = runtime.isGenericMode;
     final bool isTree = isTreeContext(runtime.cropContext);
+    // Las ornamentales (cactus, suculenta) son cultivos de PRIMERA CLASE, igual
+    // que frijol o árbol: mismas métricas, mismas bandas, mismas alertas. Lo
+    // único propio es que no son cíclicas (establecimiento → mantenimiento, sin
+    // cosecha ni rendimiento), exactamente como el árbol.
+    final bool isOrnamental =
+        isEstablishmentMaintenanceContext(runtime.cropContext) ||
+        isEstablishmentMaintenanceCrop(cropId: runtime.cropKeyName);
+    final String? ornamentalCropId =
+        ornamentalCropIdOrNull(runtime.cropContext?.cropId) ??
+        ornamentalCropIdOrNull(runtime.cropKeyName);
     final treeContext = runtime.cropContext;
 
+    // Igual que el árbol: no heredamos la evaluación de otro cultivo guardada en
+    // el store; la ornamental se evalúa con su propio runtime.
     final AgroEvalResult? effectiveEval = isPlanted
-        ? (isTree ? runtime.eval : (runtime.eval ?? store.lastAgroEval))
+        ? ((isTree || isOrnamental)
+              ? runtime.eval
+              : (runtime.eval ?? store.lastAgroEval))
         : null;
     final bool hasCropAwareEval = effectiveEval != null;
 
@@ -207,8 +225,13 @@ class DashboardScreenPresenter {
       dashboardEvents,
     );
 
-    final DashboardTreeStatusUiData? treeStatus = isTree && treeContext != null
+    final DashboardTreeStatusUiData? treeStatus = treeContext == null
+        ? null
+        : isTree
         ? _buildTreeStatus(treeContext)
+        : isOrnamental
+        // La etapa viene del runtime RESUELTO, no del campo crudo del contexto.
+        ? _buildOrnamentalStatus(treeContext, stageResult)
         : null;
 
     // No telemetry → no soil-health reading. Returning null (instead of 0.0)
@@ -387,7 +410,9 @@ class DashboardScreenPresenter {
         npkSubtitle = top.shortRecommendation;
       }
     } else if (isPlanned) {
-      npkSubtitle = 'Disponible tras la siembra';
+      npkSubtitle = isOrnamental
+          ? 'Disponible cuando la plantes'
+          : 'Disponible tras la siembra';
     } else {
       npkSubtitle = 'Modo genérico activo';
     }
@@ -396,6 +421,8 @@ class DashboardScreenPresenter {
     late final String irrigationSubtitle;
     late final String irrigationTag;
 
+    // Las ornamentales NO tienen tarjeta de riego propia: usan la misma que
+    // frijol, con la evaluación real del sensor. Solo cambia el subtítulo.
     if (isTree && treeContext != null) {
       irrigationTitle = _treeIrrigationTitle(treeContext, effectiveEval);
       irrigationSubtitle = treeStagePriorityText(treeContext.phenologyStageId);
@@ -413,7 +440,9 @@ class DashboardScreenPresenter {
                   )
                 : 'Recomendación pendiente');
       irrigationSubtitle = hasCropAwareEval
-          ? 'Basado en humedad del suelo y modelo Bio-G'
+          ? (isOrnamental
+                ? ornamentalIrrigationSubtitle(ornamentalCropId)
+                : 'Basado en humedad del suelo y modelo Bio-G')
           : ((telemetry != null && targets != null)
                 ? 'Basado en humedad del suelo y etapa actual'
                 : 'Sin evaluación agronómica actual');
@@ -427,8 +456,9 @@ class DashboardScreenPresenter {
                 : '—');
     } else if (isPlanned) {
       irrigationTitle = _plannedInsightTitle(plannedDaysLeft, telemetry);
-      irrigationSubtitle =
-          'Preparación previa a siembra basada en condición actual del suelo';
+      irrigationSubtitle = isOrnamental
+          ? 'Preparación del sustrato antes de plantarla'
+          : 'Preparación previa a siembra basada en condición actual del suelo';
       irrigationTag = plannedDaysLeft <= 0 ? 'Hoy' : '${plannedDaysLeft}d';
     } else {
       if (primaryDashboardEvent != null &&
@@ -453,6 +483,8 @@ class DashboardScreenPresenter {
       soilHealth: soilHealth,
       soilHealthLabel: isTree
           ? 'Monitoreo continuo del \u00e1rbol'
+          : isOrnamental
+          ? 'Monitoreo continuo de la planta'
           : telemetry == null
           ? 'Sin datos del sensor'
           : isPlanted
@@ -480,6 +512,8 @@ class DashboardScreenPresenter {
         status: '',
         assetIcon: 'assets/icons/metrics/ic_ph.png',
       ).copyWith(value: phValue, status: phStatus),
+      // Resistencia del suelo, en MPa, igual que TODOS los demás cultivos. El
+      // agricultor entiende "suelo apretado"; no entiende electroconductividad.
       resistance: const DashboardMetricUiData(
         title: 'Resistencia',
         value: '',
@@ -494,10 +528,54 @@ class DashboardScreenPresenter {
         tag: irrigationTag,
       ),
       treeStatus: treeStatus,
-      cropJourneyTitle: isTree
+      // Las ornamentales no tienen cosecha ni rendimiento: la tarjeta lleva al
+      // estado de la planta y sus cuidados, no a una proyección de rendimiento.
+      cropJourneyTitle: isOrnamental
+          ? 'Estado\nde tu planta'
+          : isTree
           ? 'Rendimiento aproximado\ndel \u00e1rbol'
           : 'Rendimiento\nestimado',
       events: dashboardEvents,
+    );
+  }
+
+  /// Tarjeta de estado de una ornamental (cactus, suculenta…). Misma estructura
+  /// y mismo widget que la del árbol (ambos son cultivos NO cíclicos), pero en
+  /// lenguaje de agricultor: sin "condición ornamental", sin "microciclo
+  /// hídrico", sin "confianza 0.25".
+  DashboardTreeStatusUiData _buildOrnamentalStatus(
+    DeviceCropContext context,
+    CropStageResult? stageResult,
+  ) {
+    final String cropId =
+        ornamentalCropIdOrNull(context.cropId) ?? CropCatalog.cactusCropId;
+
+    // Etapa RESUELTA. Leer `context.ornamentalStageId` a pelo dejaba la tarjeta
+    // clavada en "Etapa por confirmar" si el contexto se guardó con 'unknown'.
+    final String stageId = normalizeOrnamentalStageId(
+      cropId,
+      stageResult?.stageKey ?? context.ornamentalStageId,
+    );
+    final profile = CropCatalog.profileByAny(cropId, context.profileId);
+    final String profileLabel =
+        profile?.label ?? ornamentalGeneralShortLabel(cropId);
+    final bool hasUnknownStage = stageId == ornamentalUnknownStageId(cropId);
+    final anchor = context.ornamentalAnchorDate;
+
+    return DashboardTreeStatusUiData(
+      title: ornamentalCropDisplayName(cropId),
+      stateLabel: 'Estado: ${ornamentalStageDisplayName(cropId, stageId)}',
+      profileLabel: 'Tipo: $profileLabel',
+      stageLabel: 'Cuidado: ${ornamentalStageCareNoteEs(cropId, stageId)}',
+      anchorText: anchor == null
+          ? 'Fecha en que la plantaste: no registrada'
+          : 'La plantaste el ${anchor.day}/${anchor.month}/${anchor.year}',
+      priorityText: ornamentalStagePriorityText(cropId, stageId),
+      criticalLabel: ornamentalCriticalWindowLabel(cropId, stageId),
+      precisionLabel: hasUnknownStage ? 'Precisión media' : null,
+      helperText: hasUnknownStage
+          ? ornamentalUnknownStageHelper(cropId)
+          : 'BIO-G interpreta tus sensores según la etapa de la planta.',
     );
   }
 
@@ -516,7 +594,8 @@ class DashboardScreenPresenter {
       title: treeCropDisplayTitle(context),
       stateLabel: 'Estado: ${treeStateDisplayName(stateId)}',
       profileLabel: 'Perfil: $profileLabel',
-      stageLabel: 'Etapa: ${treeStageDisplayNameForCrop(context.cropId, stageId)}',
+      stageLabel:
+          'Etapa: ${treeStageDisplayNameForCrop(context.cropId, stageId)}',
       anchorText: treeAnchorDisplayText(
         context.perennialAnchorDate,
         context.perennialAnchorTypeId,
@@ -582,6 +661,9 @@ class DashboardScreenPresenter {
     required bool isGenericMode,
     required DateTime now,
   }) {
+    // El cactus usa el EventEngine COMPARTIDO, igual que frijol. Antes tenía su
+    // propio generador que solo emitía un evento de contexto con jerga interna
+    // ("Estado hídrico: Patrón por aprender"), y por eso nunca avisaba de nada.
     if (isTreeContext(runtime.cropContext) && runtime.cropContext != null) {
       return _buildTreeDashboardEvents(
         runtime: runtime,
@@ -1078,6 +1160,7 @@ class DashboardScreenPresenter {
     required double value,
     required AgroRange range,
   }) => _labelFromRangeTuned(index0to100: value, range: range);
+
 
   String _moistureStatusFromTargets({
     required double soilMoisturePct,
