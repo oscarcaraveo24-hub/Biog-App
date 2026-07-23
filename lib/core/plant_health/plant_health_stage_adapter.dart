@@ -62,11 +62,165 @@ class PlantHealthStageAdapter {
       case CropCatalog.cactusCropId:
       case CropCatalog.succulentCropId:
       case CropCatalog.aloeCropId:
+      case CropCatalog.agaveCropId:
         // Las ornamentales de establecimiento + mantenimiento comparten las
         // MISMAS etapas (instalación → raíz → crecimiento → estable ↔ reposo),
         // así que traducen igual a los buckets del motor de sanidad. Lo que
         // cambia entre plantas son los targets y los síndromes, no las etapas.
         return _fromEstablishmentMaintenance(stage);
+      case CropCatalog.roseCropId:
+        // El rosal es de floración recurrente: NO comparte las etapas de las
+        // ornamentales de establecimiento (Doc C §5). Sus estados de floración
+        // mapean a los buckets reproductivos del motor de sanidad.
+        return _fromRose(stage);
+      case CropCatalog.tulipCropId:
+        // El Tulipán es un bulbo estacional con reloj anual (Doc C §6). Sus
+        // diez etapas se traducen a los buckets compartidos del motor de
+        // sanidad sin crear una segunda taxonomía.
+        return _fromTulip(stage, daySinceSowing);
+      case CropCatalog.sunflowerCropId:
+        // El Girasol es una ornamental anual verdadera con reloj anual (Doc C
+        // §3). Sus once etapas se traducen a los buckets compartidos. `post_bloom`
+        // reutiliza `grainFill` solo como bucket técnico (NUNCA "llenado de
+        // grano"). `unknown` y `cycle_complete` devuelven null: la etapa terminal
+        // no ejecuta PlantHealth (Doc C §3.1, §11.1).
+        return _fromSunflower(stage, daySinceSowing);
+    }
+    return null;
+  }
+
+  static PlantHealthStageBucket? _fromRose(String stage) {
+    if (_matches(stage, const <String>[
+      'installation_establishment',
+      'root_establishment',
+    ])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['vegetative_flush'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['bud_formation'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['flowering'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>['post_bloom_recovery'])) {
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (_matches(stage, const <String>['rest'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    return null;
+  }
+
+  /// Tulipán: bulbo estacional con reloj anual y diez etapas oficiales
+  /// (Doc C §6). Cada etapa cae en un bucket compartido; ninguna queda sin
+  /// mapear. `bulb_recharge` reutiliza `grainFill` solo como "llenado de
+  /// reservas" (la UI nunca muestra "llenado de grano"). `foliage_senescence`
+  /// y `dormancy` caen en `lateSeason`: la dormancia conserva el registro y NO
+  /// es muerte. La escalera por día es respaldo cuando falta el stageKey.
+  static PlantHealthStageBucket _fromTulip(String stage, int? day) {
+    if (_matches(stage, const <String>['planting', 'bulb_plant'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['rooting', 'chilling'])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['shoot_emergence', 'emergence'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['vegetative_growth', 'vegetative'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['stem_elongation', 'elongation'])) {
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (_matches(stage, const <String>['bud_formation', 'bud'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    if (_matches(stage, const <String>['flowering', 'bloom'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    // 'recharge' debe evaluarse por su fragmento propio: 'bulb_recharge'
+    // comparte el prefijo 'bulb' con 'bulb_planting'.
+    if (_matches(stage, const <String>['recharge'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>['senescence', 'foliage'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (_matches(stage, const <String>['dormancy', 'dorman'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (day != null) {
+      if (day <= 120) return PlantHealthStageBucket.seedling;
+      if (day <= 140) return PlantHealthStageBucket.vegetativeEarly;
+      if (day <= 160) return PlantHealthStageBucket.vegetativeMid;
+      if (day <= 175) return PlantHealthStageBucket.vegetativeLate;
+      if (day <= 190) return PlantHealthStageBucket.reproductiveEarly;
+      if (day <= 205) return PlantHealthStageBucket.reproductiveMid;
+      if (day <= 235) return PlantHealthStageBucket.grainFill;
+    }
+    return PlantHealthStageBucket.lateSeason;
+  }
+
+  /// Girasol: ornamental anual verdadera con reloj anual y once etapas oficiales
+  /// (Doc C §3). Cada etapa viva cae en un bucket compartido; `post_bloom`
+  /// reutiliza `grainFill` solo como bucket técnico (la UI nunca muestra "llenado
+  /// de grano"). `cycle_complete` y `unknown` devuelven null: la etapa terminal
+  /// no ejecuta PlantHealth (Doc C §3.1, §11.1, §11.2). La escalera por día
+  /// (ventanas de gi_skip) es respaldo cuando falta el stageKey.
+  static PlantHealthStageBucket? _fromSunflower(String stage, int? day) {
+    // Terminal / por confirmar: no ejecuta PlantHealth.
+    if (_matches(stage, const <String>[
+      'cycle_complete',
+      'cycle',
+      'complete',
+      'terminado',
+      'unknown',
+    ])) {
+      return null;
+    }
+    if (_matches(stage, const <String>[
+      'sowing',
+      'germination',
+      'emergence',
+    ])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['early_vegetative'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['active_vegetative'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['stem_elongation'])) {
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (_matches(stage, const <String>['bud_formation', 'bud'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    // 'post_bloom' contiene 'bloom': se evalúa ANTES que 'flowering'.
+    if (_matches(stage, const <String>['post_bloom'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>['flowering', 'bloom'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>['senescence'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (day != null) {
+      if (day <= 14) return PlantHealthStageBucket.seedling;
+      if (day <= 27) return PlantHealthStageBucket.vegetativeEarly;
+      if (day <= 42) return PlantHealthStageBucket.vegetativeMid;
+      if (day <= 52) return PlantHealthStageBucket.vegetativeLate;
+      if (day <= 63) return PlantHealthStageBucket.reproductiveEarly;
+      if (day <= 78) return PlantHealthStageBucket.reproductiveMid;
+      if (day <= 94) return PlantHealthStageBucket.grainFill;
+      if (day <= 112) return PlantHealthStageBucket.lateSeason;
+      return null;
     }
     return null;
   }

@@ -268,6 +268,11 @@ class CropContextSupabaseSync {
         normalized == 'sábila') {
       return 'crop_aloe';
     }
+    if (normalized == 'crop_agave' ||
+        normalized == 'agave' ||
+        normalized == 'maguey') {
+      return 'crop_agave';
+    }
     return null;
   }
 

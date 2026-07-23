@@ -1,4 +1,9 @@
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
+import 'package:bio_g/core/crops/recurring_bloom/recurring_bloom_crops.dart';
+// Tulipán (seasonal_bulb): capa compartida del modo bulboso estacional.
+import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
+// Girasol (annual_ornamental): capa compartida del modo ornamental anual.
+import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/maize/maize_catalog.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
@@ -76,10 +81,24 @@ class WizardCropContextResolver {
       cropCategoryId: normalizedCropCategoryId,
     );
 
+    // Ornamental de floración recurrente (rosal): guarda en los mismos campos
+    // ornamentales, pero con su propio modo y su propia estimación (solo el
+    // establecimiento se infiere por fecha; los estados recurrentes se confirman
+    // visualmente).
+    final bool isRecurringBloomContext = isRecurringBloomCrop(
+      cropId: normalizedCropId,
+      cropCategoryId: normalizedCropCategoryId,
+    );
+
+    // Ambos modos ornamentales comparten estructura de persistencia (categoría
+    // ornamental, sin siembra ni fenología de árbol).
+    final bool isOrnamentalLike =
+        isOrnamentalContext || isRecurringBloomContext;
+
     // Un contexto ornamental histórico en fallow se migra a plantado; nunca
     // expone descanso del suelo ni borra su perfil al normalizarlo.
     final bool isFallow =
-        lifecycleStatus == CropLifecycleStatus.fallow && !isOrnamentalContext;
+        lifecycleStatus == CropLifecycleStatus.fallow && !isOrnamentalLike;
     final String? rawVarietySelection = isFallow
         ? null
         : _normalizeVarietyAlias(varietyAlias);
@@ -98,7 +117,12 @@ class WizardCropContextResolver {
             cropId: normalizedCropId,
             varietyId:
                 isTreeCrop(cropId: normalizedCropId) ||
-                    isEstablishmentMaintenanceCrop(cropId: normalizedCropId)
+                    isEstablishmentMaintenanceCrop(cropId: normalizedCropId) ||
+                    isRecurringBloomCrop(cropId: normalizedCropId) ||
+                    // Tulipán (seasonal_bulb): su tu_* es un PERFIL, no variedad.
+                    isSeasonalBulbCrop(cropId: normalizedCropId) ||
+                    // Girasol (annual_ornamental): su gi_* es un PERFIL, no variedad.
+                    isAnnualOrnamentalCrop(cropId: normalizedCropId)
                 ? _normalizeNullable(varietyId)
                 : resolvedVarietyId,
             varietyAlias: rawVarietySelection,
@@ -125,7 +149,7 @@ class WizardCropContextResolver {
       resolvedVarietyId: resolvedVarietyId,
       resolvedProfileId: resolvedProfileId,
       lifecycleStatus:
-          isOrnamentalContext && lifecycleStatus == CropLifecycleStatus.fallow
+          isOrnamentalLike && lifecycleStatus == CropLifecycleStatus.fallow
           ? CropLifecycleStatus.planted
           : lifecycleStatus,
     );
@@ -142,7 +166,7 @@ class WizardCropContextResolver {
     final String resolvedRegionCode =
         (regionCode ?? previous?.regionCode ?? 'MX').trim();
 
-    final resolvedScaleId = isOrnamentalContext
+    final resolvedScaleId = isOrnamentalLike
         ? null
         : cultivationScaleId?.trim().isNotEmpty == true
         ? cultivationScaleId!.trim()
@@ -154,13 +178,23 @@ class WizardCropContextResolver {
         : null;
 
     // Ancla ornamental: fecha de plantación/alta (planned o planted).
-    final DateTime? ornamentalAnchor = isOrnamentalContext
+    final DateTime? ornamentalAnchor = isOrnamentalLike
         ? (ornamentalAnchorDate ??
               selectedDate ??
               (dateConfidence != DateConfidence.unknown && sameCrop
                   ? previous?.ornamentalAnchorDate
                   : null))
         : null;
+    final bool preservePreviousOrnamentalStage =
+        isOrnamentalLike &&
+        sameCrop &&
+        dateConfidence != DateConfidence.unknown &&
+        ornamentalStageId == null &&
+        previous?.ornamentalAnchorDate == ornamentalAnchor;
+
+    // Estimación por fecha: la ornamental de establecimiento estima toda su
+    // progresión; el rosal SOLO estima el establecimiento (los estados
+    // recurrentes los confirma el usuario de forma visual).
     final OrnamentalStageEstimate? ornamentalEstimate = isOrnamentalContext
         ? estimateOrnamentalStageFromDate(
             cropId: normalizedCropId,
@@ -169,12 +203,22 @@ class WizardCropContextResolver {
             profileId: resolvedProfileId,
           )
         : null;
-    final bool preservePreviousOrnamentalStage =
-        isOrnamentalContext &&
-        sameCrop &&
-        dateConfidence != DateConfidence.unknown &&
-        ornamentalStageId == null &&
-        previous?.ornamentalAnchorDate == ornamentalAnchor;
+    final RecurringBloomStageEstimate? recurringBloomEstimate =
+        isRecurringBloomContext
+        ? resolveRecurringBloomSetupStage(
+            cropId: normalizedCropId,
+            intentId: lifecycleStatus == CropLifecycleStatus.planned
+                ? kRecurringBloomIntentPlannedPlant
+                : kRecurringBloomIntentAlreadyPlanted,
+            plantingDate: ornamentalAnchor,
+            now: now,
+            profileId: resolvedProfileId,
+            previousStageId: preservePreviousOrnamentalStage
+                ? previous?.ornamentalStageId
+                : null,
+          )
+        : null;
+
     final String? ornamentalStateId = isOrnamentalContext
         ? normalizeOrnamentalStageId(
             normalizedCropId,
@@ -183,6 +227,15 @@ class WizardCropContextResolver {
                     ? previous?.ornamentalStageId
                     : null) ??
                 ornamentalEstimate?.stageId,
+          )
+        : isRecurringBloomContext
+        ? normalizeRecurringBloomStageId(
+            normalizedCropId,
+            ornamentalStageId ??
+                (preservePreviousOrnamentalStage
+                    ? previous?.ornamentalStageId
+                    : null) ??
+                recurringBloomEstimate?.stageId,
           )
         : null;
     final String? ornamentalAnchorType = isOrnamentalContext
@@ -194,6 +247,15 @@ class WizardCropContextResolver {
                     : null) ??
                 ornamentalEstimate?.anchorTypeId,
           )
+        : isRecurringBloomContext
+        ? normalizeRecurringBloomAnchorTypeId(
+            normalizedCropId,
+            ornamentalAnchorTypeId ??
+                (preservePreviousOrnamentalStage
+                    ? previous?.ornamentalAnchorTypeId
+                    : null) ??
+                recurringBloomEstimate?.anchorTypeId,
+          )
         : null;
     final double? ornamentalConfidence = isOrnamentalContext
         ? (ornamentalStageConfidence ??
@@ -201,6 +263,12 @@ class WizardCropContextResolver {
                   ? previous?.ornamentalStageConfidence
                   : null) ??
               ornamentalEstimate?.confidence)
+        : isRecurringBloomContext
+        ? (ornamentalStageConfidence ??
+              (preservePreviousOrnamentalStage
+                  ? previous?.ornamentalStageConfidence
+                  : null) ??
+              recurringBloomEstimate?.confidence)
         : null;
     final CropLifecycleStatus effectiveLifecycleStatus =
         isOrnamentalContext && lifecycleStatus == CropLifecycleStatus.fallow
@@ -226,19 +294,19 @@ class WizardCropContextResolver {
       sowingDate: effectiveLifecycleStatus == CropLifecycleStatus.planted
           ? (isTreeContext
                 ? (treePlantingDate ?? carriedTreeSowingDate)
-                : (isOrnamentalContext ? null : selectedDate))
+                : (isOrnamentalLike ? null : selectedDate))
           : null,
       plannedSowingDate:
           !isTreeContext &&
-              !isOrnamentalContext &&
+              !isOrnamentalLike &&
               lifecycleStatus == CropLifecycleStatus.planned
           ? selectedDate
           : null,
-      sowingDateConfidence: isOrnamentalContext
+      sowingDateConfidence: isOrnamentalLike
           ? DateConfidence.unknown
           : dateConfidence,
       cultivationScaleId: resolvedScaleId,
-      sowingModeId: isOrnamentalContext
+      sowingModeId: isOrnamentalLike
           ? null
           : (sowingModeId ??
                 _sowingModeIdFromLifecycle(effectiveLifecycleStatus)),
@@ -252,11 +320,21 @@ class WizardCropContextResolver {
       perennialAnchorTypeId: isTreeContext ? perennialAnchorTypeId : null,
       lifecycleModeId: isOrnamentalContext
           ? ornamentalLifecycleMode(normalizedCropId)
+          : isRecurringBloomContext
+          ? kRecurringBloomLifecycleModeId
+          // Tulipán (seasonal_bulb): persiste su modo de ciclo bulboso estacional.
+          // El sowingDate se conserva arriba como ancla real (no se anula).
+          : isSeasonalBulbCrop(cropId: normalizedCropId)
+          ? kSeasonalBulbLifecycleModeId
+          // Girasol (annual_ornamental): persiste su modo de ciclo anual. El
+          // sowingDate se conserva arriba como ancla real (no se anula).
+          : isAnnualOrnamentalCrop(cropId: normalizedCropId)
+          ? kAnnualOrnamentalLifecycleModeId
           : null,
       ornamentalStageId: ornamentalStateId,
       ornamentalAnchorDate: ornamentalAnchor,
       ornamentalAnchorTypeId: ornamentalAnchorType,
-      ornamentalAnchorDateConfidence: isOrnamentalContext
+      ornamentalAnchorDateConfidence: isOrnamentalLike
           ? dateConfidence
           : null,
       ornamentalStageConfidence: ornamentalConfidence,
@@ -276,7 +354,14 @@ class WizardCropContextResolver {
     // pero también se persiste como varietyId para que la identidad elegida
     // viaje completa por wizard -> storage -> runtime. No la descartamos solo
     // porque no exista una fila en el catálogo de variedades anuales.
-    if (isEstablishmentMaintenanceCrop(cropId: cropId)) {
+    if (isEstablishmentMaintenanceCrop(cropId: cropId) ||
+        isRecurringBloomCrop(cropId: cropId) ||
+        // Tulipán (seasonal_bulb): también identifica su tipo por PERFIL (tu_*),
+        // aunque conserve el eje de fecha de un grano.
+        isSeasonalBulbCrop(cropId: cropId) ||
+        // Girasol (annual_ornamental): identifica su tipo por PERFIL (gi_*),
+        // aunque conserve el eje de fecha de un grano.
+        isAnnualOrnamentalCrop(cropId: cropId)) {
       return (CropCatalog.profileByAny(cropId, varietyId) ??
               CropCatalog.profileByAny(cropId, varietyAlias))
           ?.id;
@@ -308,6 +393,31 @@ class WizardCropContextResolver {
           CropCatalog.profileByAny(cropId, resolvedProfileId) ??
           CropCatalog.profileByAny(cropId, rawValue);
       return profile?.label ?? ornamentalGeneralProfileLabel(cropId);
+    }
+
+    if (isRecurringBloomCrop(cropId: cropId)) {
+      final profile =
+          CropCatalog.profileByAny(cropId, resolvedProfileId) ??
+          CropCatalog.profileByAny(cropId, rawValue);
+      return profile?.label ?? recurringBloomGeneralProfileLabel(cropId);
+    }
+
+    // Tulipán (seasonal_bulb): la selección visible es un PERFIL; se persiste su
+    // etiqueta humana, nunca el id interno tu_*.
+    if (isSeasonalBulbCrop(cropId: cropId)) {
+      final profile =
+          CropCatalog.profileByAny(cropId, resolvedProfileId) ??
+          CropCatalog.profileByAny(cropId, rawValue);
+      return profile?.label ?? seasonalBulbGeneralProfileLabel(cropId);
+    }
+
+    // Girasol (annual_ornamental): la selección visible es un PERFIL; se persiste
+    // su etiqueta humana, nunca el id interno gi_*.
+    if (isAnnualOrnamentalCrop(cropId: cropId)) {
+      final profile =
+          CropCatalog.profileByAny(cropId, resolvedProfileId) ??
+          CropCatalog.profileByAny(cropId, rawValue);
+      return profile?.label ?? annualOrnamentalGeneralProfileLabel(cropId);
     }
 
     if (isTreeCrop(cropId: cropId)) {
@@ -351,7 +461,12 @@ class WizardCropContextResolver {
       return profile?.id;
     }
 
-    if (isEstablishmentMaintenanceCrop(cropId: cropId)) {
+    if (isEstablishmentMaintenanceCrop(cropId: cropId) ||
+        isRecurringBloomCrop(cropId: cropId) ||
+        // Tulipán (seasonal_bulb): el tu_* se resuelve como perfil explícito.
+        isSeasonalBulbCrop(cropId: cropId) ||
+        // Girasol (annual_ornamental): el gi_* se resuelve como perfil explícito.
+        isAnnualOrnamentalCrop(cropId: cropId)) {
       return (CropCatalog.profileByAny(cropId, varietyId) ??
               CropCatalog.profileByAny(cropId, varietyAlias))
           ?.id;

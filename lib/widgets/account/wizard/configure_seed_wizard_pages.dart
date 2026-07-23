@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
+import 'package:bio_g/core/crops/recurring_bloom/recurring_bloom_crops.dart';
+// Tulipán (seasonal_bulb): textos/íconos del modo bulboso estacional.
+import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
+// Girasol (annual_ornamental): textos/íconos del modo anual ornamental.
+import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_components.dart';
@@ -562,6 +567,10 @@ class StagePage extends StatelessWidget {
     required this.onSelect,
     this.ornamentalMode = false,
     this.ornamentalCropId,
+    this.seasonalBulbMode = false,
+    this.seasonalBulbCropId,
+    this.annualOrnamentalMode = false,
+    this.annualOrnamentalCropId,
   });
 
   final String? stage;
@@ -574,6 +583,27 @@ class StagePage extends StatelessWidget {
 
   /// cropId canónico de la ornamental, para textos con el género correcto.
   final String? ornamentalCropId;
+
+  /// Modo bulboso estacional (Tulipán / seasonal_bulb): SOLO dos opciones de
+  /// alta ("Lo voy a plantar" / "Ya está plantado"), SIN descanso del suelo (un
+  /// bulbo entra en dormancia, no en fallow). A diferencia del modo ornamental,
+  /// emite los MISMOS valores que el grano ('planned' / 'planted') para que la
+  /// fecha y la persistencia corran por la ruta de grano y conserven el
+  /// sowingDate como ancla real.
+  final bool seasonalBulbMode;
+
+  /// cropId canónico del bulboso estacional, para textos con su nombre.
+  final String? seasonalBulbCropId;
+
+  /// Modo anual ornamental (Girasol / annual_ornamental): SOLO dos opciones de
+  /// alta ("Lo voy a sembrar" / "Ya está sembrado o plantado"), SIN descanso
+  /// del suelo. Igual que el modo bulboso estacional, emite los MISMOS valores
+  /// que el grano ('planned' / 'planted') para que la fecha y la persistencia
+  /// corran por la ruta de grano y conserven el sowingDate como ancla real.
+  final bool annualOrnamentalMode;
+
+  /// cropId canónico de la ornamental anual, para textos con su nombre.
+  final String? annualOrnamentalCropId;
 
   @override
   Widget build(BuildContext context) {
@@ -588,6 +618,12 @@ class StagePage extends StatelessWidget {
             child: Text(
               ornamentalMode
                   ? ornamentalStateQuestion(ornamentalCropId)
+                  : seasonalBulbMode
+                  ? '¿En qué etapa está tu '
+                        '${seasonalBulbCropDisplayName(seasonalBulbCropId).toLowerCase()}?'
+                  : annualOrnamentalMode
+                  ? '¿En qué etapa está tu '
+                        '${annualOrnamentalCropDisplayName(annualOrnamentalCropId).toLowerCase()}?'
                   : '¿En qué etapa está tu cultivo?',
               textAlign: TextAlign.center,
               style: const TextStyle(
@@ -609,6 +645,10 @@ class StagePage extends StatelessWidget {
               iconPath: ConfigureSeedWizardAssets.stagePlanned,
               title: ornamentalMode
                   ? ornamentalPlannedOptionTitle(ornamentalCropId)
+                  : seasonalBulbMode
+                  ? seasonalBulbPlannedOptionTitle(seasonalBulbCropId)
+                  : annualOrnamentalMode
+                  ? annualOrnamentalPlannedOptionTitle(annualOrnamentalCropId)
                   : 'Aún no siembro /\nestoy por sembrar',
               subtitle: '',
               selected: ornamentalMode
@@ -628,6 +668,10 @@ class StagePage extends StatelessWidget {
               iconPath: ConfigureSeedWizardAssets.stagePlanted,
               title: ornamentalMode
                   ? ornamentalPlantedOptionTitle(ornamentalCropId)
+                  : seasonalBulbMode
+                  ? seasonalBulbPlantedOptionTitle(seasonalBulbCropId)
+                  : annualOrnamentalMode
+                  ? annualOrnamentalPlantedOptionTitle(annualOrnamentalCropId)
                   : 'Ya sembrado y creciendo',
               subtitle: '',
               selected: ornamentalMode
@@ -640,7 +684,13 @@ class StagePage extends StatelessWidget {
               ),
             ),
           ),
-          if (!ornamentalMode) ...[
+          // El descanso del suelo (fallow) NO aplica al tulipán ni al girasol:
+          // su cierre es dormancia (bulbo) o cycle_complete (anual), no suelo en
+          // reposo. Por eso ambos modos ocultan esta tercera opción, igual que
+          // el ornamental.
+          if (!ornamentalMode &&
+              !seasonalBulbMode &&
+              !annualOrnamentalMode) ...[
             const SizedBox(height: 14),
             StaggerIn(
               delay: 200,
@@ -1022,6 +1072,95 @@ class TreeStatePage extends StatelessWidget {
           if (summary != null) ...[
             const SizedBox(height: 4),
             StaggerIn(delay: 340, child: summary!),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Wizard visual "¿Cómo está tu <planta> ahora?" para ornamentales de floración
+/// recurrente (rosal hoy; tulipán y otras después). Config-driven: recibe la
+/// lista de opciones desde `recurringBloomVisualStateOptions(cropId)`, así que no
+/// codifica ninguna planta en concreto.
+class RecurringBloomStatePage extends StatelessWidget {
+  const RecurringBloomStatePage({
+    super.key,
+    required this.question,
+    required this.helper,
+    required this.options,
+    required this.selectedOptionId,
+    required this.summary,
+    required this.onSelect,
+  });
+
+  final String question;
+  final String helper;
+  final List<RecurringBloomStateOption> options;
+  final String? selectedOptionId;
+  final Widget? summary;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return CenteredWizardPage(
+      scrollable: true,
+      topPadding: 8,
+      child: Column(
+        children: [
+          const BrandMark(),
+          const SizedBox(height: 22),
+          StaggerIn(
+            delay: 0,
+            child: Text(
+              question,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 22,
+                height: 1.18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
+                color: Color(0xFF293533),
+              ),
+            ),
+          ),
+          if (helper.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            StaggerIn(
+              delay: 40,
+              child: Text(
+                helper,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.3,
+                  color: Color(0xFF6B7A77),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          ...options.asMap().entries.map((entry) {
+            final index = entry.key;
+            final option = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: StaggerIn(
+                delay: 90 + (index.clamp(0, 8)) * 35,
+                child: WizardLongPill(
+                  iconPath: option.iconPath,
+                  title: option.title,
+                  subtitle: option.subtitle,
+                  selected: selectedOptionId == option.id,
+                  enabled: true,
+                  onTap: () => onSelect(option.id),
+                ),
+              ),
+            );
+          }),
+          if (summary != null) ...[
+            const SizedBox(height: 4),
+            StaggerIn(delay: 390, child: summary!),
           ],
         ],
       ),

@@ -5,6 +5,10 @@ import 'package:bio_g/core/plant_health/catalog/bean_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/cactus_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/succulent_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/aloe_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/agave_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/rose_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/tulip_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/sunflower_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/chili_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/maize_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/cucumber_syndromes.dart';
@@ -48,6 +52,10 @@ class PlantHealthRegistry {
         return succulentSyndromes;
       case CropCatalog.aloeCropId:
         return aloeSyndromes;
+      case CropCatalog.agaveCropId:
+        return agaveSyndromes;
+      case CropCatalog.roseCropId:
+        return roseSyndromes;
       case CropCatalog.tomatoCropId:
         return tomatoSyndromes;
       case CropCatalog.cucumberCropId:
@@ -84,6 +92,10 @@ class PlantHealthRegistry {
         return mangoTreeSyndromes;
       case CropCatalog.avocadoTreeCropId:
         return avocadoTreeSyndromes;
+      case CropCatalog.tulipCropId:
+        return tulipSyndromes;
+      case CropCatalog.sunflowerCropId:
+        return sunflowerSyndromes;
       default:
         return const <PlantHealthSyndrome>[];
     }

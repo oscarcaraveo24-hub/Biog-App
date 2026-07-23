@@ -3,6 +3,13 @@ import 'package:bio_g/core/crops/cactus/cactus_crop_definition.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/succulent/succulent_crop_definition.dart';
 import 'package:bio_g/core/crops/aloe/aloe_crop_definition.dart';
+import 'package:bio_g/core/crops/agave/agave_crop_definition.dart';
+import 'package:bio_g/core/crops/rose/rose_crop_definition.dart';
+import 'package:bio_g/core/crops/recurring_bloom/recurring_bloom_crops.dart';
+import 'package:bio_g/core/crops/tulip/tulip_crop_definition.dart';
+import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
+import 'package:bio_g/core/crops/sunflower/sunflower_crop_definition.dart';
+import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/crop_presentation_resolver.dart';
@@ -78,9 +85,45 @@ class CropRuntimeResolver {
       category: definition?.category,
     );
 
+    // Ornamental de floración recurrente (rosal): tras el establecimiento la
+    // etapa la confirma el usuario visualmente; el eje NO es la siembra y no hay
+    // cosecha. La pregunta es por el MODO DE CICLO, no por una planta concreta.
+    final bool isRecurringBloomRuntime = isRecurringBloomCrop(
+      cropId: cropKeyName,
+      cropCategoryId: normalizedContext?.cropCategoryId,
+      category: definition?.category,
+    );
+
+    // Ornamental bulbosa estacional (tulipán): usa el RELOJ ANUAL tipo granos
+    // (fecha ancla → día → etapa) pero es categoría ornamental y su cierre es
+    // dormancia, no cosecha. El eje SÍ es la fecha ancla (`sowingDate`), por eso
+    // NO cae en la rama de establecimiento (que anularía la fecha). La pregunta
+    // es por el MODO DE CICLO, no por una planta concreta.
+    final bool isSeasonalBulbRuntime = isSeasonalBulbCrop(
+      cropId: cropKeyName,
+      cropCategoryId: normalizedContext?.cropCategoryId,
+      category: definition?.category,
+    );
+
+    // Ornamental ANUAL VERDADERA (girasol): usa el RELOJ ANUAL tipo granos
+    // (fecha ancla → día → etapa) pero es categoría ornamental y su cierre es
+    // `cycle_complete` TERMINAL, no cosecha ni dormancia. El eje SÍ es la fecha
+    // ancla (`sowingDate`), por eso NO cae en la rama de establecimiento (que
+    // anularía la fecha) ni en seasonal_bulb (que implicaría dormancia). La
+    // pregunta es por el MODO DE CICLO, no por una planta concreta (Documento A
+    // §4.2, §8, §16.7).
+    final bool isAnnualOrnamentalRuntime = isAnnualOrnamentalCrop(
+      cropId: cropKeyName,
+      cropCategoryId: normalizedContext?.cropCategoryId,
+      category: definition?.category,
+    );
+
     final bool isPlanted =
         sowingStatus == SowingStatus.planted &&
-        (isPerennialRuntime || isOrnamentalRuntime || plantedDate != null);
+        (isPerennialRuntime ||
+            isOrnamentalRuntime ||
+            isRecurringBloomRuntime ||
+            plantedDate != null);
 
     final bool isPlanned = sowingStatus == SowingStatus.planned;
 
@@ -124,6 +167,43 @@ class CropRuntimeResolver {
                 stageResult,
                 profileId: profile.id,
               )
+            : definition is AgaveCropDefinition
+            ? definition.resolveTargetsForProfile(
+                stageResult,
+                profileId: profile.id,
+              )
+            : definition.resolveTargets(stageResult);
+
+        if (sowingStatus == SowingStatus.planted && live != null) {
+          final out = definition.evaluateTelemetry(
+            telemetry: live,
+            stage: stageResult,
+            profile: profile,
+            targetsOverride: targets,
+            alertsState: alertsState,
+          );
+          eval = out.eval;
+          nextAlertsState = out.nextAlertsState;
+        }
+      }
+    } else if (isRecurringBloomRuntime &&
+        (sowingStatus == SowingStatus.planted ||
+            sowingStatus == SowingStatus.planned) &&
+        normalizedContext != null) {
+      // Rosal: etapa por estado visual confirmado o por fecha (solo el
+      // establecimiento). Sin cosecha ni rendimiento; NO se invoca
+      // YieldProjection.
+      stageResult = resolveRecurringBloomStageResult(
+        context: normalizedContext,
+        today: today,
+      );
+
+      if (definition != null && profile != null) {
+        targets = definition is RoseCropDefinition
+            ? definition.resolveTargetsForProfile(
+                stageResult,
+                profileId: profile.id,
+              )
             : definition.resolveTargets(stageResult);
 
         if (sowingStatus == SowingStatus.planted && live != null) {
@@ -161,8 +241,88 @@ class CropRuntimeResolver {
           nextAlertsState = out.nextAlertsState;
         }
       }
+    } else if (isSeasonalBulbRuntime &&
+        isPlanted &&
+        definition != null &&
+        profile != null) {
+      // Tulipán (seasonal_bulb): ESPEJO ESTRUCTURAL de la rama anual de granos.
+      // `sowingDate` es la fecha ancla del ciclo (Documento A §2.1, §2.4). El
+      // motor conserva la última etapa (dormancia) cuando el día supera las
+      // ventanas: NO se cierra el registro ni se convierte en fallow. Usa
+      // targets por perfil (modificadores de maceta/forzado/corte, Documento B
+      // §17). No hay calendario ni rendimiento.
+      final DateTime effectiveSowingDate = plantedDate!;
+      engineSowingDate = effectiveSowingDate;
+
+      stageResult = definition.engine.compute(
+        sowingDate: effectiveSowingDate,
+        today: today,
+        profile: profile,
+        stressDelayDays: 0,
+      );
+
+      targets = definition is TulipCropDefinition
+          ? definition.resolveTargetsForProfile(
+              stageResult,
+              profileId: profile.id,
+            )
+          : definition.resolveTargets(stageResult);
+
+      if (live != null) {
+        final out = definition.evaluateTelemetry(
+          telemetry: live,
+          stage: stageResult,
+          profile: profile,
+          targetsOverride: targets,
+          alertsState: alertsState,
+        );
+        eval = out.eval;
+        nextAlertsState = out.nextAlertsState;
+      }
+    } else if (isAnnualOrnamentalRuntime &&
+        isPlanted &&
+        definition != null &&
+        profile != null) {
+      // Girasol (annual_ornamental): ESPEJO ESTRUCTURAL de la rama anual de
+      // granos y del tulipán. `sowingDate` es la fecha ancla del ciclo
+      // (Documento A §9.1). El motor conserva la última etapa (`cycle_complete`)
+      // cuando el día supera las ventanas: es TERMINAL (no dormancia, no
+      // cosecha), con progreso 1.0 y días restantes 0 (Documento A §11.9). Usa
+      // targets por perfil (pH + modificadores de maceta/ramificado/corte,
+      // Documento B §15). No hay calendario ni rendimiento.
+      final DateTime effectiveSowingDate = plantedDate!;
+      engineSowingDate = effectiveSowingDate;
+
+      stageResult = definition.engine.compute(
+        sowingDate: effectiveSowingDate,
+        today: today,
+        profile: profile,
+        stressDelayDays: 0,
+      );
+
+      targets = definition is SunflowerCropDefinition
+          ? definition.resolveTargetsForProfile(
+              stageResult,
+              profileId: profile.id,
+            )
+          : definition.resolveTargets(stageResult);
+
+      if (live != null) {
+        final out = definition.evaluateTelemetry(
+          telemetry: live,
+          stage: stageResult,
+          profile: profile,
+          targetsOverride: targets,
+          alertsState: alertsState,
+        );
+        eval = out.eval;
+        nextAlertsState = out.nextAlertsState;
+      }
     } else if (!isPerennialRuntime &&
         !isOrnamentalRuntime &&
+        !isRecurringBloomRuntime &&
+        !isSeasonalBulbRuntime &&
+        !isAnnualOrnamentalRuntime &&
         isPlanted &&
         definition != null &&
         profile != null) {
@@ -249,6 +409,12 @@ class CropRuntimeResolver {
       cropCategoryId: cropContext?.cropCategoryId,
       category: definition.category,
     );
+    final bool isRecurringBloom = isRecurringBloomCrop(
+      cropId: cropKeyName,
+      cropCategoryId: cropContext?.cropCategoryId,
+      category: definition.category,
+    );
+    final bool isOrnamentalLike = isOrnamental || isRecurringBloom;
     final String? ornamentalSelectionId = isOrnamental
         ? _resolveOrnamentalSelectionId(
             cropId: cropKeyName,
@@ -256,9 +422,16 @@ class CropRuntimeResolver {
             varietyId: cropContext?.varietyId,
             varietyAlias: cropContext?.varietyAlias ?? seed?.varietyAlias,
           )
+        : isRecurringBloom
+        ? _resolveRecurringBloomSelectionId(
+            cropId: cropKeyName,
+            profileId: cropContext?.profileId ?? seed?.profileId,
+            varietyId: cropContext?.varietyId,
+            varietyAlias: cropContext?.varietyAlias ?? seed?.varietyAlias,
+          )
         : null;
 
-    final String? rawVarietyValue = isOrnamental
+    final String? rawVarietyValue = isOrnamentalLike
         ? ornamentalSelectionId
         : cropContext?.varietyId ??
               cropContext?.varietyAlias ??
@@ -269,7 +442,7 @@ class CropRuntimeResolver {
       rawValue: rawVarietyValue,
     );
 
-    final String? explicitProfileId = isOrnamental
+    final String? explicitProfileId = isOrnamentalLike
         ? ornamentalSelectionId
         : _normalizeNullable(cropContext?.profileId ?? seed?.profileId);
 
@@ -376,10 +549,34 @@ class CropRuntimeResolver {
         cropEntry?.categoryId ??
         CropCatalog.grainCategoryId;
 
-    final bool isOrnamental = isEstablishmentMaintenanceCrop(
+    final bool isEstMaint = isEstablishmentMaintenanceCrop(
       cropId: cropId,
       cropCategoryId: cropCategoryId,
     );
+    final bool isRose = isRecurringBloomCrop(
+      cropId: cropId,
+      cropCategoryId: cropCategoryId,
+    );
+    // Tulipán (seasonal_bulb): categoría ornamental PERO con reloj anual. NO es
+    // "ornamental" para efectos de normalización: conserva `sowingDate` (su
+    // fecha ancla) y `sowingModeId`, como un grano (Documento A §22.9). Solo se
+    // usa para estampar su `lifecycleModeId`.
+    final bool isSeasonalBulb = isSeasonalBulbCrop(
+      cropId: cropId,
+      cropCategoryId: cropCategoryId,
+    );
+    // Girasol (annual_ornamental): igual que el tulipán, categoría ornamental
+    // PERO con reloj anual. NO es "ornamental" para efectos de normalización:
+    // conserva `sowingDate` (su fecha ancla) y `sowingModeId`, como un grano.
+    // Solo se usa para estampar su `lifecycleModeId` (Documento A §4.4).
+    final bool isAnnualOrnamental = isAnnualOrnamentalCrop(
+      cropId: cropId,
+      cropCategoryId: cropCategoryId,
+    );
+    // Ambos modos ornamentales comparten: categoría ornamental, sin siembra ni
+    // campos perennes. Difieren en el resolver de perfil/etapa y el modo. El
+    // tulipán y el girasol NO entran aquí: mantienen su fecha ancla como un grano.
+    final bool isOrnamental = isEstMaint || isRose;
     final bool isFallow =
         cropContext.lifecycleStatus == CropLifecycleStatus.fallow &&
         !isOrnamental;
@@ -387,8 +584,15 @@ class CropRuntimeResolver {
         isOrnamental && cropContext.lifecycleStatus == CropLifecycleStatus.fallow
         ? CropLifecycleStatus.planted
         : cropContext.lifecycleStatus;
-    final String? ornamentalSelectionId = isOrnamental
+    final String? ornamentalSelectionId = isEstMaint
         ? _resolveOrnamentalSelectionId(
+            cropId: cropId,
+            profileId: cropContext.profileId,
+            varietyId: cropContext.varietyId,
+            varietyAlias: cropContext.varietyAlias,
+          )
+        : isRose
+        ? _resolveRecurringBloomSelectionId(
             cropId: cropId,
             profileId: cropContext.profileId,
             varietyId: cropContext.varietyId,
@@ -410,8 +614,10 @@ class CropRuntimeResolver {
             rawValue: rawVarietyValue,
           );
 
-    final String resolvedProfileId = isOrnamental
+    final String resolvedProfileId = isEstMaint
         ? (ornamentalSelectionId ?? ornamentalDefaultProfileId(cropId))
+        : isRose
+        ? (ornamentalSelectionId ?? recurringBloomDefaultProfileId(cropId))
         : CropCatalog.resolveProfileId(
             cropId: cropId,
             varietyId: resolvedVarietyId,
@@ -440,11 +646,22 @@ class CropRuntimeResolver {
       ),
       varietyId: resolvedVarietyId,
       varietyAlias: resolvedVarietyAlias,
-      lifecycleModeId: isOrnamental
+      lifecycleModeId: isEstMaint
           ? ornamentalLifecycleMode(cropId)
+          : isRose
+          ? kRecurringBloomLifecycleModeId
+          : isSeasonalBulb
+          ? kSeasonalBulbLifecycleModeId
+          : isAnnualOrnamental
+          ? kAnnualOrnamentalLifecycleModeId
           : cropContext.lifecycleModeId,
-      ornamentalStageId: isOrnamental
+      ornamentalStageId: isEstMaint
           ? normalizeOrnamentalStageId(
+              cropId,
+              cropContext.ornamentalStageId ?? cropContext.perennialStateId,
+            )
+          : isRose
+          ? normalizeRecurringBloomStageId(
               cropId,
               cropContext.ornamentalStageId ?? cropContext.perennialStateId,
             )
@@ -522,6 +739,11 @@ class CropRuntimeResolver {
           ornamentalGeneralProfileLabel(cropId);
     }
 
+    if (isRecurringBloomCrop(cropId: cropId)) {
+      return CropCatalog.profileByAny(cropId, resolvedProfileId)?.label ??
+          recurringBloomGeneralProfileLabel(cropId);
+    }
+
     if (resolvedVarietyId != null) {
       final variety = CropCatalog.varietyById(cropId, resolvedVarietyId);
       if (variety != null) {
@@ -567,6 +789,27 @@ class CropRuntimeResolver {
     final fromAlias = CropCatalog.profileByAny(cropId, varietyAlias);
 
     final String generalProfileId = ornamentalDefaultProfileId(cropId);
+    for (final entry in [fromVariety, fromProfile, fromAlias]) {
+      if (entry != null && entry.id != generalProfileId) {
+        return entry.id;
+      }
+    }
+    return fromProfile?.id ?? fromVariety?.id ?? fromAlias?.id;
+  }
+
+  /// Igual que [_resolveOrnamentalSelectionId] pero para el modo de floración
+  /// recurrente (rosal): usa su perfil general como red de seguridad.
+  static String? _resolveRecurringBloomSelectionId({
+    required String cropId,
+    String? profileId,
+    String? varietyId,
+    String? varietyAlias,
+  }) {
+    final fromProfile = CropCatalog.profileByAny(cropId, profileId);
+    final fromVariety = CropCatalog.profileByAny(cropId, varietyId);
+    final fromAlias = CropCatalog.profileByAny(cropId, varietyAlias);
+
+    final String generalProfileId = recurringBloomDefaultProfileId(cropId);
     for (final entry in [fromVariety, fromProfile, fromAlias]) {
       if (entry != null && entry.id != generalProfileId) {
         return entry.id;

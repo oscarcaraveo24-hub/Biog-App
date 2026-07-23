@@ -22,6 +22,10 @@ import 'package:bio_g/core/crops/avocado_tree/avocado_tree_crop_definition.dart'
 import 'package:bio_g/core/crops/cactus/cactus_crop_definition.dart';
 import 'package:bio_g/core/crops/succulent/succulent_crop_definition.dart';
 import 'package:bio_g/core/crops/aloe/aloe_crop_definition.dart';
+import 'package:bio_g/core/crops/agave/agave_crop_definition.dart';
+import 'package:bio_g/core/crops/rose/rose_crop_definition.dart';
+import 'package:bio_g/core/crops/tulip/tulip_crop_definition.dart';
+import 'package:bio_g/core/crops/sunflower/sunflower_crop_definition.dart';
 import 'package:bio_g/core/crops/spinach/spinach_crop_definition.dart';
 import 'package:bio_g/core/crops/squash/squash_crop_definition.dart';
 import 'package:bio_g/core/crops/tomato/tomato_crop_definition.dart';
@@ -57,6 +61,10 @@ class CropRegistry {
     CropKey.cactus: CactusCropDefinition(),
     CropKey.succulent: SucculentCropDefinition(),
     CropKey.aloe: AloeCropDefinition(),
+    CropKey.agave: AgaveCropDefinition(),
+    CropKey.rose: RoseCropDefinition(),
+    CropKey.tulip: TulipCropDefinition(),
+    CropKey.sunflower: SunflowerCropDefinition(),
   };
 
   static CropDefinition? byKey(CropKey key) => _definitions[key];
@@ -241,6 +249,65 @@ class CropRegistry {
         normalized == 'zábila' ||
         normalized == 'aloe vera') {
       return _definitions[CropKey.aloe];
+    }
+
+    // Maguey / Agave: cuarta ornamental oficial. cropId canónico + alias legacy
+    // + aliases humanos resuelven a Maguey. NO cae en sábila, suculenta ni
+    // cactus: comparten modo de ciclo, no biología.
+    if (normalized == 'crop_agave' ||
+        normalized == 'agave' ||
+        normalized == 'agaves' ||
+        normalized == 'maguey' ||
+        normalized == 'magueyes') {
+      return _definitions[CropKey.agave];
+    }
+
+    // Rosal: primera ornamental de floración recurrente. cropId canónico + alias
+    // legacy + aliases humanos resuelven a Rosal. NO cae en las ornamentales de
+    // establecimiento: comparten categoría, no modo ni biología.
+    if (normalized == 'crop_rose' ||
+        normalized == 'rose' ||
+        normalized == 'roses' ||
+        normalized == 'rosa' ||
+        normalized == 'rosas' ||
+        normalized == 'rosal' ||
+        normalized == 'rosales') {
+      return _definitions[CropKey.rose];
+    }
+
+    // Tulipán: primera ornamental bulbosa estacional (modo seasonal_bulb).
+    // cropId canónico + alias legacy + aliases humanos resuelven a Tulipán. NO
+    // se mezcla con las ornamentales de establecimiento ni con el rosal:
+    // comparten categoría, no modo ni biología. Los nombres ambiguos (árbol de
+    // tulipán / Liriodendron / Spathodea / "tulipán mexicano") quedan FUERA a
+    // propósito (Documento A §18.2).
+    if (normalized == 'crop_tulip' ||
+        normalized == 'tulip' ||
+        normalized == 'tulips' ||
+        normalized == 'tulipan' ||
+        normalized == 'tulipán' ||
+        normalized == 'tulipanes' ||
+        normalized == 'tulipa' ||
+        normalized == 'orn_tulip') {
+      return _definitions[CropKey.tulip];
+    }
+
+    // Girasol: primera ornamental ANUAL VERDADERA (modo annual_ornamental).
+    // cropId canónico + alias legacy + aliases humanos resuelven a Girasol. NO
+    // se mezcla con las ornamentales de establecimiento, el rosal ni el tulipán:
+    // comparten categoría, no modo ni biología. Los nombres ambiguos ("girasol
+    // mexicano" / Tithonia / topinambur / alto oleico) quedan FUERA a propósito
+    // (Documento A §7.3).
+    if (normalized == 'crop_sunflower' ||
+        normalized == 'sunflower' ||
+        normalized == 'sun flower' ||
+        normalized == 'girasol' ||
+        normalized == 'girasoles' ||
+        normalized == 'helianthus annuus' ||
+        normalized == 'helianthus_annuus' ||
+        normalized == 'mirasol' ||
+        normalized == 'flor de sol') {
+      return _definitions[CropKey.sunflower];
     }
 
     return null;

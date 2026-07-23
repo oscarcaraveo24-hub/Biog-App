@@ -9,6 +9,8 @@ import 'package:bio_g/core/agro/event_engine.dart';
 import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart'; // <-- IMPORTANTE: Lo usamos para las dosis en vivo
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
+import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
+import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
@@ -185,7 +187,15 @@ class DashboardScreenPresenter {
     // cosecha ni rendimiento), exactamente como el árbol.
     final bool isOrnamental =
         isEstablishmentMaintenanceContext(runtime.cropContext) ||
-        isEstablishmentMaintenanceCrop(cropId: runtime.cropKeyName);
+        isEstablishmentMaintenanceCrop(cropId: runtime.cropKeyName) ||
+        // Tulipán (seasonal_bulb): sin cosecha ni rendimiento; se evalúa con su
+        // propio runtime, como las demás ornamentales.
+        isSeasonalBulbContext(runtime.cropContext) ||
+        isSeasonalBulbCrop(cropId: runtime.cropKeyName) ||
+        // Girasol (annual_ornamental): anual verdadera; sin cosecha ni
+        // rendimiento. Termina en cycle_complete, no en cosecha.
+        isAnnualOrnamentalContext(runtime.cropContext) ||
+        isAnnualOrnamentalCrop(cropId: runtime.cropKeyName);
     final String? ornamentalCropId =
         ornamentalCropIdOrNull(runtime.cropContext?.cropId) ??
         ornamentalCropIdOrNull(runtime.cropKeyName);

@@ -27,5 +27,9 @@ enum CropKey {
   cactus,
   succulent,
   aloe,
+  agave,
+  rose,
+  tulip,
+  sunflower,
   generic,
 }

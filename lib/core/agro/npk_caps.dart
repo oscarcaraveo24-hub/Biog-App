@@ -215,6 +215,36 @@ class NpkCaps {
           case 'zabila':
           case 'zábila':
             return 85.0;
+          // Maguey / Agave: cap N=90 (cactus 60 · suculenta 70 · sábila 85 ·
+          // maguey 90). Es la ornamental con la respuesta a N mejor documentada
+          // (fertigación en A. tequilana/potatorum, Doc B §4.6, §5). Muy por
+          // debajo de un cultivo de rendimiento. NO es dosis.
+          case 'agave':
+          case 'crop_agave':
+          case 'maguey':
+            return 90.0;
+          // Rosal: cap N=120 (Doc B §0). Arbusto ornamental de flor con demanda
+          // real de N en brotación; muy por encima de las ornamentales
+          // xerófitas. El cap normaliza el gauge, NO es una dosis.
+          case 'rose':
+          case 'crop_rose':
+          case 'rosal':
+            return 120.0;
+          // Tulipán: cap N=100 (Documento B §9.6). Demanda baja-moderada; el
+          // bulbo ya trae reservas de N y el exceso no debe dominar. El cap
+          // normaliza el gauge, NO es una dosis.
+          case 'tulip':
+          case 'crop_tulip':
+          case 'tulipan':
+          case 'tulipán':
+            return 100.0;
+          // Girasol: cap N=130 (Documento B §0.3, §11). Demanda anual
+          // moderada-alta, con techo prudente por vuelco y enfermedad. El cap
+          // normaliza el gauge, NO es una dosis.
+          case 'sunflower':
+          case 'crop_sunflower':
+          case 'girasol':
+            return 130.0;
           default:
             return 120.0;
         }
@@ -387,6 +417,35 @@ class NpkCaps {
           case 'zabila':
           case 'zábila':
             return 65.0;
+          // Maguey / Agave: cap P=55 (cactus 55 · suculenta 60 · sábila 65 ·
+          // maguey 55). Demanda moderada; la sonda económica tiene baja
+          // confianza en P, así que pesos bajos y nunca una dosis (Doc B §4.7,
+          // §5).
+          case 'agave':
+          case 'crop_agave':
+          case 'maguey':
+            return 55.0;
+          // Rosal: cap P=90 (Doc B §0). Demanda de P en raíz y botón mayor que
+          // las ornamentales xerófitas. El cap normaliza el gauge, NO es dosis.
+          case 'rose':
+          case 'crop_rose':
+          case 'rosal':
+            return 90.0;
+          // Tulipán: cap P=80 (Documento B §9.6). El P importa en enraizado y
+          // recarga, pero la sonda económica tiene baja confianza en P: cap
+          // moderado y nunca una dosis.
+          case 'tulip':
+          case 'crop_tulip':
+          case 'tulipan':
+          case 'tulipán':
+            return 80.0;
+          // Girasol: cap P=90 (Documento B §0.3, §11). Prioridad temprana, pero
+          // respuesta regional variable y riesgo de acumulación en maceta. El
+          // cap normaliza el gauge, NO es una dosis.
+          case 'sunflower':
+          case 'crop_sunflower':
+          case 'girasol':
+            return 90.0;
           default:
             return 80.0;
         }
@@ -576,6 +635,35 @@ class NpkCaps {
           case 'zabila':
           case 'zábila':
             return 270.0;
+          // Maguey / Agave: cap K=280 (cactus 220 · suculenta 240 · sábila 270
+          // · maguey 280). El K conserva relevancia por la regulación hídrica y
+          // la firmeza de hoja; es el cap más alto del maguey (Doc B §4.8, §5).
+          case 'agave':
+          case 'crop_agave':
+          case 'maguey':
+            return 280.0;
+          // Rosal: cap K=280 (Doc B §0). El K es el nutriente clave en
+          // floración; cap alto. El cap normaliza el gauge, NO es una dosis.
+          case 'rose':
+          case 'crop_rose':
+          case 'rosal':
+            return 280.0;
+          // Tulipán: cap K=260 (Documento B §9.6). El K es el nutriente clave
+          // en tallo, botón, flor y recarga; cap alto para que su óptimo caiga a
+          // media escala. El cap normaliza el gauge, NO es una dosis.
+          case 'tulip':
+          case 'crop_tulip':
+          case 'tulipan':
+          case 'tulipán':
+            return 260.0;
+          // Girasol: cap K=300 (Documento B §0.3, §11). Suficiencia ~150 ppm en
+          // referencias de suelo y alta absorción antes de floración; cap alto
+          // para que su óptimo caiga a media escala. El cap normaliza el gauge,
+          // NO es una dosis.
+          case 'sunflower':
+          case 'crop_sunflower':
+          case 'girasol':
+            return 300.0;
           default:
             return 140.0;
         }

@@ -9,6 +9,9 @@ import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
 import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
 import 'package:bio_g/core/crops/cactus/cactus_assets.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
+import 'package:bio_g/core/crops/recurring_bloom/recurring_bloom_crops.dart';
+import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
+import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
@@ -244,6 +247,33 @@ class CropPresentationResolver {
       );
     }
 
+    if (isRecurringBloomCrop(cropId: cropId)) {
+      return _resolveRecurringBloom(
+        cropId: cropId,
+        cropContext: cropContext,
+        seed: seed,
+        definition: definition,
+      );
+    }
+
+    if (isSeasonalBulbCrop(cropId: cropId)) {
+      return _resolveSeasonalBulb(
+        cropId: cropId,
+        cropContext: cropContext,
+        seed: seed,
+        definition: definition,
+      );
+    }
+
+    if (isAnnualOrnamentalCrop(cropId: cropId)) {
+      return _resolveAnnualOrnamental(
+        cropId: cropId,
+        cropContext: cropContext,
+        seed: seed,
+        definition: definition,
+      );
+    }
+
     if (sowingStatus == SowingStatus.skip) {
       return CropPresentationData(
         hasConfiguredCrop: true,
@@ -461,6 +491,174 @@ class CropPresentationResolver {
     );
   }
 
+  /// Presentación de las ornamentales de floración recurrente (rosal). La
+  /// "variedad" visible es el PERFIL; una selección específica gana sobre el
+  /// perfil general.
+  static CropPresentationData _resolveRecurringBloom({
+    required String cropId,
+    required DeviceCropContext? cropContext,
+    required SeedInstall? seed,
+    CropDefinition? definition,
+  }) {
+    final cropDisplayName =
+        CropCatalog.cropById(cropId)?.label ??
+        definition?.displayName ??
+        recurringBloomCropDisplayName(cropId);
+    final String generalProfileId = recurringBloomDefaultProfileId(cropId);
+
+    final candidates = <CropProfileEntry?>[
+      CropCatalog.profileByAny(cropId, cropContext?.varietyId),
+      CropCatalog.profileByAny(cropId, cropContext?.profileId),
+      CropCatalog.profileByAny(cropId, cropContext?.varietyAlias),
+      CropCatalog.profileByAny(cropId, seed?.profileId),
+      CropCatalog.profileByAny(cropId, seed?.varietyAlias),
+    ];
+    CropProfileEntry? profile;
+    for (final candidate in candidates) {
+      if (candidate != null && candidate.id != generalProfileId) {
+        profile = candidate;
+        break;
+      }
+    }
+    if (profile == null) {
+      for (final candidate in candidates) {
+        if (candidate != null) {
+          profile = candidate;
+          break;
+        }
+      }
+    }
+    profile ??= CropCatalog.profileByAny(cropId, generalProfileId);
+    final profileId = profile?.id ?? generalProfileId;
+    final profileLabel =
+        profile?.label ?? recurringBloomGeneralProfileLabel(cropId);
+    final isGeneric = profileId == generalProfileId;
+
+    return CropPresentationData(
+      hasConfiguredCrop: true,
+      isFallowMode: false,
+      isGenericSelection: isGeneric,
+      cropId: cropId,
+      cropDisplayName: cropDisplayName,
+      varietyLabel: profileLabel,
+      headlineLabel: '$cropDisplayName · $profileLabel',
+      runtimeLabel: '$cropDisplayName ($profileLabel)',
+      iconAsset: recurringBloomProfileIcon(cropId, profileId),
+    );
+  }
+
+  /// Tulipán (seasonal_bulb): la "variedad" visible es el PERFIL (TU-01..
+  /// TU-05 o el general), guardado en `profileId`. Espejo estructural de
+  /// `_resolveRecurringBloom`; nunca muestra el id interno del perfil.
+  static CropPresentationData _resolveSeasonalBulb({
+    required String cropId,
+    required DeviceCropContext? cropContext,
+    required SeedInstall? seed,
+    CropDefinition? definition,
+  }) {
+    final cropDisplayName =
+        CropCatalog.cropById(cropId)?.label ??
+        definition?.displayName ??
+        seasonalBulbCropDisplayName(cropId);
+    final String generalProfileId = seasonalBulbDefaultProfileId(cropId);
+
+    final candidates = <CropProfileEntry?>[
+      CropCatalog.profileByAny(cropId, cropContext?.varietyId),
+      CropCatalog.profileByAny(cropId, cropContext?.profileId),
+      CropCatalog.profileByAny(cropId, cropContext?.varietyAlias),
+      CropCatalog.profileByAny(cropId, seed?.profileId),
+      CropCatalog.profileByAny(cropId, seed?.varietyAlias),
+    ];
+    CropProfileEntry? profile;
+    for (final candidate in candidates) {
+      if (candidate != null && candidate.id != generalProfileId) {
+        profile = candidate;
+        break;
+      }
+    }
+    if (profile == null) {
+      for (final candidate in candidates) {
+        if (candidate != null) {
+          profile = candidate;
+          break;
+        }
+      }
+    }
+    profile ??= CropCatalog.profileByAny(cropId, generalProfileId);
+    final profileId = profile?.id ?? generalProfileId;
+    final profileLabel =
+        profile?.label ?? seasonalBulbGeneralProfileLabel(cropId);
+    final isGeneric = profileId == generalProfileId;
+
+    return CropPresentationData(
+      hasConfiguredCrop: true,
+      isFallowMode: false,
+      isGenericSelection: isGeneric,
+      cropId: cropId,
+      cropDisplayName: cropDisplayName,
+      varietyLabel: profileLabel,
+      headlineLabel: '$cropDisplayName · $profileLabel',
+      runtimeLabel: '$cropDisplayName ($profileLabel)',
+      iconAsset: seasonalBulbProfileIcon(cropId, profileId),
+    );
+  }
+
+  /// Girasol (annual_ornamental): la "variedad" visible es el PERFIL (gi_01..
+  /// gi_04 o el general), guardado en `profileId`. Espejo estructural de
+  /// `_resolveSeasonalBulb`; nunca muestra el id interno del perfil.
+  static CropPresentationData _resolveAnnualOrnamental({
+    required String cropId,
+    required DeviceCropContext? cropContext,
+    required SeedInstall? seed,
+    CropDefinition? definition,
+  }) {
+    final cropDisplayName =
+        CropCatalog.cropById(cropId)?.label ??
+        definition?.displayName ??
+        annualOrnamentalCropDisplayName(cropId);
+    final String generalProfileId = annualOrnamentalDefaultProfileId(cropId);
+
+    final candidates = <CropProfileEntry?>[
+      CropCatalog.profileByAny(cropId, cropContext?.varietyId),
+      CropCatalog.profileByAny(cropId, cropContext?.profileId),
+      CropCatalog.profileByAny(cropId, cropContext?.varietyAlias),
+      CropCatalog.profileByAny(cropId, seed?.profileId),
+      CropCatalog.profileByAny(cropId, seed?.varietyAlias),
+    ];
+    CropProfileEntry? profile;
+    for (final candidate in candidates) {
+      if (candidate != null && candidate.id != generalProfileId) {
+        profile = candidate;
+        break;
+      }
+    }
+    if (profile == null) {
+      for (final candidate in candidates) {
+        if (candidate != null) {
+          profile = candidate;
+          break;
+        }
+      }
+    }
+    profile ??= CropCatalog.profileByAny(cropId, generalProfileId);
+    final profileId = profile?.id ?? generalProfileId;
+    final profileLabel =
+        profile?.label ?? annualOrnamentalGeneralProfileLabel(cropId);
+    final isGeneric = profileId == generalProfileId;
+
+    return CropPresentationData(
+      hasConfiguredCrop: true,
+      isFallowMode: false,
+      isGenericSelection: isGeneric,
+      cropId: cropId,
+      cropDisplayName: cropDisplayName,
+      varietyLabel: profileLabel,
+      headlineLabel: '$cropDisplayName · $profileLabel',
+      runtimeLabel: '$cropDisplayName ($profileLabel)',
+      iconAsset: annualOrnamentalProfileIcon(cropId, profileId),
+    );
+  }
+
   static SowingStatus _resolveSowingStatus({
     required DeviceCropContext? cropContext,
     required SeedInstall? seed,
@@ -608,6 +806,34 @@ class CropPresentationResolver {
         // alias visible, que no mapea a icono.
         return ornamentalProfileIcon(
           CropCatalog.aloeCropId,
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.agaveCropId:
+        // El maguey guarda el perfil MG en `profileId`. Se prioriza sobre el
+        // alias visible, que no mapea a icono.
+        return ornamentalProfileIcon(
+          CropCatalog.agaveCropId,
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.roseCropId:
+        // El rosal guarda el perfil RO en `profileId`. Se prioriza sobre el
+        // alias visible, que no mapea a icono.
+        return recurringBloomProfileIcon(
+          CropCatalog.roseCropId,
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.tulipCropId:
+        // El tulipán guarda el perfil TU en `profileId`. Se prioriza sobre el
+        // alias visible, que no mapea a icono.
+        return seasonalBulbProfileIcon(
+          CropCatalog.tulipCropId,
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.sunflowerCropId:
+        // El girasol guarda el perfil GI en `profileId`. Se prioriza sobre el
+        // alias visible, que no mapea a icono.
+        return annualOrnamentalProfileIcon(
+          CropCatalog.sunflowerCropId,
           cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
         );
       case CropCatalog.appleTreeCropId:

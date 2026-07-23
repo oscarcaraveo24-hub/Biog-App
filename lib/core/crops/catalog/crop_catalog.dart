@@ -24,6 +24,12 @@ import 'package:bio_g/core/crops/avocado_tree/avocado_tree_catalog.dart';
 import 'package:bio_g/core/crops/cactus/cactus_catalog.dart';
 import 'package:bio_g/core/crops/succulent/succulent_catalog.dart';
 import 'package:bio_g/core/crops/aloe/aloe_catalog.dart';
+import 'package:bio_g/core/crops/agave/agave_catalog.dart';
+import 'package:bio_g/core/crops/rose/rose_catalog.dart';
+import 'package:bio_g/core/crops/tulip/tulip_catalog.dart';
+import 'package:bio_g/widgets/seeds/tulip_profiles.dart' show kTuSkip;
+import 'package:bio_g/core/crops/sunflower/sunflower_catalog.dart';
+import 'package:bio_g/widgets/seeds/sunflower_profiles.dart' show kGiSkip;
 import 'package:bio_g/core/crops/spinach/spinach_catalog.dart';
 import 'package:bio_g/core/crops/squash/squash_catalog.dart';
 import 'package:bio_g/core/crops/tomato/tomato_catalog.dart';
@@ -72,6 +78,10 @@ class CropCatalog {
   static const String cactusCropId = kCropCactus;
   static const String succulentCropId = kCropSucculent;
   static const String aloeCropId = kCropAloe;
+  static const String agaveCropId = kCropAgave;
+  static const String roseCropId = kCropRose;
+  static const String tulipCropId = kCropTulip;
+  static const String sunflowerCropId = kCropSunflower;
 
   static const String tomatoDefaultProfileId = 'tm_gen';
   static const String tomatoDefaultCalendarId = 'tomato_default';
@@ -137,6 +147,33 @@ class CropCatalog {
   // sal, responde a N).
   static const String aloeDefaultProfileId = kSaSkip;
 
+  // Maguey / Agave (ornamental, establishment_maintenance) — perfil general/
+  // seguro MG-SKIP. No es fallow ni promete floración/cosecha ni jima. Comparte
+  // el modo del cactus, la suculenta y la sábila, NO sus targets (banda hídrica
+  // baja-moderada, tolera banda pH más alcalina, responde a N en crecimiento).
+  static const String agaveDefaultProfileId = kAgaveSkip;
+
+  // Rosal (ornamental, recurring_bloom) — perfil general/seguro RO-SKIP. NO es
+  // fallow ni promete cosecha; su ciclo es de floración recurrente confirmada
+  // visualmente. Comparte categoría ornamental, NO el modo ni la biología de las
+  // ornamentales de establecimiento.
+  static const String roseDefaultProfileId = kRoSkip;
+
+  // Tulipán (ornamental, seasonal_bulb) — perfil general/seguro TU-SKIP. NO es
+  // fallow ni promete cosecha ni rendimiento. Su ciclo es un RELOJ ANUAL tipo
+  // granos que termina en dormancia (el registro sobrevive y puede iniciar otra
+  // temporada). Comparte categoría ornamental, NO el modo ni la biología de las
+  // ornamentales de establecimiento ni del rosal.
+  static const String tulipDefaultProfileId = kTuSkip;
+
+  // Girasol (ornamental, annual_ornamental) — perfil general/seguro gi_skip. NO
+  // es fallow ni promete cosecha ni rendimiento. Su ciclo es un RELOJ ANUAL tipo
+  // granos que termina en cycle_complete TERMINAL: la planta cierra su ciclo y
+  // una nueva temporada exige una nueva siembra. Comparte categoría ornamental,
+  // NO el modo ni la biología de las ornamentales de establecimiento, del rosal
+  // ni del tulipán.
+  static const String sunflowerDefaultProfileId = kGiSkip;
+
   // ── Maize catalog constants ─────────────────────────────────────────────────
   static const String maizeDemoVarietyId = 'dk_2069';
   static const String maizeGenericVarietyId = 'generic_maize';
@@ -179,7 +216,7 @@ class CropCatalog {
     CropCategoryEntry(
       id: ornamentalCategoryId,
       label: 'Planta ornamental',
-      subtitle: 'Cactus, suculentas y sábila (más ornamentales próximamente)',
+      subtitle: 'Cactus, suculentas, sábila, maguey, rosal, tulipán y girasol',
       enabled: true,
     ),
   ];
@@ -894,6 +931,71 @@ class CropCatalog {
       enabled: true,
       defaultProfileId: aloeDefaultProfileId,
       profiles: aloeProfileEntries,
+    ),
+    // Maguey / Agave: cuarta ornamental oficial. Mismo modo de ciclo que cactus,
+    // suculenta y sábila (establecimiento → mantenimiento abierto), biología
+    // PROPIA: banda hídrica baja-moderada, tolera una banda pH más alcalina,
+    // responde a N en crecimiento y conserva K como cap más alto. Sin
+    // rendimiento y sin cosecha; "Maduro" es estabilidad ornamental, no jima.
+    CropCatalogEntry(
+      cropId: agaveCropId,
+      categoryId: ornamentalCategoryId,
+      label: 'Maguey',
+      subtitle:
+          'Planta ornamental de roseta perenne (maguey / agave) · '
+          'establecimiento y mantenimiento',
+      enabled: true,
+      defaultProfileId: agaveDefaultProfileId,
+      profiles: agaveProfileEntries,
+    ),
+    // Rosal: primera ornamental de FLORACIÓN RECURRENTE. Modo de ciclo propio
+    // (recurring_bloom), NO establecimiento/mantenimiento: tras arraigar entra
+    // en un ciclo brote → botón → floración → post-floración → reposo que el
+    // usuario confirma visualmente. Sin cosecha, sin rendimiento, sin etapa
+    // final.
+    CropCatalogEntry(
+      cropId: roseCropId,
+      categoryId: ornamentalCategoryId,
+      label: 'Rosal',
+      subtitle:
+          'Arbusto ornamental de flor · floración recurrente (brote, botón, '
+          'floración, reposo)',
+      enabled: true,
+      defaultProfileId: roseDefaultProfileId,
+      profiles: roseProfileEntries,
+    ),
+    // Tulipán: primera ornamental BULBOSA ESTACIONAL. Modo de ciclo propio
+    // (seasonal_bulb): reloj anual tipo granos (fecha ancla → día → etapa) que
+    // termina en DORMANCIA, no en cosecha. El registro sobrevive al cierre y
+    // puede iniciar otra temporada. Sin rendimiento. NO comparte el modo ni la
+    // biología de las ornamentales de establecimiento ni del rosal.
+    CropCatalogEntry(
+      cropId: tulipCropId,
+      categoryId: ornamentalCategoryId,
+      label: 'Tulipán',
+      subtitle:
+          'Bulbo ornamental de flor · temporada anual (plantación, floración, '
+          'recarga, reposo)',
+      enabled: true,
+      defaultProfileId: tulipDefaultProfileId,
+      profiles: tulipProfileEntries,
+    ),
+    // Girasol: primera ornamental ANUAL VERDADERA. Modo de ciclo propio
+    // (annual_ornamental): reloj anual tipo granos (fecha ancla → día → etapa)
+    // que termina en cycle_complete TERMINAL, no en dormancia ni cosecha. Una
+    // nueva temporada exige una nueva siembra. Sin rendimiento. NO comparte el
+    // modo ni la biología de las ornamentales de establecimiento, el rosal ni el
+    // tulipán.
+    CropCatalogEntry(
+      cropId: sunflowerCropId,
+      categoryId: ornamentalCategoryId,
+      label: 'Girasol',
+      subtitle:
+          'Flor ornamental anual · temporada única (siembra, tallo, botón, '
+          'floración, fin de ciclo)',
+      enabled: true,
+      defaultProfileId: sunflowerDefaultProfileId,
+      profiles: sunflowerProfileEntries,
     ),
   ];
 
@@ -1806,6 +1908,55 @@ class CropCatalog {
       'sabila ornamental' ||
       'planta de sabila' ||
       'planta de sábila' => aloeCropId,
+      // Maguey / Agave (ornamental). cropId canónico + alias legacy + aliases
+      // humanos. NO se mezcla con sábila, suculenta ni cactus: cultivos
+      // distintos con targets distintos.
+      'crop_agave' ||
+      'agave' ||
+      'agaves' ||
+      'maguey' ||
+      'magueyes' ||
+      'planta de maguey' ||
+      'planta de agave' => agaveCropId,
+      // Rosal (ornamental, floración recurrente). cropId canónico + alias legacy
+      // + aliases humanos. NO se mezcla con las ornamentales de establecimiento:
+      // cultivo distinto, modo distinto, targets distintos.
+      'crop_rose' ||
+      'rose' ||
+      'roses' ||
+      'rosa' ||
+      'rosas' ||
+      'rosal' ||
+      'rosales' => roseCropId,
+      // Tulipán (ornamental, bulbosa estacional). cropId canónico + alias legacy
+      // + aliases humanos. NO se mezcla con las ornamentales de establecimiento
+      // ni con el rosal: cultivo distinto, modo distinto, targets distintos. Los
+      // nombres ambiguos (árbol de tulipán / Liriodendron / tulipán africano /
+      // Spathodea / "tulipán mexicano") NO se listan a propósito: quedan fuera
+      // del alta automática y requieren confirmación (Documento A §18.2).
+      'crop_tulip' ||
+      'tulip' ||
+      'tulips' ||
+      'tulipan' ||
+      'tulipán' ||
+      'tulipanes' ||
+      'tulipa' ||
+      'orn_tulip' => tulipCropId,
+      // Girasol (ornamental, anual verdadera). cropId canónico + alias legacy +
+      // aliases humanos. NO se mezcla con las ornamentales de establecimiento, el
+      // rosal ni el tulipán: cultivo distinto, modo distinto, targets distintos.
+      // Los nombres ambiguos ("girasol mexicano" / Tithonia / topinambur / alto
+      // oleico / girasol agrícola) NO se listan a propósito: quedan fuera del
+      // alta automática y requieren confirmación (Documento A §7.3).
+      'crop_sunflower' ||
+      'sunflower' ||
+      'sun flower' ||
+      'girasol' ||
+      'girasoles' ||
+      'helianthus annuus' ||
+      'helianthus_annuus' ||
+      'mirasol' ||
+      'flor de sol' => sunflowerCropId,
       _ => value,
     };
   }
@@ -1847,6 +1998,10 @@ class CropCatalog {
       cactusCropId => 'Cactus',
       succulentCropId => 'Suculenta',
       aloeCropId => 'Sábila',
+      agaveCropId => 'Maguey',
+      roseCropId => 'Rosal',
+      tulipCropId => 'Tulipán',
+      sunflowerCropId => 'Girasol',
       _ => 'Cultivo',
     };
   }

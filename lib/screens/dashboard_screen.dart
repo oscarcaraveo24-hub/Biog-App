@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
+import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
+import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/features/reporting/pdf_preview_screen.dart';
 import 'package:bio_g/features/reporting/pdf_report_builder.dart';
@@ -154,7 +156,14 @@ class _DashboardScreenState extends State<DashboardScreen>
     // seguimiento de la planta (estado / cuidados) en su lugar.
     final BioGStore store = BioGScope.of(context);
     if (isEstablishmentMaintenanceContext(store.activeCropContext) ||
-        isEstablishmentMaintenanceCrop(cropId: store.activeSeed?.cropKey)) {
+        isEstablishmentMaintenanceCrop(cropId: store.activeSeed?.cropKey) ||
+        // Tulipán (seasonal_bulb): no proyecta rendimiento; el tap abre sanidad.
+        isSeasonalBulbContext(store.activeCropContext) ||
+        isSeasonalBulbCrop(cropId: store.activeSeed?.cropKey) ||
+        // Girasol (annual_ornamental): no proyecta rendimiento; el tap abre
+        // sanidad, como las demás ornamentales.
+        isAnnualOrnamentalContext(store.activeCropContext) ||
+        isAnnualOrnamentalCrop(cropId: store.activeSeed?.cropKey)) {
       await _handlePlantHealthTap();
       return;
     }

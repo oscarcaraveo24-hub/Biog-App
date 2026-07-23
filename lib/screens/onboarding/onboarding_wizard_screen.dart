@@ -17,8 +17,14 @@ import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
 import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
 import 'package:bio_g/core/crops/cactus/cactus_assets.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
+import 'package:bio_g/core/crops/recurring_bloom/recurring_bloom_crops.dart';
+// Tulipán (seasonal_bulb): capa compartida del modo bulboso estacional.
+import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
+// Girasol (annual_ornamental): capa compartida del modo anual ornamental.
+import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/crops/succulent/succulent_assets.dart';
 import 'package:bio_g/core/crops/aloe/aloe_assets.dart';
+import 'package:bio_g/core/crops/agave/agave_assets.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/onboarding/onboarding_draft.dart';
@@ -97,6 +103,48 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
   /// cropId canónico de la ornamental seleccionada (para textos y assets).
   String? get _ornamentalCropId => ornamentalCropIdOrNull(_draft.cropId);
+
+  /// Tulipán (seasonal_bulb): ornamental bulbosa estacional. Elige PERFIL como
+  /// una ornamental, pero su alta/fecha/persistencia siguen la ruta de GRANO
+  /// (ancla real: conserva el sowingDate). Por eso NO es `_isOrnamentalDraft`.
+  bool get _isSeasonalBulbDraft => isSeasonalBulbCrop(
+    cropId: _draft.cropId,
+    cropCategoryId: _draft.cropCategory,
+  );
+
+  /// cropId canónico del bulboso estacional seleccionado (para textos y assets).
+  String? get _seasonalBulbCropId => seasonalBulbCropIdOrNull(_draft.cropId);
+
+  /// Girasol (annual_ornamental): ornamental anual verdadera. Elige PERFIL como
+  /// una ornamental, pero su alta/fecha/persistencia siguen la ruta de GRANO
+  /// (ancla real: conserva el sowingDate). Por eso NO es `_isOrnamentalDraft`.
+  bool get _isAnnualOrnamentalDraft => isAnnualOrnamentalCrop(
+    cropId: _draft.cropId,
+    cropCategoryId: _draft.cropCategory,
+  );
+
+  /// cropId canónico de la ornamental anual seleccionada (para textos y assets).
+  String? get _annualOrnamentalCropId =>
+      annualOrnamentalCropIdOrNull(_draft.cropId);
+
+  /// Ornamental de floración recurrente (rosal): usa selección VISUAL de estado.
+  bool get _isRecurringBloomDraft => isRecurringBloomCrop(
+    cropId: _draft.cropId,
+    cropCategoryId: _draft.cropCategory,
+  );
+
+  /// Opción de estado visual del rosal seleccionada (guardada en draft.stage).
+  RecurringBloomStateOption? get _selectedRecurringBloomOption {
+    if (!_isRecurringBloomDraft || _draft.stage == null) return null;
+    for (final option in recurringBloomVisualStateOptions(_draft.cropId)) {
+      if (option.id == _draft.stage) return option;
+    }
+    return null;
+  }
+
+  bool get _isRecurringBloomFutureIntent =>
+      _isRecurringBloomDraft &&
+      (_selectedRecurringBloomOption?.requiresFutureDate ?? false);
   bool get _isTreeUnknownStageSelection =>
       _isTreeDraft &&
       (normalizeTreeProductionStatusId(_draft.treeProductionStatusId) ==
@@ -521,6 +569,13 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               fallbackAsset:
                   isEstablishmentMaintenanceCrop(cropId: crop.cropId)
                   ? kOrnamentalGenericPlantFallback
+                  // Tulipán (seasonal_bulb): planta genérica ornamental, no árbol.
+                  : isSeasonalBulbCrop(cropId: crop.cropId)
+                  ? kSeasonalBulbGenericPlantFallback
+                  // Girasol (annual_ornamental): planta genérica ornamental, no
+                  // árbol.
+                  : isAnnualOrnamentalCrop(cropId: crop.cropId)
+                  ? kAnnualOrnamentalGenericPlantFallback
                   : 'assets/icons/wizard/ic_tree.png',
               enabled: crop.enabled,
             ),
@@ -562,6 +617,37 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       cropCategoryId: _draft.cropCategory,
     )) {
       await _openOrnamentalProfileSelector();
+      return;
+    }
+
+    // El rosal (floración recurrente) también usa perfiles como "tipos".
+    if (isRecurringBloomCrop(
+      cropId: cropId,
+      cropCategoryId: _draft.cropCategory,
+    )) {
+      await _openRecurringBloomProfileSelector();
+      return;
+    }
+
+    // El tulipán (seasonal_bulb) también elige PERFIL como "tipo", aunque su alta
+    // siga el flujo de grano. Sin esta rama caería al selector de variedades de
+    // semilla, que está vacío para el tulipán.
+    if (isSeasonalBulbCrop(
+      cropId: cropId,
+      cropCategoryId: _draft.cropCategory,
+    )) {
+      await _openSeasonalBulbProfileSelector();
+      return;
+    }
+
+    // El girasol (annual_ornamental) también elige PERFIL como "tipo", aunque
+    // su alta siga el flujo de grano. Sin esta rama caería al selector de
+    // variedades de semilla, que está vacío para el girasol.
+    if (isAnnualOrnamentalCrop(
+      cropId: cropId,
+      cropCategoryId: _draft.cropCategory,
+    )) {
+      await _openAnnualOrnamentalProfileSelector();
       return;
     }
 
@@ -788,6 +874,146 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     _animateToStep(OnboardingStep.cropStage);
   }
 
+  /// Selector de perfil del rosal (floración recurrente) en el onboarding.
+  Future<void> _openRecurringBloomProfileSelector() async {
+    final cropId = _draft.cropId;
+    if (cropId == null) return;
+
+    final profiles = CropCatalog.profilesForCrop(cropId, enabledOnly: false);
+    if (profiles.isEmpty) return;
+    final defaultProfileId = CropCatalog.resolveProfileId(cropId: cropId);
+
+    final result = await showWizardSelectionSheet<String>(
+      context: context,
+      title: recurringBloomTypeQuestion(cropId),
+      options: profiles
+          .map(
+            (profile) => WizardSheetOption<String>(
+              value: profile.id,
+              title: profile.label,
+              subtitle: profile.id == defaultProfileId
+                  ? recurringBloomGeneralProfileHint(cropId)
+                  : (profile.subtitle ?? 'Disponible'),
+              iconPath: recurringBloomProfileIcon(cropId, profile.id),
+              fallbackAsset: kRecurringBloomGenericPlantFallback,
+              enabled: true,
+            ),
+          )
+          .toList(growable: false),
+    );
+
+    if (result == null) return;
+
+    _updateDraft(
+      _draft.copyWith(
+        varietyId: result,
+        varietyAlias: result,
+        stage: null,
+        selectedDate: null,
+        useFlexibleDate: false,
+      ),
+    );
+
+    _animateToStep(OnboardingStep.cropStage);
+  }
+
+  /// Selector de tipo del Tulipán (seasonal_bulb) en el onboarding. Espejo del
+  /// selector ornamental (perfiles en ORDEN del catálogo con el general al final,
+  /// íconos ic_tulip_*, nunca el id interno). Tras elegir, pasa a la etapa de
+  /// GRANO (planned/planted) para conservar el sowingDate como ancla real.
+  Future<void> _openSeasonalBulbProfileSelector() async {
+    final cropId = _draft.cropId;
+    if (cropId == null) return;
+
+    final profiles = CropCatalog.profilesForCrop(cropId, enabledOnly: false);
+    if (profiles.isEmpty) return;
+    final defaultProfileId = CropCatalog.resolveProfileId(cropId: cropId);
+
+    final result = await showWizardSelectionSheet<String>(
+      context: context,
+      title: seasonalBulbTypeQuestion(cropId),
+      options: profiles
+          .map(
+            (profile) => WizardSheetOption<String>(
+              value: profile.id,
+              title: profile.label,
+              subtitle: profile.id == defaultProfileId
+                  ? seasonalBulbGeneralProfileHint(cropId)
+                  : (profile.subtitle ?? 'Disponible'),
+              iconPath: seasonalBulbProfileIcon(cropId, profile.id),
+              fallbackAsset: kSeasonalBulbGenericPlantFallback,
+              enabled: true,
+            ),
+          )
+          .toList(growable: false),
+    );
+
+    if (result == null) return;
+
+    _updateDraft(
+      _draft.copyWith(
+        // En el tulipán, "tipo" es el perfil (tu_*). El alta sigue el flujo de
+        // grano; la fecha se conservará como sowingDate.
+        varietyId: result,
+        varietyAlias: result,
+        stage: null,
+        selectedDate: null,
+        useFlexibleDate: false,
+      ),
+    );
+
+    _animateToStep(OnboardingStep.cropStage);
+  }
+
+  /// Selector de tipo del Girasol (annual_ornamental) en el onboarding. Espejo
+  /// del selector ornamental (perfiles en ORDEN del catálogo con el general al
+  /// final, íconos ic_girasol_*, nunca el id interno). Tras elegir, pasa a la
+  /// etapa de GRANO (planned/planted) para conservar el sowingDate como ancla
+  /// real.
+  Future<void> _openAnnualOrnamentalProfileSelector() async {
+    final cropId = _draft.cropId;
+    if (cropId == null) return;
+
+    final profiles = CropCatalog.profilesForCrop(cropId, enabledOnly: false);
+    if (profiles.isEmpty) return;
+    final defaultProfileId = CropCatalog.resolveProfileId(cropId: cropId);
+
+    final result = await showWizardSelectionSheet<String>(
+      context: context,
+      title: annualOrnamentalTypeQuestion(cropId),
+      options: profiles
+          .map(
+            (profile) => WizardSheetOption<String>(
+              value: profile.id,
+              title: profile.label,
+              subtitle: profile.id == defaultProfileId
+                  ? annualOrnamentalGeneralProfileHint(cropId)
+                  : (profile.subtitle ?? 'Disponible'),
+              iconPath: annualOrnamentalProfileIcon(cropId, profile.id),
+              fallbackAsset: kAnnualOrnamentalGenericPlantFallback,
+              enabled: true,
+            ),
+          )
+          .toList(growable: false),
+    );
+
+    if (result == null) return;
+
+    _updateDraft(
+      _draft.copyWith(
+        // En el girasol, "tipo" es el perfil (gi_*). El alta sigue el flujo de
+        // grano; la fecha se conservará como sowingDate.
+        varietyId: result,
+        varietyAlias: result,
+        stage: null,
+        selectedDate: null,
+        useFlexibleDate: false,
+      ),
+    );
+
+    _animateToStep(OnboardingStep.cropStage);
+  }
+
   String _treeProfileTitle(
     String cropId,
     String profileId,
@@ -830,6 +1056,29 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     } else {
       _animateToStep(OnboardingStep.cropDate);
     }
+  }
+
+  /// Selección del estado VISUAL del rosal en el onboarding. Guarda el id de la
+  /// opción en draft.stage y ajusta la fecha inicial según si pide fecha futura.
+  void _onSelectRecurringBloomState(String optionId) {
+    RecurringBloomStateOption? option;
+    for (final candidate in recurringBloomVisualStateOptions(_draft.cropId)) {
+      if (candidate.id == optionId) {
+        option = candidate;
+        break;
+      }
+    }
+    final bool requiresFuture = option?.requiresFutureDate ?? false;
+    _updateDraft(
+      _draft.copyWith(
+        stage: optionId,
+        selectedDate: requiresFuture
+            ? DateTime.now().add(const Duration(days: 1))
+            : DateTime.now(),
+        useFlexibleDate: false,
+      ),
+    );
+    _animateToStep(OnboardingStep.cropDate);
   }
 
   // ─── Labels ───
@@ -974,6 +1223,21 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       )) {
         return profile.label;
       }
+      // Tulipán (seasonal_bulb): etiqueta humana directa del perfil (sin id tu_*).
+      if (isSeasonalBulbCrop(
+        cropId: cropId,
+        cropCategoryId: _draft.cropCategory,
+      )) {
+        return profile.label;
+      }
+      // Girasol (annual_ornamental): etiqueta humana directa del perfil (sin id
+      // gi_*).
+      if (isAnnualOrnamentalCrop(
+        cropId: cropId,
+        cropCategoryId: _draft.cropCategory,
+      )) {
+        return profile.label;
+      }
       return TreeProfilePresentation.displayLabel(
         cropId,
         profile.id,
@@ -985,6 +1249,12 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   }
 
   String get _dateQuestionTitle {
+    if (_isRecurringBloomDraft) {
+      return recurringBloomDateQuestionTitle(
+        _draft.cropId,
+        _selectedRecurringBloomOption?.intentId,
+      );
+    }
     if (_isOrnamentalDraft) {
       return ornamentalDateQuestionTitle(_ornamentalCropId, _draft.stage);
     }
@@ -1085,6 +1355,15 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return SucculentAssets.cropIcon;
       case CropCatalog.aloeCropId:
         return AloeAssets.cropIcon;
+      case CropCatalog.agaveCropId:
+        return AgaveAssets.cropIcon;
+      // Tulipán (seasonal_bulb): arte propio del bulbo, no el árbol ni genérico.
+      case CropCatalog.tulipCropId:
+        return seasonalBulbCropIcon(CropCatalog.canonicalCropKey(cropId));
+      // Girasol (annual_ornamental): arte propio de la anual, no el árbol ni
+      // genérico.
+      case CropCatalog.sunflowerCropId:
+        return annualOrnamentalCropIcon(CropCatalog.canonicalCropKey(cropId));
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;
     }
@@ -1396,6 +1675,16 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             varietyId: selectedVariety?.id ?? _draft.varietyAlias,
             label: selectedVariety?.label ?? selectedVarietyLabel,
           )
+        : _isSeasonalBulbDraft
+        ? seasonalBulbProfileIcon(
+            _seasonalBulbCropId,
+            _draft.varietyId ?? _draft.varietyAlias,
+          )
+        : _isAnnualOrnamentalDraft
+        ? annualOrnamentalProfileIcon(
+            _annualOrnamentalCropId,
+            _draft.varietyId ?? _draft.varietyAlias,
+          )
         : _isOrnamentalDraft
         ? ornamentalProfileIcon(
             _ornamentalCropId,
@@ -1464,6 +1753,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                   : _cropIconPath(cropId),
               fallbackAsset: _isOrnamentalDraft
                   ? kOrnamentalGenericPlantFallback
+                  : _isSeasonalBulbDraft
+                  ? kSeasonalBulbGenericPlantFallback
+                  : _isAnnualOrnamentalDraft
+                  ? kAnnualOrnamentalGenericPlantFallback
                   : 'assets/icons/wizard/ic_tree.png',
               title: 'Cultivo',
               value: cropLabel,
@@ -1484,8 +1777,17 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               iconPath: selectedVarietyIconPath,
               fallbackAsset: _isOrnamentalDraft
                   ? kOrnamentalGenericPlantFallback
+                  : _isSeasonalBulbDraft
+                  ? kSeasonalBulbGenericPlantFallback
+                  : _isAnnualOrnamentalDraft
+                  ? kAnnualOrnamentalGenericPlantFallback
                   : 'assets/icons/wizard/ic_tree.png',
-              title: _isOrnamentalDraft
+              // Tulipán (seasonal_bulb) y Girasol (annual_ornamental): su "tipo"
+              // es un PERFIL, igual que en las ornamentales.
+              title:
+                  _isOrnamentalDraft ||
+                      _isSeasonalBulbDraft ||
+                      _isAnnualOrnamentalDraft
                   ? 'Perfil'
                   : cropId != null &&
                         isTreeCrop(
@@ -1525,6 +1827,15 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     }
     if (_isOrnamentalDraft) {
       return _buildOrnamentalStagePage();
+    }
+    if (_isRecurringBloomDraft) {
+      return _buildRecurringBloomStagePage();
+    }
+    if (_isSeasonalBulbDraft) {
+      return _buildSeasonalBulbStagePage();
+    }
+    if (_isAnnualOrnamentalDraft) {
+      return _buildAnnualOrnamentalStagePage();
     }
 
     final stage = _draft.stage;
@@ -1645,6 +1956,182 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
               onTap: () => _onSelectStage(kOrnamentalIntentAlreadyPlanted),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Alta del Tulipán (seasonal_bulb). Reutiliza el patrón de GRANO (ancla real):
+  /// SOLO dos opciones — "Lo voy a plantar" / "Ya está plantado" — SIN descanso
+  /// del suelo (un bulbo entra en dormancia, no en fallow). Emite los valores de
+  /// grano 'planned'/'planted' para que el flujo de fecha y la persistencia
+  /// corran por la ruta de grano y conserven la fecha como sowingDate.
+  Widget _buildSeasonalBulbStagePage() {
+    final stage = _draft.stage;
+    final String? cropId = _seasonalBulbCropId;
+    return CenteredWizardPage(
+      horizontalPadding: 4,
+      topPadding: 8,
+      child: Column(
+        children: [
+          const BrandMark(width: 274),
+          const SizedBox(height: 22),
+          StaggerIn(
+            delay: 0,
+            child: Text(
+              '¿En qué etapa está tu '
+              '${seasonalBulbCropDisplayName(cropId).toLowerCase()}?',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 22,
+                height: 1.18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
+                color: Color(0xFF293533),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Los MISMOS iconos de wizard que usa el grano (no imágenes de etapa).
+          StaggerIn(
+            delay: 90,
+            child: _wizardPill(
+              iconPath: 'assets/icons/wizard/ic_aun_no_siembro.png',
+              title: seasonalBulbPlannedOptionTitle(cropId),
+              subtitle: '',
+              selected: stage == 'planned',
+              enabled: true,
+              fallbackAsset: kSeasonalBulbGenericPlantFallback,
+              onTap: () => _onSelectStage('planned'),
+            ),
+          ),
+          const SizedBox(height: 14),
+          StaggerIn(
+            delay: 145,
+            child: _wizardPill(
+              iconPath: 'assets/icons/wizard/ic_ya_sembrado.png',
+              title: seasonalBulbPlantedOptionTitle(cropId),
+              subtitle: '',
+              selected: stage == 'planted' || stage == 'growing',
+              enabled: true,
+              fallbackAsset: kSeasonalBulbGenericPlantFallback,
+              onTap: () => _onSelectStage('planted'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Alta del Girasol (annual_ornamental). Reutiliza el patrón de GRANO (ancla
+  /// real): SOLO dos opciones — "Lo voy a sembrar" / "Ya está sembrado o
+  /// plantado" — SIN descanso del suelo. Emite los valores de grano
+  /// 'planned'/'planted' para que el flujo de fecha y la persistencia corran
+  /// por la ruta de grano y conserven la fecha como sowingDate.
+  Widget _buildAnnualOrnamentalStagePage() {
+    final stage = _draft.stage;
+    final String? cropId = _annualOrnamentalCropId;
+    return CenteredWizardPage(
+      horizontalPadding: 4,
+      topPadding: 8,
+      child: Column(
+        children: [
+          const BrandMark(width: 274),
+          const SizedBox(height: 22),
+          StaggerIn(
+            delay: 0,
+            child: Text(
+              '¿En qué etapa está tu '
+              '${annualOrnamentalCropDisplayName(cropId).toLowerCase()}?',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 22,
+                height: 1.18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
+                color: Color(0xFF293533),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Los MISMOS iconos de wizard que usa el grano (no imágenes de etapa).
+          StaggerIn(
+            delay: 90,
+            child: _wizardPill(
+              iconPath: 'assets/icons/wizard/ic_aun_no_siembro.png',
+              title: annualOrnamentalPlannedOptionTitle(cropId),
+              subtitle: '',
+              selected: stage == 'planned',
+              enabled: true,
+              fallbackAsset: kAnnualOrnamentalGenericPlantFallback,
+              onTap: () => _onSelectStage('planned'),
+            ),
+          ),
+          const SizedBox(height: 14),
+          StaggerIn(
+            delay: 145,
+            child: _wizardPill(
+              iconPath: 'assets/icons/wizard/ic_ya_sembrado.png',
+              title: annualOrnamentalPlantedOptionTitle(cropId),
+              subtitle: '',
+              selected: stage == 'planted' || stage == 'growing',
+              enabled: true,
+              fallbackAsset: kAnnualOrnamentalGenericPlantFallback,
+              onTap: () => _onSelectStage('planted'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Estado VISUAL del rosal en el onboarding: "¿Cómo está tu rosal ahora?".
+  /// Config-driven desde `recurringBloomVisualStateOptions`.
+  Widget _buildRecurringBloomStagePage() {
+    final options = recurringBloomVisualStateOptions(_draft.cropId);
+    final stage = _draft.stage;
+    return CenteredWizardPage(
+      scrollable: true,
+      horizontalPadding: 4,
+      topPadding: 8,
+      child: Column(
+        children: [
+          const BrandMark(width: 274),
+          const SizedBox(height: 22),
+          StaggerIn(
+            delay: 0,
+            child: Text(
+              recurringBloomStateQuestion(_draft.cropId),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 22,
+                height: 1.18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
+                color: Color(0xFF293533),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ...options.asMap().entries.map((entry) {
+            final index = entry.key;
+            final option = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: StaggerIn(
+                delay: 90 + (index.clamp(0, 8)) * 40,
+                child: _wizardPill(
+                  iconPath: option.iconPath,
+                  title: option.title,
+                  subtitle: option.subtitle,
+                  selected: stage == option.id,
+                  enabled: true,
+                  fallbackAsset: kRecurringBloomGenericPlantFallback,
+                  onTap: () => _onSelectRecurringBloomState(option.id),
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -1992,13 +2479,17 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     final today = DateTime.now();
     // Ornamental: "la voy a plantar" pide una fecha FUTURA; "ya está plantada"
     // solo admite una fecha pasada (o ninguna).
-    final isOrnamentalDate = _isOrnamentalDraft;
+    // El rosal (floración recurrente) usa las mismas reglas de fecha que una
+    // ornamental: "lo voy a plantar" pide fecha futura; los demás estados, fecha
+    // pasada (o ninguna).
+    final isOrnamentalDate = _isOrnamentalDraft || _isRecurringBloomDraft;
     final ornamentalFutureIntent =
-        isOrnamentalDate &&
-        ornamentalSetupIntentRequiresFutureDate(
-          _ornamentalCropId,
-          _draft.stage,
-        );
+        (_isOrnamentalDraft &&
+            ornamentalSetupIntentRequiresFutureDate(
+              _ornamentalCropId,
+              _draft.stage,
+            )) ||
+        (_isRecurringBloomDraft && _isRecurringBloomFutureIntent);
     final ornamentalFirstDate = isOrnamentalDate && !ornamentalFutureIntent
         ? DateTime(1900)
         : isOrnamentalDate

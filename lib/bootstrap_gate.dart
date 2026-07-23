@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
+import 'package:bio_g/core/crops/recurring_bloom/recurring_bloom_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/profile/profile_repository.dart';
@@ -221,6 +222,104 @@ DeviceCropContext resolveOnboardingOrnamentalDraftContext({
   );
 }
 
+/// Resuelve el contexto del ROSAL (floración recurrente) desde el onboarding.
+/// `draft.stage` trae el id de la opción VISUAL elegida; de ahí se derivan la
+/// intención, el estado a persistir y el anclaje. Las opciones de establecimiento
+/// dejan que la fecha resuelva la etapa; los estados recurrentes se guardan tal
+/// cual el usuario los vio.
+@visibleForTesting
+DeviceCropContext resolveOnboardingRecurringBloomDraftContext({
+  required String deviceId,
+  required OnboardingDraft draft,
+  required String cropId,
+  required String stage,
+  DeviceCropContext? previous,
+  DateTime? now,
+  WizardCropContextResolver contextResolver = const WizardCropContextResolver(),
+}) {
+  final DateTime effectiveNow = now ?? DateTime.now();
+  final String categoryId =
+      draft.cropCategory ??
+      previous?.cropCategoryId ??
+      CropCatalog.ornamentalCategoryId;
+
+  RecurringBloomStateOption? option;
+  for (final candidate in recurringBloomVisualStateOptions(cropId)) {
+    if (candidate.id == stage) {
+      option = candidate;
+      break;
+    }
+  }
+
+  final bool isPlanned =
+      option?.intentId == kRecurringBloomIntentPlannedPlant;
+
+  final DateTime today = DateTime(
+    effectiveNow.year,
+    effectiveNow.month,
+    effectiveNow.day,
+  );
+  final DateTime? rawDate = draft.useFlexibleDate ? null : draft.selectedDate;
+  DateTime? selectedDate;
+  if (rawDate != null) {
+    final pickedDay = DateTime(rawDate.year, rawDate.month, rawDate.day);
+    final requiresFuture = option?.requiresFutureDate ?? false;
+    final valid = requiresFuture
+        ? pickedDay.isAfter(today)
+        : !pickedDay.isAfter(today);
+    if (valid) selectedDate = rawDate;
+  }
+
+  final bool preserveExistingAnchor =
+      !isPlanned &&
+      selectedDate == null &&
+      previous?.ornamentalAnchorDate != null;
+  final DateTime? effectiveAnchorDate = preserveExistingAnchor
+      ? previous!.ornamentalAnchorDate
+      : selectedDate;
+
+  late final DateConfidence dateConfidence;
+  if (preserveExistingAnchor) {
+    dateConfidence =
+        previous!.ornamentalAnchorDateConfidence ?? DateConfidence.unknown;
+  } else if (selectedDate == null) {
+    dateConfidence = DateConfidence.unknown;
+  } else if (isPlanned) {
+    dateConfidence = DateConfidence.exact;
+  } else {
+    dateConfidence = DateConfidence.estimated;
+  }
+
+  // Establecimiento → la fecha resuelve la etapa (pasa null); estado recurrente
+  // → se guarda el estado elegido con su confianza.
+  final bool usesDateEstimation = option?.usesDateEstimation ?? true;
+  final String? passStageId = usesDateEstimation ? null : option?.stageId;
+  final double? passConfidence = usesDateEstimation
+      ? null
+      : option?.stageConfidence;
+
+  return contextResolver.resolve(
+    deviceId: deviceId,
+    cropCategoryId: categoryId,
+    cropId: cropId,
+    lifecycleStatus: isPlanned
+        ? CropLifecycleStatus.planned
+        : CropLifecycleStatus.planted,
+    dateConfidence: dateConfidence,
+    now: effectiveNow,
+    previous: previous,
+    varietyId: draft.varietyId,
+    varietyAlias: draft.varietyAlias,
+    selectedDate: effectiveAnchorDate,
+    timezone: draft.timezone ?? previous?.timezone,
+    cultivationScaleId: null,
+    ornamentalStageId: passStageId,
+    ornamentalAnchorDate: effectiveAnchorDate,
+    ornamentalAnchorTypeId: option?.anchorTypeId,
+    ornamentalStageConfidence: passConfidence,
+  );
+}
+
 class BootstrapGate extends StatefulWidget {
   const BootstrapGate({super.key});
 
@@ -378,6 +477,25 @@ class _BootstrapGateState extends State<BootstrapGate> {
     )) {
       final DeviceCropContext? previous = store.cropContextForDevice(device.id);
       final resolved = resolveOnboardingOrnamentalDraftContext(
+        deviceId: device.id,
+        draft: draft,
+        cropId: cropId,
+        stage: stage,
+        previous: previous,
+        contextResolver: _contextResolver,
+      );
+      await store.saveCropContext(resolved);
+      return;
+    }
+
+    // Rosal (floración recurrente): guarda el estado VISUAL elegido; nunca va a
+    // descanso del suelo y no infiere estados recurrentes por antigüedad.
+    if (isRecurringBloomCrop(
+      cropId: cropId,
+      cropCategoryId: draft.cropCategory,
+    )) {
+      final DeviceCropContext? previous = store.cropContextForDevice(device.id);
+      final resolved = resolveOnboardingRecurringBloomDraftContext(
         deviceId: device.id,
         draft: draft,
         cropId: cropId,

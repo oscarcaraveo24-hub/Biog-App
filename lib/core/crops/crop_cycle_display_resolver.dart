@@ -64,6 +64,84 @@ CropCycleDisplayLine resolveCycleDisplayLine({
     );
   }
 
+  // Tulipán (bulbosa estacional): línea de ciclo por etapa (Documento A §13).
+  // Nunca dice "estimado a cosecha", "cultivo muerto" ni "sin cultivo activo".
+  // En dormancia muestra "Bulbo en reposo", NO cierra el registro.
+  if (family == _CropFamily.seasonalBulb) {
+    final profile = (profileId ?? '').toLowerCase();
+    final bool isCutFlower =
+        profile.contains('cut') || profile.contains('tu_04');
+    if (stage.contains('dorman')) {
+      return const CropCycleDisplayLine(
+        label: 'Estado del ciclo:',
+        value: 'Bulbo en reposo',
+      );
+    }
+    if (stage.contains('senesc')) {
+      return CropCycleDisplayLine(
+        label: 'Cierre de temporada:',
+        value: hasDays ? '$daysValue días aprox.' : 'Cerrando',
+      );
+    }
+    if (stage.contains('recharge') || stage.contains('recarga')) {
+      return CropCycleDisplayLine(
+        label: 'Recarga del bulbo:',
+        value: hasDays ? '$daysValue días aprox.' : 'En curso',
+      );
+    }
+    if (stage.contains('flower') || stage.contains('flor')) {
+      return CropCycleDisplayLine(
+        label: isCutFlower ? 'Ventana de corte:' : 'Ventana de floración:',
+        value: 'Activa',
+      );
+    }
+    return CropCycleDisplayLine(
+      label: 'Floración estimada:',
+      value: hasDays ? '$daysValue días aprox.' : 'Pendiente',
+    );
+  }
+
+  // Girasol (ornamental anual verdadera): línea de ciclo por etapa (Documento A
+  // §8, §11). El final `cycle_complete` es TERMINAL: nunca dice "estimado a
+  // cosecha" ni "cultivo muerto"; invita a registrar una nueva siembra.
+  if (family == _CropFamily.annualOrnamental) {
+    final profile = (profileId ?? '').toLowerCase();
+    final bool isCutFlower =
+        profile.contains('cut') || profile.contains('gi_04');
+    if (stage.contains('cycle_complete') ||
+        stage.contains('cycle') ||
+        stage.contains('complete') ||
+        stage.contains('terminado')) {
+      return const CropCycleDisplayLine(
+        label: 'Estado del ciclo:',
+        value: 'Ciclo terminado',
+        helper: 'Para cultivar otro, registra una nueva siembra.',
+      );
+    }
+    if (stage.contains('senesc') || stage.contains('secand')) {
+      return CropCycleDisplayLine(
+        label: 'Cierre de ciclo:',
+        value: hasDays ? '$daysValue días aprox.' : 'Cerrando',
+      );
+    }
+    if (stage.contains('post_bloom') || stage.contains('envejec')) {
+      return CropCycleDisplayLine(
+        label: 'Flor envejeciendo:',
+        value: hasDays ? '$daysValue días aprox.' : 'En curso',
+      );
+    }
+    if (stage.contains('flower') || stage.contains('flor')) {
+      return CropCycleDisplayLine(
+        label: isCutFlower ? 'Ventana de corte:' : 'Ventana de floración:',
+        value: 'Activa',
+      );
+    }
+    return CropCycleDisplayLine(
+      label: 'Floración estimada:',
+      value: hasDays ? '$daysValue días aprox.' : 'Pendiente',
+    );
+  }
+
   // Hortalizas de fruto
   if (family == _CropFamily.fruitVeg) {
     if (isLate) {
@@ -390,6 +468,8 @@ enum _CropFamily {
   leafVeg,
   tree,
   ornamental,
+  seasonalBulb,
+  annualOrnamental,
   generic,
 }
 
@@ -404,7 +484,34 @@ _CropFamily _resolveFamily(String crop) {
     case 'aloe':
     case 'sabila':
     case 'sábila':
+    case 'crop_agave':
+    case 'agave':
+    case 'maguey':
       return _CropFamily.ornamental;
+    case 'crop_rose':
+    case 'rose':
+    case 'rosa':
+    case 'rosal':
+    case 'rosales':
+      return _CropFamily.ornamental;
+    // Tulipán: bulbosa estacional con reloj anual. NO es "ornamental" estático:
+    // su línea de ciclo depende de la etapa (floración estimada → ventana de
+    // floración → recarga → cierre de temporada → bulbo en reposo).
+    case 'crop_tulip':
+    case 'tulip':
+    case 'tulipan':
+    case 'tulipán':
+    case 'tulipanes':
+      return _CropFamily.seasonalBulb;
+    // Girasol: ornamental ANUAL VERDADERA con reloj anual. NO es "ornamental"
+    // estático: su línea de ciclo depende de la etapa (floración estimada →
+    // ventana de floración → flor envejeciendo → cierre → ciclo terminado). El
+    // final es TERMINAL (no dormancia): invita a una nueva siembra.
+    case 'crop_sunflower':
+    case 'sunflower':
+    case 'girasol':
+    case 'girasoles':
+      return _CropFamily.annualOrnamental;
     case 'lettuce':
     case 'lechuga':
     case 'spinach':

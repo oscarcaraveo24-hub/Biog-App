@@ -37,6 +37,8 @@ class OnboardingUiAssets {
   static const String spinach = 'assets/icons/wizard/ic_spinach.png';
   static const String onion = 'assets/icons/wizard/ic_onion_generic.png';
   static const String garlic = 'assets/icons/wizard/ic_garlic_generic.png';
+  static const String tulip = 'assets/icons/wizard/ic_tulip.png';
+  static const String sunflower = 'assets/icons/wizard/ic_sunflower.png';
   static const String variety = 'assets/icons/wizard/ic_variedad.png';
   static const String configureCrop =
       'assets/icons/wizard/ic_configurar_cultivo.png';
@@ -232,7 +234,21 @@ class OnboardingUiAssets {
       case 'crop_aloe':
       case 'sabila':
       case 'sábila':
+      case 'agave':
+      case 'crop_agave':
+      case 'maguey':
         return ornamental;
+      case 'tulip':
+      case 'crop_tulip':
+      case 'tulipan':
+      case 'tulipán':
+      case 'tulipanes':
+        return tulip;
+      case 'sunflower':
+      case 'crop_sunflower':
+      case 'girasol':
+      case 'girasoles':
+        return sunflower;
       default:
         return assetForCategory(category);
     }

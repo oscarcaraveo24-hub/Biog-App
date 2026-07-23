@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/crops/cactus/cactus_universal_profile.dart';
+import 'package:bio_g/core/crops/succulent/succulent_catalog.dart';
 import 'package:bio_g/core/crops/succulent/succulent_universal_profile.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_registry.dart';

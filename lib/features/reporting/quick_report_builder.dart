@@ -6,6 +6,8 @@ import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
+import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
+import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/screens/history/history_series_builder.dart';
@@ -212,6 +214,26 @@ class QuickReportBuilder {
           runtime.seed?.profileId;
       return CropCatalog.profileByAny(canonicalCrop, token)?.label ??
           ornamentalGeneralProfileLabel(canonicalCrop);
+    }
+    // Tulipán (seasonal_bulb): el perfil ES la identidad visible, como las
+    // ornamentales. El reporte comparte plantilla y NO lleva rendimiento.
+    if (isSeasonalBulbCrop(cropId: canonicalCrop)) {
+      final token =
+          runtime.cropContext?.profileId ??
+          runtime.profile?.id ??
+          runtime.seed?.profileId;
+      return CropCatalog.profileByAny(canonicalCrop, token)?.label ??
+          seasonalBulbGeneralProfileLabel(canonicalCrop);
+    }
+    // Girasol (annual_ornamental): el perfil ES la identidad visible. El reporte
+    // comparte plantilla y NO lleva rendimiento.
+    if (isAnnualOrnamentalCrop(cropId: canonicalCrop)) {
+      final token =
+          runtime.cropContext?.profileId ??
+          runtime.profile?.id ??
+          runtime.seed?.profileId;
+      return CropCatalog.profileByAny(canonicalCrop, token)?.label ??
+          annualOrnamentalGeneralProfileLabel(canonicalCrop);
     }
     if (_isFruitTreeCrop(canonicalCrop)) {
       final String? profileToken =
