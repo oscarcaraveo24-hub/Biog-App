@@ -362,9 +362,10 @@ class DeviceCropContext {
       sowingDateConfidence: DateConfidence.values.byName(
         json['sowingDateConfidence'] as String,
       ),
-      cultivationScaleId: isOrnamentalLike
-          ? null
-          : json['cultivationScaleId'] as String?,
+      // La escala de cultivo aplica a todas las formas, ornamentales incluidas.
+      // Ver la nota en CropRuntimeResolver: anularla aquí borraba la maceta al
+      // rehidratar el contexto desde disco.
+      cultivationScaleId: json['cultivationScaleId'] as String?,
       sowingModeId: isOrnamentalLike ? null : json['sowingModeId'] as String?,
       timezone: json['timezone'] as String?,
       regionCode: json['regionCode'] as String?,

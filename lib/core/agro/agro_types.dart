@@ -374,11 +374,30 @@ class Calibration {
 }
 
 class AlertsState {
-  const AlertsState({this.lastByType = const {}});
+  const AlertsState({this.lastByType = const {}, this.lastByKey = const {}});
+
+  /// Última emisión por tipo de alerta. Se conserva por compatibilidad.
   final Map<BioGAlertType, DateTime> lastByType;
 
-  AlertsState copyWith({Map<BioGAlertType, DateTime>? lastByType}) =>
-      AlertsState(lastByType: lastByType ?? this.lastByType);
+  /// Última emisión por par (tipo, severidad).
+  ///
+  /// El anti-spam se decide con este mapa y no con [lastByType]: con la cubeta
+  /// por tipo, una alerta de "humedad baja" (warning) silenciaba durante todo
+  /// el cooldown a la "humedad crítica" que llegaba después — justo la que
+  /// nunca hay que callar.
+  final Map<String, DateTime> lastByKey;
+
+  /// Clave de cooldown para un par tipo/severidad.
+  static String cooldownKey(BioGAlertType type, BioGAlertSeverity severity) =>
+      '${type.name}|${severity.name}';
+
+  AlertsState copyWith({
+    Map<BioGAlertType, DateTime>? lastByType,
+    Map<String, DateTime>? lastByKey,
+  }) => AlertsState(
+    lastByType: lastByType ?? this.lastByType,
+    lastByKey: lastByKey ?? this.lastByKey,
+  );
 }
 
 class AlertsBuildResult {

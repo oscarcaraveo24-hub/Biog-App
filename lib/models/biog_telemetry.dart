@@ -220,6 +220,23 @@ class BioGTelemetry {
     return parsed;
   }
 
+  /// Descarta un valor que cae fuera del rango físicamente posible.
+  ///
+  /// Devuelve `null` cuando el valor es nulo, no finito o está fuera de
+  /// `[min, max]`. Un `null` aguas abajo apaga automáticamente la bandera
+  /// `hasXData` correspondiente, de modo que una lectura imposible se trata
+  /// como dato ausente y no como cero legítimo.
+  ///
+  /// Los límites son de plausibilidad física, no rangos agronómicos: sirven
+  /// para detectar sonda descalibrada o payload corrupto, no para juzgar si el
+  /// suelo está bien. Fundacional 2.1 §9.2.
+  static double? _plausible(double? value, double min, double max) {
+    if (value == null) return null;
+    if (value.isNaN || value.isInfinite) return null;
+    if (value < min || value > max) return null;
+    return value;
+  }
+
   static BioGTelemetry? tryFromJson(Map<String, dynamic> json) {
     final String? deviceId = _firstString(<dynamic>[
       json['device_id'],
@@ -312,6 +329,20 @@ class BioGTelemetry {
       json['potassium'],
       json['potassium_ppm'],
     ]);
+    // ── Validación de plausibilidad física ────────────────────────────────
+    // A partir de aquí se trabaja con los valores saneados. Lo que cae fuera
+    // de rango pasa a ser `null` y, por tanto, dato ausente: nunca cero.
+    final double? vAirTempC = _plausible(airTempC, -50.0, 65.0);
+    final double? vAirHumidityPct = _plausible(airHumidityPct, 0.0, 100.0);
+    final double? vSoilMoisturePct = _plausible(soilMoisturePct, 0.0, 100.0);
+    final double? vSoilTempC = _plausible(soilTempC, -40.0, 80.0);
+    final double? vPh = _plausible(ph, 0.0, 14.0);
+    final double? vEc = _plausible(ec, 0.0, 20.0);
+    final double? vResistance = _plausible(resistance, 0.0, 10.0);
+    final double? vN = _plausible(n, 0.0, 2000.0);
+    final double? vP = _plausible(p, 0.0, 1000.0);
+    final double? vK = _plausible(k, 0.0, 3000.0);
+
     final bool? explicitHasNitrogenData = _asBool(
       json['has_nitrogen_data'] ?? json['hasNitrogenData'],
     );
@@ -339,45 +370,52 @@ class BioGTelemetry {
     );
     final bool detectedSensorData =
         _hasAnySensorValue(<double?>[
-          airTempC,
-          airHumidityPct,
-          soilMoisturePct,
-          soilTempC,
-          ph,
-          ec,
-          resistance,
-          n,
-          p,
-          k,
+          vAirTempC,
+          vAirHumidityPct,
+          vSoilMoisturePct,
+          vSoilTempC,
+          vPh,
+          vEc,
+          vResistance,
+          vN,
+          vP,
+          vK,
         ]) ||
         _hasAnyRawSensorField(json);
 
     return BioGTelemetry(
       deviceId: deviceId,
       timestamp: timestamp,
-      airTempC: airTempC ?? 0.0,
-      airHumidityPct: airHumidityPct ?? 0.0,
-      soilMoisturePct: soilMoisturePct ?? 0.0,
-      soilTempC: soilTempC ?? 0.0,
-      ph: ph ?? 0.0,
-      ec: ec ?? 0.0,
-      resistance: resistance ?? 0.0,
-      n: n ?? 0.0,
-      p: p ?? 0.0,
-      k: k ?? 0.0,
+      airTempC: vAirTempC ?? 0.0,
+      airHumidityPct: vAirHumidityPct ?? 0.0,
+      soilMoisturePct: vSoilMoisturePct ?? 0.0,
+      soilTempC: vSoilTempC ?? 0.0,
+      ph: vPh ?? 0.0,
+      ec: vEc ?? 0.0,
+      resistance: vResistance ?? 0.0,
+      n: vN ?? 0.0,
+      p: vP ?? 0.0,
+      k: vK ?? 0.0,
+      // Una bandera explícita del payload nunca puede afirmar que hay dato
+      // cuando el valor llegó ausente o fuera de rango: el `&&` la desmiente.
       hasSoilMoistureData:
-          explicitHasSoilMoistureData ?? soilMoisturePct != null,
-      hasSoilTempData: explicitHasSoilTempData ?? soilTempC != null,
-      hasPhData: explicitHasPhData ?? ph != null,
-      hasResistanceData: explicitHasResistanceData ?? resistance != null,
-      hasNitrogenData: explicitHasNitrogenData ?? n != null,
-      hasPhosphorusData: explicitHasPhosphorusData ?? p != null,
-      hasPotassiumData: explicitHasPotassiumData ?? k != null,
-      batteryPct: _firstNullableDouble(<dynamic>[
-        json['battery_pct'],
-        json['batteryPct'],
-        json['battery_percent'],
-      ]),
+          (explicitHasSoilMoistureData ?? true) && vSoilMoisturePct != null,
+      hasSoilTempData: (explicitHasSoilTempData ?? true) && vSoilTempC != null,
+      hasPhData: (explicitHasPhData ?? true) && vPh != null,
+      hasResistanceData:
+          (explicitHasResistanceData ?? true) && vResistance != null,
+      hasNitrogenData: (explicitHasNitrogenData ?? true) && vN != null,
+      hasPhosphorusData: (explicitHasPhosphorusData ?? true) && vP != null,
+      hasPotassiumData: (explicitHasPotassiumData ?? true) && vK != null,
+      batteryPct: _plausible(
+        _firstNullableDouble(<dynamic>[
+          json['battery_pct'],
+          json['batteryPct'],
+          json['battery_percent'],
+        ]),
+        0.0,
+        100.0,
+      ),
       signalRssi: _firstNullableInt(<dynamic>[
         json['signal_rssi'],
         json['signalRssi'],

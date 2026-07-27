@@ -223,6 +223,19 @@ class NpkCaps {
           case 'crop_agave':
           case 'maguey':
             return 90.0;
+          // Nopal: cap N=90 (cactus 60 - suculenta 70 - sabila 85 - maguey 90 -
+          // nopal 90). El nopal tiene una respuesta de crecimiento a N mejor
+          // documentada que el cactus: la ausencia completa de N limita la
+          // emision de cladodios. Sigue muy por debajo de un cultivo de
+          // rendimiento (Doc B section 10.4, 10.5). NO es dosis.
+          case 'nopal':
+          case 'crop_nopal':
+          case 'nopales':
+          case 'opuntia':
+          case 'orn_nopal':
+          case 'prickly pear':
+          case 'cactus pear':
+            return 90.0;
           // Rosal: cap N=120 (Doc B §0). Arbusto ornamental de flor con demanda
           // real de N en brotación; muy por encima de las ornamentales
           // xerófitas. El cap normaliza el gauge, NO es una dosis.
@@ -245,6 +258,20 @@ class NpkCaps {
           case 'crop_sunflower':
           case 'girasol':
             return 130.0;
+          // Cempasúchil: cap N=110 (Documento B §0, §10.4, §10.5). Menor que el
+          // Girasol: es un cultivo de baja demanda en jardín y el exceso de N
+          // favorece follaje, retrasa la floración y ablanda el tallo. El cap
+          // normaliza el gauge, NO es una dosis.
+          case 'marigold':
+          case 'crop_marigold':
+          case 'cempasuchil':
+          case 'cempasúchil':
+          case 'cempoalxochitl':
+          case 'cempoalxóchitl':
+          case 'flor de muerto':
+          case 'orn_cempasuchil':
+          case 'tagetes erecta':
+            return 110.0;
           default:
             return 120.0;
         }
@@ -425,6 +452,18 @@ class NpkCaps {
           case 'crop_agave':
           case 'maguey':
             return 55.0;
+          // Nopal: cap P=60 (cactus 55 - suculenta 60 - sabila 65 - maguey 55 -
+          // nopal 60). Demanda moderada; el P acompana raiz y crecimiento pero
+          // NUNCA domina el score, y la sonda economica tiene baja confianza en
+          // P (Doc B section 10.4, 12). NO es dosis.
+          case 'nopal':
+          case 'crop_nopal':
+          case 'nopales':
+          case 'opuntia':
+          case 'orn_nopal':
+          case 'prickly pear':
+          case 'cactus pear':
+            return 60.0;
           // Rosal: cap P=90 (Doc B §0). Demanda de P en raíz y botón mayor que
           // las ornamentales xerófitas. El cap normaliza el gauge, NO es dosis.
           case 'rose':
@@ -446,6 +485,20 @@ class NpkCaps {
           case 'crop_sunflower':
           case 'girasol':
             return 90.0;
+          // Cempasúchil: cap P=75 (Documento B §0, §10.4, §10.5). Deliberadamente
+          // bajo para que el fósforo NO se lea como un "flor booster" capaz de
+          // corregir fotoperiodo, calor, sequía o exceso de N. El cap normaliza
+          // el gauge, NO es una dosis.
+          case 'marigold':
+          case 'crop_marigold':
+          case 'cempasuchil':
+          case 'cempasúchil':
+          case 'cempoalxochitl':
+          case 'cempoalxóchitl':
+          case 'flor de muerto':
+          case 'orn_cempasuchil':
+          case 'tagetes erecta':
+            return 75.0;
           default:
             return 80.0;
         }
@@ -642,6 +695,18 @@ class NpkCaps {
           case 'crop_agave':
           case 'maguey':
             return 280.0;
+          // Nopal: cap K=280 (cactus 220 - suculenta 240 - sabila 270 - maguey
+          // 280 - nopal 280). El K conserva el cap mas alto por su papel
+          // osmotico y de turgencia y por la alta concentracion observada en
+          // cladodios (Doc B section 3.8, 13). NO es dosis.
+          case 'nopal':
+          case 'crop_nopal':
+          case 'nopales':
+          case 'opuntia':
+          case 'orn_nopal':
+          case 'prickly pear':
+          case 'cactus pear':
+            return 280.0;
           // Rosal: cap K=280 (Doc B §0). El K es el nutriente clave en
           // floración; cap alto. El cap normaliza el gauge, NO es una dosis.
           case 'rose':
@@ -664,6 +729,20 @@ class NpkCaps {
           case 'crop_sunflower':
           case 'girasol':
             return 300.0;
+          // Cempasúchil: cap K=280 (Documento B §0, §10.4, §10.5). El potasio
+          // conserva el cap más alto del cultivo porque gana prioridad relativa
+          // en porte, botón y floración, pero queda por debajo del Girasol. El
+          // cap normaliza el gauge, NO es una dosis.
+          case 'marigold':
+          case 'crop_marigold':
+          case 'cempasuchil':
+          case 'cempasúchil':
+          case 'cempoalxochitl':
+          case 'cempoalxóchitl':
+          case 'flor de muerto':
+          case 'orn_cempasuchil':
+          case 'tagetes erecta':
+            return 280.0;
           default:
             return 140.0;
         }

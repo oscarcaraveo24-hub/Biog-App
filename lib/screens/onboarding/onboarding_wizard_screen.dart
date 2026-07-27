@@ -1357,12 +1357,17 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         return AloeAssets.cropIcon;
       case CropCatalog.agaveCropId:
         return AgaveAssets.cropIcon;
+      // Nopal (establishment_maintenance): arte propio de la penca plana.
+      case CropCatalog.nopalCropId:
+        return ornamentalCropIcon(CropCatalog.canonicalCropKey(cropId));
       // Tulipán (seasonal_bulb): arte propio del bulbo, no el árbol ni genérico.
       case CropCatalog.tulipCropId:
         return seasonalBulbCropIcon(CropCatalog.canonicalCropKey(cropId));
-      // Girasol (annual_ornamental): arte propio de la anual, no el árbol ni
-      // genérico.
+      // Girasol y Cempasúchil (annual_ornamental): arte propio de cada anual,
+      // no el árbol ni el genérico. `annualOrnamentalCropIcon` despacha por
+      // cropId, así que ambos comparten el mismo cuerpo sin heredar arte.
       case CropCatalog.sunflowerCropId:
+      case CropCatalog.marigoldCropId:
         return annualOrnamentalCropIcon(CropCatalog.canonicalCropKey(cropId));
       default:
         return ConfigureSeedWizardAssets.categoryGeneric;

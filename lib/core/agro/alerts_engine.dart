@@ -21,6 +21,7 @@ class AlertsEngine {
   }) {
     final out = <BioGAlert>[];
     final nextMap = Map<BioGAlertType, DateTime>.from(prev.lastByType);
+    final nextKeyMap = Map<String, DateTime>.from(prev.lastByKey);
     final crop = cropLabel ?? 'tu cultivo';
     final stage = stageLabel ?? 'etapa actual';
 
@@ -39,7 +40,10 @@ class AlertsEngine {
         }
       }
 
-      final last = nextMap[type];
+      // El cooldown se evalúa por (tipo + severidad): una alerta leve previa
+      // no puede silenciar a la crítica que llega después.
+      final cooldownKey = AlertsState.cooldownKey(type, severity);
+      final last = nextKeyMap[cooldownKey];
       final canEmit = (last == null) || now.difference(last) >= cooldown;
       if (!canEmit) continue;
 
@@ -58,11 +62,12 @@ class AlertsEngine {
       );
 
       nextMap[type] = now;
+      nextKeyMap[cooldownKey] = now;
     }
 
     return AlertsBuildResult(
       alerts: out,
-      state: prev.copyWith(lastByType: nextMap),
+      state: prev.copyWith(lastByType: nextMap, lastByKey: nextKeyMap),
     );
   }
 

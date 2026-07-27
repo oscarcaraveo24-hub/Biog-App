@@ -26,6 +26,8 @@ import 'package:bio_g/core/crops/agave/agave_crop_definition.dart';
 import 'package:bio_g/core/crops/rose/rose_crop_definition.dart';
 import 'package:bio_g/core/crops/tulip/tulip_crop_definition.dart';
 import 'package:bio_g/core/crops/sunflower/sunflower_crop_definition.dart';
+import 'package:bio_g/core/crops/marigold/marigold_crop_definition.dart';
+import 'package:bio_g/core/crops/nopal/nopal_crop_definition.dart';
 import 'package:bio_g/core/crops/spinach/spinach_crop_definition.dart';
 import 'package:bio_g/core/crops/squash/squash_crop_definition.dart';
 import 'package:bio_g/core/crops/tomato/tomato_crop_definition.dart';
@@ -65,6 +67,8 @@ class CropRegistry {
     CropKey.rose: RoseCropDefinition(),
     CropKey.tulip: TulipCropDefinition(),
     CropKey.sunflower: SunflowerCropDefinition(),
+    CropKey.marigold: MarigoldCropDefinition(),
+    CropKey.nopal: NopalCropDefinition(),
   };
 
   static CropDefinition? byKey(CropKey key) => _definitions[key];
@@ -308,6 +312,59 @@ class CropRegistry {
         normalized == 'mirasol' ||
         normalized == 'flor de sol') {
       return _definitions[CropKey.sunflower];
+    }
+
+    // Cempasúchil: segunda ornamental ANUAL VERDADERA (modo annual_ornamental).
+    // Comparte modo con el Girasol y NADA más: calendarios, targets, caps NPK,
+    // assets, textos y sanidad son propios. Esta lista debe mantenerse
+    // SINCRONIZADA con `CropCatalog.canonicalCropKey`. Los nombres ambiguos y
+    // las demás especies de Tagetes ("French marigold", "pericón", "pot
+    // marigold", "Tagetes" a secas…) quedan FUERA a propósito: exigen
+    // confirmación del usuario (Documento A §4.4, §4.5, §8.3).
+    if (normalized == 'crop_marigold' ||
+        normalized == 'marigold' ||
+        normalized == 'crop_cempasuchil' ||
+        normalized == 'orn_cempasuchil' ||
+        normalized == 'orn_marigold' ||
+        normalized == 'cempasuchil' ||
+        normalized == 'cempasúchil' ||
+        normalized == 'sempasuchil' ||
+        normalized == 'sempasúchil' ||
+        normalized == 'zempasuchil' ||
+        normalized == 'zempasúchil' ||
+        normalized == 'cempoalxochitl' ||
+        normalized == 'cempoalxóchitl' ||
+        normalized == 'cempaxuchil' ||
+        normalized == 'cempaxuchitl' ||
+        normalized == 'cempaxúchitl' ||
+        normalized == 'flor de muerto' ||
+        normalized == 'flor de muertos' ||
+        normalized == 'tagetes erecta' ||
+        normalized == 't. erecta' ||
+        normalized == 'aztec marigold' ||
+        normalized == 'african marigold' ||
+        normalized == 'american marigold') {
+      return _definitions[CropKey.marigold];
+    }
+
+    // Nopal: quinta ornamental de establecimiento y mantenimiento. cropId
+    // canonico + alias legacy (`orn_nopal`, fichas NP-*) + aliases humanos
+    // resuelven a Nopal. NO cae en cactus ni en maguey: comparten familia o
+    // modo, no biologia (Documento A section 2.9, 8.1).
+    if (normalized == 'crop_nopal' ||
+        normalized == 'nopal' ||
+        normalized == 'nopales' ||
+        normalized == 'opuntia' ||
+        normalized == 'opuntias' ||
+        normalized == 'opuntia sp.' ||
+        normalized == 'opuntia spp.' ||
+        normalized == 'orn_nopal' ||
+        normalized == 'ornamental_nopal' ||
+        normalized == 'nopal_crop' ||
+        normalized == 'crop_opuntia' ||
+        normalized == 'prickly pear' ||
+        normalized == 'cactus pear') {
+      return _definitions[CropKey.nopal];
     }
 
     return null;

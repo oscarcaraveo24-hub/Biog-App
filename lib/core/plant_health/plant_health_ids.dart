@@ -23,6 +23,9 @@ class PlantHealthIds {
   static const String organSeed = 'seed';
   static const String organBud = 'bud';
   static const String organFlowerHead = 'flower_head';
+  // Nopal (Doc C section 28): la penca / cladodio es el organo objetivo del
+  // nopal. NO se reutiliza organLeaf: una penca no es una hoja.
+  static const String organCladode = 'cladode';
 
   // Symptoms
   static const String symptomOrangeReddishPustules = 'orange_reddish_pustules';
@@ -270,6 +273,53 @@ class PlantHealthIds {
       'sunflower_nutrient_pattern';
   static const String symptomSunflowerNormalSenescence =
       'sunflower_normal_senescence';
+
+  // Cempasúchil / Marigold (Doc C §37): sintomas nuevos. Observaciones
+  // visuales que reporta el usuario, NUNCA diagnosticos. La sonda no ve hojas,
+  // flores, insectos ni raices: estos sintomas los reporta la persona.
+  static const String symptomMarigoldPoorPatchyEmergence =
+      'marigold_poor_patchy_emergence';
+  static const String symptomMarigoldSeedlingCollapse =
+      'marigold_seedling_collapse';
+  static const String symptomMarigoldRootCollarWilt =
+      'marigold_root_collar_wilt';
+  static const String symptomMarigoldDarkConcentricLeafBlight =
+      'marigold_dark_concentric_leaf_blight';
+  static const String symptomMarigoldGrayBlackSpots =
+      'marigold_gray_black_spots';
+  static const String symptomMarigoldGrayFuzzyFlowerBlight =
+      'marigold_gray_fuzzy_flower_blight';
+  static const String symptomMarigoldWhitePowderyCoating =
+      'marigold_white_powdery_coating';
+  static const String symptomMarigoldBronzeSpeckle = 'marigold_bronze_speckle';
+  static const String symptomMarigoldChlorosisEdgeBurn =
+      'marigold_chlorosis_edge_burn';
+  static const String symptomMarigoldMosaicRingsDistortion =
+      'marigold_mosaic_rings_distortion';
+  static const String symptomMarigoldPhyllodyWitchesBroom =
+      'marigold_phyllody_witches_broom';
+  static const String symptomMarigoldLushNoBuds = 'marigold_lush_no_buds';
+  static const String symptomMarigoldBudBrowningAbortion =
+      'marigold_bud_browning_abortion';
+  static const String symptomMarigoldSilverScarring =
+      'marigold_silver_scarring';
+  static const String symptomMarigoldStickyColonies =
+      'marigold_sticky_colonies';
+  static const String symptomMarigoldStipplingBronzingWebbing =
+      'marigold_stippling_bronzing_webbing';
+  static const String symptomMarigoldSerpentineMines =
+      'marigold_serpentine_mines';
+  static const String symptomMarigoldChewingDamage =
+      'marigold_chewing_damage';
+  static const String symptomMarigoldRootGalls = 'marigold_root_galls';
+  static const String symptomMarigoldWaterStressWilt =
+      'marigold_water_stress_wilt';
+  static const String symptomMarigoldTemperatureSunInjury =
+      'marigold_temperature_sun_injury';
+  static const String symptomMarigoldLodgingStemBreak =
+      'marigold_lodging_stem_break';
+  static const String symptomMarigoldEndOfCycleSenescence =
+      'marigold_end_of_cycle_senescence';
 
   // Signals
   static const String signalPustulesOnStem = 'pustules_on_stem';
@@ -1202,6 +1252,465 @@ class PlantHealthIds {
   static const String signalSunflowerActivePustules =
       'sunflower_active_pustules';
 
+  // ── Nopal (Documento C, NO v1.0) ──────────────────────────────────────────
+  // 18 sindromes observables. Las senales COMPARTIDAS (humedad, frio, sales,
+  // excremento, melaza, tizne, telarana...) se reutilizan tal cual; aqui solo
+  // viven las propias del nopal.
+  static const String symptomNopalBlackMapSpots = 'nopal_black_map_spots';
+  static const String symptomNopalCankerCrackExudate =
+      'nopal_canker_crack_exudate';
+  static const String symptomNopalChewingGallery = 'nopal_chewing_gallery';
+  static const String symptomNopalChlorosisEdgeBurn =
+      'nopal_chlorosis_edge_burn';
+  static const String symptomNopalChloroticRingsMosaic =
+      'nopal_chlorotic_rings_mosaic';
+  static const String symptomNopalColdTissueChange = 'nopal_cold_tissue_change';
+  static const String symptomNopalEggStickFrassHollowPad =
+      'nopal_egg_stick_frass_hollow_pad';
+  static const String symptomNopalImpactWoundScar = 'nopal_impact_wound_scar';
+  static const String symptomNopalMiteStipplingGall =
+      'nopal_mite_stippling_gall';
+  static const String symptomNopalPaleElongatedGrowth =
+      'nopal_pale_elongated_growth';
+  static const String symptomNopalRaisedBlackScab = 'nopal_raised_black_scab';
+  static const String symptomNopalRootCollarDecline =
+      'nopal_root_collar_decline';
+  static const String symptomNopalSoftWaterSoakedTissue =
+      'nopal_soft_water_soaked_tissue';
+  static const String symptomNopalSuckingBlotches = 'nopal_sucking_blotches';
+  static const String symptomNopalSunburnPatch = 'nopal_sunburn_patch';
+  static const String symptomNopalWhiteCottonWax = 'nopal_white_cotton_wax';
+  static const String symptomNopalWitchesBroomDeformation =
+      'nopal_witches_broom_deformation';
+  static const String symptomNopalWrinklingTurgorLoss =
+      'nopal_wrinkling_turgor_loss';
+
+  static const String signalNopalAbnormalOdor = 'nopal_abnormal_odor';
+  static const String signalNopalAbnormalProliferation =
+      'nopal_abnormal_proliferation';
+  static const String signalNopalAdultBeetle = 'nopal_adult_beetle';
+  static const String signalNopalAnimalBite = 'nopal_animal_bite';
+  static const String signalNopalAnimalContact = 'nopal_animal_contact';
+  static const String signalNopalBaseSoft = 'nopal_base_soft';
+  static const String signalNopalBlackAfterFreeze = 'nopal_black_after_freeze';
+  static const String signalNopalBlackGum = 'nopal_black_gum';
+  static const String signalNopalBleachedPatch = 'nopal_bleached_patch';
+  static const String signalNopalChangedSunExposure =
+      'nopal_changed_sun_exposure';
+  static const String signalNopalChloroticHalo = 'nopal_chlorotic_halo';
+  static const String signalNopalCircularBlackSpot =
+      'nopal_circular_black_spot';
+  static const String signalNopalCleanBreak = 'nopal_clean_break';
+  static const String signalNopalCleanCut = 'nopal_clean_cut';
+  static const String signalNopalColdSensitiveProfile =
+      'nopal_cold_sensitive_profile';
+  static const String signalNopalColoniesOnAreoles =
+      'nopal_colonies_on_areoles';
+  static const String signalNopalCottonWax = 'nopal_cotton_wax';
+  static const String signalNopalCrackedTissue = 'nopal_cracked_tissue';
+  static const String signalNopalCrestedCultivarKnown =
+      'nopal_crested_cultivar_known';
+  static const String signalNopalCrowding = 'nopal_crowding';
+  static const String signalNopalDarkExudate = 'nopal_dark_exudate';
+  static const String signalNopalDarkSoftMargin = 'nopal_dark_soft_margin';
+  static const String signalNopalDryCrispLater = 'nopal_dry_crisp_later';
+  static const String signalNopalDrySoilDuringWrinkling =
+      'nopal_dry_soil_during_wrinkling';
+  static const String signalNopalDrySunkenCanker = 'nopal_dry_sunken_canker';
+  static const String signalNopalDryingPads = 'nopal_drying_pads';
+  static const String signalNopalEdgeBurn = 'nopal_edge_burn';
+  static const String signalNopalEggStick = 'nopal_egg_stick';
+  static const String signalNopalElongatedPad = 'nopal_elongated_pad';
+  static const String signalNopalFeedingClusters = 'nopal_feeding_clusters';
+  static const String signalNopalFewFineRoots = 'nopal_few_fine_roots';
+  static const String signalNopalFineStippling = 'nopal_fine_stippling';
+  static const String signalNopalFirmDry = 'nopal_firm_dry';
+  static const String signalNopalFlowerOrFruitDamage =
+      'nopal_flower_or_fruit_damage';
+  static const String signalNopalFrassAtEntry = 'nopal_frass_at_entry';
+  static const String signalNopalFreshPuncture = 'nopal_fresh_puncture';
+  static const String signalNopalFreshSprayPattern =
+      'nopal_fresh_spray_pattern';
+  static const String signalNopalFruitDrop = 'nopal_fruit_drop';
+  static const String signalNopalGall = 'nopal_gall';
+  static const String signalNopalGallery = 'nopal_gallery';
+  static const String signalNopalGrowthNormalizes = 'nopal_growth_normalizes';
+  static const String signalNopalHighNitrogen = 'nopal_high_nitrogen';
+  static const String signalNopalHighPhContext = 'nopal_high_ph_context';
+  static const String signalNopalHollowPad = 'nopal_hollow_pad';
+  static const String signalNopalImpactCrater = 'nopal_impact_crater';
+  static const String signalNopalIndoorContext = 'nopal_indoor_context';
+  static const String signalNopalInternalOrangeBlackLarvae =
+      'nopal_internal_orange_black_larvae';
+  static const String signalNopalIrregularMottling = 'nopal_irregular_mottling';
+  static const String signalNopalKnownImpact = 'nopal_known_impact';
+  static const String signalNopalLarvalEntryHole = 'nopal_larval_entry_hole';
+  static const String signalNopalLeafFootedBugPresent =
+      'nopal_leaf_footed_bug_present';
+  static const String signalNopalLeaningTowardLight =
+      'nopal_leaning_toward_light';
+  static const String signalNopalLesionExpands = 'nopal_lesion_expands';
+  static const String signalNopalLightBrownToBlack =
+      'nopal_light_brown_to_black';
+  static const String signalNopalLocalizedDistortion =
+      'nopal_localized_distortion';
+  static const String signalNopalLossOfSupport = 'nopal_loss_of_support';
+  static const String signalNopalLossOfTurgor = 'nopal_loss_of_turgor';
+  static const String signalNopalLowLightContext = 'nopal_low_light_context';
+  static const String signalNopalLowNRepeated = 'nopal_low_n_repeated';
+  static const String signalNopalLowerPadsWorse = 'nopal_lower_pads_worse';
+  static const String signalNopalManyShortShoots = 'nopal_many_short_shoots';
+  static const String signalNopalMapLikeBlackPattern =
+      'nopal_map_like_black_pattern';
+  static const String signalNopalMicroscopicMites = 'nopal_microscopic_mites';
+  static const String signalNopalMineralResidue = 'nopal_mineral_residue';
+  static const String signalNopalMosaicPattern = 'nopal_mosaic_pattern';
+  static const String signalNopalMultipleExposedPads =
+      'nopal_multiple_exposed_pads';
+  static const String signalNopalMultiplePadsAffected =
+      'nopal_multiple_pads_affected';
+  static const String signalNopalMultipleRandomSides =
+      'nopal_multiple_random_sides';
+  static const String signalNopalMultipleScabs = 'nopal_multiple_scabs';
+  static const String signalNopalNearbyAffectedCacti =
+      'nopal_nearby_affected_cacti';
+  static const String signalNopalNearbyOpuntiaDamage =
+      'nopal_nearby_opuntia_damage';
+  static const String signalNopalNewGrowth = 'nopal_new_growth';
+  static const String signalNopalNewLeaning = 'nopal_new_leaning';
+  static const String signalNopalNoInsectAndStable =
+      'nopal_no_insect_and_stable';
+  static const String signalNopalNoInternalDamage = 'nopal_no_internal_damage';
+  static const String signalNopalNoRepeat = 'nopal_no_repeat';
+  static const String signalNopalNormalBranching = 'nopal_normal_branching';
+  static const String signalNopalNormalGlochids = 'nopal_normal_glochids';
+  static const String signalNopalNormalSpeciesShape =
+      'nopal_normal_species_shape';
+  static const String signalNopalNormalVariegation = 'nopal_normal_variegation';
+  static const String signalNopalNormalYoungPad = 'nopal_normal_young_pad';
+  static const String signalNopalNurseryOrigin = 'nopal_nursery_origin';
+  static const String signalNopalOnePadOnly = 'nopal_one_pad_only';
+  static const String signalNopalOneSidedHailPattern =
+      'nopal_one_sided_hail_pattern';
+  static const String signalNopalOozeAtEntry = 'nopal_ooze_at_entry';
+  static const String signalNopalPadCollapseFromInside =
+      'nopal_pad_collapse_from_inside';
+  static const String signalNopalPadDiesBeyondLesion =
+      'nopal_pad_dies_beyond_lesion';
+  static const String signalNopalPadYellowingNearColony =
+      'nopal_pad_yellowing_near_colony';
+  static const String signalNopalPaleDeadBorder = 'nopal_pale_dead_border';
+  static const String signalNopalPaleFeedingBlotch =
+      'nopal_pale_feeding_blotch';
+  static const String signalNopalPaleNewGrowth = 'nopal_pale_new_growth';
+  static const String signalNopalPatternOnNewPads = 'nopal_pattern_on_new_pads';
+  static const String signalNopalPatternRepeats = 'nopal_pattern_repeats';
+  static const String signalNopalPersistentDeformation =
+      'nopal_persistent_deformation';
+  static const String signalNopalPlantBugPresent = 'nopal_plant_bug_present';
+  static const String signalNopalPlantingTooDeep = 'nopal_planting_too_deep';
+  static const String signalNopalPriorWound = 'nopal_prior_wound';
+  static const String signalNopalProgressesToNewPads =
+      'nopal_progresses_to_new_pads';
+  static const String signalNopalProgressesWithoutNewImpact =
+      'nopal_progresses_without_new_impact';
+  static const String signalNopalPropagationHistory =
+      'nopal_propagation_history';
+  static const String signalNopalPruningResponse = 'nopal_pruning_response';
+  static const String signalNopalRaggedMargin = 'nopal_ragged_margin';
+  static const String signalNopalRainSplash = 'nopal_rain_splash';
+  static const String signalNopalRaisedDryScab = 'nopal_raised_dry_scab';
+  static const String signalNopalRapidProgression = 'nopal_rapid_progression';
+  static const String signalNopalRecentTransplant = 'nopal_recent_transplant';
+  static const String signalNopalRedMaterialUnderWax =
+      'nopal_red_material_under_wax';
+  static const String signalNopalReducedGreenArea = 'nopal_reduced_green_area';
+  static const String signalNopalReflectedHeat = 'nopal_reflected_heat';
+  static const String signalNopalRootRestriction = 'nopal_root_restriction';
+  static const String signalNopalRootsFirmLightTips =
+      'nopal_roots_firm_light_tips';
+  static const String signalNopalSapSuckingPunctures =
+      'nopal_sap_sucking_punctures';
+  static const String signalNopalScabDetaches = 'nopal_scab_detaches';
+  static const String signalNopalScarOrDeformity = 'nopal_scar_or_deformity';
+  static const String signalNopalSeasonalShriveling =
+      'nopal_seasonal_shriveling';
+  static const String signalNopalSmallBlackDotsOnLesion =
+      'nopal_small_black_dots_on_lesion';
+  static const String signalNopalSoftRotAwayFromWound =
+      'nopal_soft_rot_away_from_wound';
+  static const String signalNopalSoftWatery = 'nopal_soft_watery';
+  static const String signalNopalSpotVisibleBothSides =
+      'nopal_spot_visible_both_sides';
+  static const String signalNopalStableOldLean = 'nopal_stable_old_lean';
+  static const String signalNopalStableScar = 'nopal_stable_scar';
+  static const String signalNopalStrawYellow = 'nopal_straw_yellow';
+  static const String signalNopalStrongFullSunGrowth =
+      'nopal_strong_full_sun_growth';
+  static const String signalNopalSunkenWetArea = 'nopal_sunken_wet_area';
+  static const String signalNopalSunnySide = 'nopal_sunny_side';
+  static const String signalNopalSurfaceOnly = 'nopal_surface_only';
+  static const String signalNopalTanScar = 'nopal_tan_scar';
+  static const String signalNopalTissueBreakdown = 'nopal_tissue_breakdown';
+  static const String signalNopalToolDamage = 'nopal_tool_damage';
+  static const String signalNopalTranslucentTissue = 'nopal_translucent_tissue';
+  static const String signalNopalUniformChlorosis = 'nopal_uniform_chlorosis';
+  static const String signalNopalUniformCorkingAtBase =
+      'nopal_uniform_corking_at_base';
+  static const String signalNopalVariegatedTrait = 'nopal_variegated_trait';
+  static const String signalNopalWarmWeatherProgression =
+      'nopal_warm_weather_progression';
+  static const String signalNopalWeakGrowth = 'nopal_weak_growth';
+  static const String signalNopalWeakNarrowPad = 'nopal_weak_narrow_pad';
+  static const String signalNopalWetCold = 'nopal_wet_cold';
+  static const String signalNopalWiltsWhileSoilWet =
+      'nopal_wilts_while_soil_wet';
+  static const String signalNopalWindEvent = 'nopal_wind_event';
+  static const String signalNopalWitchesBroomCluster =
+      'nopal_witches_broom_cluster';
+  static const String signalNopalWrinkling = 'nopal_wrinkling';
+  static const String signalNopalYellowRings = 'nopal_yellow_rings';
+  static const String signalNopalYellowingWithBroom =
+      'nopal_yellowing_with_broom';
+  static const String signalNopalYoungPad = 'nopal_young_pad';
+
+  // Cempasúchil / Marigold (Doc C §37): señales de apoyo que reporta el
+  // usuario al confirmar. Solo se crea una señal nueva cuando cambia el
+  // diferencial y no existe equivalente genérica: waterlogging, coldExposure,
+  // heatStress, dryHotWindow, vectorPresent, stickyHoneydew, sootyMold,
+  // mitesWebbing, feedingHoles, leafMines, rootGalls, salinityLoad,
+  // recentStress, frostEvent, hailEvent, grayFuzzyGrowth, whitePowderGrowth,
+  // thripsPresent, whiteflyCloud, leafEdgeBurn y poorEmergence se REUTILIZAN
+  // (Doc C §37 "No crear IDs duplicados").
+  static const String signalMarigoldPatchyGaps = 'marigold_patchy_gaps';
+  static const String signalMarigoldSeedMissingOrSoft =
+      'marigold_seed_missing_or_soft';
+  static const String signalMarigoldSoilCrust = 'marigold_soil_crust';
+  static const String signalMarigoldUnevenSowingDepth =
+      'marigold_uneven_sowing_depth';
+  static const String signalMarigoldHealthyEmergenceNearby =
+      'marigold_healthy_emergence_nearby';
+  static const String signalMarigoldWithinNormalWindow =
+      'marigold_within_normal_window';
+  static const String signalMarigoldOldOrDamagedSeedLot =
+      'marigold_old_or_damaged_seed_lot';
+  static const String signalMarigoldStemPinchedAtSoil =
+      'marigold_stem_pinched_at_soil';
+  static const String signalMarigoldWateryBrownLesion =
+      'marigold_watery_brown_lesion';
+  static const String signalMarigoldSeedlingFellStillGreen =
+      'marigold_seedling_fell_still_green';
+  static const String signalMarigoldConsecutiveSeedlingDeaths =
+      'marigold_consecutive_seedling_deaths';
+  static const String signalMarigoldStemCleanCut = 'marigold_stem_clean_cut';
+  static const String signalMarigoldDehydratedFirmCollar =
+      'marigold_dehydrated_firm_collar';
+  static const String signalMarigoldReusedSubstrate =
+      'marigold_reused_substrate';
+  static const String signalMarigoldFrequentIrrigation =
+      'marigold_frequent_irrigation';
+  static const String signalMarigoldDenseSpacing = 'marigold_dense_spacing';
+  static const String signalMarigoldPoorVentilation =
+      'marigold_poor_ventilation';
+  static const String signalMarigoldWiltInWetSoil =
+      'marigold_wilt_in_wet_soil';
+  static const String signalMarigoldCollarBrownCrackedSoft =
+      'marigold_collar_brown_cracked_soft';
+  static const String signalMarigoldRootCortexSloughs =
+      'marigold_root_cortex_sloughs';
+  static const String signalMarigoldFineRootsLost = 'marigold_fine_roots_lost';
+  static const String signalMarigoldAbnormalOdor = 'marigold_abnormal_odor';
+  static const String signalMarigoldDrySoilFirmRoot =
+      'marigold_dry_soil_firm_root';
+  static const String signalMarigoldMiddayWiltRecovers =
+      'marigold_midday_wilt_recovers';
+  static const String signalMarigoldRecentTransplant =
+      'marigold_recent_transplant';
+  static const String signalMarigoldCircularBrownSpot =
+      'marigold_circular_brown_spot';
+  static const String signalMarigoldChloroticHalo = 'marigold_chlorotic_halo';
+  static const String signalMarigoldConcentricRingsInLesion =
+      'marigold_concentric_rings_in_lesion';
+  static const String signalMarigoldSpotsCoalescing =
+      'marigold_spots_coalescing';
+  static const String signalMarigoldStartedLowerLeaves =
+      'marigold_started_lower_leaves';
+  static const String signalMarigoldPetalPedicelDarkening =
+      'marigold_petal_pedicel_darkening';
+  static const String signalMarigoldLeafWetness = 'marigold_leaf_wetness';
+  static const String signalMarigoldBlackDotsInLesion =
+      'marigold_black_dots_in_lesion';
+  static const String signalMarigoldGrayBlackPaperyLesion =
+      'marigold_gray_black_papery_lesion';
+  static const String signalMarigoldUpwardProgression =
+      'marigold_upward_progression';
+  static const String signalMarigoldRecentSprayEvent =
+      'marigold_recent_spray_event';
+  static const String signalMarigoldBudNotOpening = 'marigold_bud_not_opening';
+  static const String signalMarigoldWateryFlowerTissue =
+      'marigold_watery_flower_tissue';
+  static const String signalMarigoldOldFlowersStuckToHealthy =
+      'marigold_old_flowers_stuck_to_healthy';
+  static const String signalMarigoldUniformDryFlowerNoMold =
+      'marigold_uniform_dry_flower_no_mold';
+  static const String signalMarigoldResidueWipesOff =
+      'marigold_residue_wipes_off';
+  static const String signalMarigoldPatchExpanding =
+      'marigold_patch_expanding';
+  static const String signalMarigoldBronzeSpecklesOlderLeaves =
+      'marigold_bronze_speckles_older_leaves';
+  static const String signalMarigoldDownwardLeafCupping =
+      'marigold_downward_leaf_cupping';
+  static const String signalMarigoldLowPhRepeated = 'marigold_low_ph_repeated';
+  static const String signalMarigoldHighPhRepeated =
+      'marigold_high_ph_repeated';
+  static const String signalMarigoldUniformChlorosis =
+      'marigold_uniform_chlorosis';
+  static const String signalMarigoldNewLeavesPale = 'marigold_new_leaves_pale';
+  static const String signalMarigoldSameManagementGroup =
+      'marigold_same_management_group';
+  static const String signalMarigoldWhiteRings = 'marigold_white_rings';
+  static const String signalMarigoldStrapLikeLeaves =
+      'marigold_strap_like_leaves';
+  static const String signalMarigoldStemNecrosis = 'marigold_stem_necrosis';
+  static const String signalMarigoldStuntedPlant = 'marigold_stunted_plant';
+  static const String signalMarigoldSharedPropagationLot =
+      'marigold_shared_propagation_lot';
+  static const String signalMarigoldKnownVariegation =
+      'marigold_known_variegation';
+  static const String signalMarigoldHerbicideDriftEvent =
+      'marigold_herbicide_drift_event';
+  static const String signalMarigoldGreenLeafyFlowers =
+      'marigold_green_leafy_flowers';
+  static const String signalMarigoldWitchesBroom = 'marigold_witches_broom';
+  static const String signalMarigoldLeafhoppersPresent =
+      'marigold_leafhoppers_present';
+  static const String signalMarigoldNearbyWeeds = 'marigold_nearby_weeds';
+  static const String signalMarigoldOtherAsteraceaeAffected =
+      'marigold_other_asteraceae_affected';
+  static const String signalMarigoldRecentPinching =
+      'marigold_recent_pinching';
+  static const String signalMarigoldLushFoliage = 'marigold_lush_foliage';
+  static const String signalMarigoldLongSoftStems = 'marigold_long_soft_stems';
+  static const String signalMarigoldNoBudsPastWindow =
+      'marigold_no_buds_past_window';
+  static const String signalMarigoldInsufficientLight =
+      'marigold_insufficient_light';
+  static const String signalMarigoldNightLightConfirmed =
+      'marigold_night_light_confirmed';
+  static const String signalMarigoldHighNitrogenReported =
+      'marigold_high_nitrogen_reported';
+  static const String signalMarigoldSmallBudsPresent =
+      'marigold_small_buds_present';
+  static const String signalMarigoldWithinCalendar =
+      'marigold_within_calendar';
+  static const String signalMarigoldEstimatedSowingDate =
+      'marigold_estimated_sowing_date';
+  static const String signalMarigoldLateCultivar = 'marigold_late_cultivar';
+  static const String signalMarigoldBudBrownOrBlack =
+      'marigold_bud_brown_or_black';
+  static const String signalMarigoldBudDrySealed = 'marigold_bud_dry_sealed';
+  static const String signalMarigoldIncompleteOpening =
+      'marigold_incomplete_opening';
+  static const String signalMarigoldDeformedPetals =
+      'marigold_deformed_petals';
+  static const String signalMarigoldBudDrop = 'marigold_bud_drop';
+  static const String signalMarigoldYoungBudFirmGreen =
+      'marigold_young_bud_firm_green';
+  static const String signalMarigoldSilverScarring =
+      'marigold_silver_scarring';
+  static const String signalMarigoldBlackThripsSpecks =
+      'marigold_black_thrips_specks';
+  static const String signalMarigoldSlenderMobileInsects =
+      'marigold_slender_mobile_insects';
+  static const String signalMarigoldDamageInsideBud =
+      'marigold_damage_inside_bud';
+  static const String signalMarigoldNewLeafDistorted =
+      'marigold_new_leaf_distorted';
+  static const String signalMarigoldAphidClusters =
+      'marigold_aphid_clusters';
+  static const String signalMarigoldAntsPresent = 'marigold_ants_present';
+  static const String signalMarigoldCurledNewGrowth =
+      'marigold_curled_new_growth';
+  static const String signalMarigoldWaxyScaleShields =
+      'marigold_waxy_scale_shields';
+  static const String signalMarigoldFineWhiteStippling =
+      'marigold_fine_white_stippling';
+  static const String signalMarigoldTinyMitesVisible =
+      'marigold_tiny_mites_visible';
+  static const String signalMarigoldPrematureLeafDrop =
+      'marigold_premature_leaf_drop';
+  static const String signalMarigoldDustySite = 'marigold_dusty_site';
+  static const String signalMarigoldMineWidensWithLarva =
+      'marigold_mine_widens_with_larva';
+  static const String signalMarigoldNewMinesAppearing =
+      'marigold_new_mines_appearing';
+  static const String signalMarigoldSmallAdultFlies =
+      'marigold_small_adult_flies';
+  static const String signalMarigoldIrregularChewedMargins =
+      'marigold_irregular_chewed_margins';
+  static const String signalMarigoldMissingTissue = 'marigold_missing_tissue';
+  static const String signalMarigoldSlimeTrail = 'marigold_slime_trail';
+  static const String signalMarigoldCaterpillarFrass =
+      'marigold_caterpillar_frass';
+  static const String signalMarigoldBeetleOnFlower =
+      'marigold_beetle_on_flower';
+  static const String signalMarigoldNightDamage = 'marigold_night_damage';
+  static const String signalMarigoldGallsIntegralToRoot =
+      'marigold_galls_integral_to_root';
+  static const String signalMarigoldNodulesRubOff = 'marigold_nodules_rub_off';
+  static const String signalMarigoldNematodeHistory =
+      'marigold_nematode_history';
+  static const String signalMarigoldRootBoundCoiled =
+      'marigold_root_bound_coiled';
+  static const String signalMarigoldPatchyFieldPattern =
+      'marigold_patchy_field_pattern';
+  static const String signalMarigoldGeneralWilt = 'marigold_general_wilt';
+  static const String signalMarigoldSmallFlowers = 'marigold_small_flowers';
+  static const String signalMarigoldRecoversAtNight =
+      'marigold_recovers_at_night';
+  static const String signalMarigoldNoLocalizedLesion =
+      'marigold_no_localized_lesion';
+  static const String signalMarigoldSunExposedSideDamage =
+      'marigold_sun_exposed_side_damage';
+  static const String signalMarigoldStrawDryTissue =
+      'marigold_straw_dry_tissue';
+  static const String signalMarigoldTranslucentAfterCold =
+      'marigold_translucent_after_cold';
+  static const String signalMarigoldDarkeningAfterFrost =
+      'marigold_darkening_after_frost';
+  static const String signalMarigoldExposureChange =
+      'marigold_exposure_change';
+  static const String signalMarigoldProgressesWithoutEvent =
+      'marigold_progresses_without_event';
+  static const String signalMarigoldBentOrBrokenStem =
+      'marigold_bent_or_broken_stem';
+  static const String signalMarigoldLeaningAfterWindRain =
+      'marigold_leaning_after_wind_rain';
+  static const String signalMarigoldHeavyFlowerHead =
+      'marigold_heavy_flower_head';
+  static const String signalMarigoldLongInternodes =
+      'marigold_long_internodes';
+  static const String signalMarigoldLooseBase = 'marigold_loose_base';
+  static const String signalMarigoldWindRainEvent =
+      'marigold_wind_rain_event';
+  static const String signalMarigoldNaturallyCompactHabit =
+      'marigold_naturally_compact_habit';
+  static const String signalMarigoldGradualFlowerDrying =
+      'marigold_gradual_flower_drying';
+  static const String signalMarigoldFewerNewBuds = 'marigold_fewer_new_buds';
+  static const String signalMarigoldLowerLeavesYellow =
+      'marigold_lower_leaves_yellow';
+  static const String signalMarigoldSeedsMaturing = 'marigold_seeds_maturing';
+  static const String signalMarigoldDeclineMatchesClock =
+      'marigold_decline_matches_clock';
+  static const String signalMarigoldExpectedSenescence =
+      'marigold_expected_senescence';
+  static const String signalMarigoldSuddenEarlyCollapse =
+      'marigold_sudden_early_collapse';
+  static const String signalMarigoldHealthyBudsStillForming =
+      'marigold_healthy_buds_still_forming';
+
   static const Map<String, String> organLabelsEs = <String, String>{
     organWhorl: 'Cogollo',
     organLeaf: 'Hoja',
@@ -1222,9 +1731,34 @@ class PlantHealthIds {
     organSeed: 'Semilla',
     organBud: 'Botón floral',
     organFlowerHead: 'Capítulo / cabeza floral',
+    organCladode: 'Penca',
   };
 
   static const Map<String, String> symptomLabelsEs = <String, String>{
+    symptomNopalBlackMapSpots: 'Manchas negras redondas o con forma de mapa',
+    symptomNopalCankerCrackExudate: 'Grieta, lesión seca o líquido oscuro',
+    symptomNopalChewingGallery: 'Bordes mordidos, galerías o tejido comido',
+    symptomNopalChlorosisEdgeBurn:
+        'Pencas pálidas, bordes secos o crecimiento débil',
+    symptomNopalChloroticRingsMosaic:
+        'Círculos amarillos, mosaico o manchas cloróticas',
+    symptomNopalColdTissueChange: 'Tejido translúcido o negro después de frío',
+    symptomNopalEggStickFrassHollowPad:
+        'Hilera de huevos, excremento o penca hueca',
+    symptomNopalImpactWoundScar:
+        'Heridas, perforaciones o cicatrices por un golpe',
+    symptomNopalMiteStipplingGall:
+        'Punteado fino, bronceado o deformación localizada',
+    symptomNopalPaleElongatedGrowth: 'Pencas nuevas largas, delgadas o pálidas',
+    symptomNopalRaisedBlackScab: 'Costra oscura, elevada o que deja cicatriz',
+    symptomNopalRootCollarDecline:
+        'Pérdida de soporte o decaimiento desde la base',
+    symptomNopalSoftWaterSoakedTissue: 'Tejido blando, acuoso o hundido',
+    symptomNopalSuckingBlotches: 'Manchas pálidas o cafés por picaduras',
+    symptomNopalSunburnPatch: 'Zona pálida o seca del lado de mayor sol',
+    symptomNopalWhiteCottonWax: 'Algodón blanco o cera pegada a la penca',
+    symptomNopalWitchesBroomDeformation: 'Muchos brotes cortos desde un punto',
+    symptomNopalWrinklingTurgorLoss: 'Pencas arrugadas, flácidas o inclinadas',
     symptomRoseRosetteExcessPrickles:
         'Crecimiento deforme con exceso de aguijones',
     symptomRoseChlorosisWeakGrowth:
@@ -1454,9 +1988,211 @@ class PlantHealthIds {
         'Color o crecimiento compatible con nutrición desbalanceada',
     symptomSunflowerNormalSenescence:
         'Flor envejecida y amarillamiento gradual al final del ciclo',
+
+    // Cempasúchil / Marigold (Doc C §6, S01–S23).
+    symptomMarigoldPoorPatchyEmergence:
+        'No emerge o nace de forma muy dispareja',
+    symptomMarigoldSeedlingCollapse:
+        'Plántula afinada, vencida o colapsada a nivel del suelo',
+    symptomMarigoldRootCollarWilt:
+        'Marchitez, amarillamiento o pérdida de soporte con suelo húmedo',
+    symptomMarigoldDarkConcentricLeafBlight:
+        'Manchas cafés o negras que crecen y se unen',
+    symptomMarigoldGrayBlackSpots:
+        'Manchas grisáceas o negras con puntos oscuros',
+    symptomMarigoldGrayFuzzyFlowerBlight:
+        'Botones o flores cafés con moho gris',
+    symptomMarigoldWhitePowderyCoating:
+        'Polvo blanco sobre hojas, tallos o flores',
+    symptomMarigoldBronzeSpeckle:
+        'Punteado bronce, clorosis y hojas curvadas hacia abajo',
+    symptomMarigoldChlorosisEdgeBurn:
+        'Amarillamiento uniforme, hojas nuevas pálidas o bordes quemados',
+    symptomMarigoldMosaicRingsDistortion:
+        'Mosaico, anillos claros, hojas estrechas o deformación',
+    symptomMarigoldPhyllodyWitchesBroom:
+        'Flores verdes, pétalos como hojas o muchos brotes cortos',
+    symptomMarigoldLushNoBuds:
+        'Mucha hoja, tallos largos y pocos o ningún botón',
+    symptomMarigoldBudBrowningAbortion:
+        'Botones cafés, deformes o que no logran abrir',
+    symptomMarigoldSilverScarring:
+        'Pétalos o hojas plateados, raspados y con puntos negros',
+    symptomMarigoldStickyColonies:
+        'Colonias pequeñas, melaza, hojas pegajosas o tizne negro',
+    symptomMarigoldStipplingBronzingWebbing:
+        'Punteado fino, bronceado y telaraña',
+    symptomMarigoldSerpentineMines:
+        'Líneas serpenteantes o minas dentro de la hoja',
+    symptomMarigoldChewingDamage:
+        'Hojas o flores mordidas, agujeros o plántulas cortadas',
+    symptomMarigoldRootGalls:
+        'Raíces con agallas y planta pequeña o marchita',
+    symptomMarigoldWaterStressWilt:
+        'Marchitez, hojas secas o flores pequeñas sin lesión específica',
+    symptomMarigoldTemperatureSunInjury:
+        'Tejido quemado, translúcido o negro después de calor, sol o frío',
+    symptomMarigoldLodgingStemBreak:
+        'Tallos doblados, planta caída o flores pesadas',
+    symptomMarigoldEndOfCycleSenescence:
+        'Flores envejecidas y planta secándose al final del ciclo',
   };
 
   static const Map<String, String> signalLabelsEs = <String, String>{
+    signalNopalAbnormalOdor: 'Olor anormal en el tejido o la base',
+    signalNopalAbnormalProliferation: 'Proliferación anormal de brotes',
+    signalNopalAdultBeetle: 'Escarabajo adulto visible sobre la planta',
+    signalNopalAnimalBite: 'Mordida de animal en la penca',
+    signalNopalAnimalContact: 'Paso o contacto de animales cerca de la planta',
+    signalNopalBaseSoft: 'Base blanda al revisarla',
+    signalNopalBlackAfterFreeze: 'Tejido ennegrecido después de una helada',
+    signalNopalBlackGum: 'Goma negra sobre la lesión',
+    signalNopalBleachedPatch: 'Zona blanquecina o descolorida',
+    signalNopalChangedSunExposure: 'Cambio reciente de sombra a sol directo',
+    signalNopalChloroticHalo: 'Halo amarillo alrededor de la mancha',
+    signalNopalCircularBlackSpot: 'Mancha negra circular',
+    signalNopalCleanBreak: 'Ruptura limpia sin tejido blando',
+    signalNopalCleanCut: 'Corte limpio hecho con herramienta',
+    signalNopalColdSensitiveProfile: 'Tipo de nopal poco resistente al frío',
+    signalNopalColoniesOnAreoles: 'Colonias pegadas a las areolas',
+    signalNopalCottonWax: 'Cera blanca algodonosa sobre la penca',
+    signalNopalCrackedTissue: 'Tejido agrietado',
+    signalNopalCrestedCultivarKnown: 'Variedad crestada o monstruosa conocida',
+    signalNopalCrowding: 'Plantas muy juntas o poca ventilación',
+    signalNopalDarkExudate: 'Líquido oscuro que escurre de la lesión',
+    signalNopalDarkSoftMargin: 'Borde oscuro y blando alrededor de la zona',
+    signalNopalDryCrispLater: 'El tejido dañado quedó seco y quebradizo',
+    signalNopalDrySoilDuringWrinkling:
+        'El suelo está seco mientras la penca se arruga',
+    signalNopalDrySunkenCanker: 'Lesión seca y hundida',
+    signalNopalDryingPads: 'Pencas que se van secando',
+    signalNopalEdgeBurn: 'Borde de la penca seco o quemado',
+    signalNopalEggStick: 'Hilera de huevos que parece una espina pegada',
+    signalNopalElongatedPad: 'Penca nueva más larga y delgada de lo normal',
+    signalNopalFeedingClusters: 'Picaduras agrupadas en una zona',
+    signalNopalFewFineRoots: 'Pocas raíces finas al revisar',
+    signalNopalFineStippling: 'Punteado muy fino en la superficie',
+    signalNopalFirmDry: 'Tejido firme y seco al tacto con herramienta',
+    signalNopalFlowerOrFruitDamage: 'Daño en flores o frutos',
+    signalNopalFrassAtEntry: 'Excremento en el punto de entrada',
+    signalNopalFreshPuncture: 'Perforación reciente',
+    signalNopalFreshSprayPattern:
+        'Patrón de una aplicación o aspersión reciente',
+    signalNopalFruitDrop: 'Caída de frutos',
+    signalNopalGall: 'Bulto o agalla en la penca',
+    signalNopalGallery: 'Galería o túnel dentro de la penca',
+    signalNopalGrowthNormalizes: 'El crecimiento nuevo sale normal',
+    signalNopalHighNitrogen: 'Lectura de nitrógeno alta',
+    signalNopalHighPhContext: 'Suelo o sustrato con pH alto',
+    signalNopalHollowPad: 'Penca vaciada por dentro',
+    signalNopalImpactCrater: 'Marca de golpe o impacto',
+    signalNopalIndoorContext: 'Planta en interior o bajo techo',
+    signalNopalInternalOrangeBlackLarvae:
+        'Larvas anaranjadas con bandas oscuras dentro de la penca',
+    signalNopalIrregularMottling: 'Moteado irregular en la penca',
+    signalNopalKnownImpact: 'Golpe, granizo o caída conocidos',
+    signalNopalLarvalEntryHole: 'Agujero de entrada de larva',
+    signalNopalLeafFootedBugPresent: 'Chinche de patas foliáceas visible',
+    signalNopalLeaningTowardLight: 'La penca nueva se inclina hacia la luz',
+    signalNopalLesionExpands: 'La lesión creció entre revisiones',
+    signalNopalLightBrownToBlack: 'La lesión empezó café clara y se oscureció',
+    signalNopalLocalizedDistortion: 'Deformación en un punto localizado',
+    signalNopalLossOfSupport: 'La planta perdió anclaje o soporte',
+    signalNopalLossOfTurgor: 'Pérdida de firmeza en las pencas',
+    signalNopalLowLightContext: 'Poca luz donde está la planta',
+    signalNopalLowNRepeated: 'Lectura de nitrógeno baja repetida',
+    signalNopalLowerPadsWorse: 'Las pencas de abajo están más afectadas',
+    signalNopalManyShortShoots: 'Muchos brotes cortos desde el mismo punto',
+    signalNopalMapLikeBlackPattern: 'Manchas negras unidas en forma de mapa',
+    signalNopalMicroscopicMites: 'Ácaros visibles solo con lupa',
+    signalNopalMineralResidue: 'Polvo o residuo mineral en la superficie',
+    signalNopalMosaicPattern: 'Patrón de mosaico en la penca',
+    signalNopalMultipleExposedPads:
+        'Varias pencas expuestas afectadas a la vez',
+    signalNopalMultiplePadsAffected: 'Varias pencas afectadas',
+    signalNopalMultipleRandomSides:
+        'Daño en varios lados sin relación con el sol',
+    signalNopalMultipleScabs: 'Varias costras nuevas',
+    signalNopalNearbyAffectedCacti:
+        'Otras cactáceas cercanas con el mismo patrón',
+    signalNopalNearbyOpuntiaDamage: 'Otros nopales cercanos con daño parecido',
+    signalNopalNewGrowth: 'Brotes o pencas nuevas tiernas',
+    signalNopalNewLeaning: 'Inclinación nueva de la planta',
+    signalNopalNoInsectAndStable: 'No hay insectos y el daño no avanza',
+    signalNopalNoInternalDamage: 'La penca no está dañada por dentro',
+    signalNopalNoRepeat: 'El patrón no se repite en el crecimiento nuevo',
+    signalNopalNormalBranching: 'Ramificación normal de la planta',
+    signalNopalNormalGlochids: 'Gloquidios y areolas de aspecto normal',
+    signalNopalNormalSpeciesShape: 'La forma corresponde a la variedad',
+    signalNopalNormalVariegation: 'Variegación normal de la variedad',
+    signalNopalNormalYoungPad: 'Penca joven tierna en toda su superficie',
+    signalNopalNurseryOrigin: 'Planta comprada en vivero o invernadero',
+    signalNopalOnePadOnly: 'Solo una penca está afectada',
+    signalNopalOneSidedHailPattern: 'Marcas de granizo en un solo lado',
+    signalNopalOozeAtEntry: 'Líquido que escurre del punto de entrada',
+    signalNopalPadCollapseFromInside: 'La penca se colapsa desde adentro',
+    signalNopalPadDiesBeyondLesion: 'El tejido muere más allá de la lesión',
+    signalNopalPadYellowingNearColony: 'La penca amarillea junto a la colonia',
+    signalNopalPaleDeadBorder: 'Borde pálido de tejido muerto',
+    signalNopalPaleFeedingBlotch: 'Mancha pálida alrededor de una picadura',
+    signalNopalPaleNewGrowth: 'Crecimiento nuevo más pálido que el resto',
+    signalNopalPatternOnNewPads:
+        'El patrón aparece también en las pencas nuevas',
+    signalNopalPatternRepeats: 'El mismo patrón se repite en la planta',
+    signalNopalPersistentDeformation: 'Deformación que no desaparece',
+    signalNopalPlantBugPresent: 'Chinche visible sobre la planta',
+    signalNopalPlantingTooDeep: 'La planta quedó sembrada demasiado profunda',
+    signalNopalPriorWound: 'Herida previa en el mismo punto',
+    signalNopalProgressesToNewPads: 'El problema avanza a las pencas nuevas',
+    signalNopalProgressesWithoutNewImpact:
+        'La herida crece sin que haya pasado nada nuevo',
+    signalNopalPropagationHistory: 'La penca vino de otra planta',
+    signalNopalPruningResponse: 'Rebrote después de una poda o un corte',
+    signalNopalRaggedMargin: 'Borde de la penca mordido o irregular',
+    signalNopalRainSplash: 'Lluvia o riego que moja la planta',
+    signalNopalRaisedDryScab: 'Costra elevada y seca',
+    signalNopalRapidProgression: 'El daño avanzó en horas o pocos días',
+    signalNopalRecentTransplant: 'Trasplante o plantación reciente',
+    signalNopalRedMaterialUnderWax: 'Material rojizo debajo de la cera blanca',
+    signalNopalReducedGreenArea: 'Se está reduciendo el área verde de la penca',
+    signalNopalReflectedHeat: 'Pared, piedra o maceta que refleja calor',
+    signalNopalRootRestriction: 'Raíz apretada o con poco volumen',
+    signalNopalRootsFirmLightTips: 'Raíces firmes y de puntas claras',
+    signalNopalSapSuckingPunctures: 'Picaduras de insectos chupadores',
+    signalNopalScabDetaches: 'La costra se desprende',
+    signalNopalScarOrDeformity: 'Cicatriz o deformación en la penca',
+    signalNopalSeasonalShriveling: 'Encogimiento propio de la temporada',
+    signalNopalSmallBlackDotsOnLesion: 'Puntitos negros dentro de la mancha',
+    signalNopalSoftRotAwayFromWound: 'Tejido blando más allá de la herida',
+    signalNopalSoftWatery: 'Tejido blando y acuoso',
+    signalNopalSpotVisibleBothSides:
+        'La mancha se ve de los dos lados de la penca',
+    signalNopalStableOldLean: 'Inclinación antigua que no avanza',
+    signalNopalStableScar: 'Cicatriz estable que no cambia',
+    signalNopalStrawYellow: 'Zona color paja',
+    signalNopalStrongFullSunGrowth: 'Crecimiento firme a pleno sol',
+    signalNopalSunkenWetArea: 'Zona hundida y húmeda',
+    signalNopalSunnySide: 'Daño solo del lado que recibe más sol',
+    signalNopalSurfaceOnly: 'El daño es solo superficial',
+    signalNopalTanScar: 'Cicatriz color canela',
+    signalNopalTissueBreakdown: 'El tejido se está deshaciendo',
+    signalNopalToolDamage: 'Daño hecho con una herramienta',
+    signalNopalTranslucentTissue: 'Tejido translúcido o aguado',
+    signalNopalUniformChlorosis: 'Amarillamiento parejo en toda la penca',
+    signalNopalUniformCorkingAtBase: 'Corchado parejo en la base vieja',
+    signalNopalVariegatedTrait: 'Variedad variegada o de color claro',
+    signalNopalWarmWeatherProgression:
+        'El daño sigue avanzando con clima cálido',
+    signalNopalWeakGrowth: 'Crecimiento débil o detenido',
+    signalNopalWeakNarrowPad: 'Penca nueva angosta y débil',
+    signalNopalWetCold: 'Frío con sustrato húmedo',
+    signalNopalWiltsWhileSoilWet: 'La planta decae aunque el suelo esté húmedo',
+    signalNopalWindEvent: 'Viento fuerte reciente',
+    signalNopalWitchesBroomCluster: 'Racimo de brotes tipo escoba de bruja',
+    signalNopalWrinkling: 'Pencas arrugadas',
+    signalNopalYellowRings: 'Anillos amarillos en la penca',
+    signalNopalYellowingWithBroom: 'Amarillamiento junto al racimo de brotes',
+    signalNopalYoungPad: 'Penca joven o brote reciente',
     signalRoseAntActivity: 'Hay hormigas subiendo por la planta',
     signalRoseBeetlesOnFlower: 'Hay escarabajos comiendo la flor',
     signalRoseBeneficialPredators:
@@ -2270,6 +3006,166 @@ class PlantHealthIds {
     signalSunflowerInsectPattern:
         'El daño sigue un patrón de insecto, no de frío',
     signalSunflowerActivePustules: 'Hay pústulas activas, no quemadura',
+
+    // Cempasúchil / Marigold (Doc C §37).
+    signalMarigoldPatchyGaps: 'Las fallas forman parches o líneas',
+    signalMarigoldSeedMissingOrSoft:
+        'Las semillas están ausentes, blandas u oscuras',
+    signalMarigoldSoilCrust: 'La superficie formó costra',
+    signalMarigoldUnevenSowingDepth: 'La profundidad de siembra fue variable',
+    signalMarigoldHealthyEmergenceNearby:
+        'Hay plántulas sanas y uniformes al lado',
+    signalMarigoldWithinNormalWindow:
+        'La fecha sigue dentro de la ventana normal del perfil',
+    signalMarigoldOldOrDamagedSeedLot: 'La semilla es vieja o de origen dudoso',
+    signalMarigoldStemPinchedAtSoil:
+        'El tallo está afinado justo al nivel del suelo',
+    signalMarigoldWateryBrownLesion: 'La lesión es acuosa, café o hundida',
+    signalMarigoldSeedlingFellStillGreen:
+        'La plántula cayó con las hojas todavía verdes',
+    signalMarigoldConsecutiveSeedlingDeaths:
+        'Hay varias muertes seguidas en la misma zona',
+    signalMarigoldStemCleanCut: 'El tallo está cortado de forma limpia',
+    signalMarigoldDehydratedFirmCollar:
+        'La plántula está deshidratada pero el cuello sigue firme',
+    signalMarigoldReusedSubstrate: 'El sustrato o la charola se reutilizaron',
+    signalMarigoldFrequentIrrigation: 'Los riegos son frecuentes',
+    signalMarigoldDenseSpacing: 'La densidad de plantas es alta',
+    signalMarigoldPoorVentilation: 'Hay poca ventilación',
+    signalMarigoldWiltInWetSoil: 'La planta se marchita con el suelo húmedo',
+    signalMarigoldCollarBrownCrackedSoft:
+        'La base está café, agrietada o blanda',
+    signalMarigoldRootCortexSloughs:
+        'La corteza de la raíz se desprende al tocarla',
+    signalMarigoldFineRootsLost: 'Se perdieron las raíces finas',
+    signalMarigoldAbnormalOdor: 'Hay un olor anormal',
+    signalMarigoldDrySoilFirmRoot: 'El suelo está seco y la raíz firme',
+    signalMarigoldMiddayWiltRecovers:
+        'Se marchita al mediodía y se recupera por la noche',
+    signalMarigoldRecentTransplant: 'Hubo un trasplante reciente',
+    signalMarigoldCircularBrownSpot: 'Las lesiones empezaron circulares',
+    signalMarigoldChloroticHalo: 'Las manchas tienen halo amarillo',
+    signalMarigoldConcentricRingsInLesion:
+        'La lesión muestra anillos o centro oscuro',
+    signalMarigoldSpotsCoalescing: 'Las manchas se están uniendo',
+    signalMarigoldStartedLowerLeaves: 'Empezó en las hojas inferiores',
+    signalMarigoldPetalPedicelDarkening:
+        'Los pétalos o pedicelos se oscurecieron',
+    signalMarigoldLeafWetness: 'El follaje permanece mojado',
+    signalMarigoldBlackDotsInLesion: 'Hay puntos negros dentro de la mancha',
+    signalMarigoldGrayBlackPaperyLesion:
+        'La lesión es gris o negra y de tejido papiráceo',
+    signalMarigoldUpwardProgression: 'El daño avanza hacia arriba',
+    signalMarigoldRecentSprayEvent: 'Hubo una aspersión reciente',
+    signalMarigoldBudNotOpening: 'El botón no logra abrir',
+    signalMarigoldWateryFlowerTissue: 'El tejido floral está acuoso',
+    signalMarigoldOldFlowersStuckToHealthy:
+        'Flores viejas quedaron pegadas a tejido sano',
+    signalMarigoldUniformDryFlowerNoMold:
+        'La flor se secó de forma uniforme y sin moho',
+    signalMarigoldResidueWipesOff: 'El material se limpia al rozarlo',
+    signalMarigoldPatchExpanding: 'El parche se expande entre revisiones',
+    signalMarigoldBronzeSpecklesOlderLeaves:
+        'Hay puntos bronce en las hojas viejas',
+    signalMarigoldDownwardLeafCupping: 'Las hojas se curvan hacia abajo',
+    signalMarigoldLowPhRepeated: 'El pH bajo se repite entre mediciones',
+    signalMarigoldHighPhRepeated: 'El pH alto se repite entre mediciones',
+    signalMarigoldUniformChlorosis: 'El amarillamiento es uniforme',
+    signalMarigoldNewLeavesPale: 'Las hojas nuevas están pálidas',
+    signalMarigoldSameManagementGroup:
+        'Afecta a varias plantas con el mismo manejo',
+    signalMarigoldWhiteRings: 'Hay anillos blancos o cloróticos',
+    signalMarigoldStrapLikeLeaves: 'Las hojas nuevas son estrechas o tipo cinta',
+    signalMarigoldStemNecrosis: 'Hay necrosis en el tallo',
+    signalMarigoldStuntedPlant: 'La planta está enana o atrofiada',
+    signalMarigoldSharedPropagationLot: 'Comparten lote de propagación',
+    signalMarigoldKnownVariegation: 'La variegación es conocida del cultivar',
+    signalMarigoldHerbicideDriftEvent: 'Hubo deriva o aplicación de herbicida',
+    signalMarigoldGreenLeafyFlowers: 'Las flores son verdes o con forma de hoja',
+    signalMarigoldWitchesBroom: 'Hay muchos brotes cortos desde un punto',
+    signalMarigoldLeafhoppersPresent: 'Hay chicharritas presentes',
+    signalMarigoldNearbyWeeds: 'Hay malezas cercanas',
+    signalMarigoldOtherAsteraceaeAffected:
+        'Otras asteráceas presentan síntomas',
+    signalMarigoldRecentPinching: 'Hubo un despunte reciente',
+    signalMarigoldLushFoliage: 'El follaje es abundante y muy verde',
+    signalMarigoldLongSoftStems: 'Los tallos son largos o blandos',
+    signalMarigoldNoBudsPastWindow:
+        'No hay botones y ya pasó la ventana del perfil',
+    signalMarigoldInsufficientLight: 'La luz útil es insuficiente',
+    signalMarigoldNightLightConfirmed:
+        'La persona confirma luz artificial durante la noche',
+    signalMarigoldHighNitrogenReported:
+        'Se reporta fertilización nitrogenada alta o frecuente',
+    signalMarigoldSmallBudsPresent: 'Ya hay botones pequeños presentes',
+    signalMarigoldWithinCalendar: 'La planta sigue dentro de su calendario',
+    signalMarigoldEstimatedSowingDate: 'La fecha de siembra es estimada',
+    signalMarigoldLateCultivar: 'El cultivar es tardío',
+    signalMarigoldBudBrownOrBlack: 'El botón está café o negro',
+    signalMarigoldBudDrySealed: 'El botón está seco y cerrado',
+    signalMarigoldIncompleteOpening: 'La apertura floral es incompleta',
+    signalMarigoldDeformedPetals: 'Los pétalos están deformes',
+    signalMarigoldBudDrop: 'Se están cayendo los botones',
+    signalMarigoldYoungBudFirmGreen: 'Los botones jóvenes están verdes y firmes',
+    signalMarigoldSilverScarring: 'Hay cicatriz plateada o raspado',
+    signalMarigoldBlackThripsSpecks: 'Hay puntos negros de excremento',
+    signalMarigoldSlenderMobileInsects: 'Hay insectos delgados y móviles',
+    signalMarigoldDamageInsideBud: 'El daño está oculto dentro del botón',
+    signalMarigoldNewLeafDistorted: 'Las hojas nuevas están distorsionadas',
+    signalMarigoldAphidClusters: 'Hay colonias agrupadas en brotes',
+    signalMarigoldAntsPresent: 'Hay hormigas asociadas',
+    signalMarigoldCurledNewGrowth: 'El crecimiento nuevo está curvado',
+    signalMarigoldWaxyScaleShields: 'Hay cera o escudos inmóviles',
+    signalMarigoldFineWhiteStippling: 'Hay punteado blanco muy fino',
+    signalMarigoldTinyMitesVisible: 'Se ven ácaros diminutos',
+    signalMarigoldPrematureLeafDrop: 'Hay caída prematura de hojas',
+    signalMarigoldDustySite: 'El sitio está polvoso',
+    signalMarigoldMineWidensWithLarva:
+        'La mina se ensancha y contiene larva o excremento',
+    signalMarigoldNewMinesAppearing: 'Siguen apareciendo minas nuevas',
+    signalMarigoldSmallAdultFlies: 'Hay adultos pequeños tipo mosca',
+    signalMarigoldIrregularChewedMargins: 'Los bordes están mordidos',
+    signalMarigoldMissingTissue: 'Falta tejido',
+    signalMarigoldSlimeTrail: 'Hay rastro de baba',
+    signalMarigoldCaterpillarFrass: 'Hay excremento de oruga',
+    signalMarigoldBeetleOnFlower: 'Hay escarabajos sobre las flores',
+    signalMarigoldNightDamage: 'El daño ocurre de noche',
+    signalMarigoldGallsIntegralToRoot:
+        'Los bultos forman parte de la raíz',
+    signalMarigoldNodulesRubOff: 'Los nódulos se desprenden al limpiar',
+    signalMarigoldNematodeHistory: 'Hay historial de nematodos en el sitio',
+    signalMarigoldRootBoundCoiled: 'La raíz está enrollada o confinada',
+    signalMarigoldPatchyFieldPattern: 'El problema aparece en parches',
+    signalMarigoldGeneralWilt: 'La marchitez es general',
+    signalMarigoldSmallFlowers: 'Las flores son más pequeñas de lo normal',
+    signalMarigoldRecoversAtNight: 'La planta recupera firmeza por la noche',
+    signalMarigoldNoLocalizedLesion: 'No hay una lesión localizada',
+    signalMarigoldSunExposedSideDamage: 'El daño está del lado expuesto al sol',
+    signalMarigoldStrawDryTissue: 'El tejido está seco y pajizo',
+    signalMarigoldTranslucentAfterCold:
+        'El tejido quedó translúcido después del frío',
+    signalMarigoldDarkeningAfterFrost: 'El tejido oscureció tras una helada',
+    signalMarigoldExposureChange: 'La planta cambió de exposición o ubicación',
+    signalMarigoldProgressesWithoutEvent:
+        'El daño sigue avanzando sin un evento nuevo',
+    signalMarigoldBentOrBrokenStem: 'El tallo está doblado o quebrado',
+    signalMarigoldLeaningAfterWindRain:
+        'La planta se inclinó después de viento o lluvia',
+    signalMarigoldHeavyFlowerHead: 'La flor es grande y pesada',
+    signalMarigoldLongInternodes: 'Los entrenudos son largos',
+    signalMarigoldLooseBase: 'La base está suelta',
+    signalMarigoldWindRainEvent: 'Hubo viento, lluvia o riego fuerte',
+    signalMarigoldNaturallyCompactHabit: 'La planta es compacta por naturaleza',
+    signalMarigoldGradualFlowerDrying: 'Las flores se secan de forma gradual',
+    signalMarigoldFewerNewBuds: 'Aparecen menos botones nuevos',
+    signalMarigoldLowerLeavesYellow: 'Las hojas inferiores amarillean',
+    signalMarigoldSeedsMaturing: 'Las semillas están madurando',
+    signalMarigoldDeclineMatchesClock:
+        'El declive coincide con la fecha del ciclo',
+    signalMarigoldExpectedSenescence: 'El cierre es el esperado para una anual',
+    signalMarigoldSuddenEarlyCollapse: 'El colapso fue repentino y temprano',
+    signalMarigoldHealthyBudsStillForming:
+        'La planta todavía forma botones sanos',
   };
 
   static String organLabel(String organId) => organLabelsEs[organId] ?? organId;

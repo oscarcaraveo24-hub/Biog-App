@@ -40,6 +40,18 @@ class HybridBioGRepository implements BioGRepository {
 
   final DeviceIdentityRepository _identity;
 
+  /// Interruptor del simulador de sensor.
+  ///
+  /// El simulador tickea cada segundo, fabrica telemetría sintética y produce
+  /// alertas que terminan en `BioGStore.latestAlerts`, un campo que hoy no lee
+  /// ninguna pantalla: lo que ve el agricultor sale de `EventEngine` sobre
+  /// telemetría real. Mantenerlo encendido en producción gasta batería del
+  /// teléfono para llenar un buzón que nadie abre.
+  ///
+  /// Se deja apagado por defecto. Cámbialo a `true` para desarrollo local si
+  /// necesitas datos sintéticos.
+  static const bool kEnableSensorSimulator = false;
+
   /// Temporary alert source.
   ///
   /// Live telemetry and history no longer come from this simulator.
@@ -141,7 +153,7 @@ class HybridBioGRepository implements BioGRepository {
     // 4) Keep simulator configured for alert fallback only.
     _simulator.configureDevices(_devices);
 
-    if (!_simulatorStarted) {
+    if (kEnableSensorSimulator && !_simulatorStarted) {
       _simulator.start();
       _simulatorStarted = true;
     }

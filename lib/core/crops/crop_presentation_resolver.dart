@@ -815,6 +815,13 @@ class CropPresentationResolver {
           CropCatalog.agaveCropId,
           cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
         );
+      case CropCatalog.nopalCropId:
+        // El nopal guarda el perfil NO en `profileId`. Se prioriza sobre el
+        // alias visible, que no mapea a icono.
+        return ornamentalProfileIcon(
+          CropCatalog.nopalCropId,
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
       case CropCatalog.roseCropId:
         // El rosal guarda el perfil RO en `profileId`. Se prioriza sobre el
         // alias visible, que no mapea a icono.
@@ -834,6 +841,13 @@ class CropPresentationResolver {
         // alias visible, que no mapea a icono.
         return annualOrnamentalProfileIcon(
           CropCatalog.sunflowerCropId,
+          cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
+        );
+      case CropCatalog.marigoldCropId:
+        // El cempasúchil guarda el perfil CS en `profileId`. Se prioriza sobre
+        // el alias visible, que no mapea a icono.
+        return annualOrnamentalProfileIcon(
+          CropCatalog.marigoldCropId,
           cropContext?.profileId ?? rawVarietyValue ?? seed?.profileId,
         );
       case CropCatalog.appleTreeCropId:

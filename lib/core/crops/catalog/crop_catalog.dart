@@ -25,11 +25,14 @@ import 'package:bio_g/core/crops/cactus/cactus_catalog.dart';
 import 'package:bio_g/core/crops/succulent/succulent_catalog.dart';
 import 'package:bio_g/core/crops/aloe/aloe_catalog.dart';
 import 'package:bio_g/core/crops/agave/agave_catalog.dart';
+import 'package:bio_g/core/crops/nopal/nopal_catalog.dart';
 import 'package:bio_g/core/crops/rose/rose_catalog.dart';
 import 'package:bio_g/core/crops/tulip/tulip_catalog.dart';
 import 'package:bio_g/widgets/seeds/tulip_profiles.dart' show kTuSkip;
 import 'package:bio_g/core/crops/sunflower/sunflower_catalog.dart';
 import 'package:bio_g/widgets/seeds/sunflower_profiles.dart' show kGiSkip;
+import 'package:bio_g/core/crops/marigold/marigold_catalog.dart';
+import 'package:bio_g/widgets/seeds/marigold_profiles.dart' show kCsSkip;
 import 'package:bio_g/core/crops/spinach/spinach_catalog.dart';
 import 'package:bio_g/core/crops/squash/squash_catalog.dart';
 import 'package:bio_g/core/crops/tomato/tomato_catalog.dart';
@@ -82,6 +85,8 @@ class CropCatalog {
   static const String roseCropId = kCropRose;
   static const String tulipCropId = kCropTulip;
   static const String sunflowerCropId = kCropSunflower;
+  static const String marigoldCropId = kCropMarigold;
+  static const String nopalCropId = kCropNopal;
 
   static const String tomatoDefaultProfileId = 'tm_gen';
   static const String tomatoDefaultCalendarId = 'tomato_default';
@@ -174,6 +179,22 @@ class CropCatalog {
   // ni del tulipán.
   static const String sunflowerDefaultProfileId = kGiSkip;
 
+  // Cempasúchil (ornamental, annual_ornamental) — perfil general/seguro
+  // cs_skip. Segunda ornamental ANUAL VERDADERA, con el mismo MODO que el
+  // Girasol pero biología PROPIA: calendarios, targets, caps NPK, textos,
+  // assets y sanidad distintos. NO promete cosecha, rendimiento, manojos,
+  // tallos ni floración garantizada para una fecha cultural. Su ciclo termina
+  // en cycle_complete TERMINAL: una nueva temporada exige una nueva siembra.
+  static const String marigoldDefaultProfileId = kCsSkip;
+
+  // Nopal (ornamental, establishment_maintenance) - perfil general/seguro
+  // NO-SKIP. Quinta ornamental del modo de establecimiento. NO promete
+  // rendimiento, cosecha, nopalito, tuna ni comestibilidad: el usuario decide
+  // cuando cortar una penca o retirar una tuna, y eso no cambia la etapa.
+  // Comparte el modo de cactus, suculenta, sabila y maguey, NO sus targets
+  // (banda hidrica mas amplia en crecimiento, N mejor documentado que cactus).
+  static const String nopalDefaultProfileId = kNopalSkip;
+
   // ── Maize catalog constants ─────────────────────────────────────────────────
   static const String maizeDemoVarietyId = 'dk_2069';
   static const String maizeGenericVarietyId = 'generic_maize';
@@ -216,7 +237,9 @@ class CropCatalog {
     CropCategoryEntry(
       id: ornamentalCategoryId,
       label: 'Planta ornamental',
-      subtitle: 'Cactus, suculentas, sábila, maguey, rosal, tulipán y girasol',
+      subtitle:
+          'Cactus, suculentas, sábila, maguey, nopal, rosal, tulipán, '
+          'girasol y cempasúchil',
       enabled: true,
     ),
   ];
@@ -996,6 +1019,40 @@ class CropCatalog {
       enabled: true,
       defaultProfileId: sunflowerDefaultProfileId,
       profiles: sunflowerProfileEntries,
+    ),
+    // Cempasúchil: segunda ornamental ANUAL VERDADERA (Tagetes erecta L.).
+    // Comparte el MODO del Girasol (annual_ornamental: reloj anual tipo granos
+    // que termina en cycle_complete TERMINAL) pero NO su biología: calendarios,
+    // targets, caps NPK, textos, assets y sanidad son propios. Sin rendimiento,
+    // sin cosecha y sin programación automática para el 1 y 2 de noviembre: la
+    // fecha cultural nunca cambia la etapa.
+    CropCatalogEntry(
+      cropId: marigoldCropId,
+      categoryId: ornamentalCategoryId,
+      label: 'Cempasúchil',
+      subtitle:
+          'Flor ornamental anual · temporada única (siembra, ramificación, '
+          'botón, floración, fin de ciclo)',
+      enabled: true,
+      defaultProfileId: marigoldDefaultProfileId,
+      profiles: marigoldProfileEntries,
+    ),
+    // Nopal: quinta ornamental de establecimiento y mantenimiento. Mismo modo
+    // que cactus, suculenta, sabila y maguey (establecimiento -> mantenimiento
+    // abierto), biologia PROPIA: banda hidrica mas amplia en crecimiento (la
+    // emision de pencas usa mas agua), respuesta a N mejor documentada que el
+    // cactus y K con el cap mas alto. Sin rendimiento y sin cosecha: cortar una
+    // penca o retirar una tuna lo decide el usuario y no cambia la etapa.
+    CropCatalogEntry(
+      cropId: nopalCropId,
+      categoryId: ornamentalCategoryId,
+      label: 'Nopal',
+      subtitle:
+          'Planta ornamental de pencas planas (Opuntia) - establecimiento y '
+          'mantenimiento',
+      enabled: true,
+      defaultProfileId: nopalDefaultProfileId,
+      profiles: nopalProfileEntries,
     ),
   ];
 
@@ -1918,6 +1975,25 @@ class CropCatalog {
       'magueyes' ||
       'planta de maguey' ||
       'planta de agave' => agaveCropId,
+      // Nopal (ornamental). cropId canonico + alias legacy (`orn_nopal`) +
+      // aliases humanos. NO se mezcla con cactus ni con maguey: cultivos
+      // distintos con targets distintos. Los nombres de finalidad productiva
+      // (tuna, nopalito, xoconostle) NO se listan a proposito: requieren
+      // preguntar el objetivo antes de continuar (Documento A section 4.6).
+      'crop_nopal' ||
+      'nopal' ||
+      'nopales' ||
+      'opuntia' ||
+      'opuntias' ||
+      'opuntia sp.' ||
+      'opuntia spp.' ||
+      'orn_nopal' ||
+      'ornamental_nopal' ||
+      'nopal_crop' ||
+      'crop_opuntia' ||
+      'prickly pear' ||
+      'cactus pear' ||
+      'planta de nopal' => nopalCropId,
       // Rosal (ornamental, floración recurrente). cropId canónico + alias legacy
       // + aliases humanos. NO se mezcla con las ornamentales de establecimiento:
       // cultivo distinto, modo distinto, targets distintos.
@@ -1957,6 +2033,37 @@ class CropCatalog {
       'helianthus_annuus' ||
       'mirasol' ||
       'flor de sol' => sunflowerCropId,
+      // Cempasúchil (ornamental, anual verdadera). cropId canónico + alias
+      // legacy (orn_cempasuchil) + variantes ortográficas c/s/z + nombres
+      // culturales. NO se mezcla con el Girasol: mismo modo, biología distinta.
+      // Quedan FUERA a propósito (Documento A §4.4, §4.5, §8.3): las demás
+      // especies de Tagetes (patula, tenuifolia, lucida, minuta, lemmonii), las
+      // "marigolds" que no son Tagetes (Calendula/pot marigold, Caltha/marsh
+      // marigold, Baileya/desert marigold, Glebionis/corn marigold) y la
+      // palabra "Tagetes" sola, que exige confirmación de especie.
+      'crop_marigold' ||
+      'marigold' ||
+      'crop_cempasuchil' ||
+      'orn_cempasuchil' ||
+      'orn_marigold' ||
+      'cempasuchil' ||
+      'cempasúchil' ||
+      'sempasuchil' ||
+      'sempasúchil' ||
+      'zempasuchil' ||
+      'zempasúchil' ||
+      'cempoalxochitl' ||
+      'cempoalxóchitl' ||
+      'cempaxuchil' ||
+      'cempaxuchitl' ||
+      'cempaxúchitl' ||
+      'flor de muerto' ||
+      'flor de muertos' ||
+      'tagetes erecta' ||
+      't. erecta' ||
+      'aztec marigold' ||
+      'african marigold' ||
+      'american marigold' => marigoldCropId,
       _ => value,
     };
   }
@@ -2002,6 +2109,8 @@ class CropCatalog {
       roseCropId => 'Rosal',
       tulipCropId => 'Tulipán',
       sunflowerCropId => 'Girasol',
+      marigoldCropId => 'Cempasúchil',
+      nopalCropId => 'Nopal',
       _ => 'Cultivo',
     };
   }

@@ -39,6 +39,7 @@ class OnboardingUiAssets {
   static const String garlic = 'assets/icons/wizard/ic_garlic_generic.png';
   static const String tulip = 'assets/icons/wizard/ic_tulip.png';
   static const String sunflower = 'assets/icons/wizard/ic_sunflower.png';
+  static const String marigold = 'assets/icons/wizard/ic_cempasuchil.png';
   static const String variety = 'assets/icons/wizard/ic_variedad.png';
   static const String configureCrop =
       'assets/icons/wizard/ic_configurar_cultivo.png';
@@ -249,6 +250,14 @@ class OnboardingUiAssets {
       case 'girasol':
       case 'girasoles':
         return sunflower;
+      case 'marigold':
+      case 'crop_marigold':
+      case 'cempasuchil':
+      case 'cempasúchil':
+      case 'cempoalxochitl':
+      case 'cempoalxóchitl':
+      case 'flor de muerto':
+        return marigold;
       default:
         return assetForCategory(category);
     }

@@ -101,9 +101,11 @@ flutter:
     - assets/seeds/succulent/
     - assets/seeds/Aloe/
     - assets/seeds/agave/
+    - assets/seeds/nopal/
     - assets/seeds/rose/
     - assets/seeds/Tulipan/
     - assets/seeds/Sunflower/
+    - assets/seeds/cempasuchil/
 
   fonts:
     - family: Inter

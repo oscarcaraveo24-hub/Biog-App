@@ -11,6 +11,72 @@ import 'package:bio_g/core/agro/squash_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 
+/// Forma de cultivo efectiva para expresar una dosis.
+///
+/// No coincide 1:1 con `CultivationScale`: aquí se distingue además la planta
+/// o árbol individual ([plant]), cuya masa de suelo efectiva es distinta a la
+/// de una maceta. `CultivationScale` sólo tiene `field | bed | pot`.
+enum _DoseForm { pot, plant, bed, field }
+
+/// Resuelve la forma de dosis a partir del id de escala persistido.
+///
+/// Acepta los ids canónicos que escribe el wizard (`field`, `bed`, `pot`) y los
+/// alias legacy que puedan venir de contextos antiguos o de imports.
+///
+/// Devuelve `null` cuando el id está vacío o no se puede resolver; el llamador
+/// decide qué hacer en ese caso.
+///
+/// Nota: antes esta resolución vivía duplicada dentro de los dos formateadores
+/// de dosis como una cadena de `contains`, y el id canónico `'bed'` no
+/// coincidía con ninguna rama, por lo que una cama de huerto terminaba
+/// recibiendo dosis en kg/ha de campo abierto.
+_DoseForm? _resolveDoseForm(String? scaleId) {
+  final raw = (scaleId ?? '').trim().toLowerCase();
+  if (raw.isEmpty) return null;
+
+  // 1) Ids canónicos y alias conocidos: coincidencia exacta.
+  switch (raw) {
+    case 'pot':
+    case 'maceta':
+    case 'contenedor':
+      return _DoseForm.pot;
+    case 'plant':
+    case 'planta':
+    case 'arbol':
+    case 'árbol':
+    case 'tree':
+      return _DoseForm.plant;
+    case 'bed':
+    case 'huerto':
+    case 'cama':
+    case 'm2':
+    case 'orchard':
+      return _DoseForm.bed;
+    case 'field':
+    case 'campo':
+    case 'parcela':
+      return _DoseForm.field;
+  }
+
+  // 2) Compatibilidad con ids compuestos antiguos (p. ej. 'scale_maceta_v1').
+  //    Se conserva el orden histórico de evaluación para no alterar resultados.
+  if (raw.contains('maceta') || raw.contains('pot')) return _DoseForm.pot;
+  if (raw.contains('planta') ||
+      raw.contains('arbol') ||
+      raw.contains('árbol')) {
+    return _DoseForm.plant;
+  }
+  if (raw.contains('huerto') ||
+      raw.contains('cama') ||
+      raw.contains('m2') ||
+      raw.contains('orchard')) {
+    return _DoseForm.bed;
+  }
+  if (raw.contains('campo') || raw.contains('field')) return _DoseForm.field;
+
+  return null;
+}
+
 class NutrientDoseGuide {
   const NutrientDoseGuide({
     required this.doseGuideEs,
@@ -1107,25 +1173,25 @@ class FertilizationPlanner {
     String nutrientName,
     String? scaleId,
   ) {
-    final scale = (scaleId ?? '').toLowerCase();
+    // Sin escala resoluble se conserva el comportamiento histórico (campo
+    // abierto). TODO(BIO-G): el Fundacional 2.1 §9.3 pide no emitir dosis
+    // cuando la forma de cultivo no se conoce; cambiar a retorno nulo cuando
+    // existan las pruebas del bloque 3.
+    final form = _resolveDoseForm(scaleId) ?? _DoseForm.field;
 
-    if (scale.contains('maceta') || scale.contains('pot')) {
-      final gPuros = (deficitPpm * _masaMacetaKg) / 1000.0;
-      return '${gPuros.toStringAsFixed(1)} g de $nutrientName por maceta';
-    } else if (scale.contains('planta') ||
-        scale.contains('arbol') ||
-        scale.contains('árbol')) {
-      final gPuros = (deficitPpm * _masaPlantaKg) / 1000.0;
-      return '${gPuros.toStringAsFixed(1)} g de $nutrientName por planta';
-    } else if (scale.contains('huerto') ||
-        scale.contains('cama') ||
-        scale.contains('m2') ||
-        scale.contains('orchard')) {
-      final gM2Puros = _kgHaPuro(deficitPpm) * 0.1;
-      return '${gM2Puros.toStringAsFixed(1)} g/m² de $nutrientName';
-    } else {
-      final kgHaPuros = _kgHaPuro(deficitPpm);
-      return '~${kgHaPuros.round()} kg/ha de $nutrientName';
+    switch (form) {
+      case _DoseForm.pot:
+        final gPuros = (deficitPpm * _masaMacetaKg) / 1000.0;
+        return '${gPuros.toStringAsFixed(1)} g de $nutrientName por maceta';
+      case _DoseForm.plant:
+        final gPuros = (deficitPpm * _masaPlantaKg) / 1000.0;
+        return '${gPuros.toStringAsFixed(1)} g de $nutrientName por planta';
+      case _DoseForm.bed:
+        final gM2Puros = _kgHaPuro(deficitPpm) * 0.1;
+        return '${gM2Puros.toStringAsFixed(1)} g/m² de $nutrientName';
+      case _DoseForm.field:
+        final kgHaPuros = _kgHaPuro(deficitPpm);
+        return '~${kgHaPuros.round()} kg/ha de $nutrientName';
     }
   }
 
@@ -1135,28 +1201,25 @@ class FertilizationPlanner {
     String sourceName,
     String? scaleId,
   ) {
-    final scale = (scaleId ?? '').toLowerCase();
+    // Ver nota en _formatPureDoseText sobre el fallback a campo abierto.
+    final form = _resolveDoseForm(scaleId) ?? _DoseForm.field;
 
-    if (scale.contains('maceta') || scale.contains('pot')) {
-      final gPuros = (deficitPpm * _masaMacetaKg) / 1000.0;
-      final gComercial = gPuros / leyFertilizante;
-      return '${gComercial.toStringAsFixed(1)} g de $sourceName por maceta';
-    } else if (scale.contains('planta') ||
-        scale.contains('arbol') ||
-        scale.contains('árbol')) {
-      final gPuros = (deficitPpm * _masaPlantaKg) / 1000.0;
-      final gComercial = gPuros / leyFertilizante;
-      return '${gComercial.toStringAsFixed(1)} g de $sourceName por planta';
-    } else if (scale.contains('huerto') ||
-        scale.contains('cama') ||
-        scale.contains('m2') ||
-        scale.contains('orchard')) {
-      final gM2Comercial = (_kgHaPuro(deficitPpm) * 0.1) / leyFertilizante;
-      return '${gM2Comercial.toStringAsFixed(1)} g/m² de $sourceName';
-    } else {
-      final kgHaComercial =
-          ((_kgHaPuro(deficitPpm) / leyFertilizante) / 5).round() * 5;
-      return '~$kgHaComercial kg/ha de $sourceName';
+    switch (form) {
+      case _DoseForm.pot:
+        final gPuros = (deficitPpm * _masaMacetaKg) / 1000.0;
+        final gComercial = gPuros / leyFertilizante;
+        return '${gComercial.toStringAsFixed(1)} g de $sourceName por maceta';
+      case _DoseForm.plant:
+        final gPuros = (deficitPpm * _masaPlantaKg) / 1000.0;
+        final gComercial = gPuros / leyFertilizante;
+        return '${gComercial.toStringAsFixed(1)} g de $sourceName por planta';
+      case _DoseForm.bed:
+        final gM2Comercial = (_kgHaPuro(deficitPpm) * 0.1) / leyFertilizante;
+        return '${gM2Comercial.toStringAsFixed(1)} g/m² de $sourceName';
+      case _DoseForm.field:
+        final kgHaComercial =
+            ((_kgHaPuro(deficitPpm) / leyFertilizante) / 5).round() * 5;
+        return '~$kgHaComercial kg/ha de $sourceName';
     }
   }
 

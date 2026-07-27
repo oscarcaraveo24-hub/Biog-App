@@ -9,6 +9,7 @@ import 'package:bio_g/core/crops/recurring_bloom/recurring_bloom_crops.dart';
 import 'package:bio_g/core/crops/tulip/tulip_crop_definition.dart';
 import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
 import 'package:bio_g/core/crops/sunflower/sunflower_crop_definition.dart';
+import 'package:bio_g/core/crops/marigold/marigold_crop_definition.dart';
 import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
@@ -283,13 +284,14 @@ class CropRuntimeResolver {
         isPlanted &&
         definition != null &&
         profile != null) {
-      // Girasol (annual_ornamental): ESPEJO ESTRUCTURAL de la rama anual de
-      // granos y del tulipán. `sowingDate` es la fecha ancla del ciclo
-      // (Documento A §9.1). El motor conserva la última etapa (`cycle_complete`)
-      // cuando el día supera las ventanas: es TERMINAL (no dormancia, no
-      // cosecha), con progreso 1.0 y días restantes 0 (Documento A §11.9). Usa
-      // targets por perfil (pH + modificadores de maceta/ramificado/corte,
-      // Documento B §15). No hay calendario ni rendimiento.
+      // Girasol y Cempasúchil (annual_ornamental): ESPEJO ESTRUCTURAL de la
+      // rama anual de granos y del tulipán. `sowingDate` es la fecha ancla del
+      // ciclo. El motor conserva la última etapa (`cycle_complete`) cuando el
+      // día supera las ventanas: es TERMINAL (no dormancia, no cosecha), con
+      // progreso 1.0 y días restantes 0. Ambos usan targets por perfil (pH +
+      // modificadores de contenedor/corte/paisaje) resueltos por su propio
+      // módulo: el despacho es EXPLÍCITO por definición, nunca un fallback a
+      // otro cultivo. No hay calendario ni rendimiento.
       final DateTime effectiveSowingDate = plantedDate!;
       engineSowingDate = effectiveSowingDate;
 
@@ -300,12 +302,17 @@ class CropRuntimeResolver {
         stressDelayDays: 0,
       );
 
-      targets = definition is SunflowerCropDefinition
-          ? definition.resolveTargetsForProfile(
-              stageResult,
-              profileId: profile.id,
-            )
-          : definition.resolveTargets(stageResult);
+      targets = switch (definition) {
+        SunflowerCropDefinition() => definition.resolveTargetsForProfile(
+          stageResult,
+          profileId: profile.id,
+        ),
+        MarigoldCropDefinition() => definition.resolveTargetsForProfile(
+          stageResult,
+          profileId: profile.id,
+        ),
+        _ => definition.resolveTargets(stageResult),
+      };
 
       if (live != null) {
         final out = definition.evaluateTelemetry(
@@ -679,7 +686,11 @@ class CropRuntimeResolver {
       perennialAnchorTypeId: isOrnamental
           ? null
           : cropContext.perennialAnchorTypeId,
-      cultivationScaleId: isOrnamental ? null : cropContext.cultivationScaleId,
+      // La escala de cultivo (campo / cama / maceta) SÍ aplica a ornamentales
+      // —de hecho es donde más importa, porque son las que viven en maceta—.
+      // Antes se anulaba junto con los campos de ciclo perenne/anual, y por eso
+      // una maceta terminaba recibiendo dosis en kg/ha de campo abierto.
+      cultivationScaleId: cropContext.cultivationScaleId,
       calendarTypeId: CropCatalog.resolveCalendarId(
         cropId: cropId,
         requested: cropContext.calendarTypeId,

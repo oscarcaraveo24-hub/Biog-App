@@ -1,5 +1,5 @@
 /// Capa COMPARTIDA de las ornamentales en modo `establishment_maintenance`
-/// (cactus, suculenta, sábila, maguey y, más adelante, nopal / helecho /
+/// (cactus, suculenta, sábila, maguey, nopal y, más adelante, helecho /
 /// palma).
 ///
 /// Existe por una razón concreta que dejó escrita la guía de ornamentales:
@@ -34,6 +34,11 @@ import 'package:bio_g/core/crops/cactus/cactus_universal_profile.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/crop_types.dart';
+import 'package:bio_g/core/crops/nopal/nopal_assets.dart';
+import 'package:bio_g/core/crops/nopal/nopal_catalog.dart';
+import 'package:bio_g/core/crops/nopal/nopal_lifecycle.dart';
+import 'package:bio_g/core/crops/nopal/nopal_stage_resolver.dart';
+import 'package:bio_g/core/crops/nopal/nopal_universal_profile.dart';
 import 'package:bio_g/core/crops/succulent/succulent_assets.dart';
 import 'package:bio_g/core/crops/succulent/succulent_catalog.dart';
 import 'package:bio_g/core/crops/succulent/succulent_lifecycle.dart';
@@ -47,6 +52,7 @@ const Set<String> kEstablishmentMaintenanceCropIds = <String>{
   kCropSucculent,
   kCropAloe,
   kCropAgave,
+  kCropNopal,
 };
 
 /// Id de la categoría ornamental (fuente de verdad compartida).
@@ -79,6 +85,11 @@ bool isEstablishmentMaintenanceCrop({
         cropId: cropId,
         cropCategoryId: cropCategoryId,
         category: category,
+      ) ||
+      isNopalCrop(
+        cropId: cropId,
+        cropCategoryId: cropCategoryId,
+        category: category,
       );
 }
 
@@ -102,13 +113,14 @@ String? ornamentalCropIdOrNull(String? cropId) {
 /// Cultivo ornamental concreto detrás del `cropId`. El default es `cactus` para
 /// conservar el comportamiento histórico de cualquier id ornamental no
 /// reconocido (antes de la sábila el fallback binario ya caía en cactus).
-enum _OrnamentalKind { cactus, succulent, aloe, agave }
+enum _OrnamentalKind { cactus, succulent, aloe, agave, nopal }
 
 _OrnamentalKind _kind(String? cropId) {
   final canonical = CropCatalog.canonicalCropKey(cropId);
   if (canonical == kCropSucculent) return _OrnamentalKind.succulent;
   if (canonical == kCropAloe) return _OrnamentalKind.aloe;
   if (canonical == kCropAgave) return _OrnamentalKind.agave;
+  if (canonical == kCropNopal) return _OrnamentalKind.nopal;
   return _OrnamentalKind.cactus;
 }
 
@@ -118,6 +130,7 @@ String ornamentalLifecycleMode(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => SucculentLifecycle.lifecycleMode,
   _OrnamentalKind.aloe => AloeLifecycle.lifecycleMode,
   _OrnamentalKind.agave => AgaveLifecycle.lifecycleMode,
+  _OrnamentalKind.nopal => NopalLifecycle.lifecycleMode,
   _OrnamentalKind.cactus => CactusLifecycle.lifecycleMode,
 };
 
@@ -125,6 +138,7 @@ String ornamentalCropDisplayName(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => 'Suculenta',
   _OrnamentalKind.aloe => 'Sábila',
   _OrnamentalKind.agave => 'Maguey',
+  _OrnamentalKind.nopal => 'Nopal',
   _OrnamentalKind.cactus => 'Cactus',
 };
 
@@ -132,6 +146,7 @@ String ornamentalDefaultProfileId(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => kSuSkip,
   _OrnamentalKind.aloe => kSaSkip,
   _OrnamentalKind.agave => kAgaveSkip,
+  _OrnamentalKind.nopal => kNopalSkip,
   _OrnamentalKind.cactus => kCaSkip,
 };
 
@@ -139,6 +154,7 @@ String ornamentalGeneralProfileLabel(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => 'No sé / suculenta general',
   _OrnamentalKind.aloe => 'No sé / sábila general',
   _OrnamentalKind.agave => 'No sé / maguey general',
+  _OrnamentalKind.nopal => 'No sé / nopal general',
   _OrnamentalKind.cactus => 'No sé / cactus general',
 };
 
@@ -147,6 +163,7 @@ String ornamentalGeneralShortLabel(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => 'Suculenta general',
   _OrnamentalKind.aloe => 'Sábila general',
   _OrnamentalKind.agave => 'Maguey general',
+  _OrnamentalKind.nopal => 'Nopal general',
   _OrnamentalKind.cactus => 'Cactus general',
 };
 
@@ -157,6 +174,7 @@ String normalizeOrnamentalStageId(String? cropId, String? stageId) =>
       _OrnamentalKind.succulent => normalizeSucculentStageId(stageId),
       _OrnamentalKind.aloe => normalizeAloeStageId(stageId),
       _OrnamentalKind.agave => normalizeAgaveStageId(stageId),
+      _OrnamentalKind.nopal => normalizeNopalStageId(stageId),
       _OrnamentalKind.cactus => normalizeCactusStageId(stageId),
     };
 
@@ -165,6 +183,7 @@ String normalizeOrnamentalAnchorTypeId(String? cropId, String? anchorTypeId) =>
       _OrnamentalKind.succulent => normalizeSucculentAnchorTypeId(anchorTypeId),
       _OrnamentalKind.aloe => normalizeAloeAnchorTypeId(anchorTypeId),
       _OrnamentalKind.agave => normalizeAgaveAnchorTypeId(anchorTypeId),
+      _OrnamentalKind.nopal => normalizeNopalAnchorTypeId(anchorTypeId),
       _OrnamentalKind.cactus => normalizeCactusAnchorTypeId(anchorTypeId),
     };
 
@@ -173,6 +192,7 @@ String ornamentalStageDisplayName(String? cropId, String? stageId) =>
       _OrnamentalKind.succulent => succulentStageDisplayName(stageId),
       _OrnamentalKind.aloe => aloeStageDisplayName(stageId),
       _OrnamentalKind.agave => agaveStageDisplayName(stageId),
+      _OrnamentalKind.nopal => nopalStageDisplayName(stageId),
       _OrnamentalKind.cactus => cactusStageDisplayName(stageId),
     };
 
@@ -181,6 +201,7 @@ String? ornamentalCriticalWindowLabel(String? cropId, String? stageId) =>
       _OrnamentalKind.succulent => succulentCriticalWindowLabel(stageId),
       _OrnamentalKind.aloe => aloeCriticalWindowLabel(stageId),
       _OrnamentalKind.agave => agaveCriticalWindowLabel(stageId),
+      _OrnamentalKind.nopal => nopalCriticalWindowLabel(stageId),
       _OrnamentalKind.cactus => cactusCriticalWindowLabel(stageId),
     };
 
@@ -189,6 +210,7 @@ String ornamentalStagePriorityText(String? cropId, String? stageId) =>
       _OrnamentalKind.succulent => succulentStagePriorityText(stageId),
       _OrnamentalKind.aloe => aloeStagePriorityText(stageId),
       _OrnamentalKind.agave => agaveStagePriorityText(stageId),
+      _OrnamentalKind.nopal => nopalStagePriorityText(stageId),
       _OrnamentalKind.cactus => cactusStagePriorityText(stageId),
     };
 
@@ -197,6 +219,7 @@ String ornamentalStageCareNoteEs(String? cropId, String? stageId) =>
       _OrnamentalKind.succulent => succulentStageCareNoteEs(stageId),
       _OrnamentalKind.aloe => aloeStageCareNoteEs(stageId),
       _OrnamentalKind.agave => agaveStageCareNoteEs(stageId),
+      _OrnamentalKind.nopal => nopalStageCareNoteEs(stageId),
       _OrnamentalKind.cactus => cactusStageCareNoteEs(stageId),
     };
 
@@ -206,6 +229,7 @@ String ornamentalUnknownStageId(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => SucculentStageIds.unknown,
   _OrnamentalKind.aloe => AloeStageIds.unknown,
   _OrnamentalKind.agave => AgaveStageIds.unknown,
+  _OrnamentalKind.nopal => NopalStageIds.unknown,
   _OrnamentalKind.cactus => CactusStageIds.unknown,
 };
 
@@ -224,6 +248,10 @@ CropStageResult resolveOrnamentalStageResult({
       today: today,
     ),
     _OrnamentalKind.agave => AgaveStageResolver.resolve(
+      context: context,
+      today: today,
+    ),
+    _OrnamentalKind.nopal => NopalStageResolver.resolve(
       context: context,
       today: today,
     ),
@@ -263,6 +291,7 @@ String normalizeOrnamentalSetupIntentId(String? cropId, String? intentId) =>
       _OrnamentalKind.succulent => normalizeSucculentSetupIntentId(intentId),
       _OrnamentalKind.aloe => normalizeAloeSetupIntentId(intentId),
       _OrnamentalKind.agave => normalizeAgaveSetupIntentId(intentId),
+      _OrnamentalKind.nopal => normalizeNopalSetupIntentId(intentId),
       _OrnamentalKind.cactus => normalizeCactusSetupIntentId(intentId),
     };
 
@@ -273,6 +302,7 @@ bool ornamentalSetupIntentRequiresFutureDate(
   _OrnamentalKind.succulent => succulentSetupIntentRequiresFutureDate(intentId),
   _OrnamentalKind.aloe => aloeSetupIntentRequiresFutureDate(intentId),
   _OrnamentalKind.agave => agaveSetupIntentRequiresFutureDate(intentId),
+  _OrnamentalKind.nopal => nopalSetupIntentRequiresFutureDate(intentId),
   _OrnamentalKind.cactus => cactusSetupIntentRequiresFutureDate(intentId),
 };
 
@@ -307,6 +337,17 @@ OrnamentalStageEstimate estimateOrnamentalStageFromDate({
       );
     case _OrnamentalKind.agave:
       final e = estimateAgaveStageFromDate(
+        plantingDate: plantingDate,
+        now: now,
+        profileId: profileId,
+      );
+      return OrnamentalStageEstimate(
+        stageId: e.stageId,
+        anchorTypeId: e.anchorTypeId,
+        confidence: e.confidence,
+      );
+    case _OrnamentalKind.nopal:
+      final e = estimateNopalStageFromDate(
         plantingDate: plantingDate,
         now: now,
         profileId: profileId,
@@ -380,6 +421,19 @@ OrnamentalStageEstimate resolveOrnamentalSetupStage({
         anchorTypeId: e.anchorTypeId,
         confidence: e.confidence,
       );
+    case _OrnamentalKind.nopal:
+      final e = resolveNopalSetupStage(
+        intentId: intentId,
+        plantingDate: plantingDate,
+        now: now,
+        profileId: profileId,
+        previousStageId: previousStageId,
+      );
+      return OrnamentalStageEstimate(
+        stageId: e.stageId,
+        anchorTypeId: e.anchorTypeId,
+        confidence: e.confidence,
+      );
     case _OrnamentalKind.cactus:
       final e = resolveCactusSetupStage(
         intentId: intentId,
@@ -402,6 +456,7 @@ String ornamentalCropIcon(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => SucculentAssets.cropIcon,
   _OrnamentalKind.aloe => AloeAssets.cropIcon,
   _OrnamentalKind.agave => AgaveAssets.cropIcon,
+  _OrnamentalKind.nopal => NopalAssets.cropIcon,
   _OrnamentalKind.cactus => CactusAssets.cropIcon,
 };
 
@@ -410,6 +465,7 @@ String ornamentalProfileIcon(String? cropId, String? profileId) =>
       _OrnamentalKind.succulent => SucculentAssets.profileIcon(profileId),
       _OrnamentalKind.aloe => AloeAssets.profileIcon(profileId),
       _OrnamentalKind.agave => AgaveAssets.profileIcon(profileId),
+      _OrnamentalKind.nopal => NopalAssets.profileIcon(profileId),
       _OrnamentalKind.cactus => CactusAssets.profileIcon(profileId),
     };
 
@@ -418,6 +474,7 @@ String ornamentalStageImage(String? cropId, String? stageId) =>
       _OrnamentalKind.succulent => SucculentAssets.stageImageOrNeutral(stageId),
       _OrnamentalKind.aloe => AloeAssets.stageImageOrNeutral(stageId),
       _OrnamentalKind.agave => AgaveAssets.stageImageOrNeutral(stageId),
+      _OrnamentalKind.nopal => NopalAssets.stageImageOrNeutral(stageId),
       _OrnamentalKind.cactus => CactusAssets.stageImageOrNeutral(stageId),
     };
 
@@ -425,6 +482,7 @@ String ornamentalStageUnknownImage(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => SucculentAssets.stageUnknown,
   _OrnamentalKind.aloe => AloeAssets.stageUnknown,
   _OrnamentalKind.agave => AgaveAssets.stageUnknown,
+  _OrnamentalKind.nopal => NopalAssets.stageUnknown,
   _OrnamentalKind.cactus => CactusAssets.stageUnknown,
 };
 
@@ -438,6 +496,7 @@ String ornamentalTypeQuestion(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => '¿Qué tipo de suculenta es?',
   _OrnamentalKind.aloe => '¿Qué tipo de sábila es?',
   _OrnamentalKind.agave => '¿Qué tipo de maguey es?',
+  _OrnamentalKind.nopal => '¿Qué tipo de nopal es?',
   _OrnamentalKind.cactus => '¿Qué tipo de cactus es?',
 };
 
@@ -445,6 +504,7 @@ String ornamentalGeneralProfileHint(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => 'Recomendado si no sabes el tipo de suculenta',
   _OrnamentalKind.aloe => 'Recomendado si no sabes el tipo de sábila',
   _OrnamentalKind.agave => 'Recomendado si no sabes el tipo de maguey',
+  _OrnamentalKind.nopal => 'Recomendado si no sabes el tipo de nopal',
   _OrnamentalKind.cactus => 'Recomendado si no sabes el tipo de cactus',
 };
 
@@ -452,6 +512,7 @@ String ornamentalStateQuestion(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => '¿En qué estado está tu suculenta?',
   _OrnamentalKind.aloe => '¿En qué estado está tu sábila?',
   _OrnamentalKind.agave => '¿En qué estado está tu maguey?',
+  _OrnamentalKind.nopal => '¿En qué estado está tu nopal?',
   _OrnamentalKind.cactus => '¿En qué estado está tu cactus?',
 };
 
@@ -459,6 +520,7 @@ String ornamentalPlannedOptionTitle(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => 'La voy a plantar',
   _OrnamentalKind.aloe => 'La voy a plantar',
   _OrnamentalKind.agave => 'Lo voy a plantar',
+  _OrnamentalKind.nopal => 'Lo voy a plantar',
   _OrnamentalKind.cactus => 'Lo voy a plantar',
 };
 
@@ -466,6 +528,7 @@ String ornamentalPlantedOptionTitle(String? cropId) => switch (_kind(cropId)) {
   _OrnamentalKind.succulent => 'Ya está plantada',
   _OrnamentalKind.aloe => 'Ya está plantada',
   _OrnamentalKind.agave => 'Ya está plantado',
+  _OrnamentalKind.nopal => 'Ya está plantado',
   _OrnamentalKind.cactus => 'Ya está plantado',
 };
 
@@ -476,6 +539,8 @@ String ornamentalVarietyFlowSubtitle(String? cropId) => switch (_kind(cropId)) {
     'Selecciona Sábila y el perfil que mejor la describe.',
   _OrnamentalKind.agave =>
     'Selecciona Maguey y el perfil que mejor lo describe.',
+  _OrnamentalKind.nopal =>
+    'Selecciona Nopal y el perfil que mejor lo describe.',
   _OrnamentalKind.cactus =>
     'Selecciona Cactus y el perfil que mejor lo describe.',
 };
@@ -485,6 +550,8 @@ String ornamentalVarietyFlowHelper(String? cropId) => switch (_kind(cropId)) {
     'Si no sabes el tipo, elige No sé / suculenta general.',
   _OrnamentalKind.aloe => 'Si no sabes el tipo, elige No sé / sábila general.',
   _OrnamentalKind.agave => 'Si no sabes el tipo, elige No sé / maguey general.',
+  _OrnamentalKind.nopal =>
+    'Si no sabes el tipo, elige No sé / nopal general.',
   _OrnamentalKind.cactus =>
     'Si no sabes el tipo, elige No sé / cactus general.',
 };
@@ -500,6 +567,7 @@ String ornamentalDateQuestionTitle(String? cropId, String? intentId) {
           ? '¿Cuándo piensas plantarla?'
           : '¿Recuerdas cuándo\nla plantaste?';
     case _OrnamentalKind.agave:
+    case _OrnamentalKind.nopal:
     case _OrnamentalKind.cactus:
       return planned
           ? '¿Cuándo piensas plantarlo?'
@@ -531,6 +599,8 @@ String ornamentalIrrigationSubtitle(String? cropId) => switch (_kind(cropId)) {
     'El exceso de agua es el mayor riesgo de una suculenta',
   _OrnamentalKind.aloe => 'El exceso de agua es el mayor riesgo de una sábila',
   _OrnamentalKind.agave => 'El exceso de agua es el mayor riesgo de un maguey',
+  _OrnamentalKind.nopal =>
+    'El exceso de agua es el mayor riesgo del nopal',
   _OrnamentalKind.cactus => 'El exceso de agua es el mayor riesgo del cactus',
 };
 
@@ -542,6 +612,8 @@ String ornamentalUnknownStageHelper(String? cropId) => switch (_kind(cropId)) {
     'Puedes ajustar el tipo de sábila y su etapa cuando quieras.',
   _OrnamentalKind.agave =>
     'Puedes ajustar el tipo de maguey y su etapa cuando quieras.',
+  _OrnamentalKind.nopal =>
+    'Puedes ajustar el tipo de nopal y su etapa cuando quieras.',
   _OrnamentalKind.cactus =>
     'Puedes ajustar el tipo de cactus y su etapa cuando quieras.',
 };

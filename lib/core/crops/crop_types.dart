@@ -31,5 +31,7 @@ enum CropKey {
   rose,
   tulip,
   sunflower,
+  marigold,
+  nopal,
   generic,
 }

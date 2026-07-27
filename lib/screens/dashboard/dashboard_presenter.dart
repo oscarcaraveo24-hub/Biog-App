@@ -1051,6 +1051,12 @@ class DashboardScreenPresenter {
         in a.lastByType.entries) {
       if (b.lastByType[entry.key] != entry.value) return false;
     }
+    // lastByKey es el mapa que gobierna el cooldown: si cambia sólo él, el
+    // estado igual tiene que guardarse o se pierde el anti-spam.
+    if (a.lastByKey.length != b.lastByKey.length) return false;
+    for (final MapEntry<String, DateTime> entry in a.lastByKey.entries) {
+      if (b.lastByKey[entry.key] != entry.value) return false;
+    }
     return true;
   }
 

@@ -6,9 +6,11 @@ import 'package:bio_g/core/plant_health/catalog/cactus_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/succulent_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/aloe_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/agave_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/nopal_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/rose_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/tulip_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/sunflower_syndromes.dart';
+import 'package:bio_g/core/plant_health/catalog/marigold_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/chili_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/maize_syndromes.dart';
 import 'package:bio_g/core/plant_health/catalog/cucumber_syndromes.dart';
@@ -54,6 +56,8 @@ class PlantHealthRegistry {
         return aloeSyndromes;
       case CropCatalog.agaveCropId:
         return agaveSyndromes;
+      case CropCatalog.nopalCropId:
+        return nopalSyndromes;
       case CropCatalog.roseCropId:
         return roseSyndromes;
       case CropCatalog.tomatoCropId:
@@ -96,6 +100,10 @@ class PlantHealthRegistry {
         return tulipSyndromes;
       case CropCatalog.sunflowerCropId:
         return sunflowerSyndromes;
+      case CropCatalog.marigoldCropId:
+        // Rama EXPLÍCITA (Doc C §36): crop_marigold jamás cae al catálogo del
+        // Girasol ni reutiliza ids con prefijo `sunflower_`.
+        return marigoldSyndromes;
       default:
         return const <PlantHealthSyndrome>[];
     }

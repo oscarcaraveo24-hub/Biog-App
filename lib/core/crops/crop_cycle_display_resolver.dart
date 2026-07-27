@@ -1,3 +1,4 @@
+import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/widgets/seeds/onion_profiles.dart';
 import 'package:bio_g/widgets/seeds/squash_profiles.dart';
 
@@ -101,13 +102,16 @@ CropCycleDisplayLine resolveCycleDisplayLine({
     );
   }
 
-  // Girasol (ornamental anual verdadera): línea de ciclo por etapa (Documento A
-  // §8, §11). El final `cycle_complete` es TERMINAL: nunca dice "estimado a
-  // cosecha" ni "cultivo muerto"; invita a registrar una nueva siembra.
+  // Girasol y Cempasúchil (ornamentales anuales verdaderas): línea de ciclo por
+  // etapa. El final `cycle_complete` es TERMINAL: nunca dice "estimado a
+  // cosecha" ni "cultivo muerto"; invita a registrar una nueva siembra. La
+  // "ventana de corte" es solo un rótulo de lectura: NO activa cosecha ni
+  // rendimiento, y en el Cempasúchil cortar una flor tampoco cierra el ciclo.
   if (family == _CropFamily.annualOrnamental) {
-    final profile = (profileId ?? '').toLowerCase();
-    final bool isCutFlower =
-        profile.contains('cut') || profile.contains('gi_04');
+    final bool isCutFlower = annualOrnamentalIsCutFlowerProfile(
+      cropId,
+      profileId,
+    );
     if (stage.contains('cycle_complete') ||
         stage.contains('cycle') ||
         stage.contains('complete') ||
@@ -511,6 +515,18 @@ _CropFamily _resolveFamily(String crop) {
     case 'sunflower':
     case 'girasol':
     case 'girasoles':
+      return _CropFamily.annualOrnamental;
+    // Cempasúchil: segunda ornamental ANUAL VERDADERA. Misma familia de línea
+    // de ciclo que el Girasol (floración estimada → ventana de floración →
+    // flores envejeciendo → cierre → ciclo terminado), con el mismo final
+    // TERMINAL que invita a una nueva siembra.
+    case 'crop_marigold':
+    case 'marigold':
+    case 'cempasuchil':
+    case 'cempasúchil':
+    case 'cempoalxochitl':
+    case 'cempoalxóchitl':
+    case 'flor de muerto':
       return _CropFamily.annualOrnamental;
     case 'lettuce':
     case 'lechuga':

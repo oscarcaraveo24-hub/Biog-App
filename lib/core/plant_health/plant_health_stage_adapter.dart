@@ -63,6 +63,7 @@ class PlantHealthStageAdapter {
       case CropCatalog.succulentCropId:
       case CropCatalog.aloeCropId:
       case CropCatalog.agaveCropId:
+      case CropCatalog.nopalCropId:
         // Las ornamentales de establecimiento + mantenimiento comparten las
         // MISMAS etapas (instalación → raíz → crecimiento → estable ↔ reposo),
         // así que traducen igual a los buckets del motor de sanidad. Lo que
@@ -85,6 +86,14 @@ class PlantHealthStageAdapter {
         // grano"). `unknown` y `cycle_complete` devuelven null: la etapa terminal
         // no ejecuta PlantHealth (Doc C §3.1, §11.1).
         return _fromSunflower(stage, daySinceSowing);
+      case CropCatalog.marigoldCropId:
+        // El Cempasúchil es la segunda ornamental anual verdadera con reloj
+        // anual (Doc C §5). Sus once etapas se traducen a los buckets
+        // compartidos SIN reutilizar la taxonomía del Girasol. `post_bloom`
+        // usa `grainFill` solo como bucket técnico (NUNCA "llenado de grano");
+        // `cycle_complete` cae en `lateSeason` para que el síndrome de
+        // senescencia normal siga disponible, y `unknown` devuelve null.
+        return _fromMarigold(stage, daySinceSowing);
     }
     return null;
   }
@@ -221,6 +230,72 @@ class PlantHealthStageAdapter {
       if (day <= 94) return PlantHealthStageBucket.grainFill;
       if (day <= 112) return PlantHealthStageBucket.lateSeason;
       return null;
+    }
+    return null;
+  }
+
+  /// Cempasúchil: ornamental anual verdadera con reloj anual y once etapas
+  /// oficiales (Doc C §5). `post_bloom` reutiliza `grainFill` solo como bucket
+  /// TÉCNICO: en Cempasúchil representa flores envejeciendo y menos botones
+  /// nuevos, nunca grano, semilla comercial, rendimiento ni cosecha.
+  /// `cycle_complete` cae en `lateSeason` porque el síndrome de senescencia
+  /// normal (S23) debe seguir disponible al cerrar el ciclo; `unknown` devuelve
+  /// null y el motor usa lenguaje reforzado de revisión (Doc C §5, §31). La
+  /// escalera por día (ventanas de cs_skip) es respaldo cuando falta el
+  /// stageKey.
+  static PlantHealthStageBucket? _fromMarigold(String stage, int? day) {
+    // Por confirmar: no ejecuta PlantHealth con una etapa inventada.
+    if (_matches(stage, const <String>['unknown'])) {
+      return null;
+    }
+    // Terminal: conserva `lateSeason` para el cierre normal del ciclo.
+    if (_matches(stage, const <String>[
+      'cycle_complete',
+      'cycle',
+      'complete',
+      'terminado',
+    ])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (_matches(stage, const <String>[
+      'sowing',
+      'germination',
+      'emergence',
+    ])) {
+      return PlantHealthStageBucket.seedling;
+    }
+    if (_matches(stage, const <String>['early_vegetative'])) {
+      return PlantHealthStageBucket.vegetativeEarly;
+    }
+    if (_matches(stage, const <String>['active_vegetative'])) {
+      return PlantHealthStageBucket.vegetativeMid;
+    }
+    if (_matches(stage, const <String>['stem_elongation'])) {
+      return PlantHealthStageBucket.vegetativeLate;
+    }
+    if (_matches(stage, const <String>['bud_formation', 'bud'])) {
+      return PlantHealthStageBucket.reproductiveEarly;
+    }
+    // 'post_bloom' contiene 'bloom': se evalúa ANTES que 'flowering'.
+    if (_matches(stage, const <String>['post_bloom'])) {
+      return PlantHealthStageBucket.grainFill;
+    }
+    if (_matches(stage, const <String>['flowering', 'bloom'])) {
+      return PlantHealthStageBucket.reproductiveMid;
+    }
+    if (_matches(stage, const <String>['senescence'])) {
+      return PlantHealthStageBucket.lateSeason;
+    }
+    if (day != null) {
+      // Ventanas del perfil general cs_skip (Documento A §12.5).
+      if (day <= 9) return PlantHealthStageBucket.seedling;
+      if (day <= 22) return PlantHealthStageBucket.vegetativeEarly;
+      if (day <= 40) return PlantHealthStageBucket.vegetativeMid;
+      if (day <= 53) return PlantHealthStageBucket.vegetativeLate;
+      if (day <= 66) return PlantHealthStageBucket.reproductiveEarly;
+      if (day <= 92) return PlantHealthStageBucket.reproductiveMid;
+      if (day <= 106) return PlantHealthStageBucket.grainFill;
+      return PlantHealthStageBucket.lateSeason;
     }
     return null;
   }

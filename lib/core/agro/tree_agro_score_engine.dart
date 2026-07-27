@@ -675,6 +675,7 @@ class TreeAgroScoreEngine {
     required Duration cooldown,
   }) {
     final nextMap = Map<BioGAlertType, DateTime>.from(alertsState.lastByType);
+    final nextKeyMap = Map<String, DateTime>.from(alertsState.lastByKey);
     final alerts = <BioGAlert>[];
     final now = telemetry.timestamp;
 
@@ -684,7 +685,9 @@ class TreeAgroScoreEngine {
       required String title,
       required String body,
     }) {
-      final last = nextMap[type];
+      // Cooldown por (tipo + severidad): ver la nota en AlertsState.lastByKey.
+      final cooldownKey = AlertsState.cooldownKey(type, severity);
+      final last = nextKeyMap[cooldownKey];
       if (last != null && now.difference(last) < cooldown) return;
 
       alerts.add(
@@ -699,6 +702,7 @@ class TreeAgroScoreEngine {
         ),
       );
       nextMap[type] = now;
+      nextKeyMap[cooldownKey] = now;
     }
 
     final moisture = metrics[AgroMetricKey.soilMoisture]?.band;
@@ -1017,7 +1021,7 @@ class TreeAgroScoreEngine {
 
     return AlertsBuildResult(
       alerts: List<BioGAlert>.unmodifiable(alerts),
-      state: alertsState.copyWith(lastByType: nextMap),
+      state: alertsState.copyWith(lastByType: nextMap, lastByKey: nextKeyMap),
     );
   }
 }
