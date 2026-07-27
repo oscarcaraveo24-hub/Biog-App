@@ -6,6 +6,7 @@ import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
+import 'package:bio_g/services/biog/sync/pending_sync_queue.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/models/yield_projection_config.dart';
@@ -160,6 +161,8 @@ class BioGStore extends ChangeNotifier {
     //    logic runs. Same user = instant re-render from their own
     //    cache; different user = starts from a clean, isolated slot.
     _currentUserId = userId;
+    _pendingSync.bindUser(userId);
+    unawaited(_pendingSync.drain());
     await _loadLocalCacheFor(userId: userId);
     notifyListeners();
 
@@ -171,6 +174,9 @@ class BioGStore extends ChangeNotifier {
         userId: userId,
         seedResolver: (deviceId) => seedInstallForDevice(deviceId),
       );
+      // 1.5) Si algún dispositivo cambió de id al migrar del formato de texto
+      //      antiguo a UUID, hay que mover con él su cultivo y su proyección.
+      await _applyLegacyDeviceIdMigration(repo.lastLegacyIdMigration);
     }
 
     // 2) Pull remote crop contexts and merge with local using LWW.
@@ -208,7 +214,7 @@ class BioGStore extends ChangeNotifier {
           final remote = remoteContexts[entry.key];
           if (remote == null ||
               entry.value.updatedAt.isAfter(remote.updatedAt)) {
-            unawaited(_cropContextSync.upload(entry.value));
+            unawaited(_queueCropContextUpload(entry.value));
           }
         }
       } catch (_) {
@@ -245,7 +251,7 @@ class BioGStore extends ChangeNotifier {
           final remote = remoteYields[entry.key];
           if (remote == null ||
               entry.value.updatedAt.isAfter(remote.updatedAt)) {
-            unawaited(_yieldProjectionSync.upload(entry.value));
+            unawaited(_queueYieldUpload(entry.value));
           }
         }
       } catch (_) {
@@ -434,12 +440,153 @@ class BioGStore extends ChangeNotifier {
     return SeedInstall.fromDeviceCropContext(context);
   }
 
-  Future<void> saveCropContext(DeviceCropContext context) async {
-    final previous = _cropByDevice[context.deviceId];
-    final normalized = _normalizeContextForStorage(context);
+  /// Bandeja de salida hacia Supabase.
+  ///
+  /// Todo lo que hay que subir se apunta aquí primero. Antes cada escritura
+  /// remota era un `unawaited(...)` con un `catch` vacío: sin señal, el cambio
+  /// se perdía para siempre y el usuario nunca se enteraba.
+  late final PendingSyncQueue _pendingSync = PendingSyncQueue(
+    handler: _handlePendingSyncOp,
+  );
+
+  /// Ejecuta una operación pendiente. La cola no conoce Supabase: sólo sabe
+  /// reintentar; quien traduce la operación a una llamada real es esto.
+  Future<void> _handlePendingSyncOp(PendingSyncOp op) async {
+    if (op.entity == SyncEntity.cropContext) {
+      if (op.op == SyncOp.upsert) {
+        final Map<String, dynamic>? payload = op.payload;
+        if (payload == null) return;
+        await _cropContextSync.upload(DeviceCropContext.fromJson(payload));
+      } else {
+        await _cropContextSync.delete(op.entityId);
+      }
+      return;
+    }
+
+    if (op.op == SyncOp.upsert) {
+      final Map<String, dynamic>? payload = op.payload;
+      if (payload == null) return;
+      await _yieldProjectionSync.upload(
+        YieldProjectionConfig.fromJson(payload),
+      );
+    } else {
+      await _yieldProjectionSync.delete(op.entityId);
+    }
+  }
+
+  Future<void> _queueCropContextUpload(DeviceCropContext c) {
+    return _pendingSync.enqueue(
+      PendingSyncOp(
+        entity: SyncEntity.cropContext,
+        op: SyncOp.upsert,
+        entityId: c.deviceId,
+        payload: c.toJson(),
+      ),
+    );
+  }
+
+  Future<void> _queueCropContextDelete(String deviceId) {
+    return _pendingSync.enqueue(
+      PendingSyncOp(
+        entity: SyncEntity.cropContext,
+        op: SyncOp.delete,
+        entityId: deviceId,
+      ),
+    );
+  }
+
+  Future<void> _queueYieldUpload(YieldProjectionConfig c) {
+    return _pendingSync.enqueue(
+      PendingSyncOp(
+        entity: SyncEntity.yieldProjection,
+        op: SyncOp.upsert,
+        entityId: c.deviceId,
+        payload: c.toJson(),
+      ),
+    );
+  }
+
+  Future<void> _queueYieldDelete(String deviceId) {
+    return _pendingSync.enqueue(
+      PendingSyncOp(
+        entity: SyncEntity.yieldProjection,
+        op: SyncOp.delete,
+        entityId: deviceId,
+      ),
+    );
+  }
+
+  /// Re-etiqueta el contexto de cultivo y la proyección de rendimiento cuando
+  /// un dispositivo cambió de id al pasar del formato de texto antiguo a UUID.
+  ///
+  /// Sin esto el usuario conservaría el dispositivo pero perdería el cultivo
+  /// que había configurado, que es justo lo que veníamos a evitar.
+  Future<void> _applyLegacyDeviceIdMigration(
+    Map<String, String> mapping,
+  ) async {
+    if (mapping.isEmpty) return;
+
+    for (final MapEntry<String, String> entry in mapping.entries) {
+      final String oldId = entry.key;
+      final String newId = entry.value;
+
+      final DeviceCropContext? crop = _cropByDevice.remove(oldId);
+      if (crop != null) {
+        final DeviceCropContext moved = crop.copyWith(deviceId: newId);
+        _cropByDevice[newId] = moved;
+        try {
+          await _cropContextStorage.save(moved, userId: _currentUserId);
+          await _cropContextStorage.delete(oldId, userId: _currentUserId);
+          unawaited(_queueCropContextUpload(moved));
+        } catch (e) {
+          debugPrint('[biog] no se pudo mover el cultivo de $oldId: $e');
+        }
+      }
+
+      final YieldProjectionConfig? projection = _yieldByDevice.remove(oldId);
+      if (projection != null) {
+        final YieldProjectionConfig movedProjection =
+            projection.copyWith(deviceId: newId);
+        _yieldByDevice[newId] = movedProjection;
+        try {
+          await _yieldProjectionStorage.save(
+            movedProjection,
+            userId: _currentUserId,
+          );
+          await _yieldProjectionStorage.delete(oldId, userId: _currentUserId);
+          unawaited(_queueYieldUpload(movedProjection));
+        } catch (e) {
+          debugPrint('[biog] no se pudo mover la proyección de $oldId: $e');
+        }
+      }
+    }
+
+    notifyListeners();
+  }
+
+  /// Guarda el contexto de cultivo de un dispositivo.
+  ///
+  /// [markSetupCompleted] sella el alta: pasa `setup_status` de `draft` a
+  /// `completed` y estampa la fecha. Se pone en true SÓLO desde el cierre de
+  /// los wizards. Antes nadie escribía esa columna, así que todos los
+  /// registros quedaban en borrador para siempre y era imposible saber qué
+  /// usuarios habían terminado de configurar su cultivo.
+  Future<void> saveCropContext(
+    DeviceCropContext context, {
+    bool markSetupCompleted = false,
+  }) async {
+    final DeviceCropContext sealed = markSetupCompleted
+        ? context.copyWith(
+            setupStatus: kCropSetupCompleted,
+            setupCompletedAt:
+                context.setupCompletedAt ?? DateTime.now().toUtc(),
+          )
+        : context;
+    final previous = _cropByDevice[sealed.deviceId];
+    final normalized = _normalizeContextForStorage(sealed);
     _cropByDevice[normalized.deviceId] = normalized;
     await _cropContextStorage.save(normalized, userId: _currentUserId);
-    unawaited(_cropContextSync.upload(normalized));
+    unawaited(_queueCropContextUpload(normalized));
 
     final previousCropId = _normalizeCropKey(previous?.cropId);
     final nextCropId = _normalizeCropKey(normalized.cropId);
@@ -475,7 +622,7 @@ class BioGStore extends ChangeNotifier {
     _agroEvalByDevice.remove(deviceId);
     _cropCareAvgByDevice.remove(deviceId);
     await _cropContextStorage.delete(deviceId, userId: _currentUserId);
-    unawaited(_cropContextSync.delete(deviceId));
+    unawaited(_queueCropContextDelete(deviceId));
     await clearYieldProjectionConfig(deviceId, notify: false);
 
     if (activeDevice?.id == deviceId) {
@@ -519,7 +666,7 @@ class BioGStore extends ChangeNotifier {
 
     _yieldByDevice[normalized.deviceId] = normalized;
     await _yieldProjectionStorage.save(normalized, userId: _currentUserId);
-    unawaited(_yieldProjectionSync.upload(normalized));
+    unawaited(_queueYieldUpload(normalized));
     notifyListeners();
   }
 
@@ -531,7 +678,7 @@ class BioGStore extends ChangeNotifier {
     if (removed == null) return;
 
     await _yieldProjectionStorage.delete(deviceId, userId: _currentUserId);
-    unawaited(_yieldProjectionSync.delete(deviceId));
+    unawaited(_queueYieldDelete(deviceId));
 
     if (notify) {
       notifyListeners();
@@ -677,8 +824,8 @@ class BioGStore extends ChangeNotifier {
       _cropCareAvgByDevice.remove(id);
       unawaited(_cropContextStorage.delete(id, userId: _currentUserId));
       unawaited(_yieldProjectionStorage.delete(id, userId: _currentUserId));
-      unawaited(_cropContextSync.delete(id));
-      unawaited(_yieldProjectionSync.delete(id));
+      unawaited(_queueCropContextDelete(id));
+      unawaited(_queueYieldDelete(id));
     }
 
     final activeId = activeDevice?.id;
@@ -700,7 +847,7 @@ class BioGStore extends ChangeNotifier {
       unawaited(
         _yieldProjectionStorage.delete(deviceId, userId: _currentUserId),
       );
-      unawaited(_yieldProjectionSync.delete(deviceId));
+      unawaited(_queueYieldDelete(deviceId));
     }
   }
 
@@ -909,8 +1056,8 @@ class BioGStore extends ChangeNotifier {
     _cropCareAvgByDevice.remove(id);
     await _cropContextStorage.delete(id, userId: _currentUserId);
     await _yieldProjectionStorage.delete(id, userId: _currentUserId);
-    unawaited(_cropContextSync.delete(id));
-    unawaited(_yieldProjectionSync.delete(id));
+    unawaited(_queueCropContextDelete(id));
+    unawaited(_queueYieldDelete(id));
 
     if (activeDevice?.id == id) {
       _resetAgroState();

@@ -1674,7 +1674,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           perennialAnchorTypeId: resolvedAnchorTypeId,
         );
 
-        await store.saveCropContext(resolvedContext);
+        await store.saveCropContext(
+          resolvedContext,
+          markSetupCompleted: true,
+        );
       } else if (_stage == 'skip') {
         await store.setSeedSkipForDevice(device.id, cropKey: resolvedCropId);
       } else if (_isRecurringBloomWizard) {
@@ -1743,7 +1746,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           ornamentalStageConfidence: passConfidence,
         );
 
-        await store.saveCropContext(resolvedContext);
+        await store.saveCropContext(
+          resolvedContext,
+          markSetupCompleted: true,
+        );
       } else {
         final String? ornamentalIntentId = _isOrnamentalWizard
             ? normalizeOrnamentalSetupIntentId(_ornamentalCropId, _stage)
@@ -1851,7 +1857,10 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           ornamentalStageConfidence: ornamentalStageConfidence,
         );
 
-        await store.saveCropContext(resolvedContext);
+        await store.saveCropContext(
+          resolvedContext,
+          markSetupCompleted: true,
+        );
       }
 
       if (!mounted) return;

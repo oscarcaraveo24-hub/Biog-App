@@ -6,6 +6,10 @@ enum DateConfidence { exact, estimated, unknown }
 
 enum CropConfigSource { wizard, manualEdit, demo, imported }
 
+/// Valores de `device_crop_contexts.setup_status` en Supabase.
+const String kCropSetupDraft = 'draft';
+const String kCropSetupCompleted = 'completed';
+
 class DeviceCropContext {
   final String deviceId;
 
@@ -32,6 +36,40 @@ class DeviceCropContext {
   final String? timezone;
   final String? regionCode;
   final String? cycleLabel;
+
+  // ── Ubicación de la parcela ────────────────────────────────────────────────
+  //
+  // Decisión de modelo: un BioG ES una parcela. No existe entidad `plots`
+  // aparte; la ubicación que el agricultor captura en el onboarding vive aquí.
+  // Las columnas ya existían en `device_crop_contexts` sin que nadie las
+  // escribiera, así que el dato se perdía en SharedPreferences.
+
+  /// Nombre legible de la parcela ("Lote norte", "Invernadero 2").
+  final String? locationLabel;
+
+  /// Origen de la ubicación: gps | manual | search.
+  final String? locationSource;
+
+  /// Latitud de la parcela. Insumo futuro del motor de riego (ET0 por
+  /// coordenadas) y de las capas edáficas.
+  final double? geoLat;
+
+  /// Longitud de la parcela.
+  final double? geoLng;
+
+  // ── Estado del alta ────────────────────────────────────────────────────────
+
+  /// Estado del wizard de configuración: `draft` | `completed`.
+  ///
+  /// La columna existe en Supabase con default `'draft'` y ningún punto del
+  /// código la escribía, así que todos los registros quedaban en borrador para
+  /// siempre y era imposible saber qué usuarios terminaron el alta.
+  final String setupStatus;
+
+  /// Momento en que el wizard se cerró correctamente. Null mientras es borrador.
+  final DateTime? setupCompletedAt;
+
+  bool get isSetupCompleted => setupStatus == kCropSetupCompleted;
 
   /// Modo de establecimiento: siembra_directa | trasplante.
   ///
@@ -115,6 +153,12 @@ class DeviceCropContext {
     this.ornamentalAnchorTypeId,
     this.ornamentalAnchorDateConfidence,
     this.ornamentalStageConfidence,
+    this.locationLabel,
+    this.locationSource,
+    this.geoLat,
+    this.geoLng,
+    this.setupStatus = kCropSetupDraft,
+    this.setupCompletedAt,
   });
 
   DeviceCropContext copyWith({
@@ -150,6 +194,12 @@ class DeviceCropContext {
     CropConfigSource? source,
     DateTime? configuredAt,
     DateTime? updatedAt,
+    Object? locationLabel = _sentinel,
+    Object? locationSource = _sentinel,
+    Object? geoLat = _sentinel,
+    Object? geoLng = _sentinel,
+    String? setupStatus,
+    Object? setupCompletedAt = _sentinel,
   }) {
     return DeviceCropContext(
       deviceId: deviceId ?? this.deviceId,
@@ -229,6 +279,18 @@ class DeviceCropContext {
       source: source ?? this.source,
       configuredAt: configuredAt ?? this.configuredAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      locationLabel: identical(locationLabel, _sentinel)
+          ? this.locationLabel
+          : locationLabel as String?,
+      locationSource: identical(locationSource, _sentinel)
+          ? this.locationSource
+          : locationSource as String?,
+      geoLat: identical(geoLat, _sentinel) ? this.geoLat : geoLat as double?,
+      geoLng: identical(geoLng, _sentinel) ? this.geoLng : geoLng as double?,
+      setupStatus: setupStatus ?? this.setupStatus,
+      setupCompletedAt: identical(setupCompletedAt, _sentinel)
+          ? this.setupCompletedAt
+          : setupCompletedAt as DateTime?,
     );
   }
 
@@ -266,6 +328,12 @@ class DeviceCropContext {
       'source': source.name,
       'configuredAt': configuredAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'locationLabel': locationLabel,
+      'locationSource': locationSource,
+      'geoLat': geoLat,
+      'geoLng': geoLng,
+      'setupStatus': setupStatus,
+      'setupCompletedAt': setupCompletedAt?.toIso8601String(),
     };
   }
 
@@ -421,6 +489,16 @@ class DeviceCropContext {
       source: CropConfigSource.values.byName(json['source'] as String),
       configuredAt: DateTime.parse(json['configuredAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      // Los contextos guardados antes de esta versión no traen estas claves:
+      // quedan en null / draft, que es exactamente su estado real.
+      locationLabel: json['locationLabel'] as String?,
+      locationSource: json['locationSource'] as String?,
+      geoLat: (json['geoLat'] as num?)?.toDouble(),
+      geoLng: (json['geoLng'] as num?)?.toDouble(),
+      setupStatus: (json['setupStatus'] as String?) ?? kCropSetupDraft,
+      setupCompletedAt: json['setupCompletedAt'] == null
+          ? null
+          : DateTime.tryParse(json['setupCompletedAt'] as String),
     );
   }
 

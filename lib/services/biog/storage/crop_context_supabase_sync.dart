@@ -154,6 +154,18 @@ class CropContextSupabaseSync {
       'source': c.source.name,
       'configured_at': c.configuredAt.toIso8601String(),
       'updated_at': c.updatedAt.toIso8601String(),
+      // Estas columnas ya existían en `device_crop_contexts` y ningún punto del
+      // código las escribía, así que llegaban siempre en null: la escala de
+      // cultivo, la ubicación de la parcela y el estado del alta se quedaban
+      // sólo dentro del teléfono. Un BioG ES una parcela; su ubicación vive
+      // aquí y no en una entidad `plots` aparte.
+      'cultivation_scale': c.cultivationScaleId,
+      'location_label': c.locationLabel,
+      'location_source': c.locationSource,
+      'geo_lat': c.geoLat,
+      'geo_lng': c.geoLng,
+      'setup_status': c.setupStatus,
+      'setup_completed_at': c.setupCompletedAt?.toIso8601String(),
     };
   }
 
@@ -215,6 +227,13 @@ class CropContextSupabaseSync {
       source: _sourceFromName(row['source'] as String?),
       configuredAt: _parseDate(row['configured_at']) ?? DateTime.now().toUtc(),
       updatedAt: _parseDate(row['updated_at']) ?? DateTime.now().toUtc(),
+      cultivationScaleId: row['cultivation_scale'] as String?,
+      locationLabel: row['location_label'] as String?,
+      locationSource: row['location_source'] as String?,
+      geoLat: (row['geo_lat'] as num?)?.toDouble(),
+      geoLng: (row['geo_lng'] as num?)?.toDouble(),
+      setupStatus: (row['setup_status'] as String?) ?? kCropSetupDraft,
+      setupCompletedAt: _parseDate(row['setup_completed_at']),
     );
   }
 

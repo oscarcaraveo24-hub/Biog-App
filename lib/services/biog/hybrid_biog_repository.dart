@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:bio_g/core/util/uuid_v4.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/services/biog/biog_repository.dart';
@@ -113,6 +114,9 @@ class HybridBioGRepository implements BioGRepository {
     // 2) Remote load (LWW merge against local).
     final fresh = await _identity.loadDevices(userId: userId);
     _publishDevices(fresh, preserveActive: true);
+
+    // 2.5) Reasignar UUID a los dispositivos con id de texto heredado.
+    _lastLegacyIdMigration = await _migrateLegacyDeviceIds(userId);
 
     // 3) Restore active device selection.
     final persistedActiveId = _identity.cachedActiveDeviceId();
@@ -459,6 +463,71 @@ class HybridBioGRepository implements BioGRepository {
     _refreshTelemetryForDevice(_activeDevice!);
   }
 
+  /// Mapa `idViejo -> idNuevo` de la última migración de ids heredados.
+  /// Lo consume [BioGStore] para mover el contexto de cultivo y la
+  /// proyección de rendimiento del dispositivo migrado.
+  Map<String, String> get lastLegacyIdMigration => _lastLegacyIdMigration;
+  Map<String, String> _lastLegacyIdMigration = const <String, String>{};
+
+  /// Reasigna un UUID a los dispositivos guardados con el formato de texto
+  /// antiguo (`biog-...`).
+  ///
+  /// Esos dispositivos están rotos por construcción: nunca subieron a
+  /// Supabase —`devices.id` es de tipo `uuid` y rechazaba el insert— y nunca
+  /// pudieron leer telemetría, porque `telemetryDeviceId` devuelve null para
+  /// cualquier id que no sea UUID. Aquí se les da identidad válida sin que el
+  /// usuario pierda su configuración.
+  ///
+  /// Va envuelto en try/catch a propósito: si la migración falla, la app
+  /// arranca igual y el dispositivo se queda exactamente como estaba.
+  Future<Map<String, String>> _migrateLegacyDeviceIds(String? userId) async {
+    final List<BioGDevice> legacy = _devices
+        .where((BioGDevice d) => !BioGDevice.isTelemetryDeviceId(d.id))
+        .toList();
+    if (legacy.isEmpty) return const <String, String>{};
+
+    final Map<String, String> mapping = <String, String>{};
+    final String? previousActiveId = _identity.cachedActiveDeviceId();
+
+    try {
+      List<BioGDevice> next = List<BioGDevice>.from(_devices);
+
+      for (final BioGDevice old in legacy) {
+        final String newId = generateUuidV4();
+        final BioGDevice migrated = old.copyWith(id: newId);
+
+        await _identity.upsertDevice(userId: userId, device: migrated);
+        await _identity.removeDevice(userId: userId, deviceId: old.id);
+
+        next = next
+            .map((BioGDevice d) => d.id == old.id ? migrated : d)
+            .toList();
+        mapping[old.id] = newId;
+
+        _logHardwareFlowOnce(
+          'legacy device id migrated old=${old.id} new=$newId',
+          onceKey: 'migrate:${old.id}',
+        );
+      }
+
+      _publishDevices(next, preserveActive: false);
+
+      final String? remappedActive = previousActiveId == null
+          ? null
+          : (mapping[previousActiveId] ?? previousActiveId);
+      if (remappedActive != null) {
+        await _identity.setActiveDeviceId(
+          userId: userId,
+          deviceId: remappedActive,
+        );
+      }
+    } catch (e) {
+      debugPrint('[biog] migración de ids heredados incompleta: $e');
+    }
+
+    return mapping;
+  }
+
   @override
   Future<BioGDevice> addDevice({
     String? seedId,
@@ -468,16 +537,11 @@ class HybridBioGRepository implements BioGRepository {
   }) async {
     final DateTime now = DateTime.now();
 
-    // NOTE:
-    // This legacy client-generated id flow is still kept for compatibility.
-    // Real paired devices should eventually come from Supabase devices.id UUID
-    // via QR/serial_number pairing instead of generating text ids here.
-    final String idPrefix = (_currentUserId == null || _currentUserId!.isEmpty)
-        ? 'biog-guest-'
-        : 'biog-${_currentUserId!.substring(0, 8)}-';
-
-    final String id =
-        '$idPrefix${now.microsecondsSinceEpoch.toRadixString(36)}';
+    // El id DEBE ser un UUID: `devices.id` en Supabase es de tipo `uuid` y
+    // `BioGDevice.telemetryDeviceId` descarta cualquier otro formato, de modo
+    // que un id de texto produce un dispositivo que ni sube a la nube ni puede
+    // leer telemetría. Ver lib/core/util/uuid_v4.dart.
+    final String id = generateUuidV4();
 
     final BioGDevice device = BioGDevice(
       id: id,

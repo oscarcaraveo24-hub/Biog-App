@@ -444,13 +444,41 @@ class _BootstrapGateState extends State<BootstrapGate> {
 
   Future<void> _saveOnboardingDraftLocally(OnboardingDraft draft) async {
     final BioGStore store = BioGScope.of(context);
-    final device = store.activeDevice;
-    if (device == null) return;
+
+    // El paso de vinculación del wizard sólo guardaba el nombre en el estado de
+    // la pantalla (`setState(_pairedDeviceName = ...)`) y mostraba "conectado
+    // correctamente": nunca creaba el dispositivo. Sin dispositivo activo esta
+    // función salía aquí en silencio y el usuario perdía ubicación, escala,
+    // cultivo, variedad, etapa y fecha —todo— sin ver un solo error, porque un
+    // `return` temprano no dispara el `catch` de _handleOnboardingCompleted.
+    //
+    // Ahora el dispositivo se crea si no existe. Un usuario que ya tenía uno
+    // (por haberlo dado de alta desde Cuenta) sigue usando el suyo, así que el
+    // camino que hoy funciona no cambia.
+    var device = store.activeDevice;
+    if (device == null) {
+      final String parcelName = draft.locationLabel?.trim().isNotEmpty == true
+          ? draft.locationLabel!.trim()
+          : 'Parcela';
+      device = await store.addDevice(
+        name: 'Bio-G',
+        locationName: parcelName,
+        seedId: null,
+        profileId: null,
+      );
+    }
 
     final String? cropId = _normalizeCropId(draft.cropId);
     final String? stage = draft.stage?.trim();
 
     if (cropId == null || stage == null || stage.isEmpty) {
+      // Salida legítima: el usuario puede terminar el onboarding sin elegir
+      // cultivo (perfil genérico / omitir). El dispositivo ya quedó creado
+      // arriba, que es lo que antes se perdía.
+      debugPrint(
+        '[onboarding] Sin cultivo o etapa en el borrador; se guarda solo el '
+        'dispositivo. cropId=$cropId stage=$stage',
+      );
       return;
     }
 
@@ -484,7 +512,10 @@ class _BootstrapGateState extends State<BootstrapGate> {
         previous: previous,
         contextResolver: _contextResolver,
       );
-      await store.saveCropContext(resolved);
+      await store.saveCropContext(
+      _withParcelLocation(resolved, draft),
+      markSetupCompleted: true,
+    );
       return;
     }
 
@@ -503,7 +534,10 @@ class _BootstrapGateState extends State<BootstrapGate> {
         previous: previous,
         contextResolver: _contextResolver,
       );
-      await store.saveCropContext(resolved);
+      await store.saveCropContext(
+      _withParcelLocation(resolved, draft),
+      markSetupCompleted: true,
+    );
       return;
     }
 
@@ -547,7 +581,10 @@ class _BootstrapGateState extends State<BootstrapGate> {
       cultivationScaleId: draft.cultivationScale,
     );
 
-    await store.saveCropContext(resolvedContext);
+    await store.saveCropContext(
+      _withParcelLocation(resolvedContext, draft),
+      markSetupCompleted: true,
+    );
   }
 
   /// Persiste el contexto de un árbol/perenne configurado en el onboarding.
@@ -560,6 +597,25 @@ class _BootstrapGateState extends State<BootstrapGate> {
   /// se manda a fallow: reposo y post-cosecha siguen siendo etapas activas. La
   /// variedad de onboarding cae de forma segura al perfil general (AP-SKIP) si
   /// no coincide con un perfil del catálogo; el usuario puede precisarla después.
+  /// Un BioG ES una parcela: la ubicación que el agricultor capturó en el
+  /// onboarding viaja con el contexto de cultivo. Antes se quedaba sólo en
+  /// SharedPreferences y no llegaba ni al contexto ni a la nube, aunque las
+  /// columnas ya existían vacías en `device_crop_contexts`.
+  DeviceCropContext _withParcelLocation(
+    DeviceCropContext context,
+    OnboardingDraft draft,
+  ) {
+    final String? label = draft.locationLabel?.trim();
+    return context.copyWith(
+      locationLabel: (label != null && label.isNotEmpty)
+          ? label
+          : context.locationLabel,
+      locationSource: draft.locationSource ?? context.locationSource,
+      geoLat: draft.geoLat ?? context.geoLat,
+      geoLng: draft.geoLng ?? context.geoLng,
+    );
+  }
+
   Future<void> _saveOnboardingTreeContext({
     required BioGStore store,
     required String deviceId,
@@ -576,7 +632,10 @@ class _BootstrapGateState extends State<BootstrapGate> {
       previous: previous,
       contextResolver: _contextResolver,
     );
-    await store.saveCropContext(resolved);
+    await store.saveCropContext(
+      _withParcelLocation(resolved, draft),
+      markSetupCompleted: true,
+    );
   }
 
   String? _normalizeCropId(String? value) {

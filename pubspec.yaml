@@ -39,6 +39,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   image_picker: ^1.1.2
   shared_preferences: ^2.2.3
+  # Historial de telemetría. Reemplaza el guardado en SharedPreferences, donde
+  # todo el historial de un dispositivo vivía en una sola cadena JSON que había
+  # que decodificar y reescribir entera en cada lectura nueva.
+  sqflite: ^2.3.3
   path_provider: ^2.1.4
   path: ^1.9.0
   google_maps_flutter: ^2.5.0

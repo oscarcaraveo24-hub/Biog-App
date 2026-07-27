@@ -439,9 +439,9 @@ class NpkScreen extends StatelessWidget {
                             required AgroMetricEval? evalMetric,
                           }) {
                             if (!isPlanted || live == null) return null;
-                            if (evalMetric?.hasNutrientInterpretation == true) {
-                              return null;
-                            }
+                            // Se calcula SIEMPRE, no sólo como respaldo: es
+                            // la única interpretación que recibe la escala
+                            // de cultivo y por tanto la unidad correcta.
                             return NutrientRecommendationEngine.interpret(
                               nutrient: nutrient,
                               rawPpm: rawPpm,
@@ -558,24 +558,24 @@ class NpkScreen extends StatelessWidget {
                               : 'Modo genérico';
 
                           final nDoseGuide =
-                              nEvalMetric?.doseGuideEs ??
-                              nInterpretation?.doseGuideEs;
+                              nInterpretation?.doseGuideEs ??
+                                    nEvalMetric?.doseGuideEs;
                           final pDoseGuide =
-                              pEvalMetric?.doseGuideEs ??
-                              pInterpretation?.doseGuideEs;
+                              pInterpretation?.doseGuideEs ??
+                                    pEvalMetric?.doseGuideEs;
                           final kDoseGuide =
-                              kEvalMetric?.doseGuideEs ??
-                              kInterpretation?.doseGuideEs;
+                              kInterpretation?.doseGuideEs ??
+                                    kEvalMetric?.doseGuideEs;
 
                           final nFertilizerEquivalent =
-                              nEvalMetric?.fertilizerEquivalentEs ??
-                              nInterpretation?.fertilizerEquivalentEs;
+                              nInterpretation?.fertilizerEquivalentEs ??
+                                    nEvalMetric?.fertilizerEquivalentEs;
                           final pFertilizerEquivalent =
-                              pEvalMetric?.fertilizerEquivalentEs ??
-                              pInterpretation?.fertilizerEquivalentEs;
+                              pInterpretation?.fertilizerEquivalentEs ??
+                                    pEvalMetric?.fertilizerEquivalentEs;
                           final kFertilizerEquivalent =
-                              kEvalMetric?.fertilizerEquivalentEs ??
-                              kInterpretation?.fertilizerEquivalentEs;
+                              kInterpretation?.fertilizerEquivalentEs ??
+                                    kEvalMetric?.fertilizerEquivalentEs;
 
                           final insightN = isPlanted
                               ? (nEvalMetric?.shortRecommendationEs ??
@@ -620,24 +620,24 @@ class NpkScreen extends StatelessWidget {
                               : 'Lectura real de potasio del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
 
                           final actionNRaw = isPlanted
-                              ? (nEvalMetric?.practicalRecommendationEs ??
-                                    nInterpretation?.practicalRecommendation ??
+                              ? (nInterpretation?.practicalRecommendation ??
+                                    nEvalMetric?.practicalRecommendationEs ??
                                     'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'
                               : 'Configura un cultivo para ver prioridad nutricional.';
 
                           final actionPRaw = isPlanted
-                              ? (pEvalMetric?.practicalRecommendationEs ??
-                                    pInterpretation?.practicalRecommendation ??
+                              ? (pInterpretation?.practicalRecommendation ??
+                                    pEvalMetric?.practicalRecommendationEs ??
                                     'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'
                               : 'Configura un cultivo para ver prioridad nutricional.';
 
                           final actionKRaw = isPlanted
-                              ? (kEvalMetric?.practicalRecommendationEs ??
-                                    kInterpretation?.practicalRecommendation ??
+                              ? (kInterpretation?.practicalRecommendation ??
+                                    kEvalMetric?.practicalRecommendationEs ??
                                     'Revisa el plan nutricional del lote.')
                               : isPlanned
                               ? 'Úsalo como línea base antes de sembrar.'

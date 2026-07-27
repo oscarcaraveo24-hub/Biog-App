@@ -141,8 +141,11 @@ class _DashboardNpkCandidate {
       interpretation?.labelEs ??
       AgroBand.unknown.labelEs;
 
+  /// La interpretación calculada en pantalla gana sobre la del motor:
+  /// es la única que conoce la escala de cultivo (maceta / cama / campo)
+  /// y por tanto la unidad correcta de la dosis.
   String? get doseGuideEs =>
-      evalMetric?.doseGuideEs ?? interpretation?.doseGuideEs;
+      interpretation?.doseGuideEs ?? evalMetric?.doseGuideEs;
 
   String get shortRecommendation {
     final fromEval = evalMetric?.shortRecommendationEs;
@@ -351,7 +354,9 @@ class DashboardScreenPresenter {
         required double rawPpm,
         required AgroMetricEval? evalMetric,
       }) {
-        if (evalMetric?.hasNutrientInterpretation == true) return null;
+        // Antes devolvía null cuando el motor ya había interpretado, y la
+        // del motor no conoce la escala de cultivo: por eso una maceta
+        // recibía su dosis en kg/ha. Ahora se calcula siempre.
         return NutrientRecommendationEngine.interpret(
           nutrient: nutrient,
           rawPpm: rawPpm,
