@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -5,12 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
 import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
+import 'package:bio_g/core/agro/irrigation/irrigation_coordinator.dart';
+import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/features/reporting/pdf_preview_screen.dart';
 import 'package:bio_g/features/reporting/pdf_report_builder.dart';
 import 'package:bio_g/features/reporting/quick_report_builder.dart';
 import 'package:bio_g/screens/dashboard/dashboard_presenter.dart';
 import 'package:bio_g/screens/dashboard/dashboard_sections.dart';
+import 'package:bio_g/widgets/dashboard/irrigation_evidence_note.dart';
 import 'package:bio_g/screens/notifications_screen.dart';
 import 'package:bio_g/screens/plant_health/crop_risk_intro_screen.dart';
 import 'package:bio_g/screens/yield/yield_projection_setup_screen.dart';
@@ -39,6 +43,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   static bool _hasAnimatedThisSession = false;
 
   final DashboardScreenPresenter _presenter = DashboardScreenPresenter();
+
+  /// Orquesta clima → decisión de riego → registro auditable.
+  ///
+  /// Vive en el estado de la pantalla para que su ciclo de vida sea el de la
+  /// pantalla y no haya que tocar el arranque de la app.
+  final IrrigationCoordinator _irrigation = IrrigationCoordinator();
 
   late final AnimationController _entranceController;
 
@@ -87,6 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   void dispose() {
     _entranceController.dispose();
+    _irrigation.dispose();
     super.dispose();
   }
 
@@ -186,7 +197,16 @@ class _DashboardScreenState extends State<DashboardScreen>
     final BioGStore store = BioGScope.of(context);
 
     return AnimatedBuilder(
-      animation: store,
+      // Escucha al store y al coordinador: cuando el clima termina de
+      // descargarse, la tarjeta de riego debe repintarse aunque el store no
+      // haya cambiado.
+      animation: Listenable.merge(<Listenable>[
+        store,
+        _irrigation,
+        // También la bandeja: un aviso nuevo debe encender la campana sin
+        // esperar a que el store notifique por otra razón.
+        store.notifications,
+      ]),
       builder: (context, _) {
         final DateTime today = DateTime.now();
 
@@ -212,10 +232,29 @@ class _DashboardScreenState extends State<DashboardScreen>
           nextAlertsState: runtime.nextAlertsState,
         );
 
+        // Decisión de riego con el clima que ya está en memoria. Es una
+        // llamada pura: no toca red ni disco, así que es segura dentro de
+        // `build`.
+        final IrrigationDecision? irrigationDecision = _irrigation.decisionFor(
+          runtime,
+          now: today,
+        );
+
+        // El refresco de clima y el registro auditable van fuera del frame:
+        // son asíncronos y no deben retrasar el pintado. El coordinador sale
+        // solo si el estado relevante no cambió.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          unawaited(
+            _irrigation.sync(runtime: runtime, userId: store.currentUserId),
+          );
+        });
+
         final DashboardViewData viewData = _presenter.buildViewData(
           store: store,
           runtime: runtime,
           today: today,
+          irrigationDecision: irrigationDecision,
         );
 
         return Scaffold(
@@ -244,7 +283,12 @@ class _DashboardScreenState extends State<DashboardScreen>
                             cropLabel: viewData.cropLabel,
                             fieldLabel: viewData.fieldLabel,
                             cropIconAsset: viewData.cropIconAsset,
-                            hasNotifications: viewData.events.isNotEmpty,
+                            // La bandeja persistente es la fuente: aplica las
+                            // preferencias del usuario y sobrevive al cierre
+                            // de la app, cosa que la lista recalculada no.
+                            hasNotifications:
+                                store.notifications.unreadCount > 0 ||
+                                viewData.events.isNotEmpty,
                             onNotificationTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
@@ -288,6 +332,30 @@ class _DashboardScreenState extends State<DashboardScreen>
                           resistance: viewData.resistance,
                           controller: _entranceController,
                         ),
+                        const SizedBox(height: 12),
+                        // Tarjeta de riego.
+                        //
+                        // `DashboardInsightSection` existía en
+                        // dashboard_sections.dart pero no se instanciaba en
+                        // ningún sitio: `viewData.irrigation` se calculaba en
+                        // cada build y no llegaba nunca a la pantalla. Sin
+                        // esto, el motor de riego decide, registra y no se ve.
+                        DashboardReveal(
+                          controller: _entranceController,
+                          intervalStart: 0.70,
+                          intervalEnd: 0.94,
+                          yOffset: 18,
+                          beginScale: 0.983,
+                          child: DashboardInsightSection(
+                            insight: viewData.irrigation,
+                          ),
+                        ),
+                        if (viewData.irrigationDecision != null) ...<Widget>[
+                          const SizedBox(height: 8),
+                          IrrigationEvidenceNote(
+                            decision: viewData.irrigationDecision!,
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         DashboardReveal(
                           controller: _entranceController,

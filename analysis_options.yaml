@@ -12,6 +12,10 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   exclude:
     - temp/**
+    # Copias de trabajo y archivos a borrar. Analizarlas produce errores
+    # falsos de "el tipo X no es asignable al tipo X" porque la misma clase
+    # queda declarada dos veces, en dos rutas distintas.
+    - _to_delete/**
 
 linter:
   # The lint rules applied to this project can be customized in the

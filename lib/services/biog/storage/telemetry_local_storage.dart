@@ -56,7 +56,19 @@ class TelemetryLocalStorage {
 
     final Database db = await openDatabase(
       path,
-      version: 1,
+      // v2: se vacía la caché una sola vez.
+      //
+      // La razón no es un cambio de esquema sino de SIGNIFICADO de `ts`. Antes,
+      // `TelemetrySupabaseSync` resolvía la fecha de una fila tomando el máximo
+      // entre `timestamp` y `created_at`, y `created_at` (hora de inserción)
+      // casi siempre ganaba. Ahora manda la hora declarada por el dispositivo.
+      // La misma medición pasa a tener una `ts` distinta, y como la llave es
+      // (device_id, ts), convivirían dos filas para una sola lectura: el
+      // Historial dibujaría cada punto dos veces, desplazado.
+      //
+      // Vaciar es seguro: esta tabla es caché de lo que hay en Supabase y se
+      // repuebla en la siguiente descarga.
+      version: 2,
       onCreate: (Database db, int version) async {
         await db.execute('''
           CREATE TABLE $_table (
@@ -69,6 +81,11 @@ class TelemetryLocalStorage {
         await db.execute(
           'CREATE INDEX idx_${_table}_device_ts ON $_table (device_id, ts DESC)',
         );
+      },
+      onUpgrade: (Database db, int oldVersion, int newVersion) async {
+        if (oldVersion < 2) {
+          await db.delete(_table);
+        }
       },
     );
 

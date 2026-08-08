@@ -6,6 +6,7 @@ import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/agronomic_event.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
+import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
 import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart'; // <-- IMPORTANTE: Lo usamos para las dosis en vivo
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
@@ -90,6 +91,18 @@ class DashboardViewData {
   final DashboardMetricUiData ph;
   final DashboardMetricUiData resistance;
   final DashboardInsightUiData irrigation;
+
+  /// Decisión completa del motor de riego, cuando estuvo disponible.
+  ///
+  /// La tarjeta solo necesita título, subtítulo y etiqueta —que ya vienen en
+  /// [irrigation]—, pero la decisión entera se expone para que la pantalla
+  /// pueda mostrar razones, confianza, antigüedad del clima y la advertencia
+  /// de "requiere confirmación" sin recalcular nada.
+  ///
+  /// Null significa que el motor no corrió (cultivo sin sembrar, modo
+  /// genérico) y la tarjeta cayó al texto derivado de la banda de humedad.
+  final IrrigationDecision? irrigationDecision;
+
   final DashboardTreeStatusUiData? treeStatus;
   final String cropJourneyTitle;
   final List<AgronomicEvent> events;
@@ -107,6 +120,7 @@ class DashboardViewData {
     required this.ph,
     required this.resistance,
     required this.irrigation,
+    this.irrigationDecision,
     this.treeStatus,
     this.cropJourneyTitle = 'Rendimiento\nestimado',
     this.events = const <AgronomicEvent>[],
@@ -175,6 +189,13 @@ class DashboardScreenPresenter {
     required BioGStore store,
     required CropRuntimeSnapshot runtime,
     required DateTime today,
+
+    /// Decisión ya calculada por `IrrigationEngine`.
+    ///
+    /// Opcional a propósito: si no llega, la tarjeta cae al comportamiento
+    /// anterior. Así el presentador sigue funcionando en pruebas y pantallas
+    /// que todavía no resuelven clima.
+    IrrigationDecision? irrigationDecision,
   }) {
     final BioGTelemetry? telemetry = runtime.live;
     final CropStageResult? stageResult = runtime.stageResult;
@@ -436,39 +457,104 @@ class DashboardScreenPresenter {
     late final String irrigationSubtitle;
     late final String irrigationTag;
 
+    // ── Motor de riego ────────────────────────────────────────────────────
+    //
+    // Cuando el motor corrió, su decisión manda sobre cualquier texto derivado
+    // únicamente de la banda de humedad. Es lo que impide que el Panel ordene
+    // regar mientras Ambiente anuncia lluvia, y lo que evita que un sensor
+    // ausente —cuyo valor llega como 0.0— se lea como suelo seco.
+    //
+    // Se exige `isPlanted` para no pisar los mensajes de preparación previa a
+    // la siembra ni el modo genérico, que siguen igual que antes.
+    //
+    // Se calcula UNA vez y se usa en los dos sitios —la tarjeta y la nota de
+    // evidencia— para que no puedan contradecirse. Antes eran dos condiciones
+    // distintas, y en el caso "árbol sin nada que hacer" la tarjeta mostraba
+    // la prioridad fenológica mientras la nota de abajo decía "No regar".
+    //
+    // No manda cuando:
+    //  - el motor no aporta nada (falta cultivo o falta objetivo de etapa):
+    //    el texto anterior conoce mejor el contexto;
+    //  - es un árbol y no hay nada que hacer: la prioridad por etapa dice más
+    //    que un "No riegues por ahora".
+    final bool engineDrivesCard =
+        irrigationDecision != null &&
+        isPlanted &&
+        irrigationDecision.overridesLegacyCard &&
+        !(isTree && treeContext != null && !irrigationDecision.isActionable);
+
+    if (engineDrivesCard) {
+      // Sin `!`: el análisis de flujo de Dart propaga la promoción de nulidad
+      // a través de un booleano local, así que `engineDrivesCard == true` ya
+      // implica que `irrigationDecision` no es null.
+      final IrrigationDecision decision = irrigationDecision;
+      irrigationTitle = decision.headlineEs;
+      irrigationTag = decision.action.tagEs;
+
+      if (isTree && treeContext != null) {
+        // Hay algo que hacer: manda la decisión, pero se conserva la prioridad
+        // de la etapa como subtítulo.
+        irrigationSubtitle = treeStagePriorityText(
+          treeContext.phenologyStageId,
+        );
+      } else if (isOrnamental && !decision.action.isRecommendation) {
+        irrigationSubtitle = ornamentalIrrigationSubtitle(ornamentalCropId);
+      } else {
+        irrigationSubtitle = decision.detailEs;
+      }
+    }
     // Las ornamentales NO tienen tarjeta de riego propia: usan la misma que
     // frijol, con la evaluación real del sensor. Solo cambia el subtítulo.
-    if (isTree && treeContext != null) {
-      irrigationTitle = _treeIrrigationTitle(treeContext, effectiveEval);
-      irrigationSubtitle = treeStagePriorityText(treeContext.phenologyStageId);
-      irrigationTag =
-          treeCriticalWindowLabel(treeContext.phenologyStageId) != null
-          ? 'Cr\u00edtica'
-          : '\u00c1rbol';
+    else if (isTree && treeContext != null) {
+      // Sin dato de humedad no hay consejo de riego posible, tampoco en árbol.
+      if (!_hasMoistureReading(telemetry)) {
+        irrigationTitle = 'Sin lectura de humedad';
+        irrigationSubtitle = _kNoMoistureReadingSubtitle;
+        irrigationTag = '—';
+      } else {
+        irrigationTitle = _treeIrrigationTitle(treeContext, effectiveEval);
+        irrigationSubtitle = treeStagePriorityText(
+          treeContext.phenologyStageId,
+        );
+        irrigationTag =
+            treeCriticalWindowLabel(treeContext.phenologyStageId) != null
+            ? 'Cr\u00edtica'
+            : '\u00c1rbol';
+      }
     } else if (isPlanted) {
-      irrigationTitle = hasCropAwareEval
-          ? _irrigationTitleFromEval(effectiveEval!)
-          : ((telemetry != null && targets != null)
-                ? _irrigationTitleFromTargets(
-                    soilMoisturePct: telemetry.soilMoisturePct,
-                    targets: targets,
-                  )
-                : 'Recomendación pendiente');
-      irrigationSubtitle = hasCropAwareEval
-          ? (isOrnamental
-                ? ornamentalIrrigationSubtitle(ornamentalCropId)
-                : 'Basado en humedad del suelo y modelo Bio-G')
-          : ((telemetry != null && targets != null)
-                ? 'Basado en humedad del suelo y etapa actual'
-                : 'Sin evaluación agronómica actual');
-      irrigationTag = hasCropAwareEval
-          ? _irrigationTagFromEval(effectiveEval!)
-          : ((telemetry != null && targets != null)
-                ? _irrigationTagFromTargets(
-                    soilMoisturePct: telemetry.soilMoisturePct,
-                    targets: targets,
-                  )
-                : '—');
+      // Guarda de dato ausente. `soilMoisturePct` vale 0.0 cuando el sensor no
+      // envió humedad, y ese cero caía por debajo del umbral bajo produciendo
+      // una orden de riego indistinguible de una real. La bandera de presencia
+      // ya existía en el modelo; aquí por fin se consulta.
+      if (!_hasMoistureReading(telemetry)) {
+        irrigationTitle = 'Sin lectura de humedad';
+        irrigationSubtitle = _kNoMoistureReadingSubtitle;
+        irrigationTag = '—';
+      } else {
+        irrigationTitle = hasCropAwareEval
+            ? _irrigationTitleFromEval(effectiveEval)
+            : (targets != null
+                  ? _irrigationTitleFromTargets(
+                      soilMoisturePct: telemetry!.soilMoisturePct,
+                      targets: targets,
+                    )
+                  : 'Recomendación pendiente');
+        irrigationSubtitle = hasCropAwareEval
+            ? (isOrnamental
+                  ? ornamentalIrrigationSubtitle(ornamentalCropId)
+                  : 'Basado en humedad del suelo y modelo Bio-G')
+            : (targets != null
+                  ? 'Basado en humedad del suelo y etapa actual'
+                  : 'Sin evaluación agronómica actual');
+        irrigationTag = hasCropAwareEval
+            ? _irrigationTagFromEval(effectiveEval)
+            : (targets != null
+                  ? _irrigationTagFromTargets(
+                      soilMoisturePct: telemetry!.soilMoisturePct,
+                      targets: targets,
+                    )
+                  : '—');
+      }
     } else if (isPlanned) {
       irrigationTitle = _plannedInsightTitle(plannedDaysLeft, telemetry);
       irrigationSubtitle = isOrnamental
@@ -542,6 +628,9 @@ class DashboardScreenPresenter {
         subtitle: irrigationSubtitle,
         tag: irrigationTag,
       ),
+      // Misma condición que la tarjeta: la nota de evidencia solo aparece
+      // cuando lo que se muestra arriba viene del motor.
+      irrigationDecision: engineDrivesCard ? irrigationDecision : null,
       treeStatus: treeStatus,
       // Las ornamentales no tienen cosecha ni rendimiento: la tarjeta lleva al
       // estado de la planta y sus cuidados, no a una proyección de rendimiento.
@@ -1211,6 +1300,22 @@ class DashboardScreenPresenter {
     return ((range.highMin - index0to100) /
             (range.highMin - range.optimalMax).abs())
         .clamp(0.0, 1.0);
+  }
+
+  /// Subtítulo único para el caso "el sensor no envió humedad".
+  ///
+  /// Centralizado para que las tres ramas de la tarjeta digan exactamente lo
+  /// mismo y nadie pueda cambiar una sin cambiar las otras.
+  static const String _kNoMoistureReadingSubtitle =
+      'No se recomienda riego sin dato del sensor de humedad.';
+
+  /// True solo si la telemetría trae humedad de suelo realmente medida.
+  ///
+  /// `soilMoisturePct` es un `double` no nulable que vale 0.0 cuando el dato
+  /// llegó ausente; la verdad está en la bandera de presencia, no en el número.
+  bool _hasMoistureReading(BioGTelemetry? telemetry) {
+    if (telemetry == null) return false;
+    return telemetry.hasSoilMoistureData;
   }
 
   String _irrigationTitleFromEval(AgroEvalResult eval) {

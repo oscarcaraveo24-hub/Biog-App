@@ -7,6 +7,8 @@ import 'package:bio_g/core/agro/fertilization_planner.dart';
 import 'package:bio_g/core/agro/garlic_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/lettuce_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/npk_caps.dart';
+import 'package:bio_g/core/agro/dose_expression.dart';
+import 'package:bio_g/core/agro/soil_reaction.dart';
 import 'package:bio_g/core/agro/onion_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/peach_tree_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/pear_tree_nutrition_modifier.dart';
@@ -78,7 +80,23 @@ class NutrientRecommendationEngine {
     double? ec,
     double? soilMoisturePct,
     double? trendPct,
+    /// Cosecha esperada por árbol, en kg. Solo la usan los perennes.
+    ///
+    /// Opcional a propósito: los quince motores de score que llaman a este
+    /// método no la pasan, y sin ella todo se comporta exactamente igual que
+    /// antes. Cuando llega, el frutal deja de dar solo criterio y pasa a dar
+    /// gramos por árbol.
+    double? kgFruitPerTree,
+    /// Cómo aplica el productor. Con fertirriego y densidad conocida, la
+    /// dosis sale en gramos por planta en vez de kg/ha.
+    DoseContext doseContext = DoseContext.none,
   }) {
+    // El pH ya viene en cada lectura: de ahí sale si el suelo es calcáreo,
+    // sin preguntarle nada al productor. En suelo calcáreo el calcio fija el
+    // fósforo y la banda objetivo tiene que subir; si no, el motor lee
+    // «óptimo» donde el laboratorio diría «bajo» y deja de recomendar fósforo
+    // que sí hacía falta.
+    final SoilReaction soilReaction = soilReactionFromPh(ph);
     assert(
       nutrient == AgroMetricKey.n ||
           nutrient == AgroMetricKey.p ||
@@ -349,6 +367,7 @@ class NutrientRecommendationEngine {
       nutrient: nutrient,
       cropKey: cropKey,
       targets: targets,
+      soilReaction: soilReaction,
     );
 
     final label = _resolveLabel(
@@ -376,6 +395,9 @@ class NutrientRecommendationEngine {
       calendarId: calendarId,
       targets: targets,
       cultivationScaleId: cultivationScaleId,
+      kgFruitPerTree: kgFruitPerTree,
+      doseContext: doseContext,
+      ph: ph,
     );
 
     final practicalBase = _practicalRecommendation(

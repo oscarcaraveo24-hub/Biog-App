@@ -2,6 +2,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bio_g/core/weather/agronomic_weather_snapshot.dart';
+import 'package:bio_g/core/weather/et0_calculator.dart';
 import 'package:bio_g/models/environment_models.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -306,6 +308,238 @@ class EnvironmentService {
     return out;
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // CLIMA AGRONÓMICO
+  //
+  // Método aditivo: no toca `fetchEnvironment` ni `fetchCurrentEnvironment`,
+  // que siguen sirviendo a las tres pantallas de Ambiente exactamente igual.
+  // Esta consulta pide además las variables que el motor necesita y que hasta
+  // ahora nunca se descargaban: ET0 de referencia, precipitación horaria y los
+  // días pasados para saber cuánto llovió ya.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /// Días hacia atrás que se piden para calcular la lluvia ya caída.
+  static const int _agronomicPastDays = 3;
+
+  /// Descarga el clima con las variables que el motor agronómico necesita.
+  ///
+  /// Devuelve un [AgronomicWeatherSnapshot] con `fetchedAt` puesto al momento
+  /// real de la descarga. Ese campo nunca debe reescribirse aguas abajo: es la
+  /// única referencia honesta de antigüedad del dato.
+  Future<AgronomicWeatherSnapshot> fetchAgronomicSnapshot({
+    required EnvironmentLocation location,
+  }) async {
+    final uri = _forecastUri(location, <String, String>{
+      'timezone': 'auto',
+      'past_days': '$_agronomicPastDays',
+      'forecast_days': '3',
+      'current':
+          'temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,precipitation,is_day',
+      'hourly': 'precipitation_probability,precipitation,shortwave_radiation',
+      'daily':
+          'temperature_2m_max,temperature_2m_min,precipitation_sum,'
+          'precipitation_probability_max,et0_fao_evapotranspiration',
+    });
+
+    final res = await _get(uri, requestName: 'Agronomic weather');
+    _ensureSuccess(res, requestName: 'Agronomic weather');
+
+    final data = _decodeObject(res.body);
+    final fetchedAt = DateTime.now().toUtc();
+
+    // Open-Meteo con `timezone=auto` devuelve marcas de tiempo en hora local
+    // sin sufijo de zona. Sin este desplazamiento, ubicar "ahora" dentro del
+    // arreglo horario falla por horas y las ventanas de lluvia se corren.
+    final offsetSeconds = _numI(data['utc_offset_seconds']);
+    final timezone = data['timezone'] as String?;
+
+    final current = _asObject(data['current'], field: 'current', isRequired: false);
+    final hourly = _asObject(data['hourly'], field: 'hourly', isRequired: false);
+    final daily = _asObject(data['daily'], field: 'daily', isRequired: false);
+
+    // ── Índice horario de "ahora" ────────────────────────────────────────────
+    final hourTimes = _asList(
+      hourly['time'],
+      field: 'hourly.time',
+      isRequired: false,
+    ).map((e) => e.toString()).toList();
+
+    final hourUtc = <DateTime?>[
+      for (final t in hourTimes) _localWallToUtc(t, offsetSeconds),
+    ];
+
+    int nowIndex = -1;
+    for (var i = 0; i < hourUtc.length; i++) {
+      final t = hourUtc[i];
+      if (t == null) continue;
+      if (!t.isBefore(fetchedAt)) {
+        nowIndex = i;
+        break;
+      }
+    }
+    // Si todas las horas quedaron en el pasado, el pronóstico no sirve para
+    // mirar hacia adelante: se deja el índice fuera de rango y las ventanas
+    // futuras quedan en null en vez de inventar ceros.
+    if (nowIndex < 0) nowIndex = hourUtc.length;
+
+    final pops = _asList(
+      hourly['precipitation_probability'],
+      field: 'hourly.precipitation_probability',
+      isRequired: false,
+    );
+    final precip = _asList(
+      hourly['precipitation'],
+      field: 'hourly.precipitation',
+      isRequired: false,
+    );
+    final radiation = _asList(
+      hourly['shortwave_radiation'],
+      field: 'hourly.shortwave_radiation',
+      isRequired: false,
+    );
+
+    final rain = RainOutlook(
+      probNext6hPct: _maxIntInWindow(pops, nowIndex, 6),
+      probNext12hPct: _maxIntInWindow(pops, nowIndex, 12),
+      probNext24hPct: _maxIntInWindow(pops, nowIndex, 24),
+      probNext48hPct: _maxIntInWindow(pops, nowIndex, 48),
+      expectedNext24hMm: _sumDoubleInWindow(precip, nowIndex, 24),
+      expectedNext48hMm: _sumDoubleInWindow(precip, nowIndex, 48),
+      observedLast24hMm: _sumDoubleInWindow(precip, nowIndex - 24, 24),
+      observedLast72hMm: _sumDoubleInWindow(precip, nowIndex - 72, 72),
+    );
+
+    // ── Bloque diario ────────────────────────────────────────────────────────
+    final dayTimes = _asList(
+      daily['time'],
+      field: 'daily.time',
+      isRequired: false,
+    ).map((e) => e.toString()).toList();
+
+    final todayLocal = fetchedAt.add(Duration(seconds: offsetSeconds));
+    final todayKey = _yyyyMmDd(todayLocal);
+    var todayIndex = dayTimes.indexOf(todayKey);
+    if (todayIndex < 0) {
+      // Sin coincidencia exacta, `past_days` deja hoy en esa posición.
+      todayIndex = _agronomicPastDays;
+    }
+
+    final tMax = _asList(
+      daily['temperature_2m_max'],
+      field: 'daily.temperature_2m_max',
+      isRequired: false,
+    );
+    final tMin = _asList(
+      daily['temperature_2m_min'],
+      field: 'daily.temperature_2m_min',
+      isRequired: false,
+    );
+    final et0Daily = _asList(
+      daily['et0_fao_evapotranspiration'],
+      field: 'daily.et0_fao_evapotranspiration',
+      isRequired: false,
+    );
+
+    final tMaxToday = _nullableNumD(_valueAt(tMax, todayIndex));
+    final tMinToday = _nullableNumD(_valueAt(tMin, todayIndex));
+
+    final et0Today = Et0Calculator.resolveDaily(
+      providerEt0Mm: _nullableNumD(_valueAt(et0Daily, todayIndex)),
+      tMaxC: tMaxToday,
+      tMinC: tMinToday,
+      latitudeDeg: location.lat,
+      date: todayLocal,
+    );
+
+    final et0Tomorrow = Et0Calculator.resolveDaily(
+      providerEt0Mm: _nullableNumD(_valueAt(et0Daily, todayIndex + 1)),
+      tMaxC: _nullableNumD(_valueAt(tMax, todayIndex + 1)),
+      tMinC: _nullableNumD(_valueAt(tMin, todayIndex + 1)),
+      latitudeDeg: location.lat,
+      date: todayLocal.add(const Duration(days: 1)),
+    );
+
+    // ── Observación actual ───────────────────────────────────────────────────
+    final observedAt = _localWallToUtc(
+      current['time']?.toString() ?? '',
+      offsetSeconds,
+    );
+
+    return AgronomicWeatherSnapshot(
+      lat: location.lat,
+      lon: location.lon,
+      timezone: timezone,
+      fetchedAt: fetchedAt,
+      observedAt: observedAt,
+      airTempC: _nullableNumD(current['temperature_2m']),
+      airTempMaxC: tMaxToday,
+      airTempMinC: tMinToday,
+      airHumidityPct: _nullableNumD(current['relative_humidity_2m']),
+      windKmh: _nullableNumD(current['wind_speed_10m']),
+      shortwaveWm2: _nullableNumD(_valueAt(radiation, nowIndex)),
+      weatherCode: current['weather_code'] is num
+          ? (current['weather_code'] as num).round()
+          : null,
+      rain: rain,
+      et0TodayMm: et0Today.millimetersPerDay,
+      et0Next24hMm: et0Tomorrow.millimetersPerDay,
+      et0Source: et0Today.source,
+      source: WeatherSnapshotSource.forecast,
+    );
+  }
+
+  /// Convierte una marca de tiempo local sin zona (`2026-08-03T14:00`) a UTC
+  /// real usando el desplazamiento que informó el proveedor.
+  DateTime? _localWallToUtc(String raw, int offsetSeconds) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    final wall = DateTime.tryParse('${trimmed}Z');
+    if (wall == null) return null;
+    return wall.subtract(Duration(seconds: offsetSeconds));
+  }
+
+  /// Máximo entero dentro de `[start, start + length)`.
+  ///
+  /// Devuelve `null` si la ventana queda fuera del arreglo o si no hay ningún
+  /// valor numérico dentro: una ventana sin datos no es una ventana con cero.
+  int? _maxIntInWindow(List<dynamic> values, int start, int length) {
+    if (values.isEmpty || length <= 0) return null;
+    final from = start < 0 ? 0 : start;
+    final to = start + length;
+    if (from >= values.length || to <= 0) return null;
+
+    int? best;
+    for (var i = from; i < to && i < values.length; i++) {
+      final v = values[i];
+      if (v is! num) continue;
+      final n = v.round();
+      if (best == null || n > best) best = n;
+    }
+    return best?.clamp(0, 100);
+  }
+
+  /// Suma de milímetros dentro de `[start, start + length)`.
+  ///
+  /// Mismo criterio: sin ningún valor numérico devuelve `null`, no `0`.
+  double? _sumDoubleInWindow(List<dynamic> values, int start, int length) {
+    if (values.isEmpty || length <= 0) return null;
+    final from = start < 0 ? 0 : start;
+    final to = start + length;
+    if (from >= values.length || to <= 0) return null;
+
+    double total = 0;
+    var found = false;
+    for (var i = from; i < to && i < values.length; i++) {
+      final v = values[i];
+      if (v is! num) continue;
+      final d = v.toDouble();
+      if (!d.isFinite || d < 0) continue;
+      total += d;
+      found = true;
+    }
+    return found ? total : null;
+  }
+
   String _yyyyMmDd(DateTime dt) {
     final y = dt.year.toString().padLeft(4, '0');
     final m = dt.month.toString().padLeft(2, '0');
@@ -531,11 +765,6 @@ class EnvironmentService {
     return normalizedBody.length > 180
         ? '${normalizedBody.substring(0, 180)}...'
         : normalizedBody;
-  }
-
-  void _log(String message) {
-    if (!kDebugMode || !_debugEnvironmentLogs) return;
-    debugPrint('[BioG/Environment] $message');
   }
 
   void _logOpenMeteo(String message) {

@@ -9,7 +9,10 @@ import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ✅ Pantallas
+import 'package:bio_g/core/account/account_deletion_service.dart';
+import 'package:bio_g/core/auth/auth_repository.dart';
 import 'package:bio_g/core/profile/profile_repository.dart';
+import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/widgets/account/location_screen.dart';
 import 'package:bio_g/widgets/account/telephone_screen.dart';
 import 'package:bio_g/widgets/shared/bio_g_page_route.dart';
@@ -53,6 +56,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   late _InitialProfile _initial;
   bool _saving = false;
+
+  /// True mientras corre el borrado de cuenta, para bloquear la interfaz.
+  bool _deletingAccount = false;
   bool _loadingPrefs = true;
 
   bool get _hasChanges {
@@ -307,10 +313,136 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       },
     );
 
-    if (ok == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Eliminar cuenta (placeholder)')),
+    if (ok != true || !mounted) return;
+
+    // Reautenticación obligatoria antes de una acción destructiva. Es
+    // requisito de ambas tiendas y, más importante, evita que alguien que
+    // encuentre el teléfono desbloqueado pueda borrar la cuenta.
+    final password = await _askPasswordForDeletion();
+    if (password == null || !mounted) return;
+
+    final store = BioGScope.of(context);
+    // Los dos ids de cada Bio-G: el de interfaz y el de telemetría. El
+    // almacenamiento local de lecturas usa el segundo, y para los dispositivos
+    // heredados no coinciden.
+    final deviceIds = <String>{
+      for (final d in store.devices) ...<String>[
+        d.id,
+        if (d.telemetryDeviceId != null) d.telemetryDeviceId!,
+      ],
+    }.toList(growable: false);
+    final userId = store.currentUserId;
+
+    setState(() => _deletingAccount = true);
+
+    final service = AccountDeletionService(
+      authRepository: AuthRepository(Supabase.instance.client),
+      // Sin esto, la cola de subidas pendientes sobrevivía al borrado y el
+      // mensaje "borramos todos los datos de este teléfono" era inexacto.
+      ingestService: store.telemetryIngest,
+    );
+
+    late final AccountDeletionResult result;
+    try {
+      result = await service.deleteAccount(
+        password: password,
+        userId: userId,
+        deviceIds: deviceIds,
       );
+    } catch (e) {
+      result = AccountDeletionResult(
+        outcome: AccountDeletionOutcome.failed,
+        messageEs:
+            'No se pudo completar la eliminación. Inténtalo de nuevo.',
+        remoteError: e.toString(),
+      );
+    }
+
+    if (!mounted) return;
+    setState(() => _deletingAccount = false);
+
+    // El mensaje lo redacta el servicio a partir de lo que REALMENTE ocurrió.
+    // La pantalla no puede prometer un borrado que no sucedió.
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          result.isComplete ? 'Cuenta eliminada' : 'Eliminación parcial',
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
+        content: Text(result.messageEs),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    if (result.outcome != AccountDeletionOutcome.failed) {
+      // La sesión ya se cerró dentro del servicio; se sale de la pantalla para
+      // que el árbol de navegación vuelva a la puerta de entrada.
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+  }
+
+  /// Pide la contraseña actual para confirmar el borrado.
+  Future<String?> _askPasswordForDeletion() async {
+    final controller = TextEditingController();
+    try {
+      return await showDialog<String>(
+        context: context,
+        barrierDismissible: true,
+        builder: (dialogContext) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            title: const Text(
+              'Confirma tu identidad',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Escribe tu contraseña actual para eliminar la cuenta.',
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  obscureText: true,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Contraseña',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(dialogContext, controller.text),
+                child: const Text(
+                  'Continuar',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      controller.dispose();
     }
   }
 
@@ -566,7 +698,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         const SizedBox(height: 30),
 
                         // ✅ Botón eliminar más abajo
-                        _DeleteButton(onTap: _confirmDeleteAccount),
+                        //
+                        // Se deshabilita mientras corre el borrado: pulsarlo
+                        // dos veces lanzaría dos reautenticaciones y dos
+                        // purgas locales en paralelo.
+                        _DeleteButton(
+                          onTap: _deletingAccount
+                              ? null
+                              : _confirmDeleteAccount,
+                        ),
                       ],
                     ),
                   ),
@@ -1332,7 +1472,8 @@ class _SyncPortalOnlyAlertState extends State<_SyncPortalOnlyAlert>
 /* ===================== DELETE BUTTON ===================== */
 
 class _DeleteButton extends StatefulWidget {
-  final VoidCallback onTap;
+  /// Null deshabilita el botón (borrado en curso).
+  final VoidCallback? onTap;
   const _DeleteButton({required this.onTap});
 
   @override

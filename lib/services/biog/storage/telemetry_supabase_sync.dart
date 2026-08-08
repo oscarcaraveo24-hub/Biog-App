@@ -46,8 +46,16 @@ class TelemetrySupabaseSync {
   /// Recommended SQL:
   /// create unique index if not exists uq_telemetry_device_timestamp
   /// on public.telemetry (device_id, timestamp);
-  Future<void> uploadBatch(List<BioGTelemetry> readings) async {
-    if (readings.isEmpty) return;
+  /// Devuelve `true` solo si Supabase confirmó la escritura.
+  ///
+  /// Antes tragaba el error y devolvía `void`, así que quien llamara no tenía
+  /// forma de saber si la subida ocurrió. Sin ese booleano no se puede
+  /// construir una cola con reintentos: cualquier fallo de red se perdía en
+  /// silencio. El error se sigue registrando y no se propaga —el
+  /// almacenamiento local sigue siendo la fuente de verdad— pero ahora se
+  /// informa.
+  Future<bool> uploadBatch(List<BioGTelemetry> readings) async {
+    if (readings.isEmpty) return true;
 
     final rows = readings.map(_toSupabaseRow).toList();
 
@@ -56,10 +64,10 @@ class TelemetrySupabaseSync {
       await _client
           .from(_table)
           .upsert(rows, onConflict: 'device_id,timestamp');
+      return true;
     } catch (e) {
       _log('upload error table=$_table rows=${rows.length} error=$e');
-      // Local storage is the primary source of truth.
-      // Cloud sync is best-effort and can retry later.
+      return false;
     }
   }
 
@@ -390,12 +398,17 @@ class TelemetrySupabaseSync {
     return <String, dynamic>{
       'device_id': t.deviceId,
       'timestamp': t.timestamp.toUtc().toIso8601String(),
-      'air_temp_c': t.airTempC,
-      'air_humidity_pct': t.airHumidityPct,
+      // Temperatura de aire, humedad de aire y CE se escribían SIEMPRE, así
+      // que el 0.0 que sintetiza `tryFromJson` cuando el dato viene ausente se
+      // subía a la nube como una medición real. Una vez arriba es irreversible:
+      // ningún consumidor puede distinguirlo de un cero legítimo. Con las
+      // banderas de presencia ya en el modelo, aquí van a `null` como el resto.
+      'air_temp_c': t.hasAirTempData ? t.airTempC : null,
+      'air_humidity_pct': t.hasAirHumidityData ? t.airHumidityPct : null,
       'soil_moisture_pct': t.hasSoilMoistureData ? t.soilMoisturePct : null,
       'soil_temp_c': t.hasSoilTempData ? t.soilTempC : null,
       'ph': t.hasPhData ? t.ph : null,
-      'ec': t.ec,
+      'ec': t.hasEcData ? t.ec : null,
       'resistance': t.hasResistanceData ? t.resistance : null,
       'n': t.hasNitrogenData ? t.n : null,
       'p': t.hasPhosphorusData ? t.p : null,
@@ -559,30 +572,46 @@ class TelemetrySupabaseSync {
     };
   }
 
+  /// Hora de MEDICIÓN de la fila, no de inserción.
+  ///
+  /// Antes tomaba el máximo entre `timestamp`, `created_at`, `createdAt` y
+  /// `recorded_at`. Como `created_at` es la hora en que Supabase insertó la
+  /// fila, una medición de hace seis horas subida ahora se presentaba con la
+  /// hora de subida: la lectura rejuvenecía. Es justo lo contrario de lo que
+  /// exige un contrato agronómico, donde la vigencia del dato decide si se
+  /// puede recomendar riego.
+  ///
+  /// Ahora se respeta la prioridad de campos —el primero que exista gana— y se
+  /// prefiere siempre la hora declarada por el dispositivo.
   static String? _latestTimestampIso(Map<String, dynamic> m) {
-    final dates = <DateTime>[];
-
+    // Exactamente las columnas que consultan las queries (`_timeColumns`),
+    // en orden de confianza: la hora que declara el dispositivo antes que la
+    // de inserción.
+    //
+    // La lista de prioridad y el ORDER BY tienen que coincidir. Si aquí
+    // apareciera una columna por la que no se ordena, la fila elegida y la
+    // fecha devuelta podrían venir de criterios distintos.
     for (final value in <dynamic>[
       m['timestamp'],
       m['created_at'],
       m['createdAt'],
-      m['recorded_at'],
     ]) {
       final parsed = _asDateTime(value);
-      if (parsed != null) dates.add(parsed.toUtc());
+      if (parsed != null) return parsed.toUtc().toIso8601String();
     }
-
-    if (dates.isEmpty) return null;
-    dates.sort((a, b) => b.compareTo(a));
-    return dates.first.toIso8601String();
+    return null;
   }
 
+  /// Idéntica a [_latestTimestampIso] desde que ésta dejó de tomar el máximo.
+  ///
+  /// Se conservan las dos porque `_mapRow` elige entre ellas con
+  /// `preferLatestTimestamp`, y separar los dos casos deja documentado dónde
+  /// tocar si alguna vez vuelven a divergir.
   static String? _historyTimestampIso(Map<String, dynamic> m) {
     for (final value in <dynamic>[
       m['timestamp'],
       m['created_at'],
       m['createdAt'],
-      m['recorded_at'],
     ]) {
       final parsed = _asDateTime(value);
       if (parsed != null) return parsed.toUtc().toIso8601String();

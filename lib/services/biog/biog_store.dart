@@ -3,9 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/notifications/notification_dispatcher.dart';
+import 'package:bio_g/core/telemetry/telemetry_ingest_service.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
+import 'package:bio_g/services/biog/events/crop_event_local_storage.dart';
+import 'package:bio_g/services/biog/events/crop_event_recorder.dart';
 import 'package:bio_g/services/biog/sync/pending_sync_queue.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
@@ -57,6 +61,9 @@ class BioGStore extends ChangeNotifier {
       _repo.watchLiveTelemetry().listen((v) {
         live = v;
         notifyListeners();
+        // Deja constancia de los eventos del cultivo aunque nadie tenga la
+        // pantalla abierta. No altera nada de lo que se muestra.
+        unawaited(_cropEventRecorder.recordFromStore(this));
       }),
     );
 
@@ -163,6 +170,15 @@ class BioGStore extends ChangeNotifier {
     _currentUserId = userId;
     _pendingSync.bindUser(userId);
     unawaited(_pendingSync.drain());
+
+    // Reintenta las lecturas que quedaron sin confirmar en la nube. Es el
+    // llamador vivo de `uploadBatch`, que hasta ahora no tenía ninguno.
+    unawaited(telemetryIngest.flushPending());
+
+    // Carga la bandeja de avisos guardada. Sin esto, los avisos de la sesión
+    // anterior no aparecen hasta que llegue la primera lectura nueva: la
+    // bandeja sería "persistente" pero no se leería en frío.
+    unawaited(notifications.hydrate());
     await _loadLocalCacheFor(userId: userId);
     notifyListeners();
 
@@ -274,6 +290,17 @@ class BioGStore extends ChangeNotifier {
     if (repo is HybridBioGRepository) {
       repo.unbindUser();
     }
+
+    // Purga del historial agronómico y de los avisos del usuario que sale.
+    //
+    // Antes esto solo limpiaba siete mapas en memoria. La tabla `crop_events`
+    // no tenía dueño y nadie la borraba, así que cambiar de cuenta en el mismo
+    // teléfono dejaba el historial del usuario anterior en disco: fuga de
+    // datos y un incumplimiento del derecho de supresión que hay que declarar
+    // en las tiendas.
+    final String? outgoingUserId = _currentUserId;
+    unawaited(_cropEventRecorder.purgeForUser(outgoingUserId));
+
     _currentUserId = null;
     _cropByDevice.clear();
     _yieldByDevice.clear();
@@ -439,6 +466,22 @@ class BioGStore extends ChangeNotifier {
     if (context == null) return null;
     return SeedInstall.fromDeviceCropContext(context);
   }
+
+  /// Memoria persistente de los eventos del cultivo.
+  final CropEventRecorder _cropEventRecorder = CropEventRecorder();
+
+  /// Acceso de solo lectura al historial de eventos registrado.
+  CropEventLocalStorage get cropEventStorage => _cropEventRecorder.storage;
+
+  /// Bandeja de avisos, ya filtrada por las preferencias del usuario.
+  NotificationDispatcher get notifications => _cropEventRecorder.notifications;
+
+  /// Camino operativo de ingesta de telemetría.
+  ///
+  /// Aquí es donde se enchufa un [TelemetryTransport] cuando exista el BLE:
+  /// `store.telemetryIngest.bindTransport(miTransporteBle)`. Mientras tanto ya
+  /// tiene una función real: reintentar las subidas que quedaron pendientes.
+  final TelemetryIngestService telemetryIngest = TelemetryIngestService();
 
   /// Bandeja de salida hacia Supabase.
   ///
@@ -1039,12 +1082,16 @@ class BioGStore extends ChangeNotifier {
     String? profileId,
     String? locationName,
     String? name,
+    String? hardwareDeviceId,
+    String? deviceModelId,
   }) {
     return _repo.addDevice(
       seedId: seedId,
       profileId: profileId,
       locationName: locationName,
       name: name,
+      hardwareDeviceId: hardwareDeviceId,
+      deviceModelId: deviceModelId,
     );
   }
 
@@ -1373,6 +1420,8 @@ class BioGStore extends ChangeNotifier {
     }
     _telemetryStreamsByDevice.clear();
     _loggedTelemetryIds.clear();
+    unawaited(telemetryIngest.dispose());
+    _cropEventRecorder.notifications.dispose();
     _repo.dispose();
     super.dispose();
   }

@@ -191,7 +191,15 @@ class HistoryScreenPresenter {
         targetsOverride: previousTargets,
         alertsState: const AlertsState(),
       );
-      previousBands = AgroEventInputFactory.safeCurrentBands(previousEvalOut.eval);
+      // `live:` también aquí. Sin él, las bandas PREVIAS se calculaban sobre
+      // los ceros sintetizados mientras las ACTUALES sí se degradaban a
+      // `unknown`. Esa asimetría hacía que `previousProblemCount > 0` y
+      // `currentProblemCount == 0`, y el Historial emitía "Recuperación" cada
+      // vez que un sensor dejaba de reportar.
+      previousBands = AgroEventInputFactory.safeCurrentBands(
+        previousEvalOut.eval,
+        live: previousTelemetry,
+      );
     } else {
       previousBands = const <String, AgroBand>{};
     }

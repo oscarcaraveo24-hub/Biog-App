@@ -9,24 +9,63 @@ import 'package:bio_g/models/seed_install.dart';
 class AgroEventInputFactory {
   const AgroEventInputFactory._();
 
-  static Map<String, AgroBand> safeCurrentBands(AgroEvalResult? eval) {
+  /// Bandas actuales listas para el motor de eventos.
+  ///
+  /// [live] es opcional pero **debe pasarse** siempre que exista telemetría:
+  /// es lo que permite anular una banda calculada sobre un dato que en
+  /// realidad no llegó.
+  ///
+  /// El motor de score evalúa el `double` crudo de `BioGTelemetry`, que vale
+  /// 0.0 cuando la métrica vino ausente. Ese 0.0 cae por debajo del umbral
+  /// bajo y produce `AgroBand.critical`, que aguas abajo se convierte en
+  /// "Riego recomendado" con severidad crítica sobre un sensor inexistente.
+  /// Aquí esa banda se degrada a `unknown`, que el motor de eventos ya sabe
+  /// tratar como "no recomendar nada".
+  static Map<String, AgroBand> safeCurrentBands(
+    AgroEvalResult? eval, {
+    BioGTelemetry? live,
+  }) {
     if (eval == null) return const <String, AgroBand>{};
 
+    AgroBand bandFor(AgroMetricKey key, bool hasData) {
+      if (!hasData) return AgroBand.unknown;
+      return eval.metrics[key]?.band ?? AgroBand.unknown;
+    }
+
+    // Sin telemetría no hay banderas que consultar: se conserva el
+    // comportamiento anterior para no alterar a los llamadores que solo
+    // tienen la evaluación.
+    final bool hasLive = live != null;
+
     return <String, AgroBand>{
-      EventMetricKeys.soilMoisture:
-          eval.metrics[AgroMetricKey.soilMoisture]?.band ?? AgroBand.unknown,
-      EventMetricKeys.ph:
-          eval.metrics[AgroMetricKey.ph]?.band ?? AgroBand.unknown,
-      EventMetricKeys.resistance:
-          eval.metrics[AgroMetricKey.resistance]?.band ?? AgroBand.unknown,
-      EventMetricKeys.soilTemp:
-          eval.metrics[AgroMetricKey.soilTemp]?.band ?? AgroBand.unknown,
-      EventMetricKeys.n:
-          eval.metrics[AgroMetricKey.n]?.band ?? AgroBand.unknown,
-      EventMetricKeys.p:
-          eval.metrics[AgroMetricKey.p]?.band ?? AgroBand.unknown,
-      EventMetricKeys.k:
-          eval.metrics[AgroMetricKey.k]?.band ?? AgroBand.unknown,
+      EventMetricKeys.soilMoisture: bandFor(
+        AgroMetricKey.soilMoisture,
+        !hasLive || live.hasSoilMoistureData,
+      ),
+      EventMetricKeys.ph: bandFor(
+        AgroMetricKey.ph,
+        !hasLive || live.hasPhData,
+      ),
+      EventMetricKeys.resistance: bandFor(
+        AgroMetricKey.resistance,
+        !hasLive || live.hasResistanceData,
+      ),
+      EventMetricKeys.soilTemp: bandFor(
+        AgroMetricKey.soilTemp,
+        !hasLive || live.hasSoilTempData,
+      ),
+      EventMetricKeys.n: bandFor(
+        AgroMetricKey.n,
+        !hasLive || live.hasNitrogenData,
+      ),
+      EventMetricKeys.p: bandFor(
+        AgroMetricKey.p,
+        !hasLive || live.hasPhosphorusData,
+      ),
+      EventMetricKeys.k: bandFor(
+        AgroMetricKey.k,
+        !hasLive || live.hasPotassiumData,
+      ),
     };
   }
 
@@ -101,18 +140,36 @@ class AgroEventInputFactory {
       stageLabel: stageResult?.stageLabelEs,
       previousStageKey: previousStageKey,
       previousStageLabel: previousStageLabel,
-      soilMoisture: live?.soilMoisturePct,
-      ph: live?.ph,
-      resistance: live?.resistance,
-      soilTemp: live?.soilTempC,
-      airTemp: live?.airTempC,
-      airHumidity: live?.airHumidityPct,
+      // Banderas de presencia en TODAS las métricas, no solo en NPK.
+      //
+      // Antes, N/P/K se protegían con `hasXData` y humedad, pH, resistencia y
+      // temperatura de suelo se pasaban crudas —líneas contiguas del mismo
+      // archivo—. Como `BioGTelemetry` rellena con 0.0 lo que llega ausente,
+      // un sensor de humedad desconectado entraba al motor como 0 %, caía por
+      // debajo del umbral bajo y disparaba "Riego recomendado" con severidad
+      // crítica sobre un sensor que no existe. El `null` es la única forma de
+      // que el motor sepa que no hay dato.
+      soilMoisture: live?.hasSoilMoistureData == true
+          ? live!.soilMoisturePct
+          : null,
+      ph: live?.hasPhData == true ? live!.ph : null,
+      resistance: live?.hasResistanceData == true ? live!.resistance : null,
+      soilTemp: live?.hasSoilTempData == true ? live!.soilTempC : null,
+      // Aire con bandera, igual que suelo y NPK. Sin esto, un sensor de aire
+      // ausente entra como 0 °C y dispara "Riesgo de helada" con severidad
+      // crítica: `frostThresholdC` vale entre 0 y 7 °C según el cultivo, así
+      // que `0.0 <= 0.0` se cumple. Lo mismo con humedad de aire = 0 % y el
+      // umbral de humedad ambiente baja (20-40 %).
+      airTemp: live?.hasAirTempData == true ? live!.airTempC : null,
+      airHumidity: live?.hasAirHumidityData == true
+          ? live!.airHumidityPct
+          : null,
       n: live?.hasNitrogenData == true ? live!.n.toDouble() : null,
       p: live?.hasPhosphorusData == true ? live!.p.toDouble() : null,
       k: live?.hasPotassiumData == true ? live!.k.toDouble() : null,
       currentBands: isGenericMode
           ? const <String, AgroBand>{}
-          : safeCurrentBands(effectiveEval),
+          : safeCurrentBands(effectiveEval, live: live),
       excessNutrientKeys: isGenericMode
           ? const <String>{}
           : safeExcessNutrientKeys(effectiveEval),

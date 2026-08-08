@@ -959,7 +959,15 @@ class EventEngine {
     AgroBand? pBand,
     AgroBand? kBand,
   ) {
-    final bands = [nBand, pBand, kBand].whereType<AgroBand>().toList();
+    // `unknown` significa "no hay dato", no "hay problema".
+    //
+    // `whereType<AgroBand>()` filtra los null pero NO los `unknown`, y como
+    // `unknown != optimal`, dos nutrientes ausentes bastaban para emitir
+    // "Desbalance nutrimental" sobre sensores que no reportaron nada.
+    final bands = [nBand, pBand, kBand]
+        .whereType<AgroBand>()
+        .where((b) => b != AgroBand.unknown)
+        .toList();
     if (bands.isEmpty) return false;
 
     final problemCount = bands.where((b) => b != AgroBand.optimal).length;

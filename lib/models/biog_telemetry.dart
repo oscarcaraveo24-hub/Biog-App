@@ -144,6 +144,9 @@ class BioGTelemetry {
     this.hasNitrogenData = true,
     this.hasPhosphorusData = true,
     this.hasPotassiumData = true,
+    this.hasAirTempData = true,
+    this.hasAirHumidityData = true,
+    this.hasEcData = true,
     this.hasSensorData = true,
   });
 
@@ -154,12 +157,24 @@ class BioGTelemetry {
   final double airTempC; // °C
   final double airHumidityPct; // %
 
+  /// Banderas de presencia de las métricas de aire.
+  ///
+  /// Faltaban: humedad de suelo, pH, resistencia y NPK sí distinguían dato
+  /// ausente de cero, pero temperatura de aire, humedad de aire y CE no. Un
+  /// sensor de aire desconectado quedaba registrado como 0 °C / 0 % y, peor,
+  /// se subía a la nube como cero real e irreversible.
+  final bool hasAirTempData;
+  final bool hasAirHumidityData;
+
   // Suelo
   final double soilMoisturePct; // %
   final double soilTempC; // °C
   final double ph; // 0–14
   final double ec; // mS/cm (o la unidad que uses)
   final double resistance; //Mpa (compactacion suelo)
+
+  /// Presencia de conductividad eléctrica. Ver nota en [hasAirTempData].
+  final bool hasEcData;
 
   final bool hasSoilMoistureData;
   final bool hasSoilTempData;
@@ -192,6 +207,9 @@ class BioGTelemetry {
     'timestamp': timestamp.toIso8601String(),
     'air_temp_c': airTempC,
     'air_humidity_pct': airHumidityPct,
+    'has_air_temp_data': hasAirTempData,
+    'has_air_humidity_data': hasAirHumidityData,
+    'has_ec_data': hasEcData,
     'soil_moisture_pct': soilMoisturePct,
     'soil_temp_c': soilTempC,
     'ph': ph,
@@ -364,6 +382,15 @@ class BioGTelemetry {
     final bool? explicitHasPotassiumData = _asBool(
       json['has_potassium_data'] ?? json['hasPotassiumData'],
     );
+    final bool? explicitHasAirTempData = _asBool(
+      json['has_air_temp_data'] ?? json['hasAirTempData'],
+    );
+    final bool? explicitHasAirHumidityData = _asBool(
+      json['has_air_humidity_data'] ?? json['hasAirHumidityData'],
+    );
+    final bool? explicitHasEcData = _asBool(
+      json['has_ec_data'] ?? json['hasEcData'],
+    );
 
     final bool? explicitHasSensorData = _asBool(
       json['has_sensor_data'] ?? json['hasSensorData'],
@@ -407,6 +434,10 @@ class BioGTelemetry {
       hasNitrogenData: (explicitHasNitrogenData ?? true) && vN != null,
       hasPhosphorusData: (explicitHasPhosphorusData ?? true) && vP != null,
       hasPotassiumData: (explicitHasPotassiumData ?? true) && vK != null,
+      hasAirTempData: (explicitHasAirTempData ?? true) && vAirTempC != null,
+      hasAirHumidityData:
+          (explicitHasAirHumidityData ?? true) && vAirHumidityPct != null,
+      hasEcData: (explicitHasEcData ?? true) && vEc != null,
       batteryPct: _plausible(
         _firstNullableDouble(<dynamic>[
           json['battery_pct'],
@@ -445,6 +476,9 @@ class BioGTelemetry {
     bool? hasNitrogenData,
     bool? hasPhosphorusData,
     bool? hasPotassiumData,
+    bool? hasAirTempData,
+    bool? hasAirHumidityData,
+    bool? hasEcData,
     double? batteryPct,
     int? signalRssi,
     bool? hasSensorData,
@@ -470,6 +504,9 @@ class BioGTelemetry {
       hasNitrogenData: hasNitrogenData ?? this.hasNitrogenData,
       hasPhosphorusData: hasPhosphorusData ?? this.hasPhosphorusData,
       hasPotassiumData: hasPotassiumData ?? this.hasPotassiumData,
+      hasAirTempData: hasAirTempData ?? this.hasAirTempData,
+      hasAirHumidityData: hasAirHumidityData ?? this.hasAirHumidityData,
+      hasEcData: hasEcData ?? this.hasEcData,
       batteryPct: batteryPct ?? this.batteryPct,
       signalRssi: signalRssi ?? this.signalRssi,
       hasSensorData: hasSensorData ?? this.hasSensorData,
@@ -510,7 +547,6 @@ class BioGTelemetry {
     return null;
   }
 
-  static double _asDouble(dynamic value) => _asNullableDouble(value) ?? 0.0;
 
   static double? _asNullableDouble(dynamic value) {
     if (value == null) return null;

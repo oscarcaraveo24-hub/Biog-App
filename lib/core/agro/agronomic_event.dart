@@ -1,5 +1,7 @@
 // lib/core/agro/agronomic_event.dart
 
+import 'dart:convert';
+
 enum AgronomicEventType {
   // Contexto general
   genericMode,
@@ -110,6 +112,82 @@ class AgronomicEvent {
 
   /// Campo flexible para guardar datos extra sin romper contrato.
   final Map<String, Object?> metadata;
+
+  /// Llave de deduplicación para la memoria persistente.
+  ///
+  /// Dos cálculos sobre la misma lectura producen el mismo evento; sin esta
+  /// llave, recalcular generaría filas repetidas. Se considera "el mismo
+  /// evento" el del mismo tipo, sobre la misma métrica y en la misma etapa,
+  /// dentro de la misma hora.
+  String get dedupKey {
+    final DateTime utc = timestamp.toUtc();
+    final String hour = DateTime.utc(
+      utc.year,
+      utc.month,
+      utc.day,
+      utc.hour,
+    ).toIso8601String();
+    return '${type.name}|${metricKey ?? '-'}|${stageKey ?? '-'}|$hour';
+  }
+
+  Map<String, dynamic> toJson() {
+    Map<String, Object?> safeMetadata;
+    try {
+      // metadata es flexible por contrato; si trae algo no serializable no
+      // puede impedir que el evento se guarde.
+      jsonEncode(metadata);
+      safeMetadata = metadata;
+    } catch (_) {
+      safeMetadata = const <String, Object?>{};
+    }
+
+    return <String, dynamic>{
+      'type': type.name,
+      'severity': severity.name,
+      'title': title,
+      'message': message,
+      'timestamp': timestamp.toUtc().toIso8601String(),
+      'deviceId': deviceId,
+      'metricKey': metricKey,
+      'seedProfileId': seedProfileId,
+      'seedAlias': seedAlias,
+      'stageKey': stageKey,
+      'stageLabel': stageLabel,
+      'isInformative': isInformative,
+      'isCritical': isCritical,
+      'metadata': safeMetadata,
+    };
+  }
+
+  /// Reconstruye un evento guardado. Devuelve null si la fila es ilegible o
+  /// si el tipo ya no existe en el enum (por ejemplo tras un cambio de
+  /// catálogo): un registro viejo no puede romper la app.
+  static AgronomicEvent? fromJson(Map<String, dynamic> json) {
+    try {
+      return AgronomicEvent(
+        type: AgronomicEventType.values.byName(json['type'] as String),
+        severity: AgronomicEventSeverity.values.byName(
+          json['severity'] as String,
+        ),
+        title: json['title'] as String,
+        message: json['message'] as String,
+        timestamp: DateTime.parse(json['timestamp'] as String),
+        deviceId: json['deviceId'] as String?,
+        metricKey: json['metricKey'] as String?,
+        seedProfileId: json['seedProfileId'] as String?,
+        seedAlias: json['seedAlias'] as String?,
+        stageKey: json['stageKey'] as String?,
+        stageLabel: json['stageLabel'] as String?,
+        isInformative: json['isInformative'] as bool? ?? false,
+        isCritical: json['isCritical'] as bool? ?? false,
+        metadata:
+            (json['metadata'] as Map?)?.cast<String, Object?>() ??
+            const <String, Object?>{},
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 
   bool get isAlertLike =>
       severity == AgronomicEventSeverity.warning ||

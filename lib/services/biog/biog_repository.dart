@@ -36,11 +36,19 @@ abstract class BioGRepository {
   /// Create / register a new device in the user's scope. The legacy
   /// naming (`addFakeDevice`) was kept as an alias for compatibility
   /// during the transition away from the monolithic fake repo.
+  ///
+  /// [hardwareDeviceId] es el UUID que el propio Bio-G declara y con el que
+  /// firma sus filas en `telemetry.device_id`. Cuando llega —de un QR, de un
+  /// anuncio BLE o capturado a mano—, es la identidad real del aparato y debe
+  /// conservarse: sin él, la app genera un UUID en el teléfono que el hardware
+  /// no conoce, y ninguna lectura real llega nunca a coincidir.
   Future<BioGDevice> addDevice({
     String? seedId,
     String? profileId,
     String? locationName,
     String? name,
+    String? hardwareDeviceId,
+    String? deviceModelId,
   });
 
   /// Remove a device from the user's scope.

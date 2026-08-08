@@ -1,5 +1,8 @@
 import 'dart:math' as math;
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/dose_expression.dart';
+import 'package:bio_g/core/agro/soil_reaction.dart';
+import 'package:bio_g/core/agro/tree_restitution_planner.dart';
 import 'package:bio_g/core/agro/chili_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/eggplant_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/garlic_nutrition_modifier.dart';
@@ -129,6 +132,27 @@ class NutrientDoseGuide {
 class FertilizationPlanner {
   FertilizationPlanner._();
 
+  /// Contexto de expresión de la dosis vigente durante una evaluación.
+  ///
+  /// Por qué un campo estático y no un parámetro que baje por las quince
+  /// guías de cultivo: llegar hasta los formateadores exigiría tocar unas
+  /// setenta llamadas, y cada una es una oportunidad de romper algo que hoy
+  /// funciona. Este campo se fija al entrar a [buildGuide] y solo lo leen dos
+  /// funciones privadas, a las que nadie más puede llamar.
+  ///
+  /// Es seguro porque [buildGuide] es síncrono —no tiene un solo `await`— y
+  /// **siempre** reasigna este campo antes de que cualquier formateador
+  /// corra. Aunque una salida temprana lo deje puesto, la siguiente entrada lo
+  /// sobrescribe antes de que alguien pueda leerlo.
+  static DoseContext _ctx = DoseContext.none;
+
+  /// Igual que [_ctx], y por la misma razón: la reacción del suelo, el pH y el
+  /// nutriente que se está evaluando, para que la línea de transparencia pueda
+  /// explicar los ajustes sin que haya que pasarlos por quince guías.
+  static SoilReaction _soilReaction = SoilReaction.unknown;
+  static double? _phReading;
+  static AgroMetricKey _nutrient = AgroMetricKey.n;
+
   // Constantes agronómicas base.
   static const double _densidadAparente = 1.2; // g/cm³
   static const double _profundidadCm = 20.0; // cm
@@ -158,7 +182,26 @@ class FertilizationPlanner {
     String? calendarId,
     StageTargets? targets,
     String? cultivationScaleId,
+    /// Cosecha esperada por árbol, en kg. Solo aplica a perennes.
+    ///
+    /// Cuando llega, los frutales dejan de dar únicamente guía en texto y
+    /// pasan a dar gramos por árbol calculados por restitución. Es opcional a
+    /// propósito: si no llega, el comportamiento es exactamente el de antes.
+    double? kgFruitPerTree,
+    /// Cómo aplica el productor y con qué densidad. Cuando dice fertirriego y
+    /// se conoce la densidad, la dosis se expresa en gramos por planta en vez
+    /// de kg/ha. El número no cambia; cambia cómo se dice.
+    DoseContext doseContext = DoseContext.none,
+    /// pH de la lectura. De aquí sale la reacción del suelo, que desplaza la
+    /// banda de fósforo en suelo calcáreo y dispara el aviso de volatilización
+    /// de urea. Si no llega, no se ajusta nada.
+    double? ph,
   }) {
+    _ctx = doseContext;
+    _phReading = ph;
+    _nutrient = nutrient;
+    final SoilReaction soilReaction = soilReactionFromPh(ph);
+    _soilReaction = soilReaction;
     if (label == NutrientPriorityLabel.unknown ||
         label == NutrientPriorityLabel.noPriority ||
         label == NutrientPriorityLabel.lowPriority) {
@@ -265,55 +308,14 @@ class FertilizationPlanner {
           fertilizerEquivalentEs: modifier.guideCaution(nutrient, stageKey),
         );
       }
-      if (_isPeachTreeCrop(crop)) {
-        return _peachTreeConservativeGuide(
-          nutrient: nutrient,
-          label: label,
-          stageKey: stageKey,
-        );
-      }
-      if (_isWalnutTreeCrop(crop)) {
-        return _walnutTreeConservativeGuide(
-          nutrient: nutrient,
-          label: label,
-          stageKey: stageKey,
-        );
-      }
-      if (_isPistachioTreeCrop(crop)) {
-        return _pistachioTreeConservativeGuide(
-          nutrient: nutrient,
-          label: label,
-          stageKey: stageKey,
-        );
-      }
-      if (_isOrangeTreeCrop(crop)) {
-        return _orangeTreeConservativeGuide(
-          nutrient: nutrient,
-          label: label,
-          stageKey: stageKey,
-        );
-      }
-      if (_isLemonTreeCrop(crop)) {
-        return _lemonTreeConservativeGuide(
-          nutrient: nutrient,
-          label: label,
-          stageKey: stageKey,
-        );
-      }
-      if (_isMangoTreeCrop(crop)) {
-        return _mangoTreeConservativeGuide(
-          nutrient: nutrient,
-          label: label,
-          stageKey: stageKey,
-        );
-      }
-      if (_isAvocadoTreeCrop(crop)) {
-        return _avocadoTreeConservativeGuide(
-          nutrient: nutrient,
-          label: label,
-          stageKey: stageKey,
-        );
-      }
+      final NutrientDoseGuide? treeGuide = _treeGuideFor(
+        crop: crop,
+        nutrient: nutrient,
+        label: label,
+        stageKey: stageKey,
+        kgFruitPerTree: kgFruitPerTree,
+      );
+      if (treeGuide != null) return treeGuide;
       if ((crop == 'barley' || crop == 'cebada') &&
           nutrient == AgroMetricKey.n &&
           _isBarleyMalt(profileId)) {
@@ -328,64 +330,23 @@ class FertilizationPlanner {
       );
     }
 
-    final deficitPpm = _calculateDeficitPpm(nutrient, rawPpm, cropKey, targets);
+    final deficitPpm = _calculateDeficitPpm(
+      nutrient,
+      rawPpm,
+      cropKey,
+      targets,
+      soilReaction,
+    );
     if (deficitPpm == null || deficitPpm < 2.0) return null;
 
-    if (_isPeachTreeCrop(crop)) {
-      return _peachTreeConservativeGuide(
-        nutrient: nutrient,
-        label: label,
-        stageKey: stageKey,
-      );
-    }
-
-    if (_isWalnutTreeCrop(crop)) {
-      return _walnutTreeConservativeGuide(
-        nutrient: nutrient,
-        label: label,
-        stageKey: stageKey,
-      );
-    }
-
-    if (_isPistachioTreeCrop(crop)) {
-      return _pistachioTreeConservativeGuide(
-        nutrient: nutrient,
-        label: label,
-        stageKey: stageKey,
-      );
-    }
-
-    if (_isOrangeTreeCrop(crop)) {
-      return _orangeTreeConservativeGuide(
-        nutrient: nutrient,
-        label: label,
-        stageKey: stageKey,
-      );
-    }
-
-    if (_isLemonTreeCrop(crop)) {
-      return _lemonTreeConservativeGuide(
-        nutrient: nutrient,
-        label: label,
-        stageKey: stageKey,
-      );
-    }
-
-    if (_isMangoTreeCrop(crop)) {
-      return _mangoTreeConservativeGuide(
-        nutrient: nutrient,
-        label: label,
-        stageKey: stageKey,
-      );
-    }
-
-    if (_isAvocadoTreeCrop(crop)) {
-      return _avocadoTreeConservativeGuide(
-        nutrient: nutrient,
-        label: label,
-        stageKey: stageKey,
-      );
-    }
+    final NutrientDoseGuide? treeGuide = _treeGuideFor(
+      crop: crop,
+      nutrient: nutrient,
+      label: label,
+      stageKey: stageKey,
+      kgFruitPerTree: kgFruitPerTree,
+    );
+    if (treeGuide != null) return treeGuide;
 
     if (crop == 'maize' || crop == 'maiz' || crop == 'corn') {
       return _maizeGuide(nutrient, stageKey, deficitPpm, cultivationScaleId);
@@ -507,6 +468,357 @@ class FertilizationPlanner {
     }
 
     return _genericGuide(nutrient, deficitPpm, cultivationScaleId);
+  }
+
+  /// Despacho único de los nueve frutales perennes.
+  ///
+  /// Antes esta cadena estaba escrita dos veces —una en la rama de exceso y
+  /// otra en la de déficit— con nueve bloques idénticos cada una. Unificarla
+  /// no cambia ninguna salida: el orden de evaluación es el mismo y las guías
+  /// son las mismas. Lo que gana es que ahora existe **un solo punto** donde
+  /// engancharle la dosis por restitución, en vez de dieciocho.
+  static NutrientDoseGuide? _treeGuideFor({
+    required String crop,
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required String? stageKey,
+    required double? kgFruitPerTree,
+  }) {
+    final NutrientDoseGuide? base;
+    if (_isAppleTreeCrop(crop)) {
+      base = _appleTreeConservativeGuide(
+          nutrient: nutrient, label: label, stageKey: stageKey);
+    } else if (_isPearTreeCrop(crop)) {
+      base = _pearTreeConservativeGuide(
+          nutrient: nutrient, label: label, stageKey: stageKey);
+    } else if (_isPeachTreeCrop(crop)) {
+      base = _peachTreeConservativeGuide(
+          nutrient: nutrient, label: label, stageKey: stageKey);
+    } else if (_isWalnutTreeCrop(crop)) {
+      base = _walnutTreeConservativeGuide(
+          nutrient: nutrient, label: label, stageKey: stageKey);
+    } else if (_isPistachioTreeCrop(crop)) {
+      base = _pistachioTreeConservativeGuide(
+          nutrient: nutrient, label: label, stageKey: stageKey);
+    } else if (_isOrangeTreeCrop(crop)) {
+      base = _orangeTreeConservativeGuide(
+          nutrient: nutrient, label: label, stageKey: stageKey);
+    } else if (_isLemonTreeCrop(crop)) {
+      base = _lemonTreeConservativeGuide(
+          nutrient: nutrient, label: label, stageKey: stageKey);
+    } else if (_isMangoTreeCrop(crop)) {
+      base = _mangoTreeConservativeGuide(
+          nutrient: nutrient, label: label, stageKey: stageKey);
+    } else if (_isAvocadoTreeCrop(crop)) {
+      base = _avocadoTreeConservativeGuide(
+          nutrient: nutrient, label: label, stageKey: stageKey);
+    } else {
+      base = null;
+    }
+    if (base == null) return null;
+
+    return _withRestitutionDose(
+      base,
+      crop: crop,
+      nutrient: nutrient,
+      label: label,
+      stageKey: stageKey,
+      kgFruitPerTree: kgFruitPerTree,
+    );
+  }
+
+  /// Le agrega a la guía del árbol la dosis en gramos por árbol.
+  ///
+  /// Si falta cualquier pieza —la cosecha esperada, el coeficiente del
+  /// cultivo, el nivel de suelo— devuelve la guía tal cual llegó. El texto
+  /// cualitativo nunca se pierde: la dosis se **suma**, no reemplaza.
+  ///
+  /// Y no se emite en cualquier momento: si la etapa no es ventana de
+  /// aplicación para ese nutriente, se calla el número y explica por qué.
+  /// La curva de absorción dice cuándo la planta lo consume, no cuándo hay
+  /// que aplicarlo.
+  static NutrientDoseGuide _withRestitutionDose(
+    NutrientDoseGuide base, {
+    required String crop,
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required String? stageKey,
+    required double? kgFruitPerTree,
+  }) {
+    final SoilSupplyLevel? soil =
+        TreeRestitutionPlanner.soilLevelFor(label);
+    final TreeRestitutionResult? r = TreeRestitutionPlanner.compute(
+      nutrient: nutrient,
+      cropKey: crop,
+      kgFruitPerTree: kgFruitPerTree,
+      soilLevel: soil,
+    );
+    if (r == null) return base;
+
+    final String? veto = _treeApplicationVetoEs(nutrient, stageKey);
+    if (veto != null) {
+      return NutrientDoseGuide(
+        doseGuideEs: '${base.doseGuideEs} $veto',
+        fertilizerEquivalentEs: base.fertilizerEquivalentEs,
+        requiresConfirmation: true,
+      );
+    }
+
+    final int puro =
+        TreeRestitutionPlanner.roundForDisplay(r.gramsPerTreeNutrient);
+    final int comercial =
+        TreeRestitutionPlanner.roundForDisplay(r.gramsPerTreeCommercial);
+
+    return NutrientDoseGuide(
+      doseGuideEs:
+          '${base.doseGuideEs} Como referencia de cantidad: unos $puro g por '
+          'árbol de nutriente puro, equivalentes a $comercial g de '
+          '${r.commercialSourceEs}.',
+      fertilizerEquivalentEs:
+          '${base.fertilizerEquivalentEs ?? ''} ${r.transparencyEs}'.trim(),
+      requiresConfirmation: true,
+    );
+  }
+
+  /// Etapas en que aplicar al suelo es tirar el dinero, o peor.
+  ///
+  /// Esto no sale de la curva de absorción sino de la de **aplicación**, que
+  /// es otra cosa. El árbol perenne vive de reservas en madera y raíz durante
+  /// reposo, brotación y floración: en manzano el 87 % del nitrógeno del
+  /// crecimiento nuevo viene de reservas, y en naranjo maduro alrededor del
+  /// 80 %. La raíz ni siquiera está absorbiendo — a 8 °C de temperatura de
+  /// suelo no se detecta absorción hasta 21 días **después** de la brotación.
+  /// Fertilizar al suelo en floración es pagar por algo que el árbol no puede
+  /// tomar.
+  ///
+  /// Y cerca de la cosecha el nitrógeno no solo se desperdicia: retrasa la
+  /// madurez, apaga el color y ablanda el fruto.
+  static String? _treeApplicationVetoEs(
+    AgroMetricKey nutrient,
+    String? stageKey,
+  ) {
+    final String stage = (stageKey ?? '').trim().toLowerCase();
+    if (stage.isEmpty) return null;
+
+    if (nutrient == AgroMetricKey.n) {
+      if (stage.contains('dormancy')) {
+        return 'No se pone número de dosis en reposo: la raíz no está '
+            'absorbiendo y el nitrógeno se lava antes de que sirva.';
+      }
+      if (stage.contains('budbreak') || stage.contains('flower')) {
+        return 'No se pone número de dosis aquí: en brotación y floración el '
+            'árbol vive de las reservas que cargó el ciclo pasado, no de lo '
+            'que se aplique hoy. La ventana buena abre unas semanas después '
+            'de la floración, cuando la raíz vuelve a absorber.';
+      }
+      if (stage.contains('harvest_maturity')) {
+        return 'No se pone número de dosis tan cerca del corte: el nitrógeno '
+            'tardío retrasa la madurez, apaga el color y ablanda el fruto.';
+      }
+    }
+
+    if (nutrient == AgroMetricKey.p && stage.contains('dormancy')) {
+      return 'No se pone número de dosis en reposo: el fósforo se mueve '
+          'milímetros al año en el suelo y necesita raíz activa que lo alcance.';
+    }
+
+    return null;
+  }
+
+  static bool _isAppleTreeCrop(String crop) {
+    return crop == 'apple_tree' ||
+        crop == 'crop_apple_tree' ||
+        crop == 'appletree' ||
+        crop == 'apple' ||
+        crop == 'manzano' ||
+        crop == 'manzana' ||
+        crop == 'manzanos';
+  }
+
+  /// Guia conservadora del manzano.
+  ///
+  /// Manzano y pera eran los dos unicos frutales de `_isFruitTreeCrop` sin
+  /// patron propio en este planner: caian al generico y recibian una dosis en
+  /// kg/ha de campo abierto. Un manzano no se fertiliza por hectarea de suelo
+  /// removido a 20 cm, asi que ese numero no significaba nada util para el
+  /// productor. El resto del sistema ya los trataba como arboles —tienen
+  /// catalogo, motor de score, modificador de nutricion y recomendacion
+  /// practica propios—; solo faltaba aqui.
+  ///
+  /// Reglas del doc 05 §11-§13, las mismas que ya aplica el motor de
+  /// recomendacion: "mas N no es mas fruta"; el K manda desde cuajado (calibre,
+  /// azucar, firmeza) cuidando el balance con Ca/Mg; el P pesa en raiz,
+  /// brotacion y floracion, y en pH alto el problema suele ser disponibilidad,
+  /// no cantidad.
+  static NutrientDoseGuide _appleTreeConservativeGuide({
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required String? stageKey,
+  }) {
+    final bool isHigh =
+        label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation;
+    final nutrientName = switch (nutrient) {
+      AgroMetricKey.n => 'nitrógeno',
+      AgroMetricKey.p => 'fósforo',
+      AgroMetricKey.k => 'potasio',
+      _ => 'nutriente',
+    };
+    final opening = isHigh
+        ? '$nutrientName alto en manzano. BioG detecta más $nutrientName del necesario para esta etapa.'
+        : '$nutrientName bajo en manzano. BioG detecta menos $nutrientName del que pide esta etapa.';
+
+    return NutrientDoseGuide(
+      doseGuideEs:
+          '$opening ${_appleTreeNutrientGuide(nutrient, isHigh: isHigh)} ${_appleTreeStageGuide(stageKey)}',
+      fertilizerEquivalentEs:
+          'Actúa con cuidado: evita fertilizar fuerte si el suelo está muy seco, encharcado, frío o con sales altas. El calcio es contexto clave del manzano (firmeza y bitter pit) pero no lo mide este sensor. Si la lectura se repite varios días, valida con análisis de suelo y hoja.',
+      requiresConfirmation: true,
+    );
+  }
+
+  static String _appleTreeNutrientGuide(
+    AgroMetricKey nutrient, {
+    required bool isHigh,
+  }) {
+    if (isHigh) {
+      return switch (nutrient) {
+        AgroMetricKey.n =>
+          'No apliques más nitrógeno por ahora: en manzano más N no es más fruta; empuja follaje, retrasa color y baja firmeza.',
+        AgroMetricKey.p =>
+          'Pausa fósforo extra: más P no mejora la manzana, puede bloquear otros nutrientes y no baja rápido.',
+        AgroMetricKey.k =>
+          'No subas más potasio por ahora: demasiado K desbalancea calcio y magnesio, sube sales y puede castigar firmeza.',
+        _ => 'Pausa este nutriente y sigue la tendencia de BioG.',
+      };
+    }
+    return switch (nutrient) {
+      AgroMetricKey.n =>
+        'Corrige N de forma ligera si el árbol se ve débil; evita pasarte cerca de cosecha para no apagar color ni ablandar la manzana.',
+      AgroMetricKey.p =>
+        'Corrige P con mesura, sobre todo en raíz, brotación y floración; si el suelo está frío o seco, primero empareja la humedad para que lo tome.',
+      AgroMetricKey.k =>
+        'Refuerza K de forma gradual con riego parejo: desde cuajado ayuda a calibre, azúcar y firmeza.',
+      _ => 'Ajusta este nutriente de forma gradual y revisa la respuesta del árbol.',
+    };
+  }
+
+  static String _appleTreeStageGuide(String? stageKey) {
+    final stage = (stageKey ?? '').trim().toLowerCase();
+    if (stage.contains('post_harvest')) {
+      return 'En postcosecha, solo corrige si el árbol sigue con hoja activa y riego parejo: esa hoja carga las reservas de la próxima floración. No metas N si ya va a reposo.';
+    }
+    if (stage.contains('fruit_fill') ||
+        stage.contains('fruit_set') ||
+        stage.contains('harvest_maturity')) {
+      return 'En cuajado, llenado o madurez mandan el potasio y el riego parejo; evita N tardío que retrase color y ablande la manzana.';
+    }
+    if (stage.contains('dormancy')) {
+      return 'En reposo el manzano está sin hoja: no es momento de empujar NPK. Cuida raíz, humedad y sales, y deja la corrección para brotación.';
+    }
+    if (stage.contains('root') ||
+        stage.contains('planting') ||
+        stage.contains('budbreak') ||
+        stage.contains('flower')) {
+      return 'En raíz, brotación y floración corrige poco a poco y cuida que el suelo no esté frío, seco o encharcado.';
+    }
+    return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
+  }
+
+  static bool _isPearTreeCrop(String crop) {
+    return crop == 'pear_tree' ||
+        crop == 'crop_pear_tree' ||
+        crop == 'peartree' ||
+        crop == 'pear' ||
+        crop == 'pera' ||
+        crop == 'peral' ||
+        crop == 'peras' ||
+        crop == 'perales';
+  }
+
+  /// Guia conservadora del peral.
+  ///
+  /// Mismo caso que el manzano: tenia catalogo, motor de score y recomendacion
+  /// practica propios, pero la dosis caia al generico de campo abierto.
+  ///
+  /// Reglas del doc 05 §9, §12, §14: "mas N no es mas fruta", y en peral el
+  /// exceso ademas sube el riesgo de fuego bacteriano —el brote tierno es la
+  /// puerta de entrada—, retrasa madurez y baja firmeza. El K es protagonista
+  /// de fruto desde cuajado, cuidando el balance con Ca/Mg (cork spot). El P
+  /// pesa en raiz, brotacion y floracion; en arbol adulto responde poco.
+  static NutrientDoseGuide _pearTreeConservativeGuide({
+    required AgroMetricKey nutrient,
+    required NutrientPriorityLabel label,
+    required String? stageKey,
+  }) {
+    final bool isHigh =
+        label == NutrientPriorityLabel.possibleExcess ||
+        label == NutrientPriorityLabel.reviewAccumulation;
+    final nutrientName = switch (nutrient) {
+      AgroMetricKey.n => 'nitrógeno',
+      AgroMetricKey.p => 'fósforo',
+      AgroMetricKey.k => 'potasio',
+      _ => 'nutriente',
+    };
+    final opening = isHigh
+        ? '$nutrientName alto en peral. BioG detecta más $nutrientName del necesario para esta etapa.'
+        : '$nutrientName bajo en peral. BioG detecta menos $nutrientName del que pide esta etapa.';
+
+    return NutrientDoseGuide(
+      doseGuideEs:
+          '$opening ${_pearTreeNutrientGuide(nutrient, isHigh: isHigh)} ${_pearTreeStageGuide(stageKey)}',
+      fertilizerEquivalentEs:
+          'Actúa con cuidado: evita fertilizar fuerte si el suelo está muy seco, encharcado, frío o con sales altas. En peral el calcio es contexto clave (firmeza y cork spot) y el brote tierno por exceso de N abre la puerta al fuego bacteriano; este sensor no mide ninguno de los dos. Si la lectura se repite varios días, valida con análisis de suelo y hoja.',
+      requiresConfirmation: true,
+    );
+  }
+
+  static String _pearTreeNutrientGuide(
+    AgroMetricKey nutrient, {
+    required bool isHigh,
+  }) {
+    if (isHigh) {
+      return switch (nutrient) {
+        AgroMetricKey.n =>
+          'No apliques más nitrógeno por ahora: en peral más N no es más fruta; sube el riesgo de fuego bacteriano, retrasa madurez y baja firmeza.',
+        AgroMetricKey.p =>
+          'Pausa fósforo extra: en peral adulto el P responde poco y el exceso puede bloquear otros nutrientes.',
+        AgroMetricKey.k =>
+          'No subas más potasio por ahora: demasiado K desbalancea calcio y magnesio —riesgo de cork spot— y sube sales.',
+        _ => 'Pausa este nutriente y sigue la tendencia de BioG.',
+      };
+    }
+    return switch (nutrient) {
+      AgroMetricKey.n =>
+        'Corrige N de forma ligera si el árbol se ve débil; evita pasarte, sobre todo con brote tierno, que es la puerta del fuego bacteriano.',
+      AgroMetricKey.p =>
+        'Corrige P con mesura en raíz, brotación y floración; en árbol adulto no esperes gran respuesta.',
+      AgroMetricKey.k =>
+        'Refuerza K de forma gradual con riego parejo: desde cuajado manda calibre, firmeza y calidad de la pera.',
+      _ => 'Ajusta este nutriente de forma gradual y revisa la respuesta del árbol.',
+    };
+  }
+
+  static String _pearTreeStageGuide(String? stageKey) {
+    final stage = (stageKey ?? '').trim().toLowerCase();
+    if (stage.contains('post_harvest')) {
+      return 'En postcosecha, solo corrige si el árbol sigue con hoja activa y riego parejo: esa hoja carga las reservas de la próxima floración. No metas N si ya va a reposo.';
+    }
+    if (stage.contains('fruit_fill') ||
+        stage.contains('fruit_set') ||
+        stage.contains('harvest_maturity')) {
+      return 'En cuajado, llenado o madurez mandan el potasio y el riego parejo; evita N tardío que retrase madurez y ablande la pera.';
+    }
+    if (stage.contains('dormancy')) {
+      return 'En reposo el peral está sin hoja: no es momento de empujar NPK. Cuida raíz, humedad y sales, y deja la corrección para brotación.';
+    }
+    if (stage.contains('root') ||
+        stage.contains('planting') ||
+        stage.contains('budbreak') ||
+        stage.contains('flower')) {
+      return 'En raíz, brotación y floración corrige poco a poco; cuida que el suelo no esté frío, seco o encharcado y no empujes brote tierno de más.';
+    }
+    return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
   }
 
   static bool _isPeachTreeCrop(String crop) {
@@ -1144,14 +1456,16 @@ class FertilizationPlanner {
     AgroMetricKey nutrient,
     double rawPpm,
     String? cropKey,
-    StageTargets? targets,
-  ) {
+    StageTargets? targets, [
+    SoilReaction soilReaction = SoilReaction.unknown,
+  ]) {
     if (targets == null) return null;
 
     final range = NutrientTargetRangeResolver.comparableRange(
       nutrient: nutrient,
       cropKey: cropKey,
       targets: targets,
+      soilReaction: soilReaction,
     );
     if (range == null) return null;
 
@@ -1191,6 +1505,15 @@ class FertilizationPlanner {
         return '${gM2Puros.toStringAsFixed(1)} g/m² de $nutrientName';
       case _DoseForm.field:
         final kgHaPuros = _kgHaPuro(deficitPpm);
+        // Fertirriego con densidad conocida: el mismo número, dicho por
+        // planta. Si falta cualquiera de las dos cosas, cae al kg/ha de
+        // siempre en vez de inventar una densidad.
+        final String? perPlant = DoseExpression.renderPerPlant(
+          kgPerHectarePure: kgHaPuros,
+          nutrientOrSourceName: nutrientName,
+          ctx: _ctx,
+        );
+        if (perPlant != null) return perPlant;
         return '~${kgHaPuros.round()} kg/ha de $nutrientName';
     }
   }
@@ -1217,8 +1540,15 @@ class FertilizationPlanner {
         final gM2Comercial = (_kgHaPuro(deficitPpm) * 0.1) / leyFertilizante;
         return '${gM2Comercial.toStringAsFixed(1)} g/m² de $sourceName';
       case _DoseForm.field:
-        final kgHaComercial =
-            ((_kgHaPuro(deficitPpm) / leyFertilizante) / 5).round() * 5;
+        final double kgHaComercialExacto =
+            _kgHaPuro(deficitPpm) / leyFertilizante;
+        final String? perPlant = DoseExpression.renderPerPlant(
+          kgPerHectarePure: kgHaComercialExacto,
+          nutrientOrSourceName: sourceName,
+          ctx: _ctx,
+        );
+        if (perPlant != null) return perPlant;
+        final kgHaComercial = (kgHaComercialExacto / 5).round() * 5;
         return '~$kgHaComercial kg/ha de $sourceName';
     }
   }
@@ -1228,7 +1558,47 @@ class FertilizationPlanner {
     final kgHaPuros = _kgHaPuro(deficitPpm);
     final gKgText = gKg < 0.1 ? gKg.toStringAsFixed(3) : gKg.toStringAsFixed(2);
 
-    return 'Déficit estimado: ${deficitPpm.toStringAsFixed(1)} mg/kg (~$gKgText g/kg de suelo; ~${kgHaPuros.round()} kg/ha de nutriente puro con el default BIO-G de 20 cm y 1.2 g/cm³).';
+    final String base =
+        'Déficit estimado: ${deficitPpm.toStringAsFixed(1)} mg/kg (~$gKgText g/kg de suelo; ~${kgHaPuros.round()} kg/ha de nutriente puro con el default BIO-G de 20 cm y 1.2 g/cm³).';
+
+    // Avisos que salen del pH y que hasta ahora no se decían. El productor de
+    // suelo calcáreo necesita los dos: que la meta de fósforo subió, y que la
+    // urea al voleo se le va al aire.
+    final List<String> extras = <String>[
+      if (DoseExpression.transparencyEs(
+            kgPerHectarePure: kgHaPuros,
+            ctx: _ctx,
+          ) !=
+          null)
+        DoseExpression.transparencyEs(
+          kgPerHectarePure: kgHaPuros,
+          ctx: _ctx,
+        )!,
+      if (soilReactionNoteEs(
+            nutrient: _nutrient,
+            reaction: _soilReaction,
+            ph: _phReading,
+          ) !=
+          null)
+        soilReactionNoteEs(
+          nutrient: _nutrient,
+          reaction: _soilReaction,
+          ph: _phReading,
+        )!,
+      if (ureaVolatilizationWarningEs(
+            nutrient: _nutrient,
+            reaction: _soilReaction,
+            ph: _phReading,
+          ) !=
+          null)
+        ureaVolatilizationWarningEs(
+          nutrient: _nutrient,
+          reaction: _soilReaction,
+          ph: _phReading,
+        )!,
+    ];
+
+    return extras.isEmpty ? base : '$base ${extras.join(' ')}';
   }
 
   static String _joinExtra(String base, String extra) => '$base $extra';
@@ -1271,12 +1641,45 @@ class FertilizationPlanner {
           'Nitrógeno puro',
           scale,
         );
+        // El espigamiento NO es ventana de aplicación: es ventana de
+        // demanda, que es otra cosa. Para cuando la milpa espiga ya absorbió
+        // entre el 63 % y el 67 % de su nitrógeno total, y el número de
+        // hileras de grano quedó fijado mucho antes —alrededor de V8—, así
+        // que el techo de rendimiento ya está puesto y no baja ni sube con lo
+        // que se aplique ahora.
+        //
+        // Sigue habiendo respuesta si la carencia es real y severa: Kentucky
+        // recuperó potencial en 8 de 13 sitios aplicando en espigamiento. Pero
+        // Purdue midió que el valor se parte a la mitad —de +80 bu/ac
+        // aplicando en V8 a menos de +40 aplicando en espigamiento— y
+        // Minnesota no encontró ganancia sobre aplicar temprano.
+        //
+        // Por eso aquí se recomienda como **rescate**, no como plan, y se le
+        // dice al agricultor lo que de verdad está comprando.
+        if (_isNitrogenRescueStage(stage)) {
+          return NutrientDoseGuide(
+            doseGuideEs:
+                'La milpa ya está espigando. A esta altura el nitrógeno ya no '
+                'sube el techo de rendimiento —eso se decidió hace semanas—, '
+                'pero si la planta se ve amarilla y la carencia es real, '
+                'aplicar $puroText todavía ayuda a llenar el grano.',
+            fertilizerEquivalentEs: _joinExtra(
+              'Equivale a aplicar $eqUrea. Tómalo como rescate, no como plan: '
+              'vale cerca de la mitad que aplicado en el estirón. El próximo '
+              'ciclo, adelántalo.',
+              bridge,
+            ),
+          );
+        }
         if (isPeakN) {
           return NutrientDoseGuide(
             doseGuideEs:
-                '¡Viene el estirón de la milpa! Aplica $puroText para que la mazorca llene.',
+                '¡Viene el estirón de la milpa! Aplica $puroText ahora para '
+                'que esté disponible cuando la mazorca lo pida.',
             fertilizerEquivalentEs: _joinExtra(
-              'Equivale a aplicar $eqUrea.',
+              'Equivale a aplicar $eqUrea. Esta es la ventana buena: la milpa '
+              'absorbe más de la mitad de su nitrógeno entre el estirón y el '
+              'espigamiento, y eso puede durar apenas 30 días.',
               bridge,
             ),
           );
@@ -3246,6 +3649,16 @@ class FertilizationPlanner {
       stage.contains('emerg') ||
       stage.contains('vegearly') ||
       stage.contains('early');
+
+  /// Espigamiento: ventana de rescate, no de aplicación planificada.
+  ///
+  /// La distinción entre "cuándo lo absorbe la planta" y "cuándo conviene
+  /// aplicarlo" es la médula del asunto. Intagri lo dice sin rodeos: las
+  /// curvas de absorción muestran cuándo la planta EXTRAE el nutriente, no
+  /// cuándo debe aplicarse. Montana State lo formula al derecho: el nutriente
+  /// tiene que estar disponible ANTES del pico de demanda.
+  static bool _isNitrogenRescueStage(String stage) =>
+      stage.contains('tass') || stage.contains('espig');
 
   static bool _isPeakNitrogenStage(String stage) =>
       stage.contains('vegmid') ||

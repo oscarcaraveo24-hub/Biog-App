@@ -534,6 +534,8 @@ class HybridBioGRepository implements BioGRepository {
     String? profileId,
     String? locationName,
     String? name,
+    String? hardwareDeviceId,
+    String? deviceModelId,
   }) async {
     final DateTime now = DateTime.now();
 
@@ -541,7 +543,35 @@ class HybridBioGRepository implements BioGRepository {
     // `BioGDevice.telemetryDeviceId` descarta cualquier otro formato, de modo
     // que un id de texto produce un dispositivo que ni sube a la nube ni puede
     // leer telemetría. Ver lib/core/util/uuid_v4.dart.
-    final String id = generateUuidV4();
+    //
+    // Si el aparato declaró su propia identidad, ESA manda. Generar un UUID en
+    // el teléfono e ignorar el que trae el hardware era la razón de fondo por
+    // la que emparejar un Bio-G real no podía funcionar: la app consultaba
+    // `telemetry` con un id que el dispositivo nunca había escrito.
+    final String? declaredId = _normalizedHardwareId(hardwareDeviceId);
+
+    // Si ese Bio-G ya está dado de alta, se activa el existente en vez de
+    // crear un duplicado.
+    //
+    // Sin esta comprobación, volver a escanear el mismo QR añadía una segunda
+    // entrada a `_devices` (que hace `add()` a ciegas) y el `upsert` con
+    // `onConflict: 'id'` machacaba en Supabase el nombre, la ubicación y el
+    // cultivo del dispositivo original.
+    if (declaredId != null) {
+      // Comparación insensible a mayúsculas: `_normalizedHardwareId` baja el
+      // id a minúsculas, pero un UUID guardado en mayúsculas (llegado de
+      // fuera) no coincidiría y se duplicaría el dispositivo.
+      final int existingIndex = _devices.indexWhere(
+        (d) => d.id.toLowerCase() == declaredId,
+      );
+      if (existingIndex >= 0) {
+        final BioGDevice existing = _devices[existingIndex];
+        await setActiveDevice(existing.id);
+        return existing;
+      }
+    }
+
+    final String id = declaredId ?? generateUuidV4();
 
     final BioGDevice device = BioGDevice(
       id: id,
@@ -549,6 +579,10 @@ class HybridBioGRepository implements BioGRepository {
       locationName: locationName ?? 'Parcela',
       seedId: seedId ?? 'UNCONFIGURED',
       profileId: profileId ?? 'unconfigured',
+      deviceModelId: deviceModelId,
+      // Redundante cuando `id` ya es el del hardware, pero deja constancia
+      // explícita de que la identidad vino del aparato y no del teléfono.
+      telemetryDeviceIdOverride: declaredId,
       status: BioGDeviceStatus.active,
       createdAt: now,
     );
@@ -564,6 +598,18 @@ class HybridBioGRepository implements BioGRepository {
     }
 
     return device;
+  }
+
+  /// Devuelve el id del hardware solo si es un UUID válido.
+  ///
+  /// Un QR con texto libre (`BIOG-QR-001`) no sirve como `telemetry.device_id`
+  /// y se descarta aquí, para que el fallo sea "no se reconoció la identidad"
+  /// y no una fila que jamás encontrará su telemetría.
+  static String? _normalizedHardwareId(String? raw) {
+    final trimmed = raw?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    if (!BioGDevice.isTelemetryDeviceId(trimmed)) return null;
+    return trimmed.toLowerCase();
   }
 
   @override

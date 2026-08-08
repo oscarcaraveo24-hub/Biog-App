@@ -60,11 +60,18 @@ class AddBioGScreen extends StatelessWidget {
     final store = BioGScope.of(context);
 
     try {
+      // El id escaneado se descartaba: se leía, se mostraba en el diálogo de
+      // confirmación y no se pasaba a `addDevice`. Ahora viaja hasta el
+      // repositorio, que lo adopta como identidad real si es un UUID válido.
       final created = await store.addDevice(
         name: name.isEmpty ? 'Bio-G' : name,
         locationName: _defaultLocationNameFromName(name),
         seedId: null,
         profileId: null,
+        hardwareDeviceId: incomingId,
+        deviceModelId: (payload['model'] ?? payload['deviceModelId'])
+            ?.toString()
+            .trim(),
       );
 
       if (!context.mounted) return;
@@ -159,6 +166,9 @@ class AddBioGScreen extends StatelessWidget {
                             );
 
                         if (res == null) return;
+                        // El `context` no puede cruzar el await anterior sin
+                        // comprobar que el widget sigue montado.
+                        if (!context.mounted) return;
                         await _confirmAndAdd(context, payload: res);
                       },
                     ),
@@ -180,6 +190,9 @@ class AddBioGScreen extends StatelessWidget {
                             );
 
                         if (res == null) return;
+                        // El `context` no puede cruzar el await anterior sin
+                        // comprobar que el widget sigue montado.
+                        if (!context.mounted) return;
                         await _confirmAndAdd(context, payload: res);
                       },
                     ),
