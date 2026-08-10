@@ -42,8 +42,8 @@ const List<CropProfileEntry> aloeProfileEntries = <CropProfileEntry>[
     label: 'Sábila de hoja ancha',
     cropId: kCropAloe,
     subtitle:
-        'La común: roseta desde el centro, hoja gruesa con gel. Exige sustrato '
-        'muy drenante; el agua estancada daña el cuello.',
+        'La más común, de roseta abierta y hoja gruesa con gel, pide sustrato '
+        'muy drenante (sábila, aloe vera)',
     aliases: <String>[
       'SA-01',
       'SA01',
@@ -73,9 +73,8 @@ const List<CropProfileEntry> aloeProfileEntries = <CropProfileEntry>[
     label: 'Sábila pequeña de maceta',
     cropId: kCropAloe,
     subtitle:
-        'Roseta chica que hace matita; aguanta luz clara sin sol fuerte. Poco '
-        'volumen de raíz: una maceta grande seca lento y el cuello se queda '
-        'húmedo.',
+        'Roseta chica que hace matita y vive bien con luz clara sin sol fuerte '
+        '(sábila enana, de maceta)',
     aliases: <String>[
       'SA-02',
       'SA02',
@@ -108,9 +107,8 @@ const List<CropProfileEntry> aloeProfileEntries = <CropProfileEntry>[
     label: 'Sábila arbustiva o de candelabro',
     cropId: kCropAloe,
     subtitle:
-        'Hace tronco y ramas; parece un arbusto de varios brazos. Con el porte '
-        'ganan importancia el anclaje y la estabilidad; el drenaje sigue '
-        'mandando.',
+        'Hace tronco y ramas como arbusto de varios brazos, pide buen anclaje '
+        'y drenaje (sábila de candelabro)',
     aliases: <String>[
       'SA-03',
       'SA03',
@@ -133,8 +131,8 @@ const List<CropProfileEntry> aloeProfileEntries = <CropProfileEntry>[
     label: 'Sábila moteada de jardín',
     cropId: kCropAloe,
     subtitle:
-        'Hoja ancha con manchas; se llena de hijos y forma mata. Uso de '
-        'paisaje; forma colonias densas más rápido que la de hoja ancha.',
+        'Hoja ancha con manchas que se llena de hijos y forma mata densa de '
+        'jardín (sábila jabonera, moteada)',
     aliases: <String>[
       'SA-04',
       'SA04',
@@ -161,8 +159,8 @@ const List<CropProfileEntry> aloeProfileEntries = <CropProfileEntry>[
     label: 'No sé / sábila general',
     cropId: kCropAloe,
     subtitle:
-        'Perfil general y migrable: usaremos un manejo prudente y podrás elegir '
-        'su forma después sin perder la fecha ni el historial.',
+        'Perfil general y migrable de la sábila con manejo prudente, precisas '
+        'su forma después sin perder historial',
     aliases: <String>[
       'SA-SKIP',
       'SA_SKIP',

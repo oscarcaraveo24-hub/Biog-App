@@ -217,6 +217,10 @@ void main() {
         'nopal morado',
         'nopal criollo',
         'nopal sin espinas',
+        // "Manso" es la forma popular de decir "sin espinas" (manso ↔ bravo).
+        // Estaba como alias de NO-02 mientras "sin espinas" ya se trataba como
+        // ambiguo: la misma palabra, dos tratamientos distintos.
+        'nopal manso',
       ]) {
         expect(
           def.resolveProfile(profileId: alias)?.id,
@@ -224,6 +228,16 @@ void main() {
           reason: '"$alias" describe contexto o color, no arquitectura',
         );
       }
+    });
+
+    test('un alias de finalidad productiva no decide perfil', () {
+      // "De huerta" declara para qué se quiere la planta, no cómo crece. La
+      // Guía de Ornamentales §51 deja fuera de alcance la producción de tuna y
+      // penca, así que esto debe disparar la pregunta de propósito y caer en
+      // el perfil general, no elegir arquitectura por su cuenta.
+      final def = NopalCropDefinition();
+      expect(isNopalProductiveIntentAlias('nopal de huerta'), isTrue);
+      expect(def.resolveProfile(profileId: 'nopal de huerta')?.id, kNopalSkip);
     });
 
     test('un alias de forma sí decide perfil', () {

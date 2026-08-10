@@ -308,7 +308,11 @@ class _HistoryEventsListState extends State<HistoryEventsList> {
     if (event.type == AgronomicEventType.combinedStress) return 'Tendencia';
     if (event.type == AgronomicEventType.recovery) return 'Resumen';
 
-    final dt = event.timestamp;
+    // `.toLocal()`: los eventos se guardan y se comparan en UTC, pero aquí se
+    // pinta la hora que el agricultor lee en su reloj. Las gráficas de esta
+    // misma pantalla ya convertían (`history_series_builder`), así que el eje
+    // de tiempo y la lista de eventos iban desfasados seis horas en México.
+    final dt = event.timestamp.toLocal();
     final now = DateTime.now();
     final diff = now.difference(dt);
 

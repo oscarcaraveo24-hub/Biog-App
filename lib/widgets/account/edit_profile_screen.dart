@@ -340,6 +340,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // Sin esto, la cola de subidas pendientes sobrevivía al borrado y el
       // mensaje "borramos todos los datos de este teléfono" era inexacto.
       ingestService: store.telemetryIngest,
+      // La instancia viva de la cola de sincronización: su `clear` se serializa
+      // con los drenados en vuelo, cosa que borrar la clave a mano no hace.
+      clearPendingSync: store.clearPendingSync,
     );
 
     late final AccountDeletionResult result;

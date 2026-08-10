@@ -1,6 +1,7 @@
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
 import 'package:bio_g/core/agro/event_engine_rules_resolver.dart';
+import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -125,6 +126,9 @@ class AgroEventInputFactory {
     Map<String, AgroBand> previousBands = const <String, AgroBand>{},
     String? previousStageKey,
     String? previousStageLabel,
+    // Autoridad unica del riego. Opcional a proposito: quien no la tenga
+    // simplemente no obtiene eventos de riego, en vez de deducirlos mal.
+    IrrigationDecision? irrigationDecision,
   }) {
     final String? cropId = cropContext?.cropId ?? seed?.cropKey;
 
@@ -179,6 +183,7 @@ class AgroEventInputFactory {
         cropId: cropId,
         stageKey: stageResult?.stageKey,
       ),
+      irrigationDecision: irrigationDecision,
     );
   }
 }

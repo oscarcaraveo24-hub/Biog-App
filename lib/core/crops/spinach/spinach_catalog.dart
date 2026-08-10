@@ -10,7 +10,8 @@ const List<CropProfileEntry> spinachProfileEntries = [
     label: 'SP-GEN - Espinaca generica / no se todavia',
     cropId: kCropSpinach,
     subtitle:
-        'Perfil conservador y migrable: puedes cambiar el tipo despues sin perder historial',
+        'Perfil general de espinaca, conservador y migrable — cambias el tipo '
+        'después sin perder historial',
     aliases: [
       'SP-GEN',
       'SPGEN',
@@ -28,7 +29,9 @@ const List<CropProfileEntry> spinachProfileEntries = [
     id: kSp01,
     label: 'SP-01 - Saboya / semi-saboya verano-calor',
     cropId: kCropSpinach,
-    subtitle: 'Hoja rizada fresca con tolerancia relativa a calor',
+    subtitle:
+        'Hoja rizada o semirrizada con tolerancia relativa al calor, para '
+        'siembras de verano',
     aliases: [
       'SP-01',
       'SP01',
@@ -43,7 +46,9 @@ const List<CropProfileEntry> spinachProfileEntries = [
     id: kSp02,
     label: 'SP-02 - Saboya / semi-saboya invierno',
     cropId: kCropSpinach,
-    subtitle: 'Hoja rizada para clima fresco y dias cortos',
+    subtitle:
+        'Hoja rizada o semirrizada para clima fresco y días cortos, propia de '
+        'siembras de invierno',
     aliases: [
       'SP-02',
       'SP02',
@@ -58,7 +63,9 @@ const List<CropProfileEntry> spinachProfileEntries = [
     id: kSp03,
     label: 'SP-03 - Lisa / baby leaf / premium',
     cropId: kCropSpinach,
-    subtitle: 'Hoja lisa tierna, baby leaf o mercado premium',
+    subtitle:
+        'Hoja lisa y tierna que se corta chica para baby leaf y bolsa de '
+        'mercado premium',
     aliases: [
       'SP-03',
       'SP03',
@@ -73,7 +80,9 @@ const List<CropProfileEntry> spinachProfileEntries = [
     id: kSp04,
     label: 'SP-04 - Oriental / manojo erecta',
     cropId: kCropSpinach,
-    subtitle: 'Hoja erecta para manojo y corte fresco',
+    subtitle:
+        'Hoja erecta y de tallo largo, fácil de amarrar para venta en manojo y '
+        'corte en fresco',
     aliases: [
       'SP-04',
       'SP04',
@@ -88,7 +97,9 @@ const List<CropProfileEntry> spinachProfileEntries = [
     id: kSp05,
     label: 'SP-05 - Proceso / industria',
     cropId: kCropSpinach,
-    subtitle: 'Biomasa comercial uniforme para proceso',
+    subtitle:
+        'Planta pareja y de buena biomasa, cortada para proceso e industria '
+        'más que para fresco',
     aliases: [
       'SP-05',
       'SP05',
@@ -105,7 +116,9 @@ const List<CropVarietyEntry> spinachVarieties = [
     id: 'spinach_generic',
     label: 'No se / Otra espinaca',
     cropId: kCropSpinach,
-    subtitle: 'Perfil seguro y migrable: ajusta despues sin reiniciar',
+    subtitle:
+        'Perfil general de espinaca, seguro y migrable — lo ajustas después '
+        'sin reiniciar tu historial',
     defaultProfileId: kSpGen,
     aliases: [
       'Espinaca',
@@ -124,7 +137,9 @@ const List<CropVarietyEntry> spinachVarieties = [
     id: 'spinach_savoy_summer',
     label: 'Saboya / semi-saboya verano-calor',
     cropId: kCropSpinach,
-    subtitle: 'Tipo - hoja rizada para clima con mas calor',
+    subtitle:
+        'Tipo de hoja rizada o semirrizada, pensada para siembras en clima con '
+        'más calor',
     defaultProfileId: kSp01,
     aliases: [
       'Saboya verano',
@@ -140,7 +155,9 @@ const List<CropVarietyEntry> spinachVarieties = [
     id: 'spinach_savoy_winter',
     label: 'Saboya / semi-saboya invierno',
     cropId: kCropSpinach,
-    subtitle: 'Tipo - hoja rizada para clima fresco y dias cortos',
+    subtitle:
+        'Tipo de hoja rizada o semirrizada para clima fresco y días cortos de '
+        'invierno',
     defaultProfileId: kSp02,
     aliases: [
       'Saboya invierno',
@@ -156,7 +173,9 @@ const List<CropVarietyEntry> spinachVarieties = [
     id: 'spinach_smooth_baby',
     label: 'Lisa / baby leaf / premium',
     cropId: kCropSpinach,
-    subtitle: 'Tipo - hoja lisa tierna de alta sensibilidad visual',
+    subtitle:
+        'Tipo de hoja lisa, tierna y muy vistosa, para corte chico de baby '
+        'leaf y bolsa premium',
     defaultProfileId: kSp03,
     aliases: [
       'Lisa',
@@ -173,7 +192,9 @@ const List<CropVarietyEntry> spinachVarieties = [
     id: 'spinach_oriental_bunching',
     label: 'Oriental / manojo erecta',
     cropId: kCropSpinach,
-    subtitle: 'Tipo - hoja erecta para manojo',
+    subtitle:
+        'Tipo de hoja erecta y tallo largo, fácil de amarrar para venderse en '
+        'manojo',
     defaultProfileId: kSp04,
     aliases: [
       'Oriental',
@@ -190,7 +211,9 @@ const List<CropVarietyEntry> spinachVarieties = [
     id: 'spinach_processing',
     label: 'Proceso / industria',
     cropId: kCropSpinach,
-    subtitle: 'Tipo - hoja para proceso e industria',
+    subtitle:
+        'Tipo de planta pareja y de buena biomasa, cortada para proceso e '
+        'industria',
     defaultProfileId: kSp05,
     aliases: [
       'Proceso',

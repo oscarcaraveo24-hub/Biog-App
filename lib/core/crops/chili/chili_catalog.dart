@@ -9,49 +9,63 @@ const List<CropProfileEntry> chiliProfileEntries = [
     id: kChGen,
     label: 'CH-GEN - Chile generico',
     cropId: kCropChili,
-    subtitle: 'Perfil conservador, migrable y recomendado si no sabes el tipo',
+    subtitle:
+        'Perfil de chile conservador y migrable: puedes precisar el tipo '
+        'después sin perder tu historial',
     aliases: ['CH-GEN', 'CHGEN', 'Generico', 'Generic', 'No se', 'Otro chile'],
   ),
   CropProfileEntry(
     id: kCh01,
     label: 'CH-01 - Jalapeno',
     cropId: kCropChili,
-    subtitle: 'Intermedio - fresco, proceso o chipotle',
+    subtitle:
+        'Chile jalapeño de ciclo intermedio, para venta en fresco, encurtido o '
+        'secado como chipotle',
     aliases: ['CH-01', 'CH01', 'Jalapeno', 'Chipotle'],
   ),
   CropProfileEntry(
     id: kCh02,
     label: 'CH-02 - Serrano',
     cropId: kCropChili,
-    subtitle: 'Intermedio - alta carga y cosecha continua',
+    subtitle:
+        'Chile serrano de ciclo intermedio, con mucha carga de fruto y corte '
+        'continuo para salsa verde',
     aliases: ['CH-02', 'CH02', 'Serrano'],
   ),
   CropProfileEntry(
     id: kCh03,
     label: 'CH-03 - Poblano / Ancho',
     cropId: kCropChili,
-    subtitle: 'Intermedio-largo - fresco como poblano, seco como ancho',
+    subtitle:
+        'Chile grande de ciclo intermedio largo para relleno, en fresco es '
+        'poblano y ya seco es ancho',
     aliases: ['CH-03', 'CH03', 'Poblano', 'Ancho', 'Mulato'],
   ),
   CropProfileEntry(
     id: kCh04,
     label: 'CH-04 - Chilaca / Pasilla',
     cropId: kCropChili,
-    subtitle: 'Intermedio-largo - fruto largo orientado a secado',
+    subtitle:
+        'Chile de fruto largo y oscuro, chilaca en fresco y pasilla cuando se '
+        'seca, para mole y salsa',
     aliases: ['CH-04', 'CH04', 'Chilaca', 'Pasilla'],
   ),
   CropProfileEntry(
     id: kCh05,
     label: 'CH-05 - Mirasol / Guajillo',
     cropId: kCropChili,
-    subtitle: 'Intermedio-largo - mercado seco principal',
+    subtitle:
+        'Chile mirasol de ciclo intermedio largo que se vende sobre todo seco, '
+        'ya como guajillo',
     aliases: ['CH-05', 'CH05', 'Mirasol', 'Guajillo'],
   ),
   CropProfileEntry(
     id: kCh06,
     label: 'CH-06 - De arbol / Puya',
     cropId: kCropChili,
-    subtitle: 'Intermedio - fruto pequeno, alta densidad, uso seco',
+    subtitle:
+        'Chile de fruto chico y delgado, se siembra bien tupido y se vende '
+        'seco para salsa picante',
     aliases: [
       'CH-06',
       'CH06',
@@ -67,14 +81,18 @@ const List<CropProfileEntry> chiliProfileEntries = [
     id: kCh07,
     label: 'CH-07 - Habanero',
     cropId: kCropChili,
-    subtitle: 'Capsicum chinense - mas termico y sensible',
+    subtitle:
+        'Chile habanero, especie aparte que pide más calor y es más delicada '
+        'de llevar en campo',
     aliases: ['CH-07', 'CH07', 'Habanero', 'Capsicum chinense'],
   ),
   CropProfileEntry(
     id: kCh08,
     label: 'CH-08 - Pimiento morron / Chile gordo',
     cropId: kCropChili,
-    subtitle: 'Fruto grande y alto potencial productivo',
+    subtitle:
+        'Pimiento morrón de fruto grande, carnoso y sin picor, también '
+        'conocido como chile gordo',
     aliases: ['CH-08', 'CH08', 'Pimiento', 'Morron', 'Chile gordo'],
   ),
 ];
@@ -84,7 +102,9 @@ const List<CropVarietyEntry> chiliVarieties = [
     id: 'chili_jalapeno',
     label: 'Jalapeno',
     cropId: kCropChili,
-    subtitle: 'Tipo - fresco / proceso / chipotle',
+    subtitle:
+        'Chile verde grueso de punta redondeada, se come fresco, en escabeche '
+        'o seco como chipotle',
     defaultProfileId: kCh01,
     aliases: ['Jalapeno', 'Chipotle', 'CH-01', 'CH01'],
   ),
@@ -92,7 +112,9 @@ const List<CropVarietyEntry> chiliVarieties = [
     id: 'chili_serrano',
     label: 'Serrano',
     cropId: kCropChili,
-    subtitle: 'Tipo - alta carga y cosecha continua',
+    subtitle:
+        'Chile verde chico y delgado, de corte continuo, muy usado en salsa '
+        'verde y pico de gallo',
     defaultProfileId: kCh02,
     aliases: ['Serrano', 'CH-02', 'CH02'],
   ),
@@ -100,7 +122,9 @@ const List<CropVarietyEntry> chiliVarieties = [
     id: 'chili_poblano_ancho',
     label: 'Poblano / Ancho',
     cropId: kCropChili,
-    subtitle: 'Tipo - fresco o seco',
+    subtitle:
+        'Chile grande de pared gruesa para relleno en fresco, ya seco se '
+        'conoce como ancho o mulato',
     defaultProfileId: kCh03,
     aliases: ['Poblano', 'Ancho', 'Mulato', 'CH-03', 'CH03'],
   ),
@@ -108,7 +132,9 @@ const List<CropVarietyEntry> chiliVarieties = [
     id: 'chili_chilaca_pasilla',
     label: 'Chilaca / Pasilla',
     cropId: kCropChili,
-    subtitle: 'Tipo - fruto largo orientado a secado',
+    subtitle:
+        'Chile largo, delgado y oscuro, chilaca en fresco y pasilla ya seco, '
+        'base de moles y salsas',
     defaultProfileId: kCh04,
     aliases: ['Chilaca', 'Pasilla', 'CH-04', 'CH04'],
   ),
@@ -116,7 +142,9 @@ const List<CropVarietyEntry> chiliVarieties = [
     id: 'chili_guajillo_mirasol',
     label: 'Guajillo / Mirasol',
     cropId: kCropChili,
-    subtitle: 'Tipo - seco principalmente',
+    subtitle:
+        'Chile mirasol que se cosecha para secar y venderse como guajillo en '
+        'adobos, salsas y moles',
     defaultProfileId: kCh05,
     aliases: ['Guajillo', 'Mirasol', 'CH-05', 'CH05'],
   ),
@@ -124,7 +152,9 @@ const List<CropVarietyEntry> chiliVarieties = [
     id: 'chili_arbol_puya',
     label: 'De arbol / Puya',
     cropId: kCropChili,
-    subtitle: 'Tipo - fruto pequeno y alta densidad',
+    subtitle:
+        'Chile chico, delgado y picoso, se siembra tupido y se vende seco como '
+        'de árbol o puya',
     defaultProfileId: kCh06,
     aliases: [
       'De arbol',
@@ -141,7 +171,9 @@ const List<CropVarietyEntry> chiliVarieties = [
     id: 'chili_habanero',
     label: 'Habanero',
     cropId: kCropChili,
-    subtitle: 'Tipo - Capsicum chinense, mas termico',
+    subtitle:
+        'Chile de fruto chico y arrugado, muy picoso, especie aparte que pide '
+        'más calor y cuidado',
     defaultProfileId: kCh07,
     aliases: ['Habanero', 'Capsicum chinense', 'CH-07', 'CH07'],
   ),
@@ -149,7 +181,9 @@ const List<CropVarietyEntry> chiliVarieties = [
     id: 'chili_bell_pepper',
     label: 'Pimiento morron / Chile gordo',
     cropId: kCropChili,
-    subtitle: 'Tipo - fruto grande y alto potencial',
+    subtitle:
+        'Pimiento morrón de fruto grande, cuadrado y carnoso, sin picor, le '
+        'dicen también chile gordo',
     defaultProfileId: kCh08,
     aliases: [
       'Pimiento',
@@ -165,7 +199,9 @@ const List<CropVarietyEntry> chiliVarieties = [
     id: 'chili_generic',
     label: 'No se / Otro chile',
     cropId: kCropChili,
-    subtitle: 'Sin tipo definido (CH-GEN)',
+    subtitle:
+        'Perfil general y migrable de chile: puedes precisar el tipo después '
+        'sin perder tu historial',
     defaultProfileId: kChGen,
     aliases: [
       'Generico',

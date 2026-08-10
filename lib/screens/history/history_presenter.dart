@@ -5,6 +5,7 @@ import 'package:bio_g/core/agro/agro_event_input_factory.dart';
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/agronomic_event.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
+import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
@@ -115,6 +116,9 @@ class HistoryScreenPresenter {
     required BioGStore store,
     required CropRuntimeSnapshot runtime,
     required List<BioGTelemetry> telemetry,
+    // Decision vigente del motor de riego, si la hay. Sin ella no se emiten
+    // eventos de riego: este camino no ve el clima y no puede decidirlo solo.
+    IrrigationDecision? irrigationDecision,
   }) {
     final List<BioGTelemetry> sortedTelemetry = [...telemetry]
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
@@ -139,6 +143,7 @@ class HistoryScreenPresenter {
       previousBands: previousContext.previousBands,
       previousStageKey: previousContext.previousStage?.stageKey,
       previousStageLabel: previousContext.previousStage?.stageLabelEs,
+      irrigationDecision: irrigationDecision,
     );
 
     return EventEngine.build(input);

@@ -36,9 +36,8 @@ const List<CropProfileEntry> lemonTreeProfileEntries = [
     label: 'Persa / Tahití / sin semilla',
     cropId: kCropLemonTree,
     subtitle:
-        'Limón grande, verde comercial, generalmente sin semilla '
-        '(exportación/fresco). Muy sensible a salinidad, agua en floración/'
-        'cuajado, raíz/Phytophthora y calibre.',
+        'Limón grande y verde, casi siempre sin semilla, para fresco y '
+        'exportación (persa o Tahití)',
     aliases: [
       'LM-01',
       'LM01',
@@ -63,8 +62,8 @@ const List<CropProfileEntry> lemonTreeProfileEntries = [
     label: 'Mexicano / Colima / con semilla',
     cropId: kCropLemonTree,
     subtitle:
-        'Limón chico, muy ácido, con semilla, cosecha frecuente. Más sensible '
-        'al frío, con fuerte contexto HLB/psílido y antracnosis en México.',
+        'Limón chico y muy ácido, con semilla y cortes frecuentes (mexicano, '
+        'criollo o de Colima)',
     aliases: [
       'LM-02',
       'LM02',
@@ -93,9 +92,8 @@ const List<CropProfileEntry> lemonTreeProfileEntries = [
     label: 'Amarillo / Eureka / Lisbon',
     cropId: kCropLemonTree,
     subtitle:
-        'True lemon / limón amarillo. Menor presencia relativa en México; '
-        'sensible a frío/helada, humedad y calidad externa. La cosecha sí '
-        'puede hablar de color amarillo.',
+        'Limón amarillo verdadero, poco común en México (Eureka, Lisbon o '
+        'italiano)',
     aliases: [
       'LM-03',
       'LM03',
@@ -121,9 +119,8 @@ const List<CropProfileEntry> lemonTreeProfileEntries = [
     label: 'Tropical / producción continua',
     cropId: kCropLemonTree,
     subtitle:
-        'Comportamiento de zonas cálidas con flor/fruto/brote traslapados y '
-        'cortes repetidos. Mayor presión de plagas de brote, salinidad y '
-        'agotamiento de reservas.',
+        'Limón de zona cálida con flor, fruto y brote al mismo tiempo y cortes '
+        'repetidos',
     aliases: [
       'LM-04',
       'LM04',
@@ -144,9 +141,8 @@ const List<CropProfileEntry> lemonTreeProfileEntries = [
     label: 'Desfase / producción programada',
     cropId: kCropLemonTree,
     subtitle:
-        'Manejo de riego/estrés/poda para mover picos a meses de mejor precio. '
-        'No es especie: busca mover la ventana, no prometer más toneladas. '
-        'Estrés mal aplicado baja cuajado.',
+        'Manejo de riego, estrés y poda para mover la cosecha a meses de mejor '
+        'precio, no es una variedad',
     aliases: [
       'LM-05',
       'LM05',
@@ -171,9 +167,8 @@ const List<CropProfileEntry> lemonTreeProfileEntries = [
     label: 'No sé / Limón general',
     cropId: kCropLemonTree,
     subtitle:
-        'Perfil general y migrable del limón: puedes precisar Persa, Mexicano, '
-        'Amarillo, Tropical o Desfase después sin perder historial. No es '
-        'descanso del suelo.',
+        'Perfil general y migrable del limón, precisa la variedad después sin '
+        'perder historial; no es descanso del suelo',
     aliases: [
       'LM-SKIP',
       'LM_SKIP',

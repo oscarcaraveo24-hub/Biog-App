@@ -352,7 +352,7 @@ void main() {
       ].join(' ').toLowerCase();
 
       expect(copy, contains('duraznero'));
-      expect(copy, contains('analisis'));
+      expect(copy, contains('análisis'));
       expect(copy, isNot(contains('kg/ha')));
       expect(copy, isNot(contains('g/m')));
       expect(copy, isNot(contains('semilla')));

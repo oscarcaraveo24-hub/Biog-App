@@ -1,6 +1,21 @@
 // lib/core/agro/irrigation/irrigation_engine.dart
 //
-// Motor de riego por veto. Fundacional 2.1 §V1-A.
+// Motor de riego por veto.
+//
+// "Veto" y "§V1-A" son vocabulario de esta implementación, no del Documento
+// Fundacional 2.1: ese documento no contiene la palabra veto ni umbrales de
+// lluvia. Lo que sí fija, y es lo que este motor obedece, son sus §9.2 y §4.2:
+//
+//   - "No se generará una nueva recomendación basada en una lectura inválida."
+//   - "Toda lectura fuera de los rangos físicamente posibles será rechazada
+//      por el sistema antes de llegar al motor de interpretación."
+//   - "Mostrar que el suelo está seco no es una recomendación: el productor ya
+//      lo sabe. [...] El ahorro de agua no proviene de confirmar que la tierra
+//      está seca, sino de evitar el riego que iba a ejecutarse sin necesidad."
+//
+// Los umbrales concretos (probabilidad de lluvia, milímetros, vigencia de la
+// lectura) son decisiones de ingeniería de este archivo. El Fundacional no da
+// cifras; si algún día las da, mandan ellas.
 //
 // Qué reemplaza: un `switch` de ocho líneas dentro del presentador del Panel,
 // con la banda de humedad como única entrada, que producía la frase "Riega

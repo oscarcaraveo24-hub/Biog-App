@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
 import 'package:bio_g/core/notifications/notification_dispatcher.dart';
 import 'package:bio_g/core/telemetry/telemetry_ingest_service.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
@@ -302,6 +303,9 @@ class BioGStore extends ChangeNotifier {
     unawaited(_cropEventRecorder.purgeForUser(outgoingUserId));
 
     _currentUserId = null;
+    // La decisión de riego es del usuario que sale. Si sobrevive, el registro
+    // en segundo plano se la colgaría a los eventos del usuario entrante.
+    _lastIrrigationDecision = null;
     _cropByDevice.clear();
     _yieldByDevice.clear();
     _alertsStateByDevice.clear();
@@ -472,6 +476,94 @@ class BioGStore extends ChangeNotifier {
 
   /// Acceso de solo lectura al historial de eventos registrado.
   CropEventLocalStorage get cropEventStorage => _cropEventRecorder.storage;
+
+  /// Última decisión publicada por [IrrigationCoordinator].
+  ///
+  /// El coordinador vive en el estado del Panel, pero el registro de eventos
+  /// corre en segundo plano cada vez que llega una lectura, sin pantalla de por
+  /// medio. Sin este puente el registro no tenía forma de saber qué había
+  /// decidido el motor de riego y volvía a deducirlo por su cuenta a partir de
+  /// la banda de humedad — que es exactamente la contradicción que se cerró:
+  /// el Panel decía "espera, se espera lluvia" y la campana decía "riego
+  /// recomendado" por la misma lectura.
+  ///
+  /// Es una foto, no una suscripción. Para consumirla usa
+  /// [irrigationDecisionAt], que aplica la vigencia; este getter en crudo solo
+  /// sirve para diagnóstico.
+  IrrigationDecision? get lastIrrigationDecision => _lastIrrigationDecision;
+  IrrigationDecision? _lastIrrigationDecision;
+
+  /// La decisión, solo si sigue vigente en [now].
+  ///
+  /// Una decisión caducada describe un clima y una humedad que ya no son los de
+  /// ahora: prolongarla sería inventar vigencia. Existe como método único
+  /// porque hay dos consumidores —el Historial y el registro en segundo plano—
+  /// y si cada uno aplicara su propio criterio volveríamos a tener dos
+  /// verdades, que es justo lo que este cambio vino a cerrar.
+  IrrigationDecision? irrigationDecisionAt(DateTime now) {
+    final IrrigationDecision? decision = _lastIrrigationDecision;
+    if (decision == null) return null;
+    return decision.isExpiredAt(now) ? null : decision;
+  }
+
+  /// Publica la decisión vigente. La llama el Panel tras cada evaluación.
+  ///
+  /// No notifica a los oyentes a propósito: se invoca durante el `build` del
+  /// Panel y notificar ahí provocaría un ciclo de reconstrucción.
+  ///
+  /// Cuando la decisión cambia sí relanza el registro de eventos, y esa parte
+  /// es imprescindible. El orden real de los hechos es: llega la lectura →
+  /// `notifyListeners` → el registro corre **ya**, antes de que el Panel se
+  /// reconstruya → el Panel calcula la decisión en el frame siguiente. Sin este
+  /// relanzamiento, la primera lectura se registraba sin decisión, quedaba
+  /// marcada como procesada y no se revisaba nunca: el Panel mostraba "riega
+  /// ahora" y ni el Historial ni la campana llegaban a enterarse.
+  ///
+  /// `recordFromStore` es idempotente —tiene su propia firma de estado y un
+  /// cerrojo de reentrada—, así que volver a llamarlo es barato y seguro.
+  ///
+  /// El disparo se compara por CONTENIDO, nunca por `decidedAt`. El coordinador
+  /// recalcula la decisión en cada reconstrucción y le pone la hora del momento,
+  /// así que comparar por hora daría "cambió" siempre: registro -> la bandeja
+  /// notifica -> el Panel se reconstruye -> hora nueva -> registro otra vez.
+  /// Un bucle infinito. Lo que importa para el aviso es qué se decidió, no
+  /// cuándo se recalculó.
+  void publishIrrigationDecision(IrrigationDecision? decision) {
+    final String? before = irrigationDecisionKey(_lastIrrigationDecision);
+    _lastIrrigationDecision = decision;
+    if (irrigationDecisionKey(decision) == before) return;
+
+    // Fuera del frame de pintado. `recordFromStore` hace trabajo síncrono antes
+    // de su primer `await` —resolver el runtime y correr el motor de eventos—,
+    // y esto se invoca desde el `build` del Panel: dejarlo en línea metería el
+    // motor de eventos en la ruta crítica del dibujado.
+    scheduleMicrotask(() => unawaited(_cropEventRecorder.recordFromStore(this)));
+  }
+
+  /// Identidad estable de una decisión de riego: qué se decidió, no cuándo.
+  ///
+  /// Es la llave que usan tanto el disparo de arriba como la firma de estado
+  /// del registro. Tiene que ser la misma en los dos sitios o se vuelve a abrir
+  /// el bucle.
+  static String? irrigationDecisionKey(IrrigationDecision? decision) {
+    if (decision == null) return null;
+    return '${decision.action.name}|${decision.urgency.name}';
+  }
+
+  /// Reintenta la sincronización pendiente.
+  ///
+  /// Se expone porque el único disparador que existía era el cambio de usuario:
+  /// una operación que fallara sin conexión sobrevivía en la cola pero nadie la
+  /// despertaba hasta el siguiente inicio de sesión. Ahora también la disparan
+  /// el regreso de la conectividad y la vuelta de la app al primer plano.
+  Future<void> drainPendingSync() => _pendingSync.drain();
+
+  /// Vacía la cola de pendientes por su propia API.
+  ///
+  /// Lo usa el borrado de cuenta. Pasa por la cadena interna de la cola, así
+  /// que un drenado en vuelo no puede reescribir en disco lo que se acaba de
+  /// borrar.
+  Future<void> clearPendingSync() => _pendingSync.clear();
 
   /// Bandeja de avisos, ya filtrada por las preferencias del usuario.
   NotificationDispatcher get notifications => _cropEventRecorder.notifications;

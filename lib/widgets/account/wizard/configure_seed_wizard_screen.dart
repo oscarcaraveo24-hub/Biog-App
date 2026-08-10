@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/core/crops/generic/generic_guide.dart';
 import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
@@ -759,6 +760,33 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   }
 
   void _onSelectCategory(String value) {
+    // Guía general: no hay cultivo, ni variedad, ni etapa, ni fecha que elegir.
+    // Se limpia todo y se guarda de inmediato; no queda ninguna página que
+    // mostrar después de esta.
+    if (isGuideCropId(value)) {
+      setState(() {
+        _category = kGuideCategoryId;
+        _crop = kGuideCropId;
+        _brandId = null;
+        _varietyId = null;
+        _stage = kGuideStageKey;
+        // `_selectedDate` no es nullable aquí (a diferencia del borrador de
+        // onboarding). Se deja en hoy y no se usa: la rama de guía de `_save`
+        // construye el contexto sin `sowingDate`.
+        _selectedDate = DateTime.now();
+        _useFlexibleDate = false;
+        _treeProductionStatusId = null;
+        _treeReproSignalId = null;
+        _perennialStateId = null;
+        _phenologyStageId = null;
+        _treeAnchorOptionId = null;
+        _perennialAnchorDate = null;
+        _perennialAnchorTypeId = null;
+      });
+      unawaited(_save(BioGScope.of(context)));
+      return;
+    }
+
     if (value != CropCatalog.grainCategoryId &&
         value != CropCatalog.vegetableCategoryId &&
         value != CropCatalog.treeCategoryId &&
@@ -1615,6 +1643,62 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
   Future<void> _save(BioGStore store) async {
     final device = store.activeDevice;
     if (device == null) return;
+
+    // Guía general. Va antes de todas las guardas porque no cumple ninguna:
+    // no tiene variedad ni etapa fenológica, y `_normalizeCropId` no reconoce
+    // su centinela. El contexto se arma a mano, igual que en el onboarding, y
+    // por el mismo motivo: `WizardCropContextResolver` convertiría un cropId
+    // desconocido en maíz.
+    if (isGuideCropId(_crop) || isGuideCropId(_category)) {
+      setState(() => _saving = true);
+      try {
+        final DateTime nowGuide = DateTime.now();
+        final DeviceCropContext? previousGuide = store.cropContextForDevice(
+          device.id,
+        );
+        await store.saveCropContext(
+          DeviceCropContext(
+            deviceId: device.id,
+            cropCategoryId: kGuideCategoryId,
+            cropId: kGuideCropId,
+            profileId: kGuideProfileId,
+            lifecycleStatus: CropLifecycleStatus.planted,
+            sowingDateConfidence: DateConfidence.unknown,
+            catalogVersion: CropCatalog.version,
+            source: CropConfigSource.wizard,
+            configuredAt: previousGuide?.configuredAt ?? nowGuide,
+            updatedAt: nowGuide,
+            cultivationScaleId: previousGuide?.cultivationScaleId,
+            timezone: previousGuide?.timezone,
+            locationLabel: previousGuide?.locationLabel,
+            locationSource: previousGuide?.locationSource,
+            geoLat: previousGuide?.geoLat,
+            geoLng: previousGuide?.geoLng,
+          ),
+          markSetupCompleted: true,
+        );
+
+        // Mismo cierre que el camino normal: diálogo de éxito, callback y
+        // pop. Antes esta rama hacía solo el pop, así que quien entraba por
+        // "Otro" no veía confirmación y `onCompleted` —que es lo que refresca
+        // la pantalla de cuenta— nunca corría.
+        if (!mounted) return;
+        await _showSuccessDialog();
+
+        if (widget.onCompleted != null) {
+          await widget.onCompleted!.call();
+        }
+
+        if (!mounted) return;
+        final guideNavigator = Navigator.of(context);
+        if (guideNavigator.canPop()) {
+          guideNavigator.pop(true);
+        }
+      } finally {
+        if (mounted) setState(() => _saving = false);
+      }
+      return;
+    }
 
     final isTreeSave = _isTreeWizard;
     if (isTreeSave) {

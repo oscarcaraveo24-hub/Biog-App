@@ -19,10 +19,12 @@ import 'package:flutter/foundation.dart';
 
 import 'package:bio_g/core/agro/irrigation/irrigation_advisor.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
+import 'package:bio_g/core/agro/irrigation/parcel_location.dart';
 import 'package:bio_g/core/agro/traceability/recommendation_recorder.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/weather/agronomic_weather_snapshot.dart';
 import 'package:bio_g/core/weather/weather_repository.dart';
+import 'package:bio_g/models/device_crop_context.dart';
 
 class IrrigationCoordinator extends ChangeNotifier {
   IrrigationCoordinator({
@@ -30,7 +32,9 @@ class IrrigationCoordinator extends ChangeNotifier {
     IrrigationAdvisor advisor = const IrrigationAdvisor(),
     RecommendationRecorder? recorder,
     DateTime Function()? clock,
-  }) : _weather = weatherRepository ?? WeatherRepository(),
+    Future<void> Function(DeviceCropContext healed)? onParcelLocationRecovered,
+  }) : _onParcelLocationRecovered = onParcelLocationRecovered,
+       _weather = weatherRepository ?? WeatherRepository(),
        _ownsWeatherRepository = weatherRepository == null,
        _advisor = advisor,
        _recorder = recorder ?? RecommendationRecorder(),
@@ -38,6 +42,12 @@ class IrrigationCoordinator extends ChangeNotifier {
 
   final WeatherRepository _weather;
   final IrrigationAdvisor _advisor;
+
+  /// Se invoca cuando la ubicación efectiva de la parcela no coincide con la
+  /// que tiene guardada el contexto de cultivo. Quien lo reciba debe
+  /// persistirlo; aquí no se conoce el store a propósito.
+  final Future<void> Function(DeviceCropContext healed)?
+  _onParcelLocationRecovered;
   final RecommendationRecorder _recorder;
   final DateTime Function() _now;
 
@@ -66,6 +76,22 @@ class IrrigationCoordinator extends ChangeNotifier {
   /// Última clave de estado sincronizada.
   String? _lastSyncKey;
 
+  /// Ubicación efectiva de la parcela, resuelta en el último [sync].
+  ///
+  /// Se guarda porque [decisionFor] es síncrono —corre dentro de `build`— y
+  /// leer preferencias no lo es. En el primer fotograma vale null y la
+  /// decisión sale sin clima; en cuanto [sync] resuelve, notifica y la
+  /// siguiente reconstrucción ya la trae.
+  ParcelLocation? _parcel;
+
+  /// Coordenadas del último intento de curado, para no repetirlo mientras el
+  /// guardado está en vuelo.
+  String? _lastHealKey;
+
+  /// La ubicación que se está usando para pedir clima y decidir. Null si la
+  /// app todavía no sabe dónde está la parcela.
+  ParcelLocation? get parcelLocation => _parcel;
+
   /// Calcula la decisión con el clima que YA está en memoria.
   ///
   /// Nunca dispara red: si el clima no está disponible todavía, el motor
@@ -78,11 +104,15 @@ class IrrigationCoordinator extends ChangeNotifier {
     if (runtime.device == null) return null;
 
     final at = now ?? _now();
-    final coords = IrrigationAdvisor.parcelCoordinates(runtime.cropContext);
 
-    final snapshot = coords == null
+    // La resuelta en el último `sync` manda; el contexto es el respaldo para
+    // el primer fotograma, antes de que `sync` haya podido leer preferencias.
+    final parcel =
+        _parcel ?? ParcelLocationResolver.fromCropContext(runtime.cropContext);
+
+    final snapshot = parcel == null
         ? AgronomicWeatherSnapshot.unavailable(at: at)
-        : _weather.snapshotForDecision(lat: coords.lat, lon: coords.lon);
+        : _weather.snapshotForDecision(lat: parcel.lat, lon: parcel.lon);
 
     return _advisor.adviseFromRuntime(
       runtime: runtime,
@@ -105,46 +135,63 @@ class IrrigationCoordinator extends ChangeNotifier {
     final device = runtime.device;
     if (device == null) return;
 
-    final reading = runtime.live;
-    final now = _now();
-
-    // La clave incluye un "cubo" de 15 minutos además del estado.
-    //
-    // Sin él, si no llega telemetría nueva la sincronización salía por la
-    // primera comprobación para siempre y el clima quedaba congelado con el
-    // de la primera vez, por mucho que venciera el intervalo de refresco del
-    // repositorio.
-    final int timeBucket =
-        now.millisecondsSinceEpoch ~/ _weatherRecheckInterval.inMilliseconds;
-
-    final key = <Object?>[
-      device.id,
-      reading?.timestamp.millisecondsSinceEpoch,
-      runtime.cropContext?.cropId,
-      runtime.stageResult?.stageKey,
-      runtime.cropContext?.geoLat,
-      runtime.cropContext?.geoLng,
-      timeBucket,
-    ].join('|');
-
-    if (!force && key == _lastSyncKey) return;
-
+    // La bandera se levanta ANTES del primer `await`. Resolver la ubicación
+    // toca preferencias, o sea que cede el hilo, y sin esto dos fotogramas
+    // seguidos entrarían a la vez.
     _syncing = true;
     try {
-      final coords = IrrigationAdvisor.parcelCoordinates(runtime.cropContext);
+      final reading = runtime.live;
+      final now = _now();
 
-      if (coords != null) {
+      // Ubicación efectiva de la parcela. Manda la del perfil —lo último que
+      // el usuario eligió— y el contexto de cultivo queda de respaldo.
+      // `parcel_location.dart` explica por qué había dos.
+      final ParcelLocation? parcel = await ParcelLocationResolver.resolve(
+        runtime.cropContext,
+      );
+      _parcel = parcel;
+
+      // La clave incluye un "cubo" de 15 minutos además del estado.
+      //
+      // Sin él, si no llega telemetría nueva la sincronización salía por la
+      // primera comprobación para siempre y el clima quedaba congelado con el
+      // de la primera vez, por mucho que venciera el intervalo de refresco del
+      // repositorio.
+      final int timeBucket =
+          now.millisecondsSinceEpoch ~/ _weatherRecheckInterval.inMilliseconds;
+
+      final key = <Object?>[
+        device.id,
+        reading?.timestamp.millisecondsSinceEpoch,
+        runtime.cropContext?.cropId,
+        runtime.stageResult?.stageKey,
+        // Las coordenadas efectivas, no las del contexto: si el usuario mueve
+        // la parcela desde Cuenta → Ubicación, esto lo nota en el acto.
+        parcel?.lat,
+        parcel?.lon,
+        timeBucket,
+      ].join('|');
+
+      if (!force && key == _lastSyncKey) return;
+
+      if (parcel != null) {
         // Sin ubicación no hay clima que pedir, y el motor ya sabe tratar la
         // ausencia. Pedirlo igual solo generaría errores de coordenadas.
         await _weather.ensureFresh(
-          lat: coords.lat,
-          lon: coords.lon,
-          locationLabel: runtime.cropContext?.locationLabel ?? 'Parcela',
+          lat: parcel.lat,
+          lon: parcel.lon,
+          locationLabel:
+              parcel.label ?? runtime.cropContext?.locationLabel ?? 'Parcela',
           force: force,
         );
+
+        // Y si el contexto de cultivo no sabía dónde está la parcela, se le
+        // dice. No es cosmético: el registro auditable y el panel web leen
+        // `geo_lat` de ahí, no de las preferencias del teléfono.
+        _healContextLocation(runtime.cropContext, parcel);
       }
 
-      final next = decisionFor(runtime);
+      final next = decisionFor(runtime, now: now);
       _lastSyncKey = key;
 
       if (next == null) return;
@@ -187,6 +234,8 @@ class IrrigationCoordinator extends ChangeNotifier {
     _decision = null;
     _lastSignature = null;
     _lastSyncKey = null;
+    _parcel = null;
+    _lastHealKey = null;
     _recorder.reset();
     notifyListeners();
   }
@@ -195,6 +244,31 @@ class IrrigationCoordinator extends ChangeNotifier {
   void dispose() {
     if (_ownsWeatherRepository) _weather.dispose();
     super.dispose();
+  }
+
+  /// Escribe en el contexto de cultivo la ubicación que de verdad se está
+  /// usando.
+  ///
+  /// No espera al guardado ni deja que un fallo afecte a la decisión: si no se
+  /// pudo persistir, la próxima sincronización lo vuelve a intentar. El
+  /// guardado dispara una reconstrucción, así que el guardián de coordenadas
+  /// es lo que impide que eso se convierta en un bucle.
+  void _healContextLocation(DeviceCropContext? context, ParcelLocation parcel) {
+    final callback = _onParcelLocationRecovered;
+    if (callback == null) return;
+    if (!parcel.needsContextSync) return;
+
+    final String healKey = '${parcel.lat}|${parcel.lon}';
+    if (healKey == _lastHealKey) return;
+
+    final DeviceCropContext? healed = ParcelLocationResolver.contextHealedWith(
+      context,
+      parcel,
+    );
+    if (healed == null) return;
+
+    _lastHealKey = healKey;
+    unawaited(callback(healed).catchError((Object _) {}));
   }
 
   /// Dos decisiones con la misma firma se consideran la misma para efectos de

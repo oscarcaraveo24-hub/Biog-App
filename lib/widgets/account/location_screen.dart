@@ -31,7 +31,26 @@ class _LocationScreenState extends State<LocationScreen> {
   static const String _kPrefLocLng = 'profile_location_lng';
 
   // ✅ Default: CDMX (si no hay nada guardado)
+  //
+  // ⚠️ Es SOLO un encuadre inicial del mapa, nunca una ubicación válida para
+  // guardar. `_save` escribía `_center` tal cual, así que un usuario que abría
+  // esta pantalla y tocaba "Guardar" sin mover nada se llevaba CDMX a sus
+  // preferencias — y de ahí al `DeviceCropContext`, al registro auditable y al
+  // motor de riego, que acababa razonando sobre la lluvia de una ciudad ajena
+  // creyendo que era la parcela del agricultor. `_hasExplicitPick` lo impide.
   static const LatLng _kDefault = LatLng(19.4326, -99.1332);
+
+  /// True cuando las coordenadas de `_center` las eligió el usuario de verdad:
+  /// vienen de sus preferencias, de una búsqueda o de haber movido el mapa.
+  /// Mientras sea false, `_center` es el encuadre por defecto y no se guarda.
+  bool _hasExplicitPick = false;
+
+  /// Compara contra el encuadre por defecto. 1e-6 grados son ~11 cm: cualquier
+  /// arrastre real del mapa queda por encima, y un `onCameraIdle` disparado al
+  /// asentarse la cámara inicial queda por debajo y no cuenta como elección.
+  static bool _isDefaultCenter(LatLng p) =>
+      (p.latitude - _kDefault.latitude).abs() < 1e-6 &&
+      (p.longitude - _kDefault.longitude).abs() < 1e-6;
 
   final Completer<GoogleMapController> _mapC = Completer<GoogleMapController>();
   final FocusNode _searchFocus = FocusNode();
@@ -79,6 +98,8 @@ class _LocationScreenState extends State<LocationScreen> {
       // ✅ set center desde prefs
       if (lat != null && lng != null) {
         _center = LatLng(lat, lng);
+        // Ya tenía ubicación guardada: puede reconfirmarla sin mover el mapa.
+        _hasExplicitPick = true;
       } else {
         _center = _kDefault;
       }
@@ -321,6 +342,8 @@ class _LocationScreenState extends State<LocationScreen> {
       final target = LatLng(lat, lng);
 
       _center = target;
+      // Buscó una dirección y Google la resolvió: elección explícita.
+      _hasExplicitPick = true;
 
       if (_mapC.isCompleted) {
         final c = await _mapC.future;
@@ -347,6 +370,19 @@ class _LocationScreenState extends State<LocationScreen> {
   // ---------- save local ----------
 
   Future<void> _save() async {
+    // Guardar el encuadre por defecto sería inventarle una parcela al
+    // agricultor. Se prefiere no guardar nada a guardar una coordenada falsa.
+    if (!_hasExplicitPick) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Mueve el mapa o busca tu parcela para confirmar la ubicación.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final label = (_currentLabel.trim().isEmpty)
         ? _searchC.text.trim()
         : _currentLabel.trim();
@@ -459,6 +495,11 @@ class _LocationScreenState extends State<LocationScreen> {
                       initial: _center,
                       onCenterChanged: (latLng) {
                         _center = latLng;
+                        // Movió el mapa a un punto distinto del encuadre por
+                        // defecto: a partir de aquí ya eligió.
+                        if (!_isDefaultCenter(latLng)) {
+                          _hasExplicitPick = true;
+                        }
                         _scheduleReverseGeocode(latLng);
                       },
                       pillIconScale: 1.35,

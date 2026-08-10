@@ -8,35 +8,29 @@ import 'package:bio_g/widgets/metric_card.dart';
 import 'package:bio_g/widgets/npk_insight_card.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 import 'package:bio_g/widgets/shared/bio_g_page_route.dart';
+import 'package:bio_g/widgets/shared/bio_g_page_background.dart';
 import 'package:bio_g/widgets/soil_health_ring.dart';
 
+/// Fondo del Panel.
+///
+/// Desde la unificación visual delega en [BioGPageBackground], que es el mismo
+/// fondo que usan las otras cuatro pestañas. Se conserva el nombre y la firma
+/// para no tocar el punto de llamada del Panel.
+///
+/// El cielo con parallax, el velo blanco y el campo de partículas viven ahora
+/// en ese widget. Aquí ya no hay pintura propia: tener dos implementaciones del
+/// mismo fondo fue justamente lo que hizo que las pantallas se desincronizaran.
 class DashboardBackground extends StatelessWidget {
-  const DashboardBackground({super.key});
+  const DashboardBackground({super.key, this.enabled = true});
+
+  /// True solo cuando el Panel es la pestaña visible. Ver la nota de
+  /// rendimiento en [BioGPageBackground]: el `IndexedStack` mantiene las cinco
+  /// pantallas vivas y solo debe animar la que se está viendo.
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        Positioned.fill(
-          child: Image.asset('assets/images/bg_sky.png', fit: BoxFit.cover),
-        ),
-        Positioned.fill(
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: <Color>[
-                  Color(0x00000000),
-                  Color(0x55FFFFFF),
-                  Color(0xCCFFFFFF),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+    return BioGPageBackground(enabled: enabled);
   }
 }
 
@@ -236,15 +230,54 @@ class DashboardSoilHealthSection extends StatelessWidget {
   final double? percent;
   final String label;
 
+  /// True cuando el Panel es la pestaña visible.
+  ///
+  /// Solo sirve para una cosa: que el arco vuelva a pintarse al entrar. Ver la
+  /// nota en [SoilHealthRing.isActive] — con `IndexedStack` el `initState` del
+  /// anillo corre una única vez en toda la vida de la app.
+  final bool isActive;
+
   const DashboardSoilHealthSection({
     super.key,
     required this.percent,
     required this.label,
+    this.isActive = true,
   });
+
+  /// Lado del lienzo cuadrado de [SoilHealthRing] (`_canvas`).
+  static const double _ringCanvas = 300;
+
+  /// Lienzo muerto que se recorta por abajo.
+  ///
+  /// El anillo se dibuja dentro de un cuadrado de 300 px, pero lo visible no
+  /// llega al borde: el aro exterior termina en 288 y el `Transform.translate`
+  /// de aqui lo sube 10 mas. Eso dejaba ~22 px de aire que nadie pinta y que
+  /// empujaban hacia abajo todo lo que viene despues.
+  ///
+  /// El tope no lo pone el aro sino la insignia: viaja por la circunferencia y
+  /// al 50 % baja hasta y=297 (`_ringRadius 118 + _badgeSize/2 29`), o 287 ya
+  /// con el translate. Recortar 14 deja el corte en 286, un pelo por encima de
+  /// la insignia en su punto mas bajo. Pasarse de ahi la haria chocar con la
+  /// tarjeta de riego en los marcadores cercanos al 50 %.
+  ///
+  /// `Align` no recorta pintura: solo reduce el alto que la seccion ocupa, asi
+  /// que no hay riesgo de cortar el resplandor ni la sombra del aro.
+  static const double _deadCanvasBottom = 14;
 
   @override
   Widget build(BuildContext context) {
-    return SoilHealthRing(percent: percent, label: label);
+    return Align(
+      alignment: Alignment.topCenter,
+      heightFactor: (_ringCanvas - _deadCanvasBottom) / _ringCanvas,
+      child: Transform.translate(
+        offset: const Offset(0, -10),
+        child: SoilHealthRing(
+          percent: percent,
+          label: label,
+          isActive: isActive,
+        ),
+      ),
+    );
   }
 }
 
@@ -396,18 +429,22 @@ class DashboardNpkSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: NpkInsightCard(
-        assetIcon: 'assets/icons/metrics/ic_npk.png',
-        title: title,
-        subtitle: subtitle,
-        onTap: () {
-          Navigator.of(
-            context,
-          ).push(BioGPageRoute(builder: (_) => const NpkScreen()));
-        },
-      ),
+    // Sin `Padding` propio.
+    //
+    // Llevaba `EdgeInsets.only(top: 12)` incrustado, que funcionaba mientras
+    // esta tarjeta estuvo fija debajo del anillo. Al intercambiarla con la de
+    // riego el margen viajaba con ella y descuadraba las dos posiciones a la
+    // vez. La separación la decide ahora el Panel con un `SizedBox`, que es
+    // donde se ve el ritmo vertical completo.
+    return NpkInsightCard(
+      assetIcon: 'assets/icons/metrics/ic_npk.png',
+      title: title,
+      subtitle: subtitle,
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(BioGPageRoute(builder: (_) => const NpkScreen()));
+      },
     );
   }
 }
@@ -590,6 +627,31 @@ class DashboardInsightSection extends StatelessWidget {
 
   const DashboardInsightSection({super.key, required this.insight});
 
+  /// El chip de la esquina solo se pinta si dice algo que el titulo no diga ya.
+  ///
+  /// El presentador produce una docena de etiquetas distintas y la mayoria son
+  /// eco del titulo o jerga interna: `OK` sobre "No riegues por ahora",
+  /// `Regar` sobre "Riega ahora", `Setup`, `Auto`, `Mon`, `Arbol`, `—`. Cada
+  /// una cuesta ~60 px de los ~240 que tiene la fila, y ese era el motivo real
+  /// de que el subtitulo se cortara a media palabra: "La humedad esta por
+  /// encima del ob…". El subtitulo lleva la razon agronomica, que el
+  /// Fundacional 2.1 exige mostrar; el chip redundante no vale ese precio.
+  ///
+  /// Se conserva lo que el titulo no puede decir: la severidad (`Critica`,
+  /// `Critico`, `Alerta`, `Atencion`) y el tiempo (`24h`, `Hoy`, `3d`).
+  ///
+  /// Para ocultarlo siempre, devuelve `null` sin mirar el valor.
+  static final RegExp _informativeTag = RegExp(
+    r'^(cr[ií]tic[ao]|alerta|atenci[óo]n|24h|hoy|\d+\s*d)$',
+    caseSensitive: false,
+  );
+
+  String? get _visibleTag {
+    final String value = insight.tag.trim();
+    if (value.isEmpty) return null;
+    return _informativeTag.hasMatch(value) ? value : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return InsightCard(
@@ -597,7 +659,7 @@ class DashboardInsightSection extends StatelessWidget {
       icon: insight.icon,
       title: insight.title,
       subtitle: insight.subtitle,
-      tag: insight.tag,
+      tag: _visibleTag,
     );
   }
 }

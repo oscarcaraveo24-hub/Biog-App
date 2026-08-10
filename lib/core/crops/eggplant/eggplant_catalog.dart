@@ -9,7 +9,9 @@ const List<CropProfileEntry> eggplantProfileEntries = [
     id: kBeGen,
     label: 'BE-GEN - Berenjena genérica',
     cropId: kCropEggplant,
-    subtitle: 'Perfil conservador, migrable y recomendado si no sabes el tipo',
+    subtitle:
+        'Perfil de berenjena conservador y migrable: precisa el tipo más '
+        'adelante sin perder tu historial',
     aliases: [
       'BE-GEN',
       'BEGEN',
@@ -29,7 +31,9 @@ const List<CropProfileEntry> eggplantProfileEntries = [
     id: kBe01,
     label: 'BE-01 - Berenjena larga / semilarga morada',
     cropId: kCropEggplant,
-    subtitle: 'Tipo dominante - fruto fresco y cosecha progresiva',
+    subtitle:
+        'Berenjena morada alargada, el tipo más sembrado, se va cortando '
+        'conforme el fruto llega',
     aliases: [
       'BE-01',
       'BE01',
@@ -54,7 +58,9 @@ const List<CropProfileEntry> eggplantProfileEntries = [
     id: kBe02,
     label: 'BE-02 - Berenjena oval / bola morada',
     cropId: kCropEggplant,
-    subtitle: 'Fruto fresco, tamaño y uniformidad de mercado',
+    subtitle:
+        'Berenjena morada de fruto ovalado o de bola, donde se cuida el tamaño '
+        'parejo para el mercado',
     aliases: [
       'BE-02',
       'BE02',
@@ -88,7 +94,9 @@ const List<CropProfileEntry> eggplantProfileEntries = [
     id: kBe03,
     label: 'BE-03 - Berenjena rayada / listada',
     cropId: kCropEggplant,
-    subtitle: 'Nicho/gourmet; mayor cuidado de calidad visual',
+    subtitle:
+        'Berenjena con rayas moradas y blancas para mercado gourmet, pide más '
+        'cuidado en la presentación',
     aliases: [
       'BE-03',
       'BE03',
@@ -105,7 +113,9 @@ const List<CropProfileEntry> eggplantProfileEntries = [
     id: kBe04,
     label: 'BE-04 - Berenjena blanca',
     cropId: kCropEggplant,
-    subtitle: 'Nicho de fruto fresco; alta sensibilidad visual',
+    subtitle:
+        'Berenjena de piel blanca para mercado de nicho, se marca fácil y '
+        'exige cuidado al cortarla',
     aliases: [
       'BE-04',
       'BE04',
@@ -123,7 +133,9 @@ const List<CropVarietyEntry> eggplantVarieties = [
     id: 'eggplant_long_purple',
     label: 'Berenjena larga / semilarga morada',
     cropId: kCropEggplant,
-    subtitle: 'Tipo - fruto fresco morado alargado',
+    subtitle:
+        'Berenjena morada de fruto largo y delgado, la más común en fresco '
+        '(Barcelona, Dark Night, Orestia)',
     defaultProfileId: kBe01,
     aliases: [
       'Barcelona',
@@ -148,7 +160,9 @@ const List<CropVarietyEntry> eggplantVarieties = [
     id: 'eggplant_italian_purple',
     label: 'Berenjena italiana / clásica morada',
     cropId: kCropEggplant,
-    subtitle: 'Tipo - clásica morada de fruto ovalado',
+    subtitle:
+        'Berenjena clásica italiana, morada oscura y de fruto ovalado y '
+        'grueso, buena para rebanar y asar',
     defaultProfileId: kBe02,
     aliases: [
       'Italiana',
@@ -174,7 +188,9 @@ const List<CropVarietyEntry> eggplantVarieties = [
     id: 'eggplant_oval_round',
     label: 'Berenjena oval / bola morada',
     cropId: kCropEggplant,
-    subtitle: 'Tipo - oval o bola morada',
+    subtitle:
+        'Berenjena morada de fruto oval o de bola, tipo americana, se pide de '
+        'tamaño parejo (Emma F1)',
     defaultProfileId: kBe02,
     aliases: [
       'Night Shadow',
@@ -196,7 +212,9 @@ const List<CropVarietyEntry> eggplantVarieties = [
     id: 'eggplant_striped',
     label: 'Berenjena rayada / listada',
     cropId: kCropEggplant,
-    subtitle: 'Tipo - nicho/gourmet de calidad visual',
+    subtitle:
+        'Berenjena rayada de morado con blanco, tipo graffiti, de nicho '
+        'gourmet y buena presentación',
     defaultProfileId: kBe03,
     aliases: [
       'Berenjena rayada',
@@ -215,7 +233,9 @@ const List<CropVarietyEntry> eggplantVarieties = [
     id: 'eggplant_white',
     label: 'Berenjena blanca',
     cropId: kCropEggplant,
-    subtitle: 'Tipo - fruto blanco de nicho',
+    subtitle:
+        'Berenjena de piel blanca lisa, de mercado de nicho, se mancha fácil '
+        'al cortarla y empacarla',
     defaultProfileId: kBe04,
     aliases: [
       'Berenjena blanca',
@@ -231,7 +251,9 @@ const List<CropVarietyEntry> eggplantVarieties = [
     id: 'eggplant_generic',
     label: 'No sé / Otra berenjena',
     cropId: kCropEggplant,
-    subtitle: 'Usar perfil seguro si no sabes el tipo',
+    subtitle:
+        'Perfil general y migrable de berenjena: eliges el tipo más adelante '
+        'sin perder tu historial',
     defaultProfileId: kBeGen,
     aliases: [
       'Generica',

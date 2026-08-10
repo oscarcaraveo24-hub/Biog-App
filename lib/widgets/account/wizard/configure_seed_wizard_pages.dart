@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/core/crops/generic/generic_guide.dart';
 import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/recurring_bloom/recurring_bloom_crops.dart';
@@ -119,10 +120,10 @@ class CategoryPage extends StatelessWidget {
             child: WizardLongPill(
               iconPath: ConfigureSeedWizardAssets.categoryGeneric,
               title: 'Otro / genérico',
-              subtitle: 'Próximamente',
-              selected: category == 'generic',
-              enabled: false,
-              onTap: null,
+              subtitle: 'Guía de suelo, sin recomendación de nutrición',
+              selected: category == kGuideCategoryId,
+              enabled: true,
+              onTap: () => onSelect(kGuideCategoryId),
             ),
           ),
           if (summary != null) ...[

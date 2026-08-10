@@ -6,7 +6,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Syncs [YieldProjectionConfig] to Supabase as a cloud backup.
 ///
 /// SharedPreferences remains the primary local source of truth.
-/// This sync is best-effort so the app keeps working even without network.
+///
+/// Las LECTURAS son best-effort y devuelven vacío ante un fallo. Las
+/// ESCRITURAS ([upload], [delete]) NO: propagan la excepción porque su único
+/// llamador es `PendingSyncQueue` y ésa es la señal con la que decide
+/// conservar y reintentar el pendiente. No volver a envolverlas en
+/// `catch (_)` — eso reintroduce la pérdida silenciosa.
 class YieldProjectionSupabaseSync {
   static const String _table = 'device_yield_projection_configs';
 
@@ -15,17 +20,24 @@ class YieldProjectionSupabaseSync {
   String? get _userId => _client.auth.currentUser?.id;
 
   /// Upload a single yield projection config to Supabase.
+  ///
+  /// PROPAGA EL ERROR A PROPÓSITO. El único llamador es `PendingSyncQueue`,
+  /// cuyo contrato es "lanza = reintenta": la operación pendiente se borra de
+  /// la bandeja sólo si el handler termina sin excepción. Con el `catch (_)`
+  /// que había aquí, un fallo de red era indistinguible de un éxito y la cola
+  /// tiraba la operación al primer intento, dejando la proyección de
+  /// rendimiento sin subir para siempre y el backoff sin alcanzar nunca.
   Future<void> upload(YieldProjectionConfig config) async {
     final userId = _userId;
-    if (userId == null) return;
-
-    try {
-      await _client
-          .from(_table)
-          .upsert(_toRow(userId, config), onConflict: 'user_id,device_id');
-    } catch (_) {
-      // Best-effort — local storage is the primary source.
+    // Sin sesión no hay escritura posible. Antes era un `return` mudo que la
+    // cola leía como confirmación y usaba para descartar el pendiente.
+    if (userId == null) {
+      throw StateError('yield projection upload: sin sesión');
     }
+
+    await _client
+        .from(_table)
+        .upsert(_toRow(userId, config), onConflict: 'user_id,device_id');
   }
 
   /// Upload all configs for the current user.
@@ -81,19 +93,21 @@ class YieldProjectionSupabaseSync {
   }
 
   /// Delete a specific device config from Supabase.
+  ///
+  /// Propaga el error por el mismo motivo que [upload]: sin excepción la cola
+  /// da el borrado por hecho y la fila sobrevive en la nube, lista para volver
+  /// a bajar en el siguiente `downloadAll`.
   Future<void> delete(String deviceId) async {
     final userId = _userId;
-    if (userId == null) return;
-
-    try {
-      await _client
-          .from(_table)
-          .delete()
-          .eq('user_id', userId)
-          .eq('device_id', deviceId);
-    } catch (_) {
-      // Best-effort.
+    if (userId == null) {
+      throw StateError('yield projection delete: sin sesión');
     }
+
+    await _client
+        .from(_table)
+        .delete()
+        .eq('user_id', userId)
+        .eq('device_id', deviceId);
   }
 
   Map<String, dynamic> _toRow(String userId, YieldProjectionConfig config) {

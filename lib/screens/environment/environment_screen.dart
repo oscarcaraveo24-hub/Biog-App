@@ -3,12 +3,14 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:bio_g/core/agro/irrigation/parcel_location.dart';
 import 'package:bio_g/models/environment_models.dart';
 import 'package:bio_g/screens/environment/environment_forecast_screen.dart';
+import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/services/environment_service.dart';
 import 'package:bio_g/widgets/bottom_nav.dart';
+import 'package:bio_g/widgets/shared/bio_g_page_background.dart';
 import 'package:bio_g/widgets/environment/environment_forecast_preview_card.dart';
 import 'package:bio_g/widgets/environment/environment_insight_card.dart';
 import 'package:bio_g/widgets/environment/environment_location_card.dart';
@@ -40,14 +42,31 @@ class _EnvironmentScreenState extends State<EnvironmentScreen>
   static const bool _debugEnvironmentLogs = false;
 
   /// Vive solo mientras la app sigue abierta.
-  static bool _hasAnimatedThisSession = false;
+  // Instancia, NO estatica.
+  //
+  // Con `static` esta bandera se compartia entre todas las instancias y entre
+  // todas las reconstrucciones, asi que la animacion de entrada corria **una
+  // sola vez en toda la vida del proceso**: la primera. A partir de ahi el
+  // controlador se creaba ya en 1.0 y la pantalla aparecia pintada de golpe,
+  // sin reveal, al cambiar de pestaña o al reabrir la app.
+  bool _hasAnimatedThisSession = false;
 
-  static const String _kPrefLocLabel = 'profile_location_label';
-  static const String _kPrefLocLat = 'profile_location_lat';
-  static const String _kPrefLocLng = 'profile_location_lng';
-
-  static const double _kDefLat = 25.7913; // Los Mochis
-  static const double _kDefLng = -108.9859;
+  /// Lo que se muestra cuando la app no sabe donde esta la parcela.
+  ///
+  /// Aqui vivia un respaldo a Los Mochis, Sinaloa (25.7913, -108.9859): si el
+  /// agricultor no tenia ubicacion configurada, esta pantalla descargaba y
+  /// pintaba el clima de esa ciudad como si fuera el de su parcela —
+  /// temperatura, humedad, radiacion, lluvia y el pronostico de 7 y 24 horas
+  /// incluidos—, sin mas aviso que la palabra "(predeterminada)" en la tarjeta
+  /// de ubicacion. Ademas contradecia al Panel, que sin ubicacion responde
+  /// honestamente que no hay pronostico para la parcela.
+  ///
+  /// Mientras la gestion de ubicacion no este terminada, la unica respuesta
+  /// correcta es decir que no se sabe.
+  static const String _kUnknownLocationMessage =
+      'Ubicación desconocida.\n'
+      'Configura tu ubicación en Cuenta para consultar '
+      'el clima de tu parcela.';
 
   final EnvironmentService _service = const EnvironmentService();
 
@@ -139,7 +158,7 @@ class _EnvironmentScreenState extends State<EnvironmentScreen>
       _scheduleLoadIfNeeded(reason: 'tab-activated');
     }
 
-    if (!wasActiveBefore && isActiveNow && !_hasAnimatedThisSession) {
+    if (!wasActiveBefore && isActiveNow) {
       _entranceController
         ..stop()
         ..reset();
@@ -170,6 +189,14 @@ class _EnvironmentScreenState extends State<EnvironmentScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _scheduleLoadIfNeeded(reason: 'app-resumed');
+      // Volver a primer plano es el momento tipico en que se recupera la red.
+      // Sin este empujon, una operacion que fallo sin cobertura se quedaba en
+      // la cola hasta el siguiente inicio de sesion, que era el unico
+      // disparador que existia.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(BioGScope.of(context).drainPendingSync());
+      });
     }
   }
 
@@ -244,23 +271,51 @@ class _EnvironmentScreenState extends State<EnvironmentScreen>
     _logStateUpdate();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final label = (prefs.getString(_kPrefLocLabel) ?? '').trim();
-      final savedLat = prefs.getDouble(_kPrefLocLat);
-      final savedLon = prefs.getDouble(_kPrefLocLng);
-      final hasSavedLocation = savedLat != null && savedLon != null;
-      final lat = hasSavedLocation ? savedLat! : _kDefLat;
-      final lon = hasSavedLocation ? savedLon! : _kDefLng;
-      final coordinateSource = hasSavedLocation ? 'preferences' : 'fallback';
-      final zoneLabel = hasSavedLocation
-          ? (label.isEmpty ? 'Ubicación seleccionada' : label)
-          : 'Los Mochis, Sinaloa (predeterminada)';
-      _logFlow(
-        'fetch starting lat=$lat lng=$lon coordinateSource=$coordinateSource',
+      // Una sola lectura de la ubicacion para toda la app.
+      //
+      // Esta pantalla releia por su cuenta las tres claves de preferencias.
+      // Ahora usa el mismo resolutor que el motor de riego, asi que Entorno y
+      // Panel no pueden discrepar sobre DONDE esta la parcela. De paso hereda
+      // sus validaciones: (0,0), no finitos y fuera de rango dejan de pasar por
+      // coordenadas buenas.
+      // `resolve` y no `fromProfilePreferences`: la cadena completa es
+      // preferencias -> contexto de cultivo. El motor de riego usa la cadena
+      // entera, asi que quedarse en el primer eslabon reabria la discrepancia:
+      // un contexto bajado de la nube desde otro telefono trae `geo_lat` pero
+      // las preferencias locales estan vacias, y entonces el Panel calculaba
+      // riego con clima mientras Entorno decia "Ubicacion desconocida".
+      final ParcelLocation? parcel = await ParcelLocationResolver.resolve(
+        BioGScope.of(context).activeCropContext,
       );
 
+      // Sin ubicacion no se pinta clima. Nunca el de otra ciudad.
+      if (parcel == null) {
+        _logFlow('fetch skipped reason=no-location');
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+          // Se descarta cualquier carga anterior: si el agricultor borro su
+          // ubicacion, el clima de la ubicacion vieja ya no es suyo.
+          _payload = null;
+          _error = _kUnknownLocationMessage;
+          _lastRefreshError = null;
+          _lastRefreshErrorIsForecast = false;
+        });
+        _logStateUpdate();
+        return;
+      }
+
+      final label = parcel.label ?? '';
+      final lat = parcel.lat;
+      final lon = parcel.lon;
+      final zoneLabel = label.isEmpty ? 'Ubicación seleccionada' : label;
+      _logFlow('fetch starting lat=$lat lng=$lon coordinateSource=preferences');
+
       final location = EnvironmentLocation(
-        fieldName: 'Bio-G Field #001',
+        // El nombre del campo era el literal 'Bio-G Field #001' para todos los
+        // usuarios, tuvieran o no ubicacion real. Se usa el que el agricultor
+        // eligio.
+        fieldName: label.isEmpty ? 'Tu parcela' : label,
         zoneLabel: zoneLabel,
         updatedAt: DateTime.now(),
         lat: lat,
@@ -582,9 +637,11 @@ class _EnvironmentScreenState extends State<EnvironmentScreen>
       ),
       body: ConnectivityBanner(
         enabled: _isActive,
+        // Al volver la señal, reintenta lo que quedó pendiente de subir.
+        onBackOnline: () => unawaited(BioGScope.of(context).drainPendingSync()),
         child: Stack(
           children: [
-            const _EnvironmentSoftBackground(),
+            BioGPageBackground(enabled: _isActive),
             SafeArea(
               top: true,
               bottom: false,
@@ -1036,68 +1093,6 @@ class _EnvironmentReveal extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-/* ===================== BACKGROUND ===================== */
-
-class _EnvironmentSoftBackground extends StatelessWidget {
-  const _EnvironmentSoftBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFF6FAF8), Color(0xFFEFF6F2), Color(0xFFF6FAF8)],
-        ),
-      ),
-      child: Stack(
-        children: const [
-          Positioned(
-            top: -120,
-            left: -80,
-            child: _GlowBlob(size: 260, opacity: 0.18),
-          ),
-          Positioned(
-            top: 160,
-            right: -110,
-            child: _GlowBlob(size: 300, opacity: 0.14),
-          ),
-          Positioned(
-            bottom: -160,
-            left: -120,
-            child: _GlowBlob(size: 340, opacity: 0.16),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GlowBlob extends StatelessWidget {
-  final double size;
-  final double opacity;
-
-  const _GlowBlob({required this.size, required this.opacity});
-
-  static const Color _brandMid = Color(0xFF3FAF6E);
-
-  @override
-  Widget build(BuildContext context) {
-    return ImageFiltered(
-      imageFilter: ImageFilter.blur(sigmaX: 34, sigmaY: 34),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: _brandMid.withValues(alpha: opacity),
-        ),
       ),
     );
   }

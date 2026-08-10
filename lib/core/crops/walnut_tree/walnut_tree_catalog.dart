@@ -25,7 +25,9 @@ const List<CropProfileEntry> walnutTreeProfileEntries = [
     id: kNg01Western,
     label: 'Western / Western Schley',
     cropId: kCropWalnutTree,
-    subtitle: 'Backbone del oeste/norte; vigoroso y confiable, puede sobrecargar',
+    subtitle:
+        'Nogal pecanero vigoroso y confiable del norte, que se puede '
+        'sobrecargar de fruta (Western Schley)',
     aliases: [
       'NG-01',
       'NG01',
@@ -41,7 +43,9 @@ const List<CropProfileEntry> walnutTreeProfileEntries = [
     id: kNg02Wichita,
     label: 'Wichita',
     cropId: kCropWalnutTree,
-    subtitle: 'Precoz y prolifica; polinizadora comun de Western, sensible a zinc',
+    subtitle:
+        'Nogal pecanero precoz y prolífico, polinizador común del Western y de '
+        'nuez grande (Wichita)',
     aliases: [
       'NG-02',
       'NG02',
@@ -56,7 +60,9 @@ const List<CropProfileEntry> walnutTreeProfileEntries = [
     id: kNg03WesternWichita,
     label: 'Bloque Western / Wichita',
     cropId: kCropWalnutTree,
-    subtitle: 'Huerto mixto comercial: paquete de polinizacion regional',
+    subtitle:
+        'Huerto pecanero mixto que junta Western y Wichita como paquete de '
+        'polinización',
     aliases: [
       'NG-03',
       'NG03',
@@ -72,7 +78,9 @@ const List<CropProfileEntry> walnutTreeProfileEntries = [
     id: kNg04CriolloRegional,
     label: 'Criollo / Regional',
     cropId: kCropWalnutTree,
-    subtitle: 'Criollo, nativo o huerto viejo de genetica variable',
+    subtitle:
+        'Nogal criollo o nativo de huerto viejo, con genética variable de un '
+        'árbol a otro',
     aliases: [
       'NG-04',
       'NG04',
@@ -90,7 +98,9 @@ const List<CropProfileEntry> walnutTreeProfileEntries = [
     id: kNg05TempranoPawneeKanza,
     label: 'Temprano / Pawnee-Kanza',
     cropId: kCropWalnutTree,
-    subtitle: 'Grupo temprano o nuevas variedades; adelantan ventana de cosecha',
+    subtitle:
+        'Nogal pecanero del grupo temprano que adelanta la cosecha (Pawnee, '
+        'Kanza o Cheyenne)',
     aliases: [
       'NG-05',
       'NG05',
@@ -112,8 +122,8 @@ const List<CropProfileEntry> walnutTreeProfileEntries = [
     label: 'No sé / Nogal general',
     cropId: kCropWalnutTree,
     subtitle:
-        'Perfil general y migrable del nogal: puedes precisar la variedad '
-        'despues sin perder historial. No es descanso del suelo.',
+        'Perfil general y migrable del nogal, precisa la variedad después sin '
+        'perder historial; no es descanso del suelo',
     aliases: [
       'NG-SKIP',
       'NG_SKIP',

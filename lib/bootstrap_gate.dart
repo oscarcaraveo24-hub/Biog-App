@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/recurring_bloom/recurring_bloom_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/generic/generic_guide.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/profile/profile_repository.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -466,6 +467,43 @@ class _BootstrapGateState extends State<BootstrapGate> {
         seedId: null,
         profileId: null,
       );
+    }
+
+    // ── GUÍA GENERAL ─────────────────────────────────────────────────────────
+    //
+    // Se resuelve antes que nada porque no pasa por el catálogo:
+    // `canonicalCropKeyOrNull('crop_generic')` no encuentra cultivo, y sin esta
+    // rama el borrador caería en la salida de abajo y solo se guardaría el
+    // dispositivo — el agricultor habría elegido "Otro" para nada.
+    //
+    // Tampoco pasa por `WizardCropContextResolver`, que convierte un cropId
+    // desconocido en maíz. Aquí el contexto se arma a mano: son cuatro campos
+    // y ninguno se infiere.
+    if (isGuideCropId(draft.cropId) || isGuideCropId(draft.cropCategory)) {
+      final DateTime now = DateTime.now();
+      final DeviceCropContext guide = DeviceCropContext(
+        deviceId: device.id,
+        cropCategoryId: kGuideCategoryId,
+        cropId: kGuideCropId,
+        // Centinela, no un perfil real: no hay variedad ni catálogo detrás.
+        // Es lo que distingue la guía de un cultivo con perfil genérico.
+        profileId: kGuideProfileId,
+        lifecycleStatus: CropLifecycleStatus.planted,
+        // La fecha no se pide, así que la confianza es "desconocida". No se
+        // estampa `sowingDate`: no hay ciclo que contar desde ella.
+        sowingDateConfidence: DateConfidence.unknown,
+        catalogVersion: CropCatalog.version,
+        source: CropConfigSource.wizard,
+        configuredAt: now,
+        updatedAt: now,
+        cultivationScaleId: draft.cultivationScale,
+        timezone: draft.timezone,
+      );
+      await store.saveCropContext(
+        _withParcelLocation(guide, draft),
+        markSetupCompleted: true,
+      );
+      return;
     }
 
     final String? cropId = _normalizeCropId(draft.cropId);

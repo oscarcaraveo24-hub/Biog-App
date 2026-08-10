@@ -28,7 +28,9 @@ const List<CropProfileEntry> sunflowerProfileEntries = <CropProfileEntry>[
     id: kGi01TallGarden,
     label: 'Girasol alto de jardín',
     cropId: kCropSunflower,
-    subtitle: 'Porte alto, flor dominante y posible necesidad de soporte.',
+    subtitle:
+        'Girasol de porte alto con una flor dominante que puede necesitar '
+        'soporte (girasol gigante, mammoth)',
     aliases: <String>[
       'GI-01',
       'GI01',
@@ -51,7 +53,9 @@ const List<CropProfileEntry> sunflowerProfileEntries = <CropProfileEntry>[
     id: kGi02CompactContainer,
     label: 'Girasol compacto para maceta',
     cropId: kCropSunflower,
-    subtitle: 'Porte bajo para maceta, patio, balcón o borde.',
+    subtitle:
+        'Girasol enano de porte bajo para maceta, patio, balcón o borde de '
+        'jardín (girasol mini, compacto)',
     aliases: <String>[
       'GI-02',
       'GI02',
@@ -74,7 +78,9 @@ const List<CropProfileEntry> sunflowerProfileEntries = <CropProfileEntry>[
     id: kGi03BranchingOrnamental,
     label: 'Girasol ramificado ornamental',
     cropId: kCropSunflower,
-    subtitle: 'Varias flores y una floración más prolongada.',
+    subtitle:
+        'Girasol ramificado con varias flores por planta y floración más '
+        'prolongada (girasol multiflor, bouquet)',
     aliases: <String>[
       'GI-03',
       'GI03',
@@ -98,7 +104,9 @@ const List<CropProfileEntry> sunflowerProfileEntries = <CropProfileEntry>[
     id: kGi04CutFlowerSingleStem,
     label: 'Girasol de corte de tallo único',
     cropId: kCropSunflower,
-    subtitle: 'Una flor por tallo, apertura uniforme y corte temprano.',
+    subtitle:
+        'Girasol de una sola flor por tallo, con apertura pareja y corte '
+        'temprano (girasol de corte, sin polen)',
     aliases: <String>[
       'GI-04',
       'GI04',
@@ -126,8 +134,8 @@ const List<CropProfileEntry> sunflowerProfileEntries = <CropProfileEntry>[
     label: 'No sé / Girasol general',
     cropId: kCropSunflower,
     subtitle:
-        'Perfil general para un Girasol cuyo tipo no conoces. Puedes precisar '
-        'alto, compacto, ramificado o de corte después sin perder historial.',
+        'Perfil general y migrable del girasol, precisas si es alto, compacto, '
+        'ramificado o de corte sin perder historial',
     aliases: <String>[
       'GI-SKIP',
       'GI_SKIP',

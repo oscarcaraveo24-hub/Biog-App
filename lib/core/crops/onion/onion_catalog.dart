@@ -10,7 +10,8 @@ const List<CropProfileEntry> onionProfileEntries = [
     label: 'ON-GEN - No sé / Otra cebolla',
     cropId: kCropOnion,
     subtitle:
-        'Perfil conservador y migrable: puedes cambiar el tipo despues sin perder historial',
+        'Perfil general de cebolla, conservador y migrable — cambias el tipo '
+        'después sin perder historial',
     aliases: [
       'ON-GEN',
       'ONGEN',
@@ -30,7 +31,9 @@ const List<CropProfileEntry> onionProfileEntries = [
     id: kOn01,
     label: 'ON-01 - Cebolla blanca grano/bola',
     cropId: kCropOnion,
-    subtitle: 'Blanca dia corto; mercado nacional, fresco y bodega',
+    subtitle:
+        'Cebolla blanca de siembra otoño-invierno, bulbo de bola o grano para '
+        'fresco nacional y bodega',
     aliases: [
       'ON-01',
       'ON01',
@@ -56,7 +59,9 @@ const List<CropProfileEntry> onionProfileEntries = [
     id: kOn02,
     label: 'ON-02 - Cebolla amarilla/dorada',
     cropId: kCropOnion,
-    subtitle: 'Amarilla dia corto; fresco, alto volumen o dulce',
+    subtitle:
+        'Cebolla amarilla o dorada de siembra otoño-invierno, para fresco de '
+        'alto volumen y tipo dulce',
     aliases: [
       'ON-02',
       'ON02',
@@ -79,7 +84,9 @@ const List<CropProfileEntry> onionProfileEntries = [
     id: kOn03,
     label: 'ON-03 - Cebolla morada',
     cropId: kCropOnion,
-    subtitle: 'Morada dia corto; fresco, color y mercado regional',
+    subtitle:
+        'Cebolla morada de siembra otoño-invierno, se vende por su color en '
+        'mercado regional y en fresco',
     aliases: [
       'ON-03',
       'ON03',
@@ -97,7 +104,9 @@ const List<CropProfileEntry> onionProfileEntries = [
     id: kOn04,
     label: 'ON-04 - Cebolla de transicion / dia intermedio',
     cropId: kCropOnion,
-    subtitle: 'Dia intermedio; altiplano/templado, calibres grandes y bodega',
+    subtitle:
+        'Cebolla de transición o día intermedio, para altiplano templado, de '
+        'bulbo grande y buena bodega',
     aliases: [
       'ON-04',
       'ON04',
@@ -118,7 +127,9 @@ const List<CropProfileEntry> onionProfileEntries = [
     id: kOn05,
     label: 'ON-05 - Cebolla en rama / cambray / manojo',
     cropId: kCropOnion,
-    subtitle: 'Cosecha joven; hoja + base/bulbo incipiente',
+    subtitle:
+        'Cebolla cortada joven, con hoja verde y base apenas engrosada, para '
+        'vender en manojo (cambray)',
     aliases: [
       'ON-05',
       'ON05',
@@ -142,7 +153,9 @@ const List<CropVarietyEntry> onionVarieties = [
     id: 'onion_generic',
     label: 'No sé / Otra cebolla',
     cropId: kCropOnion,
-    subtitle: 'Perfil seguro y migrable: ajusta despues sin reiniciar',
+    subtitle:
+        'Perfil general de cebolla, seguro y migrable — lo ajustas después sin '
+        'reiniciar tu historial',
     defaultProfileId: kOnGen,
     aliases: [
       'Cebolla',
@@ -163,7 +176,9 @@ const List<CropVarietyEntry> onionVarieties = [
     id: 'onion_white',
     label: 'Cebolla blanca grano/bola',
     cropId: kCropOnion,
-    subtitle: 'Tipo - blanca dia corto, mercado nacional/fresco',
+    subtitle:
+        'Tipo blanca de siembra otoño-invierno, bulbo de bola o grano para '
+        'fresco de mercado nacional',
     defaultProfileId: kOn01,
     aliases: [
       'Cebolla blanca',
@@ -190,7 +205,9 @@ const List<CropVarietyEntry> onionVarieties = [
     id: 'onion_yellow',
     label: 'Cebolla amarilla/dorada',
     cropId: kCropOnion,
-    subtitle: 'Tipo - amarilla dia corto, fresco/volumen/dulce',
+    subtitle:
+        'Tipo amarilla o dorada de siembra otoño-invierno, para fresco de alto '
+        'volumen y también dulce',
     defaultProfileId: kOn02,
     aliases: [
       'Cebolla amarilla',
@@ -214,7 +231,9 @@ const List<CropVarietyEntry> onionVarieties = [
     id: 'onion_purple',
     label: 'Cebolla morada',
     cropId: kCropOnion,
-    subtitle: 'Tipo - morada dia corto, color y mercado regional',
+    subtitle:
+        'Tipo morada de siembra otoño-invierno, se vende por su color fuerte '
+        'en el mercado regional',
     defaultProfileId: kOn03,
     aliases: [
       'Cebolla morada',
@@ -234,7 +253,9 @@ const List<CropVarietyEntry> onionVarieties = [
     id: 'onion_transition',
     label: 'Cebolla de transicion / dia intermedio',
     cropId: kCropOnion,
-    subtitle: 'Tipo - dia intermedio, altiplano/templado',
+    subtitle:
+        'Tipo de transición o día intermedio, para siembras de altiplano y '
+        'clima templado',
     defaultProfileId: kOn04,
     aliases: [
       'Transicion',
@@ -255,7 +276,9 @@ const List<CropVarietyEntry> onionVarieties = [
     id: 'onion_cambray',
     label: 'Cebolla en rama / cambray / manojo',
     cropId: kCropOnion,
-    subtitle: 'Tipo - cosecha joven, hoja + base',
+    subtitle:
+        'Tipo que se cosecha joven, con hoja verde y base apenas engrosada, '
+        'para vender en manojo',
     defaultProfileId: kOn05,
     aliases: [
       'Cambray',

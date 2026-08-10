@@ -32,9 +32,8 @@ const List<CropProfileEntry> mangoTreeProfileEntries = [
     label: 'Ataulfo / Manila / miel',
     cropId: kCropMangoTree,
     subtitle:
-        'Mango amarillo, pequeño-mediano, pulpa cremosa/poca fibra, temprano y '
-        'premium. Sensible a HR/lluvia en floración, aborto floral, cuajado, '
-        'alternancia y calidad de piel/pulpa. Premium no significa más toneladas.',
+        'Mango amarillo chico a mediano, de pulpa cremosa con poca fibra y '
+        'corte temprano (Ataulfo/Manila)',
     aliases: [
       'MG-01',
       'MG01',
@@ -61,9 +60,8 @@ const List<CropProfileEntry> mangoTreeProfileEntries = [
     label: 'Tommy Atkins',
     cropId: kCropMangoTree,
     subtitle:
-        'Mango de volumen/exportación, fruto grande rojo/verde de buena '
-        'resistencia de transporte. Vigilar déficit hídrico prolongado, exceso '
-        'vegetativo por N, alternancia y antracnosis/cenicilla en flor.',
+        'Mango grande rojo con verde, de volumen y exportación, aguanta bien '
+        'el transporte (Tommy Atkins)',
     aliases: [
       'MG-02',
       'MG02',
@@ -85,9 +83,8 @@ const List<CropProfileEntry> mangoTreeProfileEntries = [
     label: 'Kent',
     cropId: kCropMangoTree,
     subtitle:
-        'Mango intermedio-tardío de exportación, buena calidad interna y '
-        'llenado largo. Sensible a estrés hídrico en llenado, HR en floración, '
-        'alternancia moderada y madurez de corte.',
+        'Mango de exportación intermedio-tardío, de buena calidad interna y '
+        'llenado largo (Kent)',
     aliases: [
       'MG-03',
       'MG03',
@@ -107,9 +104,8 @@ const List<CropProfileEntry> mangoTreeProfileEntries = [
     label: 'Keitt',
     cropId: kCropMangoTree,
     subtitle:
-        'Mango tardío/muy tardío, fruto grande, ventana extendida. Llenado muy '
-        'largo: mayor exposición a estrés hídrico acumulado, alternancia fuerte, '
-        'reservas de postcosecha, calibre y madurez.',
+        'Mango tardío de fruto grande y ventana extendida, con llenado muy '
+        'largo (Keitt)',
     aliases: [
       'MG-04',
       'MG04',
@@ -128,9 +124,8 @@ const List<CropProfileEntry> mangoTreeProfileEntries = [
     label: 'Criollo / regional',
     cropId: kCropMangoTree,
     subtitle:
-        'Mango de patio/huerto tradicional, mercado local/regional, mucha '
-        'variabilidad genética y de calidad. No asumir rendimiento alto por '
-        'árbol grande viejo: poda, alternancia y calidad son irregulares.',
+        'Mango criollo de patio o huerto tradicional para mercado local, muy '
+        'variable en calidad',
     aliases: [
       'MG-05',
       'MG05',
@@ -154,9 +149,8 @@ const List<CropProfileEntry> mangoTreeProfileEntries = [
     label: 'No sé / Mango general',
     cropId: kCropMangoTree,
     subtitle:
-        'Perfil general y migrable del mango: puedes precisar Ataulfo/Manila, '
-        'Tommy Atkins, Kent, Keitt o Criollo después sin perder historial. No '
-        'es descanso del suelo ni promete floración cada año.',
+        'Perfil general y migrable del mango, precisa la variedad después sin '
+        'perder historial; no es descanso del suelo',
     aliases: [
       'MG-SKIP',
       'MG_SKIP',

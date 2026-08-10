@@ -54,9 +54,8 @@ const List<CropProfileEntry> nopalProfileEntries = <CropProfileEntry>[
     label: 'Nopal compacto o agrupado',
     cropId: kCropNopal,
     subtitle:
-        'Pencas pequeñas o medianas que forman grupos; común en maceta y '
-        'rocalla. Los puntos que parecen pelusa sueltan gloquidios: no lo '
-        'toques con la mano.',
+        'Pencas chicas que forman grupos, común en maceta y rocalla, con '
+        'gloquidios que no debes tocar (orejas de conejo)',
     aliases: <String>[
       'NO-01',
       'NO01',
@@ -90,9 +89,8 @@ const List<CropProfileEntry> nopalProfileEntries = <CropProfileEntry>[
     label: 'Nopal alto o de penca grande',
     cropId: kCropNopal,
     subtitle:
-        'Pencas amplias y porte erguido; común en jardín, maceta grande o '
-        'cerco. Con el tamaño ganan importancia el anclaje y la raíz extendida: '
-        'una sonda solo describe su zona.',
+        'Pencas amplias y porte erguido para jardín, maceta grande o cerco, '
+        'con raíz extendida (nopal de castilla)',
     aliases: <String>[
       'NO-02',
       'NO02',
@@ -107,9 +105,7 @@ const List<CropProfileEntry> nopalProfileEntries = <CropProfileEntry>[
       'indian fig',
       'indian fig opuntia',
       'mission cactus',
-      'nopal manso',
-      'nopal sin espinas',
-      'nopal de huerta',
+
       'nopal orejón',
       'nopal orejon',
       'nopal oreja de elefante',
@@ -129,8 +125,8 @@ const List<CropProfileEntry> nopalProfileEntries = <CropProfileEntry>[
     label: 'Nopal arbustivo de paisaje',
     cropId: kCropNopal,
     subtitle:
-        'Forma matas amplias, con pencas medianas y espinas o color ornamental. '
-        'El color morado puede ser estacional y no indica enfermedad.',
+        'Mata amplia de pencas medianas y espinas, con color morado que puede '
+        'ser estacional y no señal de daño',
     aliases: <String>[
       'NO-03',
       'NO03',
@@ -165,9 +161,8 @@ const List<CropProfileEntry> nopalProfileEntries = <CropProfileEntry>[
     label: 'Nopal bajo o rastrero',
     cropId: kCropNopal,
     subtitle:
-        'Pencas cercanas al suelo que se extienden; algunas formas pasan '
-        'inviernos fríos. El encogimiento y la postura baja en invierno pueden '
-        'ser normales, no colapso.',
+        'Pencas cercanas al suelo que se extienden, algunas formas pasan '
+        'inviernos fríos y se ven encogidas',
     aliases: <String>[
       'NO-04',
       'NO04',
@@ -207,8 +202,8 @@ const List<CropProfileEntry> nopalProfileEntries = <CropProfileEntry>[
     label: 'No sé / nopal general',
     cropId: kCropNopal,
     subtitle:
-        'Perfil general y migrable: usaremos un manejo prudente y podrás elegir '
-        'su forma después sin perder la fecha ni el historial.',
+        'Perfil general y migrable del nopal con manejo prudente, precisas su '
+        'forma después sin perder el historial',
     aliases: <String>[
       'NO-SKIP',
       'NO_SKIP',
@@ -255,6 +250,17 @@ const List<String> nopalAmbiguousProfileAliases = <String>[
   'nopal blanco',
   'nopal pelón',
   'nopal pelon',
+  // "Sin espinas" describe el número de espinas, no la arquitectura de la
+  // planta. Estaba como alias de NO-02 (erguido, penca grande, clima cálido),
+  // así que un usuario que solo dijera "nopal sin espinas" heredaba su
+  // agronomía: multiplicador de frío 1.15 y NPK en lenguaje de acción en vez
+  // de revisión. El catálogo prohíbe expresamente separar perfiles por número
+  // de espinas (Doc A §0.4, §5).
+  'nopal sin espinas',
+  // "Manso" es exactamente lo mismo dicho de otra forma: manso ↔ bravo es la
+  // oposición popular por espinas. Dejarlo en NO-02 mientras "sin espinas" se
+  // consideraba ambiguo era una incoherencia del propio catálogo.
+  'nopal manso',
   'nopal decorativo',
   'nopal decorativo pequeño',
   'nopal decorativo pequeno',
@@ -295,6 +301,10 @@ const List<String> nopalProductiveIntentAliases = <String>[
   'nopal forrajero',
   'nopal de cochinilla',
   'nopal de tuna',
+  // "De huerta" declara finalidad productiva, no arquitectura. La Guía de
+  // Ornamentales §51 deja fuera de alcance la producción de tuna y penca, así
+  // que esto debe disparar la pregunta de propósito, no elegir perfil.
+  'nopal de huerta',
   'penca para comer',
 ];
 

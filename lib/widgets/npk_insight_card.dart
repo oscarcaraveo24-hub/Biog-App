@@ -110,8 +110,7 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
                         children: [
                           Text(
                             widget.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            softWrap: true,
                             style: const TextStyle(
                               fontSize: 14.5,
                               fontWeight: FontWeight.w800,

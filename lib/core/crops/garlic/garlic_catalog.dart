@@ -10,7 +10,8 @@ const List<CropProfileEntry> garlicProfileEntries = [
     label: 'AG-GEN - No se / Otro ajo',
     cropId: kCropGarlic,
     subtitle:
-        'Perfil conservador y migrable: puedes cambiar el tipo despues sin perder historial',
+        'Perfil general de ajo, conservador y migrable — cambias el tipo '
+        'después sin perder tu historial',
     aliases: [
       'AG-GEN',
       'AGGEN',
@@ -27,7 +28,9 @@ const List<CropProfileEntry> garlicProfileEntries = [
     id: kAg01,
     label: 'AG-01 - Ajo blanco / Perla',
     cropId: kCropGarlic,
-    subtitle: 'Blanco o Perla; curado y calibre comercial',
+    subtitle:
+        'Ajo de túnica blanca y bulbo parejo, se cura para calibre comercial y '
+        'venta en fresco (perla)',
     aliases: [
       'AG-01',
       'AG01',
@@ -43,7 +46,9 @@ const List<CropProfileEntry> garlicProfileEntries = [
     id: kAg02,
     label: 'AG-02 - Ajo jaspeado / Calera / rayado',
     cropId: kCropGarlic,
-    subtitle: 'Jaspeado, Calera o rayado; alto potencial si hay frio y sanidad',
+    subtitle:
+        'Ajo de túnica rayada con vetas moradas, de alto potencial donde hay '
+        'frío y buena sanidad (Calera)',
     aliases: [
       'AG-02',
       'AG02',
@@ -62,21 +67,27 @@ const List<CropProfileEntry> garlicProfileEntries = [
     id: kAg03,
     label: 'AG-03 - Ajo morado',
     cropId: kCropGarlic,
-    subtitle: 'Morado; color, frio y curado pesan fuerte',
+    subtitle:
+        'Ajo de túnica morada, donde el color, el frío y el buen curado pesan '
+        'fuerte a la hora de vender',
     aliases: ['AG-03', 'AG03', 'Ajo morado', 'Morado'],
   ),
   CropProfileEntry(
     id: kAg04,
     label: 'AG-04 - Ajo criollo / regional',
     cropId: kCropGarlic,
-    subtitle: 'Criollo o regional; cuidar diente-semilla y sanidad local',
+    subtitle:
+        'Ajo criollo adaptado a tu zona, cuida la calidad del diente-semilla y '
+        'la sanidad local',
     aliases: ['AG-04', 'AG04', 'Ajo criollo', 'Criollo Regional', 'Regional'],
   ),
   CropProfileEntry(
     id: kAg05,
     label: 'AG-05 - Ajo chino / coreano',
     cropId: kCropGarlic,
-    subtitle: 'Chino o coreano; verificar trazabilidad y adaptacion',
+    subtitle:
+        'Ajo tipo chino o coreano de bulbo blanco y grande, revisa su '
+        'trazabilidad y su adaptación a tu zona',
     aliases: [
       'AG-05',
       'AG05',
@@ -94,7 +105,9 @@ const List<CropVarietyEntry> garlicVarieties = [
     id: 'garlic_generic',
     label: 'No se / Otro ajo',
     cropId: kCropGarlic,
-    subtitle: 'Perfil seguro y migrable: ajusta despues sin reiniciar',
+    subtitle:
+        'Perfil general de ajo, seguro y migrable — lo ajustas después sin '
+        'reiniciar tu historial',
     defaultProfileId: kAgGen,
     aliases: [
       'Ajo',
@@ -112,7 +125,9 @@ const List<CropVarietyEntry> garlicVarieties = [
     id: 'garlic_white_pearl',
     label: 'Blanco / Perla',
     cropId: kCropGarlic,
-    subtitle: 'Tipo - blanco o perla, bulbo comercial curado',
+    subtitle:
+        'Tipo de túnica blanca o perla, bulbo parejo y ya curado para venta '
+        'comercial en fresco',
     defaultProfileId: kAg01,
     aliases: [
       'Ajo blanco',
@@ -131,7 +146,9 @@ const List<CropVarietyEntry> garlicVarieties = [
     id: 'garlic_jaspeado_calera',
     label: 'Jaspeado / Calera / rayado',
     cropId: kCropGarlic,
-    subtitle: 'Tipo - jaspeado, Calera o rayado',
+    subtitle:
+        'Tipo de túnica rayada con vetas moradas y dientes grandes, pocos por '
+        'bulbo (Calera, rayado)',
     defaultProfileId: kAg02,
     aliases: [
       'Ajo jaspeado',
@@ -153,7 +170,9 @@ const List<CropVarietyEntry> garlicVarieties = [
     id: 'garlic_purple',
     label: 'Morado',
     cropId: kCropGarlic,
-    subtitle: 'Tipo - morado, color y mercado regional',
+    subtitle:
+        'Tipo de túnica morada, se vende por su color intenso en mercados '
+        'regionales y locales',
     defaultProfileId: kAg03,
     aliases: ['Ajo morado', 'Morado', 'AG-03', 'AG03'],
   ),
@@ -161,7 +180,9 @@ const List<CropVarietyEntry> garlicVarieties = [
     id: 'garlic_criollo_regional',
     label: 'Criollo / Regional',
     cropId: kCropGarlic,
-    subtitle: 'Tipo - criollo o regional',
+    subtitle:
+        'Tipo criollo o regional, de semilla propia del productor y bulbo '
+        'adaptado a tu zona',
     defaultProfileId: kAg04,
     aliases: ['Ajo criollo', 'Criollo Regional', 'Regional', 'AG-04', 'AG04'],
   ),
@@ -169,7 +190,9 @@ const List<CropVarietyEntry> garlicVarieties = [
     id: 'garlic_chinese_korean',
     label: 'Chino / Coreano',
     cropId: kCropGarlic,
-    subtitle: 'Tipo - chino, coreano o trazabilidad similar',
+    subtitle:
+        'Tipo chino o coreano de bulbo blanco y grande, revisa la trazabilidad '
+        'de la semilla que compras',
     defaultProfileId: kAg05,
     aliases: [
       'Ajo chino',

@@ -3,13 +3,54 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:bio_g/core/agro/agronomic_event.dart';
+import 'package:bio_g/core/notifications/notification_dispatcher.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 import 'package:bio_g/widgets/history/history_event_tile.dart';
 
+/// Bandeja de avisos.
+///
+/// Antes recibía una lista de [AgronomicEvent] por constructor, y cada pantalla
+/// le pasaba la suya: el Panel una calculada sin historial de telemetría y el
+/// Historial otra distinta. Abrir la campana desde un sitio o desde otro daba
+/// contenidos diferentes, y ninguno coincidía con lo que la bandeja real había
+/// decidido entregar.
+///
+/// Ahora la fuente es única: [NotificationDispatcher], que es quien aplica las
+/// preferencias del agricultor —umbral de severidad, categorías, horario
+/// silencioso— y persiste lo que de verdad se avisó.
+///
+/// La distinción del Fundacional se conserva intacta: un **evento** es algo que
+/// ocurrió y vive en el Historial; una **notificación** es lo que BIO-G decidió
+/// comunicar y vive aquí. Por eso el Historial legítimamente muestra más cosas
+/// que esta pantalla.
+///
+/// Esa misma distinción obliga a dos entradas, no a una:
+///
+/// - [NotificationsScreen] — la campana. Fuente: el despachador.
+/// - [NotificationsScreen.events] — el "Ver más" del Historial. Fuente: la
+///   lista de eventos que esa pantalla ya está mostrando, porque el Historial
+///   solo pinta tres y necesita una vía para verlos todos.
+///
+/// Comparten el mismo render a propósito: es la misma clase de contenido con
+/// distinto criterio de inclusión. Lo que NO puede volver a pasar es que la
+/// campana se alimente de eventos recalculados, que era el origen de que
+/// mostrara una cosa por fuera y otra por dentro.
 class NotificationsScreen extends StatefulWidget {
-  final List<AgronomicEvent> events;
+  /// Bandeja real. Nulo en el modo de solo eventos.
+  final NotificationDispatcher? dispatcher;
 
-  const NotificationsScreen({super.key, required this.events});
+  /// Eventos fijos a mostrar. Nulo en el modo bandeja.
+  final List<AgronomicEvent>? events;
+
+  // Los `assert` sostienen el invariante que el sistema de tipos no puede:
+  // exactamente una de las dos fuentes, nunca ninguna.
+  const NotificationsScreen({super.key, required this.dispatcher})
+    : events = null,
+      assert(dispatcher != null, 'La campana necesita el despachador');
+
+  const NotificationsScreen.events({super.key, required this.events})
+    : dispatcher = null,
+      assert(events != null, 'El modo lista necesita los eventos');
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -20,24 +61,92 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   static const List<String> _filterLabels = ['Todos', 'Alertas', 'Info'];
 
-  List<AgronomicEvent> get _filtered {
+  @override
+  void initState() {
+    super.initState();
+    // Visitar la bandeja es leerla: apaga la campana y lo persiste.
+    // `markRead`/`markAllRead` existían y no los llamaba nadie, así que
+    // `unreadCount` solo podía crecer y el punto rojo no se apagaba jamás.
+    //
+    // Se hidrata antes de marcar: en un arranque en frío la bandeja de disco
+    // puede no estar leída todavía, y marcar sobre una lista vacía no tendría
+    // efecto útil. `hydrate()` es idempotente.
+    final NotificationDispatcher? dispatcher = widget.dispatcher;
+    if (dispatcher == null) return; // Modo solo eventos: no hay nada que leer.
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await dispatcher.hydrate();
+      if (!mounted) return;
+      await dispatcher.markAllRead();
+    });
+  }
+
+  /// Evento de presentación reconstruido desde la notificación.
+  ///
+  /// Los tiles siguen recibiendo un [AgronomicEvent], así que el render queda
+  /// idéntico: no se toca ni un widget. `payload` conserva el tipo y la métrica
+  /// del evento de origen, y el `id` de la notificación es `deviceId|dedupKey`,
+  /// que es la misma llave con la que el evento quedó archivado en el Historial.
+  static AgronomicEvent _asDisplayEvent(BiogNotification n) {
+    return AgronomicEvent(
+      type: AgronomicEventType.values.firstWhere(
+        (AgronomicEventType t) => t.name == n.payload['eventType'],
+        orElse: () => AgronomicEventType.genericMode,
+      ),
+      severity: n.severity,
+      title: n.title,
+      message: n.body,
+      timestamp: n.createdAt,
+      deviceId: n.deviceId,
+      metricKey: n.payload['metricKey'] as String?,
+      stageKey: n.payload['stageKey'] as String?,
+      isCritical: n.severity == AgronomicEventSeverity.critical,
+      isInformative: n.severity == AgronomicEventSeverity.info,
+    );
+  }
+
+  List<AgronomicEvent> get _all {
+    final List<AgronomicEvent>? fixed = widget.events;
+    if (fixed != null) return fixed;
+
+    return widget.dispatcher!.notifications
+        .where(
+          (BiogNotification n) =>
+              n.state != NotificationDeliveryState.dismissed,
+        )
+        .map(_asDisplayEvent)
+        .toList(growable: false);
+  }
+
+  List<AgronomicEvent> _filteredFrom(List<AgronomicEvent> all) {
     switch (_filterIndex) {
       case 1:
-        return widget.events
-            .where((e) => e.isAlertLike || e.isCritical)
-            .toList();
+        return all.where((e) => e.isAlertLike || e.isCritical).toList();
       case 2:
-        return widget.events
-            .where((e) => !e.isAlertLike && !e.isCritical)
-            .toList();
+        return all.where((e) => !e.isAlertLike && !e.isCritical).toList();
       default:
-        return widget.events;
+        return all;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filtered;
+    final NotificationDispatcher? dispatcher = widget.dispatcher;
+    // En modo solo eventos la lista es fija: no hay a qué suscribirse.
+    if (dispatcher == null) return _buildContent(context);
+
+    // Repinta cuando la bandeja cambia: al marcar leído, al descartar o al
+    // llegar un aviso nuevo mientras la pantalla está abierta.
+    return AnimatedBuilder(
+      animation: dispatcher,
+      builder: (BuildContext context, Widget? _) => _buildContent(context),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    final all = _all;
+    final filtered = _filteredFrom(all);
     final bottomPad = MediaQuery.of(context).viewPadding.bottom + 24;
 
     return Scaffold(
@@ -65,7 +174,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                   ),
                   Text(
-                    '${widget.events.length}',
+                    '${all.length}',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -405,7 +514,10 @@ class _NotificationExpandableTileState
     if (event.type == AgronomicEventType.combinedStress) return 'Tendencia';
     if (event.type == AgronomicEventType.recovery) return 'Resumen';
 
-    final dt = event.timestamp;
+    // `.toLocal()`: los timestamps se persisten y se comparan en UTC, pero la
+    // hora que lee el agricultor tiene que ser la de su reloj. Sin esto la
+    // bandeja mostraba las horas corridas por el huso (seis horas en México).
+    final dt = event.timestamp.toLocal();
     final now = DateTime.now();
     final diff = now.difference(dt);
 

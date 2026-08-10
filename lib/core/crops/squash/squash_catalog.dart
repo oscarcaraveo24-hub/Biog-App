@@ -14,7 +14,8 @@ const List<CropProfileEntry> squashProfileEntries = [
     label: 'CA-GEN - Calabaza genérica',
     cropId: kCropSquash,
     subtitle:
-        'Perfil conservador y migrable: puedes afinar el tipo después sin perder historial',
+        'Perfil conservador y migrable de calabaza: afinas el tipo después sin '
+        'perder tu historial',
     aliases: [
       'CA-GEN',
       'CAGEN',
@@ -36,7 +37,9 @@ const List<CropProfileEntry> squashProfileEntries = [
     id: kCa01,
     label: 'CA-01 - Calabacita italiana / zucchini',
     cropId: kCropSquash,
-    subtitle: 'Fruto tierno de corte continuo (calabacita)',
+    subtitle:
+        'Calabacita tierna de planta de mata, se corta chica y seguido para '
+        'consumo inmediato (zucchini)',
     aliases: [
       'CA-01',
       'CA01',
@@ -56,7 +59,9 @@ const List<CropProfileEntry> squashProfileEntries = [
     id: kCa02,
     label: 'CA-02 - Calabacita criolla / huicha / milpa',
     cropId: kCropSquash,
-    subtitle: 'Fruto tierno - sistema mixto / temporal',
+    subtitle:
+        'Calabacita criolla de guía, sembrada en milpa y de temporal, se come '
+        'tierna (huicha)',
     aliases: [
       'CA-02',
       'CA02',
@@ -76,7 +81,9 @@ const List<CropProfileEntry> squashProfileEntries = [
     id: kCa03,
     label: 'CA-03 - Calabacita de bola / redonda',
     cropId: kCropSquash,
-    subtitle: 'Fruto tierno - calibre y forma esférica',
+    subtitle:
+        'Calabacita tierna y redonda de planta de mata, se corta chica para '
+        'consumo inmediato (de bola)',
     aliases: [
       'CA-03',
       'CA03',
@@ -92,7 +99,9 @@ const List<CropProfileEntry> squashProfileEntries = [
     id: kCa04,
     label: 'CA-04 - Calabaza de Castilla',
     cropId: kCropSquash,
-    subtitle: 'Fruto maduro - dulce, altar y almacenamiento',
+    subtitle:
+        'Calabaza de guía de cáscara dura y pulpa dulce, se cosecha madura y '
+        'aguanta guardada (de altar)',
     aliases: [
       'CA-04',
       'CA04',
@@ -109,7 +118,9 @@ const List<CropProfileEntry> squashProfileEntries = [
     id: kCa05,
     label: 'CA-05 - Butternut / buchona / mantequilla',
     cropId: kCropSquash,
-    subtitle: 'Fruto maduro - mercado fresco y postcosecha',
+    subtitle:
+        'Calabaza de cuello largo y cáscara dura, de pulpa anaranjada dulce y '
+        'guarda larga (buchona)',
     aliases: [
       'CA-05',
       'CA05',
@@ -126,7 +137,9 @@ const List<CropProfileEntry> squashProfileEntries = [
     id: kCa06,
     label: 'CA-06 - Chilacayote',
     cropId: kCropSquash,
-    subtitle: 'Ciclo muy largo / fruto maduro tradicional',
+    subtitle:
+        'Calabaza de guía muy vigorosa y ciclo largo, de cáscara dura y fruto '
+        'maduro para dulce',
     aliases: [
       'CA-06',
       'CA06',
@@ -139,7 +152,9 @@ const List<CropProfileEntry> squashProfileEntries = [
     id: kCa07,
     label: 'CA-07 - Pipián / pipiana / pepita',
     cropId: kCropSquash,
-    subtitle: 'Destino semilla seca (pepita); mide en t/ha de semilla',
+    subtitle:
+        'Calabaza sembrada para pepita: se cosecha la semilla seca y no la '
+        'pulpa (pipiana, chihua)',
     aliases: [
       'CA-07',
       'CA07',
@@ -164,7 +179,9 @@ const List<CropVarietyEntry> squashVarieties = [
     id: 'squash_generic',
     label: 'No sé / Otra calabaza',
     cropId: kCropSquash,
-    subtitle: 'Perfil seguro y migrable: ajusta después sin reiniciar',
+    subtitle:
+        'Perfil seguro y migrable de calabaza, ajustas el tipo después sin '
+        'reiniciar tu historial',
     defaultProfileId: kCaGen,
     aliases: [
       'Calabaza',
@@ -187,7 +204,9 @@ const List<CropVarietyEntry> squashVarieties = [
     id: 'squash_zucchini',
     label: 'Calabacita italiana / zucchini',
     cropId: kCropSquash,
-    subtitle: 'Tipo - fruto tierno de corte continuo',
+    subtitle:
+        'Tipo de mata con fruto tierno de corte continuo, para consumo '
+        'inmediato (italiana, zucchini)',
     defaultProfileId: kCa01,
     aliases: [
       'Calabacita italiana',
@@ -207,7 +226,9 @@ const List<CropVarietyEntry> squashVarieties = [
     id: 'squash_criolla',
     label: 'Calabacita criolla / huicha / milpa',
     cropId: kCropSquash,
-    subtitle: 'Tipo - sistema mixto, temporal, milpa',
+    subtitle:
+        'Tipo de guía para milpa y temporal, de fruto tierno y consumo '
+        'inmediato (criolla, huicha)',
     defaultProfileId: kCa02,
     aliases: [
       'Criolla',
@@ -227,7 +248,9 @@ const List<CropVarietyEntry> squashVarieties = [
     id: 'squash_round',
     label: 'Calabacita de bola / redonda',
     cropId: kCropSquash,
-    subtitle: 'Tipo - fruto tierno esférico',
+    subtitle:
+        'Tipo de mata con fruto tierno y redondo, se corta chico y se come '
+        'pronto (bola, redonda)',
     defaultProfileId: kCa03,
     aliases: [
       'Bola',
@@ -244,7 +267,9 @@ const List<CropVarietyEntry> squashVarieties = [
     id: 'squash_castilla',
     label: 'Calabaza de Castilla',
     cropId: kCropSquash,
-    subtitle: 'Tipo - fruto maduro de altar y dulce',
+    subtitle:
+        'Tipo de guía con fruto maduro de cáscara dura, dulce y de guarda '
+        'larga (calabaza de altar)',
     defaultProfileId: kCa04,
     aliases: [
       'Castilla',
@@ -262,7 +287,9 @@ const List<CropVarietyEntry> squashVarieties = [
     id: 'squash_butternut',
     label: 'Butternut / buchona / mantequilla',
     cropId: kCropSquash,
-    subtitle: 'Tipo - fruto maduro mantequilla y postcosecha',
+    subtitle:
+        'Tipo de fruto maduro con cuello largo y cáscara dura, aguanta bien '
+        'guardado (mantequilla)',
     defaultProfileId: kCa05,
     aliases: [
       'Butternut',
@@ -280,7 +307,9 @@ const List<CropVarietyEntry> squashVarieties = [
     id: 'squash_chilacayote',
     label: 'Chilacayote',
     cropId: kCropSquash,
-    subtitle: 'Tipo - ciclo muy largo, fruto maduro',
+    subtitle:
+        'Tipo de guía de ciclo muy largo, con fruto maduro de cáscara dura que '
+        'se usa para dulce',
     defaultProfileId: kCa06,
     aliases: [
       'Chilacayote',
@@ -294,7 +323,9 @@ const List<CropVarietyEntry> squashVarieties = [
     id: 'squash_pipian',
     label: 'Pipián / pipiana / pepita',
     cropId: kCropSquash,
-    subtitle: 'Tipo - destino semilla seca (pepita)',
+    subtitle:
+        'Tipo sembrado para semilla seca, se cosecha la pepita y no la pulpa '
+        '(pipiana, chihua)',
     defaultProfileId: kCa07,
     aliases: [
       'Pipian',

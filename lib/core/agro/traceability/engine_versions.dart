@@ -36,7 +36,7 @@ class BioGEngineVersions {
   static const String agroScore = '1.0.0';
 
   /// Planificador de fertilización existente.
-  static const String fertilization = '1.0.0';
+  static const String fertilization = '1.1.0';
 
   /// Versión del formato del registro auditable de recomendaciones.
   ///

@@ -9,6 +9,14 @@ class AlertsEngine {
   ///   0 = sin ajuste (etapa normal)
   ///   1 = parcial (info → warning)
   ///   2 = completo (info → warning, warning → critical)
+  ///
+  /// [isGuide] activa los textos del MODO GUÍA GENERAL. Los cuerpos normales
+  /// interpolan cultivo y etapa ("para maíz en floración"); en guía no hay ni
+  /// uno ni otra, y las plantillas de siempre acabarían diciendo "para tu
+  /// cultivo en etapa etapa actual" o nombrando patologías de un cultivo que
+  /// el sistema no conoce. Con la bandera en true se sirven versiones sin
+  /// etapa y sin diagnóstico específico. Por defecto false: ningún motor
+  /// existente cambia de comportamiento.
   static AlertsBuildResult buildFromSuggestedKeys({
     required String deviceId,
     required DateTime now,
@@ -18,6 +26,7 @@ class AlertsEngine {
     Duration cooldown = defaultCooldown,
     String? cropLabel,
     String? stageLabel,
+    bool isGuide = false,
   }) {
     final out = <BioGAlert>[];
     final nextMap = Map<BioGAlertType, DateTime>.from(prev.lastByType);
@@ -26,7 +35,12 @@ class AlertsEngine {
     final stage = stageLabel ?? 'etapa actual';
 
     for (final k in suggestedKeys) {
-      final mapped = _mapKeyToAlert(k, crop: crop, stage: stage);
+      final mapped = _mapKeyToAlert(
+        k,
+        crop: crop,
+        stage: stage,
+        isGuide: isGuide,
+      );
       if (mapped == null) continue;
 
       final type = mapped.type;
@@ -71,6 +85,153 @@ class AlertsEngine {
     );
   }
 
+  /// Plantillas del MODO GUÍA GENERAL.
+  ///
+  /// Mismos tipos y mismas severidades que las plantillas normales — un aviso
+  /// de helada no puede pesar distinto según cómo se configuró el cultivo—,
+  /// pero con dos reglas de redacción:
+  ///
+  ///   1. **No se nombra la etapa.** No hay fenología en guía; escribir "en
+  ///      etapa actual" es ruido, y "en floración" sería una invención.
+  ///   2. **No se nombra la patología ni la enmienda concreta.** "Favorece
+  ///      roya, antracnosis y tizón" es un diagnóstico que exige saber qué
+  ///      planta hay sembrada. Se describe la condición medida y se deja la
+  ///      interpretación al agricultor, que sí sabe qué plantó.
+  ///
+  /// Solo cubre las claves que el motor de guía puede emitir: las cinco
+  /// críticas de suelo y las seis ambientales. Devuelve null para el resto.
+  static _AlertTemplate? _guideAlert(String key, {required String crop}) {
+    switch (key) {
+      // ── Suelo (solo críticas: ver GuideAgroScoreEngine) ──
+      case 'soilMoisture.critical':
+        return _AlertTemplate(
+          type: BioGAlertType.lowSoilMoisture,
+          severity: BioGAlertSeverity.critical,
+          title: 'Humedad crítica',
+          // Sin orden de riego: esa solo la emite IrrigationEngine, que es
+          // quien ve el pronóstico.
+          body:
+              'La humedad del suelo está muy por debajo del rango general '
+              'para plantas de campo. Revisa la recomendación de riego en el '
+              'Panel.',
+        );
+      // Clave exclusiva de la guía: el otro lado de `soilMoisture.critical`.
+      // El vocabulario del catálogo no distingue sequía de encharcamiento
+      // dentro de "crítico", y aquí sí hace falta.
+      case 'soilMoisture.saturated':
+        return _AlertTemplate(
+          type: BioGAlertType.highSoilMoisture,
+          severity: BioGAlertSeverity.critical,
+          title: 'Suelo encharcado',
+          body:
+              'La humedad del suelo está muy por encima del rango general. '
+              'Con la raíz sin aire empiezan las pudriciones. Revisa drenaje '
+              'y suspende el riego.',
+        );
+      case 'soilTemp.critical':
+        return _AlertTemplate(
+          type: BioGAlertType.tempExtreme,
+          severity: BioGAlertSeverity.warning,
+          title: 'Temperatura de suelo extrema',
+          body:
+              'La temperatura del suelo está fuera del rango que tolera la '
+              'mayoría de las plantas. Las raíces pueden sufrir estrés '
+              'térmico y absorber peor.',
+        );
+      case 'ph.critical':
+        return _AlertTemplate(
+          type: BioGAlertType.phOutOfRange,
+          severity: BioGAlertSeverity.warning,
+          title: 'pH fuera de rango',
+          body:
+              'El pH del suelo está fuera del rango general (5.8 – 7.2). '
+              'Fuera de esa ventana varios nutrientes quedan bloqueados '
+              'aunque estén presentes en el suelo.',
+        );
+      case 'ec.critical':
+        return _AlertTemplate(
+          type: BioGAlertType.ecOutOfRange,
+          severity: BioGAlertSeverity.warning,
+          title: 'Conductividad eléctrica fuera de rango',
+          body:
+              'La CE está fuera del rango general. Si es alta, la salinidad '
+              'puede dañar las raíces. Si es baja, hay pocos nutrientes '
+              'disueltos.',
+        );
+      case 'resistance.critical':
+        return _AlertTemplate(
+          type: BioGAlertType.stageEvent,
+          severity: BioGAlertSeverity.warning,
+          title: 'Suelo compactado',
+          body:
+              'La resistencia a la penetración es alta. Las raíces pueden no '
+              'expandirse bien. Evalúa subsoleo o laboreo.',
+        );
+
+      // ── Ambiental ──
+      // Estas sí son físicas y valen para cualquier planta: el agua se
+      // congela a 0 °C sin preguntar qué hay sembrado arriba.
+      case 'airTemp.frost':
+        return _AlertTemplate(
+          type: BioGAlertType.airTempExtreme,
+          severity: BioGAlertSeverity.critical,
+          title: 'Riesgo de helada',
+          body:
+              'La temperatura ambiental está cerca o bajo 0 °C. Salvo que '
+              '$crop resista el frío, evalúa protección anti-helada.',
+        );
+      case 'airTemp.cold':
+        return _AlertTemplate(
+          type: BioGAlertType.airTempExtreme,
+          severity: BioGAlertSeverity.warning,
+          title: 'Temperatura ambiental baja',
+          body:
+              'La temperatura ambiental es baja. El crecimiento se ralentiza '
+              'y puede haber daño por frío.',
+        );
+      case 'airTemp.heat':
+        return _AlertTemplate(
+          type: BioGAlertType.airTempExtreme,
+          severity: BioGAlertSeverity.warning,
+          title: 'Golpe de calor',
+          body:
+              'La temperatura ambiental supera los 35 °C. Si $crop está en '
+              'floración, el polen puede perder viabilidad.',
+        );
+      case 'airTemp.extreme_heat':
+        return _AlertTemplate(
+          type: BioGAlertType.airTempExtreme,
+          severity: BioGAlertSeverity.critical,
+          title: 'Calor extremo',
+          body:
+              'La temperatura ambiental supera los 40 °C. Riesgo de '
+              'quemaduras foliares y estrés severo en casi cualquier planta '
+              'de campo.',
+        );
+      case 'airHumidity.high':
+        return _AlertTemplate(
+          type: BioGAlertType.highHumidity,
+          severity: BioGAlertSeverity.warning,
+          title: 'Humedad relativa alta',
+          body:
+              'La HR es alta (>80%). La humedad sostenida sobre el follaje '
+              'favorece hongos. Revisa ventilación y mojado de hoja.',
+        );
+      case 'airHumidity.critical':
+        return _AlertTemplate(
+          type: BioGAlertType.highHumidity,
+          severity: BioGAlertSeverity.critical,
+          title: 'Humedad relativa muy alta',
+          body:
+              'La HR está por arriba del 90%. El follaje pasa horas mojado y '
+              'el riesgo de enfermedad fúngica sube mucho. Prioriza '
+              'ventilación y drenaje.',
+        );
+    }
+
+    return null;
+  }
+
   static BioGAlertSeverity _bumpSeverity(BioGAlertSeverity s) {
     switch (s) {
       case BioGAlertSeverity.info:
@@ -86,7 +247,15 @@ class AlertsEngine {
     String key, {
     required String crop,
     required String stage,
+    bool isGuide = false,
   }) {
+    if (isGuide) {
+      final _AlertTemplate? guideTemplate = _guideAlert(key, crop: crop);
+      if (guideTemplate != null) return guideTemplate;
+      // Sin plantilla de guía se cae al catálogo normal a propósito: es
+      // preferible un texto con "etapa actual" de más que perder el aviso.
+    }
+
     final nutrientPriorityMatch = RegExp(
       r'^npk\.(n|p|k)\.(action|review|high_priority|medium_priority|possible_excess|review_accumulation)$',
     ).firstMatch(key);
@@ -142,10 +311,15 @@ class AlertsEngine {
         type: BioGAlertType.lowSoilMoisture,
         severity: BioGAlertSeverity.critical,
         title: 'Humedad crítica',
+        // Describe el riesgo y remite al Panel; no ordena regar.
+        // La orden de riego solo puede salir de IrrigationEngine, que es el
+        // único que ve el pronóstico. Este texto llega al informe rápido, y
+        // antes podía imprimir "riego inmediato" en el mismo PDF donde el
+        // motor había decidido esperar por lluvia.
         body:
             'La humedad del suelo está muy por debajo del mínimo requerido '
-            'para $crop en etapa $stage. Se recomienda riego inmediato para '
-            'evitar estrés hídrico severo.',
+            'para $crop en etapa $stage. Riesgo de estrés hídrico severo: '
+            'revisa la recomendación de riego en el Panel.',
       );
     }
     if (key == 'soilMoisture.low') {
@@ -164,10 +338,11 @@ class AlertsEngine {
         type: BioGAlertType.lowSoilMoisture,
         severity: BioGAlertSeverity.warning,
         title: 'Humedad baja',
+        // Igual que en la crítica: sin orden ni plazo de riego. El plazo lo
+        // fija el motor, que sabe si viene lluvia.
         body:
             'La humedad del suelo está por debajo del rango óptimo para '
-            '$crop en $stage. Considera programar riego en las próximas '
-            '24 horas.',
+            '$crop en $stage. Revisa la recomendación de riego en el Panel.',
       );
     }
     if (key == 'soilMoisture.high') {

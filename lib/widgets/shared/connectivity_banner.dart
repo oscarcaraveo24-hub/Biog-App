@@ -8,11 +8,25 @@ class ConnectivityBanner extends StatefulWidget {
   final Duration checkInterval;
   final bool enabled;
 
+  /// Se dispara UNA vez en cada transición sin señal → con señal.
+  ///
+  /// Este widget ya era el único punto de la app que se entera de que volvió
+  /// la conectividad, pero sólo lo usaba para ocultar su propio banner. Sin
+  /// este aviso, una operación de la bandeja de sincronización que falló se
+  /// queda esperando a que alguien vuelva a encolar algo o a que se reinicie
+  /// la sesión: el backoff largo no tiene quién lo despierte justo cuando por
+  /// fin hay red.
+  ///
+  /// Opcional y sin ningún efecto visual: si nadie lo pasa, el banner se
+  /// comporta exactamente igual que antes.
+  final VoidCallback? onBackOnline;
+
   const ConnectivityBanner({
     super.key,
     required this.child,
     this.checkInterval = const Duration(seconds: 15),
     this.enabled = true,
+    this.onBackOnline,
   });
 
   @override
@@ -27,6 +41,17 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
 
   bool _offline = false;
   bool _checking = false;
+
+  /// La pestaña se desactivó mientras no había señal.
+  ///
+  /// Sirve para que la recuperación se detecte aunque haya ocurrido con el
+  /// banner apagado. Ver la nota en [_syncChecks].
+  bool _wasOfflineWhenDisabled = false;
+
+  /// El próximo sondeo con red cuenta como recuperación aunque el estado
+  /// visible ya diga "en línea". Evita tener que falsear `_offline`, que
+  /// pintaría el aviso de sin-señal sin motivo.
+  bool _pendingRecoveryProbe = false;
   Timer? _timer;
 
   @override
@@ -56,9 +81,26 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
 
     if (!widget.enabled) {
       if (_offline && mounted) {
+        // Se recuerda que la pestaña se apagó estando sin señal.
+        //
+        // El banner se oculta al perder el foco y `_offline` volvía a false,
+        // así que al regresar con la red ya recuperada no había transición que
+        // detectar y `onBackOnline` no llegaba a dispararse nunca: lo pendiente
+        // se quedaba en la cola. El agricultor edita el cultivo en Semillas o
+        // en Cuenta, que es justo donde no hay banner.
+        _wasOfflineWhenDisabled = true;
         setState(() => _offline = false);
       }
       return;
+    }
+
+    // Al reactivarse tras haber estado sin señal, el primer sondeo se trata
+    // como una posible recuperación. NO se toca `_offline`: falsearlo pintaría
+    // el aviso de "sin conexión" al volver a la pestaña aunque la señal fuera
+    // perfecta, y se quedaría ahí hasta que resolviera el sondeo.
+    if (_wasOfflineWhenDisabled) {
+      _wasOfflineWhenDisabled = false;
+      _pendingRecoveryProbe = true;
     }
 
     unawaited(_check());
@@ -91,9 +133,22 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
     }
 
     if (!mounted || !widget.enabled) return;
+
+    // Se anota ANTES de mover el estado: es la transición lo que interesa, no
+    // el estado final. Así el aviso sale una sola vez por recuperación y no en
+    // cada sondeo con red.
+    //
+    // `_pendingRecoveryProbe` cubre la recuperación que ocurrió con esta
+    // pestaña apagada: entonces no hay transición visible que detectar, pero
+    // la cola de pendientes sí necesita el empujón.
+    final bool recoveredConnection =
+        (_offline || _pendingRecoveryProbe) && hasConnection;
+    _pendingRecoveryProbe = false;
+
     if (_offline != !hasConnection) {
       setState(() => _offline = !hasConnection);
     }
+    if (recoveredConnection) widget.onBackOnline?.call();
   }
 
   @override

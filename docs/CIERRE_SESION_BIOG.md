@@ -1,6 +1,8 @@
 # BIO-G · Cierre de sesión y traspaso
 
-**8 de agosto de 2026.** Este documento reemplaza a los anteriores: si vuelves dentro de un mes, lee solo este.
+**8 de agosto de 2026 — versión final, todo verificado.** Este documento reemplaza a los anteriores: si vuelves dentro de un mes, lee solo este.
+
+> **Estado al cerrar:** 1,512 pruebas pasan · 0 errores de compilación · el bug de ET0 corregido y verificado · commit `21d1791` subido a GitHub · `HEAD == origin/main`. **No queda nada pendiente de tu parte.**
 
 ---
 
@@ -14,13 +16,15 @@ Dicho de otro modo: **no hay nada a medio terminar esperando un paquete.** Si co
 
 ---
 
-## Qué pasó en esta sesión, en tres actos
+## Qué pasó en esta sesión, en cuatro actos
 
 **Acto 1 — Validé la auditoría.** Contrasté el plan de cierre contra las 220 mil líneas reales. Las 6 brechas eran ciertas, pero encontré 3 afirmaciones equivocadas (`isGenericMode` no era el campo sobrecargado; era `subscriptionStatus`), 4 bugs activos que la auditoría trataba como "features pendientes", y 5 bloqueantes de tienda que había dejado fuera de alcance.
 
 **Acto 2 — Cerré los 5 frentes.** 21 archivos nuevos, 18 modificados, 8 de pruebas, ~8,400 líneas. Cero dependencias nuevas. Dos revisiones adversariales encontraron 1 error de compilación, 8 regresiones y 22 riesgos; todos corregidos.
 
 **Acto 3 — Corriste `flutter analyze` y corregí lo que salió.** Resultado: **1 solo error en todo el proyecto, y estaba en una carpeta de trabajo mía**, no en tu código. Los 21 archivos nuevos —5,500 líneas— produjeron 4 avisos menores. Las 8 pruebas nuevas, cero.
+
+**Acto 4 — Corriste `flutter test` y cazó un bug agronómico mío.** Un error de unidades en ET0. Corregido, verificado en la segunda corrida, y con dos pruebas nuevas que impiden que vuelva.
 
 ---
 
@@ -36,9 +40,17 @@ Dicho de otro modo: **no hay nada a medio terminar esperando un paquete.** Si co
 | Avisos en las 8 pruebas nuevas | ✅ **0** |
 | Avisos preexistentes | ~470, ninguno error. 241 son `unnecessary_const` en `yield_reference_catalog.dart` |
 
-### Pruebas: 1,509 pasan, 19 fallan — 18 preexistentes y 1 mío, ya corregido
+### Git ✅
 
-**El único fallo mío era un bug agronómico de verdad, y la prueba lo cazó.**
+`21d1791 Actualiza aplicacion BioG` · **`HEAD == origin/main`** · subido a `github.com/oscarcaraveo24-hub/Biog-App`
+
+Verificado que el commit contiene `lib/core/weather/et0_calculator.dart` y `test/core/weather/et0_calculator_test.dart` —el arreglo de ET0 está dentro de lo que subiste, no fuera— y que `_to_delete/` quedó fuera del árbol.
+
+*(Nota menor de limpieza, sin prisa: `lib.zip` —1.8 MB— sigue rastreado en el repo. No estorba, pero no pinta nada ahí.)*
+
+### Pruebas: 1,512 pasan, 18 fallan — **todas preexistentes** ✅
+
+**El único fallo mío era un bug agronómico de verdad, la prueba lo cazó, y ya está corregido y verificado.**
 
 Mi implementación de Hargreaves-Samani metía la radiación extraterrestre en
 MJ/m²/día directamente en la fórmula. La ecuación 52 de FAO-56 exige Ra como
@@ -46,13 +58,17 @@ MJ/m²/día directamente en la fórmula. La ecuación 52 de FAO-56 exige Ra como
 
 Resultado: **14.51 mm/día donde el real son 5.92** — exactamente 1/0.408 = 2.45
 veces de más. Corregido, documentado, y con dos pruebas nuevas que fijan las
-unidades para que no pueda repetirse en silencio.
+unidades para que no pueda repetirse en silencio: una rehace la cuenta a mano y
+comprueba el factor, otra barre 6 latitudes × 4 estaciones exigiendo ET0 < 15 mm/día.
+
+La segunda corrida lo confirma: **1,509 → 1,512 pasan** (la prueba que fallaba,
+más las dos nuevas) y ET0 desapareció de la lista de fallos.
 
 Hoy la ET0 solo se muestra como evidencia, no entra en la decisión de riego, así
 que no había consejo equivocado en campo. Pero habría envenenado el balance
 hídrico de V1-B desde el primer día.
 
-**Los otros 18 fallos son anteriores a esta intervención.** Verificado uno a uno:
+**Los 18 fallos restantes son anteriores a esta intervención.** Verificado uno a uno:
 
 | Archivo | Fallos | Causa |
 |---|---|---|
@@ -98,24 +114,15 @@ Y las RLS son correctas: dependen de `device_memberships`, y la app sí crea esa
 
 ## Lo que falta, por dueño
 
-### Tuyo — 2 minutos
+### Tuyo — **nada** ✅
 
-`flutter analyze` ✅ · `_to_delete\` borrada ✅ · commit ✅ · `flutter test` ✅ **hecho todo.**
+`flutter analyze` ✅ · `_to_delete\` borrada ✅ · `flutter test` ✅ · commit ✅ · `git push` ✅
 
-Solo queda volver a correr el test tras el arreglo de ET0 y hacer commit:
-
-```powershell
-cd C:\Users\oscar\Documents\bio_g
-flutter test
-git add lib test docs
-git commit -m "Corrige unidades de ET0 (FAO-56 ec. 52) y anade prueba de regresion"
-```
-
-Deberían quedar **18 fallos, todos preexistentes** (ver abajo).
+Cerraste todo. La rama está subida y sincronizada.
 
 ### Mío cuando vuelvas — dime "sigue con Supabase"
 
-Los cuatro pendientes están verificados hoy y el SQL está listo abajo.
+Los cuatro pendientes están verificados y el SQL está listo abajo. **Nunca ejecuté nada contra tu base**: espero tu autorización explícita.
 
 ### Antes de publicar (sin prisa, pero irreversible)
 
@@ -126,7 +133,7 @@ El `applicationId` **no se puede cambiar después de la primera subida.** Decíd
 
 ## Supabase: lo que falta, con el SQL listo
 
-Verificado hoy contra tu base:
+Verificado contra tu base:
 
 | Pendiente | Estado |
 |---|---|
@@ -221,6 +228,7 @@ Cerrado y verificado. No lo reabras sin motivo nuevo:
 - El cambio de fechas **no afecta** al dispositivo en vivo (verificado: 1.1 s).
 - Las dependencias **no bloquean** nada de lo entregado.
 - `isGenericMode` **no** era el campo sobrecargado. Era `subscriptionStatus`, y ya está cableado.
+- El bug de ET0 **ya está corregido y verificado** en la corrida de 1,512.
 
 ---
 

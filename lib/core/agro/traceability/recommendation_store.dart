@@ -38,7 +38,23 @@ class RecommendationStore {
   Future<Database> get _db async {
     final override = _testDatabase;
     if (override != null) return override();
-    return _dbFuture ??= _openDb();
+
+    // El futuro se cachea para no abrir la base dos veces, pero un futuro
+    // RECHAZADO no puede quedarse cacheado. Antes, si el primer intento fallaba
+    // —disco lleno, permisos, un `onCreate` a medias—, el estático conservaba
+    // ese error y TODAS las operaciones posteriores del proceso lo relanzaban:
+    // cada `save` devolvía false y cada `load` lista vacía, en silencio, hasta
+    // reiniciar la app. La trazabilidad moría por un fallo transitorio y no
+    // tenía forma de recuperarse sola.
+    final pending = _dbFuture ??= _openDb();
+    try {
+      return await pending;
+    } catch (_) {
+      // Solo se descarta si nadie lo sustituyó mientras tanto, para no anular
+      // una reapertura válida que ya esté en vuelo.
+      if (identical(_dbFuture, pending)) _dbFuture = null;
+      rethrow;
+    }
   }
 
   static Future<Database> _openDb() async {
@@ -75,6 +91,10 @@ class RecommendationStore {
   /// La inmutabilidad es el punto: una recomendación emitida no se reescribe.
   /// Lo único que cambia después es la respuesta del usuario, y para eso está
   /// [respond].
+  ///
+  /// El valor devuelto significa **una sola cosa: la fila está persistida**.
+  /// `true` tanto si se insertó ahora como si ya estaba; `false` únicamente
+  /// cuando el registro NO quedó en la base y por tanto hay que reintentar.
   Future<bool> save(RecommendationRecord record) async {
     try {
       final db = await _db;
@@ -93,9 +113,26 @@ class RecommendationStore {
           record.encode(),
         ],
       );
-      return inserted > 0;
+      if (inserted > 0) return true;
+
+      // `INSERT OR IGNORE` devuelve 0 en dos situaciones muy distintas: la fila
+      // ya existía (duplicado legítimo, la inmutabilidad hizo su trabajo) o no
+      // se escribió nada. Devolver false en ambas confundía "no hace falta
+      // reintentar" con "se perdió el registro", y dejaba a quien llama sin
+      // forma de distinguirlas. Se comprueba la presencia real antes de
+      // declarar un fallo.
+      final existing = await db.query(
+        _table,
+        columns: <String>['id'],
+        where: 'id = ?',
+        whereArgs: <Object?>[record.id],
+        limit: 1,
+      );
+      return existing.isNotEmpty;
     } catch (_) {
-      // Registrar la trazabilidad nunca puede interrumpir al agricultor.
+      // Registrar la trazabilidad nunca puede interrumpir al agricultor: no se
+      // relanza. Pero el false sí tiene que llegar a quien llama, porque es la
+      // única señal de que la recomendación quedó sin auditar.
       return false;
     }
   }

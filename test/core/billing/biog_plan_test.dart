@@ -133,4 +133,89 @@ void main() {
       );
     });
   });
+
+  group('fila real de public.subscriptions', () {
+    test('una suscripción Pro activa concede las funciones de pago', () {
+      final sub = BiogSubscription.fromSubscriptionRow(<String, Object?>{
+        'plan_code': 'pro',
+        'status': 'active',
+        'starts_at': '2026-01-01T00:00:00Z',
+        'ends_at': '2027-01-01T00:00:00Z',
+      });
+      expect(sub.plan, BiogPlan.pro);
+      expect(sub.status, BiogPlanStatus.active);
+      expect(sub.entitlementsAt(now).canUseIrrigationEngine, isTrue);
+      expect(sub.expiresAt, DateTime.utc(2027, 1, 1));
+    });
+
+    test('la fecha manda sobre la cadena, igual que en el perfil', () {
+      final sub = BiogSubscription.fromSubscriptionRow(<String, Object?>{
+        'plan_code': 'pro',
+        'status': 'active',
+        'ends_at': '2026-01-01T00:00:00Z',
+      });
+      // Venció en enero y la gracia son 30 días: en agosto ya está expirada.
+      expect(sub.statusAt(now), BiogPlanStatus.expired);
+      expect(sub.entitlementsAt(now).canUseIrrigationEngine, isFalse);
+    });
+
+    test('un plan_code desconocido no abre funciones de pago', () {
+      final sub = BiogSubscription.fromSubscriptionRow(<String, Object?>{
+        'plan_code': 'plan_que_no_existe',
+        'status': 'active',
+      });
+      expect(sub.plan, BiogPlan.basico);
+      expect(sub.entitlementsAt(now).canUseIrrigationEngine, isFalse);
+    });
+  });
+
+  group('precedencia entre orígenes', () {
+    test('sin fila de suscripción se comporta EXACTAMENTE como antes', () {
+      for (final raw in <String?>[
+        null,
+        '',
+        'trial',
+        'pro',
+        'grace',
+        'expired',
+        'basico',
+        'valor_raro',
+      ]) {
+        final resuelto = BiogSubscription.resolve(profileStatus: raw);
+        final anterior = BiogSubscription.fromStatusString(raw);
+        expect(resuelto.plan, anterior.plan, reason: 'plan para "$raw"');
+        expect(resuelto.status, anterior.status, reason: 'estado para "$raw"');
+      }
+    });
+
+    test('la tabla gana sobre la cadena del perfil', () {
+      final resuelto = BiogSubscription.resolve(
+        subscriptionRow: <String, Object?>{
+          'plan_code': 'pro',
+          'status': 'active',
+          'ends_at': '2027-01-01T00:00:00Z',
+        },
+        profileStatus: 'expired',
+      );
+      expect(resuelto.status, BiogPlanStatus.active);
+      expect(resuelto.entitlementsAt(now).canUseIrrigationEngine, isTrue);
+    });
+
+    test('una fila ilegible NO degrada a una cuenta que el perfil reconoce', () {
+      final resuelto = BiogSubscription.resolve(
+        subscriptionRow: <String, Object?>{'status': 'algo_incomprensible'},
+        profileStatus: 'pro',
+      );
+      expect(resuelto.plan, BiogPlan.pro);
+      expect(resuelto.status, BiogPlanStatus.active);
+    });
+
+    test('una fila vacía equivale a no tener fila', () {
+      final resuelto = BiogSubscription.resolve(
+        subscriptionRow: const <String, Object?>{},
+        profileStatus: 'trial',
+      );
+      expect(resuelto.status, BiogPlanStatus.trial);
+    });
+  });
 }

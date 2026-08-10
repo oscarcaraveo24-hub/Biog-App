@@ -1,4 +1,5 @@
 import 'package:bio_g/core/agro/agronomic_event.dart';
+import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/core/notifications/notification_dispatcher.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
@@ -51,6 +52,15 @@ class CropEventRecorder {
   /// Impide que dos registros se solapen si llegan lecturas seguidas.
   bool _running = false;
 
+  /// Alguien pidió registrar mientras había un registro en vuelo.
+  ///
+  /// Descartar esa petición sin más se tragaba justo el caso que importa: la
+  /// lectura llega y lanza el registro, y una fracción de segundo después el
+  /// Panel publica la decisión de riego. Esa segunda llamada se perdía, y como
+  /// la decisión ya no vuelve a cambiar, nada la relanzaba: el Panel mostraba
+  /// "riega ahora" y ni el Historial ni la campana llegaban a enterarse.
+  bool _pendingRerun = false;
+
   CropEventLocalStorage get storage => _storage;
 
   NotificationDispatcher get notifications => _notifications;
@@ -61,7 +71,10 @@ class CropEventRecorder {
   /// última vez, sale sin tocar disco. Cualquier fallo se traga a propósito —
   /// registrar la memoria del cultivo jamás debe interrumpir al usuario.
   Future<void> recordFromStore(BioGStore store) async {
-    if (_running) return;
+    if (_running) {
+      _pendingRerun = true;
+      return;
+    }
 
     final String? deviceId = store.activeDevice?.id;
     final BioGTelemetry? live = store.live;
@@ -69,11 +82,25 @@ class CropEventRecorder {
 
     // Firma del estado: si la lectura y el contexto son los mismos, no hay
     // eventos nuevos que calcular.
+    //
+    // El `userId` forma parte de la firma porque la primera lectura puede
+    // llegar antes de que se resuelva la sesión. Sin él, esos eventos se
+    // guardaban bajo un dueño provisional y `load(userId: ...)` no los volvía a
+    // encontrar nunca; con él, la misma lectura se reprocesa una vez ya
+    // conocido el dueño real y queda archivada donde corresponde.
+    //
+    // La decisión de riego también entra en la firma. El Panel la publica
+    // durante su `build`, que ocurre en el frame SIGUIENTE a la llegada de la
+    // lectura: sin esto, la primera lectura se procesaba sin decisión, se daba
+    // por registrada y no se reprocesaba nunca, así que ni el historial ni la
+    // campana llegaban a tener el aviso de riego que el Panel sí mostraba.
     final String signature = <Object?>[
       deviceId,
+      store.currentUserId,
       live.timestamp.toUtc().millisecondsSinceEpoch,
       store.activeCropContext?.cropId,
       store.activeCropContext?.updatedAt.millisecondsSinceEpoch,
+      BioGStore.irrigationDecisionKey(store.lastIrrigationDecision),
     ].join('|');
     if (signature == _lastSignature) return;
 
@@ -92,10 +119,18 @@ class CropEventRecorder {
         alertsState: store.alertsState,
       );
 
+      // Autoridad única del riego, tomada tal cual del motor y solo si sigue
+      // vigente. Sin decisión utilizable el motor de eventos no emite consejo
+      // de riego, que es la respuesta honesta: aquí no se ve el clima.
+      final IrrigationDecision? irrigationDecision = store.irrigationDecisionAt(
+        live.timestamp,
+      );
+
       final List<AgronomicEvent> events = _presenter.buildAgronomicEvents(
         store: store,
         runtime: runtime,
         telemetry: history,
+        irrigationDecision: irrigationDecision,
       );
 
       // El `userId` es lo que permite purgar este historial al cerrar sesión.
@@ -114,6 +149,15 @@ class CropEventRecorder {
       // falla, el agricultor no debe enterarse ni ver nada distinto.
     } finally {
       _running = false;
+    }
+
+    // La petición que llegó mientras corríamos. Se atiende ahora, ya con el
+    // estado actualizado. Si nada cambió, la firma la detiene de inmediato, así
+    // que no hay riesgo de recursión: cada repetición o encuentra estado nuevo
+    // o sale sin tocar disco.
+    if (_pendingRerun) {
+      _pendingRerun = false;
+      await recordFromStore(store);
     }
   }
 

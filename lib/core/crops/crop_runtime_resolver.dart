@@ -12,7 +12,9 @@ import 'package:bio_g/core/crops/sunflower/sunflower_crop_definition.dart';
 import 'package:bio_g/core/crops/marigold/marigold_crop_definition.dart';
 import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/agro/guide_agro_score_engine.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
+import 'package:bio_g/core/crops/generic/generic_guide.dart';
 import 'package:bio_g/core/crops/crop_presentation_resolver.dart';
 import 'package:bio_g/core/crops/crop_profile_models.dart';
 import 'package:bio_g/core/crops/crop_registry.dart';
@@ -52,6 +54,19 @@ class CropRuntimeResolver {
     final String cropKeyName = _canonicalCropKey(
       normalizedContext?.cropId ?? effectiveSeed?.cropKey,
     );
+
+    // Modo guía general. Se resuelve aquí arriba, antes que nada, porque
+    // `isPlanted` depende de él: en guía no hay fecha de siembra que exigir.
+    //
+    // Se exige `planted` y no un simple "distinto de skip". Ambos wizards
+    // guardan la guía como `planted` —no hay pantalla que la deje en
+    // `planned`—, pero si un contexto llegara así, `isPlanted` daría false y
+    // la pantalla pintaría textos de pre-siembra ("Seco", "Apta") mientras el
+    // motor de guía seguía calculando bandas por detrás: dos lecturas
+    // distintas del mismo dato. Con esta guarda ese contexto degrada limpio a
+    // "sin cultivo interpretable" en vez de contradecirse.
+    final bool isGuideRuntime =
+        isGuideCropId(cropKeyName) && sowingStatus == SowingStatus.planted;
 
     final CropDefinition? definition = cropKeyName.isEmpty
         ? null
@@ -124,6 +139,11 @@ class CropRuntimeResolver {
         (isPerennialRuntime ||
             isOrnamentalRuntime ||
             isRecurringBloomRuntime ||
+            // La guía no pide fecha de siembra: sin fenología no habría qué
+            // calcular con ella. Sin esta rama, las cinco métricas caerían a
+            // los textos de pre-siembra ("Seco", "Apta") en vez de mostrar la
+            // banda evaluada.
+            isGuideRuntime ||
             plantedDate != null);
 
     final bool isPlanned = sowingStatus == SowingStatus.planned;
@@ -141,7 +161,44 @@ class CropRuntimeResolver {
     DateTime? engineSowingDate;
     AlertsState nextAlertsState = alertsState;
 
-    if (isOrnamentalRuntime &&
+    // ── MODO GUÍA GENERAL ────────────────────────────────────────────────────
+    //
+    // El agricultor eligió "Otro": tiene una planta que no está en el catálogo.
+    // Se le dan bandas para las cinco condiciones de suelo que casi todas las
+    // plantas comparten, y NADA de nutrición.
+    //
+    // `targets` se queda deliberadamente en NULL. Es lo que hace que NPK salga
+    // sin interpretar en toda la app sin tocar un solo consumidor: quien
+    // pregunta por objetivos de nutrientes obtiene null, y de ahí sale
+    // `AgroBand.unknown` → '—'. Las bandas de suelo no viajan por `targets`,
+    // viajan ya evaluadas dentro de `eval`.
+    //
+    // `stageResult` también queda en null: sin cultivo no hay fenología, y
+    // fabricar una etapa sería inventarla. Ninguna pantalla lo exige sin
+    // comprobarlo antes.
+    if (isGuideRuntime) {
+      // Se exige al menos un sensor de suelo con dato. `soilControlScore01` es
+      // un `double` no nulable: sin ninguna métrica que promediar, el motor
+      // solo puede devolver 0.0, y el anillo del Panel pintaría "0 % de salud"
+      // —un diagnóstico catastrófico— cuando lo cierto es que no llegó
+      // ninguna lectura. Con `eval` en null la app ya sabe pintar "sin datos".
+      final bool guideHasSoilData =
+          live != null &&
+          (live.hasSoilMoistureData ||
+              live.hasSoilTempData ||
+              live.hasPhData ||
+              live.hasEcData ||
+              live.hasResistanceData);
+
+      if (guideHasSoilData) {
+        final guideBuild = GuideAgroScoreEngine.evaluate(
+          t: live,
+          alertsState: alertsState,
+        );
+        eval = guideBuild.eval;
+        nextAlertsState = guideBuild.nextAlertsState;
+      }
+    } else if (isOrnamentalRuntime &&
         (sowingStatus == SowingStatus.planted ||
             sowingStatus == SowingStatus.planned) &&
         normalizedContext != null) {
@@ -396,7 +453,12 @@ class CropRuntimeResolver {
       hasSeed: hasSeed,
       isPlanted: isPlanted,
       isPlanned: isPlanned,
-      isGenericMode: presentation.isGenericSelection,
+      // Excluyentes. Sin esta resta, el modo guía heredaría el apagado total
+      // del genérico y perdería las cinco bandas que es su razón de existir:
+      // `_resolveVisibleVarietyAlias` devuelve 'generic' cuando el alias viene
+      // vacío, y eso enciende `isGenericSelection`.
+      isGenericMode: presentation.isGenericSelection && !isGuideRuntime,
+      isGuideMode: isGuideRuntime,
     );
   }
 

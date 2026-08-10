@@ -15,7 +15,8 @@ const List<CropProfileEntry> lettuceProfileEntries = [
     label: 'LE-GEN - Lechuga genérica / no sé todavía',
     cropId: kCropLettuce,
     subtitle:
-        'Perfil conservador y migrable: puedes cambiar el tipo después sin perder historial',
+        'Perfil general de lechuga, conservador y migrable — cambias el tipo '
+        'después sin perder historial',
     aliases: [
       'LE-GEN',
       'LEGEN',
@@ -35,7 +36,9 @@ const List<CropProfileEntry> lettuceProfileEntries = [
     id: kLe01,
     label: 'LE-01 - Lechuga romana / cos',
     cropId: kCropLettuce,
-    subtitle: 'Cabeza alargada de nervadura marcada, 1 corte',
+    subtitle:
+        'Cabeza alargada de hoja firme y nervadura marcada, se cosecha en 1 '
+        'corte (romana, cos)',
     aliases: [
       'LE-01',
       'LE01',
@@ -52,7 +55,9 @@ const List<CropProfileEntry> lettuceProfileEntries = [
     id: kLe02,
     label: 'LE-02 - Mini romana / corazones / Little Gem',
     cropId: kCropLettuce,
-    subtitle: 'Cabeza compacta chica, corazones, 1 corte',
+    subtitle:
+        'Cabeza chica y compacta que se vende como corazones, se cosecha en 1 '
+        'corte (Little Gem)',
     aliases: [
       'LE-02',
       'LE02',
@@ -67,7 +72,9 @@ const List<CropProfileEntry> lettuceProfileEntries = [
     id: kLe03,
     label: 'LE-03 - Lechuga bola / iceberg',
     cropId: kCropLettuce,
-    subtitle: 'Cabeza redonda compacta, crisphead, 1 corte',
+    subtitle:
+        'Cabeza redonda, apretada y de hoja crujiente, se cosecha entera en 1 '
+        'corte (iceberg, bola)',
     aliases: [
       'LE-03',
       'LE03',
@@ -83,7 +90,9 @@ const List<CropProfileEntry> lettuceProfileEntries = [
     id: kLe04,
     label: 'LE-04 - Lechuga mantequilla / butterhead',
     cropId: kCropLettuce,
-    subtitle: 'Cabeza suave de hojas tiernas, 1 corte',
+    subtitle:
+        'Cabeza suave y poco apretada, de hojas tiernas al tacto, se cosecha '
+        'en 1 corte (Bibb, Boston)',
     aliases: [
       'LE-04',
       'LE04',
@@ -99,7 +108,9 @@ const List<CropProfileEntry> lettuceProfileEntries = [
     id: kLe05,
     label: 'LE-05 - Lechuga hoja suelta / orejona / baby leaf',
     cropId: kCropLettuce,
-    subtitle: 'Roseta abierta, no cabecea; 1 corte o multicorte',
+    subtitle:
+        'Roseta abierta de hojas sueltas que no cabecea, va a 1 corte o '
+        'multicorte (orejona, baby leaf)',
     aliases: [
       'LE-05',
       'LE05',
@@ -126,7 +137,9 @@ const List<CropVarietyEntry> lettuceVarieties = [
     id: 'lettuce_generic',
     label: 'No sé / Otra lechuga',
     cropId: kCropLettuce,
-    subtitle: 'Perfil seguro y migrable: ajusta después sin reiniciar',
+    subtitle:
+        'Perfil general de lechuga, seguro y migrable — lo ajustas después sin '
+        'reiniciar tu historial',
     defaultProfileId: kLeGen,
     aliases: [
       'Lechuga',
@@ -147,7 +160,9 @@ const List<CropVarietyEntry> lettuceVarieties = [
     id: 'lettuce_romaine',
     label: 'Lechuga romana / cos',
     cropId: kCropLettuce,
-    subtitle: 'Tipo - cabeza alargada de nervadura marcada',
+    subtitle:
+        'Tipo de cabeza alargada, con hoja firme y nervadura marcada al centro '
+        '(romana, cos)',
     defaultProfileId: kLe01,
     aliases: [
       'Romana',
@@ -167,7 +182,9 @@ const List<CropVarietyEntry> lettuceVarieties = [
     id: 'lettuce_mini_romaine',
     label: 'Mini romana / corazones / Little Gem',
     cropId: kCropLettuce,
-    subtitle: 'Tipo - cabeza compacta chica, corazones',
+    subtitle:
+        'Tipo de cabeza chica y compacta que se corta y se vende como '
+        'corazones (Little Gem, mini cos)',
     defaultProfileId: kLe02,
     aliases: [
       'Mini romana',
@@ -185,7 +202,9 @@ const List<CropVarietyEntry> lettuceVarieties = [
     id: 'lettuce_iceberg',
     label: 'Lechuga bola / iceberg',
     cropId: kCropLettuce,
-    subtitle: 'Tipo - cabeza redonda compacta (crisphead)',
+    subtitle:
+        'Tipo de cabeza redonda y apretada, de hoja crujiente que se corta '
+        'entera (iceberg, crisphead)',
     defaultProfileId: kLe03,
     aliases: [
       'Bola',
@@ -204,7 +223,9 @@ const List<CropVarietyEntry> lettuceVarieties = [
     id: 'lettuce_butterhead',
     label: 'Lechuga mantequilla / butterhead',
     cropId: kCropLettuce,
-    subtitle: 'Tipo - cabeza suave de hojas tiernas',
+    subtitle:
+        'Tipo de cabeza suave y poco apretada, de hojas tiernas y delicadas al '
+        'manejo (Bibb, Boston)',
     defaultProfileId: kLe04,
     aliases: [
       'Mantequilla',
@@ -223,7 +244,9 @@ const List<CropVarietyEntry> lettuceVarieties = [
     id: 'lettuce_looseleaf',
     label: 'Lechuga hoja suelta / orejona / baby leaf',
     cropId: kCropLettuce,
-    subtitle: 'Tipo - roseta abierta, no cabecea',
+    subtitle:
+        'Tipo de roseta abierta que no forma cabeza, se corta por hoja o '
+        'completa (orejona, baby leaf)',
     defaultProfileId: kLe05,
     aliases: [
       'Hoja suelta',

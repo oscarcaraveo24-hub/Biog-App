@@ -15,6 +15,7 @@ import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/widgets/bottom_nav.dart';
+import 'package:bio_g/widgets/shared/bio_g_page_background.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 import 'package:bio_g/widgets/seeds/maize_models.dart';
 
@@ -44,7 +45,14 @@ class _SeedsScreenState extends State<SeedsScreen>
   static const int _seedsTabIndex = 2;
 
   /// Solo vive mientras la app siga abierta.
-  static bool _hasAnimatedThisSession = false;
+  // Instancia, NO estatica.
+  //
+  // Con `static` esta bandera se compartia entre todas las instancias y entre
+  // todas las reconstrucciones, asi que la animacion de entrada corria **una
+  // sola vez en toda la vida del proceso**: la primera. A partir de ahi el
+  // controlador se creaba ya en 1.0 y la pantalla aparecia pintada de golpe,
+  // sin reveal, al cambiar de pestaña o al reabrir la app.
+  bool _hasAnimatedThisSession = false;
 
   late final AnimationController _entranceController;
 
@@ -77,7 +85,7 @@ class _SeedsScreenState extends State<SeedsScreen>
     final bool wasActiveBefore = oldWidget.currentIndex == _seedsTabIndex;
     final bool isActiveNow = widget.currentIndex == _seedsTabIndex;
 
-    if (!wasActiveBefore && isActiveNow && !_hasAnimatedThisSession) {
+    if (!wasActiveBefore && isActiveNow) {
       _entranceController
         ..stop()
         ..reset();
@@ -464,7 +472,7 @@ class _SeedsScreenState extends State<SeedsScreen>
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
-      backgroundColor: const Color.fromARGB(209, 255, 255, 255),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         toolbarHeight: 0,
         elevation: 0,
@@ -472,7 +480,17 @@ class _SeedsScreenState extends State<SeedsScreen>
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
       ),
-      body: SingleChildScrollView(
+      body: Stack(
+        children: <Widget>[
+          // Mismo fondo que las otras cuatro pestanas. Va debajo de todo:
+          // el arte del cultivo y las tarjetas del panel siguen encima, sin
+          // tocarse. Lo unico que se sustituye es el blanco plano que habia.
+          Positioned.fill(
+            child: BioGPageBackground(
+              enabled: widget.currentIndex == _seedsTabIndex,
+            ),
+          ),
+          SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: SizedBox(
           height: stackHeight,
@@ -667,6 +685,8 @@ class _SeedsScreenState extends State<SeedsScreen>
             ],
           ),
         ),
+      ),
+        ],
       ),
       bottomNavigationBar: BioGBottomNav(
         currentIndex: widget.currentIndex,

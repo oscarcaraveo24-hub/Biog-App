@@ -235,7 +235,19 @@ class NotificationDispatcher extends ChangeNotifier {
 
   int get unreadCount => unread.length;
 
-  Future<void> hydrate() async {
+  /// Lee la bandeja de disco. Idempotente y **esperable**.
+  ///
+  /// Antes bastaba con `if (_hydrated) return;` y una bandera puesta antes del
+  /// primer `await`. Eso hacía que el segundo llamante volviera de inmediato
+  /// con la bandeja todavía vacía: era idempotente en efecto, pero no servía
+  /// como barrera de sincronización. Quien quisiera esperar a tener los datos
+  /// —la pantalla de la campana, por ejemplo— seguía adelante sin ellos.
+  ///
+  /// Cacheando el futuro, todos los llamantes esperan la misma carga.
+  Future<void> hydrate() => _hydration ??= _hydrateOnce();
+  Future<void>? _hydration;
+
+  Future<void> _hydrateOnce() async {
     if (_hydrated) return;
     _hydrated = true;
 
@@ -345,6 +357,20 @@ class NotificationDispatcher extends ChangeNotifier {
   }
 
   Future<void> markAllRead() async {
+    // Salvaguarda contra el borrado silencioso de la bandeja.
+    //
+    // `hydrate()` marca `_hydrated` antes de su primer `await`, así que durante
+    // el arranque en frío hay una ventana en la que la bandeja de disco aún no
+    // se ha leído y `_outbox` está vacía. Si en esa ventana alguien llamaba a
+    // este método —abrir la campana en el primer segundo—, el bucle no hacía
+    // nada pero `_persist()` escribía `[]` encima del archivo, y la hidratación
+    // en vuelo ya no encontraba nada que leer. Se perdía la bandeja entera, en
+    // silencio y para siempre.
+    //
+    // Sin nada que marcar no hay nada que persistir: es la corrección correcta
+    // aunque nadie llame en esa ventana.
+    if (!_outbox.any((BiogNotification n) => n.isUnread)) return;
+
     final now = _now();
     for (var i = 0; i < _outbox.length; i++) {
       if (!_outbox[i].isUnread) continue;

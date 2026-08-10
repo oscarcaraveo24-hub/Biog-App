@@ -14,7 +14,12 @@ import 'package:bio_g/models/device_crop_context.dart';
 ///
 /// Offline-first policy:
 ///   - Every write first updates local storage (handled upstream),
-///     then fires a best-effort upsert here.
+///     then enqueues the upsert here. Las ESCRITURAS ([upload], [delete])
+///     propagan el error: quien las llama es `PendingSyncQueue` y necesita la
+///     excepción para conservar y reintentar el pendiente. No volver a
+///     envolverlas en `catch (_)` — eso reintroduce la pérdida silenciosa.
+///   - Las LECTURAS sí son best-effort y devuelven vacío ante un fallo: no
+///     hay nada que perder porque el dato local sigue siendo el bueno.
 ///   - Every read returns whatever Supabase has. The caller is
 ///     responsible for last-write-wins merging against the local
 ///     cache using [DeviceCropContext.updatedAt].
@@ -26,20 +31,31 @@ class CropContextSupabaseSync {
   String? get _userId => _client.auth.currentUser?.id;
 
   /// Upload a single crop context to Supabase.
+  ///
+  /// PROPAGA EL ERROR A PROPÓSITO. Esta escritura sólo se invoca desde
+  /// `PendingSyncQueue`, y el contrato de esa cola es "lanza = reintenta":
+  /// una operación se borra de la bandeja únicamente si el handler termina
+  /// sin excepción. Mientras aquí hubo un `catch (_)`, un fallo de red se
+  /// veía desde la cola exactamente igual que un éxito, así que la operación
+  /// se descartaba al primer intento: el cultivo que el agricultor configuró
+  /// sin señal no llegaba nunca a la nube y el backoff era código
+  /// inalcanzable. El guardado local ya ocurrió antes de llamar aquí, así que
+  /// dejar subir la excepción no pierde nada — sólo conserva el pendiente.
   Future<void> upload(DeviceCropContext context) async {
     final userId = _userId;
-    if (userId == null) return;
-
-    try {
-      await _client
-          .from(_table)
-          .upsert(
-            toRowForSync(userId, context),
-            onConflict: 'user_id,device_id',
-          );
-    } catch (_) {
-      // Best-effort — local storage is the primary source.
+    // Sin sesión no hay escritura posible. Antes esto era un `return` mudo que
+    // la cola interpretaba como subida confirmada, de modo que todo lo editado
+    // mientras el token aún no estaba restaurado se borraba de la bandeja.
+    if (userId == null) {
+      throw StateError('crop context upload: sin sesión');
     }
+
+    await _client
+        .from(_table)
+        .upsert(
+          toRowForSync(userId, context),
+          onConflict: 'user_id,device_id',
+        );
   }
 
   /// Upload all crop contexts for the current user.
@@ -90,19 +106,22 @@ class CropContextSupabaseSync {
   }
 
   /// Delete a specific device's crop context from Supabase.
+  ///
+  /// Propaga el error por el mismo motivo que [upload]: la cola necesita la
+  /// excepción para conservar el borrado pendiente. Si se tragaba, el cultivo
+  /// borrado en el teléfono seguía vivo en la nube y volvía a bajar en el
+  /// siguiente `downloadAll`, resucitado.
   Future<void> delete(String deviceId) async {
     final userId = _userId;
-    if (userId == null) return;
-
-    try {
-      await _client
-          .from(_table)
-          .delete()
-          .eq('user_id', userId)
-          .eq('device_id', deviceId);
-    } catch (_) {
-      // Best-effort.
+    if (userId == null) {
+      throw StateError('crop context delete: sin sesión');
     }
+
+    await _client
+        .from(_table)
+        .delete()
+        .eq('user_id', userId)
+        .eq('device_id', deviceId);
   }
 
   // ---------------------------------------------------------------------------
@@ -115,7 +134,9 @@ class CropContextSupabaseSync {
   /// `crop_id` column keeps them apart, so each plant decodes back into its own
   /// domain. Trees and annual crops retain their exact mapping.
   ///
-  /// DEUDA TÉCNICA CONOCIDA (guía de ornamentales §9): conviene crear columnas
+  /// DEUDA TÉCNICA CONOCIDA (Guía de Ornamentales §50, decisión diferida
+  /// "definir si el baseline hídrico se guarda local, en Supabase o en ambas"):
+  /// conviene crear columnas
   /// ornamentales propias antes de que un perenne futuro choque aquí.
   Map<String, dynamic> toRowForSync(String userId, DeviceCropContext c) {
     final isCactus = _isOrnamentalCropId(c.cropId);
@@ -291,6 +312,21 @@ class CropContextSupabaseSync {
         normalized == 'agave' ||
         normalized == 'maguey') {
       return 'crop_agave';
+    }
+    // El nopal faltaba, y sí usa `ornamentalStageId`: `NopalStageResolver` lo
+    // lee y lo escribe. Al no cruzar este puente, `toRowForSync` mandaba
+    // `perennial_state_id` (null) en su lugar y `fromRowForSync` devolvía la
+    // etapa vacía. Efecto real: un nopal PERDÍA su etapa y su ancla al
+    // reinstalar la app o cambiar de teléfono, que es justo lo que la Guía de
+    // Ornamentales exige que no pase ("los datos persisten y se restauran sin
+    // perder etapa, baseline ni memoria").
+    if (normalized == 'crop_nopal' ||
+        normalized == 'nopal' ||
+        normalized == 'orn_nopal') {
+      // `orn_nopal` es el id heredado y sigue vivo: lo reconocen npk_caps,
+      // crop_catalog y crop_registry, y hay una prueba que lo exige. Dejarlo
+      // fuera habría arreglado el round-trip solo para las fichas nuevas.
+      return 'crop_nopal';
     }
     return null;
   }

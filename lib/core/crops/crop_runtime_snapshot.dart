@@ -53,6 +53,19 @@ class CropRuntimeSnapshot {
   final bool isPlanned;
   final bool isGenericMode;
 
+  /// Modo guía general: el agricultor eligió "Otro".
+  ///
+  /// Es un estado DISTINTO de [isGenericMode] y los dos son excluyentes. La
+  /// diferencia práctica: en modo genérico no hay interpretación de ninguna
+  /// clase; en modo guía sí la hay para humedad, pH, temperatura de suelo y
+  /// compactación, y solo la nutrición queda sin interpretar.
+  ///
+  /// Se añade como campo nuevo con valor por omisión en vez de meterle un
+  /// cuarto significado a [isGenericMode], que ya carga tres y está leído en
+  /// más de una docena de sitios. Ese es justo el patrón que produjo las
+  /// contradicciones entre pantallas que se cerraron en la auditoría V1-A.
+  final bool isGuideMode;
+
   const CropRuntimeSnapshot({
     required this.device,
     required this.live,
@@ -74,6 +87,7 @@ class CropRuntimeSnapshot {
     required this.isPlanted,
     required this.isPlanned,
     required this.isGenericMode,
+    this.isGuideMode = false,
   });
 
   /// Fuente formal nueva disponible.

@@ -22,7 +22,9 @@ const List<CropProfileEntry> peachTreeProfileEntries = [
     id: kDz01CriolloRegional,
     label: 'Criollo / Regional',
     cropId: kCropPeachTree,
-    subtitle: 'Durazno criollo, regional o tradicional para mercado local',
+    subtitle:
+        'Durazno criollo de rancho, casi siempre prisco de hueso pegado, para '
+        'mercado local',
     aliases: [
       'DZ-01',
       'DZ01',
@@ -49,7 +51,9 @@ const List<CropProfileEntry> peachTreeProfileEntries = [
     id: kDz02TempranoBajoFrio,
     label: 'Temprano / bajo frío',
     cropId: kCropPeachTree,
-    subtitle: 'Durazno temprano o de bajo requerimiento de frio',
+    subtitle:
+        'Durazno de cosecha temprana que cuaja en zonas templadas sin '
+        'inviernos largos (Flordaprince)',
     aliases: [
       'DZ-02',
       'DZ02',
@@ -73,7 +77,9 @@ const List<CropProfileEntry> peachTreeProfileEntries = [
     id: kDz03AmarilloComercial,
     label: 'Amarillo comercial',
     cropId: kCropPeachTree,
-    subtitle: 'Durazno amarillo comercial de mercado fresco',
+    subtitle:
+        'Durazno amarillo de pulpa firme y hueso libre, para venta en fresco '
+        '(Redhaven, O\'Henry)',
     aliases: [
       'DZ-03',
       'DZ03',
@@ -94,7 +100,9 @@ const List<CropProfileEntry> peachTreeProfileEntries = [
     id: kDz04BlancoDulce,
     label: 'Blanco / Dulce',
     cropId: kCropPeachTree,
-    subtitle: 'Durazno de carne blanca o especialidad dulce / premium',
+    subtitle:
+        'Durazno de carne blanca, muy dulce y de poca acidez, para mercado de '
+        'especialidad (chato)',
     aliases: [
       'DZ-04',
       'DZ04',
@@ -116,7 +124,9 @@ const List<CropProfileEntry> peachTreeProfileEntries = [
     id: kDz05TardioIndustria,
     label: 'Tardío / industria',
     cropId: kCropPeachTree,
-    subtitle: 'Durazno tardio, de industria, proceso o mercado tardio',
+    subtitle:
+        'Durazno de cosecha tardía y pulpa firme, pensado para almíbar, '
+        'conserva y proceso',
     aliases: [
       'DZ-05',
       'DZ05',
@@ -141,8 +151,8 @@ const List<CropProfileEntry> peachTreeProfileEntries = [
     label: 'No sé / Durazno general',
     cropId: kCropPeachTree,
     subtitle:
-        'Perfil general y migrable del durazno: puedes precisar la variedad '
-        'despues sin perder historial. No es descanso del suelo.',
+        'Perfil general del durazno, migrable a una variedad después sin '
+        'perder historial; no es descanso del suelo',
     aliases: [
       'DZ-SKIP',
       'DZ_SKIP',

@@ -117,7 +117,25 @@ class PendingSyncQueue {
   final List<Duration> _backoff;
 
   String? _userId;
-  bool _draining = false;
+
+  /// Cadena de acceso a la bandeja. TODA mutación del almacenamiento
+  /// (encolar, drenar, descartar) pasa por aquí, una detrás de otra.
+  ///
+  /// El invariante que protege: entre el `load()` y el `_write()` de una
+  /// operación no puede colarse el `load()`/`_write()` de otra. Cada ciclo
+  /// leer-modificar-escribir es indivisible frente a los demás.
+  Future<void> _chain = Future<void>.value();
+
+  /// Encadena [action] detrás de lo que ya hubiera en curso y devuelve su
+  /// futuro. Un fallo de [action] llega a quien llamó, pero NO se queda en la
+  /// cadena: si `_chain` guardara un futuro en error, todas las operaciones
+  /// posteriores heredarían ese error y la bandeja quedaría bloqueada para
+  /// siempre.
+  Future<void> _serialize(Future<void> Function() action) {
+    final Future<void> next = _chain.then((_) => action());
+    _chain = next.catchError((Object _) {});
+    return next;
+  }
 
   String get _key {
     final String? id = _userId;
@@ -161,63 +179,87 @@ class PendingSyncQueue {
   ///
   /// Si no hay señal, el intento falla sin ruido y la operación se queda
   /// esperando: es exactamente el comportamiento que se busca.
+  ///
+  /// El apunte va por la cadena. Antes no: hacía su `load()` mientras un
+  /// drenado ya estaba en vuelo con la lista vieja en memoria, y al terminar
+  /// ese drenado escribía `remaining` encima, borrando de disco la operación
+  /// recién apuntada. Encolar detrás del drenado también resuelve el caso del
+  /// cultivo reeditado a mitad de subida: la edición nueva se escribe cuando
+  /// la anterior ya se resolvió, así que no la pisa nadie.
   Future<void> enqueue(PendingSyncOp op) async {
-    final List<PendingSyncOp> ops = await load();
-    ops.removeWhere((PendingSyncOp o) => o.collapseKey == op.collapseKey);
-    ops.add(op);
-    await _write(ops);
+    await _serialize(() async {
+      final List<PendingSyncOp> ops = await load();
+      ops.removeWhere((PendingSyncOp o) => o.collapseKey == op.collapseKey);
+      ops.add(op);
+      await _write(ops);
+    });
     unawaited(drain());
   }
 
-  /// Vacía la bandeja. Seguro de llamar en cualquier momento: si ya hay un
-  /// vaciado en curso, esta llamada no hace nada.
-  Future<void> drain() async {
-    if (_draining) return;
-    _draining = true;
-    try {
-      final List<PendingSyncOp> ops = await load();
-      if (ops.isEmpty) return;
+  /// Vacía la bandeja. Seguro de llamar en cualquier momento y desde varios
+  /// sitios a la vez: las llamadas se encadenan y corren una tras otra.
+  ///
+  /// Antes aquí había un `if (_draining) return;` que DESCARTABA la llamada
+  /// concurrente en lugar de encolarla, y eso perdía operaciones. La secuencia
+  /// exacta: `enqueue` hace load → añadir → write y después pide un drenado;
+  /// si en ese instante ya había un drenado en vuelo (el que dispara
+  /// `bindUser` al arrancar), ese drenado había leído la bandeja ANTES de la
+  /// nueva escritura y al terminar hacía `_write(remaining)` con la lista
+  /// vieja, borrando de disco la operación recién encolada. Y encima el
+  /// drenado que la habría subido nunca llegaba a correr, porque su llamada
+  /// era justo la descartada. Al encadenar, el segundo drenado espera al
+  /// primero y relee la bandeja ya actualizada.
+  Future<void> drain() => _serialize(_drainOnce);
 
-      final int now = DateTime.now().millisecondsSinceEpoch;
-      final List<PendingSyncOp> remaining = <PendingSyncOp>[];
+  Future<void> _drainOnce() async {
+    final List<PendingSyncOp> ops = await load();
+    if (ops.isEmpty) return;
 
-      for (final PendingSyncOp op in ops) {
-        if (op.nextAttemptAtMs > now) {
-          // Todavía no le toca su reintento.
-          remaining.add(op);
-          continue;
-        }
-        try {
-          await _handler(op);
-          // Éxito: la operación sale de la bandeja.
-        } catch (e) {
-          final int attempts = op.attempts + 1;
-          final Duration wait =
-              _backoff[attempts - 1 < _backoff.length
-                  ? attempts - 1
-                  : _backoff.length - 1];
-          remaining.add(
-            op.reschedule(
-              attempts: attempts,
-              nextAttemptAtMs: now + wait.inMilliseconds,
-            ),
-          );
-          debugPrint(
-            '[sync] pendiente ${op.collapseKey} (${op.op.name}) '
-            'intento $attempts, reintenta en ${wait.inMinutes} min: $e',
-          );
-        }
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    final List<PendingSyncOp> remaining = <PendingSyncOp>[];
+
+    for (final PendingSyncOp op in ops) {
+      if (op.nextAttemptAtMs > now) {
+        // Todavía no le toca su reintento.
+        remaining.add(op);
+        continue;
       }
-
-      await _write(remaining);
-    } finally {
-      _draining = false;
+      try {
+        await _handler(op);
+        // Éxito: la operación sale de la bandeja. Que esto signifique de
+        // verdad "Supabase lo confirmó" depende de que los adaptadores
+        // propaguen sus errores; por eso `upload`/`delete` ya no los tragan.
+      } catch (e) {
+        final int attempts = op.attempts + 1;
+        final Duration wait =
+            _backoff[attempts - 1 < _backoff.length
+                ? attempts - 1
+                : _backoff.length - 1];
+        remaining.add(
+          op.reschedule(
+            attempts: attempts,
+            nextAttemptAtMs: now + wait.inMilliseconds,
+          ),
+        );
+        debugPrint(
+          '[sync] pendiente ${op.collapseKey} (${op.op.name}) '
+          'intento $attempts, reintenta en ${wait.inMinutes} min: $e',
+        );
+      }
     }
+
+    await _write(remaining);
   }
 
   /// Descarta la bandeja de un usuario. Se usa al borrar la cuenta.
-  Future<void> clear() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
+  ///
+  /// También por la cadena: si un drenado estuviera en vuelo, su
+  /// `_write(remaining)` final resucitaría en disco las operaciones de una
+  /// cuenta que el usuario acaba de pedir borrar.
+  Future<void> clear() {
+    return _serialize(() async {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_key);
+    });
   }
 }

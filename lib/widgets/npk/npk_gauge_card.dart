@@ -95,21 +95,45 @@ class NpkGaugeCard extends StatelessWidget {
               child: Center(
                 child: AspectRatio(
                   aspectRatio: 1,
-                  child: CustomPaint(
-                    painter: _NpkGaugePainter(
-                      channel: channel,
-                      percent: v,
-                      accent: accent,
-                      gradient: _gradient(),
-                      targetMin: targetMin,
-                      targetMax: targetMax,
-                      capPpm: _effectiveCapPpm(),
-                    ),
-                    child: _GaugeCenter(
-                      bigText: '$centerValue',
-                      unitText: centerUnit,
-                      accent: accent,
-                      statusLabel: statusLabel,
+                  // ─────────────────────────────────────────────────────────
+                  // O2 · Frontera de repintado del gauge.
+                  // ─────────────────────────────────────────────────────────
+                  //
+                  // Este painter es el dibujo más caro de la pantalla NPK: por
+                  // cada `paint()` ejecuta 4 `MaskFilter.blur` (σ18, σ10, σ6,
+                  // σ12), 21 `drawLine` de marcas, 6 `TextPainter().layout()`
+                  // para las etiquetas y un `SweepGradient.createShader()`.
+                  //
+                  // Sin esta frontera compartía capa con
+                  // `_TechWaveScanDivider`, cuyo `AnimationController` hace
+                  // `repeat()` perpetuo: cada tick de la onda re-rasterizaba
+                  // la capa entera y, como al repintar una capa
+                  // `RenderCustomPaint.paint()` llama a `painter.paint()` sin
+                  // consultar `shouldRepaint`, todo ese coste se pagaba 60
+                  // veces por segundo aunque el valor del nutriente no
+                  // cambiara. Ahora el gauge conserva su capa cacheada y solo
+                  // se repinta cuando de verdad cambia.
+                  //
+                  // No cambia un píxel: `RepaintBoundary` no recorta, así que
+                  // los glows y las etiquetas que desbordan el cuadrado del
+                  // `AspectRatio` se siguen pintando igual.
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: _NpkGaugePainter(
+                        channel: channel,
+                        percent: v,
+                        accent: accent,
+                        gradient: _gradient(),
+                        targetMin: targetMin,
+                        targetMax: targetMax,
+                        capPpm: _effectiveCapPpm(),
+                      ),
+                      child: _GaugeCenter(
+                        bigText: '$centerValue',
+                        unitText: centerUnit,
+                        accent: accent,
+                        statusLabel: statusLabel,
+                      ),
                     ),
                   ),
                 ),

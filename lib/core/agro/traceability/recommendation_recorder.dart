@@ -28,7 +28,10 @@ class RecommendationRecorder {
 
   /// Registra una decisión de riego.
   ///
-  /// Devuelve el registro guardado, o `null` si no había nada que guardar.
+  /// Devuelve el registro construido, o `null` si no había nada que guardar.
+  /// Devolverlo no garantiza que se haya persistido: si el almacén falla, el
+  /// registro se devuelve igual —la interfaz no debe cambiar por un fallo de
+  /// auditoría— pero queda pendiente de reintento.
   ///
   /// Regla deliberada: **`datosInsuficientes` NO se registra como
   /// recomendación**. No es un consejo, es la ausencia de uno. Guardarlo
@@ -71,8 +74,16 @@ class RecommendationRecorder {
 
     if (record.id == _lastRecordedId) return record;
 
-    await _store.save(record);
-    _lastRecordedId = record.id;
+    // La marca solo se pone si la persistencia se confirmó. Antes se ponía
+    // siempre: si SQLite fallaba, el registro no llegaba a existir y aun así la
+    // deduplicación daba la decisión por auditada, así que no se reintentaba
+    // nunca y la recomendación se consideraba trazada sin estarlo.
+    //
+    // Dejar la marca en nulo es todo el mecanismo de reintento que hace falta:
+    // la siguiente sincronización vuelve a pasar por aquí y lo intenta de
+    // nuevo. Sin cola, sin backoff, sin estado extra que mantener.
+    final saved = await _store.save(record);
+    _lastRecordedId = saved ? record.id : null;
     return record;
   }
 

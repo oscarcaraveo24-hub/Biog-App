@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/generic/generic_guide.dart';
 import 'package:bio_g/core/crops/peach_tree/peach_tree_assets.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_assets.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
@@ -95,6 +96,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   bool get _isLastStep => _currentStep == _steps.last;
   bool get _isTreeDraft =>
       isTreeCrop(cropId: _draft.cropId, cropCategoryId: _draft.cropCategory);
+
+  /// Guía general: "Otro". Ni cultivo, ni variedad, ni etapa, ni fecha.
+  bool get _isGuideDraft =>
+      isGuideCropId(_draft.cropId) || isGuideCropId(_draft.cropCategory);
   /// Ornamental de establecimiento + mantenimiento (cactus, suculenta…).
   bool get _isOrnamentalDraft => isEstablishmentMaintenanceCrop(
     cropId: _draft.cropId,
@@ -225,6 +230,13 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     if (_currentStep == OnboardingStep.pairBioG &&
         _isTreeUnknownStageSelection) {
       setState(() => _currentStep = OnboardingStep.cropStage);
+      return;
+    }
+
+    // Guía general: se saltó de categoría a emparejamiento, así que la vuelta
+    // tiene que regresar a categoría y no al paso de fecha, que nunca se vio.
+    if (_currentStep == OnboardingStep.pairBioG && _isGuideDraft) {
+      setState(() => _currentStep = OnboardingStep.cropCategory);
       return;
     }
 
@@ -411,17 +423,38 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
     // Read saved coords from SharedPreferences (LocationScreen already saved them)
     final prefs = await SharedPreferences.getInstance();
-    final lat = prefs.getDouble(_kPrefLocLat) ?? 19.4326;
-    final lng = prefs.getDouble(_kPrefLocLng) ?? -99.1332;
+    final lat = prefs.getDouble(_kPrefLocLat);
+    final lng = prefs.getDouble(_kPrefLocLng);
 
+    // Si no hay coordenadas guardadas, no se inventan.
+    //
+    // Aquí había un respaldo `?? 19.4326 / ?? -99.1332` (CDMX) que se escribía
+    // en `geoLat`/`geoLng` del borrador y de ahí pasaba al `DeviceCropContext`,
+    // a la columna `geo_lat` de la nube y al motor de riego, que las trataba
+    // como la parcela real del agricultor. Un borrador sin coordenadas el resto
+    // de la app ya sabe manejarlo; uno con coordenadas falsas es indistinguible
+    // de uno bueno.
     _updateDraft(
-      _draft.copyWith(
-        locationSource: 'map',
-        locationLabel: result,
-        geoLat: lat,
-        geoLng: lng,
-        timezone: 'America/Mexico_City',
-      ),
+      (lat != null && lng != null)
+          ? _draft.copyWith(
+              locationSource: 'map',
+              locationLabel: result,
+              geoLat: lat,
+              geoLng: lng,
+              timezone: 'America/Mexico_City',
+            )
+          : _draft.copyWith(
+              locationSource: 'map',
+              locationLabel: result,
+              // Nulos EXPLÍCITOS. `copyWith` usa centinela: omitir el campo
+              // conserva el valor anterior, así que sin esto quedaría la
+              // etiqueta nueva pegada a las coordenadas viejas — que es la
+              // misma clase de dato falso que se acaba de quitar, solo que más
+              // difícil de detectar.
+              geoLat: null,
+              geoLng: null,
+              timezone: 'America/Mexico_City',
+            ),
     );
   }
 
@@ -537,6 +570,29 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
         useFlexibleDate: changed ? false : _draft.useFlexibleDate,
       ),
     );
+
+    // Guía general: no hay cultivo que elegir, ni variedad, ni etapa, ni fecha
+    // de siembra. Se fija el cultivo centinela y se salta directo al
+    // emparejamiento, igual que ya hace el flujo de árbol con etapa
+    // desconocida.
+    if (value == kGuideCategoryId) {
+      _updateDraft(
+        _draft.copyWith(
+          cropCategory: kGuideCategoryId,
+          cropId: kGuideCropId,
+          brandId: null,
+          varietyId: null,
+          varietyAlias: null,
+          treeProductionStatusId: null,
+          stage: kGuideStageKey,
+          treeAnchorOptionId: null,
+          selectedDate: null,
+          useFlexibleDate: false,
+        ),
+      );
+      _animateToStep(OnboardingStep.pairBioG);
+      return;
+    }
 
     _animateToStep(OnboardingStep.cropDetails);
   }
@@ -1599,10 +1655,13 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             child: _wizardPill(
               iconPath: ConfigureSeedWizardAssets.categoryGeneric,
               title: 'Otro / genérico',
-              subtitle: 'Próximamente',
-              selected: category == 'generic',
-              enabled: false,
-              onTap: null,
+              // Dice exactamente lo que entrega y lo que no. "Perfil general"
+              // habría prometido nutrición, que es justo lo único que este modo
+              // no puede dar.
+              subtitle: 'Guía de suelo, sin recomendación de nutrición',
+              selected: category == kGuideCategoryId,
+              enabled: true,
+              onTap: () => _onSelectCategory(kGuideCategoryId),
             ),
           ),
         ],

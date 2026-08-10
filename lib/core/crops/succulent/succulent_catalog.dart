@@ -41,9 +41,8 @@ const List<CropProfileEntry> succulentProfileEntries = <CropProfileEntry>[
     label: 'Suculenta de roseta',
     cropId: kCropSucculent,
     subtitle:
-        'Hojas carnosas acomodadas desde el centro, como rosa de piedra. '
-        'Pide mucha luz y drenaje libre; el agua atrapada en el centro es su '
-        'mayor riesgo.',
+        'Hojas carnosas acomodadas desde el centro, pide mucha luz y drenaje '
+        'libre (rosa de piedra, echeveria)',
     aliases: <String>[
       'SU-01',
       'SU01',
@@ -70,9 +69,8 @@ const List<CropProfileEntry> succulentProfileEntries = <CropProfileEntry>[
     label: 'Suculenta colgante',
     cropId: kCropSucculent,
     subtitle:
-        'Tallos que caen de la maceta o avanzan sobre el sustrato. La maceta '
-        'colgante puede secarse desigual: la corona sigue húmeda aunque las '
-        'puntas se vean secas.',
+        'Tallos que caen de la maceta o avanzan sobre el sustrato y se secan '
+        'disparejo (cola de burro, rosario)',
     aliases: <String>[
       'SU-02',
       'SU02',
@@ -99,9 +97,8 @@ const List<CropProfileEntry> succulentProfileEntries = <CropProfileEntry>[
     label: 'Suculenta tipo jade o ramificada',
     cropId: kCropSucculent,
     subtitle:
-        'Tallos gruesos con forma de arbusto pequeño. Tolera periodos secos, '
-        'pero no el agua retenida; con la edad el tallo se pone leñoso y eso es '
-        'normal.',
+        'Tallos gruesos con forma de arbusto pequeño que se vuelven leñosos '
+        'con la edad (árbol de jade)',
     aliases: <String>[
       'SU-03',
       'SU03',
@@ -128,9 +125,8 @@ const List<CropProfileEntry> succulentProfileEntries = <CropProfileEntry>[
     label: 'Suculenta compacta de luz filtrada',
     cropId: kCropSucculent,
     subtitle:
-        'Roseta pequeña de hojas firmes, rayadas o con ventanas translúcidas. '
-        'Mucha claridad sin sol fuerte; crece despacio y el sustrato debe '
-        'secarse entre riegos.',
+        'Roseta chica de hojas firmes, rayadas o con ventanas translúcidas, '
+        'quiere claridad sin sol fuerte (haworthia)',
     aliases: <String>[
       'SU-04',
       'SU04',
@@ -157,8 +153,8 @@ const List<CropProfileEntry> succulentProfileEntries = <CropProfileEntry>[
     label: 'No sé / suculenta general',
     cropId: kCropSucculent,
     subtitle:
-        'Perfil general y migrable: usaremos un manejo prudente y podrás elegir '
-        'su forma después sin perder la fecha ni el historial.',
+        'Perfil general y migrable de la suculenta con manejo prudente, '
+        'precisas su forma después sin perder historial',
     aliases: <String>[
       'SU-SKIP',
       'SU_SKIP',

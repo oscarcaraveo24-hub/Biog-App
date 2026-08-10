@@ -28,7 +28,9 @@ const List<CropProfileEntry> tulipProfileEntries = <CropProfileEntry>[
     id: kTu01GardenExterior,
     label: 'Tulipán de jardín',
     cropId: kCropTulip,
-    subtitle: 'Para suelo exterior, camas, bordes y macizos estacionales.',
+    subtitle:
+        'Tulipán para suelo exterior, en camas, bordes y macizos de temporada '
+        '(tulipán de jardín, triumph)',
     aliases: <String>[
       'TU-01',
       'TU01',
@@ -52,7 +54,9 @@ const List<CropProfileEntry> tulipProfileEntries = <CropProfileEntry>[
     id: kTu02DecorativeContainer,
     label: 'Tulipán en maceta',
     cropId: kCropTulip,
-    subtitle: 'Para patio, terraza, balcón o contenedor decorativo.',
+    subtitle:
+        'Tulipán cultivado en maceta o contenedor decorativo para patio, '
+        'terraza o balcón',
     aliases: <String>[
       'TU-02',
       'TU02',
@@ -72,7 +76,9 @@ const List<CropProfileEntry> tulipProfileEntries = <CropProfileEntry>[
     id: kTu03ForcedIndoor,
     label: 'Tulipán forzado de interior',
     cropId: kCropTulip,
-    subtitle: 'Preenfriado o preparado para florecer dentro de casa.',
+    subtitle:
+        'Tulipán preenfriado o forzado en maceta para que florezca dentro de '
+        'casa (tulipán de regalo, ya brotado)',
     aliases: <String>[
       'TU-03',
       'TU03',
@@ -91,7 +97,9 @@ const List<CropProfileEntry> tulipProfileEntries = <CropProfileEntry>[
     id: kTu04CutFlower,
     label: 'Tulipán para flor de corte',
     cropId: kCropTulip,
-    subtitle: 'Para tallo largo, uniformidad y ventana de corte.',
+    subtitle:
+        'Tulipán de tallo largo y parejo para flor de corte, ramo y florería, '
+        'con ventana de corte definida',
     aliases: <String>[
       'TU-04',
       'TU04',
@@ -110,7 +118,9 @@ const List<CropProfileEntry> tulipProfileEntries = <CropProfileEntry>[
     id: kTu05SpecialPremium,
     label: 'Tulipán especial o premium',
     cropId: kCropTulip,
-    subtitle: 'Dobles, loro, con flecos y otras flores grandes o delicadas.',
+    subtitle:
+        'Tulipán de flor grande o delicada, doble o tipo peonía, loro o con '
+        'flecos (parrot, fringed)',
     aliases: <String>[
       'TU-05',
       'TU05',
@@ -137,9 +147,8 @@ const List<CropProfileEntry> tulipProfileEntries = <CropProfileEntry>[
     label: 'No sé / Tulipán general',
     cropId: kCropTulip,
     subtitle:
-        'Perfil amplio para bulbos sin etiqueta o tipo desconocido. Puedes '
-        'precisar jardín, maceta, interior o corte después sin perder '
-        'historial.',
+        'Perfil general y migrable para bulbos sin etiqueta, precisas si es de '
+        'jardín, maceta o corte sin perder historial',
     aliases: <String>[
       'TU-SKIP',
       'TU_SKIP',

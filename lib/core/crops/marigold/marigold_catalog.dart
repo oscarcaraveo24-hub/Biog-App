@@ -32,8 +32,8 @@ const List<CropProfileEntry> marigoldProfileEntries = <CropProfileEntry>[
     label: 'Cempasúchil tradicional de campo',
     cropId: kCropMarigold,
     subtitle:
-        'Planta ramificada de campo o cama, común para ofrenda, manojo y '
-        'venta de temporada.',
+        'Planta ramificada de campo o cama, común para ofrenda, manojo y venta '
+        'de temporada (flor de muerto)',
     aliases: <String>[
       'CS-01',
       'CS01',
@@ -58,8 +58,8 @@ const List<CropProfileEntry> marigoldProfileEntries = <CropProfileEntry>[
     label: 'Cempasúchil alto de corte',
     cropId: kCropMarigold,
     subtitle:
-        'Tallos largos y firmes para arreglos, ramos, guirnaldas o flor de '
-        'corte.',
+        'Cempasúchil de tallos largos y firmes para flor de corte, ramos, '
+        'arreglos y guirnaldas',
     aliases: <String>[
       'CS-02',
       'CS02',
@@ -90,8 +90,8 @@ const List<CropProfileEntry> marigoldProfileEntries = <CropProfileEntry>[
     label: 'Cempasúchil compacto para maceta',
     cropId: kCropMarigold,
     subtitle:
-        'Porte bajo y redondeado para maceta, patio, balcón o decoración '
-        'residencial.',
+        'Cempasúchil enano de porte bajo y redondeado para maceta, patio, '
+        'balcón o decoración de casa',
     aliases: <String>[
       'CS-03',
       'CS03',
@@ -116,8 +116,8 @@ const List<CropProfileEntry> marigoldProfileEntries = <CropProfileEntry>[
     label: 'Cempasúchil para cama o paisaje',
     cropId: kCropMarigold,
     subtitle:
-        'Porte intermedio, ramificación uniforme y floración de masa para '
-        'parques, camellones y camas florales.',
+        'Porte intermedio de ramificación pareja y floración de masa para '
+        'camas, parques y camellones',
     aliases: <String>[
       'CS-04',
       'CS04',
@@ -150,8 +150,8 @@ const List<CropProfileEntry> marigoldProfileEntries = <CropProfileEntry>[
     // cambiar el tipo sin perder el historial") es un mensaje aparte de la
     // pantalla, no el subtítulo de la opción del wizard.
     subtitle:
-        'Para una planta o semilla de Cempasúchil cuyo tipo no puedes '
-        'identificar.',
+        'Perfil general y migrable del cempasúchil, precisas el tipo de planta '
+        'o semilla después sin perder historial',
     aliases: <String>[
       'CS-SKIP',
       'CS_SKIP',

@@ -134,6 +134,17 @@ class BiogEntitlements {
   /// Cuántos Bio-G fijos caben en la cuenta.
   ///
   /// Los portátiles no ocupan plaza: ver [occupiesFixedSlot].
+  ///
+  /// El 4 de Pro sí está en el documento (Fundacional 2.1 §7.1: "la cuenta Pro
+  /// incluye hasta cuatro equipos fijos"). **El 1 de Básico NO**: el documento
+  /// solo dice "consulta local por dispositivo", sin cifra. Es un valor de
+  /// ingeniería.
+  ///
+  /// Y falta lo más importante: el documento **no define qué pasa al superar
+  /// el límite** —si se bloquea el alta, si solo se avisa, o si se degrada—.
+  /// Hasta que lo defina, este número no debe usarse para impedir dar de alta
+  /// un equipo: el §7.3 es tajante en que "BIO-G nunca bloquea el hardware
+  /// comprado". Sirve para avisar y para dimensionar, no para prohibir.
   final int fixedDeviceLimit;
 
   /// Entitlements de Básico. Es también el suelo al que se degrada un Pro
@@ -188,8 +199,15 @@ class BiogEntitlements {
 
   /// Un Bio-G portátil no ocupa plaza fija.
   ///
-  /// Regla del Fundacional: "La categoría portátil permanece en Básico; si la
-  /// cuenta tiene Pro puede sincronizar puntos sin ocupar un equipo fijo".
+  /// Regla del Fundacional 2.1 §7.2: "un BIO-G Móvil vinculado a una cuenta
+  /// con Pro activo puede sincronizar sus lecturas puntuales al historial de
+  /// la cuenta, sin ocupar uno de los cuatro espacios de equipo fijo".
+  ///
+  /// Detectar la categoría por subcadena del modelo es frágil: el documento
+  /// define DOS categorías de hardware —fija y portátil— y "maceta" es un caso
+  /// de uso, no una categoría. Lo correcto a futuro es un campo de categoría
+  /// explícito en el contrato de telemetría (§6.5: "identidad de dispositivo
+  /// compartida entre las dos categorías"). Mientras tanto, esto.
   static bool occupiesFixedSlot(String? deviceModelId) {
     final id = deviceModelId?.trim().toLowerCase();
     if (id == null || id.isEmpty) return true;
@@ -240,10 +258,17 @@ class BiogSubscription {
   /// diagnóstico y para no perder información al escribir de vuelta.
   final String? rawStatus;
 
-  /// Duración inicial que contempla el Fundacional para una alta manual.
+  /// Doce meses. Es el único plazo que el Fundacional 2.1 §7.1 fija con
+  /// número: "la compra inicial de un equipo fijo incluye doce meses de Pro".
   static const Duration initialTerm = Duration(days: 365);
 
   /// Periodo de gracia tras el vencimiento.
+  ///
+  /// **Estos 30 días son un valor de ingeniería, no una lectura del documento.**
+  /// El Fundacional 2.1 §7.1 dice que "habrá avisos persistentes y un periodo
+  /// de gracia antes de degradar a Básico", y su §22 lista el "periodo exacto
+  /// de gracia por cobro fallido" entre las decisiones PENDIENTES. Cuando se
+  /// decida, manda el documento y esta constante se ajusta.
   static const Duration gracePeriod = Duration(days: 30);
 
   static const BiogSubscription basic = BiogSubscription(
@@ -316,6 +341,123 @@ class BiogSubscription {
       graceEndsAt: expiresAt?.add(gracePeriod),
       rawStatus: raw,
     );
+  }
+
+  /// Interpreta una fila de `public.subscriptions`.
+  ///
+  /// Esa tabla es la fuente de verdad *real* del plan: tiene `plan_code`,
+  /// `status`, `starts_at` y `ends_at` como columnas propias, en vez de una
+  /// sola cadena de texto. Hasta ahora la app no podía leerla —la única
+  /// política de RLS comparaba `auth.uid()` contra un UUID escrito a mano— así
+  /// que deducía el plan de `profiles.subscription_status`. Con la política de
+  /// lectura propia ya en su sitio, esta fábrica existe para cuando empiece a
+  /// haber filas.
+  ///
+  /// Sigue habiendo dos orígenes posibles, pero ya no dos verdades: ver
+  /// [resolve], que fija la precedencia.
+  factory BiogSubscription.fromSubscriptionRow(Map<String, Object?> row) {
+    // Lectura tolerante a tipos. `as String?` lanzaba TypeError con un
+    // `plan_code` numérico o un jsonb, y el error subía al llamador ANTES de
+    // llegar al respaldo de perfil, justo al revés de lo que promete
+    // [resolve]. Una fila rara debe degradar al respaldo, no tumbar la app.
+    final planCode = _asText(row['plan_code'])?.toLowerCase();
+    final rawStatus = _asText(row['status'])?.toLowerCase() ?? '';
+
+    final BiogPlan plan;
+    switch (planCode) {
+      case 'pro':
+      case 'premium':
+        plan = BiogPlan.pro;
+        break;
+      default:
+        // Un `plan_code` desconocido no abre funciones de pago. Misma regla
+        // que en `fromStatusString`.
+        plan = BiogPlan.basico;
+    }
+
+    final BiogPlanStatus status;
+    switch (rawStatus) {
+      case 'active':
+      case 'activa':
+      case 'paid':
+        status = BiogPlanStatus.active;
+        break;
+      case 'trial':
+      case 'trialing':
+        status = BiogPlanStatus.trial;
+        break;
+      case 'past_due':
+      case 'grace':
+      case 'unpaid':
+        status = BiogPlanStatus.grace;
+        break;
+      case 'canceled':
+      case 'cancelled':
+      case 'expired':
+      case 'incomplete_expired':
+        status = BiogPlanStatus.expired;
+        break;
+      default:
+        status = BiogPlanStatus.none;
+    }
+
+    final starts = _parseUtc(row['starts_at']);
+    final ends = _parseUtc(row['ends_at']);
+
+    return BiogSubscription(
+      plan: status == BiogPlanStatus.none ? BiogPlan.basico : plan,
+      status: status,
+      activatedAt: starts,
+      expiresAt: ends,
+      graceEndsAt: ends?.add(gracePeriod),
+      rawStatus: _asText(row['status']),
+    );
+  }
+
+  /// Fija la precedencia entre los dos orígenes del plan.
+  ///
+  /// `subscriptions` manda cuando hay fila: es la tabla que escribe el backend
+  /// de cobros y la que lleva fechas. `profiles.subscription_status` queda como
+  /// respaldo para las cuentas dadas de alta antes de que existiera la tabla
+  /// —hoy, todas— y para el caso en que RLS o la red impidan leerla.
+  ///
+  /// Con [subscriptionRow] en null el comportamiento es idéntico al de antes,
+  /// carácter por carácter. Por eso esto se puede desplegar sin esperar a que
+  /// haya un solo registro de cobro.
+  static BiogSubscription resolve({
+    Map<String, Object?>? subscriptionRow,
+    String? profileStatus,
+    DateTime? profileActivatedAt,
+    DateTime? profileExpiresAt,
+  }) {
+    if (subscriptionRow != null && subscriptionRow.isNotEmpty) {
+      final fromTable = BiogSubscription.fromSubscriptionRow(subscriptionRow);
+      // Una fila que no se entiende (`status` desconocido y sin fechas) no
+      // debe degradar a una cuenta que la columna de perfil sí reconoce.
+      final bool usable =
+          fromTable.status != BiogPlanStatus.none || fromTable.expiresAt != null;
+      if (usable) return fromTable;
+    }
+
+    return BiogSubscription.fromStatusString(
+      profileStatus,
+      activatedAt: profileActivatedAt,
+      expiresAt: profileExpiresAt,
+    );
+  }
+
+  static String? _asText(Object? value) {
+    if (value == null) return null;
+    final text = value is String ? value.trim() : value.toString().trim();
+    return text.isEmpty ? null : text;
+  }
+
+  static DateTime? _parseUtc(Object? value) {
+    if (value == null) return null;
+    if (value is DateTime) return value.toUtc();
+    final text = value.toString().trim();
+    if (text.isEmpty) return null;
+    return DateTime.tryParse(text)?.toUtc();
   }
 
   /// Estado real en un momento dado, aplicando vencimiento y gracia.

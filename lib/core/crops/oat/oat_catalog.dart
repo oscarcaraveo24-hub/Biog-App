@@ -27,42 +27,54 @@ const List<CropProfileEntry> oatProfileEntries = [
     id: kAvf01,
     label: 'AVF-01 · Forrajera Precoz',
     cropId: kCropOat,
-    subtitle: 'Ciclo corto, corte temprano',
+    subtitle:
+        'Avena forrajera de ciclo corto, lista para corte temprano de planta '
+        'verde',
     aliases: ['AVF-01', 'AVF01', 'Forrajera Precoz'],
   ),
   CropProfileEntry(
     id: kAvf02,
     label: 'AVF-02 · Forrajera Intermedia',
     cropId: kCropOat,
-    subtitle: 'Estándar nacional de forraje',
+    subtitle:
+        'Avena forrajera de ciclo intermedio, el perfil de forraje más usado '
+        'en el país',
     aliases: ['AVF-02', 'AVF02', 'Forrajera Intermedia', 'Forrajera'],
   ),
   CropProfileEntry(
     id: kAvf03,
     label: 'AVF-03 · Forrajera Ciclo Largo',
     cropId: kCropOat,
-    subtitle: 'Riego, >100 días (Chihuahua/Durango)',
+    subtitle:
+        'Avena forrajera de ciclo largo bajo riego, la que se siembra en '
+        'Chihuahua y Durango',
     aliases: ['AVF-03', 'AVF03', 'Forrajera Ciclo Largo'],
   ),
   CropProfileEntry(
     id: kAvg01,
     label: 'AVG-01 · Grano',
     cropId: kCropOat,
-    subtitle: 'Cosecha de grano',
+    subtitle:
+        'Avena que se lleva hasta grano seco, para venta, semilla o consumo, '
+        'no para corte',
     aliases: ['AVG-01', 'AVG01', 'Grano'],
   ),
   CropProfileEntry(
     id: kAvd01,
     label: 'AVD-01 · Doble Propósito',
     cropId: kCropOat,
-    subtitle: 'Forraje + grano',
+    subtitle:
+        'Avena de doble propósito, primero das corte o pastoreo y después '
+        'cosechas el grano',
     aliases: ['AVD-01', 'AVD01', 'Doble Propósito', 'Doble Proposito'],
   ),
   CropProfileEntry(
     id: kAvGen,
     label: 'AV-GEN · General',
     cropId: kCropOat,
-    subtitle: 'Perfil conservador (SKIP)',
+    subtitle:
+        'Perfil general y migrable de avena: puedes precisar la variedad '
+        'después sin perder tu historial',
     aliases: ['AV-GEN', 'AVGEN', 'Genérico', 'Generico', 'General'],
   ),
 ];
@@ -75,7 +87,9 @@ const List<CropVarietyEntry> oatVarieties = [
     id: 'oat_chihuahua',
     label: 'Avena Chihuahua',
     cropId: kCropOat,
-    subtitle: 'Forrajera · INIFAP',
+    subtitle:
+        'Avena forrajera del INIFAP, se siembra para corte en verde, heno o '
+        'ensilado del ganado',
     defaultProfileId: kAvf01,
     brandId: 'inifap_oat',
     aliases: ['Chihuahua', 'Avena Chihuahua INIFAP'],
@@ -84,7 +98,9 @@ const List<CropVarietyEntry> oatVarieties = [
     id: 'oat_cuauhtemoc',
     label: 'Avena Cuauhtémoc',
     cropId: kCropOat,
-    subtitle: 'Forrajera / Doble propósito · INIFAP',
+    subtitle:
+        'Avena del INIFAP de uso forrajero y doble propósito, sirve para corte '
+        'y también para grano',
     defaultProfileId: kAvf02,
     brandId: 'inifap_oat',
     aliases: ['Cuauhtémoc', 'Cuauhtemoc', 'Avena Cuauhtémoc INIFAP'],
@@ -93,7 +109,9 @@ const List<CropVarietyEntry> oatVarieties = [
     id: 'oat_menonita',
     label: 'Avena Menonita',
     cropId: kCropOat,
-    subtitle: 'Forrajera · INIFAP',
+    subtitle:
+        'Avena forrajera liberada por el INIFAP, se corta en verde o se paca '
+        'en heno para el ganado',
     defaultProfileId: kAvf02,
     brandId: 'inifap_oat',
     aliases: ['Menonita', 'Avena Menonita INIFAP', 'Avena menonita'],
@@ -102,7 +120,9 @@ const List<CropVarietyEntry> oatVarieties = [
     id: 'oat_obispo',
     label: 'Avena Obispo',
     cropId: kCropOat,
-    subtitle: 'Forrajera · INIFAP',
+    subtitle:
+        'Avena forrajera del INIFAP, se siembra para corte de planta verde y '
+        'para ensilado',
     defaultProfileId: kAvf02,
     brandId: 'inifap_oat',
     aliases: ['Obispo', 'Avena Obispo INIFAP'],
@@ -113,7 +133,9 @@ const List<CropVarietyEntry> oatVarieties = [
     id: 'oat_turquesa',
     label: 'Avena Turquesa',
     cropId: kCropOat,
-    subtitle: 'Forrajera · Berentsen',
+    subtitle:
+        'Avena forrajera de casa semillera mexicana, se destina a corte en '
+        'verde, heno o ensilado',
     defaultProfileId: kAvf02,
     brandId: 'berentsen_oat',
     aliases: ['Turquesa', 'Avena Turquesa Berentsen'],
@@ -124,7 +146,9 @@ const List<CropVarietyEntry> oatVarieties = [
     id: 'oat_karma',
     label: 'Avena Karma',
     cropId: kCropOat,
-    subtitle: 'Grano / Doble propósito · INIFAP',
+    subtitle:
+        'Avena de doble propósito del INIFAP, da corte de forraje y también se '
+        'cosecha en grano',
     defaultProfileId: kAvg01,
     brandId: 'inifap_oat',
     aliases: ['Karma', 'Avena Karma INIFAP', 'Avena Karma Berentsen'],
@@ -133,7 +157,9 @@ const List<CropVarietyEntry> oatVarieties = [
     id: 'oat_agata',
     label: 'Avena Ágata',
     cropId: kCropOat,
-    subtitle: 'Grano · INIFAP',
+    subtitle:
+        'Avena del INIFAP que se lleva hasta grano seco, para consumo, semilla '
+        'o venta',
     defaultProfileId: kAvg01,
     brandId: 'inifap_oat',
     aliases: ['Ágata', 'Agata', 'Avena Ágata INIFAP'],
@@ -144,7 +170,9 @@ const List<CropVarietyEntry> oatVarieties = [
     id: 'oat_generic',
     label: 'Avena genérica',
     cropId: kCropOat,
-    subtitle: 'Usar perfil general',
+    subtitle:
+        'Perfil general y migrable para avena criolla o de costal: puedes '
+        'precisarla después sin perder historial',
     defaultProfileId: kAvGen,
     aliases: [
       'Genérica',

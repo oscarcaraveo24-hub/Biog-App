@@ -24,8 +24,8 @@ const List<CropProfileEntry> pistachioTreeProfileEntries = [
     label: 'Kerman / Peters',
     cropId: kCropPistachioTree,
     subtitle:
-        'Estandar tradicional; alto requerimiento de frio, alternancia fuerte '
-        'y cosecha tardia. Peters es el macho clasico.',
+        'Pistache tradicional de cosecha tardía, con Peters como macho '
+        'polinizador (Kerman)',
     aliases: [
       'PS-01',
       'PS01',
@@ -47,8 +47,8 @@ const List<CropProfileEntry> pistachioTreeProfileEntries = [
     label: 'Golden Hills / Randy',
     cropId: kCropPistachioTree,
     subtitle:
-        'Cultivar UC moderno, mas temprano que Kerman; buen porcentaje de '
-        'abiertos. Randy es el polinizador.',
+        'Pistache moderno más temprano que el Kerman, con Randy como macho '
+        'polinizador (Golden Hills)',
     aliases: [
       'PS-02',
       'PS02',
@@ -68,8 +68,8 @@ const List<CropProfileEntry> pistachioTreeProfileEntries = [
     label: 'Lost Hills / Randy',
     cropId: kCropPistachioTree,
     subtitle:
-        'Cultivar UC moderno de calibre grande, buen split y menor alternancia '
-        'reportada. Randy como polinizador.',
+        'Pistache moderno de nuez grande, con Randy como macho polinizador '
+        '(Lost Hills)',
     aliases: [
       'PS-03',
       'PS03',
@@ -88,8 +88,8 @@ const List<CropProfileEntry> pistachioTreeProfileEntries = [
     label: 'Sirora / compatible',
     cropId: kCropPistachioTree,
     subtitle:
-        'Perfil intermedio/adaptable; evidencia regional variable, usar '
-        'confianza media. Polinizador no asumido.',
+        'Pistache intermedio y adaptable, sin macho polinizador definido '
+        '(Sirora)',
     aliases: [
       'PS-04',
       'PS04',
@@ -107,8 +107,8 @@ const List<CropProfileEntry> pistachioTreeProfileEntries = [
     label: 'Larnaka / Mateur (bajo-frio relativo)',
     cropId: kCropPistachioTree,
     subtitle:
-        'Mediterraneo/temprano; menor requerimiento de frio relativo, pero NO '
-        'sin frio. Cuidado con helada tardia.',
+        'Pistache mediterráneo temprano, pide menos frío pero no cero frío '
+        '(Larnaka o Mateur)',
     aliases: [
       'PS-05',
       'PS05',
@@ -130,8 +130,8 @@ const List<CropProfileEntry> pistachioTreeProfileEntries = [
     label: 'No sé / Pistache general',
     cropId: kCropPistachioTree,
     subtitle:
-        'Perfil general y migrable del pistache: puedes precisar la variedad y '
-        'el macho despues sin perder historial. No es descanso del suelo.',
+        'Perfil general y migrable del pistache, precisa variedad y macho '
+        'después sin perder historial; no es descanso del suelo',
     aliases: [
       'PS-SKIP',
       'PS_SKIP',

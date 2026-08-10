@@ -288,17 +288,9 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
 
   Future<void> _uploadDevice(String userId, BioGDevice device) async {
     try {
-      await _client.from(_devicesTable).upsert(<String, dynamic>{
-        'id': device.id,
-        'user_id': userId,
-        'name': device.name,
-        'location_name': device.locationName,
-        'status': _statusToDb(device.status),
-        'seed_id': device.seedId,
-        'profile_id': device.profileId,
-        'updated_at': (device.updatedAt ?? DateTime.now().toUtc())
-            .toIso8601String(),
-      }, onConflict: 'id');
+      await _client
+          .from(_devicesTable)
+          .upsert(_toSupabaseRow(userId, device), onConflict: 'id');
     } catch (_) {
       // Best-effort.
     }
@@ -313,6 +305,58 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
       // Best-effort. If the unique constraint differs, plain insert is
       // still tolerated — duplicates are silently ignored.
     }
+  }
+
+  /// Fila que se manda a `public.devices`.
+  ///
+  /// Las columnas opcionales SOLO viajan cuando hay valor. El motivo no es
+  /// estético: `upsert(..., onConflict: 'id')` actualiza cada columna que
+  /// aparezca en el mapa, así que mandar `null` machacaría en la nube un dato
+  /// que puede haber escrito el panel de fábrica —`hardware_model`,
+  /// `serial_number`, `pairing_method`— y que el teléfono no conoce.
+  ///
+  /// Estas columnas ya existían en `devices` desde el principio; la app las
+  /// ignoraba por completo. Ahora que hay hardware reportando, son lo que
+  /// permite reconocer un equipo desde soporte sin abrir la base.
+  static Map<String, dynamic> _toSupabaseRow(String userId, BioGDevice device) {
+    final Map<String, dynamic> row = <String, dynamic>{
+      'id': device.id,
+      'user_id': userId,
+      'name': device.name,
+      'location_name': device.locationName,
+      'status': _statusToDb(device.status),
+      'seed_id': device.seedId,
+      'profile_id': device.profileId,
+      'updated_at': (device.updatedAt ?? DateTime.now().toUtc())
+          .toUtc()
+          .toIso8601String(),
+    };
+
+    final model = device.deviceModelId?.trim();
+    if (model != null && model.isNotEmpty) {
+      row['hardware_model'] = model;
+    }
+
+    // El emparejamiento solo se declara cuando el APARATO dijo quién era.
+    // Cuando el id lo generó el teléfono no hay hardware al otro lado, y
+    // escribir `pairing_status = 'paired'` sería afirmar algo falso: es el
+    // mismo criterio que con la humedad ausente.
+    // `serial_number` NO se escribe desde el teléfono a propósito: es la serie
+    // física impresa en el aparato, tiene restricción UNIQUE en la base, y el
+    // QR actual solo trae `name`, `id` y `model`. Meter ahí el UUID mezclaría
+    // dos identidades distintas y un choque de unicidad tumbaría el upsert
+    // entero —incluido el nombre y la ubicación— sin que nadie se enterara,
+    // porque la subida es best-effort.
+    final declared = device.telemetryDeviceIdOverride?.trim();
+    if (declared != null && declared.isNotEmpty) {
+      row['pairing_method'] = 'app';
+      row['pairing_status'] = 'paired';
+      row['paired_at'] = (device.createdAt ?? DateTime.now().toUtc())
+          .toUtc()
+          .toIso8601String();
+    }
+
+    return row;
   }
 
   List<BioGDevice> _mergeByUpdatedAt({
@@ -330,11 +374,50 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
       if (existing == null) {
         byId[r.id] = r;
       } else if (_moreRecent(r, existing)) {
-        byId[r.id] = r;
+        byId[r.id] = _keepingIdentityOf(existing, r);
+      } else {
+        // También cuando gana el local. Si no, el caso más probable se
+        // escapaba: caché viejo sin `device_model_id` + una edición sin red
+        // (renombrar el equipo) le da al local un `updatedAt` más nuevo, gana,
+        // y el `hardware_model` que sí tenía el servidor se pierde igual.
+        byId[r.id] = _keepingIdentityOf(r, existing);
       }
     }
 
     return byId.values.toList(growable: false);
+  }
+
+  /// Deja ganar a [winner] en todo MENOS en los dos campos de identidad del
+  /// hardware, que se conservan si el ganador no los trae.
+  ///
+  /// Last-write-wins es correcto para nombre, ubicación y cultivo: son datos
+  /// que el usuario edita y la edición más nueva manda. Pero aplicado a
+  /// `telemetryDeviceIdOverride` y `deviceModelId` destruía información:
+  ///
+  ///  * `telemetry_device_id` NO existe como columna en Supabase, así que
+  ///    toda fila remota lo trae null. Cada vez que la fila remota resultaba
+  ///    más reciente, el override se borraba del caché — y con él, la única
+  ///    forma que tiene un id de interfaz heredado (`biog-...`) de encontrar
+  ///    su telemetría.
+  ///  * `hardware_model` sí existe, pero está vacío en todos los equipos
+  ///    dados de alta antes de que la app empezara a escribirlo.
+  ///
+  /// Un dato conocido nunca debe perder contra uno ausente. Es la misma regla
+  /// que en telemetría: ausencia no es un valor.
+  BioGDevice _keepingIdentityOf(BioGDevice loser, BioGDevice winner) {
+    final override =
+        winner.telemetryDeviceIdOverride ?? loser.telemetryDeviceIdOverride;
+    final model = winner.deviceModelId ?? loser.deviceModelId;
+
+    if (override == winner.telemetryDeviceIdOverride &&
+        model == winner.deviceModelId) {
+      return winner;
+    }
+
+    return winner.copyWith(
+      telemetryDeviceIdOverride: override,
+      deviceModelId: model,
+    );
   }
 
   /// Returns true when [a] is strictly more recent than [b], comparing
@@ -363,6 +446,16 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
         locationName: (row['location_name'] as String?) ?? 'Parcela',
         seedId: (row['seed_id'] as String?) ?? 'UNCONFIGURED',
         profileId: (row['profile_id'] as String?) ?? 'unconfigured',
+        // El modelo comercial vive en `hardware_model`. Sin esta línea, al
+        // recargar los equipos desde la nube el modelo volvía a null.
+        //
+        // Consecuencia cuando se conecte el gating de planes:
+        // `BiogEntitlements.occupiesFixedSlot(null)` devuelve `true`, así que
+        // un Bio-G portátil contaría como plaza fija. Hoy ninguna pantalla
+        // consulta entitlements —el módulo de billing está escrito y sin
+        // cablear—, así que el efecto todavía no se ve; el dato se pierde
+        // igual y hay que conservarlo antes de cablearlo.
+        deviceModelId: _nonEmpty(row['hardware_model']),
         telemetryDeviceIdOverride: _validTelemetryDeviceIdFrom(<dynamic>[
           row['telemetry_device_id'],
           row['telemetryDeviceId'],
@@ -386,6 +479,10 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
         'location_name': d.locationName,
         'seed_id': d.seedId,
         'profile_id': d.profileId,
+        // Se persiste el modelo: es lo que decide si el equipo ocupa plaza
+        // fija en el plan. Antes solo vivía en memoria, así que el primer
+        // reinicio lo perdía y todos los equipos pasaban a contar como fijos.
+        'device_model_id': d.deviceModelId,
         'telemetry_device_id': d.telemetryDeviceIdOverride,
         'status': _statusToDb(d.status),
         'created_at': d.createdAt?.toIso8601String(),
@@ -403,6 +500,9 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
         locationName: (json['location_name'] as String?) ?? 'Parcela',
         seedId: (json['seed_id'] as String?) ?? 'UNCONFIGURED',
         profileId: (json['profile_id'] as String?) ?? 'unconfigured',
+        deviceModelId: _nonEmpty(
+          json['device_model_id'] ?? json['deviceModelId'],
+        ),
         telemetryDeviceIdOverride: _validTelemetryDeviceIdFrom(<dynamic>[
           json['telemetry_device_id'],
           json['telemetryDeviceId'],
@@ -418,6 +518,16 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Texto no vacío, o `null`. Trata `'null'` literal como ausente: es lo que
+  /// llega cuando un valor nulo pasó antes por una interpolación de cadena.
+  String? _nonEmpty(dynamic value) {
+    final text = value?.toString().trim();
+    if (text == null || text.isEmpty || text.toLowerCase() == 'null') {
+      return null;
+    }
+    return text;
   }
 
   String? _validTelemetryDeviceIdFrom(Iterable<dynamic> values) {
@@ -444,7 +554,7 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
     }
   }
 
-  String _statusToDb(BioGDeviceStatus status) {
+  static String _statusToDb(BioGDeviceStatus status) {
     switch (status) {
       case BioGDeviceStatus.pendingConfig:
         return 'pending_config';

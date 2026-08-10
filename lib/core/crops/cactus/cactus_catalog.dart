@@ -45,8 +45,8 @@ const List<CropProfileEntry> cactusProfileEntries = <CropProfileEntry>[
     label: 'Cactus de maceta',
     cropId: kCropCactus,
     subtitle:
-        'Cactus desértico de contenedor. Raíz confinada, secado más rápido y '
-        'mayor riesgo de sales; la luz interior insuficiente es un riesgo común.',
+        'Cactus desértico de contenedor con raíz confinada, se seca rápido y '
+        'pide buena luz (cactus de colección)',
     aliases: <String>[
       'CA-01',
       'CA01',
@@ -68,8 +68,8 @@ const List<CropProfileEntry> cactusProfileEntries = <CropProfileEntry>[
     label: 'Biznaga o cactus barril',
     cropId: kCropCactus,
     subtitle:
-        'Cactus globoso / barril / biznaga. Crecimiento muy lento, gran reserva '
-        'en el tallo y alta sensibilidad al agua retenida junto al cuello.',
+        'Cactus globoso de crecimiento muy lento y tallo con gran reserva de '
+        'agua (biznaga, barril de oro)',
     aliases: <String>[
       'CA-02',
       'CA02',
@@ -89,9 +89,8 @@ const List<CropProfileEntry> cactusProfileEntries = <CropProfileEntry>[
     label: 'Cactus columna u órgano',
     cropId: kCropCactus,
     subtitle:
-        'Cactus columnar de paisaje (ejemplar mediano o grande). '
-        'Establecimiento radicular más prolongado; una sola sonda representa '
-        'solo parte de la zona radicular.',
+        'Cactus columnar de paisaje, mediano o grande, con raíz que tarda en '
+        'establecerse (órgano, cactus columna)',
     aliases: <String>[
       'CA-03',
       'CA03',
@@ -118,8 +117,8 @@ const List<CropProfileEntry> cactusProfileEntries = <CropProfileEntry>[
     label: 'Cactus agrupado o de varios tallos',
     cropId: kCropCactus,
     subtitle:
-        'Cactus desértico agrupado, cespitoso o ramificado. Múltiples tallos o '
-        'hijuelos; puede coexistir tejido sano con daño localizado.',
+        'Cactus desértico de varios tallos o hijuelos, donde puede haber '
+        'tejido sano junto a daño local',
     aliases: <String>[
       'CA-04',
       'CA04',
@@ -142,8 +141,8 @@ const List<CropProfileEntry> cactusProfileEntries = <CropProfileEntry>[
     label: 'No sé / cactus general',
     cropId: kCropCactus,
     subtitle:
-        'Perfil general y migrable del cactus: puedes precisar maceta, biznaga, '
-        'columnar o agrupado después sin perder historial.',
+        'Perfil general y migrable del cactus, precisas si es de maceta, '
+        'biznaga, columna o agrupado sin perder historial',
     aliases: <String>[
       'CA-SKIP',
       'CA_SKIP',

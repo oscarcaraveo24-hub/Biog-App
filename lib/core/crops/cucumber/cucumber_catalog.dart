@@ -14,7 +14,9 @@ const List<CropProfileEntry> cucumberProfileEntries = [
     id: kPe01,
     label: 'PE-01 · Slicer campo abierto',
     cropId: kCropCucumber,
-    subtitle: 'Americano / criollo de rebanada · ciclo corto-medio',
+    subtitle:
+        'Pepino americano de rebanada, de cáscara gruesa y con espinas, para '
+        'campo abierto (criollo)',
     aliases: [
       'PE-01',
       'PE01',
@@ -28,7 +30,9 @@ const List<CropProfileEntry> cucumberProfileEntries = [
     id: kPe02,
     label: 'PE-02 · Europeo / inglés protegido',
     cropId: kCropCucumber,
-    subtitle: 'Pepino largo protegido en suelo · inglés / europeo',
+    subtitle:
+        'Pepino largo de cáscara lisa y delgada, sin espinas, para cultivo '
+        'bajo cubierta (inglés o europeo)',
     aliases: [
       'PE-02',
       'PE02',
@@ -42,7 +46,9 @@ const List<CropProfileEntry> cucumberProfileEntries = [
     id: kPe03,
     label: 'PE-03 · Persa / mini / Beit-Alfa',
     cropId: kCropCucumber,
-    subtitle: 'Partenocárpico sin semilla · mini protegido en suelo',
+    subtitle:
+        'Pepino chico de cáscara lisa y casi sin semilla, se da bajo cubierta '
+        '(persa, mini, Beit-Alfa)',
     aliases: [
       'PE-03',
       'PE03',
@@ -58,7 +64,9 @@ const List<CropProfileEntry> cucumberProfileEntries = [
     id: kPe04,
     label: 'PE-04 · Pickler campo abierto',
     cropId: kCropCucumber,
-    subtitle: 'Encurtido / cornichón · ciclo corto · alta densidad',
+    subtitle:
+        'Pepino chico y firme que se corta tierno para encurtir, se siembra '
+        'denso (pepinillo, cornichón)',
     aliases: [
       'PE-04',
       'PE04',
@@ -72,7 +80,9 @@ const List<CropProfileEntry> cucumberProfileEntries = [
     id: kPeGen,
     label: 'PE-GEN · Genérico',
     cropId: kCropCucumber,
-    subtitle: 'Perfil genérico (skip obligatorio)',
+    subtitle:
+        'Perfil general del pepino, migrable: defines el tipo después sin '
+        'perder tu historial',
     aliases: ['PE-GEN', 'PEGEN', 'Genérico', 'Generico', 'Generic'],
   ),
 ];
@@ -86,7 +96,9 @@ const List<CropVarietyEntry> cucumberVarieties = [
     id: 'cucumber_slicer_ca',
     label: 'Slicer campo abierto',
     cropId: kCropCucumber,
-    subtitle: 'Tipo · Americano / criollo de rebanada',
+    subtitle:
+        'Tipo de rebanada para campo abierto, de cáscara gruesa y con espinas '
+        '(americano, criollo)',
     defaultProfileId: kPe01,
     aliases: [
       'Slicer',
@@ -102,7 +114,9 @@ const List<CropVarietyEntry> cucumberVarieties = [
     id: 'cucumber_european_protected',
     label: 'Europeo / inglés protegido',
     cropId: kCropCucumber,
-    subtitle: 'Tipo · Pepino largo europeo bajo cubierta',
+    subtitle:
+        'Pepino largo europeo de piel lisa y delgada, sin espinas, para '
+        'cultivo bajo cubierta',
     defaultProfileId: kPe02,
     aliases: [
       'Europeo',
@@ -121,7 +135,9 @@ const List<CropVarietyEntry> cucumberVarieties = [
     id: 'cucumber_persian',
     label: 'Persa / mini / Beit-Alfa',
     cropId: kCropCucumber,
-    subtitle: 'Tipo · Mini partenocárpico protegido',
+    subtitle:
+        'Pepino mini de piel lisa y casi sin semilla, se cultiva bajo cubierta '
+        '(persa, Beit-Alfa)',
     defaultProfileId: kPe03,
     aliases: [
       'Persian',
@@ -142,7 +158,9 @@ const List<CropVarietyEntry> cucumberVarieties = [
     id: 'cucumber_pickler',
     label: 'Pickler (encurtido)',
     cropId: kCropCucumber,
-    subtitle: 'Tipo · Cornichón / pepinillo',
+    subtitle:
+        'Pepino chico y firme que se cosecha tierno para encurtir (pepinillo, '
+        'cornichón)',
     defaultProfileId: kPe04,
     aliases: [
       'Pickler',
@@ -159,7 +177,9 @@ const List<CropVarietyEntry> cucumberVarieties = [
     id: 'cucumber_generic',
     label: 'Pepino genérico',
     cropId: kCropCucumber,
-    subtitle: 'Sin tipo definido (PE-GEN)',
+    subtitle:
+        'Pepino sin tipo definido, perfil migrable: afinas el tipo después sin '
+        'perder historial',
     defaultProfileId: kPeGen,
     aliases: [
       'Genérico',

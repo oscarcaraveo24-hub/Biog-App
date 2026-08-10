@@ -29,8 +29,8 @@ const List<CropProfileEntry> orangeTreeProfileEntries = [
     label: 'Valencia / tardía / jugo',
     cropId: kCropOrangeTree,
     subtitle:
-        'Naranja tardía de jugo/industria; puede sostener fruta más tiempo en '
-        'el árbol. Cuidado con el reverdecido de color externo.',
+        'Naranja tardía para jugo e industria, aguanta más tiempo colgada en '
+        'el árbol (Valencia)',
     aliases: [
       'OR-01',
       'OR01',
@@ -57,8 +57,8 @@ const List<CropProfileEntry> orangeTreeProfileEntries = [
     label: 'Navel / ombligo / mesa',
     cropId: kCropOrangeTree,
     subtitle:
-        'Naranja de mesa; el calibre, el color y la calidad externa pesan más. '
-        'Más sensible al calor en flor/cuajado, rajado y golpe de sol.',
+        'Naranja de mesa u ombligona, donde pesan más el calibre, el color y '
+        'la calidad externa (Navel)',
     aliases: [
       'OR-02',
       'OR02',
@@ -81,8 +81,8 @@ const List<CropProfileEntry> orangeTreeProfileEntries = [
     label: 'Temprano / Hamlin-Pineapple',
     cropId: kCropOrangeTree,
     subtitle:
-        'Grupo temprano/intermedio-temprano; adelanta cosecha. La floración, '
-        'el cuajado y la caída fisiológica siguen mandando.',
+        'Naranja del grupo temprano que adelanta la cosecha (Hamlin, Pineapple '
+        'o Parson Brown)',
     aliases: [
       'OR-03',
       'OR03',
@@ -104,8 +104,8 @@ const List<CropProfileEntry> orangeTreeProfileEntries = [
     label: 'Criollo / regional / huerto viejo',
     cropId: kCropOrangeTree,
     subtitle:
-        'Huerto regional, árboles viejos o mezcla genética; la variedad no se '
-        'conoce con precisión. Más incertidumbre: manda el historial.',
+        'Naranja criolla de huerto viejo o mezcla de árboles, con la variedad '
+        'no bien conocida',
     aliases: [
       'OR-04',
       'OR04',
@@ -127,8 +127,8 @@ const List<CropProfileEntry> orangeTreeProfileEntries = [
     label: 'Tropical / clima cálido / floración múltiple',
     cropId: kCropOrangeTree,
     subtitle:
-        'Zonas cálidas/húmedas o sistemas menos concentrados; puede tener '
-        'flor/fruto/brote al mismo tiempo. Mayor riesgo de HLB/psílido y calor.',
+        'Naranja de zona cálida y húmeda, que puede traer flor, fruto y brote '
+        'al mismo tiempo',
     aliases: [
       'OR-05',
       'OR05',
@@ -152,8 +152,8 @@ const List<CropProfileEntry> orangeTreeProfileEntries = [
     label: 'No sé / Naranjo general',
     cropId: kCropOrangeTree,
     subtitle:
-        'Perfil general y migrable del naranjo: puedes precisar la variedad '
-        'después sin perder historial. No es descanso del suelo.',
+        'Perfil general y migrable del naranjo, precisa la variedad después '
+        'sin perder historial; no es descanso del suelo',
     aliases: [
       'OR-SKIP',
       'OR_SKIP',

@@ -39,8 +39,8 @@ const List<CropProfileEntry> roseProfileEntries = <CropProfileEntry>[
     label: 'Rosal mini o de maceta',
     cropId: kCropRose,
     subtitle:
-        'Compacto, pequeño o cultivado en una maceta reducida. Raíz confinada, '
-        'se seca más rápido y acumula más sales; sensible a lapsos de riego.',
+        'Rosal compacto de maceta chica, con raíz confinada que se seca rápido '
+        'y es sensible a lapsos de riego',
     aliases: <String>[
       'RO-01',
       'RO01',
@@ -64,9 +64,8 @@ const List<CropProfileEntry> roseProfileEntries = <CropProfileEntry>[
     label: 'Rosal de flor grande',
     cropId: kCropRose,
     subtitle:
-        'Flores grandes, normalmente sobre tallos largos o erguidos. Oleadas de '
-        'floración marcadas; la pérdida de botón afecta mucho el objetivo '
-        'ornamental.',
+        'Flores grandes sobre tallos largos y erguidos, con oleadas de '
+        'floración marcadas (té híbrido, de corte)',
     aliases: <String>[
       'RO-02',
       'RO02',
@@ -86,8 +85,8 @@ const List<CropProfileEntry> roseProfileEntries = <CropProfileEntry>[
     label: 'Rosal de flores en racimo o de jardín',
     cropId: kCropRose,
     subtitle:
-        'Arbusto ramificado, muchas flores o uso en cama y paisaje. Floración '
-        'abundante y casi continua; coexisten botones, flores y flores agotadas.',
+        'Arbusto ramificado con muchas flores en racimo, casi siempre '
+        'florecido, para cama y jardín (floribunda)',
     aliases: <String>[
       'RO-03',
       'RO03',
@@ -114,9 +113,8 @@ const List<CropProfileEntry> roseProfileEntries = <CropProfileEntry>[
     label: 'Rosal trepador',
     cropId: kCropRose,
     subtitle:
-        'Cañas largas guiadas sobre muro, reja, arco o pérgola. El soporte es '
-        'parte de su estado; debe florecer varias veces para entrar en este '
-        'perfil.',
+        'Cañas largas guiadas sobre muro, reja, arco o pérgola, que vuelve a '
+        'florecer varias veces',
     aliases: <String>[
       'RO-04',
       'RO04',
@@ -138,8 +136,8 @@ const List<CropProfileEntry> roseProfileEntries = <CropProfileEntry>[
     label: 'No sé / rosal general',
     cropId: kCropRose,
     subtitle:
-        'Perfil general y migrable del rosal: puedes precisar mini, flor grande, '
-        'racimo o trepador después sin perder historial.',
+        'Perfil general y migrable del rosal, precisas si es mini, de flor '
+        'grande, de racimo o trepador sin perder historial',
     aliases: <String>[
       'RO-SKIP',
       'RO_SKIP',

@@ -70,7 +70,18 @@ class InsightCard extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            // Emparejado con `NpkInsightCard`.
+            //
+            // Las dos tarjetas viven en el Panel una a cada lado del grid de
+            // metricas y deben leerse como piezas del mismo sistema. El ancho
+            // ya coincidia —las dos son hijas directas de la columna con
+            // `stretch`—, pero el alto no: NPK usa `vertical: 12` y esta usaba
+            // `vertical: 9`. Esos 6 px de menos se veian como una tarjeta mas
+            // delgada.
+            //
+            // Con 12 las dos miden ~58 px con titulo y subtitulo de una linea.
+            // Si tocas este valor, toca el de `npk_insight_card.dart` igual.
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               color: const Color(0xFFF0F2F5).withValues(alpha:0.94),

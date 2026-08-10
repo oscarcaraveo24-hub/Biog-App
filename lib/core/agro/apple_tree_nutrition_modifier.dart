@@ -8,7 +8,14 @@ import 'package:bio_g/core/crops/tree_lifecycle.dart';
 /// Espeja el patrón de `eggplant_nutrition_modifier` / `chili_nutrition_modifier`:
 /// NO cambia la estructura fenológica ni los targets base; sólo ajusta presión
 /// fenológica y mensajes según la variedad/perfil AP.
-enum AppleTreeNutritionGroup { generic, golden, red, criollaRayada, gala, lowChill }
+enum AppleTreeNutritionGroup {
+  generic,
+  golden,
+  red,
+  criollaRayada,
+  gala,
+  lowChill,
+}
 
 class AppleTreeNutritionModifier implements TreeNutritionModifier {
   const AppleTreeNutritionModifier({
@@ -98,11 +105,17 @@ class AppleTreeNutritionModifier implements TreeNutritionModifier {
     final stage = normalizeTreeStageId(stageKey);
     final isFruitFill = stage == TreeStageIds.fruitFill;
     final isHarvestMaturity = stage == TreeStageIds.harvestMaturity;
+    // Contrato v1.5 §9.3 pt8: postcosecha tiene identidad propia —reservas del
+    // siguiente ciclo, hoja y raíz activas—. Sin esta rama caía al texto por
+    // defecto, el MISMO que reposo: se comunicaba como dormancia pasiva, que
+    // es justo lo que el anexo prohíbe.
+    final isPostHarvest = stage == TreeStageIds.postHarvest;
 
     if (nutrient == AgroMetricKey.n) {
       return _nitrogenCaution(
         isFruitFill: isFruitFill,
         isHarvestMaturity: isHarvestMaturity,
+        isPostHarvest: isPostHarvest,
       );
     }
 
@@ -110,6 +123,7 @@ class AppleTreeNutritionModifier implements TreeNutritionModifier {
       return _potassiumCaution(
         isFruitFill: isFruitFill,
         isHarvestMaturity: isHarvestMaturity,
+        isPostHarvest: isPostHarvest,
       );
     }
 
@@ -117,34 +131,43 @@ class AppleTreeNutritionModifier implements TreeNutritionModifier {
       return _phosphorusCaution(
         isFruitFill: isFruitFill,
         isHarvestMaturity: isHarvestMaturity,
+        isPostHarvest: isPostHarvest,
       );
     }
 
     return _generalCaution(
       isFruitFill: isFruitFill,
       isHarvestMaturity: isHarvestMaturity,
+      isPostHarvest: isPostHarvest,
     );
   }
 
   String _nitrogenCaution({
     required bool isFruitFill,
     required bool isHarvestMaturity,
+    required bool isPostHarvest,
   }) {
     switch (group) {
       case AppleTreeNutritionGroup.generic:
         if (isFruitFill) {
-          return 'Manzano general: en llenado manda el fruto; evita follaje de más.';
+          return 'Manzano general: en llenado manda el fruto: calibre y firmeza. Cuida el balance N-K-Ca/Mg; el follaje de más compite con el fruto.';
         }
         if (isHarvestMaturity) {
           return 'Manzano general: cerca de cosecha cuida color y firmeza.';
         }
+        if (isPostHarvest) {
+          return 'Manzano general: en postcosecha el N solo suma si queda hoja activa; es la reserva de la próxima floración, no un cultivo cerrado.';
+        }
         return 'Manzano general: ajusta N con calma, sin empujar brotes de más.';
       case AppleTreeNutritionGroup.golden:
         if (isFruitFill) {
-          return 'Golden: en llenado cuida calibre, acabado y firmeza.';
+          return 'Golden: en llenado cuida calibre, acabado y firmeza; sostén el balance N-K-Ca/Mg y no dejes que el follaje le gane al fruto.';
         }
         if (isHarvestMaturity) {
           return 'Golden: N alto cerca de cosecha retrasa madurez y baja firmeza.';
+        }
+        if (isPostHarvest) {
+          return 'Golden: en postcosecha alimenta reservas con hoja activa y riego parejo; el árbol sigue trabajando.';
         }
         return 'Golden: no empujes N si BioG ya lo marca alto.';
       case AppleTreeNutritionGroup.red:
@@ -152,7 +175,10 @@ class AppleTreeNutritionModifier implements TreeNutritionModifier {
           return 'Red: N alto cerca de cosecha apaga color y baja firmeza.';
         }
         if (isFruitFill) {
-          return 'Red: en llenado evita sombra sobre el fruto.';
+          return 'Red: en llenado protege calibre y firmeza; cuida el balance N-K-Ca/Mg y no dejes que el follaje dé sombra al fruto.';
+        }
+        if (isPostHarvest) {
+          return 'Red: en postcosecha la hoja activa carga la reserva del próximo ciclo; no lo des por cerrado.';
         }
         return 'Red: prioriza color y firmeza antes que más follaje.';
       case AppleTreeNutritionGroup.gala:
@@ -160,23 +186,32 @@ class AppleTreeNutritionModifier implements TreeNutritionModifier {
           return 'Gala: N alto tarde pega en color, madurez y firmeza.';
         }
         if (isFruitFill) {
-          return 'Gala: en llenado protege calibre y firmeza.';
+          return 'Gala: en llenado protege calibre, azúcares y firmeza; cuida el balance N-K-Ca/Mg y el vigor que compite con el fruto.';
+        }
+        if (isPostHarvest) {
+          return 'Gala: en postcosecha el N solo si hay hoja activa y raíz activa; es reserva para el próximo ciclo.';
         }
         return 'Gala: maneja N corto y claro; no busques vigor de más.';
       case AppleTreeNutritionGroup.criollaRayada:
         if (isFruitFill) {
-          return 'Criolla/rayada: en llenado cuida riego parejo y calibre.';
+          return 'Criolla/rayada: en llenado cuida riego parejo, calibre y firmeza; el balance N-K-Ca/Mg pesa más que subir N.';
         }
         if (isHarvestMaturity) {
-          return 'Criolla/rayada: evita N tarde para no perder firmeza.';
+          return 'Criolla/rayada: cerca de cosecha evita N tarde para no perder firmeza.';
+        }
+        if (isPostHarvest) {
+          return 'Criolla/rayada: en postcosecha mantén hoja y raíz activas con humedad pareja; ahí se carga la reserva.';
         }
         return 'Criolla/rayada: responde mejor a manejo parejo que a jalones de N.';
       case AppleTreeNutritionGroup.lowChill:
         if (isFruitFill) {
-          return 'Bajo frío: en llenado evita pasarte de N; el ciclo va rápido.';
+          return 'Bajo frío: en llenado el ciclo va rápido; protege calibre y firmeza y cuida el balance N-K-Ca/Mg sin pasarte de N.';
         }
         if (isHarvestMaturity) {
           return 'Bajo frío: cerca de cosecha no retrases madurez con N.';
+        }
+        if (isPostHarvest) {
+          return 'Bajo frío: en postcosecha la ventana de reservas es corta; aprovéchala con hoja activa y humedad pareja.';
         }
         return 'Bajo frío: usa N temprano, no tarde.';
     }
@@ -185,7 +220,13 @@ class AppleTreeNutritionModifier implements TreeNutritionModifier {
   String _potassiumCaution({
     required bool isFruitFill,
     required bool isHarvestMaturity,
+    required bool isPostHarvest,
   }) {
+    if (isPostHarvest) {
+      // §9.2 postcosecha: reservas, hoja y raíz activas, humedad, sales bajas.
+      // El K deja de mandar calidad de fruto porque ya no hay fruto.
+      return '$labelEs en postcosecha: el K baja de prioridad; sostén hoja y raíz activas con humedad pareja y sales bajas para cargar la reserva.';
+    }
     switch (group) {
       case AppleTreeNutritionGroup.generic:
         if (isFruitFill) {
@@ -238,10 +279,36 @@ class AppleTreeNutritionModifier implements TreeNutritionModifier {
     }
   }
 
+  /// Cautela de fósforo: matiz varietal + el vínculo pH ↔ disponibilidad.
+  ///
+  /// El P del manzano casi nunca falla por cantidad, falla por disponibilidad:
+  /// en suelo calizo o con pH alto se fija y el árbol no lo toma aunque la
+  /// lectura suba. `soil_reaction.dart` ya desplaza la banda objetivo por
+  /// reacción del suelo, así que el número que ve el agricultor sale bien —
+  /// pero nadie se lo explicaba. Nogal, aguacate, limón y mango sí lo dicen;
+  /// al manzano se le había quedado fuera en las seis variedades.
   String _phosphorusCaution({
     required bool isFruitFill,
     required bool isHarvestMaturity,
+    required bool isPostHarvest,
   }) {
+    final varietal = _phosphorusVarietalCaution(
+      isFruitFill: isFruitFill,
+      isHarvestMaturity: isHarvestMaturity,
+      isPostHarvest: isPostHarvest,
+    );
+    return '$varietal En suelo calizo o pH alto, revisa disponibilidad antes '
+        'que cantidad.';
+  }
+
+  String _phosphorusVarietalCaution({
+    required bool isFruitFill,
+    required bool isHarvestMaturity,
+    required bool isPostHarvest,
+  }) {
+    if (isPostHarvest) {
+      return '$labelEs en postcosecha: el P acompaña raíz activa y las reservas del próximo ciclo, no la calidad del fruto.';
+    }
     switch (group) {
       case AppleTreeNutritionGroup.generic:
         if (isFruitFill || isHarvestMaturity) {
@@ -264,12 +331,16 @@ class AppleTreeNutritionModifier implements TreeNutritionModifier {
   String _generalCaution({
     required bool isFruitFill,
     required bool isHarvestMaturity,
+    required bool isPostHarvest,
   }) {
     if (isFruitFill) {
-      return '$labelEs en llenado: prioriza fruto, K y riego parejo.';
+      return '$labelEs en llenado: prioriza fruto, calibre, K y riego parejo, cuidando el balance N-K-Ca/Mg.';
     }
     if (isHarvestMaturity) {
       return '$labelEs en madurez/cosecha: cuida color, firmeza y corte.';
+    }
+    if (isPostHarvest) {
+      return '$labelEs en postcosecha: sostén hoja y raíz activas con humedad pareja; ahí se carga la reserva del próximo ciclo.';
     }
     return '$labelEs: ajusta según etapa y lectura BioG.';
   }

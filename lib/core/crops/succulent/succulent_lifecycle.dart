@@ -25,7 +25,15 @@ class SucculentLifecycle {
   static const bool supportsHarvest = false;
   static const bool supportsRecurringBloom = false;
 
-  /// DESCARTADO en v1 (Guía de Ornamentales §7.2). El microciclo hídrico exige
+  /// DESCARTADO en v1. **Esto es una desviación consciente del documento
+  /// rector, no una lectura suya.** La Guía de Ornamentales §21 dice
+  /// literalmente "declara supportsYieldProjection = false y
+  /// supportsHydricCycle = true", y su §4 añade que el microciclo hídrico
+  /// "permanece activo siempre". La versión anterior de este comentario citaba
+  /// una "§7.2" que no existe en el documento.
+  ///
+  /// El motivo técnico sí es válido y el propio documento lo reconoce: el
+  /// microciclo hídrico exige
   /// un baseline por dispositivo que BIO-G no tiene. El agua se interpreta con
   /// la lectura real de humedad contra los targets de la etapa, igual que en
   /// frijol.
@@ -214,9 +222,12 @@ SucculentStageEstimate estimateSucculentStageFromDate({
     return SucculentStageEstimate(
       stageId: SucculentStageIds.rootEstablishment,
       anchorTypeId: SucculentAnchorTypeIds.stageStart,
-      confidence: _dateInferenceConfidence(
-        profileId,
-      ).clamp(0.0, 0.40).toDouble(),
+      // Sin techo artificial: el clamp a 0.40 que había aquí anulaba la
+      // distinción del propio `_dateInferenceConfidence`, que da 0.40 al perfil
+      // general y 0.45 a uno concreto. Inferir por fecha ya es conservador
+      // (Guía de Ornamentales §11: "la edad no debe afirmar por sí sola que la
+      // raíz está establecida"); recortarlo dos veces solo escondía el matiz.
+      confidence: _dateInferenceConfidence(profileId),
     );
   }
 

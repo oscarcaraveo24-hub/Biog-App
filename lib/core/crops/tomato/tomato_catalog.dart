@@ -14,42 +14,54 @@ const List<CropProfileEntry> tomatoProfileEntries = [
     id: kTm01,
     label: 'TM-01 · Saladette campo abierto',
     cropId: kCropTomato,
-    subtitle: 'Roma / pera · determinado · ciclo corto-medio',
+    subtitle:
+        'Jitomate saladette o Roma a campo abierto, de mata baja que para '
+        'sola, ciclo corto a medio',
     aliases: ['TM-01', 'TM01', 'Saladette campo abierto', 'Roma', 'Pera'],
   ),
   CropProfileEntry(
     id: kTm02,
     label: 'TM-02 · Saladette protegido',
     cropId: kCropTomato,
-    subtitle: 'Saladette bajo malla o invernadero en suelo',
+    subtitle:
+        'Perfil de jitomate saladette sembrado en suelo bajo malla sombra o '
+        'invernadero, no a cielo abierto',
     aliases: ['TM-02', 'TM02', 'Saladette protegido'],
   ),
   CropProfileEntry(
     id: kTm03,
     label: 'TM-03 · Bola',
     cropId: kCropTomato,
-    subtitle: 'Redondo grande · indeterminado · ciclo largo',
+    subtitle:
+        'Jitomate bola, redondo y grande, de planta que sigue creciendo y da '
+        'cosecha por más tiempo',
     aliases: ['TM-03', 'TM03', 'Bola', 'Redondo', 'Beef'],
   ),
   CropProfileEntry(
     id: kTm04,
     label: 'TM-04 · Cherry / uva',
     cropId: kCropTomato,
-    subtitle: 'Cherry o uva · indeterminado · protegido en suelo',
+    subtitle:
+        'Jitomate chico cherry o uva, de planta que no deja de crecer, en '
+        'suelo bajo malla o invernadero',
     aliases: ['TM-04', 'TM04', 'Cherry', 'Uva', 'Grape'],
   ),
   CropProfileEntry(
     id: kTm05,
     label: 'TM-05 · TOV (racimo)',
     cropId: kCropTomato,
-    subtitle: 'Truss on the Vine · racimo comercial',
+    subtitle:
+        'Jitomate que se corta y se vende en racimo, con la rama pegada al '
+        'fruto, para anaquel',
     aliases: ['TM-05', 'TM05', 'TOV', 'Racimo'],
   ),
   CropProfileEntry(
     id: kTmGen,
     label: 'TM-GEN · Genérico',
     cropId: kCropTomato,
-    subtitle: 'Perfil genérico (skip obligatorio)',
+    subtitle:
+        'Perfil general y migrable de jitomate: puedes precisar el tipo '
+        'después sin perder tu historial',
     aliases: ['TM-GEN', 'TMGEN', 'Genérico', 'Generico', 'Generic'],
   ),
 ];
@@ -65,7 +77,9 @@ const List<CropVarietyEntry> tomatoVarieties = [
     id: 'tomato_saladette_ca',
     label: 'Saladette campo abierto',
     cropId: kCropTomato,
-    subtitle: 'Tipo · Saladette / Roma',
+    subtitle:
+        'Jitomate alargado tipo saladette sembrado a campo abierto, para salsa '
+        'y venta diaria (Roma, pera)',
     defaultProfileId: kTm01,
     aliases: [
       'Saladette',
@@ -83,7 +97,9 @@ const List<CropVarietyEntry> tomatoVarieties = [
     id: 'tomato_saladette_protegido',
     label: 'Saladette protegido',
     cropId: kCropTomato,
-    subtitle: 'Tipo · Saladette bajo malla o invernadero',
+    subtitle:
+        'Jitomate alargado tipo saladette cultivado en suelo bajo malla sombra '
+        'o invernadero',
     defaultProfileId: kTm02,
     aliases: [
       'Saladette protegido',
@@ -97,7 +113,9 @@ const List<CropVarietyEntry> tomatoVarieties = [
     id: 'tomato_bola',
     label: 'Bola',
     cropId: kCropTomato,
-    subtitle: 'Tipo · Redondo grande',
+    subtitle:
+        'Jitomate bola, redondo y grande, bueno para rebanar en tortas y '
+        'hamburguesas (beef, beefsteak)',
     defaultProfileId: kTm03,
     aliases: [
       'Bola',
@@ -113,7 +131,9 @@ const List<CropVarietyEntry> tomatoVarieties = [
     id: 'tomato_cherry',
     label: 'Cherry / uva',
     cropId: kCropTomato,
-    subtitle: 'Tipo · Cherry o uva',
+    subtitle:
+        'Jitomate chico y dulce que da en racimos, redondo cherry o alargado '
+        'tipo uva, para ensalada',
     defaultProfileId: kTm04,
     aliases: [
       'Cherry',
@@ -129,7 +149,9 @@ const List<CropVarietyEntry> tomatoVarieties = [
     id: 'tomato_tov',
     label: 'TOV (racimo)',
     cropId: kCropTomato,
-    subtitle: 'Tipo · Truss on the Vine',
+    subtitle:
+        'Jitomate que se corta y se vende en racimo, con todo y rama, conocido '
+        'como tomate en racimo',
     defaultProfileId: kTm05,
     aliases: [
       'TOV',
@@ -145,7 +167,9 @@ const List<CropVarietyEntry> tomatoVarieties = [
     id: 'tomato_generic',
     label: 'Tomate genérico',
     cropId: kCropTomato,
-    subtitle: 'Sin tipo definido (TM-GEN)',
+    subtitle:
+        'Perfil general y migrable de jitomate: eliges el tipo más adelante '
+        'sin perder tu historial',
     defaultProfileId: kTmGen,
     aliases: [
       'Genérico',

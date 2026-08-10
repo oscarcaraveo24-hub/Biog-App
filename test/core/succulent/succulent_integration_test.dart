@@ -666,13 +666,19 @@ void main() {
       );
     }
 
-    test('plantada el 2 de mayo → Echando raíz, con el día real', () {
+    test('plantada el 2 de mayo → Creciendo, con el día real', () {
       final result = SucculentStageResolver.resolve(
         context: context(anchor: DateTime(2026, 5, 2)),
         today: DateTime(2026, 7, 13),
       );
-      expect(result.stageKey, SucculentStageIds.rootEstablishment);
-      expect(result.stageLabelEs, 'Echando raíz');
+      // 72 días: la suculenta YA arraigó. Su ventana de raíz es 15-56 d
+      // (~8 semanas, succulent_lifecycle.dart:151), no la del cactus, que es
+      // 15-84 d. Esta prueba venía copiada literalmente de
+      // cactus_integration_test.dart —misma ancla, mismo hoy, mismo día 72— y
+      // se trajo sus números junto con su arquitectura. La cabecera de este
+      // mismo archivo lo advierte: "se copia su arquitectura, NO sus números".
+      expect(result.stageKey, SucculentStageIds.activeGrowth);
+      expect(result.stageLabelEs, 'Creciendo');
       expect(result.daySinceSowing, 72);
     });
 
@@ -684,7 +690,8 @@ void main() {
         ),
         today: DateTime(2026, 7, 13),
       );
-      expect(result.stageKey, SucculentStageIds.rootEstablishment);
+      // La auto-reparación funciona: repara a la etapa que toca a los 72 días.
+      expect(result.stageKey, SucculentStageIds.activeGrowth);
     });
 
     test('no tiene día terminal de ciclo', () {
@@ -714,7 +721,7 @@ void main() {
         context: context(anchor: DateTime(2026, 5, 2)),
         today: DateTime(2026, 7, 13),
       );
-      expect(result.stageKey, SucculentStageIds.rootEstablishment);
+      expect(result.stageKey, SucculentStageIds.activeGrowth);
     });
   });
 

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/agronomic_event.dart';
+import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
 
 /// ============================================================
 /// EVENT ENGINE
@@ -154,7 +155,9 @@ class EventEngine {
             severity: moistureBand.toSeverity(isLow: true),
             title: 'Humedad baja',
             message: input.soilMoisture != null
-                ? 'La humedad de suelo está baja (${_fmt(input.soilMoisture)}%). Conviene revisar riego o retención de humedad.'
+                // Describe el estado, no ordena regar: la orden de riego es
+                // competencia exclusiva de IrrigationEngine.
+                ? 'La humedad de suelo está baja (${_fmt(input.soilMoisture)}%). Conviene revisar la retención de humedad del suelo.'
                 : 'La humedad de suelo se detecta por debajo del rango esperado.',
             timestamp: now,
             deviceId: input.deviceId,
@@ -862,10 +865,17 @@ class EventEngine {
     // 9) RECOMENDACIONES (eventos tipo recomendación)
     // =========================================================
     if (_shouldRecommendIrrigation(input, moistureBand)) {
+      // No nulo por construccion: _shouldRecommendIrrigation ya exigio que la
+      // decision existiera y que su accion fuera regar.
+      final IrrigationDecision decision = input.irrigationDecision!;
       events.add(
         AgronomicEvent(
           type: AgronomicEventType.irrigationRecommended,
-          severity: moistureBand == AgroBand.critical
+          // La urgencia la gradua el motor de riego, no la banda de humedad.
+          // Una banda critica con lluvia encima no es una urgencia critica.
+          severity:
+              decision.urgency == IrrigationUrgency.critical ||
+                  decision.urgency == IrrigationUrgency.high
               ? AgronomicEventSeverity.critical
               : AgronomicEventSeverity.caution,
           title: 'Riego recomendado',
@@ -882,6 +892,11 @@ class EventEngine {
             'group': 'recommendation',
             'value': input.soilMoisture,
             'band': moistureBand?.name,
+            // Trazabilidad: deja constancia de que este aviso proviene de una
+            // decision del motor de riego y de cual.
+            'decisionAction': decision.action.name,
+            'decisionUrgency': decision.urgency.name,
+            'engineVersion': decision.engineVersion,
           },
         ),
       );
@@ -1022,13 +1037,20 @@ class EventEngine {
     return moistureOk && phOk && tempOk;
   }
 
+  /// El riego NO se decide aquí. Se consume la decisión de [IrrigationEngine].
+  ///
+  /// La versión anterior devolvía true con solo ver la banda de humedad en
+  /// `low` o `critical`. Ese atajo ignoraba la lluvia pronosticada, la vigencia
+  /// de la lectura y la confianza, así que podía ordenar riego justo cuando el
+  /// motor había decidido esperar. Ver la nota de [EventEngineInput.irrigationDecision].
   static bool _shouldRecommendIrrigation(
     EventEngineInput input,
     AgroBand? moistureBand,
   ) {
     if (input.isGenericMode) return false;
-    if (moistureBand == null) return false;
-    return moistureBand == AgroBand.low || moistureBand == AgroBand.critical;
+    final IrrigationDecision? decision = input.irrigationDecision;
+    if (decision == null) return false;
+    return decision.action == IrrigationAction.regar;
   }
 
   static bool _shouldRecommendFertilization(
@@ -1439,6 +1461,7 @@ class EventEngineInput {
     this.excessNutrientKeys = const <String>{},
     this.history = const <EventTelemetryPoint>[],
     this.rules = const EventEngineRules(),
+    this.irrigationDecision,
   });
 
   final DateTime timestamp;
@@ -1492,6 +1515,19 @@ class EventEngineInput {
 
   /// Reglas de sensibilidad del motor.
   final EventEngineRules rules;
+
+  /// Decisión ya tomada por [IrrigationEngine]. Autoridad única del riego.
+  ///
+  /// Este motor no tiene clima, ni pronóstico, ni vigencia de lectura, ni
+  /// confianza: con solo la banda de humedad no puede saber si conviene regar.
+  /// Antes lo deducía por su cuenta (`banda low o critical => riega`) y eso
+  /// producía la contradicción que el agricultor veía: el Panel decía "espera,
+  /// se espera lluvia" mientras el Historial y la campana decían "riego
+  /// recomendado" por la misma lectura.
+  ///
+  /// Null significa "no hay decisión disponible": entonces no se emite consejo
+  /// de riego. Callar es correcto; inventar una segunda verdad agronómica, no.
+  final IrrigationDecision? irrigationDecision;
 
   AgroBand? bandOf(String key) => currentBands[key];
 

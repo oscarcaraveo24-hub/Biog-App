@@ -42,9 +42,8 @@ const List<CropProfileEntry> agaveProfileEntries = <CropProfileEntry>[
     label: 'Maguey compacto',
     cropId: kCropAgave,
     subtitle:
-        'Roseta pequeña o mediana, rígida y de crecimiento lento. Pide '
-        'excelente salida de agua; el tamaño reducido no significa que sea '
-        'joven.',
+        'Roseta chica o mediana, rígida y de crecimiento lento, pide muy buena '
+        'salida de agua (maguey de colección)',
     aliases: <String>[
       'MG-01',
       'MG01',
@@ -72,9 +71,8 @@ const List<CropProfileEntry> agaveProfileEntries = <CropProfileEntry>[
     label: 'Maguey grande de paisaje',
     cropId: kCropAgave,
     subtitle:
-        'Roseta amplia, hojas fuertes y mucho espacio de crecimiento. Con el '
-        'porte ganan importancia el anclaje y dejar espacio libre alrededor de '
-        'las puntas.',
+        'Roseta amplia de hojas fuertes que necesita mucho espacio y buen '
+        'anclaje (maguey americano, salmiana)',
     aliases: <String>[
       'MG-02',
       'MG02',
@@ -100,9 +98,8 @@ const List<CropProfileEntry> agaveProfileEntries = <CropProfileEntry>[
     label: 'Maguey azul o de hoja angosta',
     cropId: kCropAgave,
     subtitle:
-        'Hojas largas y estrechas, común en campo y paisaje. El color azul no '
-        'confirma especie; BIO-G acompaña la planta, no certifica tequila ni '
-        'jima.',
+        'Hojas largas y angostas, común en campo y paisaje, el color azul no '
+        'confirma la especie (agave azul)',
     aliases: <String>[
       'MG-03',
       'MG03',
@@ -125,8 +122,8 @@ const List<CropProfileEntry> agaveProfileEntries = <CropProfileEntry>[
     label: 'Maguey de hoja suave',
     cropId: kCropAgave,
     subtitle:
-        'Hojas flexibles o casi sin espinas; más sensible al frío fuerte. Sin '
-        'espinas no significa sin punta ni riesgo en todas las formas.',
+        'Hojas flexibles o casi sin espinas y más sensible al frío fuerte, '
+        'aunque conserva la punta (cola de zorro)',
     aliases: <String>[
       'MG-04',
       'MG04',
@@ -152,8 +149,8 @@ const List<CropProfileEntry> agaveProfileEntries = <CropProfileEntry>[
     label: 'No sé / maguey general',
     cropId: kCropAgave,
     subtitle:
-        'Perfil general y migrable: usaremos un manejo prudente y podrás elegir '
-        'su forma después sin perder la fecha ni el historial.',
+        'Perfil general y migrable del maguey con manejo prudente, precisas su '
+        'forma después sin perder el historial',
     aliases: <String>[
       'MG-SKIP',
       'MG_SKIP',

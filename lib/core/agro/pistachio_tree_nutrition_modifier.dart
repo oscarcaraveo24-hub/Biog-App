@@ -104,10 +104,10 @@ class PistachioTreeNutritionModifier implements TreeNutritionModifier {
   @override
   double lateNitrogenExcessPenaltyFactor(String? stageKey) {
     final stage = normalizeTreeStageId(stageKey);
-    final isLate =
+    final isLateNitrogenRisk =
         stage == TreeStageIds.fruitFill ||
         stage == TreeStageIds.harvestMaturity;
-    if (!isLate) return 1.0;
+    if (!isLateNitrogenRisk) return 1.0;
     if (isEarlyCycle) return 0.86;
     if (isKermanTraditional) return 0.90;
     return 0.92;

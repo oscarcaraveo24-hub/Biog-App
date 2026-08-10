@@ -95,10 +95,10 @@ class AvocadoTreeNutritionModifier implements TreeNutritionModifier {
   @override
   double lateNitrogenExcessPenaltyFactor(String? stageKey) {
     final stage = normalizeTreeStageId(stageKey);
-    final isLate =
+    final isLateNitrogenRisk =
         stage == TreeStageIds.fruitFill ||
         stage == TreeStageIds.harvestMaturity;
-    if (!isLate) return 1.0;
+    if (!isLateNitrogenRisk) return 1.0;
     return switch (group) {
       AvocadoTreeNutritionGroup.hassExport => 0.80,
       AvocadoTreeNutritionGroup.mendezCarmenEarly => 0.82,

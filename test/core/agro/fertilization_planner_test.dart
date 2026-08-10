@@ -724,4 +724,149 @@ void main() {
       }
     });
   });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Anexo v1.5 — Contrato de interoperabilidad etapa/NPK/copy/UI
+  // ───────────────────────────────────────────────────────────────────────────
+  //
+  // "Queda prohibido agrupar etapas para copy UX cuando esa agrupacion borra
+  //  diferencias agronomicas reales, especialmente fruit_fill vs
+  //  harvest_maturity."
+  //
+  // Estas pruebas no juzgan agronomía: fijan el CONTRATO. Si una falla, alguien
+  // volvió a mezclar cuajado, llenado, madurez o postcosecha en un solo texto.
+  group('Anexo v1.5 · identidad de etapa en la guía de los nueve frutales', () {
+    const List<String> arboles = <String>[
+      'apple_tree',
+      'pear_tree',
+      'peach_tree',
+      'walnut_tree',
+      'pistachio_tree',
+      'orange_tree',
+      'lemon_tree',
+      'mango_tree',
+      'avocado_tree',
+    ];
+
+    String guia(String crop, String stage) {
+      final NutrientDoseGuide? g = guideForNitrogen(
+        deficitPpm: 100.0,
+        cropKey: crop,
+        stageKey: stage,
+        scaleId: 'field',
+      );
+      expect(g, isNotNull, reason: '$crop/$stage debe recibir guía de árbol');
+      return g!.doseGuideEs;
+    }
+
+    /// Deja solo lo que comunica IDENTIDAD de etapa.
+    ///
+    /// "postcosecha" es el nombre de otra etapa, no una fuga. Y "todavía no
+    /// cosecha" es el desambiguador explícito que el anexo premia: negar la
+    /// cosecha es cumplir el contrato, no romperlo.
+    String soloIdentidad(String texto) => texto
+        .toLowerCase()
+        .replaceAll('postcosecha', '')
+        .replaceAll('poscosecha', '')
+        .replaceAll('todavía no cosecha', '')
+        .replaceAll('todavia no cosecha', '');
+
+    test('llenado nunca se comunica como cosecha ni como madurez', () {
+      for (final String crop in arboles) {
+        final String texto = soloIdentidad(guia(crop, 'fruit_fill'));
+        for (final String prohibido in const <String>[
+          'cerca de cosecha',
+          'cosecha',
+          'madurez',
+          'maduracion',
+          'maduración',
+        ]) {
+          expect(
+            texto,
+            isNot(contains(prohibido)),
+            reason: '$crop en llenado no puede decir "$prohibido"',
+          );
+        }
+        expect(texto, contains('llenado'), reason: crop);
+      }
+    });
+
+    test('cuajado no se comunica como llenado avanzado ni como cosecha', () {
+      for (final String crop in arboles) {
+        final String texto = soloIdentidad(guia(crop, 'fruit_set'));
+        expect(texto, isNot(contains('llenado')), reason: crop);
+        expect(texto, isNot(contains('cosecha')), reason: crop);
+        expect(texto, isNot(contains('madurez')), reason: crop);
+        expect(
+          texto,
+          anyOf(contains('cuajado'), contains('amarre')),
+          reason: crop,
+        );
+      }
+    });
+
+    test('madurez conserva copy propio', () {
+      for (final String crop in arboles) {
+        expect(
+          guia(crop, 'harvest_maturity').toLowerCase(),
+          anyOf(contains('madurez'), contains('cosecha')),
+          reason: crop,
+        );
+      }
+    });
+
+    test('postcosecha habla de reservas, no de cultivo cerrado', () {
+      for (final String crop in arboles) {
+        final String texto = guia(crop, 'post_harvest').toLowerCase();
+        expect(texto, contains('postcosecha'), reason: crop);
+        expect(
+          texto,
+          anyOf(contains('reserva'), contains('hoja')),
+          reason: crop,
+        );
+      }
+    });
+
+    test('cuajado, llenado y madurez dan TRES textos distintos', () {
+      for (final String crop in arboles) {
+        final String set = guia(crop, 'fruit_set');
+        final String fill = guia(crop, 'fruit_fill');
+        final String harvest = guia(crop, 'harvest_maturity');
+        expect(set, isNot(fill), reason: '$crop: cuajado ≠ llenado');
+        expect(fill, isNot(harvest), reason: '$crop: llenado ≠ madurez');
+        expect(set, isNot(harvest), reason: '$crop: cuajado ≠ madurez');
+      }
+    });
+
+    test('los caducifolios tienen rama propia de reposo', () {
+      // Duraznero, nogal y pistachero caían al texto genérico, el mismo que una
+      // etapa desconocida. Manzano y peral sí la tenían.
+      for (final String crop in const <String>[
+        'apple_tree',
+        'pear_tree',
+        'peach_tree',
+        'walnut_tree',
+        'pistachio_tree',
+      ]) {
+        final String reposo = guia(crop, 'dormancy');
+        expect(reposo, isNot(guia(crop, 'unknown')), reason: crop);
+        expect(reposo.toLowerCase(), contains('reposo'), reason: crop);
+      }
+    });
+
+    test('un id de etapa no cerrado NO hereda el copy de una etapa real', () {
+      // "Copy UX debe derivarse de la etapa normalizada, no de cadenas
+      //  ambiguas como stage.contains(...) cuando existen IDs cerrados."
+      for (final String falso in const <String>[
+        'fruit_fill_tardio',
+        'pre_fruit_set',
+        'harvest_maturity_2',
+      ]) {
+        final String texto = guia('apple_tree', falso);
+        expect(texto, isNot(contains('En llenado')), reason: falso);
+        expect(texto, isNot(contains('En cuajado')), reason: falso);
+        expect(texto, isNot(contains('En madurez')), reason: falso);
+      }
+    });
+  });
 }

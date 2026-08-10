@@ -36,10 +36,8 @@ const List<CropProfileEntry> avocadoTreeProfileEntries = [
     label: 'Hass',
     cropId: kCropAvocadoTree,
     subtitle:
-        'Aguacate de exportación dominante, piel rugosa verde que oscurece a '
-        'negro/morado al madurar, tipo floral A. Vigilar alternancia marcada, '
-        'cuajado, salinidad/cloruros, Phytophthora y fruta colgando durante '
-        'nueva floración. Exportación es calidad, no garantía de toneladas.',
+        'Aguacate de exportación, piel rugosa que oscurece a negro conforme '
+        'madura (Hass tipo A)',
     aliases: [
       'AG-01',
       'AG01',
@@ -61,10 +59,8 @@ const List<CropProfileEntry> avocadoTreeProfileEntries = [
     label: 'Méndez / Carmen / Hass temprano',
     cropId: kCropAvocadoTree,
     subtitle:
-        'Tipo Hass temprano o con floración/cosecha fuera de temporada '
-        '(«flor loca»), tipo floral A. Ventana temprana de alto valor, pero la '
-        'floración desfasada no garantiza cosecha: puede tirar fruta si clima, '
-        'agua o raíz fallan. No copiar el manejo de Hass al 100%.',
+        'Aguacate tipo Hass temprano, con floración fuera de temporada o flor '
+        'loca (Méndez/Carmen, tipo A)',
     aliases: [
       'AG-02',
       'AG02',
@@ -89,10 +85,8 @@ const List<CropProfileEntry> avocadoTreeProfileEntries = [
     label: 'Criollo / mexicano / regional',
     cropId: kCropAvocadoTree,
     subtitle:
-        'Aguacate de patio/regional, semilla o injerto, mucha variabilidad de '
-        'piel, calibre, calidad y ventana. No asumir exportación ni rendimiento '
-        'alto por árbol grande viejo: tipo floral desconocido, alternancia y '
-        'calidad irregulares. SKIP/criollo debe ser conservador.',
+        'Aguacate criollo de patio o regional, de semilla o injerto, muy '
+        'variable en piel y tamaño',
     aliases: [
       'AG-03',
       'AG03',
@@ -119,10 +113,8 @@ const List<CropProfileEntry> avocadoTreeProfileEntries = [
     label: 'Fuerte / piel verde',
     cropId: kCropAvocadoTree,
     subtitle:
-        'Clásico de piel verde (no oscurece), tipo floral B y posible '
-        'polinizador de Hass si coincide la floración. Puede alternar o ser '
-        'inconsistente; la piel verde confunde la madurez visual. No tratarlo '
-        'como Hass negro de exportación.',
+        'Aguacate clásico de piel verde que no oscurece, tipo floral B y '
+        'posible polinizador del Hass',
     aliases: [
       'AG-04',
       'AG04',
@@ -146,10 +138,8 @@ const List<CropProfileEntry> avocadoTreeProfileEntries = [
     label: 'Antillano / tropical',
     cropId: kCropAvocadoTree,
     subtitle:
-        'Grupo antillano/tropical de costa y clima cálido: fruta grande, piel '
-        'más lisa y verde, menor aceite en algunos materiales. Fruto grande '
-        'puede subir kg/árbol, pero no equivale a Hass exportación. Sensible a '
-        'exceso de humedad, antracnosis/roña y calidad externa/poscosecha.',
+        'Aguacate de costa y clima cálido, fruta grande de piel más lisa y '
+        'verde (antillano o tropical)',
     aliases: [
       'AG-05',
       'AG05',
@@ -172,10 +162,8 @@ const List<CropProfileEntry> avocadoTreeProfileEntries = [
     label: 'Tardío / Lamb Hass / Reed',
     cropId: kCropAvocadoTree,
     subtitle:
-        'Tardíos y especialidad: Lamb Hass (Hass-like más grande/tardío) y '
-        'Reed (verde, redondo, grande, puede permanecer en árbol), tipo floral '
-        'A. Ventana extendida y buen potencial, pero acumula estrés y carga '
-        'sostenida; no marcar inmaduro solo porque sigue verde.',
+        'Aguacate tardío de ventana extendida, tipo Lamb Hass grande o Reed '
+        'verde y redondo (tipo A)',
     aliases: [
       'AG-06',
       'AG06',
@@ -199,10 +187,8 @@ const List<CropProfileEntry> avocadoTreeProfileEntries = [
     label: 'No sé / Aguacate general',
     cropId: kCropAvocadoTree,
     subtitle:
-        'Perfil general y migrable del aguacate: puedes precisar Hass, '
-        'Méndez/Carmen, Criollo, Fuerte, Antillano o Tardío después sin perder '
-        'historial. No asume tipo floral A/B, portainjerto ni destino. No es '
-        'descanso del suelo ni promete floración ni cuajado.',
+        'Perfil general y migrable del aguacate, precisa la variedad después '
+        'sin perder historial; no es descanso del suelo',
     aliases: [
       'AG-SKIP',
       'AG_SKIP',

@@ -150,10 +150,17 @@ class _DashboardNpkCandidate {
   final AgroMetricEval? evalMetric;
   final NutrientInterpretationResult? interpretation;
 
-  String get labelEs =>
-      evalMetric?.labelEs ??
-      interpretation?.labelEs ??
-      AgroBand.unknown.labelEs;
+  /// Estado compacto para el resumen del dashboard.
+  ///
+  /// La banda ya resuelta por el motor es la fuente de verdad. Si existe una
+  /// evaluación (incluso `unknown`) no se reemplaza con el fallback calculado
+  /// desde el valor crudo: hacerlo convertiría un canal ausente en una alerta.
+  String get dashboardStatusEs {
+    final metricEval = evalMetric;
+    if (metricEval != null) return metricEval.band.labelEs;
+
+    return interpretation?.label.agroBand.labelEs ?? AgroBand.unknown.labelEs;
+  }
 
   /// La interpretación calculada en pantalla gana sobre la del motor:
   /// es la única que conoce la escala de cultivo (maceta / cama / campo)
@@ -227,8 +234,13 @@ class DashboardScreenPresenter {
 
     // Igual que el árbol: no heredamos la evaluación de otro cultivo guardada en
     // el store; la ornamental se evalúa con su propio runtime.
+    // La guía se suma al árbol y a la ornamental por el mismo motivo: su
+    // evaluación sale de un motor propio, y caer al `lastAgroEval` del store
+    // le colgaría al agricultor las bandas del cultivo anterior.
+    final bool isGuide = runtime.isGuideMode;
+
     final AgroEvalResult? effectiveEval = isPlanted
-        ? ((isTree || isOrnamental)
+        ? ((isTree || isOrnamental || isGuide)
               ? runtime.eval
               : (runtime.eval ?? store.lastAgroEval))
         : null;
@@ -253,6 +265,10 @@ class DashboardScreenPresenter {
       stageResult: stageResult,
       isGenericMode: isGenericMode,
       now: today,
+      // La misma decision que ya pinta la tarjeta de riego. Sin esto el motor
+      // de eventos volveria a deducir el riego por su cuenta y podria
+      // contradecir a la tarjeta que tiene justo encima.
+      irrigationDecision: irrigationDecision,
     );
 
     final AgronomicEvent? primaryDashboardEvent = _pickPrimaryDashboardEvent(
@@ -363,7 +379,16 @@ class DashboardScreenPresenter {
     String npkTitle = 'Nutrición (NPK)';
     String npkSubtitle = 'Sin evaluación actual';
 
-    if (isPlanted && telemetry != null) {
+    if (isGuide) {
+      // Modo guía: las cinco condiciones del suelo SÍ llevan etiqueta, la
+      // nutrición no. No es una limitación del sensor sino de lo que se puede
+      // afirmar: el nitrógeno que sobra en crecimiento falta en llenado, y sin
+      // saber qué planta es ni en qué etapa va no hay ventana que aplicar.
+      // La lectura se sigue mostrando; lo que no se inventa es su lectura
+      // agronómica.
+      npkSubtitle =
+          'Lectura sin interpretar: la nutrición necesita saber qué cultivo es.';
+    } else if (isPlanted && telemetry != null) {
       final scaleId = runtime.cropContext?.cultivationScaleId;
       final cropContext = runtime.cropContext;
       final nEvalMetric = effectiveEval?.metrics[AgroMetricKey.n];
@@ -427,9 +452,12 @@ class DashboardScreenPresenter {
         interpretation: kInt,
       );
 
-      // Usamos las etiquetas premium cortas para el title
+      // El dashboard muestra solo la banda corta ya calculada. La explicación
+      // agronómica completa se conserva por separado en `npkSubtitle`.
       npkTitle =
-          'N: ${nCandidate.labelEs} · P: ${pCandidate.labelEs} · K: ${kCandidate.labelEs}';
+          'N\u00a0—\u00a0${nCandidate.dashboardStatusEs} · '
+          'P\u00a0—\u00a0${pCandidate.dashboardStatusEs} · '
+          'K\u00a0—\u00a0${kCandidate.dashboardStatusEs}';
 
       // Buscamos el nutriente con más urgencia
       final allNutrients = [nCandidate, pCandidate, kCandidate]
@@ -582,17 +610,7 @@ class DashboardScreenPresenter {
           : runtime.cropLabel,
       cropIconAsset: runtime.cropIconAsset,
       soilHealth: soilHealth,
-      soilHealthLabel: isTree
-          ? 'Monitoreo continuo del \u00e1rbol'
-          : isOrnamental
-          ? 'Monitoreo continuo de la planta'
-          : telemetry == null
-          ? 'Sin datos del sensor'
-          : isPlanted
-          ? 'Índice de salud del suelo'
-          : isPlanned
-          ? 'Índice de preparación de suelo'
-          : 'Lectura general del suelo',
+      soilHealthLabel: 'Estado general del suelo',
       npkTitle: npkTitle,
       npkSubtitle: npkSubtitle,
       moisture: const DashboardMetricUiData(
@@ -764,6 +782,7 @@ class DashboardScreenPresenter {
     required CropStageResult? stageResult,
     required bool isGenericMode,
     required DateTime now,
+    IrrigationDecision? irrigationDecision,
   }) {
     // El cactus usa el EventEngine COMPARTIDO, igual que frijol. Antes tenía su
     // propio generador que solo emitía un evento de contexto con jerga interna
@@ -790,6 +809,7 @@ class DashboardScreenPresenter {
       previousBands: const <String, AgroBand>{},
       previousStageKey: _previousDashboardStage(runtime, now)?.stageKey,
       previousStageLabel: _previousDashboardStage(runtime, now)?.stageLabelEs,
+      irrigationDecision: irrigationDecision,
     );
     return EventEngine.build(input);
   }
@@ -1270,7 +1290,6 @@ class DashboardScreenPresenter {
     required double value,
     required AgroRange range,
   }) => _labelFromRangeTuned(index0to100: value, range: range);
-
 
   String _moistureStatusFromTargets({
     required double soilMoisturePct,

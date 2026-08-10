@@ -255,7 +255,7 @@ void main() {
       expectActiveTreeContext(context);
     });
 
-    test('manzano y pera estan habilitados; limon no queda activado', () {
+    test('manzano, pera y limon estan habilitados', () {
       final treeCrops = CropCatalog.cropsByCategory(
         CropCatalog.treeCategoryId,
         enabledOnly: true,
@@ -265,7 +265,11 @@ void main() {
         treeCrops.map((crop) => crop.cropId),
         containsAll([CropCatalog.appleTreeCropId, CropCatalog.pearTreeCropId]),
       );
-      expect(contextOrNullForLemon(), isNull);
+      // El limón se habilitó a propósito (séptimo árbol, segundo cítrico) y
+      // tiene motor, catálogo y pruebas propias. Esperar que NO se active era
+      // un gate de "todavía no lo enviamos" que caducó. La aserción nueva es
+      // más fuerte: falla si se deshabilita Y si el resolutor mezclara cultivos.
+      expect(contextOrNullForLemon()?.cropId, CropCatalog.lemonTreeCropId);
     });
   });
 

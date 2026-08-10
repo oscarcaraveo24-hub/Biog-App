@@ -803,15 +803,33 @@ void main() {
     });
 
     test('el déficit hídrico en floración castiga más que en senescencia', () {
-      final flowering = _evaluate(
-        t: _telemetry(moisture: 5),
-        stage: MarigoldStageIds.flowering,
-      ).eval.soilControlScore01;
-      final senescence = _evaluate(
-        t: _telemetry(moisture: 5),
-        stage: MarigoldStageIds.senescence,
-      ).eval.soilControlScore01;
-      expect(flowering, lessThan(senescence));
+      // Se compara la FRACCIÓN de score que conserva cada etapa respecto de su
+      // propia lectura óptima, no el score crudo.
+      //
+      // El fixture usa el mismo NPK (40/30/150) para las dos etapas, y sus
+      // bandas de suficiencia son distintas: en floración los tres nutrientes
+      // caen en rango, en senescencia los tres son "posible exceso" y cada uno
+      // aplica su propio castigo. Comparar los crudos medía agua + tres
+      // excesos de NPK, no agua. El motor hídrico siempre estuvo bien: el
+      // castigo por sequía es 0.56 en floración contra 0.80 en senescencia.
+      double retained(String stage) {
+        final base = _evaluate(
+          t: _telemetry(moisture: 45),
+          stage: stage,
+        ).eval.soilControlScore01;
+        final dry = _evaluate(
+          t: _telemetry(moisture: 5),
+          stage: stage,
+        ).eval.soilControlScore01;
+        return dry / base;
+      }
+
+      // 45 % es óptimo en las dos etapas (floración 40-70, senescencia 20-48),
+      // así que la línea base de cada una está limpia de castigos.
+      expect(
+        retained(MarigoldStageIds.flowering),
+        lessThan(retained(MarigoldStageIds.senescence)),
+      );
     });
 
     test('el exceso de humedad castiga más en germinación que en posfloración', () {

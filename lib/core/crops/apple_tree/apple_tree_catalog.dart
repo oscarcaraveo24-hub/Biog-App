@@ -35,8 +35,8 @@ const List<CropProfileEntry> appleTreeProfileEntries = [
     label: 'AP-SKIP - No sé / Manzano general',
     cropId: kCropAppleTree,
     subtitle:
-        'Perfil general y migrable del manzano: puedes precisar la variedad '
-        'después sin perder historial. No es descanso del suelo.',
+        'Perfil general del manzano, migrable a una variedad después sin '
+        'perder historial; no es descanso del suelo',
     aliases: [
       'AP-SKIP',
       'AP_SKIP',
@@ -57,7 +57,9 @@ const List<CropProfileEntry> appleTreeProfileEntries = [
     id: kAp01Golden,
     label: 'AP-01 - Golden',
     cropId: kCropAppleTree,
-    subtitle: 'Manzana Golden / amarilla',
+    subtitle:
+        'Manzana amarilla dorada, dulce y jugosa, de pulpa crujiente y cosecha '
+        'de otoño (Golden Delicious)',
     aliases: [
       'AP-01',
       'AP01',
@@ -73,7 +75,9 @@ const List<CropProfileEntry> appleTreeProfileEntries = [
     id: kAp02Red,
     label: 'AP-02 - Red',
     cropId: kCropAppleTree,
-    subtitle: 'Manzana roja / Red Delicious',
+    subtitle:
+        'Manzana roja oscura y alargada, dulce y de pulpa suave, se cosecha en '
+        'otoño (Red Delicious)',
     // 'apple_rojo' es el id legacy del onboarding viejo para manzana roja.
     aliases: [
       'AP-02',
@@ -93,7 +97,9 @@ const List<CropProfileEntry> appleTreeProfileEntries = [
     id: kAp03CriollaRayada,
     label: 'AP-03 - Criolla / Rayada',
     cropId: kCropAppleTree,
-    subtitle: 'Manzana criolla o rayada (regional)',
+    subtitle:
+        'Manzana criolla rayada de huertos regionales, de sabor ácido-dulce y '
+        'venta en mercado local',
     aliases: [
       'AP-03',
       'AP03',
@@ -108,14 +114,18 @@ const List<CropProfileEntry> appleTreeProfileEntries = [
     id: kAp04Gala,
     label: 'AP-04 - Gala',
     cropId: kCropAppleTree,
-    subtitle: 'Manzana Gala',
+    subtitle:
+        'Manzana chica rayada de rojo y amarillo, dulce y crujiente, de '
+        'cosecha temprana (Royal Gala)',
     aliases: ['AP-04', 'AP04', 'Gala', 'Royal Gala', 'Gala sport'],
   ),
   CropProfileEntry(
     id: kAp05LowChill,
     label: 'AP-05 - Bajo requerimiento de frío',
     cropId: kCropAppleTree,
-    subtitle: 'Variedades de bajo requerimiento de horas frío (low-chill)',
+    subtitle:
+        'Manzanas que cuajan en zonas templadas sin inviernos largos (Anna, '
+        'Dorsett Golden, Ein Shemer)',
     aliases: [
       'AP-05',
       'AP05',

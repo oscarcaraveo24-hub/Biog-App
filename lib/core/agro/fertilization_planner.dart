@@ -13,6 +13,7 @@ import 'package:bio_g/core/agro/spinach_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/squash_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
 
 /// Forma de cultivo efectiva para expresar una dosis.
 ///
@@ -597,27 +598,27 @@ class FertilizationPlanner {
     AgroMetricKey nutrient,
     String? stageKey,
   ) {
-    final String stage = (stageKey ?? '').trim().toLowerCase();
-    if (stage.isEmpty) return null;
+    final String stage = normalizeTreeStageId(stageKey);
+    if (stage == TreeStageIds.unknown) return null;
 
     if (nutrient == AgroMetricKey.n) {
-      if (stage.contains('dormancy')) {
+      if (stage == TreeStageIds.dormancy) {
         return 'No se pone número de dosis en reposo: la raíz no está '
             'absorbiendo y el nitrógeno se lava antes de que sirva.';
       }
-      if (stage.contains('budbreak') || stage.contains('flower')) {
+      if (stage == TreeStageIds.budbreak || stage == TreeStageIds.flowering) {
         return 'No se pone número de dosis aquí: en brotación y floración el '
             'árbol vive de las reservas que cargó el ciclo pasado, no de lo '
             'que se aplique hoy. La ventana buena abre unas semanas después '
             'de la floración, cuando la raíz vuelve a absorber.';
       }
-      if (stage.contains('harvest_maturity')) {
+      if (stage == TreeStageIds.harvestMaturity) {
         return 'No se pone número de dosis tan cerca del corte: el nitrógeno '
             'tardío retrasa la madurez, apaga el color y ablanda el fruto.';
       }
     }
 
-    if (nutrient == AgroMetricKey.p && stage.contains('dormancy')) {
+    if (nutrient == AgroMetricKey.p && stage == TreeStageIds.dormancy) {
       return 'No se pone número de dosis en reposo: el fósforo se mueve '
           'milímetros al año en el suelo y necesita raíz activa que lo alcance.';
     }
@@ -684,7 +685,7 @@ class FertilizationPlanner {
     if (isHigh) {
       return switch (nutrient) {
         AgroMetricKey.n =>
-          'No apliques más nitrógeno por ahora: en manzano más N no es más fruta; empuja follaje, retrasa color y baja firmeza.',
+          'No apliques más nitrógeno por ahora: en manzano más N no es más fruta; empuja follaje, retrasa color, desbalancea el K/Ca del fruto y baja firmeza.',
         AgroMetricKey.p =>
           'Pausa fósforo extra: más P no mejora la manzana, puede bloquear otros nutrientes y no baja rápido.',
         AgroMetricKey.k =>
@@ -694,7 +695,7 @@ class FertilizationPlanner {
     }
     return switch (nutrient) {
       AgroMetricKey.n =>
-        'Corrige N de forma ligera si el árbol se ve débil; evita pasarte cerca de cosecha para no apagar color ni ablandar la manzana.',
+        'Corrige N de forma ligera si el árbol se ve débil y solo mientras la raíz está absorbiendo; el N tardío apaga color y ablanda la manzana, así que la etapa manda cuándo parar.',
       AgroMetricKey.p =>
         'Corrige P con mesura, sobre todo en raíz, brotación y floración; si el suelo está frío o seco, primero empareja la humedad para que lo tome.',
       AgroMetricKey.k =>
@@ -704,22 +705,29 @@ class FertilizationPlanner {
   }
 
   static String _appleTreeStageGuide(String? stageKey) {
-    final stage = (stageKey ?? '').trim().toLowerCase();
-    if (stage.contains('post_harvest')) {
+    final stage = normalizeTreeStageId(stageKey);
+    if (stage == TreeStageIds.postHarvest) {
       return 'En postcosecha, solo corrige si el árbol sigue con hoja activa y riego parejo: esa hoja carga las reservas de la próxima floración. No metas N si ya va a reposo.';
     }
-    if (stage.contains('fruit_fill') ||
-        stage.contains('fruit_set') ||
-        stage.contains('harvest_maturity')) {
-      return 'En cuajado, llenado o madurez mandan el potasio y el riego parejo; evita N tardío que retrase color y ablande la manzana.';
+    // Llenado y madurez NO son la misma ventana (contrato v1.5). Estaban en la
+    // misma rama, así que la guía de llenado hablaba de madurez y el productor
+    // recibía lenguaje de cosecha cuando al fruto todavía le faltaba calibre.
+    if (stage == TreeStageIds.harvestMaturity) {
+      return 'En madurez mandan el potasio y el riego parejo; evita N tardío que retrase color y ablande la manzana.';
     }
-    if (stage.contains('dormancy')) {
+    if (stage == TreeStageIds.fruitFill) {
+      return 'En llenado mandan el potasio y el riego parejo: aquí se hacen calibre, azúcares y firmeza. Cuida el balance N-K-Ca/Mg; el N de más se va a follaje que compite con el fruto y le quita calibre. (Esto es llenado, aún no es el corte.)';
+    }
+    if (stage == TreeStageIds.fruitSet) {
+      return 'En cuajado/amarre lo primero es agua estable y sales bajas para que no se caiga el frutito; el potasio empieza a pesar y el balance Ca/Mg es contexto. El fruto apenas amarra: no empujes N.';
+    }
+    if (stage == TreeStageIds.dormancy) {
       return 'En reposo el manzano está sin hoja: no es momento de empujar NPK. Cuida raíz, humedad y sales, y deja la corrección para brotación.';
     }
-    if (stage.contains('root') ||
-        stage.contains('planting') ||
-        stage.contains('budbreak') ||
-        stage.contains('flower')) {
+    if (stage == TreeStageIds.rootEstablishment ||
+        stage == TreeStageIds.plantingTransplant ||
+        stage == TreeStageIds.budbreak ||
+        stage == TreeStageIds.flowering) {
       return 'En raíz, brotación y floración corrige poco a poco y cuida que el suelo no esté frío, seco o encharcado.';
     }
     return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
@@ -780,7 +788,7 @@ class FertilizationPlanner {
     if (isHigh) {
       return switch (nutrient) {
         AgroMetricKey.n =>
-          'No apliques más nitrógeno por ahora: en peral más N no es más fruta; sube el riesgo de fuego bacteriano, retrasa madurez y baja firmeza.',
+          'No apliques más nitrógeno por ahora: en peral más N no es más fruta; sube el riesgo de fuego bacteriano, atrasa el punto de corte y baja firmeza.',
         AgroMetricKey.p =>
           'Pausa fósforo extra: en peral adulto el P responde poco y el exceso puede bloquear otros nutrientes.',
         AgroMetricKey.k =>
@@ -800,22 +808,26 @@ class FertilizationPlanner {
   }
 
   static String _pearTreeStageGuide(String? stageKey) {
-    final stage = (stageKey ?? '').trim().toLowerCase();
-    if (stage.contains('post_harvest')) {
+    final stage = normalizeTreeStageId(stageKey);
+    if (stage == TreeStageIds.postHarvest) {
       return 'En postcosecha, solo corrige si el árbol sigue con hoja activa y riego parejo: esa hoja carga las reservas de la próxima floración. No metas N si ya va a reposo.';
     }
-    if (stage.contains('fruit_fill') ||
-        stage.contains('fruit_set') ||
-        stage.contains('harvest_maturity')) {
-      return 'En cuajado, llenado o madurez mandan el potasio y el riego parejo; evita N tardío que retrase madurez y ablande la pera.';
+    if (stage == TreeStageIds.harvestMaturity) {
+      return 'En madurez mandan el potasio y el riego parejo; evita N tardío que retrase madurez y ablande la pera.';
     }
-    if (stage.contains('dormancy')) {
+    if (stage == TreeStageIds.fruitFill) {
+      return 'En llenado mandan el potasio y el riego parejo: calibre, azúcares y firmeza de la pera se juegan aquí. Cuida el balance N-K-Ca/Mg (cork spot) y no metas N de más, que se va a follaje y compite con el fruto. (Esto es llenado, aún no es el corte.)';
+    }
+    if (stage == TreeStageIds.fruitSet) {
+      return 'En cuajado/amarre cuida agua estable y sales bajas para que no se caiga el frutito; el potasio empieza a pesar y el balance Ca/Mg es contexto. Nada de brote tierno de más: es la puerta del fuego bacteriano.';
+    }
+    if (stage == TreeStageIds.dormancy) {
       return 'En reposo el peral está sin hoja: no es momento de empujar NPK. Cuida raíz, humedad y sales, y deja la corrección para brotación.';
     }
-    if (stage.contains('root') ||
-        stage.contains('planting') ||
-        stage.contains('budbreak') ||
-        stage.contains('flower')) {
+    if (stage == TreeStageIds.rootEstablishment ||
+        stage == TreeStageIds.plantingTransplant ||
+        stage == TreeStageIds.budbreak ||
+        stage == TreeStageIds.flowering) {
       return 'En raíz, brotación y floración corrige poco a poco; cuida que el suelo no esté frío, seco o encharcado y no empujes brote tierno de más.';
     }
     return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
@@ -867,7 +879,7 @@ class FertilizationPlanner {
     if (isHigh) {
       return switch (nutrient) {
         AgroMetricKey.n =>
-          'No apliques más nitrógeno por ahora: puede empujar follaje de más, retrasar madurez y bajar firmeza.',
+          'No apliques más nitrógeno por ahora: puede empujar follaje de más, atrasar el punto de corte y bajar firmeza.',
         AgroMetricKey.p =>
           'Pausa fósforo extra: más P no mejora el fruto y puede bloquear otros nutrientes.',
         AgroMetricKey.k =>
@@ -877,7 +889,7 @@ class FertilizationPlanner {
     }
     return switch (nutrient) {
       AgroMetricKey.n =>
-        'Corrige N de forma ligera si el árbol se ve débil; evita pasarte cerca de cosecha.',
+        'Corrige N de forma ligera si el árbol se ve débil y solo mientras la raíz está absorbiendo; el N tardío empuja follaje y ablanda el fruto, así que la etapa manda cuándo parar.',
       AgroMetricKey.p =>
         'Corrige P con mesura, sobre todo en raíz, brotación o floración.',
       AgroMetricKey.k =>
@@ -887,19 +899,26 @@ class FertilizationPlanner {
   }
 
   static String _peachTreeStageGuide(String? stageKey) {
-    final stage = (stageKey ?? '').trim().toLowerCase();
-    if (stage.contains('post_harvest')) {
+    final stage = normalizeTreeStageId(stageKey);
+    if (stage == TreeStageIds.postHarvest) {
       return 'En postcosecha, solo corrige si el árbol sigue con hoja y riego parejo; no metas N si ya va a reposo.';
     }
-    if (stage.contains('fruit_fill') ||
-        stage.contains('fruit_set') ||
-        stage.contains('harvest_maturity')) {
-      return 'En cuajado, llenado o madurez, mantén riego parejo y evita N tardío que ablande fruta.';
+    if (stage == TreeStageIds.harvestMaturity) {
+      return 'En madurez, mantén riego parejo y evita N tardío que ablande fruta.';
     }
-    if (stage.contains('root') ||
-        stage.contains('planting') ||
-        stage.contains('budbreak') ||
-        stage.contains('flower')) {
+    if (stage == TreeStageIds.fruitFill) {
+      return 'En llenado, mantén riego parejo y sostén el potasio: aquí se hacen calibre, azúcares y firmeza. Cuida el balance N-K-Ca/Mg; el N de más se va a follaje que compite con el fruto. (Esto es llenado, aún no es el corte.)';
+    }
+    if (stage == TreeStageIds.fruitSet) {
+      return 'En cuajado/amarre cuida agua estable y sales bajas para que no se caiga el frutito; el potasio empieza a pesar y el balance Ca/Mg es contexto. El fruto apenas amarra: no empujes N.';
+    }
+    if (stage == TreeStageIds.dormancy) {
+      return 'En reposo el duraznero está sin hoja: no es momento de empujar NPK. Cuida raíz, humedad y sales, y deja la corrección para brotación.';
+    }
+    if (stage == TreeStageIds.rootEstablishment ||
+        stage == TreeStageIds.plantingTransplant ||
+        stage == TreeStageIds.budbreak ||
+        stage == TreeStageIds.flowering) {
       return 'En raíz, brotación y floración, corrige poco a poco y cuida que el suelo no esté frío, seco o encharcado.';
     }
     return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
@@ -961,7 +980,7 @@ class FertilizationPlanner {
     }
     return switch (nutrient) {
       AgroMetricKey.n =>
-        'Corrige N de forma ligera si la hoja se ve débil; evita pasarte y no metas N tardío cerca de cosecha.',
+        'Corrige N de forma ligera si la hoja se ve débil y solo mientras la raíz está absorbiendo; el N tardío se va a follaje y sombra, así que la etapa manda cuándo parar.',
       AgroMetricKey.p =>
         'Corrige P con mesura y análisis, sobre todo en raíz, brotación o floración.',
       AgroMetricKey.k =>
@@ -971,20 +990,26 @@ class FertilizationPlanner {
   }
 
   static String _walnutTreeStageGuide(String? stageKey) {
-    final stage = (stageKey ?? '').trim().toLowerCase();
-    if (stage.contains('post_harvest')) {
+    final stage = normalizeTreeStageId(stageKey);
+    if (stage == TreeStageIds.postHarvest) {
       return 'En postcosecha, solo corrige si el nogal sigue con hoja activa y riego parejo: la hoja carga reservas para el siguiente ciclo. No metas N si ya va a reposo.';
     }
-    if (stage.contains('fruit_fill')) {
-      return 'En llenado de nuez/almendra, el potasio y el agua mandan; no empujes N que se vaya a follaje. (Esto es llenado, todavía no cosecha.)';
+    if (stage == TreeStageIds.fruitFill) {
+      return 'En llenado de nuez/almendra, el potasio y el agua mandan; no empujes N que se vaya a follaje. (Esto es llenado, aún no es el corte.)';
     }
-    if (stage.contains('fruit_set') || stage.contains('harvest_maturity')) {
-      return 'En amarre y madurez/ruezno, mantén riego parejo y evita N tardío que retrase madurez o ablande el árbol.';
+    if (stage == TreeStageIds.fruitSet) {
+      return 'En amarre de nuez cuida agua estable y sales bajas para que no se caiga el frutito; el potasio empieza a pesar y el balance Ca/Mg es contexto. La nuez apenas amarró: no empujes N.';
     }
-    if (stage.contains('root') ||
-        stage.contains('planting') ||
-        stage.contains('budbreak') ||
-        stage.contains('flower')) {
+    if (stage == TreeStageIds.dormancy) {
+      return 'En reposo el nogal está sin hoja: no es momento de empujar NPK. Cuida raíz, humedad y sales, y deja la corrección para brotación.';
+    }
+    if (stage == TreeStageIds.harvestMaturity) {
+      return 'En madurez, con el ruezno abriendo, mantén riego parejo y cuida color, calidad final y almacenamiento; evita N tardío que retrase la madurez.';
+    }
+    if (stage == TreeStageIds.rootEstablishment ||
+        stage == TreeStageIds.plantingTransplant ||
+        stage == TreeStageIds.budbreak ||
+        stage == TreeStageIds.flowering) {
       return 'En raíz, brotación y floración, corrige poco a poco; cuida zinc contextual y que el suelo no esté frío, seco o con sales.';
     }
     return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
@@ -1110,20 +1135,26 @@ class FertilizationPlanner {
   }
 
   static String _pistachioTreeStageGuide(String? stageKey) {
-    final stage = (stageKey ?? '').trim().toLowerCase();
-    if (stage.contains('post_harvest')) {
+    final stage = normalizeTreeStageId(stageKey);
+    if (stage == TreeStageIds.postHarvest) {
       return 'En postcosecha, solo corrige si el pistache sigue con hoja activa y riego parejo: la hoja carga reservas para el siguiente ciclo. No todo huerto necesita N postcosecha.';
     }
-    if (stage.contains('fruit_fill')) {
-      return 'En llenado de kernel, el potasio y el agua mandan; no empujes N que se vaya a follaje. (Esto es llenado, todavía no cosecha.)';
+    if (stage == TreeStageIds.fruitFill) {
+      return 'En llenado de kernel, el potasio y el agua mandan; no empujes N que se vaya a follaje. (Esto es llenado, aún no es el corte.)';
     }
-    if (stage.contains('fruit_set') || stage.contains('harvest_maturity')) {
-      return 'En amarre y madurez/apertura, mantén riego parejo y evita N tardío; si no amarró, revisa macho/hembra, frío y clima antes de fertilizar.';
+    if (stage == TreeStageIds.fruitSet) {
+      return 'En cuajado/amarre, mantén riego parejo, EC baja y agua estable: si no amarró, revisa macho/hembra, frío y clima antes de fertilizar. El potasio empieza a pesar y el balance Ca/Mg es contexto.';
     }
-    if (stage.contains('root') ||
-        stage.contains('planting') ||
-        stage.contains('budbreak') ||
-        stage.contains('flower')) {
+    if (stage == TreeStageIds.dormancy) {
+      return 'En reposo el pistachero está sin hoja: no es momento de empujar NPK. Cuida raíz, humedad y sales, y deja la corrección para brotación.';
+    }
+    if (stage == TreeStageIds.harvestMaturity) {
+      return 'En madurez, con el pistache abriendo, mantén riego parejo y cuida kernel, split, calidad final y almacenamiento; evita N tardío que retrase la madurez.';
+    }
+    if (stage == TreeStageIds.rootEstablishment ||
+        stage == TreeStageIds.plantingTransplant ||
+        stage == TreeStageIds.budbreak ||
+        stage == TreeStageIds.flowering) {
       return 'En raíz, brotación y floración, corrige poco a poco; cuida boro/zinc contextual y que el suelo no esté frío, seco o con sales. En floración manda macho/hembra y clima, no el NPK.';
     }
     return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
@@ -1183,26 +1214,26 @@ class FertilizationPlanner {
   }
 
   static String _orangeTreeStageGuide(String? stageKey) {
-    final stage = (stageKey ?? '').trim().toLowerCase();
-    if (stage.contains('post_harvest')) {
+    final stage = normalizeTreeStageId(stageKey);
+    if (stage == TreeStageIds.postHarvest) {
       return 'En postcosecha, solo corrige si el naranjo sigue con hoja activa y riego parejo: la hoja carga reservas para la siguiente floración. La cosecha no apaga el árbol.';
     }
-    if (stage.contains('fruit_fill')) {
-      return 'En llenado, el potasio y el agua mandan calibre y jugo; no empujes N que se vaya a follaje. (Esto es llenado, todavía no cosecha.)';
+    if (stage == TreeStageIds.fruitFill) {
+      return 'En llenado, el potasio y el agua mandan calibre y jugo; no empujes N que se vaya a follaje. (Esto es llenado, aún no es el corte.)';
     }
-    if (stage.contains('fruit_set')) {
+    if (stage == TreeStageIds.fruitSet) {
       return 'En cuajado/amarre, mantén riego parejo y evita el estrés: si se cae el frutito, revisa calor, agua, sales y raíz antes de fertilizar.';
     }
-    if (stage.contains('harvest_maturity')) {
+    if (stage == TreeStageIds.harvestMaturity) {
       return 'En madurez/cosecha cuida color, calibre, jugo y calidad; no empujes N tardío. En Valencia el color externo puede engañar.';
     }
-    if (stage.contains('dormancy')) {
+    if (stage == TreeStageIds.dormancy) {
       return 'En reposo relativo el naranjo sigue verde (no es árbol pelón): baja la presión de NPK y cuida raíz, humedad y sales.';
     }
-    if (stage.contains('root') ||
-        stage.contains('planting') ||
-        stage.contains('budbreak') ||
-        stage.contains('flower')) {
+    if (stage == TreeStageIds.rootEstablishment ||
+        stage == TreeStageIds.plantingTransplant ||
+        stage == TreeStageIds.budbreak ||
+        stage == TreeStageIds.flowering) {
       return 'En raíz, brotación y floración, corrige poco a poco; cuida Fe/Zn/Mn contextual y que el suelo no esté frío, seco o con sales. En floración manda el agua y el clima, no el NPK.';
     }
     return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
@@ -1262,26 +1293,26 @@ class FertilizationPlanner {
   }
 
   static String _lemonTreeStageGuide(String? stageKey) {
-    final stage = (stageKey ?? '').trim().toLowerCase();
-    if (stage.contains('post_harvest')) {
+    final stage = normalizeTreeStageId(stageKey);
+    if (stage == TreeStageIds.postHarvest) {
       return 'En postcosecha/entre cortes, solo corrige si el limón sigue con hoja activa y riego parejo: la hoja carga reservas para la siguiente floración o corte. La cosecha no apaga el árbol.';
     }
-    if (stage.contains('fruit_fill')) {
-      return 'En llenado, el potasio y el agua mandan calibre y jugo; no empujes N que se vaya a brote tierno. (Esto es llenado, todavía no cosecha.)';
+    if (stage == TreeStageIds.fruitFill) {
+      return 'En llenado, el potasio y el agua mandan calibre y jugo; no empujes N que se vaya a brote tierno. (Esto es llenado, aún no es el corte.)';
     }
-    if (stage.contains('fruit_set')) {
+    if (stage == TreeStageIds.fruitSet) {
       return 'En cuajado/amarre del limoncito, mantén riego parejo y evita el estrés: si se cae el frutito, revisa calor, agua, sales y raíz antes de fertilizar.';
     }
-    if (stage.contains('harvest_maturity')) {
-      return 'Cerca del corte cuida calibre, jugo y calidad; no empujes N tardío. En persa/mexicano el limón comercial puede seguir verde.';
+    if (stage == TreeStageIds.harvestMaturity) {
+      return 'En madurez comercial, cerca del corte, cuida calibre, jugo y calidad; no empujes N tardío. En persa/mexicano el limón puede seguir verde aunque ya esté en punto.';
     }
-    if (stage.contains('dormancy')) {
+    if (stage == TreeStageIds.dormancy) {
       return 'En reposo relativo/entre cortes el limón sigue verde (no es árbol pelón): baja la presión de NPK y cuida raíz, humedad y sales.';
     }
-    if (stage.contains('root') ||
-        stage.contains('planting') ||
-        stage.contains('budbreak') ||
-        stage.contains('flower')) {
+    if (stage == TreeStageIds.rootEstablishment ||
+        stage == TreeStageIds.plantingTransplant ||
+        stage == TreeStageIds.budbreak ||
+        stage == TreeStageIds.flowering) {
       return 'En raíz, brotación y floración, corrige poco a poco; cuida Fe/Zn/Mn contextual y que el suelo no esté frío, seco o con sales. En floración manda el agua y el clima, no el NPK. El brote tierno atrae psílido/minador.';
     }
     return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
@@ -1341,26 +1372,26 @@ class FertilizationPlanner {
   }
 
   static String _mangoTreeStageGuide(String? stageKey) {
-    final stage = (stageKey ?? '').trim().toLowerCase();
-    if (stage.contains('post_harvest')) {
+    final stage = normalizeTreeStageId(stageKey);
+    if (stage == TreeStageIds.postHarvest) {
       return 'En postcosecha, solo corrige si el mango sigue con hoja activa y riego parejo: es la ventana fuerte de reservas para la siguiente floración. La cosecha no apaga el árbol.';
     }
-    if (stage.contains('fruit_fill')) {
-      return 'En llenado, el potasio y el agua mandan calibre y calidad; no empujes N que se vaya a brote. (Esto es llenado, todavía no cosecha.)';
+    if (stage == TreeStageIds.fruitFill) {
+      return 'En llenado, el potasio y el agua mandan calibre y calidad; no empujes N que se vaya a brote. (Esto es llenado, aún no es el corte.)';
     }
-    if (stage.contains('fruit_set')) {
+    if (stage == TreeStageIds.fruitSet) {
       return 'En cuajado/amarre del manguito, mantén riego parejo y evita el estrés: si se cae el frutito, revisa calor, agua, sales, sanidad de panícula y raíz antes de fertilizar.';
     }
-    if (stage.contains('harvest_maturity')) {
+    if (stage == TreeStageIds.harvestMaturity) {
       return 'Cerca del corte cuida calibre, madurez y calidad; no empujes N tardío. No decidas la madurez solo por el color externo (Kent/Keitt pueden verse verdes).';
     }
-    if (stage.contains('dormancy')) {
+    if (stage == TreeStageIds.dormancy) {
       return 'En reposo funcional/inducción el mango sigue verde (no es árbol pelón): baja la presión de N (empuja brote y rompe flor) y cuida raíz, humedad y sales. La inducción no se receta.';
     }
-    if (stage.contains('root') ||
-        stage.contains('planting') ||
-        stage.contains('budbreak') ||
-        stage.contains('flower')) {
+    if (stage == TreeStageIds.rootEstablishment ||
+        stage == TreeStageIds.plantingTransplant ||
+        stage == TreeStageIds.budbreak ||
+        stage == TreeStageIds.flowering) {
       return 'En raíz, brotación y floración, corrige poco a poco; cuida Ca/B/Fe/Zn contextual y que el suelo no esté frío, seco o con sales. En floración mandan agua, HR, sanidad de panícula y clima, no el NPK.';
     }
     return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';
@@ -1420,28 +1451,28 @@ class FertilizationPlanner {
   }
 
   static String _avocadoTreeStageGuide(String? stageKey) {
-    final stage = (stageKey ?? '').trim().toLowerCase();
-    if (stage.contains('post_harvest')) {
+    final stage = normalizeTreeStageId(stageKey);
+    if (stage == TreeStageIds.postHarvest) {
       return 'En postcosecha, solo corrige si el aguacate sigue con hoja activa y riego parejo: es la ventana viva de reservas para la siguiente floración. La cosecha no apaga el árbol.';
     }
-    if (stage.contains('fruit_fill')) {
-      return 'En llenado, el potasio y el agua mandan calibre y materia seca; no empujes N que se vaya a brote. (Esto es llenado, todavía no cosecha; madura después del corte.)';
+    if (stage == TreeStageIds.fruitFill) {
+      return 'En llenado, el potasio y el agua mandan calibre y materia seca; no empujes N que se vaya a brote. (Esto es llenado, aún no es el corte; el aguacate termina de hacerse en el árbol y ablanda después.)';
     }
-    if (stage.contains('fruit_set')) {
+    if (stage == TreeStageIds.fruitSet) {
       return 'En cuajado/amarre del aguacatito, mantén riego parejo, baja EC y raíz oxigenada: si se cae el frutito, revisa calor, agua, sales, polinización y raíz antes de fertilizar. Ca/B/Zn son contexto.';
     }
-    if (stage.contains('harvest_maturity')) {
+    if (stage == TreeStageIds.harvestMaturity) {
       return 'Cerca del corte cuida madurez fisiológica, materia seca y calidad; no empujes N tardío. No decidas la madurez solo por el color externo (el aguacate madura después del corte).';
     }
-    if (stage.contains('dormancy')) {
+    if (stage == TreeStageIds.dormancy) {
       return 'En reposo funcional/inducción el aguacate sigue verde (es siempreverde, no árbol pelón): baja la presión de N (empuja brote y compite con la flor) y cuida raíz, humedad y sales. La inducción no se receta.';
     }
-    if (stage.contains('flower')) {
+    if (stage == TreeStageIds.flowering) {
       return 'En floración manda agua, temperatura, polinización (tipo A/B) y Ca/B/Zn contextual, no el NPK. El K aún no va al máximo: primero cuaja. Corrige poco a poco.';
     }
-    if (stage.contains('root') ||
-        stage.contains('planting') ||
-        stage.contains('budbreak')) {
+    if (stage == TreeStageIds.rootEstablishment ||
+        stage == TreeStageIds.plantingTransplant ||
+        stage == TreeStageIds.budbreak) {
       return 'En raíz, plantación y brotación corrige poco a poco; la raíz fina del aguacate no tolera sales ni saturación. Cuida drenaje, EC baja y Ca/B/Fe/Zn contextual.';
     }
     return 'Haz ajustes graduales y revisa si la lectura mejora en los siguientes riegos.';

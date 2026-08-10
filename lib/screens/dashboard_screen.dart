@@ -12,9 +12,10 @@ import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/features/reporting/pdf_preview_screen.dart';
 import 'package:bio_g/features/reporting/pdf_report_builder.dart';
 import 'package:bio_g/features/reporting/quick_report_builder.dart';
+import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/screens/dashboard/dashboard_presenter.dart';
 import 'package:bio_g/screens/dashboard/dashboard_sections.dart';
-import 'package:bio_g/widgets/dashboard/irrigation_evidence_note.dart';
+import 'package:bio_g/screens/recommendations/recommendations_screen.dart';
 import 'package:bio_g/screens/notifications_screen.dart';
 import 'package:bio_g/screens/plant_health/crop_risk_intro_screen.dart';
 import 'package:bio_g/screens/yield/yield_projection_setup_screen.dart';
@@ -40,7 +41,14 @@ class _DashboardScreenState extends State<DashboardScreen>
     with SingleTickerProviderStateMixin {
   static const int _dashboardTabIndex = 4;
 
-  static bool _hasAnimatedThisSession = false;
+  // Instancia, NO estatica.
+  //
+  // Con `static` esta bandera se compartia entre todas las instancias y entre
+  // todas las reconstrucciones, asi que la animacion de entrada corria **una
+  // sola vez en toda la vida del proceso**: la primera. A partir de ahi el
+  // controlador se creaba ya en 1.0 y la pantalla aparecia pintada de golpe,
+  // sin reveal, al cambiar de pestaña o al reabrir la app.
+  bool _hasAnimatedThisSession = false;
 
   final DashboardScreenPresenter _presenter = DashboardScreenPresenter();
 
@@ -48,7 +56,16 @@ class _DashboardScreenState extends State<DashboardScreen>
   ///
   /// Vive en el estado de la pantalla para que su ciclo de vida sea el de la
   /// pantalla y no haya que tocar el arranque de la app.
-  final IrrigationCoordinator _irrigation = IrrigationCoordinator();
+  /// El coordinador de riego.
+  ///
+  /// `late final` y no un inicializador de campo porque necesita `context`:
+  /// cuando descubre que la parcela tiene ubicación en el perfil pero no en el
+  /// contexto de cultivo, la escribe. Ese era el bug por el que el motor de
+  /// riego nunca veía el clima aunque Entorno sí lo mostrara.
+  late final IrrigationCoordinator _irrigation = IrrigationCoordinator(
+    onParcelLocationRecovered: (DeviceCropContext healed) =>
+        BioGScope.of(context).saveCropContext(healed),
+  );
 
   late final AnimationController _entranceController;
 
@@ -81,7 +98,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     final bool wasActiveBefore = oldWidget.currentIndex == _dashboardTabIndex;
     final bool isActiveNow = widget.currentIndex == _dashboardTabIndex;
 
-    if (!wasActiveBefore && isActiveNow && !_hasAnimatedThisSession) {
+    if (!wasActiveBefore && isActiveNow) {
       _entranceController
         ..stop()
         ..reset();
@@ -240,6 +257,19 @@ class _DashboardScreenState extends State<DashboardScreen>
           now: today,
         );
 
+        // Publica la decisión para el resto del sistema.
+        //
+        // El coordinador vive aquí, en el estado de esta pantalla, pero el
+        // registro de eventos corre en segundo plano cada vez que llega una
+        // lectura. Sin este puente, ese registro no sabía qué había decidido el
+        // motor y deducía el riego por su cuenta desde la banda de humedad: por
+        // eso la campana podía decir "riego recomendado" mientras esta misma
+        // tarjeta decía "espera, se espera lluvia".
+        //
+        // Es una asignación pura, sin `notifyListeners`, así que es segura
+        // dentro de `build`.
+        store.publishIrrigationDecision(irrigationDecision);
+
         // El refresco de clima y el registro auditable van fuera del frame:
         // son asíncronos y no deben retrasar el pintado. El coordinador sale
         // solo si el estado relevante no cambió.
@@ -257,14 +287,67 @@ class _DashboardScreenState extends State<DashboardScreen>
           irrigationDecision: irrigationDecision,
         );
 
+        // Abre la pantalla de Recomendaciones con lo que el Panel ya calculo.
+        // No recalcula nada: pasa la misma decision y los mismos eventos que
+        // se estan mostrando, para que lo que se lee alli sea exactamente lo
+        // que fundamenta la tarjeta de aqui.
+        void openRecommendations() {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => RecommendationsScreen(
+                events: viewData.events,
+                irrigationDecision: viewData.irrigationDecision,
+                cropLabel: viewData.cropLabel,
+                // La bandera manda: sin `hasSoilMoistureData` el valor es el
+                // 0.0 sintetizado, y un cero fingido en el dial de humedad
+                // seria justo el bug que el proyecto lleva meses cerrando.
+                moisturePct: (runtime.live?.hasSoilMoistureData ?? false)
+                    ? runtime.live!.soilMoisturePct
+                    : null,
+                // El objetivo de la etapa sale del catalogo, el mismo que usa
+                // el motor de riego. Asi el dial y el Panel no pueden
+                // contradecirse.
+                moistureTarget: runtime.targets?.moistureRaw,
+                // Contexto de la tarjeta de etapa: es la etapa la que mueve el
+                // rango ideal, asi que el productor tiene que poder ver contra
+                // cual se le esta midiendo.
+                stageLabel: runtime.stageLabel,
+                cropIconAsset: viewData.cropIconAsset,
+                // Una ruta empujada no se reconstruye cuando el Panel lo hace.
+                // Pasando el coordinador, la pantalla se entera de la decisión
+                // que llegue después —tipicamente cuando baja el pronóstico— y
+                // pide un refresco al abrirse.
+                coordinator: _irrigation,
+                onRefresh: () => _irrigation.refresh(
+                  runtime: runtime,
+                  userId: store.currentUserId,
+                ),
+                // El bloque del pronostico es un resumen. Quien quiera el
+                // completo cierra esta ruta y cae en la pestana de Entorno,
+                // que es donde vive de verdad.
+                onOpenEnvironment: () {
+                  Navigator.of(context).pop();
+                  widget.onNavTap(BioGTabIndex.environment);
+                },
+              ),
+            ),
+          );
+        }
+
         return Scaffold(
           extendBody: true,
           backgroundColor: Colors.transparent,
           body: ConnectivityBanner(
             enabled: widget.currentIndex == _dashboardTabIndex,
+            // Al recuperar la señal, reintenta lo que quedó pendiente de subir.
+            // Antes el único disparador era iniciar sesión: una edición hecha
+            // sin cobertura esperaba en la cola hasta el siguiente arranque.
+            onBackOnline: () => unawaited(store.drainPendingSync()),
             child: Stack(
               children: <Widget>[
-                const DashboardBackground(),
+                DashboardBackground(
+                  enabled: widget.currentIndex == _dashboardTabIndex,
+                ),
                 SafeArea(
                   top: true,
                   bottom: false,
@@ -283,17 +366,25 @@ class _DashboardScreenState extends State<DashboardScreen>
                             cropLabel: viewData.cropLabel,
                             fieldLabel: viewData.fieldLabel,
                             cropIconAsset: viewData.cropIconAsset,
-                            // La bandeja persistente es la fuente: aplica las
-                            // preferencias del usuario y sobrevive al cierre
-                            // de la app, cosa que la lista recalculada no.
+                            // La bandeja persistente es la ÚNICA fuente:
+                            // aplica las preferencias del usuario y sobrevive
+                            // al cierre de la app, cosa que la lista
+                            // recalculada no.
+                            //
+                            // El `|| viewData.events.isNotEmpty` que había
+                            // aquí mantenía la campana encendida siempre: el
+                            // motor de eventos emite un evento de contexto en
+                            // cada evaluación, y esos eventos son `info`, es
+                            // decir, justo los que el umbral por defecto nunca
+                            // deja pasar a la bandeja. La campana vibraba por
+                            // avisos que tenían garantizado no existir.
                             hasNotifications:
-                                store.notifications.unreadCount > 0 ||
-                                viewData.events.isNotEmpty,
+                                store.notifications.unreadCount > 0,
                             onNotificationTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
                                   builder: (_) => NotificationsScreen(
-                                    events: viewData.events,
+                                    dispatcher: store.notifications,
                                   ),
                                 ),
                               );
@@ -310,18 +401,51 @@ class _DashboardScreenState extends State<DashboardScreen>
                           child: DashboardSoilHealthSection(
                             percent: viewData.soilHealth,
                             label: viewData.soilHealthLabel,
+                            isActive:
+                                widget.currentIndex == _dashboardTabIndex,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        // Separador anillo → tarjeta de riego.
+                        //
+                        // Heredaba los 12 px que vivian dentro de
+                        // `DashboardNpkSection`; ahora que las dos tarjetas se
+                        // intercambian de sitio, el margen pertenece a la
+                        // posicion y no al widget.
+                        //
+                        // Baja a 6 porque el otro recorte —los 14 px de lienzo
+                        // muerto del anillo, en `DashboardSoilHealthSection`—
+                        // ya no compensa solo: entre los dos suben 20 px todo
+                        // lo que va debajo del anillo.
+                        const SizedBox(height: 6),
+                        // Tarjeta de riego — primera posicion.
+                        //
+                        // Sube aqui desde debajo del grid. El riego es la
+                        // decision de hoy y cambia con cada lectura; el NPK es
+                        // decision de etapa y cambia en semanas. Lo que se
+                        // mueve rapido va arriba.
+                        //
+                        // Conserva el intervalo de la posicion (0.32–0.50), no
+                        // el suyo anterior: la cascada de entrada tiene que
+                        // seguir corriendo de arriba hacia abajo.
+                        //
+                        // La franja amarilla de evidencia que iba debajo se
+                        // mudo a la pantalla de Recomendaciones: alli cabe
+                        // entera —motivos, clima usado, vigencia, confianza y
+                        // limitaciones— sin competir con la recomendacion. El
+                        // Panel se queda con lo unico que importa aqui: que
+                        // hacer hoy.
                         DashboardReveal(
                           controller: _entranceController,
                           intervalStart: 0.32,
                           intervalEnd: 0.50,
                           yOffset: 18,
                           beginScale: 0.984,
-                          child: DashboardNpkSection(
-                            title: viewData.npkTitle,
-                            subtitle: viewData.npkSubtitle,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: openRecommendations,
+                            child: DashboardInsightSection(
+                              insight: viewData.irrigation,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 13),
@@ -333,30 +457,28 @@ class _DashboardScreenState extends State<DashboardScreen>
                           controller: _entranceController,
                         ),
                         const SizedBox(height: 12),
-                        // Tarjeta de riego.
+                        // Tarjeta de NPK — baja detras del grid.
                         //
-                        // `DashboardInsightSection` existía en
-                        // dashboard_sections.dart pero no se instanciaba en
-                        // ningún sitio: `viewData.irrigation` se calculaba en
-                        // cada build y no llegaba nunca a la pantalla. Sin
-                        // esto, el motor de riego decide, registra y no se ve.
+                        // Queda pegada a las otras cuatro metricas del suelo,
+                        // que es su familia: el bloque de medicion completo va
+                        // junto y sin que la decision lo interrumpa.
                         DashboardReveal(
                           controller: _entranceController,
                           intervalStart: 0.70,
                           intervalEnd: 0.94,
                           yOffset: 18,
                           beginScale: 0.983,
-                          child: DashboardInsightSection(
-                            insight: viewData.irrigation,
+                          child: DashboardNpkSection(
+                            title: viewData.npkTitle,
+                            subtitle: viewData.npkSubtitle,
                           ),
                         ),
-                        if (viewData.irrigationDecision != null) ...<Widget>[
-                          const SizedBox(height: 8),
-                          IrrigationEvidenceNote(
-                            decision: viewData.irrigationDecision!,
-                          ),
-                        ],
-                        const SizedBox(height: 12),
+                        // El enlace "Ver por que y mas avisos" se retiro: la
+                        // tarjeta de riego ya lleva a Recomendaciones y ahora
+                        // esta arriba, asi que el enlace quedaba huerfano al
+                        // final de la pantalla apuntando a algo que ya no
+                        // estaba a su lado.
+                        const SizedBox(height: 14),
                         DashboardReveal(
                           controller: _entranceController,
                           intervalStart: 0.78,

@@ -33,8 +33,8 @@ const List<CropProfileEntry> pearTreeProfileEntries = [
     label: 'PR-SKIP - No sé / Pera general',
     cropId: kCropPearTree,
     subtitle:
-        'Perfil general y migrable de la pera: puedes precisar la variedad '
-        'después sin perder historial. No es descanso del suelo.',
+        'Perfil general del peral, migrable a una variedad después sin perder '
+        'historial; no es descanso del suelo',
     aliases: [
       'PR-SKIP',
       'PR_SKIP',
@@ -81,7 +81,9 @@ const List<CropProfileEntry> pearTreeProfileEntries = [
     id: kPr02Anjou,
     label: "PR-02 - D'Anjou / Anjou",
     cropId: kCropPearTree,
-    subtitle: 'Pera europea de invierno / alta conservación y almacenaje',
+    subtitle:
+        'Pera europea de invierno, de alta conservación y largo almacenaje en '
+        'bodega',
     aliases: [
       'PR-02',
       'PR02',
@@ -102,7 +104,9 @@ const List<CropProfileEntry> pearTreeProfileEntries = [
     id: kPr03Bosc,
     label: 'PR-03 - Bosc',
     cropId: kCropPearTree,
-    subtitle: 'Pera firme de piel café/russet (Bosc / Mantecosa Bosc)',
+    subtitle:
+        'Pera firme de piel café tipo russet, de cuello alargado (Bosc / '
+        'Mantecosa Bosc)',
     aliases: [
       'PR-03',
       'PR03',
@@ -121,7 +125,9 @@ const List<CropProfileEntry> pearTreeProfileEntries = [
     id: kPr04SeckelComice,
     label: 'PR-04 - Seckel / Comice',
     cropId: kCropPearTree,
-    subtitle: 'Peras dulces premium de mesa (Seckel / Comice)',
+    subtitle:
+        'Peras dulces y jugosas de mesa, para mercado premium (Seckel / '
+        'Comice)',
     aliases: [
       'PR-04',
       'PR04',

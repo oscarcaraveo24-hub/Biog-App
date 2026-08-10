@@ -82,10 +82,10 @@ class OrangeTreeNutritionModifier implements TreeNutritionModifier {
   @override
   double lateNitrogenExcessPenaltyFactor(String? stageKey) {
     final stage = normalizeTreeStageId(stageKey);
-    final isLate =
+    final isLateNitrogenRisk =
         stage == TreeStageIds.fruitFill ||
         stage == TreeStageIds.harvestMaturity;
-    if (!isLate) return 1.0;
+    if (!isLateNitrogenRisk) return 1.0;
     return switch (group) {
       OrangeTreeNutritionGroup.navelFreshQuality => 0.82,
       OrangeTreeNutritionGroup.earlyOrange => 0.84,

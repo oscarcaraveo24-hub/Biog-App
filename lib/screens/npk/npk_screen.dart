@@ -18,8 +18,82 @@ import 'package:bio_g/widgets/npk/npk_gauge_card.dart';
 
 enum InsightTone { ok, warn, bad }
 
-class NpkScreen extends StatelessWidget {
+class NpkScreen extends StatefulWidget {
   const NpkScreen({super.key});
+
+  @override
+  State<NpkScreen> createState() => _NpkScreenState();
+}
+
+class _NpkScreenState extends State<NpkScreen> {
+  // ───────────────────────────────────────────────────────────────────────────
+  // O1 · El stream del historial se resuelve UNA vez, no en cada `build`.
+  // ───────────────────────────────────────────────────────────────────────────
+  //
+  // Lo que había: `stream: store.watchHistory(const Duration(days: 7))`
+  // directamente en el `build`. `BioGStore.watchHistory` delega en
+  // `HybridBioGRepository.watchHistory`, que declara su `StreamController`
+  // como variable LOCAL y devuelve `out.stream`: **objeto nuevo en cada
+  // llamada**. `StreamBuilder.didUpdateWidget` compara por identidad
+  // (`oldWidget.stream != widget.stream`), así que veía un stream distinto
+  // cada vez y hacía `_unsubscribe()` + `_subscribe()`.
+  //
+  // El coste real de esa resuscripción, medido en la cadena completa:
+  //   onCancel  → `_maybeStopDevice` CANCELA el timer de refresco cloud.
+  //   onListen  → `_startDevice` + `_startHistory`
+  //             → `_emitLocalHistory` → `TelemetryLocalStorage.loadWindow`
+  //             → una query SQLite + hasta **2000 `jsonDecode`** síncronos
+  //               en el isolate de UI (el tope es `defaultCap = 2000`).
+  //
+  // Y esto ocurría en CADA notificación del store —hay 20 `notifyListeners()`
+  // en `BioGStore`, y con un BioG simulado (`SensorSimulator(tick: 1 s)`) son
+  // ~2 por segundo—. Ese es el bloqueo de hilo principal que el logcat del
+  // Xiaomi reporta como `Skipped 173 frames`.
+  //
+  // Efecto secundario que también desaparece: al reiniciarse el timer de
+  // polling en cada build, el refresco cloud de 10 minutos NUNCA llegaba a
+  // dispararse mientras esta pantalla estuviera abierta.
+  //
+  // Por qué se cachea aquí y no en el store: el store es propiedad de otro
+  // frente de trabajo. Cachear en el `State` da el mismo resultado y no toca
+  // nada compartido.
+  Stream<List<BioGTelemetry>>? _history7dStream;
+
+  /// Claves de la suscripción vigente. El stream se vuelve a pedir **solo**
+  /// si cambia el store o el dispositivo del que cuelga la telemetría.
+  BioGStore? _boundStore;
+  String? _boundTelemetryDeviceId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Ojo: este método se ejecuta en CADA `notifyListeners()` del store,
+    // porque `BioGScope` es un `InheritedNotifier` y esta pantalla depende de
+    // él. Sin la guarda de abajo, cachear aquí no arreglaría nada: volvería a
+    // pedir un stream nuevo con la misma frecuencia que antes.
+    final store = BioGScope.of(context);
+
+    // Se usa `telemetryDeviceId` —y no `activeDevice.id`— porque es
+    // exactamente la clave sobre la que el repositorio enlaza el historial.
+    final telemetryDeviceId = store.activeDevice?.telemetryDeviceId;
+
+    final bool sameBinding =
+        _history7dStream != null &&
+        identical(store, _boundStore) &&
+        telemetryDeviceId == _boundTelemetryDeviceId;
+
+    if (sameBinding) return;
+
+    _boundStore = store;
+    _boundTelemetryDeviceId = telemetryDeviceId;
+    _history7dStream = store.watchHistory(const Duration(days: 7));
+  }
+
+  // No hace falta `dispose`: este State no crea controladores ni
+  // suscripciones propias. La única suscripción al stream la abre y la cierra
+  // el `StreamBuilder`, que se desmonta con la pantalla y dispara el
+  // `onCancel` del controlador del repositorio.
 
   AgroMetricKey _metricKeyFor(NpkChannel ch) {
     switch (ch) {
@@ -232,15 +306,6 @@ class NpkScreen extends StatelessWidget {
     return (v != null && v.trim().isNotEmpty) ? v.trim() : null;
   }
 
-  /// Intenta tomar pesos de etapa si runtime los expone.
-  StageWeights? _resolveRuntimeWeights(dynamic runtime) {
-    try {
-      final w = runtime.weights;
-      if (w is StageWeights) return w;
-    } catch (_) {}
-    return null;
-  }
-
   /// practicalRecommendation ya puede venir fusionada con doseGuideEs.
   /// Aquí limpiamos la parte repetida para que la UI no la pinte dos veces.
   String _cleanMergedActionText(String? actionText, String? doseGuideText) {
@@ -263,30 +328,38 @@ class NpkScreen extends StatelessWidget {
     return text;
   }
 
+  /// O3 · Recibe la serie YA ordenada y saneada, y la tendencia YA calculada.
+  ///
+  /// Antes este método ordenaba el historial por su cuenta
+  /// (`[...history7d]..sort(...)`) y se le llamaba **seis** veces por build:
+  /// tres para obtener solo `avgTrendPct` (los antiguos `nBase`/`pBase`/
+  /// `kBase`) y otras tres para el resultado definitivo. Con hasta 2000
+  /// lecturas en ventana eso eran 6 copias de lista, ~131.400 llamadas a
+  /// `DateTime.compareTo` y 24.000 dobles boxeados por build.
+  ///
+  /// Ahora el orden y las tres series se calculan una sola vez en el `build`
+  /// y este método pasa a ser puramente aritmético. El resultado es idéntico:
+  /// `List.sort` de Dart es determinista, así que ordenar una vez y reutilizar
+  /// produce exactamente la misma secuencia que ordenar seis veces la misma
+  /// lista.
   _NpkStats _statsForChannel({
     required NpkChannel channel,
     required BioGTelemetry? live,
-    required List<BioGTelemetry> history7d,
+    required List<double> series,
+    required double? trendPct,
     required StageTargets? targets,
     required bool allowStageInterpretation,
     required String? cropKey,
     AgroMetricEval? evalMetric,
     NutrientInterpretationResult? interpretation,
   }) {
-    double read(BioGTelemetry t) {
-      return switch (channel) {
-        NpkChannel.n => t.n.toDouble(),
-        NpkChannel.p => t.p.toDouble(),
-        NpkChannel.k => t.k.toDouble(),
-      };
-    }
-
-    final level = live == null ? 0.0 : read(live);
-
-    final sorted = [...history7d]
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
-    final series = sorted.map(read).map((v) => v < 0 ? 0.0 : v).toList();
+    final level = live == null
+        ? 0.0
+        : switch (channel) {
+            NpkChannel.n => live.n.toDouble(),
+            NpkChannel.p => live.p.toDouble(),
+            NpkChannel.k => live.k.toDouble(),
+          };
 
     final avg7 = series.isEmpty
         ? 0.0
@@ -295,7 +368,6 @@ class NpkScreen extends StatelessWidget {
     final minV = series.isEmpty ? 0.0 : series.reduce(math.min);
     final maxV = series.isEmpty ? 0.0 : series.reduce(math.max);
 
-    final trendPct = _trendPctFromSeries(series);
     final gaugePercent = _ppmToGauge01(channel, level, cropKey: cropKey);
 
     final comparableRange = (!allowStageInterpretation || targets == null)
@@ -399,7 +471,12 @@ class NpkScreen extends StatelessWidget {
                     const SizedBox(height: 10),
                     Expanded(
                       child: StreamBuilder<List<BioGTelemetry>>(
-                        stream: store.watchHistory(const Duration(days: 7)),
+                        // O1 · Instancia cacheada en `didChangeDependencies`.
+                        // Nunca `store.watchHistory(...)` aquí: devolvería un
+                        // stream nuevo por build y forzaría la resuscripción
+                        // completa del pipeline (query SQLite + hasta 2000
+                        // `jsonDecode`) en cada notificación del store.
+                        stream: _history7dStream,
                         builder: (context, snap) {
                           final history7d =
                               snap.data ?? const <BioGTelemetry>[];
@@ -418,7 +495,23 @@ class NpkScreen extends StatelessWidget {
                             now: DateTime.now(),
                           );
 
-                          final isPlanted = runtime.isPlanted;
+                          // MODO GUÍA GENERAL.
+                          //
+                          // En el runtime la guía SÍ cuenta como plantada: por
+                          // eso el Panel puede etiquetar humedad, pH,
+                          // temperatura y compactación. Pero esta pantalla es
+                          // la de nutrición, y ahí no hay nada que interpretar:
+                          // sin saber qué planta es ni en qué etapa va, no hay
+                          // ventana de demanda de N, P o K.
+                          //
+                          // Se degrada aquí, en un solo sitio, en vez de
+                          // acordarse del modo guía en las veinte ramas de
+                          // abajo. Con esto la pantalla entera cae en los
+                          // textos de "sin cultivo", que es exactamente lo
+                          // correcto: la lectura se muestra, la lectura
+                          // agronómica no se inventa.
+                          final bool isGuide = runtime.isGuideMode;
+                          final isPlanted = runtime.isPlanted && !isGuide;
                           final isPlanned = runtime.isPlanned;
                           final targets = runtime.targets;
                           final eval = runtime.eval;
@@ -426,7 +519,31 @@ class NpkScreen extends StatelessWidget {
                           final pEvalMetric = eval?.metrics[AgroMetricKey.p];
                           final kEvalMetric = eval?.metrics[AgroMetricKey.k];
                           final stageKey = runtime.stageResult?.stageKey;
-                          final weights = _resolveRuntimeWeights(runtime);
+                          // Los pesos de etapa NO están cableados en esta
+                          // pantalla, y decirlo así es más honesto que el
+                          // código que había.
+                          //
+                          // Lo que había: `_resolveRuntimeWeights(dynamic
+                          // runtime)` leía `runtime.weights` por despacho
+                          // dinámico dentro de un `catch (_) {}` vacío.
+                          // `CropRuntimeSnapshot` no tiene un miembro
+                          // `weights`: ni campo, ni getter, ni extensión. Esa
+                          // llamada lanzaba `NoSuchMethodError` en CADA build,
+                          // el `catch` se lo tragaba en silencio y la función
+                          // devolvía siempre null. Aparentaba resolver algo
+                          // que nunca resolvió.
+                          //
+                          // Por qué se deja en null en vez de hacerlo
+                          // funcionar: que los pesos llegaran de verdad al
+                          // motor cambiaría las recomendaciones que hoy ve el
+                          // agricultor. Eso es funcionalidad nueva y no entra
+                          // en esta corrección. El comportamiento en runtime
+                          // es idéntico al actual; lo que desaparece es la
+                          // excepción por build.
+                          //
+                          // DEUDA PENDIENTE: pasar los pesos por etapa al
+                          // motor de nutrición desde esta pantalla.
+                          const StageWeights? weights = null;
                           final cultivationScaleId = _resolveCultivationScaleId(
                             cropContext,
                           );
@@ -461,42 +578,60 @@ class NpkScreen extends StatelessWidget {
                             );
                           }
 
-                          final nBase = _statsForChannel(
-                            channel: NpkChannel.n,
-                            live: live,
-                            history7d: history7d,
-                            targets: targets,
-                            allowStageInterpretation: isPlanted,
-                            cropKey: runtime.cropKeyName,
-                            evalMetric: nEvalMetric,
-                          );
+                          // ─────────────────────────────────────────────────
+                          // O3 · Una sola ordenación del historial por build.
+                          // ─────────────────────────────────────────────────
+                          //
+                          // Antes se llamaba seis veces a `_statsForChannel`
+                          // y cada llamada hacía su propio
+                          // `[...history7d]..sort(...)`. Con la ventana llena
+                          // (`TelemetryLocalStorage.defaultCap = 2000`) eso
+                          // era, POR BUILD: 6 copias de lista (12.000
+                          // referencias), 6 ordenaciones ≈ **131.400 llamadas
+                          // a `DateTime.compareTo`** y 12 pasadas
+                          // `map/toList` ≈ 24.000 dobles boxeados. A ~2
+                          // builds/s con BioG simulado, ~264.000
+                          // comparaciones por segundo en el hilo de UI.
+                          //
+                          // Ahora: 1 copia, 1 ordenación, 1 pasada que llena
+                          // las tres series. El orden resultante es el mismo
+                          // —`List.sort` de Dart es determinista— así que
+                          // todas las cifras derivadas salen idénticas.
+                          final sortedHistory = [...history7d]
+                            ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-                          final pBase = _statsForChannel(
-                            channel: NpkChannel.p,
-                            live: live,
-                            history7d: history7d,
-                            targets: targets,
-                            allowStageInterpretation: isPlanted,
-                            cropKey: runtime.cropKeyName,
-                            evalMetric: pEvalMetric,
-                          );
+                          final nSeries = <double>[];
+                          final pSeries = <double>[];
+                          final kSeries = <double>[];
+                          for (final t in sortedHistory) {
+                            // Mismo saneo que hacía el `.map()` anterior:
+                            // los negativos se recortan a 0. NaN no cumple
+                            // `< 0` y pasa tal cual, igual que antes.
+                            final nv = t.n.toDouble();
+                            final pv = t.p.toDouble();
+                            final kv = t.k.toDouble();
+                            nSeries.add(nv < 0 ? 0.0 : nv);
+                            pSeries.add(pv < 0 ? 0.0 : pv);
+                            kSeries.add(kv < 0 ? 0.0 : kv);
+                          }
 
-                          final kBase = _statsForChannel(
-                            channel: NpkChannel.k,
-                            live: live,
-                            history7d: history7d,
-                            targets: targets,
-                            allowStageInterpretation: isPlanted,
-                            cropKey: runtime.cropKeyName,
-                            evalMetric: kEvalMetric,
-                          );
+                          // La tendencia era el ÚNICO dato que se sacaba de
+                          // los antiguos `nBase`/`pBase`/`kBase`: alimentaba
+                          // a `interpret` y volvía a calcularse igual en la
+                          // segunda ronda. Se calcula una vez y se usa en los
+                          // dos sitios; el valor es el mismo porque
+                          // `_trendPctFromSeries` es pura y la serie es la
+                          // misma.
+                          final nTrendPct = _trendPctFromSeries(nSeries);
+                          final pTrendPct = _trendPctFromSeries(pSeries);
+                          final kTrendPct = _trendPctFromSeries(kSeries);
 
                           final nInterpretation = live == null
                               ? null
                               : interpretNutrientFallback(
                                   nutrient: AgroMetricKey.n,
                                   rawPpm: live.n.toDouble(),
-                                  trendPct: nBase.avgTrendPct,
+                                  trendPct: nTrendPct,
                                   evalMetric: nEvalMetric,
                                 );
 
@@ -505,7 +640,7 @@ class NpkScreen extends StatelessWidget {
                               : interpretNutrientFallback(
                                   nutrient: AgroMetricKey.p,
                                   rawPpm: live.p.toDouble(),
-                                  trendPct: pBase.avgTrendPct,
+                                  trendPct: pTrendPct,
                                   evalMetric: pEvalMetric,
                                 );
 
@@ -514,14 +649,15 @@ class NpkScreen extends StatelessWidget {
                               : interpretNutrientFallback(
                                   nutrient: AgroMetricKey.k,
                                   rawPpm: live.k.toDouble(),
-                                  trendPct: kBase.avgTrendPct,
+                                  trendPct: kTrendPct,
                                   evalMetric: kEvalMetric,
                                 );
 
                           final n = _statsForChannel(
                             channel: NpkChannel.n,
                             live: live,
-                            history7d: history7d,
+                            series: nSeries,
+                            trendPct: nTrendPct,
                             targets: targets,
                             allowStageInterpretation: isPlanted,
                             cropKey: runtime.cropKeyName,
@@ -532,7 +668,8 @@ class NpkScreen extends StatelessWidget {
                           final p = _statsForChannel(
                             channel: NpkChannel.p,
                             live: live,
-                            history7d: history7d,
+                            series: pSeries,
+                            trendPct: pTrendPct,
                             targets: targets,
                             allowStageInterpretation: isPlanted,
                             cropKey: runtime.cropKeyName,
@@ -543,7 +680,8 @@ class NpkScreen extends StatelessWidget {
                           final k = _statsForChannel(
                             channel: NpkChannel.k,
                             live: live,
-                            history7d: history7d,
+                            series: kSeries,
+                            trendPct: kTrendPct,
                             targets: targets,
                             allowStageInterpretation: isPlanted,
                             cropKey: runtime.cropKeyName,
@@ -555,6 +693,8 @@ class NpkScreen extends StatelessWidget {
                               ? 'Etapa: ${runtime.stageLabel}'
                               : isPlanned
                               ? 'Pre-siembra'
+                              : isGuide
+                              ? 'Guía general'
                               : 'Modo genérico';
 
                           final nDoseGuide =
@@ -577,47 +717,61 @@ class NpkScreen extends StatelessWidget {
                               kInterpretation?.fertilizerEquivalentEs ??
                                     kEvalMetric?.fertilizerEquivalentEs;
 
+                          // Lenguaje de NPK: estimación, no medición absoluta.
+                          //
+                          // Estos textos decían 'Lectura real de N/P/K'. El
+                          // sensor NPK de Bio-G es aproximado (±10 %): sirve
+                          // para leer tendencias y decidir, no para afirmar el
+                          // contenido exacto del suelo. Llamarlo "real" era
+                          // prometer una precisión que el hardware no da.
+                          //
+                          // Lo que NO se hace aquí, a propósito: mandar al
+                          // agricultor al laboratorio, hablar de validación
+                          // pendiente o sugerir que el dato no es confiable.
+                          // El dato es útil y se presenta como lo que es: una
+                          // estimación por sensor. La honestidad está en la
+                          // palabra "estimado", no en anular la herramienta.
                           final insightN = isPlanted
                               ? (nEvalMetric?.shortRecommendationEs ??
                                     nInterpretation?.shortRecommendation ??
-                                    'Lectura real de N disponible.')
+                                    'Nitrógeno disponible estimado por sensor.')
                               : isPlanned
-                              ? 'Lectura real de N en pre-siembra.'
+                              ? 'Nitrógeno disponible estimado en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final insightP = isPlanted
                               ? (pEvalMetric?.shortRecommendationEs ??
                                     pInterpretation?.shortRecommendation ??
-                                    'Lectura real de P disponible.')
+                                    'Fósforo disponible estimado por sensor.')
                               : isPlanned
-                              ? 'Lectura real de P en pre-siembra.'
+                              ? 'Fósforo disponible estimado en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final insightK = isPlanted
                               ? (kEvalMetric?.shortRecommendationEs ??
                                     kInterpretation?.shortRecommendation ??
-                                    'Lectura real de K disponible.')
+                                    'Potasio disponible estimado por sensor.')
                               : isPlanned
-                              ? 'Lectura real de K en pre-siembra.'
+                              ? 'Potasio disponible estimado en pre-siembra.'
                               : 'Lectura disponible sin cultivo asignado.';
 
                           final descN = isPlanted
                               ? (nEvalMetric?.justificationEs ??
                                     nInterpretation?.justification ??
-                                    'Lectura actual de nitrógeno del suelo.')
-                              : 'Lectura real de nitrógeno del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
+                                    'Nitrógeno disponible estimado por sensor.')
+                              : 'Nitrógeno disponible estimado por sensor. Asigna un cultivo para convertirlo en recomendación nutricional.';
 
                           final descP = isPlanted
                               ? (pEvalMetric?.justificationEs ??
                                     pInterpretation?.justification ??
-                                    'Lectura actual de fósforo del suelo.')
-                              : 'Lectura real de fósforo del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
+                                    'Fósforo disponible estimado por sensor.')
+                              : 'Fósforo disponible estimado por sensor. Asigna un cultivo para convertirlo en recomendación nutricional.';
 
                           final descK = isPlanted
                               ? (kEvalMetric?.justificationEs ??
                                     kInterpretation?.justification ??
-                                    'Lectura actual de potasio del suelo.')
-                              : 'Lectura real de potasio del suelo. Asigna un cultivo para convertirla en recomendación nutricional.';
+                                    'Potasio disponible estimado por sensor.')
+                              : 'Potasio disponible estimado por sensor. Asigna un cultivo para convertirlo en recomendación nutricional.';
 
                           final actionNRaw = isPlanted
                               ? (nInterpretation?.practicalRecommendation ??
@@ -680,15 +834,22 @@ class NpkScreen extends StatelessWidget {
                               ? 'Pre-siembra'
                               : 'Sin cultivo';
 
+                          // Chip dentro del gauge. Decía 'Lectura real', que
+                          // es una promesa que el sensor NPK no sostiene: su
+                          // salida es una estimación útil para seguir
+                          // tendencias, no una medición de laboratorio.
+                          // 'Estimado' dice la verdad, cabe en el mismo pill
+                          // (es más corto) y mantiene el registro de las otras
+                          // etiquetas de banda.
                           final statusN = isPlanted
                               ? n.bandLabel
-                              : 'Lectura real';
+                              : 'Estimado';
                           final statusP = isPlanted
                               ? p.bandLabel
-                              : 'Lectura real';
+                              : 'Estimado';
                           final statusK = isPlanted
                               ? k.bandLabel
-                              : 'Lectura real';
+                              : 'Estimado';
 
                           return _NpkContentCardShell(
                             child: TabBarView(
@@ -1358,10 +1519,34 @@ class _TechWaveScanDividerState extends State<_TechWaveScanDivider>
     return SizedBox(
       height: 28,
       width: double.infinity,
-      child: AnimatedBuilder(
-        animation: _c,
-        builder: (_, __) => CustomPaint(
-          painter: _TechWaveScanPainter(t: _c.value, accent: widget.accent),
+      // ───────────────────────────────────────────────────────────────────
+      // O2 · Aislar este repintado del resto de la pestaña.
+      // ───────────────────────────────────────────────────────────────────
+      //
+      // El controlador de arriba hace `repeat()` y no para nunca: marca este
+      // `CustomPaint` como sucio 60 veces por segundo. Sin frontera de
+      // repintado, `markNeedsPaint` subía hasta la frontera de la página del
+      // `PageView`, que contiene TAMBIÉN el gauge. Y al repintar una capa,
+      // `RenderCustomPaint.paint()` NO consulta `shouldRepaint`: llama a
+      // `painter.paint()` siempre. Resultado: `_NpkGaugePainter` se ejecutaba
+      // 60 veces por segundo aunque su valor no cambiara, con sus 4
+      // `MaskFilter.blur`, 21 `drawLine`, 6 `TextPainter().layout()` (=360
+      // maquetados de texto por segundo) y un `SweepGradient.createShader()`.
+      //
+      // Con la frontera, la capa de este divisor se rasteriza sola y el resto
+      // de la tarjeta reutiliza su capa cacheada.
+      //
+      // No cambia un píxel: `RepaintBoundary` no recorta. El halo del glow
+      // (`MaskFilter.blur` σ30) desborda de sobra estos 28 dp, y sigue
+      // pintándose igual — el rectángulo de la capa es una pista de culling,
+      // no un clip, y Skia/Impeller conservan las órdenes de dibujo cuyos
+      // límites (ya inflados por el desenfoque) intersecan la capa.
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _c,
+          builder: (_, __) => CustomPaint(
+            painter: _TechWaveScanPainter(t: _c.value, accent: widget.accent),
+          ),
         ),
       ),
     );

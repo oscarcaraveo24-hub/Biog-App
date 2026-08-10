@@ -505,13 +505,17 @@ class _GlassCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          // Mismos valores que BioGGlassCard, que es el estandar del resto de
+          // la app: blur 8 y superficie a 0.92. Antes esta pantalla usaba blur
+          // 16 sobre blanco al 0.62, y por eso sus tarjetas se veian mucho mas
+          // transparentes que las del Panel, Historial o Entorno.
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.62),
+              color: const Color(0xFFF2F4F6).withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(radius),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.55),
+                color: Colors.white.withValues(alpha: 0.96),
                 width: 1,
               ),
             ),
