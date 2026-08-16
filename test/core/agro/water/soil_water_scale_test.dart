@@ -10,6 +10,12 @@ import 'package:bio_g/core/agro/water/crop_water_policy.dart';
 import 'package:bio_g/core/agro/water/moisture_target_resolver.dart';
 import 'package:bio_g/core/agro/water/soil_water_scale.dart';
 import 'package:bio_g/core/crops/crop_types.dart';
+import 'package:bio_g/core/crops/tree_lifecycle.dart';
+import 'package:bio_g/widgets/seeds/garlic_models.dart';
+import 'package:bio_g/widgets/seeds/maize_models.dart';
+import 'package:bio_g/widgets/seeds/onion_models.dart';
+import 'package:bio_g/widgets/seeds/tomato_models.dart';
+import 'package:bio_g/widgets/seeds/wheat_models.dart';
 
 void main() {
   group('SoilWaterScale · constantes hídricas', () {
@@ -264,15 +270,20 @@ void main() {
       expect(arcilla.range.optimalMin, greaterThan(arena.range.optimalMin));
     });
 
+    // OJO al elegir las cadenas de esta prueba: usa SOLO claves que un motor
+    // emita de verdad. La versión anterior probaba el maíz con 'grain_fill' y
+    // 'vegetative', que ningún adaptador produce —el maíz emite vegMid,
+    // tasseling, flowerSet…—, así que validaba el matcher contra sí mismo y
+    // por eso no detectó que llevaba meses roto.
     test('la etapa crítica aprieta el riego', () {
       final vegetativo = MoistureTargetResolver.resolve(
         cropKey: CropKey.maize,
-        stageKey: 'vegetative',
+        stageKey: MaizeStageKey.vegMid.name,
         texture: SoilTexture.loam,
       );
       final llenado = MoistureTargetResolver.resolve(
         cropKey: CropKey.maize,
-        stageKey: 'grain_fill',
+        stageKey: MaizeStageKey.tasseling.name,
         texture: SoilTexture.loam,
       );
       expect(
@@ -285,12 +296,12 @@ void main() {
     test('la etapa de curado permite secar', () {
       final bulbo = MoistureTargetResolver.resolve(
         cropKey: CropKey.onion,
-        stageKey: 'bulking',
+        stageKey: OnionStageKey.llenadoBulbo.name,
         texture: SoilTexture.loam,
       );
       final curado = MoistureTargetResolver.resolve(
         cropKey: CropKey.onion,
-        stageKey: 'curing',
+        stageKey: OnionStageKey.maduracionCosecha.name,
         texture: SoilTexture.loam,
       );
       expect(curado.effectiveDepletion, greaterThan(bulbo.effectiveDepletion));
@@ -370,9 +381,20 @@ void main() {
     });
 
     test('el agotamiento ajustado nunca sale de un rango sensato', () {
-      const stages = [
-        'vegetative', 'flowering', 'fruit_set', 'grain_fill', 'bulking',
-        'harvest_maturity', 'curing', 'dormancy', 'senescence', '', 'raro',
+      // Claves reales de los tres catálogos que conviven, más los dos casos
+      // degenerados. Nada inventado.
+      final stages = <String>[
+        MaizeStageKey.tasseling.name,
+        MaizeStageKey.harvest.name,
+        WheatStageKey.grainFill.name,
+        OnionStageKey.maduracionCosecha.name,
+        GarlicStageKey.bulbMaturation.name,
+        TomatoStageKey.cosechaProgresiva.name,
+        TreeStageIds.fruitFill,
+        TreeStageIds.postHarvest,
+        TreeStageIds.dormancy,
+        '',
+        'etapa_que_no_existe',
       ];
       for (final k in CropKey.values) {
         final p = CropWaterPolicies.forCrop(k);

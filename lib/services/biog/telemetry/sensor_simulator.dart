@@ -3,6 +3,8 @@ import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
+import 'package:bio_g/core/agro/water/moisture_target_resolver.dart';
+import 'package:bio_g/core/agro/water/soil_profile_resolver.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/crop_profile_models.dart';
@@ -10,6 +12,7 @@ import 'package:bio_g/core/crops/crop_registry.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
+import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
 
 enum _NpkNutrient { n, p, k }
@@ -68,6 +71,16 @@ class SensorSimulator {
   /// store or to Supabase.
   SeedInstall? Function(String deviceId)? _seedResolver;
 
+  /// Igual que [_seedResolver], pero para el contexto de cultivo completo.
+  ///
+  /// [SeedInstall] no lleva ni escala de cultivo ni textura de suelo, así que
+  /// sin esta juntura el simulador resolvía el perfil de suelo con la mitad de
+  /// los datos y caía SIEMPRE al franco de respaldo, mientras la app usaba la
+  /// textura declarada. Dos escalas para el mismo número: exactamente la
+  /// contradicción que el motor de humedad existe para cerrar, reintroducida
+  /// dentro del simulador que alimenta las alertas reales.
+  DeviceCropContext? Function(String deviceId)? _cropContextResolver;
+
   // ---- Broadcast streams -----------------------------------------------------
 
   final Map<String, StreamController<BioGTelemetry?>> _liveCtrlByDevice =
@@ -104,6 +117,12 @@ class SensorSimulator {
 
   void attachSeedResolver(SeedInstall? Function(String deviceId) resolver) {
     _seedResolver = resolver;
+  }
+
+  void attachCropContextResolver(
+    DeviceCropContext? Function(String deviceId) resolver,
+  ) {
+    _cropContextResolver = resolver;
   }
 
   void start() {
@@ -334,7 +353,32 @@ class SensorSimulator {
     final definition = _resolveCropDefinition(device);
     final stage = _resolveCropStageResult(device, now);
     if (definition == null || stage == null) return null;
-    return definition.resolveTargets(stage);
+    final base = definition.resolveTargets(stage);
+    if (base == null) return null;
+
+    final DeviceCropContext? ctx = _cropContextResolver?.call(device.id);
+
+    // La banda de humedad se deriva igual que en el runtime. Sin esto, el
+    // simulador evaluaba sus propias lecturas contra el catálogo mientras la
+    // app las evaluaba contra la textura: dos escalas para el mismo número. Y
+    // tras corregir el rango del simulador a valores físicamente posibles
+    // (6–46 %), TODA lectura simulada salía crítica-baja contra el catálogo.
+    return base.copyWith(
+      moistureRaw: MoistureTargetResolver.resolveForSoilProfile(
+        soilProfile: SoilProfileResolver.resolve(
+          deviceModelId: device.deviceModelId,
+          cropKey: definition.cropKey,
+          // Los tres que faltaban. Sin ellos el resolver ignoraba la textura
+          // declarada y devolvía franco de respaldo para todo equipo que no
+          // fuera de maceta.
+          cultivationScaleId: ctx?.cultivationScaleId,
+          soilTextureId: ctx?.soilTextureId,
+          soilTextureSourceId: ctx?.soilTextureSource,
+        ),
+        cropKey: definition.cropKey,
+        stageKey: stage.stageKey,
+      ).range,
+    );
   }
 
   AgroMetricKey _metricKeyFor(_NpkNutrient n) {
@@ -431,8 +475,29 @@ class SensorSimulator {
         60.0 + 4.5 * math.sin(phase * 0.22 + 1.1) + noise(0.5);
     final double soilTempTarget =
         23.5 + 1.2 * math.sin(phase * 0.28 + 0.8) + noise(0.12);
+    // ── Humedad del suelo: valores FÍSICAMENTE POSIBLES ────────────────────
+    //
+    // El objetivo anterior era 46 % ± 3, con banda de salida 25–65 %. Ninguno
+    // de esos números existe en un suelo mineral: la capacidad de campo más
+    // alta de la tabla —arcilla— es 40 %, y su saturación 53 %. La banda vieja
+    // arrancaba por ENCIMA de la capacidad de campo del suelo franco (28 %) y
+    // llegaba por encima de la saturación de casi todos.
+    //
+    // Consecuencia práctica: el simulador no podía producir un suelo seco
+    // jamás, así que ninguna ruta de riego se ejercitaba nunca. Y todo defecto
+    // de humedad quedaba invisible para quien probaba con él.
+    //
+    // Ahora el objetivo se centra cerca del punto de reposición del franco
+    // —entre marchitez (13 %) y capacidad de campo (28 %)— y oscila 9 puntos,
+    // así que recorre de 12,4 a 31,6 %. Eso ejercita cuatro de las cinco
+    // lecturas del modelo: bajo punto de marchitez, toca regar, cómodo y
+    // drenando (en arena y suelos ligeros).
+    //
+    // El encharcamiento sigue sin ser alcanzable —exige 43,2 % en franco— y así
+    // debe ser: es un estado de lluvia o de riego excesivo, no la línea base de
+    // un suelo. Se prueba inyectando telemetría, no esperando al simulador.
     final double soilMoistureTarget =
-        46.0 + 3.0 * math.sin(phase * 0.16 + 0.5) + noise(0.6);
+        22.0 + 9.0 * math.sin(phase * 0.16 + 0.5) + noise(0.6);
     final double phTarget = 6.45 + 0.10 * math.sin(phase * 0.08) + noise(0.01);
     final double ecTarget =
         1.25 + 0.12 * math.sin(phase * 0.10 + 0.4) + noise(0.015);
@@ -442,7 +507,7 @@ class SensorSimulator {
     final double prevAirT = prev?.airTempC ?? 26.0;
     final double prevAirH = prev?.airHumidityPct ?? 60.0;
     final double prevSoilT = prev?.soilTempC ?? 23.5;
-    final double prevSoilM = prev?.soilMoisturePct ?? 46.0;
+    final double prevSoilM = prev?.soilMoisturePct ?? 22.0;
     final double prevPh = prev?.ph ?? 6.45;
     final double prevEc = prev?.ec ?? 1.25;
     final double prevRes = prev?.resistance ?? 1.10;
@@ -611,9 +676,22 @@ class SensorSimulator {
     final BioGTelemetry t = BioGTelemetry(
       deviceId: deviceId,
       timestamp: now,
-      airTempC: _roundTo(clamp(airTemp, 18, 34), 1),
+      // Envolvente física, no rango ejercitado. El objetivo sigue centrado en
+      // 26 °C y el suavizado nunca lo rebasa, así que el simulador se mueve de
+      // hecho entre 24 y 28 °C: las ramas de frío y helada NO se ejercitan
+      // desde aquí. Se deja constancia porque el piso anterior de 18 °C daba a
+      // entender lo contrario. Para probar helada hay que inyectar telemetría,
+      // no esperar a que el simulador la produzca.
+      airTempC: _roundTo(clamp(airTemp, 2, 42), 1),
       airHumidityPct: _roundTo(clamp(airHumidity, 35, 80), 1),
-      soilMoisturePct: _roundTo(clamp(soilMoisture, 25, 65), 1),
+      // 6–46 % VWC de envolvente: desde por debajo del punto de marchitez de la
+      // arena hasta rozar el umbral de encharcamiento del franco. Es el rango
+      // que un suelo mineral real puede recorrer. La banda de 25–65 % anterior
+      // arrancaba POR ENCIMA de la capacidad de campo del franco (28 %) y
+      // terminaba por encima de la saturación de casi todos: el simulador no
+      // podía producir un suelo seco jamás, así que ninguna ruta de riego se
+      // ejercitaba y todo defecto de humedad quedaba invisible.
+      soilMoisturePct: _roundTo(clamp(soilMoisture, 6, 46), 1),
       soilTempC: _roundTo(clamp(soilTemp, 16, 30), 1),
       ph: _roundTo(clamp(ph, 5.8, 7.2), 2),
       ec: _roundTo(clamp(ec, 0.8, 2.0), 2),

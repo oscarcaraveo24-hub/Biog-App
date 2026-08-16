@@ -1,4 +1,6 @@
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/water/moisture_target_resolver.dart';
+import 'package:bio_g/core/agro/water/soil_profile_resolver.dart';
 import 'package:bio_g/core/crops/cactus/cactus_crop_definition.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/succulent/succulent_crop_definition.dart';
@@ -161,6 +163,51 @@ class CropRuntimeResolver {
     DateTime? engineSowingDate;
     AlertsState nextAlertsState = alertsState;
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // EL OBJETIVO DE HUMEDAD SE SOBRESCRIBE AQUÍ, EN EL CENTRO
+    // ─────────────────────────────────────────────────────────────────────────
+    //
+    // Esta es la única razón por la que arreglar la escala de humedad cuesta
+    // dos puntos de enganche y no 32 archivos de perfil: el motor de riego, el
+    // anillo del Panel y los 26 motores de score reciben todos su `AgroRange`
+    // desde `targets`. Sustituir la FUENTE de ese objeto —no los archivos que
+    // lo escribieron a mano— corrige el catálogo entero de golpe.
+    //
+    // Y tiene que ser aquí y no en cada consumidor: si el motor de riego usara
+    // la banda derivada y el Panel siguiera con la del catálogo, las dos
+    // pantallas darían lecturas distintas de la misma humedad. Esa
+    // contradicción es lo que se está cerrando, no una optimización.
+    //
+    // Los rangos escritos a mano en los perfiles NO se borran: los de maceta
+    // siguen siendo válidos como referencia y los de suelo se conservan como
+    // historia hasta que el prototipo confirme estas constantes en campo.
+    final ResolvedSoilProfile soilProfile = SoilProfileResolver.resolve(
+      deviceModelId: device?.deviceModelId,
+      cultivationScaleId: normalizedContext?.cultivationScaleId,
+      soilTextureId: normalizedContext?.soilTextureId,
+      soilTextureSourceId: normalizedContext?.soilTextureSource,
+      cropKey: definition?.cropKey,
+    );
+
+    ResolvedMoistureTarget? resolvedMoisture;
+
+    ResolvedMoistureTarget resolveMoistureFor(String? stageKey) {
+      final r = MoistureTargetResolver.resolveForSoilProfile(
+        soilProfile: soilProfile,
+        cropKey: definition?.cropKey,
+        stageKey: stageKey,
+      );
+      resolvedMoisture = r;
+      return r;
+    }
+
+    /// Devuelve los mismos objetivos con la banda de humedad derivada de
+    /// (textura + cultivo + etapa). Todo lo demás del catálogo queda intacto.
+    StageTargets? withDerivedMoisture(StageTargets? base, String? stageKey) {
+      if (base == null) return null;
+      return base.copyWith(moistureRaw: resolveMoistureFor(stageKey).range);
+    }
+
     // ── MODO GUÍA GENERAL ────────────────────────────────────────────────────
     //
     // El agricultor eligió "Otro": tiene una planta que no está en el catálogo.
@@ -191,8 +238,14 @@ class CropRuntimeResolver {
               live.hasResistanceData);
 
       if (guideHasSoilData) {
+        // La guía general también recibe la banda derivada. Sus 18/35/70/85
+        // salían de la mediana de 67 rangos mesófitos, es decir de la misma
+        // escala rota que el resto del catálogo.
         final guideBuild = GuideAgroScoreEngine.evaluate(
           t: live,
+          targets: kGuideTargets.copyWith(
+            moistureRaw: resolveMoistureFor(null).range,
+          ),
           alertsState: alertsState,
         );
         eval = guideBuild.eval;
@@ -231,6 +284,7 @@ class CropRuntimeResolver {
                 profileId: profile.id,
               )
             : definition.resolveTargets(stageResult);
+        targets = withDerivedMoisture(targets, stageResult.stageKey);
 
         if (sowingStatus == SowingStatus.planted && live != null) {
           final out = definition.evaluateTelemetry(
@@ -263,6 +317,7 @@ class CropRuntimeResolver {
                 profileId: profile.id,
               )
             : definition.resolveTargets(stageResult);
+        targets = withDerivedMoisture(targets, stageResult.stageKey);
 
         if (sowingStatus == SowingStatus.planted && live != null) {
           final out = definition.evaluateTelemetry(
@@ -285,7 +340,10 @@ class CropRuntimeResolver {
       );
 
       if (definition != null && profile != null) {
-        targets = definition.resolveTargets(stageResult);
+        targets = withDerivedMoisture(
+          definition.resolveTargets(stageResult),
+          stageResult.stageKey,
+        );
 
         if (live != null) {
           final out = definition.evaluateTelemetry(
@@ -325,6 +383,7 @@ class CropRuntimeResolver {
               profileId: profile.id,
             )
           : definition.resolveTargets(stageResult);
+      targets = withDerivedMoisture(targets, stageResult.stageKey);
 
       if (live != null) {
         final out = definition.evaluateTelemetry(
@@ -370,6 +429,7 @@ class CropRuntimeResolver {
         ),
         _ => definition.resolveTargets(stageResult),
       };
+      targets = withDerivedMoisture(targets, stageResult.stageKey);
 
       if (live != null) {
         final out = definition.evaluateTelemetry(
@@ -413,6 +473,10 @@ class CropRuntimeResolver {
           baseTargets: baseTargets,
         );
       }
+      // Después del ajuste de calendario, no antes: el desplazamiento de
+      // calendario opera sobre la banda del catálogo, y lo que llega al motor
+      // tiene que ser la banda derivada de la textura.
+      targets = withDerivedMoisture(targets, stageResult.stageKey);
 
       if (live != null) {
         final out = definition.evaluateTelemetry(
@@ -427,9 +491,15 @@ class CropRuntimeResolver {
       }
     }
 
+    // Siempre hay un objetivo resuelto, aunque no haya `targets` (modo guía,
+    // genérico o sin cultivo): el motor de riego necesita el `SoilContext` para
+    // calcular la lámina, y ese no depende del catálogo de etapas.
+    resolvedMoisture ??= resolveMoistureFor(stageResult?.stageKey);
+
     return CropRuntimeSnapshot(
       device: device,
       live: live,
+      resolvedMoisture: resolvedMoisture,
       seed: effectiveSeed,
       cropContext: normalizedContext,
       definition: definition,

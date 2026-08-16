@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:bio_g/core/util/uuid_v4.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
+import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/services/biog/biog_repository.dart';
 import 'package:bio_g/services/biog/identity/device_identity_repository.dart';
@@ -97,11 +98,15 @@ class HybridBioGRepository implements BioGRepository {
   Future<void> bindUser({
     required String? userId,
     SeedInstall? Function(String deviceId)? seedResolver,
+    DeviceCropContext? Function(String deviceId)? cropContextResolver,
   }) async {
     _currentUserId = userId;
 
     if (seedResolver != null) {
       _simulator.attachSeedResolver(seedResolver);
+    }
+    if (cropContextResolver != null) {
+      _simulator.attachCropContextResolver(cropContextResolver);
     }
 
     // 1) Local cache first (instant render).
@@ -566,6 +571,31 @@ class HybridBioGRepository implements BioGRepository {
       );
       if (existingIndex >= 0) {
         final BioGDevice existing = _devices[existingIndex];
+
+        // Rellenar el modelo que faltaba. Un equipo dado de alta antes de que
+        // el QR llevara el modelo dentro se queda con `deviceModelId` nulo
+        // para siempre si esta rama devuelve el existente sin mirar: volver a
+        // escanearlo es la única oportunidad de recuperar la identidad, y la
+        // estaba tirando.
+        //
+        // Solo se RELLENA, nunca se sobrescribe: si el equipo ya declaró un
+        // modelo, una etiqueta mal impresa no puede cambiárselo.
+        final String? incomingModel = deviceModelId?.trim();
+        if (existing.deviceModelId == null &&
+            incomingModel != null &&
+            incomingModel.isNotEmpty) {
+          final BioGDevice patched = existing.copyWith(
+            deviceModelId: incomingModel,
+            updatedAt: now,
+          );
+          await _identity.upsertDevice(userId: _currentUserId, device: patched);
+          final next = List<BioGDevice>.from(_devices);
+          next[existingIndex] = patched;
+          _publishDevices(next, preserveActive: true);
+          await setActiveDevice(patched.id);
+          return patched;
+        }
+
         await setActiveDevice(existing.id);
         return existing;
       }

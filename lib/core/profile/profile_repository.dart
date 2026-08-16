@@ -71,11 +71,23 @@ class ProfileRepository {
     String? avatarStoragePath,
     String? preferredLanguage,
     String? preferredUnits,
+    double? locationLat,
+    double? locationLng,
+    String? locationSource,
+    DateTime? locationUpdatedAt,
   }) async {
     final user = _currentUser;
     if (user == null) {
       throw StateError('No authenticated user.');
     }
+
+    // Las coordenadas viajan EN PAREJA o no viajan.
+    //
+    // La base lo obliga con `profiles_location_pair_check`, pero conviene no
+    // llegar hasta allá: un upsert con solo la latitud sería rechazado entero
+    // y se llevaría por delante el teléfono y la etiqueta que iban en la misma
+    // llamada. Aquí se descarta el par incompleto y lo demás sí se guarda.
+    final bool hasCoordinates = locationLat != null && locationLng != null;
 
     await _client.from('profiles').upsert({
       'id': user.id,
@@ -86,6 +98,14 @@ class ProfileRepository {
         'avatar_url': _emptyToNull(avatarStoragePath),
       if (preferredLanguage != null) 'preferred_language': preferredLanguage,
       if (preferredUnits != null) 'preferred_units': preferredUnits,
+      if (hasCoordinates) 'location_lat': locationLat,
+      if (hasCoordinates) 'location_lng': locationLng,
+      if (hasCoordinates && locationSource != null)
+        'location_source': locationSource,
+      if (hasCoordinates)
+        'location_updated_at': (locationUpdatedAt ?? DateTime.now())
+            .toUtc()
+            .toIso8601String(),
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     }, onConflict: 'id');
   }
@@ -194,6 +214,10 @@ class ProfileRepository {
       phone: null,
       avatarUrl: null,
       location: null,
+      locationLat: null,
+      locationLng: null,
+      locationSource: null,
+      locationUpdatedAt: null,
       preferredLanguage: 'es',
       preferredUnits: 'metric',
       subscriptionStatus: 'trial',

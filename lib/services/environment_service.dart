@@ -78,9 +78,25 @@ class EnvironmentService {
     );
   }
 
+  /// Cuántos días mira el consejo de la tarjeta de Entorno.
+  ///
+  /// Va SEPARADO de `dailyLimit` a propósito. Antes el consejo se calculaba
+  /// sobre la misma lista recortada, así que ampliar el pronóstico de 3 a 7
+  /// días —que es lo que hace que la pantalla de Pronóstico abra sin esperar a
+  /// la red— habría cambiado también el texto del consejo: una tormenta al
+  /// sexto día habría convertido «Condiciones estables» en una advertencia.
+  /// El consejo habla del horizonte corto y se queda en tres días.
+  static const int kInsightHorizonDays = 3;
+
   /// ✅ Fetch principal (mantiene arquitectura/modelos actuales)
-  /// - EnvironmentScreen: usa default (3 días)
-  /// - EnvironmentForecastScreen: pide 7 días con dailyLimit: 7
+  /// - EnvironmentScreen: pide 7 días y enseña 3 (la tarjeta recorta sola),
+  ///   para que la pantalla de Pronóstico ya los tenga al abrirse.
+  /// - EnvironmentForecastScreen: los recibe del padre; solo pide por su
+  ///   cuenta si llega sin ellos.
+  ///
+  /// Pedir 7 no cuesta una petición extra: la llamada a Open-Meteo ya lleva
+  /// `forecast_days=7` desde siempre. Lo único que cambiaba era cuántos se
+  /// tiraban a la basura al volver.
   Future<EnvironmentPayload> fetchEnvironment({
     required EnvironmentLocation location,
     int dailyLimit = 3,
@@ -206,7 +222,11 @@ class EnvironmentService {
         .toList();
 
     // ---------- insight ----------
-    final insight = _buildInsight(limitedDays, nowModel);
+    // Sobre el horizonte corto, no sobre `limitedDays`: ver kInsightHorizonDays.
+    final insight = _buildInsight(
+      fullDays.take(kInsightHorizonDays).toList(),
+      nowModel,
+    );
 
     return EnvironmentPayload(
       location: location.copyWith(updatedAt: DateTime.now()),

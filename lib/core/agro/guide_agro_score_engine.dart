@@ -234,14 +234,24 @@ class GuideAgroScoreEngine {
     }
   }
 
+  /// Contenido volumétrico del sensor, a fracción 0..1.
+  ///
+  /// La rama de calibración relativa seco/mojado se BORRÓ. El módulo de agua
+  /// declara que la humedad es contenido volumétrico real y que no necesita
+  /// calibración de usuario; el propio contrato de datos crudos lo dice por
+  /// escrito. Aquella rama existía para otra clase de sonda —la capacitiva
+  /// analógica barata— y no aplica al sensor que entrega VWC ya calibrado de
+  /// fábrica.
+  ///
+  /// Verificado antes de borrarla: el tipo tenía dos consumidores y **cero
+  /// productores**. Nadie la instanciaba, y no había pantalla para hacerlo. Se
+  /// borra en vez de dejarla dormida porque un condicional que nadie puede
+  /// activar hoy pero que alguien activará en seis meses es peor que ninguno:
+  /// para entonces nadie recordará por qué estaba ahí, y el efecto sería que el
+  /// motor de riego leyera 25 % como 25 % mientras el de puntuación leyera el
+  /// mismo 25 % como 58 % relativo —dos lecturas del mismo dato, en la misma
+  /// pantalla—.
   static double _normalizeMoisture01(double raw0to100, Calibration? cal) {
-    final double? dry = cal?.moistureDryRaw;
-    final double? wet = cal?.moistureWetRaw;
-
-    if (dry != null && wet != null && (wet - dry).abs() > 1e-6) {
-      return ((raw0to100 - dry) / (wet - dry)).clamp(0.0, 1.0);
-    }
-
     return (raw0to100 / 100.0).clamp(0.0, 1.0);
   }
 

@@ -1930,9 +1930,14 @@ class _ConfigureSeedWizardScreenState extends State<ConfigureSeedWizardScreen> {
           varietyAlias: _isOrnamentalWizard ? _varietyId : null,
           selectedDate: selectedDate,
           timezone: previous?.timezone,
-          cultivationScaleId: _isOrnamentalWizard
-              ? null
-              : previous?.cultivationScaleId,
+          // La escala ya no se nulifica para ornamentales: una rosa en maceta y
+          // una rosa en cama son riegos distintos. Ver la nota larga en
+          // `biog_store._normalizeContextForStorage`.
+          cultivationScaleId: previous?.cultivationScaleId,
+          // El tipo de suelo NO se pregunta aquí y NO se pierde: es atributo de
+          // la parcela, y cambiar de cultivo no debe borrar la tierra. El
+          // resolver lo arrastra desde `previous`. Se corrige por su propia
+          // ruta: Cuenta → «Tipo de suelo» (`SoilTextureAccountScreen`).
           ornamentalStageId: ornamentalStageId,
           ornamentalAnchorDate: _isOrnamentalWizard
               ? effectiveOrnamentalAnchorDate

@@ -304,10 +304,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                 moisturePct: (runtime.live?.hasSoilMoistureData ?? false)
                     ? runtime.live!.soilMoisturePct
                     : null,
-                // El objetivo de la etapa sale del catalogo, el mismo que usa
-                // el motor de riego. Asi el dial y el Panel no pueden
-                // contradecirse.
-                moistureTarget: runtime.targets?.moistureRaw,
+                // La MISMA banda que usa el motor de riego, con el mismo
+                // respaldo. `runtime.targets` es null a proposito en modo guia
+                // y sin cultivo; sin el `??` el dial y la barra de zonas
+                // desaparecian de la pantalla mientras el motor seguia
+                // decidiendo con la banda derivada — dos lecturas del mismo
+                // dato, que es el defecto que este trabajo cierra.
+                moistureTarget:
+                    runtime.targets?.moistureRaw ??
+                    runtime.resolvedMoisture?.range,
                 // Contexto de la tarjeta de etapa: es la etapa la que mueve el
                 // rango ideal, asi que el productor tiene que poder ver contra
                 // cual se le esta midiendo.

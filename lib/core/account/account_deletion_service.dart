@@ -320,6 +320,13 @@ class AccountDeletionService {
         ParcelLocationKeys.label,
         ParcelLocationKeys.lat,
         ParcelLocationKeys.lng,
+        // Metadatos de la ubicación (origen y fecha de elección). Viven fuera
+        // de `ParcelLocationKeys` porque los añadió la sincronización con la
+        // nube y aquellas tres claves las lee medio proyecto. Sus literales
+        // están en `ParcelLocationStore`, privados: si cambian allí, hay que
+        // cambiarlos aquí.
+        'profile_location_source',
+        'profile_location_updated_at_ms',
         // Bandeja de avisos de `NotificationDispatcher`. Su clave es privada
         // en aquel archivo y aquí no hay una instancia del despachador que
         // llamar, así que se repite el literal. Si allí cambia, hay que

@@ -118,18 +118,26 @@ class _BigIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Transform.translate(
-      offset: const Offset(6, -1), // ✅ derecha + leve lift
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // ✅ sombra suave (copia del icon, negro con opacidad + blur)
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 2.6, sigmaY: 2.6),
-            child: Transform.translate(
-              offset: const Offset(0, 1.4), // sombra hacia abajo
-              child: Opacity(
-                opacity: 0.22,
+    // `RepaintBoundary`: el icono lleva un desenfoque dentro y no cambia
+    // mientras la tarjeta esté en pantalla. Aislado, se rasteriza una vez en
+    // lugar de rehacer el desenfoque cada vez que algo a su alrededor se
+    // repinta (el desplazamiento de la lista, la animación de entrada).
+    return RepaintBoundary(
+      child: Transform.translate(
+        offset: const Offset(6, -1), // ✅ derecha + leve lift
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // ✅ sombra suave (copia del icon, negro con opacidad + blur)
+            ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 2.6, sigmaY: 2.6),
+              child: Transform.translate(
+                offset: const Offset(0, 1.4), // sombra hacia abajo
+                // Opacidad horneada en el color en vez de un `Opacity` aparte:
+                // `srcIn` pinta la silueta con este color, así que negro al
+                // 22 % da el mismo píxel que negro opaco dentro de
+                // `Opacity(0.22)`, sin la capa de composición que ese widget
+                // obliga a crear.
                 child: Transform.scale(
                   scale: scale,
                   child: EnvironmentAssetIcon(
@@ -137,25 +145,25 @@ class _BigIcon extends StatelessWidget {
                     width: 26,
                     height: 26,
                     fit: BoxFit.contain,
-                    color: Colors.black,
+                    color: Colors.black.withValues(alpha: 0.22),
                     colorBlendMode: BlendMode.srcIn,
                   ),
                 ),
               ),
             ),
-          ),
 
-          // ✅ icon real encima
-          Transform.scale(
-            scale: scale,
-            child: EnvironmentAssetIcon(
-              assetPath: iconPath,
-              width: 26,
-              height: 26,
-              fit: BoxFit.contain,
+            // ✅ icon real encima
+            Transform.scale(
+              scale: scale,
+              child: EnvironmentAssetIcon(
+                assetPath: iconPath,
+                width: 26,
+                height: 26,
+                fit: BoxFit.contain,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

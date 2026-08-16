@@ -54,6 +54,22 @@ class WizardCropContextResolver {
     DateTime? ornamentalAnchorDate,
     String? ornamentalAnchorTypeId,
     double? ornamentalStageConfidence,
+
+    // ── Atributos de la parcela ───────────────────────────────────────────
+    //
+    // Son de la PARCELA, no del cultivo: no cambian al reconfigurar qué se
+    // siembra. Se aceptan explícitamente por si una pantalla los edita, y en
+    // ausencia de valor se arrastran desde [previous]. Ver la nota larga sobre
+    // el patrón al final de este bloque de parámetros.
+    String? locationLabel,
+    String? locationSource,
+    double? geoLat,
+    double? geoLng,
+    String? establishmentModeId,
+    String? soilTextureId,
+    String? soilTextureSource,
+    List<String>? soilLocalDescriptors,
+    String? soilLocalOther,
   }) {
     final normalizedCropId = _canonicalCropKey(
       cropId.trim().isEmpty ? CropCatalog.maizeCropId : cropId,
@@ -166,9 +182,11 @@ class WizardCropContextResolver {
     final String resolvedRegionCode =
         (regionCode ?? previous?.regionCode ?? 'MX').trim();
 
-    final resolvedScaleId = isOrnamentalLike
-        ? null
-        : cultivationScaleId?.trim().isNotEmpty == true
+    // La escala YA NO se nulifica para ornamentales. Una rosa en maceta y una
+    // rosa en cama son riegos distintos; borrarla destruía información real que
+    // el usuario había declarado, y precisamente en los cultivos que más la
+    // necesitan. Ver la nota larga en `biog_store._normalizeContextForStorage`.
+    final resolvedScaleId = cultivationScaleId?.trim().isNotEmpty == true
         ? cultivationScaleId!.trim()
         : previous?.cultivationScaleId;
 
@@ -338,11 +356,61 @@ class WizardCropContextResolver {
           ? dateConfidence
           : null,
       ornamentalStageConfidence: ornamentalConfidence,
+
+      // ── El patrón que este bloque arregla ──────────────────────────────────
+      //
+      // Este constructor acepta 38 campos y esta función rellenaba 31. Los
+      // siete que faltaban —etiqueta y fuente de ubicación, latitud, longitud,
+      // modo de establecimiento y ahora los de suelo— se perdían en SILENCIO al
+      // reconfigurar el cultivo desde Cuenta.
+      //
+      // Y el mecanismo es lo que importa: como es un constructor de parámetros
+      // con nombre, omitirlos **compila sin un solo aviso**. Es exactamente lo
+      // que dejó las coordenadas en nulo en producción. El usuario tampoco veía
+      // un error: veía que su respuesta no había tenido efecto.
+      //
+      // Arreglar los siete no resuelve el patrón; cada propiedad nueva vuelve a
+      // correr el mismo riesgo. Lo que lo cierra es la prueba de invariante de
+      // ida y vuelta que acompaña a este cambio
+      // (`wizard_crop_context_resolver_invariant_test.dart`): abre, cambia SOLO
+      // un campo, guarda, y compara TODOS los demás uno por uno. Falla el día
+      // que alguien añada una propiedad y olvide propagarla.
+      //
+      // `setupStatus` y `setupCompletedAt` NO se tocan aquí a propósito: los
+      // sella `BioGStore.saveCropContext` con `markSetupCompleted`, y duplicar
+      // esa decisión en dos sitios es cómo nacen las contradicciones.
+      locationLabel: _preserve(locationLabel, previous?.locationLabel),
+      locationSource: _preserve(locationSource, previous?.locationSource),
+      geoLat: geoLat ?? previous?.geoLat,
+      geoLng: geoLng ?? previous?.geoLng,
+      establishmentModeId: _preserve(
+        establishmentModeId,
+        previous?.establishmentModeId,
+      ),
+      soilTextureId: _preserve(soilTextureId, previous?.soilTextureId),
+      soilTextureSource: _preserve(
+        soilTextureSource,
+        previous?.soilTextureSource,
+      ),
+      soilLocalDescriptors:
+          soilLocalDescriptors ??
+          previous?.soilLocalDescriptors ??
+          const <String>[],
+      soilLocalOther: _preserve(soilLocalOther, previous?.soilLocalOther),
+
       catalogVersion: CropCatalog.version,
       source: CropConfigSource.wizard,
       configuredAt: previous?.configuredAt ?? now,
       updatedAt: now,
     );
+  }
+
+  /// Valor nuevo si lo hay; si no, el previo. Una cadena vacía cuenta como
+  /// «no llegó nada», no como «bórralo»: las pantallas mandan cadenas vacías
+  /// con más frecuencia de lo que mandan un borrado deliberado.
+  static String? _preserve(String? incoming, String? previous) {
+    final v = incoming?.trim();
+    return (v == null || v.isEmpty) ? previous : v;
   }
 
   String? _resolveCanonicalVarietyId({

@@ -1,9 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bio_g/core/crops/apple_tree/apple_tree_assets.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
@@ -26,12 +23,20 @@ import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart'
 import 'package:bio_g/core/crops/succulent/succulent_assets.dart';
 import 'package:bio_g/core/crops/aloe/aloe_assets.dart';
 import 'package:bio_g/core/crops/agave/agave_assets.dart';
+import 'package:bio_g/core/agro/cultivation_scale.dart';
+import 'package:bio_g/core/geo/geocoding_service.dart';
+import 'package:bio_g/core/profile/parcel_location_store.dart';
+import 'package:bio_g/core/agro/water/soil_texture_source.dart';
+import 'package:bio_g/core/agro/water/soil_water_scale.dart';
+import 'package:bio_g/core/hardware/biog_serial.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/onboarding/onboarding_draft.dart';
 import 'package:bio_g/models/onboarding/onboarding_step.dart';
 import 'package:bio_g/screens/onboarding/steps/location_step.dart';
+import 'package:bio_g/screens/onboarding/steps/soil_texture_step.dart';
 import 'package:bio_g/screens/onboarding/steps/pair_biog_step.dart';
+import 'package:bio_g/widgets/onboarding/soil_texture_guide_sheet.dart';
 import 'package:bio_g/widgets/account/bluetooth_scan_screen.dart';
 import 'package:bio_g/widgets/account/location_screen.dart';
 import 'package:bio_g/widgets/account/qr_scan_screen.dart';
@@ -78,6 +83,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   static const List<OnboardingStep> _steps = <OnboardingStep>[
     OnboardingStep.location,
     OnboardingStep.cultivationScale,
+    OnboardingStep.soilTexture,
     OnboardingStep.cropCategory,
     OnboardingStep.cropDetails,
     OnboardingStep.cropStage,
@@ -94,6 +100,33 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
   bool get _isFirstStep => _currentStep == _steps.first;
   bool get _isLastStep => _currentStep == _steps.last;
+
+  /// El paso de tierra se salta cuando la escala ya contestó la pregunta.
+  ///
+  /// En maceta el medio es sustrato, no suelo mineral, y preguntar por
+  /// «arenosa o arcillosa» sería pedir un dato que no se va a usar: el resolver
+  /// lo derivará del modelo del equipo o de la escala. A largo plazo el
+  /// hardware es la autoridad, pero el emparejamiento ocurre **después** de
+  /// este paso, así que aquí manda la escala y el emparejamiento final valida
+  /// la compatibilidad.
+  bool get _skipsSoilTextureStep =>
+      // Se pregunta al MISMO conversor que usa el resolver. Duplicar aquí la
+      // lista de alias ('pot', 'maceta', 'planta'…) garantizaría que las dos
+      // definiciones de «esto es maceta» se separen con el tiempo.
+      cultivationScaleFromId(_draft.cultivationScale) == CultivationScale.pot;
+
+  /// Los pasos que el productor va a ver **de verdad**.
+  ///
+  /// `_steps` es el guion completo. En maceta el paso de tierra no se muestra, y
+  /// contarlo igualmente hacía dos cosas mal a la vez: la barra decía «Paso 4 de
+  /// 8» en una secuencia de siete pantallas, y el riel dibujaba un peldaño que
+  /// nunca se pisa. El total tiene que ser el de la ruta real.
+  List<OnboardingStep> get _visibleSteps => _skipsSoilTextureStep
+      ? _steps
+            .where((s) => s != OnboardingStep.soilTexture)
+            .toList(growable: false)
+      : _steps;
+
   bool get _isTreeDraft =>
       isTreeCrop(cropId: _draft.cropId, cropCategoryId: _draft.cropCategory);
 
@@ -182,6 +215,14 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   Future<void> _handleContinue() async {
     if (!_canContinueFromCurrentStep || _submitting) return;
 
+    // El contrato de la pantalla de tierra pide háptica de éxito al confirmar,
+    // distinta del pulso ligero que acompaña a cada cambio de textura. Va acotada
+    // a ese paso: dar la misma vibración en los ocho cambiaría el tacto del
+    // wizard entero, que no es lo que se pidió.
+    if (_currentStep == OnboardingStep.soilTexture) {
+      HapticFeedback.mediumImpact();
+    }
+
     if (_isLastStep) {
       await _finishFlow();
       return;
@@ -190,6 +231,21 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     if (_currentStep == OnboardingStep.cropStage &&
         _isTreeUnknownStageSelection) {
       setState(() => _currentStep = OnboardingStep.pairBioG);
+      return;
+    }
+
+    // Maceta: el medio ya está decidido por la escala. Se salta la pregunta y
+    // se deja constancia de POR QUÉ no se preguntó, para que el historial
+    // pueda distinguir «no se preguntó» de «no contestó».
+    if (_currentStep == OnboardingStep.cultivationScale &&
+        _skipsSoilTextureStep) {
+      _updateDraft(
+        _draft.copyWith(
+          soilTextureId: null,
+          soilTextureSource: SoilTextureSource.derivedFromScale.id,
+        ),
+      );
+      setState(() => _currentStep = OnboardingStep.cropCategory);
       return;
     }
 
@@ -240,6 +296,13 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       return;
     }
 
+    // Simétrico del salto de maceta: si la tierra no se preguntó, la vuelta no
+    // puede aterrizar en una pantalla que el usuario nunca vio.
+    if (_currentStep == OnboardingStep.cropCategory && _skipsSoilTextureStep) {
+      setState(() => _currentStep = OnboardingStep.cultivationScale);
+      return;
+    }
+
     final int currentIndex = _steps.indexOf(_currentStep);
     setState(() => _currentStep = _steps[currentIndex - 1]);
   }
@@ -269,6 +332,13 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             (_draft.locationLabel?.isNotEmpty ?? false);
       case OnboardingStep.cultivationScale:
         return _draft.cultivationScale?.isNotEmpty ?? false;
+      case OnboardingStep.soilTexture:
+        // El estado inicial NO cuenta como respuesta. La pantalla muestra
+        // Franca como vista inicial, pero el botón queda deshabilitado hasta
+        // que hay una interacción explícita: quien no toca nada no ha
+        // declarado nada, y esa diferencia decide si la recomendación lleva
+        // penalización de confianza.
+        return _draft.soilTextureId?.isNotEmpty ?? false;
       case OnboardingStep.cropCategory:
         return _draft.cropCategory?.isNotEmpty ?? false;
       case OnboardingStep.cropDetails:
@@ -284,43 +354,64 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     }
   }
 
-  String get _continueLabel => _isLastStep ? 'Finalizar' : 'Continuar';
+  String get _continueLabel {
+    if (_isLastStep) return 'Finalizar';
+    if (_currentStep == OnboardingStep.soilTexture) return 'Usar esta tierra';
+    return 'Continuar';
+  }
+
+  /// La nota al pie que sustituye a «Omitir» en el paso de tierra.
+  ///
+  /// Omitir aquí guardaría el hueco como «no contestó»: el resolver caería a
+  /// media con penalización de confianza… que es exactamente lo que hace «No
+  /// estoy seguro», con la diferencia de que esa opción **sí deja constancia de
+  /// que se preguntó**. Dos caminos al mismo estado, uno de ellos mudo, es un
+  /// camino de más y encima destruye la métrica de adopción. En su lugar se dice
+  /// lo único que el productor necesita para no sentirse atrapado.
+  String? get _footerNoteEs => _currentStep == OnboardingStep.soilTexture
+      // Se nombra la ruta REAL. «Configuración de tu parcela» no existe en la
+      // app; prometer reversibilidad señalando a una pantalla inventada es peor
+      // que no prometer nada.
+      ? 'Puedes cambiarlo después en Cuenta → Tipo de suelo.'
+      : null;
+
+  /// La «?» de la barra superior en el paso de tierra.
+  ///
+  /// La guía se abre **desde aquí** y no a través de una llave global sobre el
+  /// estado del paso. `AnimatedSwitcher` conserva la pantalla saliente mientras
+  /// se desvanece, así que ir y volver deprisa deja dos `SoilTextureStep` vivos
+  /// a la vez: con `GlobalKey` eso es un fallo duro de framework, no un parpadeo.
+  /// El paso ya reacciona a `selectedTextureId` desde `didUpdateWidget`, y sin
+  /// volver a reportar —la procedencia correcta la escribe esta función—.
+  Future<void> _handleSoilGuide() async {
+    final SoilTexture? result = await showSoilTextureGuideSheet(context);
+    if (result == null || !mounted) return;
+
+    HapticFeedback.lightImpact();
+    _updateDraft(
+      _draft.copyWith(
+        soilTextureId: result.id,
+        soilTextureSource: SoilTextureSource.guidedEstimate.id,
+      ),
+    );
+  }
 
   // ─── Handlers ───
 
-  static const String _kMapsKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY');
-  static const String _kPrefLocLabel = 'profile_location_label';
-  static const String _kPrefLocLat = 'profile_location_lat';
-  static const String _kPrefLocLng = 'profile_location_lng';
+  static const GeocodingService _geocoder = GeocodingService();
 
-  Future<void> _saveLocationToPrefs({
-    required String label,
-    required double lat,
-    required double lng,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kPrefLocLabel, label);
-    await prefs.setDouble(_kPrefLocLat, lat);
-    await prefs.setDouble(_kPrefLocLng, lng);
-  }
-
+  /// Nombre legible del punto, o el respaldo genérico si no se puede saber.
+  ///
+  /// Aquí había una copia propia del geocodificado inverso que devolvía
+  /// `formatted_address` tal cual. El mismo punto producía «Camino a Satevó
+  /// s/n, Chihuahua, Chih., México» en la pantalla de Ubicación —que sí sabía
+  /// reconstruir direcciones rurales— y «52JHG+Q8 Chihuahua, Chih., México»
+  /// aquí, porque Google devuelve un plus code cuando el punto no cae sobre
+  /// una dirección postal, que es el caso normal de una parcela.
   Future<String> _reverseGeocodeLabel(double lat, double lng) async {
-    if (_kMapsKey.isEmpty) return 'Ubicación actual';
     try {
-      final uri = Uri.parse(
-        'https://maps.googleapis.com/maps/api/geocode/json'
-        '?latlng=$lat,$lng'
-        '&key=$_kMapsKey'
-        '&language=es',
-      );
-      final res = await http.get(uri);
-      if (res.statusCode != 200) return 'Ubicación actual';
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final results = (data['results'] as List?) ?? [];
-      if (results.isEmpty) return 'Ubicación actual';
-      return (results.first['formatted_address'] ?? 'Ubicación actual')
-          .toString();
-    } catch (_) {
+      return await _geocoder.reverseGeocode(lat, lng);
+    } on GeocodingException {
       return 'Ubicación actual';
     }
   }
@@ -383,8 +474,16 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       // 4. Reverse geocode for a readable label
       final label = await _reverseGeocodeLabel(lat, lng);
 
-      // 5. Save to SharedPreferences (for environment screen)
-      await _saveLocationToPrefs(label: label, lat: lat, lng: lng);
+      // 5. Persistir. `ParcelLocationStore` escribe las dos claves de
+      //    preferencias que lee la app (la del motor de clima y la que pinta
+      //    la Cuenta) y espeja a Supabase, así que la ubicación elegida en el
+      //    alta sobrevive a una reinstalación.
+      await ParcelLocationStore.save(
+        lat: lat,
+        lng: lng,
+        label: label,
+        origin: ParcelLocationOrigin.gps,
+      );
 
       if (!mounted) return;
 
@@ -421,10 +520,11 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
     if (result == null || !mounted) return;
 
-    // Read saved coords from SharedPreferences (LocationScreen already saved them)
-    final prefs = await SharedPreferences.getInstance();
-    final lat = prefs.getDouble(_kPrefLocLat);
-    final lng = prefs.getDouble(_kPrefLocLng);
+    // La pantalla de Ubicación ya persistió el punto al pulsar «Guardar»; aquí
+    // solo se recoge para el borrador.
+    final StoredParcelLocation? saved = await ParcelLocationStore.readLocal();
+    final double? lat = saved?.lat;
+    final double? lng = saved?.lng;
 
     // Si no hay coordenadas guardadas, no se inventan.
     //
@@ -464,16 +564,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     );
 
     if (result == null || !mounted) return;
-
-    final name = (result['name'] as String?) ?? 'Bio-G';
-    setState(() => _pairedDeviceName = name);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$name conectado correctamente.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    _adoptPairedDevice(result);
   }
 
   Future<void> _handleConnectBluetooth() async {
@@ -484,13 +575,81 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     );
 
     if (result == null || !mounted) return;
+    _adoptPairedDevice(result);
+  }
 
-    final name = (result['name'] as String?) ?? 'Bio-G';
-    setState(() => _pairedDeviceName = name);
+  /// Conserva la identidad completa del equipo, no solo el nombre.
+  ///
+  /// Antes esta función guardaba `result['name']` y descartaba el resto. El
+  /// efecto no se veía en pantalla —el usuario leía «conectado correctamente»—
+  /// pero el dispositivo se creaba después sin modelo y con un UUID inventado
+  /// por el teléfono, así que nunca encontraría su telemetría y el medio de
+  /// cultivo quedaba indeterminado para siempre.
+  ///
+  /// El arreglo ya existía en la pantalla de Cuenta; aquí solo se replica.
+  void _adoptPairedDevice(Map<String, dynamic> result) {
+    final name = (result['name'] as String?)?.trim();
+    final hardwareId = (result['id'] as String?)?.trim();
+    final serial = (result['serial'] as String?)?.trim();
+
+    // El modelo declarado se cruza contra la serie: si la etiqueta trae una
+    // serie válida, ESA manda, porque va impresa en el aparato.
+    final parsedSerial = BioGSerial.tryParse(serial);
+    final String? modelId =
+        parsedSerial?.deviceModelId ??
+        (result['model'] ?? result['deviceModelId'])?.toString().trim();
+
+    final resolvedName = (name == null || name.isEmpty) ? 'Bio-G' : name;
+
+    setState(() {
+      _pairedDeviceName = resolvedName;
+      _draft = _draft.copyWith(
+        pairedDeviceName: resolvedName,
+        pairedHardwareId: (hardwareId == null || hardwareId.isEmpty)
+            ? null
+            : hardwareId,
+        pairedDeviceModelId: (modelId == null || modelId.isEmpty)
+            ? null
+            : modelId,
+      );
+    });
+
+    final model = deviceModelFromId(modelId);
+    final modelLabel = model == null
+        ? null
+        : switch (model) {
+            BioGDeviceModel.campo => 'Campo',
+            BioGDeviceModel.huerto => 'Huerto',
+            BioGDeviceModel.maceta => 'Maceta',
+          };
+
+    // ── La validación de compatibilidad que el paso de tierra promete ───────
+    //
+    // El paso de suelo se salta cuando la escala dice maceta, y se justifica
+    // diciendo que «el emparejamiento final valida la compatibilidad». Aquí es
+    // donde eso tiene que ocurrir: a largo plazo el hardware es la autoridad
+    // sobre el medio, pero el emparejamiento pasa DESPUÉS de la pregunta, así
+    // que una incompatibilidad hay que detectarla y decirla, no ignorarla.
+    final scale = cultivationScaleFromId(_draft.cultivationScale);
+    final bool mismatch =
+        model != null &&
+        scale != null &&
+        ((model == BioGDeviceModel.maceta) != (scale == CultivationScale.pot));
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$name conectado correctamente.'),
+        duration: mismatch
+            ? const Duration(seconds: 6)
+            : const Duration(seconds: 4),
+        content: Text(
+          mismatch
+              ? '$resolvedName es un BIO-G $modelLabel, y dijiste que cultivas '
+                    'en ${scale == CultivationScale.pot ? 'maceta' : 'campo o huerto'}. '
+                    'BIO-G usará lo que dice el equipo; puedes ajustar el resto '
+                    'después desde Cuenta.'
+              : '$resolvedName conectado correctamente'
+                    '${modelLabel == null ? '' : ' · $modelLabel'}.',
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -547,6 +706,20 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
     if (_isLastStep) {
       await _finishFlow();
+      return;
+    }
+
+    // Misma regla que en `_handleContinue`: omitir la escala con maceta ya
+    // elegida no puede aterrizar en una pregunta que no aplica.
+    if (_currentStep == OnboardingStep.cultivationScale &&
+        _skipsSoilTextureStep) {
+      _updateDraft(
+        _draft.copyWith(
+          soilTextureId: null,
+          soilTextureSource: SoilTextureSource.derivedFromScale.id,
+        ),
+      );
+      setState(() => _currentStep = OnboardingStep.cropCategory);
       return;
     }
 
@@ -1538,6 +1711,24 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
           showContinueButton: false,
           onChanged: (value) {
             _updateDraft(_draft.copyWith(cultivationScale: value));
+          },
+        );
+
+      case OnboardingStep.soilTexture:
+        // Los nombres locales («¿la conoces por otro nombre?») se retiraron de
+        // la pantalla: no cambiaban ni la textura, ni la retención, ni el
+        // drenaje, ni un solo cálculo del motor, y costaban el espacio vertical
+        // que ahora ocupan retención y drenaje. Los campos del borrador siguen
+        // existiendo y viajan intactos; simplemente ya no se capturan aquí.
+        return SoilTextureStep(
+          selectedTextureId: controller.draft.soilTextureId,
+          onTextureChanged: (texture, source) {
+            _updateDraft(
+              _draft.copyWith(
+                soilTextureId: texture.id,
+                soilTextureSource: source.id,
+              ),
+            );
           },
         );
 
@@ -3027,6 +3218,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       isLastStep: _isLastStep,
     );
 
+    final List<OnboardingStep> visibleSteps = _visibleSteps;
+    final String? footerNote = _footerNoteEs;
+    final bool isSoilStep = _currentStep == OnboardingStep.soilTexture;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8F7),
       body: SafeArea(
@@ -3040,9 +3235,14 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     _WizardTopBar(
-                      currentStepIndex: _steps.indexOf(_currentStep),
-                      totalSteps: _steps.length,
+                      currentStepIndex: visibleSteps.indexOf(_currentStep),
+                      totalSteps: visibleSteps.length,
                       onBack: _handleBack,
+                      // La ayuda solo existe donde hay algo que ayudar a
+                      // decidir. Un icono presente y muerto en los otros siete
+                      // pasos enseñaría a ignorarlo justo en el único donde
+                      // sirve.
+                      onHelp: isSoilStep ? _handleSoilGuide : null,
                     ),
                     const SizedBox(height: 18),
                     AnimatedSwitcher(
@@ -3095,27 +3295,68 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                     loading: _submitting,
                     height: 54,
                     radius: 18,
+                    // El aro con palomita solo aparece cuando el botón está
+                    // vivo: dibujarlo apagado prometería una confirmación que
+                    // todavía no se puede dar.
+                    trailing: isSoilStep && _canContinueFromCurrentStep
+                        ? const _CtaCheck()
+                        : null,
                   ),
                   const SizedBox(height: 6),
-                  TextButton(
-                    onPressed: _submitting ? null : _handleSkip,
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                  if (footerNote != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          // Lápiz y no candado: en este mismo archivo el
+                          // candado ya significa «no puedes entrar aquí», y
+                          // ponerlo junto a «puedes cambiarlo después» dice lo
+                          // contrario de la frase que acompaña.
+                          const Padding(
+                            padding: EdgeInsets.only(top: 1),
+                            child: Icon(
+                              Icons.edit_outlined,
+                              size: 13,
+                              color: Color(0xFF9AA5AA),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              footerNote,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 11.6,
+                                height: 1.32,
+                                color: Color(0xFF8A9399),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text(
-                      'Omitir',
-                      style: TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF8A9399),
+                    )
+                  else
+                    TextButton(
+                      onPressed: _submitting ? null : _handleSkip,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        'Omitir',
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF8A9399),
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -3164,70 +3405,267 @@ class _OnboardingTreeOptionData {
   final String iconPath;
 }
 
+/// El aro con palomita del CTA «Usar esta tierra».
+class _CtaCheck extends StatelessWidget {
+  const _CtaCheck();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.85),
+          width: 1.4,
+        ),
+      ),
+      child: const Icon(Icons.check_rounded, size: 12, color: Colors.white),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BARRA SUPERIOR DEL WIZARD
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Es UNA barra para los ocho pasos, no una versión especial para la pantalla de
+// tierra. La instrucción de partida era explícita —reutilizar, no montar un
+// sistema de diseño paralelo—, y un encabezado distinto en un solo paso es
+// exactamente eso.
+//
+// Lo que cambia respecto de la versión anterior:
+//
+//  · «Paso 3 de 8» en texto. Los puntos decían *dónde* estás pero no *cuánto*
+//    falta, y ese número es la única pregunta que se hace quien va a la mitad de
+//    un formulario.
+//  · Riel numerado en vez de puntos. Mismo espacio, más información: qué pasos
+//    quedaron atrás (palomita), en cuál estás (número en verde lleno) y cuántos
+//    faltan (números en aro).
+//  · Una acción opcional a la derecha. El hueco de 42 px ya estaba reservado y
+//    vacío desde siempre.
+
 class _WizardTopBar extends StatelessWidget {
   final int currentStepIndex;
   final int totalSteps;
   final VoidCallback onBack;
 
+  /// Acción opcional a la derecha. Nula en los pasos que no tienen ayuda.
+  final VoidCallback? onHelp;
+
   const _WizardTopBar({
     required this.currentStepIndex,
     required this.totalSteps,
     required this.onBack,
+    this.onHelp,
   });
 
   @override
   Widget build(BuildContext context) {
+    // `indexOf` devuelve -1 si el paso actual no está en la ruta visible. No
+    // debería ocurrir —solo se salta tierra y no se puede estar en ella y
+    // saltarla a la vez—, pero «Paso 0 de 7» es un texto que no puede llegar a
+    // producción por una condición de carrera de un `setState`.
+    final int index = currentStepIndex < 0 ? 0 : currentStepIndex;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(8, 2, 8, 0),
+      child: Column(
         children: <Widget>[
-          BioGGlassCard(
-            radius: 16,
-            padding: EdgeInsets.zero,
-            child: SizedBox(
-              width: 42,
-              height: 42,
-              child: IconButton(
-                onPressed: onBack,
-                icon: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  size: 18,
-                  color: Color(0xFF274A44),
-                ),
+          Row(
+            children: <Widget>[
+              _TopBarAction(
+                icon: Icons.arrow_back_rounded,
+                tooltip: 'Atrás',
+                onTap: onBack,
               ),
-            ),
-          ),
-          const Spacer(),
-          BioGGlassCard(
-            radius: 18,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(
-                totalSteps,
-                (index) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 350),
-                  curve: Curves.easeOutCubic,
-                  width: index == currentStepIndex ? 18 : 7,
-                  height: 7,
-                  margin: EdgeInsets.only(
-                    right: index == totalSteps - 1 ? 0 : 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: index == currentStepIndex
-                        ? const Color(0xFF82A775)
-                        : index < currentStepIndex
-                        ? const Color(0xFF82A775).withValues(alpha: 0.40)
-                        : Colors.black.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(99),
+              Expanded(
+                child: Text(
+                  'Paso ${index + 1} de $totalSteps',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.1,
+                    color: Color(0xFF6B7A80),
                   ),
                 ),
               ),
-            ),
+              if (onHelp != null)
+                _TopBarAction(
+                  icon: Icons.help_outline_rounded,
+                  // Se nombra el destino, igual que la tarjeta de ayuda dentro
+                  // del paso: dos puertas a la misma hoja tienen que decir que
+                  // llevan al mismo sitio.
+                  tooltip: 'Identifica tu tierra en 20 segundos',
+                  onTap: onHelp!,
+                )
+              else
+                const SizedBox(width: 44, height: 44),
+            ],
           ),
-          const Spacer(),
-          const SizedBox(width: 42, height: 42),
+          const SizedBox(height: 12),
+          _ProgressRail(current: index, total: totalSteps),
         ],
+      ),
+    );
+  }
+}
+
+class _TopBarAction extends StatelessWidget {
+  const _TopBarAction({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          // 44 y no 42: es el mínimo táctil, y por aquí pasan el «atrás» del
+          // wizard entero y la única puerta a la guía de tierra.
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Icon(icon, size: 21, color: const Color(0xFF12201C)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// El riel numerado.
+///
+/// El diámetro se calcula, no se fija: con ocho pasos un círculo de 26 px no
+/// cabe en un teléfono estrecho, y con cinco sobra sitio. `LayoutBuilder` reparte
+/// lo que hay y los tramos absorben el resto, así que la fila no puede
+/// desbordarse por ancho por muchos pasos que se le añadan al guion.
+class _ProgressRail extends StatelessWidget {
+  const _ProgressRail({required this.current, required this.total});
+
+  final int current;
+  final int total;
+
+  static const Color _green = Color(0xFF2AA84A);
+  static const Color _hair = Color(0xFFE3E9E5);
+  static const double _minSegment = 8;
+
+  @override
+  Widget build(BuildContext context) {
+    if (total <= 1) return const SizedBox.shrink();
+
+    return ExcludeSemantics(
+      // El texto «Paso N de M» de arriba ya lo dice. Sin esto, el lector de
+      // pantalla recitaría además ocho nodos numerados uno por uno.
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double diameter =
+              ((constraints.maxWidth - (total - 1) * _minSegment) / total)
+                  .clamp(16.0, 26.0);
+
+          final children = <Widget>[];
+          for (var i = 0; i < total; i++) {
+            if (i > 0) {
+              children.add(
+                Expanded(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 320),
+                    curve: Curves.easeOutCubic,
+                    height: 3,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: i <= current ? _green : _hair,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+              );
+            }
+            children.add(
+              _RailNode(index: i, current: current, diameter: diameter),
+            );
+          }
+
+          return Row(children: children);
+        },
+      ),
+    );
+  }
+}
+
+class _RailNode extends StatelessWidget {
+  const _RailNode({
+    required this.index,
+    required this.current,
+    required this.diameter,
+  });
+
+  final int index;
+  final int current;
+  final double diameter;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool done = index < current;
+    final bool isCurrent = index == current;
+    final bool filled = done || isCurrent;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+      width: diameter,
+      height: diameter,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: filled ? _ProgressRail._green : Colors.white,
+        border: Border.all(
+          color: filled ? _ProgressRail._green : _ProgressRail._hair,
+          width: 1.4,
+        ),
+        boxShadow: isCurrent
+            ? <BoxShadow>[
+                BoxShadow(
+                  color: _ProgressRail._green.withValues(alpha: 0.28),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : const <BoxShadow>[],
+      ),
+      child: Center(
+        child: done
+            ? Icon(
+                Icons.check_rounded,
+                size: diameter * 0.54,
+                color: Colors.white,
+              )
+            : Text(
+                '${index + 1}',
+                style: TextStyle(
+                  // Se calcula del diámetro y se acota: por debajo de 8 px el
+                  // número deja de leerse y el riel pasa a ser decoración.
+                  fontSize: (diameter * 0.44).clamp(8.0, 12.0),
+                  height: 1.0,
+                  fontWeight: FontWeight.w700,
+                  color: isCurrent ? Colors.white : const Color(0xFF9AA5AA),
+                ),
+              ),
       ),
     );
   }

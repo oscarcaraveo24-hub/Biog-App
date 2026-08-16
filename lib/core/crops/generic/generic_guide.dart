@@ -123,12 +123,34 @@ const AgroRange _kUnusedNutrientRange = AgroRange(
 ///   optimalMax < valor ≤ highMin      → Alto
 ///   valor > highMin                   → Crítico (por encima)
 const StageTargets kGuideTargets = StageTargets(
-  // Mediana de 67 rangos de etapa mesófitos.
+  // ── Humedad: derivada, no mediana ─────────────────────────────────────────
+  //
+  // Antes eran 18 / 35–70 / 85, la mediana de 67 rangos de etapa mesófitos. El
+  // problema no era la mediana: era que esos 67 rangos estaban escritos contra
+  // una escala de sustrato de maceta. Un `optimalMax` de 70 % de contenido
+  // volumétrico está por encima de la SATURACIÓN de cualquier suelo mineral
+  // —la más alta de la tabla, arcilla, es 53 %—, así que el óptimo empezaba en
+  // un valor que la física no permite alcanzar en tierra.
+  //
+  // Estos cuatro números salen de la misma aritmética que usa el resolver, con
+  // suelo franco (θpmp 13, θcc 28, sat 48) y el agotamiento permisible genérico
+  // (0,40), que es el que aplica cuando no hay cultivo declarado:
+  //
+  //   optimalMax = θcc                        = 28,0
+  //   optimalMin = 28 − 0,40 × 15             = 22,0
+  //   lowMax     = 28 − 1,50 × 0,40 × 15      = 19,0
+  //   highMin    = 0,90 × 48                  = 43,2   ← encharcamiento REAL
+  //
+  // Es el valor por omisión: cuando el runtime conoce la textura de la parcela,
+  // la sobrescribe con la de ESE suelo. Aquí viven los números del respaldo, y
+  // por eso tienen que ser los mismos que produciría el resolver para franco —
+  // si no, la pantalla que llama al motor directamente y la que pasa por el
+  // runtime darían dos lecturas distintas de la misma humedad.
   moistureRaw: AgroRange(
-    lowMax: 18,
-    optimalMin: 35,
-    optimalMax: 70,
-    highMin: 85,
+    lowMax: 19,
+    optimalMin: 22,
+    optimalMax: 28,
+    highMin: 43.2,
   ),
 
   // Mediana de 94 rangos de etapa mesófitos.

@@ -56,7 +56,19 @@ class LettuceAgroScoreEngine {
       return (eval: empty, nextAlertsState: alertsState);
     }
 
-    final moisture01 = _normalizeMoisture01(t.soilMoisturePct, cal);
+    // ── La bandera de presencia manda ──────────────────────────────────────
+    //
+    // `BioGTelemetry` rellena con 0.0 el sensor que no reportó, y 0.0 cae en
+    // CRÍTICO en cuatro de los cinco rangos: sin esta guarda, una sonda
+    // averiada o desconectada se leería como suelo en emergencia y el anillo
+    // del Panel pintaría un diagnóstico catastrófico de un dato que no existe.
+    //
+    // NaN y no cero: `_evalLegacy` ya devuelve `AgroBand.unknown` ante un valor
+    // no finito, así que la métrica sale como «sin dato» —que es la verdad— sin
+    // tocar la firma del evaluador ni la de este motor.
+    final moisture01 = t.hasSoilMoistureData
+        ? _normalizeMoisture01(t.soilMoisturePct, cal)
+        : double.nan;
     final moistureRawCal = moisture01 * 100.0;
 
     final moistureEval =
@@ -69,35 +81,38 @@ class LettuceAgroScoreEngine {
 
     final nMetric = _interpretLettuceNutrient(
       metricKey: AgroMetricKey.n,
+      hasData: t.hasNitrogenData,
       rawMgKg: t.n.toDouble(),
       stageKey: stageKey,
       targets: targets,
       weights: weights,
       ph: t.ph,
       ec: t.ec,
-      soilMoisturePct: t.soilMoisturePct,
+      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
       profileId: stage.profile.id,
     );
     final pMetric = _interpretLettuceNutrient(
       metricKey: AgroMetricKey.p,
       rawMgKg: t.p.toDouble(),
+      hasData: t.hasPhosphorusData,
       stageKey: stageKey,
       targets: targets,
       weights: weights,
       ph: t.ph,
       ec: t.ec,
-      soilMoisturePct: t.soilMoisturePct,
+      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
       profileId: stage.profile.id,
     );
     final kMetric = _interpretLettuceNutrient(
       metricKey: AgroMetricKey.k,
       rawMgKg: t.k.toDouble(),
+      hasData: t.hasPotassiumData,
       stageKey: stageKey,
       targets: targets,
       weights: weights,
       ph: t.ph,
       ec: t.ec,
-      soilMoisturePct: t.soilMoisturePct,
+      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
       profileId: stage.profile.id,
     );
 
@@ -140,9 +155,10 @@ class LettuceAgroScoreEngine {
 
     // El espigado degrada el valor comercial: penaliza el score directo.
     final boltingRisk = computeBoltingRisk(
-      airTempC: t.airTempC,
+      airTempC: t.hasAirTempData ? t.airTempC : double.nan,
       moistureRawCal: moistureRawCal,
       stage: stageKey,
+      moistureBand: targets.moistureRaw,
     );
     switch (boltingRisk) {
       case LettuceBoltingRisk.critico:
@@ -214,10 +230,19 @@ class LettuceAgroScoreEngine {
   /// Evalúa el riesgo de espigado / bolting (evento E7 del Perfil
   /// Universal). Disparadores: calor sostenido, déficit hídrico y edad
   /// fisiológica avanzada. No es una etapa: es una falla de calidad.
+  /// [moistureBand] es la banda de humedad ya derivada de la textura del suelo
+  /// (`targets.moistureRaw`). El umbral de estrés hídrico sale de ahí.
+  ///
+  /// Antes era `moistureRawCal < 50` fijo, y eso NO era un umbral: era una
+  /// constante encendida. La capacidad de campo más alta de la tabla de suelos
+  /// es 40 (arcilla) y su umbral de encharcamiento 47,7, así que **ninguna
+  /// lectura de un suelo mineral llega a 50**. El riesgo de espigado subía en
+  /// cada lectura válida, para siempre, en cualquier tierra.
   static LettuceBoltingRisk computeBoltingRisk({
     required double airTempC,
     required double moistureRawCal,
     required LettuceStageKey stage,
+    AgroRange? moistureBand,
   }) {
     final isQualityStage = stage == LettuceStageKey.formacionCabeza ||
         stage == LettuceStageKey.ventanaCosecha;
@@ -227,7 +252,11 @@ class LettuceAgroScoreEngine {
     if (!isExposedStage) return LettuceBoltingRisk.bajo;
     if (!airTempC.isFinite) return LettuceBoltingRisk.bajo;
 
-    final waterStress = moistureRawCal > 0 && moistureRawCal < 50;
+    // Por debajo del punto de recarga hay estrés hídrico de verdad: es el mismo
+    // límite con el que el resto de la app dice «bajo». Sin banda, el literal
+    // viejo queda de respaldo para no cambiar el comportamiento a ciegas.
+    final waterStress =
+        moistureRawCal > 0 && moistureRawCal < (moistureBand?.optimalMin ?? 50);
 
     if (airTempC >= 30 && isQualityStage) return LettuceBoltingRisk.critico;
     if (airTempC >= 30) return LettuceBoltingRisk.alto;
@@ -244,6 +273,7 @@ class LettuceAgroScoreEngine {
   static AgroMetricEval _interpretLettuceNutrient({
     required AgroMetricKey metricKey,
     required double rawMgKg,
+    required bool hasData,
     required LettuceStageKey stageKey,
     required StageTargets targets,
     required StageWeights weights,
@@ -252,11 +282,29 @@ class LettuceAgroScoreEngine {
     double? ec,
     double? soilMoisturePct,
   }) {
+    // Sin sonda de nutrientes no hay dato, y ausencia NO es cero.
+    //
+    // Un 0 ppm entra en `interpret` y sale como `actionRecommended`, la peor
+    // etiqueta de deficiencia que existe: un equipo sin sonda NPK le decía al
+    // productor «aplica fertilizante ya», en cada lectura, para siempre. El
+    // motor de frutales ya se guardaba de esto desde el principio; el resto no.
+    if (!hasData || rawMgKg <= 0) {
+      return AgroMetricEval(
+        band: AgroBand.unknown,
+        score01: 0.5,
+        labelEs: AgroBand.unknown.labelEs,
+        value: rawMgKg,
+        stageKey: stageKey.name,
+        stageLabelEs: _stageLabelEs(stageKey),
+        demandWindowLabelEs: targets.windowLabelFor(metricKey),
+      );
+    }
+
     final interpretation = NutrientRecommendationEngine.interpret(
       nutrient: metricKey,
       rawPpm: rawMgKg,
       cropKey: 'lettuce',
-      stageKey: stageKey.name,
+        stageKey: stageKey.name,
       profileId: profileId,
       targets: targets,
       weights: weights,
@@ -273,8 +321,8 @@ class LettuceAgroScoreEngine {
       labelEs: interpretation.labelEs,
       value: rawMgKg,
       priorityLabel: interpretation.label,
-      stageKey: stageKey.name,
-      stageLabelEs: _stageLabelEs(stageKey),
+        stageKey: stageKey.name,
+        stageLabelEs: _stageLabelEs(stageKey),
       demandWindowLabelEs: interpretation.demandWindowLabel,
       shortRecommendationEs: interpretation.shortRecommendation,
       practicalRecommendationEs: interpretation.practicalRecommendation,
@@ -454,8 +502,21 @@ class LettuceAgroScoreEngine {
     LettuceStageResult stage,
     LettuceBoltingRisk boltingRisk,
   ) {
-    final airTemp = t.airTempC;
-    final airHum = t.airHumidityPct;
+    // ── Un canal que no midió viaja como NaN, jamás como cero ──────────────
+    //
+    // `BioGTelemetry` rellena con 0.0 el sensor ausente y baja su bandera de
+    // presencia. Sin esta línea, `0.0 <= 0` cumple la condición de helada: un
+    // equipo sin sensor de aire —o con un cable flojo en el bus— gritaría
+    // «Riesgo de helada» CRÍTICO en cada lectura, para siempre. Un productor
+    // puede encender calefactores o quemar diésel por un canal que nunca
+    // existió.
+    //
+    // NaN, y no un cero: en IEEE-754 toda comparación ordenada con NaN es
+    // falsa, así que apaga los cinco umbrales de este bloque —helada, frío,
+    // calor, calor extremo y humedad— de una sola vez y sin poder olvidarse
+    // ninguno. `isFinite` también da falso, que es lo correcto.
+    final airTemp = t.hasAirTempData ? t.airTempC : double.nan;
+    final airHum = t.hasAirHumidityData ? t.airHumidityPct : double.nan;
     final isQualityStage = _criticalStages.contains(stage.stage);
 
     // Frío / helada: la lechuga es de estación fresca, pero la helada
@@ -508,13 +569,24 @@ class LettuceAgroScoreEngine {
     }
   }
 
+  /// Contenido volumétrico del sensor, a fracción 0..1.
+  ///
+  /// La rama de calibración relativa seco/mojado se BORRÓ. El módulo de agua
+  /// declara que la humedad es contenido volumétrico real y que no necesita
+  /// calibración de usuario; el propio contrato de datos crudos lo dice por
+  /// escrito. Aquella rama existía para otra clase de sonda —la capacitiva
+  /// analógica barata— y no aplica al sensor que entrega VWC ya calibrado de
+  /// fábrica.
+  ///
+  /// Verificado antes de borrarla: el tipo tenía dos consumidores y **cero
+  /// productores**. Nadie la instanciaba, y no había pantalla para hacerlo. Se
+  /// borra en vez de dejarla dormida porque un condicional que nadie puede
+  /// activar hoy pero que alguien activará en seis meses es peor que ninguno:
+  /// para entonces nadie recordará por qué estaba ahí, y el efecto sería que el
+  /// motor de riego leyera 25 % como 25 % mientras el de puntuación leyera el
+  /// mismo 25 % como 58 % relativo —dos lecturas del mismo dato, en la misma
+  /// pantalla—.
   static double _normalizeMoisture01(double raw0to100, Calibration? cal) {
-    final dry = cal?.moistureDryRaw;
-    final wet = cal?.moistureWetRaw;
-
-    if (dry != null && wet != null && (wet - dry).abs() > 1e-6) {
-      return ((raw0to100 - dry) / (wet - dry)).clamp(0.0, 1.0);
-    }
     return (raw0to100 / 100.0).clamp(0.0, 1.0);
   }
 

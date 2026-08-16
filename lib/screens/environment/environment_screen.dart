@@ -435,7 +435,21 @@ class _EnvironmentScreenState extends State<EnvironmentScreen>
     );
 
     try {
-      final data = await _service.fetchEnvironment(location: location);
+      // Siete días, no tres.
+      //
+      // La petición a Open-Meteo ya pedía siete desde siempre; el servicio los
+      // recortaba al volver. Consecuencia: la pantalla de Pronóstico se abría
+      // sin datos utilizables y lanzaba OTRA descarga idéntica justo durante
+      // la animación de entrada — de ahí los esqueletos y el tirón al abrir.
+      //
+      // La tarjeta de vista previa sigue pintando tres (recorta ella sola con
+      // `clamp(0, 3)`), y el consejo sigue mirando tres
+      // (`EnvironmentService.kInsightHorizonDays`), así que esta pantalla se ve
+      // exactamente igual.
+      final data = await _service.fetchEnvironment(
+        location: location,
+        dailyLimit: 7,
+      );
       if (!mounted) return;
       if (currentRevisionAtStart != _currentRevision) {
         setState(() {

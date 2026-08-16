@@ -190,6 +190,7 @@ class BioGStore extends ChangeNotifier {
       await repo.bindUser(
         userId: userId,
         seedResolver: (deviceId) => seedInstallForDevice(deviceId),
+        cropContextResolver: (deviceId) => _cropByDevice[deviceId],
       );
       // 1.5) Si algún dispositivo cambió de id al migrar del formato de texto
       //      antiguo a UUID, hay que mover con él su cultivo y su proyección.
@@ -920,6 +921,32 @@ class BioGStore extends ChangeNotifier {
         timezone: previous?.timezone,
         regionCode: previous?.regionCode,
         cycleLabel: previous?.cycleLabel,
+        // Atributos de la PARCELA, no del ciclo. Poner el equipo «en descanso»
+        // dice que no hay siembra; no dice que la tierra haya cambiado de sitio
+        // ni de textura.
+        //
+        // Esto se perdía: `saveCropContext` REEMPLAZA el contexto, no lo
+        // fusiona, así que reconstruirlo aquí sin estos campos borraba en
+        // Supabase la textura que el productor acababa de declarar en el alta —
+        // y, peor, la borraba también al reconfigurar desde Cuenta, donde ya
+        // llevaba tiempo declarada. El daño no se veía: la fila simplemente
+        // volvía a `NULL` y el motor de humedad caía al franco de respaldo.
+        soilTextureId: previous?.soilTextureId,
+        soilTextureSource: previous?.soilTextureSource,
+        soilLocalDescriptors: previous?.soilLocalDescriptors ?? const <String>[],
+        soilLocalOther: previous?.soilLocalOther,
+        locationLabel: previous?.locationLabel,
+        locationSource: previous?.locationSource,
+        geoLat: previous?.geoLat,
+        geoLng: previous?.geoLng,
+        cultivationScaleId: previous?.cultivationScaleId,
+        establishmentModeId: previous?.establishmentModeId,
+        // Y el sello del alta, por lo mismo: reconstruir sin estos dos revertía
+        // `setup_status` de `completed` a `draft` en Supabase cada vez que un
+        // equipo pasaba a descanso, y un alta terminada en descanso no se
+        // sellaba nunca.
+        setupStatus: previous?.setupStatus ?? kCropSetupDraft,
+        setupCompletedAt: previous?.setupCompletedAt,
         catalogVersion: CropCatalog.version,
         source: CropConfigSource.wizard,
         configuredAt: sameCrop
@@ -1346,7 +1373,25 @@ class BioGStore extends ChangeNotifier {
           !isOrnamental && context.lifecycleStatus == CropLifecycleStatus.planned
           ? context.plannedSowingDate
           : null,
-      cultivationScaleId: isOrnamental ? null : context.cultivationScaleId,
+      // ── La escala SÍ aplica a ornamentales ─────────────────────────────────
+      //
+      // Aquí convivían dos generaciones de decisiones: esta línea nulificaba la
+      // escala para ornamentales, y el modelo la declara campo legítimo con un
+      // comentario que advierte que quitarla borra información de maceta.
+      //
+      // Gana el comentario, no el código antiguo. Una rosa en maceta y una rosa
+      // en cama son riegos distintos, y nulificar borra información real que el
+      // usuario sí declaró. Y hay algo peor: los ornamentales —cactus,
+      // suculentas, tulipán, rosal— son exactamente los cultivos que necesitan
+      // el perfil de sustrato, así que el campo llegaba nulo justo a quien más
+      // lo necesitaba. Un resolver que dedujera el medio desde la escala les
+      // habría aplicado constantes de suelo mineral, invirtiendo el consejo en
+      // el grupo donde regar de más es lo que los mata.
+      //
+      // Con el modelo del hardware decidiendo el sustrato, la escala queda libre
+      // para ser lo que debe ser: contexto agronómico secundario, no autoridad
+      // sobre el medio.
+      cultivationScaleId: context.cultivationScaleId,
       sowingModeId: isOrnamental
           ? null
           : _normalizeNullable(context.sowingModeId) ??

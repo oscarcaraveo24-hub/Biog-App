@@ -24,6 +24,15 @@ class BioGButton extends StatefulWidget {
   /// ✅ Shadow en el texto (especialmente útil en primary)
   final bool labelShadow;
 
+  /// Adorno opcional a la derecha de la etiqueta —el aro con palomita del CTA
+  /// «Usar esta tierra»—. Es un [Widget] y no un asset porque lo que pide el
+  /// diseño es un aro dibujado, no un icono del catálogo, y porque así ningún
+  /// botón existente cambia: sin este parámetro el `Row` se arma exactamente
+  /// igual que antes.
+  ///
+  /// Desaparece mientras [loading] está activo, como el leading.
+  final Widget? trailing;
+
   const BioGButton({
     super.key,
     required this.label,
@@ -37,6 +46,7 @@ class BioGButton extends StatefulWidget {
     this.fullWidth = true,
     this.loading = false,
     this.labelShadow = true,
+    this.trailing,
   });
 
   bool get _enabled => onTap != null && !loading;
@@ -265,6 +275,10 @@ class _BioGButtonState extends State<BioGButton> {
                                       ),
                               ),
                             ),
+                            if (widget.trailing != null && !widget.loading) ...[
+                              const SizedBox(width: 10),
+                              widget.trailing!,
+                            ],
                           ],
                         ),
                       ),

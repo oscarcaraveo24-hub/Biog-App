@@ -79,31 +79,227 @@ enum SoilTexture {
   clayLoam,
   clay,
   pottingMix,
+
+  /// Sustrato drenante de cactácea: perlita, arena o pómez sobre poca materia
+  /// orgánica. Existe porque **una sola fila de sustrato no puede servir para
+  /// un cactus y para una lechuga en maceta**: no es un conflicto de números,
+  /// es una diferencia de hidráulica. Drena rápido, retiene poco y se seca
+  /// parejo. Sus constantes se calibraron contra los rangos que ya tenían
+  /// escritos cactus, nopal, agave y suculentas (ver [SoilWaterScale._table]).
+  ///
+  /// Nunca se pregunta: se deriva del grupo hídrico del cultivo (xerófito) más
+  /// el medio de maceta. Ver `SoilProfileResolver`.
+  pottingMixDraining,
   unknown;
 
-  /// Etiqueta para el productor. Deliberadamente sin jerga: nadie en campo
-  /// dice "franco-arcilloso", dice "tierra pesada".
-  String get labelEs => switch (this) {
-    SoilTexture.sandy => 'Arenosa (se escurre rápido)',
-    SoilTexture.sandyLoam => 'Ligera (arenosa con algo de tierra)',
-    SoilTexture.loam => 'Media (la más común)',
-    SoilTexture.clayLoam => 'Pesada (se hace terrón)',
-    SoilTexture.clay => 'Muy pesada (barro, se agrieta al secar)',
+  /// Nombre técnico, el que va como protagonista en la pantalla de selección.
+  /// Es el vocabulario del mapa de suelos, para quien ya lo conoce.
+  String get displayNameEs => switch (this) {
+    SoilTexture.sandy => 'Arenosa',
+    SoilTexture.sandyLoam => 'Franco-arenosa',
+    SoilTexture.loam => 'Franca',
+    SoilTexture.clayLoam => 'Franco-arcillosa',
+    SoilTexture.clay => 'Arcillosa',
     SoilTexture.pottingMix => 'Sustrato de maceta',
-    SoilTexture.unknown => 'No la sé',
+    SoilTexture.pottingMixDraining => 'Sustrato drenante',
+    SoilTexture.unknown => 'No estoy seguro',
+  };
+
+  /// Nombre corto y cotidiano. Va debajo del técnico, en chip pequeño, y es el
+  /// que se reutiliza en listas, resúmenes y chips de Cuenta.
+  ///
+  /// Existe como campo propio —y no parseando el paréntesis de [labelEs]— para
+  /// que haya **una sola fuente de verdad para el texto**.
+  String get shortLabelEs => switch (this) {
+    SoilTexture.sandy => 'Arenosa',
+    SoilTexture.sandyLoam => 'Ligera',
+    SoilTexture.loam => 'Media',
+    SoilTexture.clayLoam => 'Pesada',
+    SoilTexture.clay => 'Muy pesada',
+    SoilTexture.pottingMix => 'Sustrato',
+    SoilTexture.pottingMixDraining => 'Drenante',
+    SoilTexture.unknown => 'Sin definir',
+  };
+
+  /// Etiqueta larga, para donde haga falta la frase completa.
+  ///
+  /// `loam` ya NO dice «la más común». Presentar una opción como la más
+  /// frecuente la convierte en la respuesta por defecto de quien no está
+  /// seguro, y ese usuario debería marcar «No estoy seguro»: si no lo hace, el
+  /// sistema pierde la capacidad de distinguir *este productor tiene suelo
+  /// franco* de *este productor no sabe qué suelo tiene*, que es justo la
+  /// distinción que decide si la recomendación lleva penalización de confianza.
+  String get labelEs => switch (this) {
+    SoilTexture.sandy => 'Arenosa — se escurre rápido',
+    SoilTexture.sandyLoam => 'Ligera — arenosa con algo de barro',
+    SoilTexture.loam => 'Media — tierra equilibrada',
+    SoilTexture.clayLoam => 'Pesada — se hace terrones',
+    SoilTexture.clay => 'Muy pesada — barro, se agrieta al secarse',
+    SoilTexture.pottingMix => 'Sustrato de maceta',
+    SoilTexture.pottingMixDraining => 'Sustrato drenante (cactáceas)',
+    SoilTexture.unknown => 'No estoy seguro',
   };
 
   /// Pista para el wizard: cómo reconocerla apretando un puño de tierra
   /// húmeda. Es la prueba de campo estándar y no necesita instrumento.
   String get fieldHintEs => switch (this) {
-    SoilTexture.sandy => 'Se deshace en cuanto abres la mano.',
-    SoilTexture.sandyLoam => 'Forma bolita pero se rompe al tocarla.',
-    SoilTexture.loam => 'Forma bolita que aguanta y se puede alisar un poco.',
-    SoilTexture.clayLoam => 'Forma una cinta corta al aplastarla entre dedos.',
-    SoilTexture.clay => 'Forma una cinta larga y brillosa; se pega.',
+    SoilTexture.sandy => 'No llega a formar bolita: se desmorona al abrir la mano.',
+    SoilTexture.sandyLoam => 'Forma una bolita, pero se rompe fácilmente.',
+    SoilTexture.loam => 'Forma una bolita firme y se puede alisar.',
+    SoilTexture.clayLoam => 'Forma una tira corta entre los dedos.',
+    SoilTexture.clay =>
+      'Pegajosa, forma una tira larga y se agrieta al secarse.',
     SoilTexture.pottingMix => 'Mezcla comprada en bolsa, ligera y esponjosa.',
+    SoilTexture.pottingMixDraining =>
+      'Mezcla de cactácea: arena, perlita o pómez.',
     SoilTexture.unknown => '',
   };
+
+  /// Cómo se ve la esfera del carrusel. **El color NO define la textura**: la
+  /// diferencia visual viene de granulometría, cohesión, porosidad, bloques y
+  /// microgrietas. Este texto acompaña al asset para que nadie convierta
+  /// «arcillosa = roja» en una regla falsa.
+  String get visualReadingEs => switch (this) {
+    SoilTexture.sandy => 'Granos grandes, muy suelta, muchos espacios.',
+    SoilTexture.sandyLoam => 'Granos y pequeños agregados, todavía suelta.',
+    SoilTexture.loam => 'Agregados equilibrados, porosidad media.',
+    SoilTexture.clayLoam => 'Bloques densos, grano fino, pocos huecos.',
+    SoilTexture.clay => 'Masa fina, compacta, microgrietas discretas.',
+    SoilTexture.pottingMix => 'Fibra esponjosa y oscura.',
+    SoilTexture.pottingMixDraining => 'Mezcla gruesa con partícula mineral.',
+    SoilTexture.unknown =>
+      'Sin definir: BIO-G usará una tierra media hasta que lo sepas.',
+  };
+
+  /// La línea de una sola frase que va bajo el nombre en la pantalla de
+  /// selección: dos rasgos separados por un punto medio. Es lo que el productor
+  /// lee sin detenerse, así que no lleva vocabulario técnico ni cifras.
+  String get plainDescriptionEs => switch (this) {
+    SoilTexture.sandy => 'Suelta y granulada · El agua se va rápido',
+    SoilTexture.sandyLoam => 'Ligera al tacto · Drena bien y guarda algo de humedad',
+    SoilTexture.loam => 'Equilibrada · Ni muy suelta ni muy compacta',
+    SoilTexture.clayLoam => 'Compacta · Forma terrones al secarse',
+    SoilTexture.clay => 'Barrosa y pesada · Se agrieta al secarse',
+    SoilTexture.pottingMix => 'Mezcla de maceta · Esponjosa y ligera',
+    SoilTexture.pottingMixDraining => 'Mezcla de cactácea · Gruesa y mineral',
+    SoilTexture.unknown => 'BIO-G usará valores medios mientras tanto',
+  };
+
+  /// Lectura cualitativa de retención de agua, de 1 a 5.
+  ///
+  /// Es material didáctico para que el agricultor **compare texturas entre
+  /// sí**. NO es un porcentaje ni una segunda fuente de verdad agronómica: el
+  /// motor sigue usando [SoilWaterScale] y sus constantes reales.
+  int get waterRetention05 => switch (this) {
+    SoilTexture.sandy => 1,
+    SoilTexture.sandyLoam => 2,
+    SoilTexture.loam => 3,
+    SoilTexture.clayLoam => 4,
+    SoilTexture.clay => 5,
+    SoilTexture.pottingMix => 5,
+    SoilTexture.pottingMixDraining => 2,
+    SoilTexture.unknown => 0,
+  };
+
+  /// La palabra que acompaña a los cinco puntos de retención.
+  ///
+  /// Va como texto **además** del nivel pintado, nunca en su lugar: la pauta de
+  /// accesibilidad del contrato prohíbe que el color o la posición sean el único
+  /// portador del significado. Concuerda en femenino porque el sustantivo que la
+  /// precede es «retención».
+  String get retentionWordEs => switch (this) {
+    SoilTexture.sandy => 'Muy baja',
+    SoilTexture.sandyLoam => 'Baja',
+    SoilTexture.loam => 'Media',
+    SoilTexture.clayLoam => 'Alta',
+    SoilTexture.clay => 'Muy alta',
+    SoilTexture.pottingMix => 'Muy alta',
+    SoilTexture.pottingMixDraining => 'Baja',
+    SoilTexture.unknown => 'Variable',
+  };
+
+  /// La frase corta bajo los puntos de retención. Describe la consecuencia para
+  /// el riego, que es lo único que el productor puede accionar.
+  String get retentionSentenceEs => switch (this) {
+    SoilTexture.sandy => 'Guarda poca agua: hay que regar seguido y poco.',
+    SoilTexture.sandyLoam => 'Guarda algo de agua, pero se seca pronto.',
+    SoilTexture.loam => 'Puede guardar buena cantidad de agua.',
+    SoilTexture.clayLoam => 'Guarda mucha agua y la suelta despacio.',
+    SoilTexture.clay => 'Guarda muchísima agua; tarda días en soltarla.',
+    SoilTexture.pottingMix => 'La mezcla guarda mucha agua junto a la raíz.',
+    SoilTexture.pottingMixDraining =>
+      'Guarda poca agua a propósito, como en el desierto.',
+    SoilTexture.unknown => 'Lo sabremos en cuanto definas tu tierra.',
+  };
+
+  /// Lectura cualitativa de drenaje, de 1 a 5. Misma advertencia que
+  /// [waterRetention05]: es comparativa, no numérica.
+  int get drainage05 => switch (this) {
+    SoilTexture.sandy => 5,
+    SoilTexture.sandyLoam => 4,
+    SoilTexture.loam => 3,
+    SoilTexture.clayLoam => 2,
+    SoilTexture.clay => 1,
+    SoilTexture.pottingMix => 2,
+    SoilTexture.pottingMixDraining => 5,
+    SoilTexture.unknown => 0,
+  };
+
+  /// La palabra que acompaña a los cinco puntos de drenaje. En masculino, por
+  /// «drenaje», y en términos de velocidad —no de cantidad— para que nadie lea
+  /// «alto drenaje» como «mucha agua».
+  String get drainageWordEs => switch (this) {
+    SoilTexture.sandy => 'Muy rápido',
+    SoilTexture.sandyLoam => 'Rápido',
+    SoilTexture.loam => 'Medio',
+    SoilTexture.clayLoam => 'Lento',
+    SoilTexture.clay => 'Muy lento',
+    SoilTexture.pottingMix => 'Lento',
+    SoilTexture.pottingMixDraining => 'Muy rápido',
+    SoilTexture.unknown => 'Variable',
+  };
+
+  /// La frase corta bajo los puntos de drenaje.
+  String get drainageSentenceEs => switch (this) {
+    SoilTexture.sandy => 'El agua se va casi de inmediato.',
+    SoilTexture.sandyLoam => 'El agua se infiltra rápido.',
+    SoilTexture.loam => 'El agua se infiltra a un ritmo moderado.',
+    SoilTexture.clayLoam => 'El agua tarda en bajar; cuidado con encharcar.',
+    SoilTexture.clay => 'El agua se queda arriba y se hacen charcos.',
+    SoilTexture.pottingMix => 'Drena solo por los orificios de la maceta.',
+    SoilTexture.pottingMixDraining => 'El agua atraviesa la mezcla enseguida.',
+    SoilTexture.unknown => 'Lo sabremos en cuanto definas tu tierra.',
+  };
+
+  /// Asset de la esfera. Los sustratos no tienen imagen propia porque **jamás
+  /// se muestran**: se asignan por hardware o por escala, nunca se preguntan.
+  String get assetPath => switch (this) {
+    SoilTexture.sandy => 'assets/soil_textures/soil_texture_sandy.png',
+    SoilTexture.sandyLoam =>
+      'assets/soil_textures/soil_texture_sandy_loam.png',
+    SoilTexture.loam => 'assets/soil_textures/soil_texture_loam.png',
+    SoilTexture.clayLoam => 'assets/soil_textures/soil_texture_clay_loam.png',
+    SoilTexture.clay => 'assets/soil_textures/soil_texture_clay.png',
+    SoilTexture.pottingMix ||
+    SoilTexture.pottingMixDraining ||
+    SoilTexture.unknown => 'assets/soil_textures/soil_texture_unknown.png',
+  };
+
+  /// True para los sustratos de maceta. Se derivan del equipo o de la escala,
+  /// nunca de una pregunta al usuario.
+  bool get isSubstrate =>
+      this == SoilTexture.pottingMix || this == SoilTexture.pottingMixDraining;
+
+  /// Lo que se ofrece en el carrusel: las cinco texturas minerales de ligera a
+  /// pesada, más «No estoy seguro». En este orden exacto.
+  static const List<SoilTexture> selectable = <SoilTexture>[
+    SoilTexture.sandy,
+    SoilTexture.sandyLoam,
+    SoilTexture.loam,
+    SoilTexture.clayLoam,
+    SoilTexture.clay,
+    SoilTexture.unknown,
+  ];
 
   String get id => name;
 
@@ -115,12 +311,26 @@ enum SoilTexture {
     }
     // Alias tolerantes: la app y BioG Admin han usado nombres distintos.
     return switch (v) {
-      'arenoso' || 'arenosa' || 'sand' => SoilTexture.sandy,
-      'franco_arenoso' || 'ligero' || 'ligera' => SoilTexture.sandyLoam,
-      'franco' || 'medio' || 'media' || 'loamy' => SoilTexture.loam,
-      'franco_arcilloso' || 'pesado' || 'pesada' => SoilTexture.clayLoam,
+      'arenoso' || 'arenosa' || 'sand' || 'sandy' => SoilTexture.sandy,
+      'franco_arenoso' ||
+      'franco-arenosa' ||
+      'ligero' ||
+      'ligera' => SoilTexture.sandyLoam,
+      'franco' ||
+      'franca' ||
+      'medio' ||
+      'media' ||
+      'loamy' => SoilTexture.loam,
+      'franco_arcilloso' ||
+      'franco-arcillosa' ||
+      'pesado' ||
+      'pesada' => SoilTexture.clayLoam,
       'arcilloso' || 'arcillosa' || 'barro' => SoilTexture.clay,
       'maceta' || 'sustrato' || 'potting' || 'pot' => SoilTexture.pottingMix,
+      'sustrato_drenante' ||
+      'drenante' ||
+      'potting_draining' ||
+      'cactus_mix' => SoilTexture.pottingMixDraining,
       _ => SoilTexture.unknown,
     };
   }
@@ -193,6 +403,31 @@ abstract final class SoilWaterScale {
       wiltingPointPct: 22,
       fieldCapacityPct: 62,
       saturationPct: 85,
+    ),
+    // ── Sustrato drenante ───────────────────────────────────────────────────
+    //
+    // NO son números inventados: se calibraron **hacia atrás** desde los rangos
+    // que cactus, nopal y suculentas ya tenían escritos y que son correctos
+    // hoy. Conectar el resolver sin hacer esto invertiría el consejo justo en
+    // el grupo donde regar de más es lo que los mata.
+    //
+    // Con MAD xerófito 0,80 y estas constantes, el resolver reproduce el
+    // catálogo vigente:
+    //
+    //   optimalMax = θcc                       = 52,0   (catálogo 48–54)
+    //   AD         = 52 − 4                    = 48
+    //   optimalMin = 52 − 0,80 × 48            = 13,6   (catálogo 10–14)
+    //   lowMax     = 52 − 1,50 × 0,80 × 48     = −5,6 → tope en θpmp = 4,0
+    //                                                   (catálogo 3–6)
+    //   highMin    = 0,90 × 78                 = 70,2   (catálogo 68–72)
+    //
+    // Donde el nuevo cálculo se aparta del catálogo lo hace hacia el lado
+    // seguro: exige regar antes en sábila (que la literatura pone cerca de
+    // capacidad de campo) y declara «drenando» antes en suculenta.
+    SoilTexture.pottingMixDraining: SoilWaterConstants(
+      wiltingPointPct: 4,
+      fieldCapacityPct: 52,
+      saturationPct: 78,
     ),
   };
 
@@ -297,6 +532,92 @@ abstract final class SoilWaterScale {
     if (wettedAreaM2PerPlant == null || wettedAreaM2PerPlant <= 0) return null;
     return mm * wettedAreaM2PerPlant;
   }
+
+  /// Clasifica una lectura en los **cinco** estados del modelo.
+  ///
+  /// Ver [SoilMoistureState] para por qué son cinco y no tres.
+  static SoilMoistureState stateOf({
+    required double vwcPct,
+    required SoilTexture texture,
+    required double allowableDepletionFraction,
+  }) {
+    final c = constantsOf(texture);
+    if (vwcPct >= waterloggingThresholdPct(texture)) {
+      return SoilMoistureState.waterlogged;
+    }
+    if (vwcPct > c.fieldCapacityPct) return SoilMoistureState.draining;
+
+    final depletion01 = 1.0 - availableWater01(vwcPct, texture);
+    if (depletion01 >= 1.0) return SoilMoistureState.belowWiltingPoint;
+    if (depletion01 >= allowableDepletionFraction) {
+      return SoilMoistureState.timeToIrrigate;
+    }
+    return SoilMoistureState.comfortable;
+  }
+}
+
+/// Los cinco estados de humedad del suelo.
+///
+/// ─────────────────────────────────────────────────────────────────────────────
+/// POR QUÉ CINCO Y NO TRES
+/// ─────────────────────────────────────────────────────────────────────────────
+///
+/// El modelo tiene **tres cotas separadas** —capacidad de campo, saturación y
+/// umbral de encharcamiento— y hay que usar las tres. Confundir «por encima de
+/// capacidad de campo» con «encharcado» genera exactamente la alarma falsa que
+/// este trabajo pretende eliminar.
+///
+/// El caso concreto: 18 % de humedad en suelo arenoso. Sus cotas son 12 / 38 /
+/// 34,2. Esa lectura está por encima de capacidad de campo pero **dieciséis
+/// puntos por debajo** del umbral de encharcamiento. Es el estado normal de un
+/// suelo unas horas después de un riego o de una lluvia: el agua gravitacional
+/// todavía se está yendo. Llamarlo anoxia es un error de lectura, no de sensor.
+enum SoilMoistureState {
+  /// Lectura ≥ umbral de encharcamiento. Riesgo real de anoxia y de enfermedad
+  /// de raíz. Es la alerta que hoy no existe.
+  waterlogged,
+
+  /// Por encima de capacidad de campo pero por debajo del umbral. Estado normal
+  /// tras un riego o una lluvia. **No es alarma.**
+  draining,
+
+  /// Agotamiento entre 0 y p. No hace falta regar.
+  comfortable,
+
+  /// Agotamiento ≥ p (coeficiente del cultivo, ajustado por etapa).
+  timeToIrrigate,
+
+  /// Agotamiento ≥ 1. Estrés severo: la planta ya no puede extraer agua.
+  belowWiltingPoint;
+
+  String get labelEs => switch (this) {
+    SoilMoistureState.waterlogged => 'Encharcado',
+    SoilMoistureState.draining => 'Drenando',
+    SoilMoistureState.comfortable => 'Cómodo',
+    SoilMoistureState.timeToIrrigate => 'Toca regar',
+    SoilMoistureState.belowWiltingPoint => 'Bajo punto de marchitez',
+  };
+
+  /// Lo que se le dice al agricultor, en su idioma y sin dramatizar el estado
+  /// que es normal.
+  String get farmerCopyEs => switch (this) {
+    SoilMoistureState.waterlogged =>
+      'El suelo está encharcado. Hay riesgo real de asfixia de raíz: no riegues '
+          'y revisa el drenaje.',
+    SoilMoistureState.draining =>
+      'El suelo tiene más agua de la que retiene. Es normal tras un riego o una '
+          'lluvia: el agua de más se está yendo sola.',
+    SoilMoistureState.comfortable => 'La humedad está donde debe. No hace falta regar.',
+    SoilMoistureState.timeToIrrigate => 'Toca regar.',
+    SoilMoistureState.belowWiltingPoint =>
+      'La planta ya no puede sacar agua del suelo. Riega en cuanto puedas.',
+  };
+
+  /// Solo el encharcamiento y el marchitamiento son alarma. Los otros tres son
+  /// información.
+  bool get isAlarm =>
+      this == SoilMoistureState.waterlogged ||
+      this == SoilMoistureState.belowWiltingPoint;
 }
 
 /// Eficiencias de aplicación por sistema de riego. Valores de referencia de

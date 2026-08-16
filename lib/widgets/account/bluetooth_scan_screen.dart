@@ -1,6 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/core/agro/cultivation_scale.dart';
+import 'package:bio_g/core/hardware/biog_serial.dart';
+
 class BluetoothScanScreen extends StatefulWidget {
   const BluetoothScanScreen({super.key});
 
@@ -9,17 +12,52 @@ class BluetoothScanScreen extends StatefulWidget {
 }
 
 class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
-  // Lista fake de dispositivos
-  final List<Map<String, String>> _devices = const [
-    {'id': 'BIOG-BLE-001', 'name': 'Bio-G Field #001'},
-    {'id': 'BIOG-BLE-002', 'name': 'Bio-G Huerto #002'},
-    {'id': 'BIOG-BLE-003', 'name': 'Bio-G Maceta #003'},
+  /// Lista simulada. Los nombres ya codificaban el modelo —«Bio-G Field»,
+  /// «Bio-G Huerto», «Bio-G Maceta»— pero el dato se tiraba al seleccionar:
+  /// el mapa que se devolvía no llevaba modelo. Ahora cada equipo trae su serie
+  /// real, y el modelo sale de ahí en vez de adivinarse del nombre.
+  final List<Map<String, String>> _devices = <Map<String, String>>[
+    <String, String>{
+      'id': '1c9a7f30-51b2-4a8e-9b64-2d0f7a51c001',
+      'name': 'Bio-G Campo #001',
+      'model': 'campo',
+      'serial': 'BIOG-C-2632-000001-?',
+    },
+    <String, String>{
+      'id': '1c9a7f30-51b2-4a8e-9b64-2d0f7a51c002',
+      'name': 'Bio-G Huerto #002',
+      'model': 'huerto',
+      'serial': 'BIOG-H-2632-000002-?',
+    },
+    <String, String>{
+      'id': '1c9a7f30-51b2-4a8e-9b64-2d0f7a51c003',
+      'name': 'Bio-G Maceta #003',
+      'model': 'maceta',
+      'serial': 'BIOG-M-2632-000003-?',
+    },
   ];
 
+  /// Serie bien formada (con su dígito de control) para cada modelo simulado.
+  String? _serialFor(String? modelId, int index) {
+    final model = deviceModelFromId(modelId);
+    if (model == null) return null;
+    return BioGSerial.build(
+      model: model,
+      year: 2026,
+      isoWeek: 32,
+      sequenceNumber: index + 1,
+    ).raw;
+  }
+
   void _selectDevice(Map<String, String> d) {
-    Navigator.pop<Map<String, dynamic>>(context, {
+    final index = _devices.indexOf(d);
+    Navigator.pop<Map<String, dynamic>>(context, <String, dynamic>{
       'id': d['id'] ?? 'BIOG-BLE-XXX',
       'name': d['name'] ?? 'Bio-G',
+      // El modelo viaja: es lo que decide el medio de cultivo y lo que hasta
+      // hoy se perdía entre esta pantalla y `addDevice`.
+      'model': d['model'],
+      'serial': _serialFor(d['model'], index < 0 ? 0 : index),
       'source': 'bluetooth',
     });
   }

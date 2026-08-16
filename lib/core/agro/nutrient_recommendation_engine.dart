@@ -1088,6 +1088,7 @@ class NutrientRecommendationEngine {
         ph: ph,
         ec: ec,
         soilMoisturePct: soilMoisturePct,
+        moistureTarget: targets?.moistureRaw,
       );
     }
     if (_isPistachioTreeCrop(crop)) {
@@ -1099,6 +1100,7 @@ class NutrientRecommendationEngine {
         ph: ph,
         ec: ec,
         soilMoisturePct: soilMoisturePct,
+        moistureTarget: targets?.moistureRaw,
       );
     }
     if (_isOrangeTreeCrop(crop)) {
@@ -1110,6 +1112,7 @@ class NutrientRecommendationEngine {
         ph: ph,
         ec: ec,
         soilMoisturePct: soilMoisturePct,
+        moistureTarget: targets?.moistureRaw,
       );
     }
     if (_isLemonTreeCrop(crop)) {
@@ -1121,6 +1124,7 @@ class NutrientRecommendationEngine {
         ph: ph,
         ec: ec,
         soilMoisturePct: soilMoisturePct,
+        moistureTarget: targets?.moistureRaw,
       );
     }
     if (_isMangoTreeCrop(crop)) {
@@ -1132,6 +1136,7 @@ class NutrientRecommendationEngine {
         ph: ph,
         ec: ec,
         soilMoisturePct: soilMoisturePct,
+        moistureTarget: targets?.moistureRaw,
       );
     }
     if (_isAvocadoTreeCrop(crop)) {
@@ -1143,6 +1148,7 @@ class NutrientRecommendationEngine {
         ph: ph,
         ec: ec,
         soilMoisturePct: soilMoisturePct,
+        moistureTarget: targets?.moistureRaw,
       );
     }
 
@@ -4732,6 +4738,14 @@ class NutrientRecommendationEngine {
     double? ph,
     double? ec,
     double? soilMoisturePct,
+    /// La banda de humedad YA derivada de la textura del suelo
+    /// (`targets.moistureRaw`). Los umbrales de agua de las guardas salen de
+    /// aquí en vez de estar escritos a mano: un `< 45 %` fijo se dispara en
+    /// CUALQUIER suelo mineral bien regado —la capacidad de campo más alta que
+    /// existe es 40— y un `> 90 %` no lo alcanza ninguna textura —la saturación
+    /// máxima es 53—. Opcional, con el literal viejo de respaldo: sin objetivos
+    /// el comportamiento es exactamente el de antes.
+    AgroRange? moistureTarget,
   }) {
     final isFruitFill = stage.contains('fruit_fill');
     final isFruit =
@@ -4740,13 +4754,15 @@ class NutrientRecommendationEngine {
         stage.contains('harvest');
 
     // 1) Saturación: oxígeno/raíz/drenaje primero (no más agua ni fertilizante).
-    if (soilMoisturePct != null && soilMoisturePct > 90) {
+    if (soilMoisturePct != null &&
+        soilMoisturePct >= (moistureTarget?.highMin ?? 90)) {
       return 'El suelo está saturado para el nogal. Más agua o fertilizante '
           'empeora el oxígeno de la raíz: revisa drenaje y aireación antes de '
           'tocar NPK.';
     }
     // 2) Humedad crítica baja: agua/absorción primero.
-    if (soilMoisturePct != null && soilMoisturePct < 45) {
+    if (soilMoisturePct != null &&
+        soilMoisturePct < (moistureTarget?.lowMax ?? 45)) {
       final tail = isFruitFill
           ? ' En llenado, la nuez no perdona falta de agua: se juega el llenado '
                 'de almendra.'
@@ -4793,6 +4809,8 @@ class NutrientRecommendationEngine {
     double? ph,
     double? ec,
     double? soilMoisturePct,
+    /// Ver `_walnutSoilGuard`.
+    AgroRange? moistureTarget,
   }) {
     // GUARDAS de Nogal (doc 05 §12.2 "bloqueos duros", §3.1-§3.4): agua, raíz,
     // salinidad y pH MANDAN antes que NPK. Si el contexto de suelo está fuera de
@@ -4803,6 +4821,7 @@ class NutrientRecommendationEngine {
       ph: ph,
       ec: ec,
       soilMoisturePct: soilMoisturePct,
+      moistureTarget: moistureTarget,
     );
     if (guard != null) return guard;
 
@@ -4934,19 +4953,23 @@ class NutrientRecommendationEngine {
     double? ph,
     double? ec,
     double? soilMoisturePct,
+    /// Ver `_walnutSoilGuard`.
+    AgroRange? moistureTarget,
   }) {
     final isFruitFill = stage.contains('fruit_fill');
 
     // 1) Saturación: oxígeno/raíz/drenaje primero. El pistache NO tolera mal
     // drenaje (no más agua ni fertilizante).
-    if (soilMoisturePct != null && soilMoisturePct > 90) {
+    if (soilMoisturePct != null &&
+        soilMoisturePct >= (moistureTarget?.highMin ?? 90)) {
       return 'El suelo está saturado para el pistache, que no tolera mal '
           'drenaje. Más agua o fertilizante empeora el oxígeno de la raíz: '
           'revisa drenaje y aireación antes de tocar NPK.';
     }
 
     // 2) Humedad crítica baja: estabilizar agua antes que fertilizar.
-    if (soilMoisturePct != null && soilMoisturePct < 45) {
+    if (soilMoisturePct != null &&
+        soilMoisturePct < (moistureTarget?.lowMax ?? 45)) {
       final tail = isFruitFill
           ? ' En llenado, el K sin agua no llena el pistache: se juega el '
                 'kernel y la apertura.'
@@ -4996,12 +5019,15 @@ class NutrientRecommendationEngine {
     double? ph,
     double? ec,
     double? soilMoisturePct,
+    /// Ver `_walnutSoilGuard`.
+    AgroRange? moistureTarget,
   }) {
     final guard = _pistachioSoilGuard(
       stage: stage,
       ph: ph,
       ec: ec,
       soilMoisturePct: soilMoisturePct,
+      moistureTarget: moistureTarget,
     );
     if (guard != null) return guard;
 
@@ -5152,13 +5178,16 @@ class NutrientRecommendationEngine {
     double? ph,
     double? ec,
     double? soilMoisturePct,
+    /// Ver `_walnutSoilGuard`.
+    AgroRange? moistureTarget,
   }) {
     final isFruitFill = stage.contains('fruit_fill');
     final isFruitSet = stage.contains('fruit_set');
 
     // 1) Saturación: oxígeno/raíz/drenaje primero. Suelo saturado favorece
     // Phytophthora/gomosis y anoxia; no más agua ni fertilizante.
-    if (soilMoisturePct != null && soilMoisturePct > 90) {
+    if (soilMoisturePct != null &&
+        soilMoisturePct >= (moistureTarget?.highMin ?? 90)) {
       return 'El suelo está saturado para el naranjo: eso favorece gomosis, '
           'pudrición de raíz y anoxia. Marchito con suelo mojado NO es falta de '
           'agua: revisa drenaje, cuello y raíz antes de tocar NPK o regar más.';
@@ -5166,7 +5195,8 @@ class NutrientRecommendationEngine {
 
     // 2) Humedad crítica baja: estabilizar agua antes que fertilizar. En
     // floración/cuajado/llenado el naranjo no perdona el estrés hídrico.
-    if (soilMoisturePct != null && soilMoisturePct < 45) {
+    if (soilMoisturePct != null &&
+        soilMoisturePct < (moistureTarget?.lowMax ?? 45)) {
       final tail = isFruitFill
           ? ' En llenado, el K sin agua no da calibre ni jugo: se juega la '
                 'naranja.'
@@ -5223,12 +5253,15 @@ class NutrientRecommendationEngine {
     double? ph,
     double? ec,
     double? soilMoisturePct,
+    /// Ver `_walnutSoilGuard`.
+    AgroRange? moistureTarget,
   }) {
     final guard = _orangeSoilGuard(
       stage: stage,
       ph: ph,
       ec: ec,
       soilMoisturePct: soilMoisturePct,
+      moistureTarget: moistureTarget,
     );
     if (guard != null) return guard;
 
@@ -5382,6 +5415,8 @@ class NutrientRecommendationEngine {
     double? ec,
     double? soilMoisturePct,
     double? resistance,
+    /// Ver `_walnutSoilGuard`.
+    AgroRange? moistureTarget,
   }) {
     final isCriticalRepro =
         stage.contains('flower') ||
@@ -5392,7 +5427,8 @@ class NutrientRecommendationEngine {
 
     // 1) Saturación: oxígeno/raíz/drenaje primero. Suelo saturado favorece
     // gomosis/Phytophthora y anoxia; no más agua ni fertilizante.
-    if (soilMoisturePct != null && soilMoisturePct >= 92) {
+    if (soilMoisturePct != null &&
+        soilMoisturePct >= (moistureTarget?.highMin ?? 92)) {
       return 'El suelo está saturado para el limonero: eso favorece raíz '
           'asfixiada, gomosis y mala absorción. Marchito con suelo mojado NO es '
           'falta de agua: revisa drenaje y cuello antes de tocar NPK o regar '
@@ -5401,8 +5437,12 @@ class NutrientRecommendationEngine {
 
     // 2) Humedad crítica baja: estabilizar agua antes que fertilizar. En
     // floración/cuajado/llenado el limón no perdona el estrés hídrico.
+    // La banda ya aprieta sola en ventana crítica —la política hídrica baja
+    // el agotamiento admisible un 30 %—, así que la distinción 50/42 escrita
+    // a mano deja de hacer falta cuando hay objetivos.
     if (soilMoisturePct != null &&
-        soilMoisturePct < (isCriticalRepro ? 50 : 42)) {
+        soilMoisturePct <
+            (moistureTarget?.lowMax ?? (isCriticalRepro ? 50 : 42))) {
       final tail = isFruitFill
           ? ' En llenado, con flor, frutito o llenado la falta de agua tumba '
                 'amarre y calibre aunque el NPK se vea corregible.'
@@ -5465,12 +5505,15 @@ class NutrientRecommendationEngine {
     double? ph,
     double? ec,
     double? soilMoisturePct,
+    /// Ver `_walnutSoilGuard`.
+    AgroRange? moistureTarget,
   }) {
     final guard = _lemonSoilGuard(
       stage: stage,
       ph: ph,
       ec: ec,
       soilMoisturePct: soilMoisturePct,
+      moistureTarget: moistureTarget,
     );
     if (guard != null) return guard;
 
@@ -5626,6 +5669,8 @@ class NutrientRecommendationEngine {
     double? ec,
     double? soilMoisturePct,
     double? resistance,
+    /// Ver `_walnutSoilGuard`.
+    AgroRange? moistureTarget,
   }) {
     final isCriticalRepro =
         stage.contains('flower') ||
@@ -5636,7 +5681,8 @@ class NutrientRecommendationEngine {
 
     // 1) Saturación: oxígeno/raíz/drenaje primero. Suelo saturado favorece raíz
     // asfixiada y enfermedad; no más agua ni fertilizante.
-    if (soilMoisturePct != null && soilMoisturePct >= 90) {
+    if (soilMoisturePct != null &&
+        soilMoisturePct >= (moistureTarget?.highMin ?? 90)) {
       return 'El suelo está saturado para el mango: eso favorece raíz asfixiada, '
           'pudrición y mala absorción. Marchito con suelo mojado NO es falta de '
           'agua: revisa drenaje y raíz antes de tocar NPK o regar más.';
@@ -5644,7 +5690,9 @@ class NutrientRecommendationEngine {
 
     // 2) Humedad crítica baja en reproducción: estabilizar agua antes que
     // fertilizar. En floración/cuajado/llenado el mango no perdona el estrés.
-    if (isCriticalRepro && soilMoisturePct != null && soilMoisturePct < 50) {
+    if (isCriticalRepro &&
+        soilMoisturePct != null &&
+        soilMoisturePct < (moistureTarget?.lowMax ?? 50)) {
       final tail = isFruitFill
           ? ' En llenado, la falta de agua se pega en calibre y calidad aunque '
                 'el K se vea corregible.'
@@ -5708,12 +5756,15 @@ class NutrientRecommendationEngine {
     double? ph,
     double? ec,
     double? soilMoisturePct,
+    /// Ver `_walnutSoilGuard`.
+    AgroRange? moistureTarget,
   }) {
     final guard = _mangoSoilGuard(
       stage: stage,
       ph: ph,
       ec: ec,
       soilMoisturePct: soilMoisturePct,
+      moistureTarget: moistureTarget,
     );
     if (guard != null) return guard;
 
@@ -5885,6 +5936,8 @@ class NutrientRecommendationEngine {
     double? ec,
     double? soilMoisturePct,
     double? resistance,
+    /// Ver `_walnutSoilGuard`.
+    AgroRange? moistureTarget,
   }) {
     final isRootEstablish = stage.contains('root_establish');
     final isCriticalRepro =
@@ -5897,7 +5950,8 @@ class NutrientRecommendationEngine {
 
     // 1) Saturación: oxígeno/raíz/drenaje primero. En aguacate el suelo saturado
     // favorece raíz asfixiada y Phytophthora; más agua puede EMPEORAR.
-    if (soilMoisturePct != null && soilMoisturePct >= 90) {
+    if (soilMoisturePct != null &&
+        soilMoisturePct >= (moistureTarget?.highMin ?? 90)) {
       return 'El suelo está saturado para el aguacate: eso favorece raíz '
           'asfixiada, Phytophthora y mala absorción. Marchito con suelo mojado '
           'NO es falta de agua: revisa drenaje y raíz antes de tocar NPK o '
@@ -5909,7 +5963,7 @@ class NutrientRecommendationEngine {
     if (isCriticalRepro &&
         !isRootEstablish &&
         soilMoisturePct != null &&
-        soilMoisturePct < 50) {
+        soilMoisturePct < (moistureTarget?.lowMax ?? 50)) {
       final tail = isFruitFill
           ? ' En llenado, la falta de agua se pega en calibre y materia seca '
                 'aunque el K se vea corregible.'
@@ -5976,12 +6030,15 @@ class NutrientRecommendationEngine {
     double? ph,
     double? ec,
     double? soilMoisturePct,
+    /// Ver `_walnutSoilGuard`.
+    AgroRange? moistureTarget,
   }) {
     final guard = _avocadoSoilGuard(
       stage: stage,
       ph: ph,
       ec: ec,
       soilMoisturePct: soilMoisturePct,
+      moistureTarget: moistureTarget,
     );
     if (guard != null) return guard;
 

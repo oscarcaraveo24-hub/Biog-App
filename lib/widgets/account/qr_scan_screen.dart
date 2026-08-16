@@ -1,8 +1,34 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/core/agro/cultivation_scale.dart';
+import 'package:bio_g/core/hardware/biog_serial.dart';
+
 class QrScanScreen extends StatelessWidget {
   const QrScanScreen({super.key});
+
+  /// Contenido simulado de la etiqueta, con el formato real —el mismo que va a
+  /// imprimirse—. El stub emite lo que emitirá el escáner de verdad para que el
+  /// resto de la cadena ya esté ejercitada cuando llegue la cámara: hasta hoy
+  /// devolvía `BIOG-QR-001`, que ni es un UUID válido ni lleva modelo dentro,
+  /// así que el repositorio lo descartaba y el equipo nacía sin identidad.
+  static String get simulatedQrContent {
+    // Campo, no maceta. Un stub que fija el modelo decide el MEDIO DE CULTIVO
+    // de quien lo escanea: con `maceta` aquí, cualquier alta de parcela abierta
+    // terminaba con perfil de sustrato y su textura mineral declarada quedaba
+    // guardada pero ignorada. Cuando esta pantalla lea la cámara de verdad, el
+    // modelo saldrá de la etiqueta y esta constante desaparece.
+    final serial = BioGSerial.build(
+      model: BioGDeviceModel.campo,
+      year: 2026,
+      isoWeek: 32,
+      sequenceNumber: 1,
+    );
+    return BioGQrPayload.encodeUrl(
+      serial: serial,
+      telemetryDeviceId: '9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,12 +115,17 @@ class QrScanScreen extends StatelessWidget {
                         _PrimaryButton(
                           label: 'Simular QR leído',
                           onTap: () {
-                            // Regresamos datos fake a AddBioGScreen
-                            Navigator.pop(context, {
-                              'id': 'BIOG-QR-001',
-                              'name': 'Bio-G QR #001',
-                              'source': 'qr',
-                            });
+                            // El payload se interpreta con el mismo parser que
+                            // usará la cámara. Así el modelo, la serie y el
+                            // UUID de telemetría viajan enteros hasta el
+                            // almacén, en vez de perderse en el camino.
+                            final payload = BioGQrPayload.parse(
+                              simulatedQrContent,
+                            );
+                            Navigator.pop(
+                              context,
+                              payload.toScanResult(source: 'qr'),
+                            );
                           },
                         ),
                       ],

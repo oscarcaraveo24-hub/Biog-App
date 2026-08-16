@@ -31,6 +31,27 @@ class BioGGlassCard extends StatelessWidget {
   /// donde la sombra default puede verse demasiado pesada.
   final List<BoxShadow>? boxShadows;
 
+  /// Si se dibuja el desenfoque de lo que hay DETRÁS de la tarjeta.
+  ///
+  /// ── Por qué se puede apagar sin que se note ──────────────────────────────
+  ///
+  /// `BackdropFilter` es de lo más caro que se puede pedir en Flutter: obliga
+  /// al compositor a leer todo lo ya pintado debajo, desenfocarlo y guardarlo
+  /// en una capa aparte, una vez por tarjeta y por frame.
+  ///
+  /// Con el fondo por defecto (`0xFFF2F4F6` al 92 %) lo desenfocado aporta el
+  /// 8 % del color final. Sobre un degradado suave —el fondo de las pantallas
+  /// de clima— la diferencia entre ese fondo y su versión desenfocada no llega
+  /// a una unidad de RGB, y ese 8 % la deja en centésimas: no es que se note
+  /// poco, es que no se puede representar en 8 bits por canal.
+  ///
+  /// Donde SÍ importa es sobre imágenes con detalle fino (el cielo del fondo
+  /// compartido) o con fondos más translúcidos. Por eso el valor por defecto
+  /// es true y esto se apaga a mano, tarjeta por tarjeta, no de forma global.
+  ///
+  /// Nada más cambia: mismo recorte, mismo color, mismo borde, mismas sombras.
+  final bool useBackdropBlur;
+
   const BioGGlassCard({
     super.key,
     required this.child,
@@ -41,6 +62,7 @@ class BioGGlassCard extends StatelessWidget {
     this.borderColor,
     this.blurSigma = 8,
     this.boxShadows,
+    this.useBackdropBlur = true,
   });
 
   @override
@@ -71,6 +93,16 @@ class BioGGlassCard extends StatelessWidget {
           ),
         ];
 
+    final Widget surface = Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        color: bg,
+        border: Border.all(color: br),
+      ),
+      child: child,
+    );
+
     return Container(
       margin: margin,
       decoration: BoxDecoration(
@@ -79,18 +111,12 @@ class BioGGlassCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(radius),
-              color: bg,
-              border: Border.all(color: br),
-            ),
-            child: child,
-          ),
-        ),
+        child: useBackdropBlur
+            ? BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+                child: surface,
+              )
+            : surface,
       ),
     );
   }

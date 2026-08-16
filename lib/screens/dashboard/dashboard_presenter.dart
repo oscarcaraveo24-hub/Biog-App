@@ -9,6 +9,7 @@ import 'package:bio_g/core/agro/event_engine.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
 import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart'; // <-- IMPORTANTE: Lo usamos para las dosis en vivo
 import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
+import 'package:bio_g/core/agro/water/moisture_target_resolver.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
 import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
@@ -296,9 +297,12 @@ class DashboardScreenPresenter {
                   targets: targets,
                   cropKey: runtime.cropKeyName,
                 )
-              : _calcPreSowingSoilHealth(telemetry));
+              : _calcPreSowingSoilHealth(telemetry, runtime.resolvedMoisture));
 
-    final String moistureValue = telemetry == null
+    // Sin bandera de presencia el número era un 0 % fabricado, y quedaba junto
+    // a un estado que ya decía «—». Dos lecturas del mismo dato en el mismo
+    // renglón.
+    final String moistureValue = (telemetry == null || !telemetry.hasSoilMoistureData)
         ? '--'
         : '${telemetry.soilMoisturePct.toStringAsFixed(0)}%';
     final String tempValue = telemetry == null
@@ -322,10 +326,19 @@ class DashboardScreenPresenter {
               : ((targets != null)
                     ? _moistureStatusFromTargets(
                         soilMoisturePct: telemetry.soilMoisturePct,
+                        hasData: telemetry.hasSoilMoistureData,
                         targets: targets,
                       )
                     : 'Monitoreo'))
-        : _preSowingMoistureStatus(telemetry.soilMoisturePct);
+        // Sin lectura no se etiqueta el suelo. La cifra de al lado ya dice
+        // «--»; poner «Seco» a su lado sería dar dos lecturas del mismo dato en
+        // el mismo renglón, que es justo el defecto que se está cerrando.
+        : !telemetry.hasSoilMoistureData
+        ? '—'
+        : _preSowingMoistureStatus(
+            telemetry.soilMoisturePct,
+            runtime.resolvedMoisture,
+          );
 
     final String tempStatus = telemetry == null
         ? '—'
@@ -416,7 +429,7 @@ class DashboardScreenPresenter {
           cultivationScaleId: scaleId,
           ph: telemetry.ph,
           ec: telemetry.ec,
-          soilMoisturePct: telemetry.soilMoisturePct,
+          soilMoisturePct: telemetry.hasSoilMoistureData ? telemetry.soilMoisturePct : null,
         );
       }
 
@@ -584,7 +597,13 @@ class DashboardScreenPresenter {
                   : '—');
       }
     } else if (isPlanned) {
-      irrigationTitle = _plannedInsightTitle(plannedDaysLeft, telemetry);
+      irrigationTitle = _plannedInsightTitle(
+        plannedDaysLeft,
+        telemetry,
+        // Punto de reposición de SU textura, no un 25 % universal.
+        preSowingDryThresholdPct: runtime.resolvedMoisture?.range.optimalMin,
+        hasMoistureReading: telemetry?.hasSoilMoistureData ?? false,
+      );
       irrigationSubtitle = isOrnamental
           ? 'Preparación del sustrato antes de plantarla'
           : 'Preparación previa a siembra basada en condición actual del suelo';
@@ -1153,9 +1172,24 @@ class DashboardScreenPresenter {
       if (av.band != bv.band) return false;
       if (av.labelEs != bv.labelEs) return false;
       if ((av.score01 - bv.score01).abs() > 0.0001) return false;
-      if (av.value != bv.value) return false;
+      // NaN != NaN es TRUE en IEEE-754. Un sensor ausente ahora produce un
+      // valor no finito —es la forma de decir «sin dato»— y con la comparación
+      // cruda esta función devolvía false en cada build: el Panel reescribía el
+      // eval en el almacén, notificaba, subía el score a la nube y volvía a
+      // construirse, en bucle. Dos valores «sin dato» son el mismo valor.
+      if (!_sameMetricValue(av.value, bv.value)) return false;
     }
     return true;
+  }
+
+  /// Igualdad de un valor de métrica que puede ser «sin dato».
+  ///
+  /// Dos lecturas ausentes son la misma lectura ausente, aunque IEEE-754 diga
+  /// que `NaN != NaN`.
+  bool _sameMetricValue(double? a, double? b) {
+    if (a == null || b == null) return a == b;
+    if (a.isNaN && b.isNaN) return true;
+    return a == b;
   }
 
   bool _sameAlertsState(AlertsState a, AlertsState b) {
@@ -1182,7 +1216,10 @@ class DashboardScreenPresenter {
     return 'BioG';
   }
 
-  double _calcPreSowingSoilHealth(BioGTelemetry? telemetry) {
+  double _calcPreSowingSoilHealth(
+    BioGTelemetry? telemetry,
+    ResolvedMoistureTarget? resolved,
+  ) {
     if (telemetry == null) return 0.0;
     double score(
       double val,
@@ -1197,19 +1234,64 @@ class DashboardScreenPresenter {
       return ((hMax - val) / (hMax - okMax)).clamp(0.0, 1.0);
     }
 
-    return ((score(telemetry.soilMoisturePct, 28, 55, 5, 85) +
-                score(telemetry.ph, 5.8, 7.2, 4.5, 8.8) +
-                score(telemetry.resistance, 0.3, 1.2, 0.1, 2.8) +
-                score(telemetry.ec, 0.8, 2.0, 0.4, 3.2)) /
-            4.0)
-        .clamp(0.0, 1.0);
+    // La humedad se puntúa contra la banda de SU textura, no contra 28–55 con
+    // extremos en 5 y 85 —una banda que empieza en la capacidad de campo del
+    // franco y termina por encima de la saturación de cualquier suelo mineral—.
+    // El resto de las variables no dependen de la textura y se quedan como
+    // están: la textura no cambia lo que significa un pH de 5,8.
+    // Sin lectura no se puntúa: un 0.0 fabricado arrastraba un cuarto del
+    // anillo hacia abajo. Se reparte el peso entre las variables que sí
+    // reportaron.
+    final bool hasMoisture = telemetry.hasSoilMoistureData;
+    final AgroRange? mr = resolved?.range;
+    final double moistureScore = !hasMoisture
+        ? 0.0
+        : mr == null
+        ? score(telemetry.soilMoisturePct, 28, 55, 5, 85)
+        : score(
+            telemetry.soilMoisturePct,
+            mr.optimalMin,
+            mr.optimalMax,
+            mr.lowMax,
+            mr.highMin,
+          );
+
+    final double rest =
+        score(telemetry.ph, 5.8, 7.2, 4.5, 8.8) +
+        score(telemetry.resistance, 0.3, 1.2, 0.1, 2.8) +
+        score(telemetry.ec, 0.8, 2.0, 0.4, 3.2);
+
+    return ((moistureScore + rest) / (hasMoisture ? 4.0 : 3.0)).clamp(0.0, 1.0);
   }
 
-  String _preSowingMoistureStatus(double value) => value < 25
-      ? 'Seco'
-      : value > 65
-      ? 'Húmedo'
-      : 'Apta';
+  /// Estado del suelo antes de sembrar, en la escala de SU tierra.
+  ///
+  /// Los cortes anteriores —seco por debajo de 25, húmedo por encima de 65—
+  /// eran absolutos y por eso significaban cinco cosas distintas según el
+  /// suelo. En arena, 25 % está muy por encima de la capacidad de campo (12 %)
+  /// y el panel diría «Apta» sobre un suelo que en realidad está drenando; en
+  /// arcilla, 25 % está por debajo del punto de marchitez (25 %) y el panel
+  /// diría «Apta» sobre un suelo donde la planta ya no puede extraer agua.
+  ///
+  /// Ahora los cortes salen del punto de reposición y de la capacidad de campo
+  /// de la textura declarada. Sin textura resuelta se conservan los valores
+  /// antiguos, que es el comportamiento anterior y no una regresión.
+  String _preSowingMoistureStatus(
+    double value,
+    ResolvedMoistureTarget? resolved,
+  ) {
+    if (resolved == null) {
+      return value < 25
+          ? 'Seco'
+          : value > 65
+          ? 'Húmedo'
+          : 'Apta';
+    }
+    final range = resolved.range;
+    if (value < range.optimalMin) return 'Seco';
+    if (value > range.optimalMax) return 'Húmedo';
+    return 'Apta';
+  }
   String _preSowingPhStatus(double value) => value < 5.8
       ? 'Bajo'
       : value > 7.2
@@ -1221,14 +1303,20 @@ class DashboardScreenPresenter {
       ? 'Suelto'
       : 'Apto';
 
-  String _plannedInsightTitle(int plannedDaysLeft, BioGTelemetry? telemetry) {
+  String _plannedInsightTitle(
+    int plannedDaysLeft,
+    BioGTelemetry? telemetry, {
+    double? preSowingDryThresholdPct,
+    bool hasMoistureReading = true,
+  }) {
     if (telemetry == null)
       return plannedDaysLeft <= 0
           ? 'Valida el suelo antes de sembrar'
           : 'Monitorea condiciones antes de la siembra';
     if (telemetry.resistance > 2.0)
       return 'La resistencia del suelo sigue alta para siembra';
-    if (telemetry.soilMoisturePct < 25)
+    if (hasMoistureReading &&
+        telemetry.soilMoisturePct < (preSowingDryThresholdPct ?? 25))
       return 'Aumenta humedad antes de sembrar';
     if (plannedDaysLeft <= 0)
       return 'Condiciones cercanas para iniciar siembra';
@@ -1294,7 +1382,11 @@ class DashboardScreenPresenter {
   String _moistureStatusFromTargets({
     required double soilMoisturePct,
     required StageTargets targets,
+    bool hasData = true,
   }) {
+    // Un canal que no midió no tiene estado. El 0.0 sintetizado caería en
+    // «Saturacion» invertido o en el extremo bajo, según el rango.
+    if (!hasData) return '—';
     final range = targets.moistureRaw;
     if (soilMoisturePct > range.highMin) return 'Saturacion';
     return _rawMetricStatusFromTargets(value: soilMoisturePct, range: range);

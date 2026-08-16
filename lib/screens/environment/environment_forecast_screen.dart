@@ -1,4 +1,36 @@
 // lib/screens/environment/environment_forecast_screen.dart
+//
+// Pronóstico de la semana.
+//
+// ═════════════════════════════════════════════════════════════════════════════
+// POR QUÉ SE SENTÍA TRABADA AL ABRIR
+// ═════════════════════════════════════════════════════════════════════════════
+//
+// Esta pantalla descargaba SIEMPRE sus siete días en `initState`, aunque el
+// padre acabara de descargar exactamente los mismos datos. La secuencia real
+// era:
+//
+//   toque en la tarjeta
+//     → empieza la transición de página (340 ms)
+//     → `initState` lanza una petición HTTP idéntica a la de Entorno
+//     → se pintan 7 esqueletos
+//     → llega la respuesta, se decodifica el JSON EN EL HILO DE LA INTERFAZ
+//     → se reemplazan los 7 esqueletos por 7 filas
+//     → arranca la animación escalonada de 820 ms
+//
+// El decodificado caía casi siempre en mitad de la transición, y cada fila era
+// una tarjeta con `BackdropFilter` y tres sombras grandes animándose a la vez.
+//
+// Ahora Entorno pide los siete días en la misma llamada que ya hacía —la
+// petición a Open-Meteo siempre trajo siete, solo que el servicio tiraba
+// cuatro— y esta pantalla los recibe hechos. No hay descarga, no hay
+// esqueletos y no hay JSON compitiendo con la animación: la lista está pintada
+// en el primer fotograma. Solo se pide a la red si el padre llega sin datos
+// suficientes, que es el caso raro.
+//
+// La presentación no cambió: mismos widgets, mismos colores, mismas medidas.
+
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -53,49 +85,88 @@ class EnvironmentForecastScreen extends StatefulWidget {
 
 class _EnvironmentForecastScreenState extends State<EnvironmentForecastScreen>
     with SingleTickerProviderStateMixin {
-  late final Future<List<EnvironmentDaily>> _futureDays7;
+  static const int _kDays = 7;
+
+  /// Lo que se pinta. Nace con lo que trajo el padre.
+  late List<EnvironmentDaily> _week = widget.days.take(_kDays).toList();
+
+  /// Solo true mientras se completa una semana incompleta.
+  bool _loading = false;
+
+  /// True si el intento de completar falló. La lista que hubiera se sigue
+  /// enseñando: media semana real vale más que siete esqueletos.
+  bool _refreshFailed = false;
 
   late final AnimationController _listAnim;
-  int _lastAnimatedCount = -1;
+
+  /// Invalida respuestas que lleguen después de que la pantalla se cierre.
+  bool _disposed = false;
+
+  bool get _needsFetch => _week.length < _kDays;
 
   @override
   void initState() {
     super.initState();
 
-    // ✅ Esta pantalla SIEMPRE pide 7 días reales.
-    _futureDays7 = _fetch7Days();
-
-    // ✅ controlador para animación stagger de rows (cuando YA tenga data real)
     _listAnim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 820),
     );
+
+    if (_needsFetch) {
+      _loading = _week.isEmpty;
+      unawaited(_completeWeek());
+    }
+
+    // Con datos en mano la animación puede arrancar ya: no hay nada que
+    // esperar. Antes se disparaba desde `build`, con un `addPostFrameCallback`
+    // por reconstrucción — un efecto secundario dentro del método que solo
+    // debería describir la interfaz.
+    if (_week.isNotEmpty) _startListAnim();
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _listAnim.dispose();
     super.dispose();
   }
 
-  Future<List<EnvironmentDaily>> _fetch7Days() async {
-    final payload = await const EnvironmentService().fetchEnvironment(
-      location: widget.location,
-      dailyLimit: 7,
-    );
-    return payload.nextDays;
-  }
-
-  void _restartListAnimIfNeeded(int count) {
-    if (_lastAnimatedCount == count) return;
-    _lastAnimatedCount = count;
-
+  void _startListAnim() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _listAnim.stop();
-      _listAnim.value = 0;
-      _listAnim.forward();
+      _listAnim
+        ..stop()
+        ..value = 0
+        ..forward();
     });
+  }
+
+  /// Completa la semana cuando el padre no traía siete días.
+  ///
+  /// Caso raro: Entorno ya los pide todos. Queda como red de seguridad para
+  /// una entrada con la caché a medias o con el pronóstico del padre fallado.
+  Future<void> _completeWeek() async {
+    try {
+      final payload = await const EnvironmentService().fetchEnvironment(
+        location: widget.location,
+        dailyLimit: _kDays,
+      );
+      if (_disposed || !mounted) return;
+
+      setState(() {
+        _week = payload.nextDays.take(_kDays).toList();
+        _loading = false;
+        _refreshFailed = false;
+      });
+      if (_week.isNotEmpty) _startListAnim();
+    } catch (_) {
+      if (_disposed || !mounted) return;
+      setState(() {
+        _loading = false;
+        _refreshFailed = true;
+      });
+    }
   }
 
   DateTime _dateForIndex(int i) {
@@ -226,6 +297,10 @@ class _EnvironmentForecastScreenState extends State<EnvironmentForecastScreen>
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.of(context).viewPadding.bottom;
 
+    final bool isLoading = _loading;
+    final bool hasRefreshError = _refreshFailed;
+    final List<EnvironmentDaily> week = _week;
+
     return Scaffold(
       extendBody: true,
       backgroundColor: Colors.transparent,
@@ -275,180 +350,159 @@ class _EnvironmentForecastScreenState extends State<EnvironmentForecastScreen>
                 const SizedBox(height: 10),
 
                 Expanded(
-                  child: FutureBuilder<List<EnvironmentDaily>>(
-                    future: _futureDays7,
-                    builder: (context, snap) {
-                      final isLoading =
-                          snap.connectionState == ConnectionState.waiting;
-                      final hasRefreshError = !isLoading && snap.hasError;
+                  child: CustomScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    slivers: [
+                      // ================= HEADER CARDS =================
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: EnvironmentForecastScreen.kSide,
+                        ),
+                        sliver: SliverToBoxAdapter(
+                          child: Column(
+                            children: [
+                              EnvironmentLocationCard(
+                                fieldLabel: widget.location.fieldName,
+                                zoneLabel: widget.location.zoneLabel,
+                                updatedLabel: _updatedLabel(
+                                  widget.location.updatedAt,
+                                ),
+                                leafIconScale: 0.78,
+                                locationIconScale: 1.55,
+                              ),
+                              const SizedBox(height: 10),
 
-                      // ✅ FIX “3 → 7”:
-                      // - Mientras carga: NO usamos widget.days (evita ver 3 y luego 7)
-                      // - Mostramos skeletons (7 filas) y ya.
-                      final List<EnvironmentDaily> week =
-                          (!isLoading && snap.hasData)
-                          ? (snap.data!.take(7).toList())
-                          : hasRefreshError
-                          ? widget.days.take(7).toList()
-                          : const [];
+                              // ✅ Sin clip / sin “box anti-shadow”
+                              EnvironmentNowSummaryCard(
+                                condition: widget.now.condition,
+                                weatherCode: widget.now.weatherCode,
+                                observedAt: widget.now.observedAt,
+                                isDay: widget.now.isDay,
+                                precipitationMm:
+                                    widget.now.precipitationMm,
+                                shortwaveRadiation:
+                                    widget.now.shortwaveWm2,
+                                temperatureC: widget.now.tempC,
+                                title: widget.now.conditionLabel,
+                                subtitle: widget.now.agroNote,
+                                weatherIconScale: 3.6,
+                              ),
 
-                      if (week.isNotEmpty)
-                        _restartListAnimIfNeeded(week.length);
+                              const SizedBox(height: 14),
+                            ],
+                          ),
+                        ),
+                      ),
 
-                      return CustomScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        slivers: [
-                          // ================= HEADER CARDS =================
-                          SliverPadding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: EnvironmentForecastScreen.kSide,
-                            ),
-                            sliver: SliverToBoxAdapter(
-                              child: Column(
-                                children: [
-                                  EnvironmentLocationCard(
-                                    fieldLabel: widget.location.fieldName,
-                                    zoneLabel: widget.location.zoneLabel,
-                                    updatedLabel: _updatedLabel(
-                                      widget.location.updatedAt,
+                      // ================= WEEK LIST =================
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: EnvironmentForecastScreen.kSide,
+                        ),
+                        sliver: isLoading
+                            ? SliverList.separated(
+                                itemCount: 7,
+                                separatorBuilder: (_, __) => const SizedBox(
+                                  height: EnvironmentForecastScreen.kRowGap,
+                                ),
+                                itemBuilder: (context, i) {
+                                  return const _SkeletonDayRow();
+                                },
+                              )
+                            : SliverList.separated(
+                                itemCount: week.length,
+                                separatorBuilder: (_, __) => const SizedBox(
+                                  height: EnvironmentForecastScreen.kRowGap,
+                                ),
+                                itemBuilder: (context, i) {
+                                  final d = week[i];
+                                  final selectedDate =
+                                      d.forecastDate ?? _dateForIndex(i);
+                                  final iconPath =
+                                      EnvironmentIconMapper.iconForDailyForecastWeather(
+                                        weatherCode: d.weatherCode,
+                                        day: selectedDate,
+                                        fallbackCondition: d.condition,
+                                        precipitationProbability:
+                                            d.rainProbPct,
+                                        precipitationMm:
+                                            d.precipitationMm,
+                                      );
+
+                                  return _StaggerIn(
+                                    controller: _listAnim,
+                                    index: i,
+                                    child: _DayRowCard(
+                                      day: d,
+                                      iconPath: iconPath,
+                                      isToday: i == 0,
+                                      subtitle: _daySummary(d),
+                                      onTap: () =>
+                                          _open24h(context, selectedDate),
                                     ),
-                                    leafIconScale: 0.78,
-                                    locationIconScale: 1.55,
-                                  ),
-                                  const SizedBox(height: 10),
+                                  );
+                                },
+                              ),
+                      ),
 
-                                  // ✅ Sin clip / sin “box anti-shadow”
-                                  EnvironmentNowSummaryCard(
-                                    condition: widget.now.condition,
-                                    weatherCode: widget.now.weatherCode,
-                                    observedAt: widget.now.observedAt,
-                                    isDay: widget.now.isDay,
-                                    precipitationMm:
-                                        widget.now.precipitationMm,
-                                    shortwaveRadiation:
-                                        widget.now.shortwaveWm2,
-                                    temperatureC: widget.now.tempC,
-                                    title: widget.now.conditionLabel,
-                                    subtitle: widget.now.agroNote,
-                                    weatherIconScale: 3.6,
+                      // ================= FOOTER NOTE =================
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(
+                          EnvironmentForecastScreen.kSide,
+                          12,
+                          EnvironmentForecastScreen.kSide,
+                          0,
+                        ),
+                        sliver: SliverToBoxAdapter(
+                          child: BioGGlassCard(
+                            padding: EdgeInsets.zero,
+                            useBackdropBlur: false,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                14,
+                                12,
+                                14,
+                                12,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.cloud_outlined,
+                                    size: 18,
+                                    color: Colors.black.withValues(alpha:0.55),
                                   ),
-
-                                  const SizedBox(height: 14),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      widget.footerNote ??
+                                          (hasRefreshError
+                                              ? week.isEmpty
+                                                    ? 'No se pudo cargar el pronóstico. Intenta de nuevo más tarde.'
+                                                    : 'No se pudo actualizar. Mostrando datos guardados.'
+                                              : week.isEmpty
+                                              ? 'No hay pronóstico disponible.'
+                                              : _footerAuto(week)),
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.black.withValues(alpha:
+                                          0.62,
+                                        ),
+                                        height: 1.15,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
                           ),
+                        ),
+                      ),
 
-                          // ================= WEEK LIST =================
-                          SliverPadding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: EnvironmentForecastScreen.kSide,
-                            ),
-                            sliver: isLoading
-                                ? SliverList.separated(
-                                    itemCount: 7,
-                                    separatorBuilder: (_, __) => const SizedBox(
-                                      height: EnvironmentForecastScreen.kRowGap,
-                                    ),
-                                    itemBuilder: (context, i) {
-                                      return const _SkeletonDayRow();
-                                    },
-                                  )
-                                : SliverList.separated(
-                                    itemCount: week.length,
-                                    separatorBuilder: (_, __) => const SizedBox(
-                                      height: EnvironmentForecastScreen.kRowGap,
-                                    ),
-                                    itemBuilder: (context, i) {
-                                      final d = week[i];
-                                      final selectedDate =
-                                          d.forecastDate ?? _dateForIndex(i);
-                                      final iconPath =
-                                          EnvironmentIconMapper.iconForDailyForecastWeather(
-                                            weatherCode: d.weatherCode,
-                                            day: selectedDate,
-                                            fallbackCondition: d.condition,
-                                            precipitationProbability:
-                                                d.rainProbPct,
-                                            precipitationMm:
-                                                d.precipitationMm,
-                                          );
-
-                                      return _StaggerIn(
-                                        controller: _listAnim,
-                                        index: i,
-                                        child: _DayRowCard(
-                                          day: d,
-                                          iconPath: iconPath,
-                                          isToday: i == 0,
-                                          subtitle: _daySummary(d),
-                                          onTap: () =>
-                                              _open24h(context, selectedDate),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                          ),
-
-                          // ================= FOOTER NOTE =================
-                          SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(
-                              EnvironmentForecastScreen.kSide,
-                              12,
-                              EnvironmentForecastScreen.kSide,
-                              0,
-                            ),
-                            sliver: SliverToBoxAdapter(
-                              child: BioGGlassCard(
-                                padding: EdgeInsets.zero,
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    14,
-                                    12,
-                                    14,
-                                    12,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.cloud_outlined,
-                                        size: 18,
-                                        color: Colors.black.withValues(alpha:0.55),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          widget.footerNote ??
-                                              (hasRefreshError
-                                                  ? week.isEmpty
-                                                        ? 'No se pudo cargar el pronóstico. Intenta de nuevo más tarde.'
-                                                        : 'No se pudo actualizar. Mostrando datos guardados.'
-                                                  : week.isEmpty
-                                                  ? 'No hay pronóstico disponible.'
-                                                  : _footerAuto(week)),
-                                          style: TextStyle(
-                                            fontSize: 13.5,
-                                            fontWeight: FontWeight.w800,
-                                            color: Colors.black.withValues(alpha:
-                                              0.62,
-                                            ),
-                                            height: 1.15,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          SliverToBoxAdapter(
-                            child: SizedBox(height: 28 + bottomPad),
-                          ),
-                        ],
-                      );
-                    },
+                      SliverToBoxAdapter(
+                        child: SizedBox(height: 28 + bottomPad),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -487,6 +541,14 @@ class _DayRowCard extends StatelessWidget {
 
     return BioGGlassCard(
       padding: EdgeInsets.zero,
+      // Sin desenfoque de fondo: ver `BioGGlassCard.useBackdropBlur`.
+      //
+      // Estas filas llevan encima una superficie blanca al 78–92 %, así que
+      // entre el fondo y la tarjeta quedan menos de dos puntos porcentuales de
+      // transparencia, y lo poco que se veía a través ya era un degradado
+      // liso. Eran siete `BackdropFilter` apilados en una lista que además se
+      // anima al entrar: la causa principal del tirón.
+      useBackdropBlur: false,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(_radius),
@@ -608,6 +670,7 @@ class _SkeletonDayRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return BioGGlassCard(
       padding: EdgeInsets.zero,
+      useBackdropBlur: false,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(_radius),
@@ -693,7 +756,17 @@ class _SkeletonDayRow extends StatelessWidget {
 
 /* ===================== STAGGER ANIM ===================== */
 
-class _StaggerIn extends StatelessWidget {
+/// Entrada escalonada de una fila.
+///
+/// Antes era un `StatelessWidget` que construía un `CurvedAnimation` NUEVO en
+/// cada `build`. Dos problemas: cada instancia se suscribe al controlador y
+/// ninguna se daba de baja —`CurvedAnimation` exige `dispose`—, así que el
+/// controlador acumulaba oyentes muertos que seguía notificando 60 veces por
+/// segundo; y la fila entera se reconstruía en cada frame de la animación.
+///
+/// Ahora la curva se crea una vez, se libera al desmontar, y la fila se
+/// rasteriza en su propia capa: animar deja de repintarla y pasa a moverla.
+class _StaggerIn extends StatefulWidget {
   final AnimationController controller;
   final int index;
   final Widget child;
@@ -705,26 +778,61 @@ class _StaggerIn extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final start = (index * 0.08).clamp(0.0, 0.75);
-    final end = (start + 0.35).clamp(0.0, 1.0);
+  State<_StaggerIn> createState() => _StaggerInState();
+}
 
-    final curved = CurvedAnimation(
-      parent: controller,
+class _StaggerInState extends State<_StaggerIn> {
+  late CurvedAnimation _curved;
+
+  @override
+  void initState() {
+    super.initState();
+    _curved = _build();
+  }
+
+  @override
+  void didUpdateWidget(covariant _StaggerIn oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller ||
+        oldWidget.index != widget.index) {
+      _curved.dispose();
+      _curved = _build();
+    }
+  }
+
+  @override
+  void dispose() {
+    _curved.dispose();
+    super.dispose();
+  }
+
+  CurvedAnimation _build() {
+    final double start = (widget.index * 0.08).clamp(0.0, 0.75);
+    final double end = (start + 0.35).clamp(0.0, 1.0);
+    return CurvedAnimation(
+      parent: widget.controller,
       curve: Interval(start, end, curve: Curves.easeOutCubic),
     );
+  }
 
-    return AnimatedBuilder(
-      animation: curved,
-      child: child,
-      builder: (_, c) {
-        final t = curved.value;
-        final dy = (1 - t) * 10.0;
-        return Opacity(
-          opacity: t.clamp(0.0, 1.0),
-          child: Transform.translate(offset: Offset(0, dy), child: c),
-        );
-      },
+  @override
+  Widget build(BuildContext context) {
+    // `FadeTransition` anima la opacidad a nivel de RenderObject: no
+    // reconstruye nada. El desplazamiento sí necesita un `AnimatedBuilder`
+    // porque son píxeles y no una fracción del tamaño, pero lo único que se
+    // reconstruye es el `Transform`; la fila viaja como `child` y se conserva.
+    return FadeTransition(
+      opacity: _curved,
+      child: AnimatedBuilder(
+        animation: _curved,
+        child: RepaintBoundary(child: widget.child),
+        builder: (_, Widget? c) {
+          return Transform.translate(
+            offset: Offset(0, (1 - _curved.value) * 10.0),
+            child: c,
+          );
+        },
+      ),
     );
   }
 }
@@ -739,15 +847,25 @@ class _ForecastIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
-          child: Transform.translate(
-            offset: const Offset(0, 1.2),
-            child: Opacity(
-              opacity: 0.18,
+    // El icono y su sombra no cambian mientras la fila existe, pero llevan un
+    // desenfoque dentro. `RepaintBoundary` los rasteriza una vez en lugar de
+    // rehacer el desenfoque en cada frame de la animación de entrada y en cada
+    // desplazamiento de la lista.
+    return RepaintBoundary(
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
+            child: Transform.translate(
+              offset: const Offset(0, 1.2),
+              // La opacidad va DENTRO del color, no en un `Opacity` aparte.
+              //
+              // `srcIn` pinta la silueta del icono con este color, así que
+              // negro al 18 % da exactamente el mismo resultado que negro
+              // opaco envuelto en `Opacity(0.18)` — pero sin la capa de
+              // composición que `Opacity` obliga a crear. Mismo píxel, una
+              // capa menos por fila.
               child: Transform.scale(
                 scale: scale,
                 child: EnvironmentAssetIcon(
@@ -755,23 +873,23 @@ class _ForecastIcon extends StatelessWidget {
                   width: 18,
                   height: 18,
                   fit: BoxFit.contain,
-                  color: Colors.black,
+                  color: Colors.black.withValues(alpha: 0.18),
                   colorBlendMode: BlendMode.srcIn,
                 ),
               ),
             ),
           ),
-        ),
-        Transform.scale(
-          scale: scale,
-          child: EnvironmentAssetIcon(
-            assetPath: path,
-            width: 18,
-            height: 18,
-            fit: BoxFit.contain,
+          Transform.scale(
+            scale: scale,
+            child: EnvironmentAssetIcon(
+              assetPath: path,
+              width: 18,
+              height: 18,
+              fit: BoxFit.contain,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -783,6 +901,18 @@ class _ForecastSoftBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // `RepaintBoundary` porque este fondo no cambia NUNCA y sus tres manchas
+    // son desenfoques de sigma 34.
+    //
+    // Sin él, el fondo comparte capa con el contenido: cada vez que la lista
+    // se desplaza o una fila se anima, Flutter vuelve a pintar los tres
+    // desenfoques aunque no se hayan movido un píxel. Con él se rasterizan una
+    // vez y después solo se componen. Es el mismo recurso que ya usa
+    // `BioGPageBackground`, por el mismo motivo.
+    return RepaintBoundary(child: _buildBackground());
+  }
+
+  Widget _buildBackground() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(

@@ -102,10 +102,21 @@ class SoilContext {
     this.rootDepthCm,
     this.allowableDepletionFraction,
     this.systemEfficiency01,
+    this.isFallbackTexture = false,
   });
 
   /// `sandy` | `loam` | `clay` | ...
   final String? textureId;
+
+  /// True cuando la textura NO la declaró el productor y se está usando la
+  /// media como respaldo.
+  ///
+  /// Vive aquí, y no en el asesor, porque la penalización de confianza tiene
+  /// que aplicarse ANTES de las compuertas del motor. Restarla después dejaba
+  /// pasar un `regar` con confianza por debajo del mínimo para recomendar, y un
+  /// `requiresConfirmation` en falso cuando ya debía estar en verdadero: las
+  /// dos compuertas se evalúan con la confianza previa a la resta.
+  final bool isFallbackTexture;
 
   final double? fieldCapacityPct;
   final double? wiltingPointPct;
@@ -135,6 +146,7 @@ class SoilContext {
     'rootDepthCm': rootDepthCm,
     'allowableDepletion': allowableDepletionFraction,
     'systemEfficiency01': systemEfficiency01,
+    'isFallbackTexture': isFallbackTexture,
   };
 }
 

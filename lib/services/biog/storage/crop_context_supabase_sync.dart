@@ -185,6 +185,16 @@ class CropContextSupabaseSync {
       'location_source': c.locationSource,
       'geo_lat': c.geoLat,
       'geo_lng': c.geoLng,
+      // Tipo de suelo. Nullable y sin valor por defecto a propósito: NULL
+      // significa «contexto anterior a esta versión» y `'unknown'` significa
+      // «el productor dijo que no la sabe». Ver la migración
+      // `20260811_add_soil_texture.sql`.
+      'soil_texture_id': c.soilTextureId,
+      'soil_texture_source': c.soilTextureSource,
+      'soil_local_descriptors': c.soilLocalDescriptors.isEmpty
+          ? null
+          : c.soilLocalDescriptors,
+      'soil_local_other': c.soilLocalOther,
       'setup_status': c.setupStatus,
       'setup_completed_at': c.setupCompletedAt?.toIso8601String(),
     };
@@ -253,9 +263,30 @@ class CropContextSupabaseSync {
       locationSource: row['location_source'] as String?,
       geoLat: (row['geo_lat'] as num?)?.toDouble(),
       geoLng: (row['geo_lng'] as num?)?.toDouble(),
+      soilTextureId: _nonEmptyText(row['soil_texture_id']),
+      soilTextureSource: _nonEmptyText(row['soil_texture_source']),
+      soilLocalDescriptors: _textList(row['soil_local_descriptors']),
+      soilLocalOther: _nonEmptyText(row['soil_local_other']),
       setupStatus: (row['setup_status'] as String?) ?? kCropSetupDraft,
       setupCompletedAt: _parseDate(row['setup_completed_at']),
     );
+  }
+
+  String? _nonEmptyText(Object? raw) {
+    if (raw is! String) return null;
+    final v = raw.trim();
+    return v.isEmpty ? null : v;
+  }
+
+  List<String> _textList(Object? raw) {
+    if (raw is! List) return const <String>[];
+    final out = <String>[];
+    for (final e in raw) {
+      if (e is! String) continue;
+      final v = e.trim();
+      if (v.isNotEmpty && !out.contains(v)) out.add(v);
+    }
+    return List<String>.unmodifiable(out);
   }
 
   CropLifecycleStatus _lifecycleFromName(String? raw) {

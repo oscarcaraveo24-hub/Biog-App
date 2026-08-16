@@ -46,7 +46,33 @@ class StageTargets {
     this.sShortGuidanceEs,
   });
 
+  /// ── OBSOLETO COMO FUENTE. Se sobrescribe en el runtime. ─────────────────
+  ///
+  /// Los cuatro números que cada perfil escribe aquí a mano **ya no llegan al
+  /// motor**: `CropRuntimeResolver` sustituye esta banda por la que deriva de
+  /// (textura del suelo + cultivo + etapa) antes de evaluar nada. Cambiar este
+  /// campo en cualquiera de los archivos de perfil no tiene efecto sobre la
+  /// humedad.
+  ///
+  /// Por qué se sobrescribe en vez de borrarse:
+  ///
+  /// · Los rangos de MACETA siguen siendo correctos, y son la referencia contra
+  ///   la que se calibró el sustrato drenante. Borrarlos perdería ese ancla.
+  /// · Los de suelo se conservan como historia hasta que el prototipo confirme
+  ///   en campo las constantes de `SoilWaterScale`. Si hubiera que revertir, el
+  ///   catálogo sigue completo.
+  ///
+  /// Por qué estaban mal: comparaban contenido volumétrico crudo contra números
+  /// escritos a mano en una escala de sustrato de maceta. Un huerto de manzano
+  /// en suelo franco perfectamente regado lee 28 % VWC y el catálogo pedía
+  /// 60–80 %: la app habría dicho «riega» el 95 % del tiempo, para siempre, y
+  /// la alarma de encharcamiento —con umbral en 90 %— era físicamente
+  /// inalcanzable porque ningún suelo mineral del planeta llega ahí.
+  ///
+  /// Regla desde entonces: **nadie compara un VWC crudo contra un número
+  /// escrito a mano.** Ver `lib/core/agro/water/soil_water_scale.dart`.
   final AgroRange moistureRaw;
+
   final AgroRange soilTemp;
   final AgroRange ph;
   final AgroRange ec;

@@ -627,7 +627,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         ),
                                       );
                                   if (res == null) return;
-                                  setState(() => _location = res);
+                                  setState(() {
+                                    _location = res;
+                                    // La pantalla de Ubicación tiene su propio
+                                    // «Guardar» y, cuando devuelve un valor, ya
+                                    // escribió preferencias y nube a través de
+                                    // `ParcelLocationStore`. Mover también la
+                                    // línea base evita el estado incoherente
+                                    // que había antes: el botón «Guardar» de
+                                    // aquí se encendía como si la ubicación
+                                    // estuviera pendiente, y darle a «Cancelar»
+                                    // la devolvía visualmente al valor viejo
+                                    // mientras el motor de riego seguía usando
+                                    // el nuevo, que era el que de verdad se
+                                    // había guardado.
+                                    _initial = _initial.copyWithLocation(res);
+                                  });
                                 },
                               ),
                               const _DividerLine(),
@@ -2029,4 +2044,18 @@ class _InitialProfile {
     required this.syncActive,
     required this.avatarPath,
   });
+
+  /// Mueve solo la línea base de la ubicación.
+  ///
+  /// La pantalla de Ubicación commitea por su cuenta, así que al volver de
+  /// ella la ubicación deja de ser un cambio pendiente. El teléfono, la foto y
+  /// el interruptor de sincronización sí siguen siéndolo y no deben tocarse.
+  _InitialProfile copyWithLocation(String value) {
+    return _InitialProfile(
+      location: value,
+      phone: phone,
+      syncActive: syncActive,
+      avatarPath: avatarPath,
+    );
+  }
 }

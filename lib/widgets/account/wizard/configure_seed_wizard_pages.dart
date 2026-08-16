@@ -8,6 +8,9 @@ import 'package:bio_g/core/crops/recurring_bloom/recurring_bloom_crops.dart';
 import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
 // Girasol (annual_ornamental): textos/íconos del modo anual ornamental.
 import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
+import 'package:bio_g/core/agro/water/soil_texture_source.dart';
+import 'package:bio_g/core/agro/water/soil_water_scale.dart';
+import 'package:bio_g/screens/onboarding/steps/soil_texture_step.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog_models.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_components.dart';
@@ -1766,6 +1769,84 @@ class _TrademarkDisclaimer extends StatelessWidget {
           height: 1.38,
           color: Colors.black.withValues(alpha: 0.32),
         ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TIPO DE SUELO — el contrato de doble uso
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Es el MISMO widget que usa el onboarding, no una copia. Un segundo selector
+// de tierra sería un segundo sitio donde arreglar cada detalle de movimiento,
+// accesibilidad y copy, y garantizaría que las dos pantallas se desincronicen.
+//
+// La única diferencia de contrato entre los dos usos es el punto de partida:
+//
+//   · onboarding -> abre en «vista inicial» y NO reporta nada hasta que hay una
+//     interacción explícita. Quien no toca nada no ha declarado nada.
+//   · Cuenta     -> abre directamente en el valor YA GUARDADO, y el usuario
+//     puede confirmarlo o cambiarlo. Aquí no hay nada que «no declarar»: ya
+//     había una respuesta.
+//
+// Esa diferencia se expresa con un solo parámetro: `selectedTextureId`.
+
+class SoilTexturePage extends StatelessWidget {
+  const SoilTexturePage({
+    super.key,
+    required this.selectedTextureId,
+    required this.onTextureChanged,
+    this.showBrandMark = true,
+    this.showLeadingMark,
+    this.scrollable = true,
+    this.summary,
+  });
+
+  final String? selectedTextureId;
+  final void Function(SoilTexture texture, SoilTextureSource source)
+  onTextureChanged;
+
+  /// El onboarding pinta el logo; Cuenta ya tiene su propia barra de título.
+  final bool showBrandMark;
+
+  /// La hojita verde sobre el título del paso. Por defecto aparece **solo
+  /// cuando no hay logo de marca**: apilar los dos deja dos emblemas seguidos
+  /// antes de leer una sola palabra.
+  final bool? showLeadingMark;
+
+  /// Quien ya está dentro de un `SingleChildScrollView` debe pasar `false`:
+  /// anidar dos scrolls verticales deja la altura sin acotar y revienta el
+  /// layout en tiempo de ejecución.
+  final bool scrollable;
+
+  final Widget? summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return CenteredWizardPage(
+      scrollable: scrollable,
+      topPadding: 4,
+      horizontalPadding: 2,
+      child: Column(
+        children: <Widget>[
+          if (showBrandMark) ...<Widget>[
+            const BrandMark(),
+            const SizedBox(height: 16),
+          ],
+          SoilTextureStep(
+            selectedTextureId: selectedTextureId,
+            onTextureChanged: onTextureChanged,
+            showLeadingMark: showLeadingMark ?? !showBrandMark,
+            subtitle:
+                'Elige la que más se parezca a la tuya.\n'
+                'Puedes cambiarla cuando quieras.',
+          ),
+          if (summary != null) ...<Widget>[
+            const SizedBox(height: 18),
+            summary!,
+          ],
+        ],
       ),
     );
   }

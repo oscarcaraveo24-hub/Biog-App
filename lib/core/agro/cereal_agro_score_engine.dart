@@ -32,7 +32,19 @@ class CerealAgroScoreEngine {
     double pCapPpm = 80.0,
     double kCapPpm = 140.0,
   }) {
-    final moisture01 = _normalizeMoisture01(t.soilMoisturePct, cal);
+    // ── La bandera de presencia manda ──────────────────────────────────────
+    //
+    // `BioGTelemetry` rellena con 0.0 el sensor que no reportó, y 0.0 cae en
+    // CRÍTICO en cuatro de los cinco rangos: sin esta guarda, una sonda
+    // averiada o desconectada se leería como suelo en emergencia y el anillo
+    // del Panel pintaría un diagnóstico catastrófico de un dato que no existe.
+    //
+    // NaN y no cero: `_evalLegacy` ya devuelve `AgroBand.unknown` ante un valor
+    // no finito, así que la métrica sale como «sin dato» —que es la verdad— sin
+    // tocar la firma del evaluador ni la de este motor.
+    final moisture01 = t.hasSoilMoistureData
+        ? _normalizeMoisture01(t.soilMoisturePct, cal)
+        : double.nan;
     final moistureRawCal = moisture01 * 100.0;
 
     final soilTemp = t.soilTempC;
@@ -56,9 +68,23 @@ class CerealAgroScoreEngine {
     final phEval = _eval(value: ph, range: targets.ph);
     final ecEval = _eval(value: ec, range: targets.ec);
     final resistanceEval = _eval(value: resistance, range: targets.resistance);
-    final nEval = _eval(value: nIndex0to100, range: targets.nIndex);
-    final pEval = _eval(value: pIndex0to100, range: targets.pIndex);
-    final kEval = _eval(value: kIndex0to100, range: targets.kIndex);
+    // Sin sonda de nutrientes no hay dato, y ausencia NO es cero.
+    //
+    // Este motor no pasa por `_interpret*Nutrient` —evalúa el índice contra la
+    // banda directamente—, así que la guarda va aquí. Sin ella, un trigo sin
+    // sonda NPK daba índice 0, caía en `critical` contra la banda del catálogo
+    // (lowMax 8) y multiplicaba la penalización crítica tres veces: el
+    // `soilControlScore01` se quedaba en un tercio de forma permanente, con
+    // N, P y K en «Crítico» para siempre.
+    final nEval = t.hasNitrogenData
+        ? _eval(value: nIndex0to100, range: targets.nIndex)
+        : _evalUnknown(nIndex0to100);
+    final pEval = t.hasPhosphorusData
+        ? _eval(value: pIndex0to100, range: targets.pIndex)
+        : _evalUnknown(pIndex0to100);
+    final kEval = t.hasPotassiumData
+        ? _eval(value: kIndex0to100, range: targets.kIndex)
+        : _evalUnknown(kIndex0to100);
 
     final metrics = <AgroMetricKey, AgroMetricEval>{
       AgroMetricKey.soilMoisture: _wrap(moistureEval),
@@ -183,6 +209,16 @@ class CerealAgroScoreEngine {
     }
   }
 
+  /// Métrica sin sensor: banda desconocida y puntuación NEUTRA.
+  ///
+  /// El 0.5 importa. `_eval` ya devuelve `unknown` ante NaN, pero con
+  /// `score01: 0.0`, y ese cero entra en el promedio ponderado de la línea 102
+  /// como si el nutriente estuviera en lo peor. Para una sonda ausente lo
+  /// correcto es no opinar: ni premia ni castiga. Es el mismo 0.5 que usa la
+  /// guarda de los otros veintitrés motores.
+  static _Eval _evalUnknown(double value) =>
+      _Eval(value: value, band: AgroBand.unknown, score01: 0.5);
+
   static _Eval _eval({required double value, required AgroRange range}) {
     if (!value.isFinite || value.isNaN) {
       return _Eval(value: value, band: AgroBand.unknown, score01: 0.0);
@@ -260,14 +296,24 @@ class CerealAgroScoreEngine {
     }
   }
 
+  /// Contenido volumétrico del sensor, a fracción 0..1.
+  ///
+  /// La rama de calibración relativa seco/mojado se BORRÓ. El módulo de agua
+  /// declara que la humedad es contenido volumétrico real y que no necesita
+  /// calibración de usuario; el propio contrato de datos crudos lo dice por
+  /// escrito. Aquella rama existía para otra clase de sonda —la capacitiva
+  /// analógica barata— y no aplica al sensor que entrega VWC ya calibrado de
+  /// fábrica.
+  ///
+  /// Verificado antes de borrarla: el tipo tenía dos consumidores y **cero
+  /// productores**. Nadie la instanciaba, y no había pantalla para hacerlo. Se
+  /// borra en vez de dejarla dormida porque un condicional que nadie puede
+  /// activar hoy pero que alguien activará en seis meses es peor que ninguno:
+  /// para entonces nadie recordará por qué estaba ahí, y el efecto sería que el
+  /// motor de riego leyera 25 % como 25 % mientras el de puntuación leyera el
+  /// mismo 25 % como 58 % relativo —dos lecturas del mismo dato, en la misma
+  /// pantalla—.
   static double _normalizeMoisture01(double raw0to100, Calibration? cal) {
-    final dry = cal?.moistureDryRaw;
-    final wet = cal?.moistureWetRaw;
-
-    if (dry != null && wet != null && (wet - dry).abs() > 1e-6) {
-      return ((raw0to100 - dry) / (wet - dry)).clamp(0.0, 1.0);
-    }
-
     return (raw0to100 / 100.0).clamp(0.0, 1.0);
   }
 
@@ -285,8 +331,21 @@ class CerealAgroScoreEngine {
     BioGTelemetry t,
     bool isCriticalStage,
   ) {
-    final airTemp = t.airTempC;
-    final airHum = t.airHumidityPct;
+    // ── Un canal que no midió viaja como NaN, jamás como cero ──────────────
+    //
+    // `BioGTelemetry` rellena con 0.0 el sensor ausente y baja su bandera de
+    // presencia. Sin esta línea, `0.0 <= 0` cumple la condición de helada: un
+    // equipo sin sensor de aire —o con un cable flojo en el bus— gritaría
+    // «Riesgo de helada» CRÍTICO en cada lectura, para siempre. Un productor
+    // puede encender calefactores o quemar diésel por un canal que nunca
+    // existió.
+    //
+    // NaN, y no un cero: en IEEE-754 toda comparación ordenada con NaN es
+    // falsa, así que apaga los cinco umbrales de este bloque —helada, frío,
+    // calor, calor extremo y humedad— de una sola vez y sin poder olvidarse
+    // ninguno. `isFinite` también da falso, que es lo correcto.
+    final airTemp = t.hasAirTempData ? t.airTempC : double.nan;
+    final airHum = t.hasAirHumidityData ? t.airHumidityPct : double.nan;
 
     // Helada: <2 °C siempre alerta; en etapa crítica, <4 °C
     if (airTemp <= 0) {

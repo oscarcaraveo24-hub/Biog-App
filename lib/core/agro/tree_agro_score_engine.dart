@@ -64,7 +64,19 @@ class TreeAgroScoreEngine {
   }) {
     final stage = normalizeTreeStageId(stageId);
 
-    final moisture01 = _normalizeMoisture01(t.soilMoisturePct, cal);
+    // ── La bandera de presencia manda ──────────────────────────────────────
+    //
+    // `BioGTelemetry` rellena con 0.0 el sensor que no reportó, y 0.0 cae en
+    // CRÍTICO en cuatro de los cinco rangos: sin esta guarda, una sonda
+    // averiada o desconectada se leería como suelo en emergencia y el anillo
+    // del Panel pintaría un diagnóstico catastrófico de un dato que no existe.
+    //
+    // NaN y no cero: `_evalLegacy` ya devuelve `AgroBand.unknown` ante un valor
+    // no finito, así que la métrica sale como «sin dato» —que es la verdad— sin
+    // tocar la firma del evaluador ni la de este motor.
+    final moisture01 = t.hasSoilMoistureData
+        ? _normalizeMoisture01(t.soilMoisturePct, cal)
+        : double.nan;
     final moistureRawCal = moisture01 * 100.0;
 
     final moistureEval = _evalTreeSoilMetric(
@@ -104,7 +116,7 @@ class TreeAgroScoreEngine {
       weights: weights,
       ph: t.ph,
       ec: t.ec,
-      soilMoisturePct: t.soilMoisturePct,
+      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
       profileId: profileId,
       varietyId: varietyId,
       varietyAlias: varietyAlias,
@@ -120,7 +132,7 @@ class TreeAgroScoreEngine {
       weights: weights,
       ph: t.ph,
       ec: t.ec,
-      soilMoisturePct: t.soilMoisturePct,
+      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
       profileId: profileId,
       varietyId: varietyId,
       varietyAlias: varietyAlias,
@@ -136,7 +148,7 @@ class TreeAgroScoreEngine {
       weights: weights,
       ph: t.ph,
       ec: t.ec,
-      soilMoisturePct: t.soilMoisturePct,
+      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
       profileId: profileId,
       varietyId: varietyId,
       varietyAlias: varietyAlias,
@@ -226,6 +238,11 @@ class TreeAgroScoreEngine {
       metrics: metrics,
       alertsState: alertsState,
       cooldown: alertsCooldown,
+      // Umbral de encharcamiento REAL, no un 80 escrito a mano. `highMin` ya
+      // viene derivado de la textura del suelo (0,90 x saturación), así que en
+      // arena dispara a 34,2 % y en arcilla a 47,7 % — dos números distintos
+      // para el mismo criterio agronómico.
+      saturationThresholdPct: targets.moistureRaw.highMin,
     );
 
     final eval = AgroEvalResult(
@@ -277,7 +294,7 @@ class TreeAgroScoreEngine {
       nutrient: metricKey,
       rawPpm: rawMgKg,
       cropKey: cropKey,
-      stageKey: stageId,
+        stageKey: stageId,
       profileId: profileId,
       varietyId: varietyId,
       varietyAlias: varietyAlias,
@@ -297,8 +314,8 @@ class TreeAgroScoreEngine {
       labelEs: interpretation.labelEs,
       value: rawMgKg,
       priorityLabel: interpretation.label,
-      stageKey: stageId,
-      stageLabelEs: stageLabelEs,
+        stageKey: stageId,
+        stageLabelEs: stageLabelEs,
       demandWindowLabelEs:
           treeCriticalWindowLabel(stageId) ?? interpretation.demandWindowLabel,
       shortRecommendationEs: interpretation.shortRecommendation,
@@ -647,12 +664,24 @@ class TreeAgroScoreEngine {
     return (0.35 / (1 + d)).clamp(0.05, 0.35);
   }
 
+  /// Contenido volumétrico del sensor, a fracción 0..1.
+  ///
+  /// La rama de calibración relativa seco/mojado se BORRÓ. El módulo de agua
+  /// declara que la humedad es contenido volumétrico real y que no necesita
+  /// calibración de usuario; el propio contrato de datos crudos lo dice por
+  /// escrito. Aquella rama existía para otra clase de sonda —la capacitiva
+  /// analógica barata— y no aplica al sensor que entrega VWC ya calibrado de
+  /// fábrica.
+  ///
+  /// Verificado antes de borrarla: el tipo tenía dos consumidores y **cero
+  /// productores**. Nadie la instanciaba, y no había pantalla para hacerlo. Se
+  /// borra en vez de dejarla dormida porque un condicional que nadie puede
+  /// activar hoy pero que alguien activará en seis meses es peor que ninguno:
+  /// para entonces nadie recordará por qué estaba ahí, y el efecto sería que el
+  /// motor de riego leyera 25 % como 25 % mientras el de puntuación leyera el
+  /// mismo 25 % como 58 % relativo —dos lecturas del mismo dato, en la misma
+  /// pantalla—.
   static double _normalizeMoisture01(double raw0to100, Calibration? cal) {
-    final dry = cal?.moistureDryRaw;
-    final wet = cal?.moistureWetRaw;
-    if (dry != null && wet != null && (wet - dry).abs() > 1e-6) {
-      return ((raw0to100 - dry) / (wet - dry)).clamp(0.0, 1.0);
-    }
     return (raw0to100 / 100.0).clamp(0.0, 1.0);
   }
 
@@ -673,6 +702,7 @@ class TreeAgroScoreEngine {
     required Map<AgroMetricKey, AgroMetricEval> metrics,
     required AlertsState alertsState,
     required Duration cooldown,
+    required double saturationThresholdPct,
   }) {
     final nextMap = Map<BioGAlertType, DateTime>.from(alertsState.lastByType);
     final nextKeyMap = Map<String, DateTime>.from(alertsState.lastByKey);
@@ -721,17 +751,37 @@ class TreeAgroScoreEngine {
     final moistureHigh =
         moisture == AgroBand.high || moisture == AgroBand.critical;
     final heat =
-        telemetry.airTempC >= 35 ||
+        (telemetry.hasAirTempData && telemetry.airTempC >= 35) ||
         soilTemp == AgroBand.high ||
         soilTemp == AgroBand.critical;
-    final cold = telemetry.airTempC <= 4;
-    final highHumidity = telemetry.airHumidityPct >= 85;
+    // La bandera manda también aquí. Este archivo ya honra `hasNitrogenData`,
+    // `hasPhosphorusData` y `hasPotassimData` unas líneas más arriba; olvidar la
+    // del aire dejaba un aviso de helada en brotación disparándose con el 0.0
+    // sintetizado de un equipo sin sensor de aire.
+    final cold = telemetry.hasAirTempData && telemetry.airTempC <= 4;
+    final highHumidity =
+        telemetry.hasAirHumidityData && telemetry.airHumidityPct >= 85;
     final salinityHigh = ec == AgroBand.high || ec == AgroBand.critical;
     final moistureValue =
         metrics[AgroMetricKey.soilMoisture]?.value ?? telemetry.soilMoisturePct;
+    // El 80 % que había aquí escrito a mano era físicamente inalcanzable en
+    // suelo mineral: la saturación más alta de la tabla —arcilla— es 53 %, y su
+    // umbral de encharcamiento 47,7 %. Ningún árbol en tierra llegaba nunca a
+    // esa condición, así que la rama de «exceso de humedad» estaba muerta justo
+    // en los cultivos que mata la asfixia radicular: aguacate, cítrico y nogal.
+    // El 80 % que había aquí escrito a mano no era solo inalcanzable en suelo
+    // mineral —la saturación más alta de la tabla, arcilla, es 53 %—: además
+    // colgaba de `moisture == critical`, y la humedad se evalúa con
+    // `publicCriticalHigh: false`, así que `critical` solo puede venir del lado
+    // SECO. La condición era doblemente imposible y la rama estaba muerta,
+    // justo en los cultivos que mata la asfixia radicular: aguacate, cítrico y
+    // nogal.
+    //
+    // Ahora la lectura se compara directamente contra el umbral de
+    // encharcamiento derivado de la textura (0,90 × saturación): en arena
+    // dispara a 34,2 % y en arcilla a 47,7 %.
     final moistureLikelySaturated =
-        moisture == AgroBand.high ||
-        (moisture == AgroBand.critical && moistureValue >= 80);
+        moisture == AgroBand.high || moistureValue >= saturationThresholdPct;
     final moistureLikelyDry =
         moisture == AgroBand.low ||
         (moisture == AgroBand.critical && !moistureLikelySaturated);
@@ -786,7 +836,7 @@ class TreeAgroScoreEngine {
         if (cold) {
           push(
             type: BioGAlertType.airTempExtreme,
-            severity: telemetry.airTempC <= 0
+            severity: telemetry.hasAirTempData && telemetry.airTempC <= 0
                 ? BioGAlertSeverity.critical
                 : BioGAlertSeverity.warning,
             title: 'Riesgo de helada en brotación',
@@ -862,7 +912,7 @@ class TreeAgroScoreEngine {
         if (cold) {
           push(
             type: BioGAlertType.airTempExtreme,
-            severity: telemetry.airTempC <= 0
+            severity: telemetry.hasAirTempData && telemetry.airTempC <= 0
                 ? BioGAlertSeverity.critical
                 : BioGAlertSeverity.warning,
             title: 'Riesgo de estres durante floracion',

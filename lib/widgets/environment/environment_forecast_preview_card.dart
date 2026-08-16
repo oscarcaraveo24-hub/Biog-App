@@ -134,18 +134,22 @@ class _DayCol extends StatelessWidget {
       precipitationProbability: day.rainProbPct,
       precipitationMm: day.precipitationMm,
     );
-    final weatherIcon = Transform.translate(
-      offset: const Offset(0, -2), // ✅ un poco arriba (menos flat)
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // sombra suave
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 2.2, sigmaY: 2.2),
-            child: Transform.translate(
-              offset: const Offset(0, 1.2),
-              child: Opacity(
-                opacity: 0.20,
+    // `RepaintBoundary`: el desenfoque de la sombra se rasteriza una vez en
+    // lugar de rehacerse cada vez que la pantalla de Entorno se repinta.
+    final weatherIcon = RepaintBoundary(
+      child: Transform.translate(
+        offset: const Offset(0, -2), // ✅ un poco arriba (menos flat)
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // sombra suave
+            ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 2.2, sigmaY: 2.2),
+              child: Transform.translate(
+                offset: const Offset(0, 1.2),
+                // Opacidad horneada en el color: `srcIn` pinta la silueta con
+                // este color, así que negro al 20 % es el mismo píxel que
+                // negro opaco dentro de `Opacity(0.20)`, sin la capa extra.
                 child: Transform.scale(
                   scale: iconScale,
                   child: EnvironmentAssetIcon(
@@ -153,25 +157,25 @@ class _DayCol extends StatelessWidget {
                     width: 22,
                     height: 22,
                     fit: BoxFit.contain,
-                    color: Colors.black,
+                    color: Colors.black.withValues(alpha: 0.20),
                     colorBlendMode: BlendMode.srcIn,
                   ),
                 ),
               ),
             ),
-          ),
 
-          // icon real
-          Transform.scale(
-            scale: iconScale,
-            child: EnvironmentAssetIcon(
-              assetPath: iconPath,
-              width: 22,
-              height: 22,
-              fit: BoxFit.contain,
+            // icon real
+            Transform.scale(
+              scale: iconScale,
+              child: EnvironmentAssetIcon(
+                assetPath: iconPath,
+                width: 22,
+                height: 22,
+                fit: BoxFit.contain,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
 

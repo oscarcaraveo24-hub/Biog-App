@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:bio_g/core/profile/parcel_location_store.dart';
 import 'package:bio_g/core/profile/profile_repository.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/screens/account/account_screen_presenter.dart';
@@ -13,6 +14,9 @@ import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/services/profile/profile_local_service.dart';
 import 'package:bio_g/widgets/account/add_biog_screen.dart';
 import 'package:bio_g/widgets/account/edit_profile_screen.dart';
+import 'package:bio_g/core/agro/water/soil_profile_resolver.dart';
+import 'package:bio_g/core/crops/crop_registry.dart';
+import 'package:bio_g/widgets/account/soil_texture_account_screen.dart';
 import 'package:bio_g/widgets/account/status_biog_screen.dart' as sb;
 import 'package:bio_g/widgets/account/wizard/configure_seed_wizard_screen.dart';
 import 'package:bio_g/widgets/bottom_nav.dart';
@@ -52,6 +56,12 @@ class _AccountScreenState extends State<AccountScreen>
       'assets/icons/metrics/ic_temperature.png';
   static const String kIcConfigureCrop =
       'assets/icons/wizard/ic_configurar_cultivo.png';
+  // Icono propio de la fila. Antes se reutilizaba la esfera de tierra media del
+  // selector, que ya no sirve por dos razones: el asset se recortó a su
+  // contenido (así que su escala en esta fila cambió) y, sobre todo, la esfera
+  // de suelo franco AFIRMA una textura concreta en una fila que existe justo
+  // para el productor que todavía no la ha elegido.
+  static const String kIcSoilType = 'assets/icons/metrics/ic_soil_type.png';
   static const String kIcHelp = 'assets/icons/metrics/ic_help.png';
   static const String kIcManual = 'assets/icons/metrics/ic_manual.png';
   static const String kIcContact = 'assets/icons/metrics/ic_contact.png';
@@ -160,16 +170,28 @@ class _AccountScreenState extends State<AccountScreen>
       if (!mounted || profile == null) return;
 
       final String? remotePhone = _nonEmpty(profile.phone);
-      final String? remoteLocation = _nonEmpty(profile.location);
 
       // Cache non-empty remote values locally so they survive offline and
       // future cold starts.
       if (remotePhone != null) {
         await _profileLocalService.savePhone(remotePhone);
       }
-      if (remoteLocation != null) {
-        await _profileLocalService.saveLocation(remoteLocation);
-      }
+
+      // La ubicación NO se copia directamente desde la fila remota.
+      //
+      // Aquí se hacía `saveLocation(profile.location)` a secas, y eso pisaba
+      // el texto local con el de la nube sin mirar cuál era más nuevo: una
+      // ubicación elegida sin cobertura —guardada en el teléfono, todavía sin
+      // subir— desaparecía en cuanto esta pantalla se refrescaba. El store
+      // compara fechas y solo deja ganar a la nube cuando de verdad es
+      // posterior, y de paso mantiene las coordenadas y la etiqueta juntas.
+      final StoredParcelLocation? effectiveLocation =
+          await ParcelLocationStore.hydrateFromCloud(
+            repository: _profileRepo,
+            knownProfile: profile,
+          );
+      final String? remoteLocation =
+          _nonEmpty(effectiveLocation?.label) ?? _nonEmpty(profile.location);
 
       // Reconcile the avatar in both directions:
       //   - remote has one, local missing/stale (e.g. after reinstall)
@@ -330,6 +352,45 @@ class _AccountScreenState extends State<AccountScreen>
     setState(() {});
   }
 
+  Future<void> _openSoilType() async {
+    await Navigator.of(
+      context,
+    ).push(BioGPageRoute(builder: (_) => const SoilTextureAccountScreen()));
+
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  /// Resumen del suelo para la fila de Cuenta.
+  ///
+  /// Se pide al mismo resolver que usa el motor, no a una lectura propia del
+  /// campo guardado: si la pantalla leyera `soilTextureId` a pelo, un BIO-G
+  /// Maceta mostraria «Sin definir» mientras el motor esta usando sustrato.
+  /// Dos lecturas del mismo dato es exactamente el defecto que este trabajo
+  /// viene a cerrar.
+  String get _soilTypeSubtitle {
+    final store = BioGScope.of(context);
+    final ctx = store.activeCropContext;
+    if (ctx == null) return 'Configura tu cultivo para definirlo';
+
+    final profile = SoilProfileResolver.resolve(
+      deviceModelId: store.activeDevice?.deviceModelId,
+      cultivationScaleId: ctx.cultivationScaleId,
+      soilTextureId: ctx.soilTextureId,
+      soilTextureSourceId: ctx.soilTextureSource,
+      // El cultivo decide la VARIANTE del sustrato (drenante para xerófitas).
+      // Sin pasarlo, esta fila diría «Sustrato de maceta» para un cactus
+      // mientras el motor estaría usando sustrato drenante: dos lecturas del
+      // mismo dato, que es justo lo que este trabajo viene a cerrar.
+      cropKey: CropRegistry.byKeyName(ctx.cropId)?.cropKey,
+    );
+
+    if (profile.texture.isSubstrate) return profile.texture.displayNameEs;
+    if (profile.isFallback) return 'Sin definir · se usa tierra media';
+    return '${profile.texture.displayNameEs} · '
+        '${profile.texture.shortLabelEs.toLowerCase()}';
+  }
+
   Future<void> _openAddBioG() async {
     final added = await Navigator.of(
       context,
@@ -457,11 +518,14 @@ class _AccountScreenState extends State<AccountScreen>
                         shadowOpacityEnd: 0.08,
                         child: AccountPreferencesCardSection(
                           configureCropAssetPath: kIcConfigureCrop,
+                          soilTypeAssetPath: kIcSoilType,
+                          soilTypeSubtitle: _soilTypeSubtitle,
                           notificationAssetPath: kIcNotification,
                           temperatureAssetPath: kIcTemperature,
                           notifications: _notifications,
                           useCelsius: _useCelsius,
                           onConfigureCropTap: _openConfigureCrop,
+                          onSoilTypeTap: _openSoilType,
                           onNotificationsChanged: (value) {
                             setState(() => _notifications = value);
                             _profileLocalService.saveNotifications(value);

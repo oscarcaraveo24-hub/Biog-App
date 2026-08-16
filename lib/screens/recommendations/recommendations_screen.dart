@@ -537,6 +537,30 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
                     ),
                   ),
 
+                // ── LA LÁMINA ────────────────────────────────────────────
+                //
+                // Este es el hueco que el encabezado de este archivo declaraba:
+                // «lo que el motor todavía NO calcula —la lámina en milímetros
+                // y los días que faltan para llegar a crítico— no se muestra.
+                // Requiere textura de suelo y profundidad radicular, que la app
+                // aún no captura. Cuando existan, las dos tarjetas se encienden
+                // solas».
+                //
+                // Ya existen. Se enciende sola, y sale nula por su cuenta
+                // cuando falta cualquier ingrediente: sin textura resuelta, sin
+                // lectura presente o con el suelo por encima de capacidad de
+                // campo, `decision.depth` es null y esta tarjeta no aparece.
+                // Nunca se inventa un número.
+                if (decision?.depth != null)
+                  SliverToBoxAdapter(
+                    child: _Reveal(
+                      controller: _entrance,
+                      begin: 0.18,
+                      end: 0.66,
+                      child: _IrrigationDepthCard(depth: decision!.depth!),
+                    ),
+                  ),
+
                 // Pronóstico, decisión y etapa: una sola tarjeta.
                 if (decision != null)
                   SliverToBoxAdapter(
@@ -1713,6 +1737,125 @@ const BoxDecoration _glassSheen = BoxDecoration(
   ),
 );
 
+/// La lámina de riego, siempre en banda.
+///
+/// ─────────────────────────────────────────────────────────────────────────────
+/// POR QUÉ UNA BANDA Y NO UNA CIFRA
+/// ─────────────────────────────────────────────────────────────────────────────
+///
+/// La exactitud declarada del canal de humedad es de ±3 puntos de contenido
+/// volumétrico en el rango bajo. Sobre una zona radicular de 40 cm eso son ±12
+/// mm de lámina; sobre una lámina neta calculada de 40 mm, **±30 %**. Un tercio.
+///
+/// Decir «aplica 40 mm» comunicaría una precisión que el instrumento no tiene,
+/// antes siquiera de contar el error de la textura elegida a mano y el de la
+/// profundidad radicular estimada. La banda no es una cortesía: es el número.
+class _IrrigationDepthCard extends StatelessWidget {
+  const _IrrigationDepthCard({required this.depth});
+
+  final IrrigationDepthEstimate depth;
+
+  @override
+  Widget build(BuildContext context) {
+    final double? lpp = depth.litersPerPlant;
+    final double? lm2 = depth.litersPerSquareMeter;
+
+    // Las dos unidades son opcionales. Sin ninguna, la línea no se pinta: un
+    // renglón vacío entre la cifra y el pie parece un fallo de carga.
+    final List<String> units = <String>[
+      if (lm2 != null) '${lm2.toStringAsFixed(lm2 < 10 ? 1 : 0)} litros por m²',
+      if (lpp != null)
+        '${lpp.toStringAsFixed(lpp < 10 ? 1 : 0)} litros por planta',
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      child: BioGGlassCard(
+        radius: 24,
+        padding: EdgeInsets.zero,
+        backgroundColor: _cardSurface(_Rx.water),
+        borderColor: _cardBorder(_Rx.water),
+        boxShadows: _cardShadow,
+        child: DecoratedBox(
+          decoration: _glassSheen,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    _ArtLifted(asset: _Rx.icRiego, size: 26),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Cuánta agua aplicar',
+                        style: TextStyle(
+                          fontSize: 13.4,
+                          fontWeight: FontWeight.w800,
+                          color: _Rx.ink,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  depth.bandEs,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    height: 1.1,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
+                    color: _Rx.waterDeep,
+                  ),
+                ),
+                if (units.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 6),
+                  Text(
+                    units.join(' · '),
+                    style: const TextStyle(
+                      fontSize: 12.6,
+                      height: 1.35,
+                      color: _Rx.muted,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                Text(
+                  depth.basisEs,
+                  style: TextStyle(
+                    fontSize: 11.4,
+                    height: 1.38,
+                    color: _Rx.muted.withValues(alpha: 0.86),
+                  ),
+                ),
+                if (!depth.includesSystemLosses) ...<Widget>[
+                  const SizedBox(height: 8),
+                  Text(
+                    // La lámina bruta SOLO si se conoce el sistema de riego.
+                    // Para los mismos 40 mm netos son 44 por goteo, 53 por
+                    // aspersión y 67 por surco: la diferencia entre el mejor y
+                    // el peor sistema es del 52 %. Fingir esa conversión sin
+                    // saber el sistema sería peor que no darla.
+                    'Es el agua que le falta al suelo. No incluye las pérdidas '
+                    'de tu sistema de riego.',
+                    style: TextStyle(
+                      fontSize: 11.4,
+                      height: 1.38,
+                      color: _Rx.muted.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Un dato suelto al pie de la tarjeta: icono diminuto y texto.
 ///
 /// Es lo que permite que la tarjeta de riego cargue con el clima que uso para
@@ -2023,6 +2166,11 @@ class _WaterBriefCard extends StatelessWidget {
       }
     }
 
+    // La lámina NO se repite aquí: ya tiene su propia tarjeta arriba, con la
+    // banda, las unidades y el supuesto con el que se calculó. Repetirla dos
+    // tarjetas más abajo es la clase de eco que hace que se deje de leer la
+    // tarjeta entera.
+
     final String? projection = trend.projectionLabelEs();
     if (projection != null && projection != 'ya está por debajo') {
       out.add(_Fact(_Rx.icAlert, 'Crítico $projection'));
@@ -2169,12 +2317,20 @@ class _BriefRow extends StatelessWidget {
                     children: <Widget>[
                       _Art(asset: f.iconAsset, size: 15),
                       const SizedBox(width: 5),
-                      Text(
-                        f.text,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: _Rx.muted,
+                      // Un dato largo (una etapa con nombre kilométrico) puede
+                      // pasarse del ancho de la fila por un pelo. `Flexible`
+                      // deja que ese caso caiga a una segunda línea en vez de
+                      // desbordar; los datos cortos siguen igual que siempre.
+                      Flexible(
+                        child: Text(
+                          f.text,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: _Rx.muted,
+                          ),
                         ),
                       ),
                     ],

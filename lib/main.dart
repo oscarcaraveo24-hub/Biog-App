@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:bio_g/bootstrap_gate.dart';
+import 'package:bio_g/core/config/maps_api_key.dart';
 import 'package:bio_g/core/config/supabase_config.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/services/biog/hybrid_biog_repository.dart';
@@ -15,6 +16,12 @@ Future<void> main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+
+  // Resuelve la llave de Google Maps ANTES de que exista una pantalla que la
+  // necesite. Si este arranque trae `--dart-define`, la guarda; si no, recupera
+  // la del arranque anterior. Es una sola lectura de preferencias y evita que
+  // la pantalla de Ubicacion tenga que decidir si esperar o pintar sin llave.
+  await MapsApiKey.resolve();
 
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(_kBioGOverlays);

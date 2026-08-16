@@ -294,23 +294,35 @@ class PdfReportBuilder {
         if (t == null)
           _noDataBox()
         else
+          // Un canal que no midió se imprime como «sin dato», nunca como 0.0.
+          // Un informe que dice «Humedad de suelo 0,0 %» es indistinguible de
+          // un suelo muerto, y va firmado.
           _kvTable(<List<String>>[
             <String>[
               'Humedad de suelo',
-              '${t.soilMoisturePct.toStringAsFixed(1)} %',
+              t.hasSoilMoistureData
+                  ? '${t.soilMoisturePct.toStringAsFixed(1)} %'
+                  : 'Sin dato',
             ],
             <String>[
               'Temperatura del suelo',
-              '${t.soilTempC.toStringAsFixed(1)} °C',
+              t.hasSoilTempData
+                  ? '${t.soilTempC.toStringAsFixed(1)} °C'
+                  : 'Sin dato',
             ],
-            <String>['pH', t.ph.toStringAsFixed(2)],
+            <String>[
+              'pH',
+              t.hasPhData ? t.ph.toStringAsFixed(2) : 'Sin dato',
+            ],
             <String>[
               'Conductividad eléctrica (EC)',
-              '${t.ec.toStringAsFixed(2)} mS/cm',
+              t.hasEcData ? '${t.ec.toStringAsFixed(2)} mS/cm' : 'Sin dato',
             ],
             <String>[
               'Resistencia / Compactación',
-              '${t.resistance.toStringAsFixed(2)} MPa',
+              t.hasResistanceData
+                  ? '${t.resistance.toStringAsFixed(2)} MPa'
+                  : 'Sin dato',
             ],
           ]),
       ],
@@ -329,11 +341,15 @@ class PdfReportBuilder {
           _kvTable(<List<String>>[
             <String>[
               'Temperatura ambiente',
-              '${t.airTempC.toStringAsFixed(1)} °C',
+              t.hasAirTempData
+                  ? '${t.airTempC.toStringAsFixed(1)} °C'
+                  : 'Sin dato',
             ],
             <String>[
               'Humedad del aire',
-              '${t.airHumidityPct.toStringAsFixed(1)} %',
+              t.hasAirHumidityData
+                  ? '${t.airHumidityPct.toStringAsFixed(1)} %'
+                  : 'Sin dato',
             ],
           ]),
       ],

@@ -5,6 +5,19 @@ class UserProfile {
   final String? phone;
   final String? avatarUrl;
   final String? location;
+
+  /// Coordenadas de la parcela. O están las dos o no está ninguna: media
+  /// ubicación no es una ubicación, y la base de datos lo obliga con
+  /// `profiles_location_pair_check`.
+  final double? locationLat;
+  final double? locationLng;
+
+  /// gps | map | search | onboarding. Se guarda aparte del valor porque un
+  /// punto arrastrado a mano y uno leído del GPS no merecen la misma confianza
+  /// cuando hay que auditar por qué se recomendó regar.
+  final String? locationSource;
+  final DateTime? locationUpdatedAt;
+
   final String preferredLanguage;
   final String preferredUnits;
   final String subscriptionStatus;
@@ -20,6 +33,10 @@ class UserProfile {
     required this.phone,
     required this.avatarUrl,
     required this.location,
+    this.locationLat,
+    this.locationLng,
+    this.locationSource,
+    this.locationUpdatedAt,
     required this.preferredLanguage,
     required this.preferredUnits,
     required this.subscriptionStatus,
@@ -42,6 +59,10 @@ class UserProfile {
       phone: map['phone'] as String?,
       avatarUrl: map['avatar_url'] as String?,
       location: map['location'] as String?,
+      locationLat: (map['location_lat'] as num?)?.toDouble(),
+      locationLng: (map['location_lng'] as num?)?.toDouble(),
+      locationSource: map['location_source'] as String?,
+      locationUpdatedAt: parseDate(map['location_updated_at']),
       preferredLanguage: (map['preferred_language'] as String?) ?? 'es',
       preferredUnits: (map['preferred_units'] as String?) ?? 'metric',
       subscriptionStatus: (map['subscription_status'] as String?) ?? 'trial',
@@ -59,6 +80,10 @@ class UserProfile {
     String? phone,
     String? avatarUrl,
     String? location,
+    double? locationLat,
+    double? locationLng,
+    String? locationSource,
+    DateTime? locationUpdatedAt,
     String? preferredLanguage,
     String? preferredUnits,
     String? subscriptionStatus,
@@ -74,6 +99,10 @@ class UserProfile {
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       location: location ?? this.location,
+      locationLat: locationLat ?? this.locationLat,
+      locationLng: locationLng ?? this.locationLng,
+      locationSource: locationSource ?? this.locationSource,
+      locationUpdatedAt: locationUpdatedAt ?? this.locationUpdatedAt,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
       preferredUnits: preferredUnits ?? this.preferredUnits,
       subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,

@@ -347,10 +347,34 @@ class AgroEvalResult {
   AgroMetricEval? get potassium => metrics[AgroMetricKey.k];
 }
 
+/// Calibración de escalas relativas.
+///
+/// ─────────────────────────────────────────────────────────────────────────────
+/// LA HUMEDAD YA NO ESTÁ AQUÍ, Y NO ES UN OLVIDO
+/// ─────────────────────────────────────────────────────────────────────────────
+///
+/// `moistureDryRaw` y `moistureWetRaw` se **borraron**. Convertían el contenido
+/// volumétrico en un índice relativo 0–100 con dos puntos aire/agua, y eso
+/// corresponde a otra clase de sonda: la capacitiva analógica barata. El sensor
+/// que monta el prototipo entrega contenido volumétrico ya calibrado de
+/// fábrica, y el contrato de datos crudos lo dice literalmente: *la humedad no
+/// necesita calibración de usuario*.
+///
+/// Verificado antes de borrarlas: el tipo tenía dos consumidores y **cero
+/// productores**. Nadie instanciaba una `Calibration` en toda la app ni en las
+/// pruebas, y no existía pantalla para hacerlo.
+///
+/// Se borran en vez de dejarlas dormidas porque un condicional que nadie puede
+/// activar hoy pero que alguien activará dentro de seis meses es peor que
+/// ninguno: para entonces nadie recordará por qué estaba ahí. Y el efecto sería
+/// que el motor de riego leyera 25 % como 25 % mientras el de puntuación leyera
+/// ese mismo 25 % como 58 % relativo, y el Panel dijera una cosa mientras
+/// Recomendaciones dice otra, sobre la misma lectura, en la misma pantalla.
+///
+/// Las escalas de N, P, K y resistencia se conservan: esas SÍ son índices
+/// relativos por naturaleza.
 class Calibration {
   const Calibration({
-    this.moistureDryRaw,
-    this.moistureWetRaw,
     this.nMinRaw,
     this.nMaxRaw,
     this.pMinRaw,
@@ -361,8 +385,6 @@ class Calibration {
     this.resistanceMaxRaw,
   });
 
-  final double? moistureDryRaw;
-  final double? moistureWetRaw;
   final double? nMinRaw;
   final double? nMaxRaw;
   final double? pMinRaw;

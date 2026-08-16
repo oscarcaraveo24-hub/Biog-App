@@ -525,7 +525,36 @@ class RecommendationRecord {
           .toList(growable: false),
       engineVersion: decision.engineVersion,
       schemaVersion: BioGEngineVersions.recommendationRecordSchema,
-      extra: <String, Object?>{'evidence': decision.evidence},
+      // ── La capa intermedia del historial ────────────────────────────────
+      //
+      // El historial auditable tiene tres capas y esta es la del medio:
+      //
+      //   1 · TELEMETRÍA — 18 % de contenido volumétrico, la hora, el número
+      //       de secuencia. INMUTABLE: es un hecho físico.
+      //   2 · CONTEXTO DE LA DECISIÓN — textura usada, de dónde salió, versión
+      //       del modelo de agua, etapa, coeficiente de agotamiento aplicado,
+      //       confianza resultante y limitaciones declaradas. INMUTABLE: se
+      //       adjunta a la decisión en el momento de tomarla.
+      //   3 · INTERPRETACIÓN ACTUAL — las franjas de color de la gráfica,
+      //       recalculadas con la configuración vigente. MUTABLE, y está bien
+      //       que lo sea: mirar el pasado con mejor información es útil.
+      //
+      // Sin la capa 2, si alguien pregunta dentro de un año «¿por qué BIO-G
+      // recomendó regar el 18 de agosto de 2026?», no habría forma de
+      // responder: la decisión dejaría de ser reproducible. Y si el productor
+      // corrige su textura dos meses después, recalcular el pasado con la
+      // textura nueva estaría REESCRIBIENDO la historia — la gráfica mostraría
+      // que aquel 18 % era estrés severo cuando lo que BIO-G dijo aquel día,
+      // con la información que tenía, fue otra cosa.
+      //
+      // La regla, en una línea: **la gráfica puede reinterpretarse; la
+      // decisión, no.**
+      extra: <String, Object?>{
+        'evidence': decision.evidence,
+        if (decision.evidence['soilDecision'] != null)
+          'decisionContext': decision.evidence['soilDecision'],
+        if (decision.depth != null) 'depth': decision.depth!.toJson(),
+      },
     );
   }
 }

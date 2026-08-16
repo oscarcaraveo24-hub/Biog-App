@@ -80,7 +80,7 @@ class QuickReportBuilder {
           cultivationScaleId: scaleId,
           ph: live.ph,
           ec: live.ec,
-          soilMoisturePct: live.soilMoisturePct,
+          soilMoisturePct: live.hasSoilMoistureData ? live.soilMoisturePct : null,
         );
 
     final NutrientInterpretationResult pInterpretation =
@@ -97,7 +97,7 @@ class QuickReportBuilder {
           cultivationScaleId: scaleId,
           ph: live.ph,
           ec: live.ec,
-          soilMoisturePct: live.soilMoisturePct,
+          soilMoisturePct: live.hasSoilMoistureData ? live.soilMoisturePct : null,
         );
 
     final NutrientInterpretationResult kInterpretation =
@@ -114,15 +114,34 @@ class QuickReportBuilder {
           cultivationScaleId: scaleId,
           ph: live.ph,
           ec: live.ec,
-          soilMoisturePct: live.soilMoisturePct,
+          soilMoisturePct: live.hasSoilMoistureData ? live.soilMoisturePct : null,
         );
 
-    final List<NutrientInterpretationResult> ordered =
+    // Solo compiten por el titular los nutrientes que DE VERDAD se midieron.
+    //
+    // Sin sonda NPK, `live.n` vale 0.0, e `interpret` convierte ese 0 en
+    // `actionRecommended` —la peor etiqueta de deficiencia—. Como el informe
+    // titula con `ordered.first`, un equipo sin sonda de nutrientes exportaba
+    // un PDF que le decía al productor «aplica fertilizante ya», en cada
+    // informe. Se filtra aquí y no en `rawPpm` a propósito: meter un NaN dentro
+    // del motor haría falsas todas sus comparaciones y el fallo saldría por
+    // otro lado.
+    final List<NutrientInterpretationResult> medidos =
         <NutrientInterpretationResult>[
-          nInterpretation,
-          pInterpretation,
-          kInterpretation,
-        ]..sort((a, b) => b.priorityScore01.compareTo(a.priorityScore01));
+          if (live.hasNitrogenData) nInterpretation,
+          if (live.hasPhosphorusData) pInterpretation,
+          if (live.hasPotassiumData) kInterpretation,
+        ];
+
+    final List<NutrientInterpretationResult> ordered =
+        (medidos.isEmpty
+            ? <NutrientInterpretationResult>[
+                nInterpretation,
+                pInterpretation,
+                kInterpretation,
+              ]
+            : medidos)
+          ..sort((a, b) => b.priorityScore01.compareTo(a.priorityScore01));
 
     final NutrientInterpretationResult top = ordered.first;
     final MapEntry<String, String>? climateBanner = _buildClimateBanner(
@@ -157,9 +176,9 @@ class QuickReportBuilder {
         metricKey: AgroMetricKey.k,
         value: live.k,
       ),
-      nStatus: nInterpretation.labelEs,
-      pStatus: pInterpretation.labelEs,
-      kStatus: kInterpretation.labelEs,
+      nStatus: live.hasNitrogenData ? nInterpretation.labelEs : '—',
+      pStatus: live.hasPhosphorusData ? pInterpretation.labelEs : '—',
+      kStatus: live.hasPotassiumData ? kInterpretation.labelEs : '—',
       historyLabels: _normalizeStringList(historySeries.labels),
       historyN: _normalizeDoubleList(historySeries.nValues),
       historyP: _normalizeDoubleList(historySeries.pValues),
@@ -313,33 +332,55 @@ class QuickReportBuilder {
 
     final List<String> drivers = <String>[];
 
-    if (live.airTempC >= 35) {
-      drivers.add(
-        'temperatura ambiente alta (${live.airTempC.toStringAsFixed(1)} °C)',
-      );
-    } else if (live.airTempC <= 5) {
-      drivers.add(
-        'temperatura ambiente baja (${live.airTempC.toStringAsFixed(1)} °C)',
-      );
+    // Cada canal se lee SOLO si su bandera de presencia lo permite. Sin esto,
+    // un informe para un equipo sin sensor de aire imprimía «temperatura
+    // ambiente baja (0.0 °C)» —indistinguible de una helada real— y un equipo
+    // sin sonda de humedad imprimía «suelo seco (0.0 %)».
+    if (live.hasAirTempData) {
+      if (live.airTempC >= 35) {
+        drivers.add(
+          'temperatura ambiente alta (${live.airTempC.toStringAsFixed(1)} °C)',
+        );
+      } else if (live.airTempC <= 5) {
+        drivers.add(
+          'temperatura ambiente baja (${live.airTempC.toStringAsFixed(1)} °C)',
+        );
+      }
     }
 
-    if (live.airHumidityPct >= 85) {
+    if (live.hasAirHumidityData && live.airHumidityPct >= 85) {
       drivers.add(
         'humedad ambiental elevada (${live.airHumidityPct.toStringAsFixed(1)} %)',
       );
     }
 
-    if (live.soilMoisturePct <= 15) {
-      drivers.add('suelo seco (${live.soilMoisturePct.toStringAsFixed(1)} %)');
-    } else if (live.soilMoisturePct >= 80) {
-      drivers.add(
-        'suelo con humedad excesiva (${live.soilMoisturePct.toStringAsFixed(1)} %)',
-      );
+    // Umbrales derivados de la textura del suelo, no absolutos.
+    //
+    // Antes eran `<= 15` y `>= 80`. El primero llamaba «seco» a un suelo
+    // arenoso con 15 %, que está POR ENCIMA de su capacidad de campo (12) —o
+    // sea, un suelo que está drenando—. El segundo era rama muerta: 80 % no lo
+    // alcanza ningún suelo mineral (la saturación máxima de la tabla es 53) ni
+    // el sustrato drenante (78). En dos años nadie vio ese aviso.
+    if (live.hasSoilMoistureData) {
+      final band = runtime.resolvedMoisture?.range;
+      final secoMax = band?.lowMax ?? 15;
+      final excesoMin = band?.highMin ?? 80;
+      if (live.soilMoisturePct <= secoMax) {
+        drivers.add('suelo seco (${live.soilMoisturePct.toStringAsFixed(1)} %)');
+      } else if (live.soilMoisturePct >= excesoMin) {
+        drivers.add(
+          'suelo con humedad excesiva (${live.soilMoisturePct.toStringAsFixed(1)} %)',
+        );
+      }
     }
 
     if (drivers.isEmpty) return null;
 
-    final String title = live.airHumidityPct >= 85 && live.airTempC >= 28
+    final String title =
+        live.hasAirHumidityData &&
+            live.hasAirTempData &&
+            live.airHumidityPct >= 85 &&
+            live.airTempC >= 28
         ? 'Ambiente favorable para presión sanitaria'
         : 'Contexto ambiental a vigilar';
 

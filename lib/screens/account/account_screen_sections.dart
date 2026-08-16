@@ -316,22 +316,32 @@ class AccountMyBioGCardSection extends StatelessWidget {
 
 class AccountPreferencesCardSection extends StatelessWidget {
   final String configureCropAssetPath;
+  final String soilTypeAssetPath;
   final String notificationAssetPath;
   final String temperatureAssetPath;
   final bool notifications;
   final bool useCelsius;
   final VoidCallback onConfigureCropTap;
+  final VoidCallback onSoilTypeTap;
+
+  /// Resumen del suelo actual, ya resuelto por quien conoce la jerarquía
+  /// equipo -> escala -> textura declarada. Se muestra bajo el título para que
+  /// el estado se lea sin entrar: sobre todo cuando es el de respaldo.
+  final String soilTypeSubtitle;
   final ValueChanged<bool> onNotificationsChanged;
   final ValueChanged<bool> onUseCelsiusChanged;
 
   const AccountPreferencesCardSection({
     super.key,
     required this.configureCropAssetPath,
+    required this.soilTypeAssetPath,
     required this.notificationAssetPath,
     required this.temperatureAssetPath,
     required this.notifications,
     required this.useCelsius,
     required this.onConfigureCropTap,
+    required this.onSoilTypeTap,
+    required this.soilTypeSubtitle,
     required this.onNotificationsChanged,
     required this.onUseCelsiusChanged,
   });
@@ -349,6 +359,24 @@ class AccountPreferencesCardSection extends StatelessWidget {
               scale: 2.6,
               title: 'Configurar cultivo',
               onTap: onConfigureCropTap,
+            ),
+            const _DividerLine(),
+            // El tipo de suelo vive FUERA del wizard de cultivo a propósito: es
+            // atributo de la parcela y no cambia al cambiar de siembra. Aquí es
+            // donde el productor que respondió «No estoy seguro» y luego lo
+            // averiguo puede corregirlo, que es lo que evita que esa respuesta
+            // honesta se vuelva una trampa permanente.
+            _NavRow(
+              // Mismo tamaño visual que «Configurar cultivo». No es la misma
+              // cifra porque no es la misma proporción de aire transparente:
+              // ic_configurar_cultivo dibuja el 47,6 % de su lienzo y a escala
+              // 2,6 rinde ~42 px de glifo; ic_soil_type dibuja el 50,7 %, así
+              // que necesita 2,45 para rendir esos mismos 42 px.
+              assetPath: soilTypeAssetPath,
+              scale: 2.45,
+              title: 'Tipo de suelo',
+              subtitle: soilTypeSubtitle,
+              onTap: onSoilTypeTap,
             ),
             const _DividerLine(),
             _SettingRow(
@@ -762,6 +790,7 @@ class _NavRow extends StatefulWidget {
   final String assetPath;
   final double scale;
   final String title;
+  final String? subtitle;
   final VoidCallback onTap;
 
   const _NavRow({
@@ -769,6 +798,7 @@ class _NavRow extends StatefulWidget {
     required this.scale,
     required this.title,
     required this.onTap,
+    this.subtitle,
   });
 
   @override
@@ -810,13 +840,32 @@ class _NavRowState extends State<_NavRow> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      widget.title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF0E1A16),
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0E1A16),
+                          ),
+                        ),
+                        if (widget.subtitle != null &&
+                            widget.subtitle!.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.subtitle!,
+                            style: TextStyle(
+                              fontSize: 11.6,
+                              height: 1.25,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black.withValues(alpha: 0.42),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   const Icon(

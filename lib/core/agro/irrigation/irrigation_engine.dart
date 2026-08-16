@@ -695,6 +695,12 @@ class IrrigationEngine {
     if (!input.moisture.isCalibrated) confidence -= 0.10;
     if (input.soil.isEmpty) confidence -= 0.05;
 
+    // Textura de respaldo: el productor no declaró su tierra y se está usando
+    // la media. Se resta AQUÍ y no después, para que las compuertas de abajo
+    // —el mínimo para recomendar y el umbral de confirmación— vean la
+    // confianza real y no una que todavía no se ha degradado.
+    if (input.soil.isFallbackTexture) confidence -= 0.15;
+
     return confidence.clamp(0.0, 1.0);
   }
 

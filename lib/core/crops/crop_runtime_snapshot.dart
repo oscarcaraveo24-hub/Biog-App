@@ -1,4 +1,5 @@
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/water/moisture_target_resolver.dart';
 import 'package:bio_g/core/crops/crop_definition.dart';
 import 'package:bio_g/core/crops/crop_profile_models.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
@@ -25,6 +26,19 @@ class CropRuntimeSnapshot {
   final CropProfile? profile;
   final CropStageResult? stageResult;
   final StageTargets? targets;
+
+  /// El objetivo de humedad ya derivado de (textura + cultivo + etapa), con su
+  /// contexto de suelo, sus limitaciones y su penalización de confianza.
+  ///
+  /// `targets.moistureRaw` ya trae esta misma banda —se sobrescribe en el
+  /// resolver— pero aquí viaja además todo lo que hace falta para **explicar**
+  /// la decisión: qué textura se usó, de dónde salió, qué coeficiente de
+  /// agotamiento se aplicó y qué no sabíamos. Sin eso, la lámina en milímetros
+  /// y el registro auditable no se pueden construir.
+  ///
+  /// Nunca es null cuando hay dispositivo: el motor de riego necesita el
+  /// `SoilContext` aunque no haya cultivo declarado.
+  final ResolvedMoistureTarget? resolvedMoisture;
 
   final AgroEvalResult? eval;
   final AlertsState nextAlertsState;
@@ -75,6 +89,7 @@ class CropRuntimeSnapshot {
     required this.profile,
     required this.stageResult,
     required this.targets,
+    this.resolvedMoisture,
     required this.eval,
     required this.nextAlertsState,
     required this.cropKeyName,

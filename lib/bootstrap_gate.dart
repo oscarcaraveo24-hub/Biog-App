@@ -9,6 +9,7 @@ import 'package:bio_g/core/crops/recurring_bloom/recurring_bloom_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/generic/generic_guide.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
+import 'package:bio_g/core/profile/parcel_location_store.dart';
 import 'package:bio_g/core/profile/profile_repository.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/onboarding/onboarding_draft.dart';
@@ -213,9 +214,13 @@ DeviceCropContext resolveOnboardingOrnamentalDraftContext({
     varietyAlias: draft.varietyAlias,
     selectedDate: selectedDate,
     timezone: draft.timezone ?? previous?.timezone,
-    // El flujo ornamental no pregunta ubicación/maceta/jardín. El contexto
-    // queda desconocido hasta que exista una edición no bloqueante posterior.
-    cultivationScaleId: null,
+    // La escala SÍ se pregunta —el wizard la pide en el paso 2, antes de la
+    // categoría— y ahora se conserva. Nulificarla aquí era el mismo defecto que
+    // en el almacén, y en la ruta que más daño hace: son los ornamentales los
+    // que necesitan el perfil de sustrato, y este `null` se lo borraba justo a
+    // ellos. `SoilProfileResolver` no tenía entonces ni modelo de equipo ni
+    // escala, y les aplicaba constantes de suelo mineral.
+    cultivationScaleId: draft.cultivationScale,
     ornamentalStageId: ornamentalStageId,
     ornamentalAnchorDate: effectiveAnchorDate,
     ornamentalAnchorTypeId: ornamentalAnchorTypeId,
@@ -313,7 +318,8 @@ DeviceCropContext resolveOnboardingRecurringBloomDraftContext({
     varietyAlias: draft.varietyAlias,
     selectedDate: effectiveAnchorDate,
     timezone: draft.timezone ?? previous?.timezone,
-    cultivationScaleId: null,
+    // Misma corrección que en la ruta ornamental: la escala se conserva.
+    cultivationScaleId: draft.cultivationScale,
     ornamentalStageId: passStageId,
     ornamentalAnchorDate: effectiveAnchorDate,
     ornamentalAnchorTypeId: option?.anchorTypeId,
@@ -419,6 +425,20 @@ class _BootstrapGateState extends State<BootstrapGate> {
     }
 
     await store.bindUser(userId: userId);
+
+    // Recupera la ubicación de la parcela desde la nube cuando el teléfono no
+    // la tiene.
+    //
+    // Es lo único que hace que una reinstalación —o entrar desde otro
+    // teléfono— no deje al usuario sin parcela. Antes las coordenadas vivían
+    // SOLO en `SharedPreferences`: la nube conservaba el texto de la ubicación
+    // y perdía el punto, así que la interfaz seguía mostrando el nombre del
+    // rancho mientras el motor de clima no tenía a dónde apuntar.
+    //
+    // No pisa lo local salvo que la nube sea demostrablemente más reciente
+    // (ver `ParcelLocationStore.hydrateFromCloud`), así que una ubicación
+    // elegida sin cobertura no se pierde al recuperar la señal.
+    unawaited(ParcelLocationStore.hydrateFromCloud(repository: _repo));
   }
 
   Future<void> _handleOnboardingCompleted(OnboardingDraft draft) async {
@@ -461,11 +481,40 @@ class _BootstrapGateState extends State<BootstrapGate> {
       final String parcelName = draft.locationLabel?.trim().isNotEmpty == true
           ? draft.locationLabel!.trim()
           : 'Parcela';
+      // La identidad que declaró el aparato viaja hasta aquí. Antes se creaba
+      // el dispositivo sin id de hardware y sin modelo, así que nacía con un
+      // UUID inventado por el teléfono —que la telemetría nunca escribiría— y
+      // con el medio de cultivo indeterminado.
       device = await store.addDevice(
-        name: 'Bio-G',
+        name: draft.pairedDeviceName?.trim().isNotEmpty == true
+            ? draft.pairedDeviceName!.trim()
+            : 'Bio-G',
         locationName: parcelName,
         seedId: null,
         profileId: null,
+        hardwareDeviceId: draft.pairedHardwareId,
+        deviceModelId: draft.pairedDeviceModelId,
+      );
+    } else if (device.deviceModelId == null &&
+        draft.pairedDeviceModelId != null &&
+        draft.pairedHardwareId != null &&
+        draft.pairedHardwareId!.toLowerCase() == device.id.toLowerCase()) {
+      // Ya había un equipo sin modelo Y es EXACTAMENTE el que se acaba de
+      // escanear. Se rellena por la misma vía que el re-escaneo: `addDevice`
+      // reconoce el id y solo completa lo que falta.
+      //
+      // La comparación de ids no es una precaución de más: sin ella, escanear
+      // un equipo distinto del activo hacía que `addDevice` no encontrara
+      // coincidencia, creara una fila NUEVA —sin activarla, porque ya había un
+      // dispositivo activo— y el contexto de cultivo entero, suelo incluido,
+      // se guardara bajo un dispositivo que la app no muestra.
+      device = await store.addDevice(
+        name: device.name,
+        locationName: device.locationName,
+        seedId: null,
+        profileId: null,
+        hardwareDeviceId: draft.pairedHardwareId,
+        deviceModelId: draft.pairedDeviceModelId,
       );
     }
 
@@ -500,7 +549,7 @@ class _BootstrapGateState extends State<BootstrapGate> {
         timezone: draft.timezone,
       );
       await store.saveCropContext(
-        _withParcelLocation(guide, draft),
+        _withParcelAttributes(guide, draft),
         markSetupCompleted: true,
       );
       return;
@@ -551,7 +600,7 @@ class _BootstrapGateState extends State<BootstrapGate> {
         contextResolver: _contextResolver,
       );
       await store.saveCropContext(
-      _withParcelLocation(resolved, draft),
+      _withParcelAttributes(resolved, draft),
       markSetupCompleted: true,
     );
       return;
@@ -573,7 +622,7 @@ class _BootstrapGateState extends State<BootstrapGate> {
         contextResolver: _contextResolver,
       );
       await store.saveCropContext(
-      _withParcelLocation(resolved, draft),
+      _withParcelAttributes(resolved, draft),
       markSetupCompleted: true,
     );
       return;
@@ -620,7 +669,7 @@ class _BootstrapGateState extends State<BootstrapGate> {
     );
 
     await store.saveCropContext(
-      _withParcelLocation(resolvedContext, draft),
+      _withParcelAttributes(resolvedContext, draft),
       markSetupCompleted: true,
     );
   }
@@ -639,11 +688,21 @@ class _BootstrapGateState extends State<BootstrapGate> {
   /// onboarding viaja con el contexto de cultivo. Antes se quedaba sólo en
   /// SharedPreferences y no llegaba ni al contexto ni a la nube, aunque las
   /// columnas ya existían vacías en `device_crop_contexts`.
-  DeviceCropContext _withParcelLocation(
+  /// Atributos de la PARCELA, no del cultivo: ubicación y tipo de suelo.
+  ///
+  /// Van juntos y en un solo sitio porque comparten el mismo ciclo de vida —no
+  /// cambian al cambiar de cultivo— y porque todas las ramas del borrador
+  /// (guía, árbol, ornamental, anual) pasan por aquí. Añadir el suelo a una
+  /// sola de ellas habría dejado las otras cinco perdiéndolo en silencio.
+  DeviceCropContext _withParcelAttributes(
     DeviceCropContext context,
     OnboardingDraft draft,
   ) {
     final String? label = draft.locationLabel?.trim();
+    final String? textureId = draft.soilTextureId?.trim();
+    final String? textureSource = draft.soilTextureSource?.trim();
+    final String? localOther = draft.soilLocalOther?.trim();
+
     return context.copyWith(
       locationLabel: (label != null && label.isNotEmpty)
           ? label
@@ -651,6 +710,18 @@ class _BootstrapGateState extends State<BootstrapGate> {
       locationSource: draft.locationSource ?? context.locationSource,
       geoLat: draft.geoLat ?? context.geoLat,
       geoLng: draft.geoLng ?? context.geoLng,
+      soilTextureId: (textureId != null && textureId.isNotEmpty)
+          ? textureId
+          : context.soilTextureId,
+      soilTextureSource: (textureSource != null && textureSource.isNotEmpty)
+          ? textureSource
+          : context.soilTextureSource,
+      soilLocalDescriptors: draft.soilLocalDescriptors.isNotEmpty
+          ? draft.soilLocalDescriptors
+          : context.soilLocalDescriptors,
+      soilLocalOther: (localOther != null && localOther.isNotEmpty)
+          ? localOther
+          : context.soilLocalOther,
     );
   }
 
@@ -671,7 +742,7 @@ class _BootstrapGateState extends State<BootstrapGate> {
       contextResolver: _contextResolver,
     );
     await store.saveCropContext(
-      _withParcelLocation(resolved, draft),
+      _withParcelAttributes(resolved, draft),
       markSetupCompleted: true,
     );
   }

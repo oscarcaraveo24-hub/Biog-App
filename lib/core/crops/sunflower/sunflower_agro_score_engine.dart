@@ -60,7 +60,19 @@ class SunflowerAgroScoreEngine {
     final bool isCompact =
         profileId?.trim().toLowerCase() == kGi02CompactContainer;
 
-    final moisture01 = _normalizeMoisture01(t.soilMoisturePct, cal);
+    // ── La bandera de presencia manda ──────────────────────────────────────
+    //
+    // `BioGTelemetry` rellena con 0.0 el sensor que no reportó, y 0.0 cae en
+    // CRÍTICO en cuatro de los cinco rangos: sin esta guarda, una sonda
+    // averiada o desconectada se leería como suelo en emergencia y el anillo
+    // del Panel pintaría un diagnóstico catastrófico de un dato que no existe.
+    //
+    // NaN y no cero: `_evalLegacy` ya devuelve `AgroBand.unknown` ante un valor
+    // no finito, así que la métrica sale como «sin dato» —que es la verdad— sin
+    // tocar la firma del evaluador ni la de este motor.
+    final moisture01 = t.hasSoilMoistureData
+        ? _normalizeMoisture01(t.soilMoisturePct, cal)
+        : double.nan;
     final moistureRawCal = moisture01 * 100.0;
 
     final moistureEval = _evalLegacy(value: moistureRawCal, range: targets.moistureRaw);
@@ -71,6 +83,7 @@ class SunflowerAgroScoreEngine {
 
     final nMetric = _interpretNutrient(
       metricKey: AgroMetricKey.n,
+      hasData: t.hasNitrogenData,
       rawMgKg: t.n.toDouble(),
       stage: stage,
       stageLabelEs: stageLabelEs,
@@ -81,6 +94,7 @@ class SunflowerAgroScoreEngine {
     final pMetric = _interpretNutrient(
       metricKey: AgroMetricKey.p,
       rawMgKg: t.p.toDouble(),
+      hasData: t.hasPhosphorusData,
       stage: stage,
       stageLabelEs: stageLabelEs,
       targets: targets,
@@ -90,6 +104,7 @@ class SunflowerAgroScoreEngine {
     final kMetric = _interpretNutrient(
       metricKey: AgroMetricKey.k,
       rawMgKg: t.k.toDouble(),
+      hasData: t.hasPotassiumData,
       stage: stage,
       stageLabelEs: stageLabelEs,
       targets: targets,
@@ -197,8 +212,21 @@ class SunflowerAgroScoreEngine {
     );
 
     // §14.4 — combinaciones de riesgo.
-    final airTemp = t.airTempC;
-    final airHum = t.airHumidityPct;
+    // ── Un canal que no midió viaja como NaN, jamás como cero ──────────────
+    //
+    // `BioGTelemetry` rellena con 0.0 el sensor ausente y baja su bandera de
+    // presencia. Sin esta línea, `0.0 <= 0` cumple la condición de helada: un
+    // equipo sin sensor de aire —o con un cable flojo en el bus— gritaría
+    // «Riesgo de helada» CRÍTICO en cada lectura, para siempre. Un productor
+    // puede encender calefactores o quemar diésel por un canal que nunca
+    // existió.
+    //
+    // NaN, y no un cero: en IEEE-754 toda comparación ordenada con NaN es
+    // falsa, así que apaga los cinco umbrales de este bloque —helada, frío,
+    // calor, calor extremo y humedad— de una sola vez y sin poder olvidarse
+    // ninguno. `isFinite` también da falso, que es lo correcto.
+    final airTemp = t.hasAirTempData ? t.airTempC : double.nan;
+    final airHum = t.hasAirHumidityData ? t.airHumidityPct : double.nan;
     final bool isBudOrFlower =
         stage == SunflowerStageIds.budFormation ||
         stage == SunflowerStageIds.flowering;
@@ -419,22 +447,41 @@ class SunflowerAgroScoreEngine {
   static AgroMetricEval _interpretNutrient({
     required AgroMetricKey metricKey,
     required double rawMgKg,
+    required bool hasData,
     required String stage,
     required String stageLabelEs,
     required StageTargets targets,
     required StageWeights weights,
     required BioGTelemetry t,
   }) {
+    // Sin sonda de nutrientes no hay dato, y ausencia NO es cero.
+    //
+    // Un 0 ppm entra en `interpret` y sale como `actionRecommended`, la peor
+    // etiqueta de deficiencia que existe: un equipo sin sonda NPK le decía al
+    // productor «aplica fertilizante ya», en cada lectura, para siempre. El
+    // motor de frutales ya se guardaba de esto desde el principio; el resto no.
+    if (!hasData || rawMgKg <= 0) {
+      return AgroMetricEval(
+        band: AgroBand.unknown,
+        score01: 0.5,
+        labelEs: AgroBand.unknown.labelEs,
+        value: rawMgKg,
+        stageKey: stage,
+        stageLabelEs: stageLabelEs,
+        demandWindowLabelEs: targets.windowLabelFor(metricKey),
+      );
+    }
+
     final interpretation = NutrientRecommendationEngine.interpret(
       nutrient: metricKey,
       rawPpm: rawMgKg,
       cropKey: 'sunflower',
-      stageKey: stage,
+        stageKey: stage,
       targets: targets,
       weights: weights,
       ph: t.ph,
       ec: t.ec,
-      soilMoisturePct: t.soilMoisturePct,
+      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
     );
 
     return AgroMetricEval(
@@ -445,8 +492,8 @@ class SunflowerAgroScoreEngine {
       labelEs: interpretation.labelEs,
       value: rawMgKg,
       priorityLabel: interpretation.label,
-      stageKey: stage,
-      stageLabelEs: stageLabelEs,
+        stageKey: stage,
+        stageLabelEs: stageLabelEs,
       demandWindowLabelEs: interpretation.demandWindowLabel,
       shortRecommendationEs: interpretation.shortRecommendation,
       practicalRecommendationEs: interpretation.practicalRecommendation,
@@ -614,8 +661,12 @@ class SunflowerAgroScoreEngine {
     BioGTelemetry t,
     String stage,
   ) {
-    final airTemp = t.airTempC;
-    final airHum = t.airHumidityPct;
+    // NaN y no cero cuando el canal no midió: toda comparación ordenada con
+    // NaN es falsa, así que la combinación de riesgo se apaga entera en vez de
+    // dispararse con un 0.0 sintetizado. Ver la nota larga en el bloque de
+    // alertas ambientales de este mismo archivo.
+    final airTemp = t.hasAirTempData ? t.airTempC : double.nan;
+    final airHum = t.hasAirHumidityData ? t.airHumidityPct : double.nan;
 
     final bool closing = stage == SunflowerStageIds.senescence;
     final bool budOrFlower =
@@ -648,13 +699,24 @@ class SunflowerAgroScoreEngine {
     }
   }
 
+  /// Contenido volumétrico del sensor, a fracción 0..1.
+  ///
+  /// La rama de calibración relativa seco/mojado se BORRÓ. El módulo de agua
+  /// declara que la humedad es contenido volumétrico real y que no necesita
+  /// calibración de usuario; el propio contrato de datos crudos lo dice por
+  /// escrito. Aquella rama existía para otra clase de sonda —la capacitiva
+  /// analógica barata— y no aplica al sensor que entrega VWC ya calibrado de
+  /// fábrica.
+  ///
+  /// Verificado antes de borrarla: el tipo tenía dos consumidores y **cero
+  /// productores**. Nadie la instanciaba, y no había pantalla para hacerlo. Se
+  /// borra en vez de dejarla dormida porque un condicional que nadie puede
+  /// activar hoy pero que alguien activará en seis meses es peor que ninguno:
+  /// para entonces nadie recordará por qué estaba ahí, y el efecto sería que el
+  /// motor de riego leyera 25 % como 25 % mientras el de puntuación leyera el
+  /// mismo 25 % como 58 % relativo —dos lecturas del mismo dato, en la misma
+  /// pantalla—.
   static double _normalizeMoisture01(double raw0to100, Calibration? cal) {
-    final dry = cal?.moistureDryRaw;
-    final wet = cal?.moistureWetRaw;
-
-    if (dry != null && wet != null && (wet - dry).abs() > 1e-6) {
-      return ((raw0to100 - dry) / (wet - dry)).clamp(0.0, 1.0);
-    }
     return (raw0to100 / 100.0).clamp(0.0, 1.0);
   }
 

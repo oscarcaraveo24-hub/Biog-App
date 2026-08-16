@@ -202,27 +202,72 @@ class IrrigationReason {
   int get hashCode => Object.hash(code, textEs, isLimitation);
 }
 
-/// Estimación cuantitativa de lámina. Solo se rellena cuando hay base para
-/// hacerlo (V1-B); en V1-A queda nula a propósito.
+/// Estimación cuantitativa de lámina.
 ///
-/// Existe desde ahora para que el contrato del registro auditable no cambie
-/// cuando llegue el balance hídrico, pero el motor de veto NUNCA la inventa.
+/// Se rellena únicamente cuando hay base real para hacerlo: textura conocida
+/// (o derivada del equipo), profundidad radicular del cultivo y una lectura de
+/// humedad presente y vigente. Sin uno de esos ingredientes queda **nula**, y la
+/// tarjeta dice «riega como acostumbras» en vez de fingir precisión.
+///
+/// El motor de veto nunca la inventa: la produce
+/// `MoistureTargetResolver.depthFor`, que devuelve null antes que adivinar.
 @immutable
 class IrrigationDepthEstimate {
   const IrrigationDepthEstimate({
     required this.millimeters,
     required this.basisEs,
+    this.lowMillimeters,
+    this.highMillimeters,
+    this.includesSystemLosses = false,
     this.litersPerPlant,
     this.litersPerSquareMeter,
   });
 
   final double millimeters;
   final String basisEs;
+
+  /// ── La banda, y por qué es obligatoria ──────────────────────────────────
+  ///
+  /// La exactitud declarada del canal de humedad es de ±3 puntos de contenido
+  /// volumétrico en el rango bajo. Sobre una zona radicular de 40 cm eso son
+  /// ±12 mm de lámina; sobre una lámina neta calculada de 40 mm, **±30 %**. Un
+  /// tercio.
+  ///
+  /// Publicar «aplica 40 mm» comunicaría una precisión que el instrumento no
+  /// tiene, antes siquiera de contar el error de la textura elegida a mano y el
+  /// de la profundidad radicular estimada. La banda no es una cortesía: es el
+  /// número.
+  final double? lowMillimeters;
+  final double? highMillimeters;
+
+  /// True cuando [millimeters] ya cuenta las pérdidas del sistema de riego.
+  ///
+  /// Sin sistema declarado se publica la lámina NETA y hay que decirlo: para
+  /// los mismos 40 mm netos son 44 por goteo, 53 por aspersión y 67 por surco.
+  /// La diferencia entre el mejor y el peor sistema es del 52 %; fingir que se
+  /// conoce esa conversión sin saber el sistema sería peor que no darla.
+  final bool includesSystemLosses;
+
   final double? litersPerPlant;
   final double? litersPerSquareMeter;
 
+  bool get hasBand => lowMillimeters != null && highMillimeters != null;
+
+  /// Nunca una cifra cerrada.
+  String get bandEs {
+    final lo = lowMillimeters;
+    final hi = highMillimeters;
+    if (lo == null || hi == null) return 'unos ${_fmt(millimeters)} mm';
+    return 'entre ${_fmt(lo)} y ${_fmt(hi)} mm';
+  }
+
+  static String _fmt(double v) => v.toStringAsFixed(v < 10 ? 1 : 0);
+
   Map<String, Object?> toJson() => <String, Object?>{
     'mm': millimeters,
+    'lowMm': lowMillimeters,
+    'highMm': highMillimeters,
+    'includesSystemLosses': includesSystemLosses,
     'basis': basisEs,
     'litersPerPlant': litersPerPlant,
     'litersPerM2': litersPerSquareMeter,

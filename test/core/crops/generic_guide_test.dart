@@ -176,8 +176,10 @@ void main() {
       // "Bajo" y "Alto" se pintan en las bandas del Panel; no suenan el
       // teléfono. Sin esta regla la guía sería el modo más ruidoso de la app,
       // y encima sobre una planta que no sabemos cuál es.
-      final bajo = GuideAgroScoreEngine.evaluate(t: telemetry(moisture: 25));
-      final alto = GuideAgroScoreEngine.evaluate(t: telemetry(moisture: 78));
+      // Bandas contra la escala corregida (franco, agotamiento genérico):
+      // 19 / 22 – 28 / 43,2 % de contenido volumétrico.
+      final bajo = GuideAgroScoreEngine.evaluate(t: telemetry(moisture: 20));
+      final alto = GuideAgroScoreEngine.evaluate(t: telemetry(moisture: 35));
       final critico = GuideAgroScoreEngine.evaluate(t: telemetry(moisture: 10));
 
       expect(bajo.eval.suggestedAlertKeys, isEmpty);
@@ -198,8 +200,11 @@ void main() {
       // 92 % y 10 % son los dos extremos de la MISMA banda crítica. Con una
       // sola clave, la maceta inundada recibía "muy por debajo del rango".
       final seco = GuideAgroScoreEngine.evaluate(t: telemetry(moisture: 10));
+      // 46 % en suelo franco SÍ es encharcamiento: está por encima del 43,2 %
+      // que es el 90 % de la saturación. Con la escala vieja hacía falta un
+      // 92 % que ningún suelo mineral alcanza — la alarma era inalcanzable.
       final inundado = GuideAgroScoreEngine.evaluate(
-        t: telemetry(moisture: 92),
+        t: telemetry(moisture: 46),
       );
 
       expect(seco.eval.suggestedAlertKeys, contains('soilMoisture.critical'));
@@ -241,12 +246,15 @@ void main() {
     }
 
     test('humedad: crítico / bajo / óptimo / alto / crítico', () {
-      // Contra kGuideTargets.moistureRaw = 18 / 35 – 70 / 85.
+      // Contra kGuideTargets.moistureRaw = 19 / 22 – 28 / 43,2, que es lo que
+      // produce el resolver para suelo franco con agotamiento genérico. Los
+      // valores de antes —45 como «óptimo», 92 como único crítico alto— vivían
+      // en una escala de sustrato de maceta.
       expect(bandFor(10), AgroBand.critical);
-      expect(bandFor(25), AgroBand.low);
-      expect(bandFor(45), AgroBand.optimal);
-      expect(bandFor(78), AgroBand.high);
-      expect(bandFor(92), AgroBand.critical);
+      expect(bandFor(20), AgroBand.low);
+      expect(bandFor(25), AgroBand.optimal);
+      expect(bandFor(35), AgroBand.high);
+      expect(bandFor(46), AgroBand.critical);
     });
 
     test('la resistencia nunca sale crítica por estar suelta', () {
@@ -355,7 +363,10 @@ void main() {
     });
 
     test('produce evaluación de suelo, sin claves de nutrientes', () {
-      final snapshot = resolveGuide();
+      // 25 % de contenido volumétrico en suelo franco: dentro del óptimo. El
+      // ayudante trae 45 por omisión, que en la escala corregida es
+      // encharcamiento.
+      final snapshot = resolveGuide(live: telemetry(moisture: 25));
 
       expect(snapshot.eval, isNotNull);
       expect(

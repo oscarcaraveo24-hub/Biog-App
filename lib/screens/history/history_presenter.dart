@@ -6,6 +6,8 @@ import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/agronomic_event.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
+import 'package:bio_g/core/agro/water/moisture_target_resolver.dart';
+import 'package:bio_g/core/agro/water/soil_profile_resolver.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
@@ -184,6 +186,30 @@ class HistoryScreenPresenter {
         calendarId: runtime.cropContext?.calendarTypeId,
         stageKey: previousStage.stageKey,
         baseTargets: previousTargets,
+      );
+
+      // ── El pasado se puntúa con la MISMA escala que el presente ───────────
+      //
+      // Esta es la única ruta que arma sus propios objetivos sin pasar por
+      // `CropRuntimeResolver`, así que se quedaba con la banda del catálogo
+      // mientras las bandas actuales ya venían derivadas de la textura. La
+      // consecuencia no era cosmética: `EventEngine` emite «Recuperación»
+      // cuando el número de problemas baja, y una humedad ESTABLE salía
+      // crítica contra el catálogo y óptima contra la banda derivada. El
+      // resultado era un evento de recuperación permanente e inventado, que
+      // además se empuja a la bandeja de notificaciones.
+      previousTargets = previousTargets.copyWith(
+        moistureRaw: MoistureTargetResolver.resolveForSoilProfile(
+          soilProfile: SoilProfileResolver.resolve(
+            deviceModelId: runtime.device?.deviceModelId,
+            cultivationScaleId: runtime.cropContext?.cultivationScaleId,
+            soilTextureId: runtime.cropContext?.soilTextureId,
+            soilTextureSourceId: runtime.cropContext?.soilTextureSource,
+            cropKey: definition.cropKey,
+          ),
+          cropKey: definition.cropKey,
+          stageKey: previousStage.stageKey,
+        ).range,
       );
     }
 

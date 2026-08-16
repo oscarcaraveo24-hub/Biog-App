@@ -552,10 +552,17 @@ class _NpkScreenState extends State<NpkScreen> {
                           interpretNutrientFallback({
                             required AgroMetricKey nutrient,
                             required double rawPpm,
+                            required bool hasData,
                             required double? trendPct,
                             required AgroMetricEval? evalMetric,
                           }) {
                             if (!isPlanted || live == null) return null;
+                            // Sin sonda de ese canal no hay dato, y ausencia no
+                            // es cero: un 0 crudo sale de `interpret` como
+                            // `actionRecommended`, la peor etiqueta de
+                            // deficiencia. Devolver null es lo correcto: los
+                            // consumidores de abajo ya tratan el nulo.
+                            if (!hasData) return null;
                             // Se calcula SIEMPRE, no sólo como respaldo: es
                             // la única interpretación que recibe la escala
                             // de cultivo y por tanto la unidad correcta.
@@ -573,7 +580,7 @@ class _NpkScreenState extends State<NpkScreen> {
                               cultivationScaleId: cultivationScaleId,
                               ph: live.ph,
                               ec: live.ec,
-                              soilMoisturePct: live.soilMoisturePct,
+                              soilMoisturePct: live.hasSoilMoistureData ? live.soilMoisturePct : null,
                               trendPct: trendPct,
                             );
                           }
@@ -631,6 +638,7 @@ class _NpkScreenState extends State<NpkScreen> {
                               : interpretNutrientFallback(
                                   nutrient: AgroMetricKey.n,
                                   rawPpm: live.n.toDouble(),
+                                  hasData: live.hasNitrogenData,
                                   trendPct: nTrendPct,
                                   evalMetric: nEvalMetric,
                                 );
@@ -640,6 +648,7 @@ class _NpkScreenState extends State<NpkScreen> {
                               : interpretNutrientFallback(
                                   nutrient: AgroMetricKey.p,
                                   rawPpm: live.p.toDouble(),
+                                  hasData: live.hasPhosphorusData,
                                   trendPct: pTrendPct,
                                   evalMetric: pEvalMetric,
                                 );
@@ -649,6 +658,7 @@ class _NpkScreenState extends State<NpkScreen> {
                               : interpretNutrientFallback(
                                   nutrient: AgroMetricKey.k,
                                   rawPpm: live.k.toDouble(),
+                                  hasData: live.hasPotassiumData,
                                   trendPct: kTrendPct,
                                   evalMetric: kEvalMetric,
                                 );

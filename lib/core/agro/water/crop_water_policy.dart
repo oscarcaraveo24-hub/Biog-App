@@ -27,6 +27,7 @@
 
 import 'package:flutter/foundation.dart';
 
+import 'package:bio_g/core/agro/water/stage_water_window.dart';
 import 'package:bio_g/core/crops/crop_types.dart';
 
 /// Clases de tolerancia al agotamiento. El número es la fracción del agua
@@ -292,58 +293,45 @@ abstract final class CropWaterPolicies {
   /// En el otro extremo, cerca de cosecha y en reposo muchos cultivos QUIEREN
   /// secarse: la cebolla y el ajo necesitan el cuello seco para almacenarse, y
   /// un frutal en dormancia no debe regarse como si estuviera creciendo.
+  ///
+  /// Qué etapa es cuál NO se adivina a partir del nombre. Antes se hacía con
+  /// `stageKey.contains('grain_fill')` y compañía, y estaba roto: `grainFill`
+  /// nunca coincidió con `'grain_fill'` porque el runtime emite el `.name` del
+  /// enum, sin guion bajo; el ajo APRETABA el riego en `bulbMaturation` por
+  /// contener 'bulb', justo donde su propia guía dice que lo detengas; y
+  /// `cosechaProgresiva` aflojaba un 40 % durante la etapa que el propio
+  /// repositorio documenta como de floración y cuajado simultáneos.
+  ///
+  /// Hoy cada etapa declara su ventana en [StageWaterWindows], y
+  /// `stage_water_window_coverage_test.dart` recorre los catálogos y falla si
+  /// alguna clave real queda sin declarar.
+  ///
+  /// [cropKey] solo hace falta para las etapas cuya cadena significa cosas
+  /// distintas según el cultivo. Sin él se resuelve por el mapa global, que es
+  /// correcto para la inmensa mayoría.
   static double allowableDepletionForStage(
     CropWaterPolicy policy,
-    String? stageKey,
-  ) {
+    String? stageKey, {
+    CropKey? cropKey,
+  }) {
     final base = policy.allowableDepletion;
-    final s = stageKey?.trim().toLowerCase() ?? '';
-    if (s.isEmpty) return base;
+    final window = StageWaterWindows.lookup(stageKey, cropKey: cropKey);
 
-    // Ventana crítica: se aprieta un 30 %, con piso de 0.20 para no volver el
-    // riego imposible de satisfacer en suelos arenosos.
-    const critical = <String>[
-      'flower',
-      'floracion',
-      'bloom',
-      'fruit_set',
-      'fruitset',
-      'cuajado',
-      'amarre',
-      'fruit_fill',
-      'fruitfill',
-      'llenado',
-      'grain_fill',
-      'bulking',
-      'bulb',
-      'tuber',
-      'heading',
-      'espigado',
-      'embuche',
-    ];
-    for (final k in critical) {
-      if (s.contains(k)) return (base * 0.70).clamp(0.20, 0.85);
+    switch (window) {
+      // Ventana crítica: se aprieta un 30 %, con piso de 0.20 para no volver el
+      // riego imposible de satisfacer en suelos arenosos.
+      case WaterWindow.critical:
+        return (base * 0.70).clamp(0.20, 0.85);
+      // Ventana seca deliberada: se afloja un 40 %, con techo de 0.85.
+      case WaterWindow.drying:
+        return (base * 1.40).clamp(0.20, 0.85);
+      case WaterWindow.normal:
+        return base;
+      // Etapa nula, vacía o sin declarar. En runtime se usa el agotamiento base,
+      // que es lo conservador; es la prueba de cobertura la que convierte esto
+      // en fallo, y lo hace antes de llegar a producción.
+      case null:
+        return base;
     }
-
-    // Ventana seca deliberada: se afloja un 40 %, con techo de 0.85.
-    const drying = <String>[
-      'maturity',
-      'madurez',
-      'harvest',
-      'cosecha',
-      'curing',
-      'curado',
-      'senescence',
-      'senescencia',
-      'dormancy',
-      'dormancia',
-      'reposo',
-      'rest',
-    ];
-    for (final k in drying) {
-      if (s.contains(k)) return (base * 1.40).clamp(0.20, 0.85);
-    }
-
-    return base;
   }
 }

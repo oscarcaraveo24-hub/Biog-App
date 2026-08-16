@@ -57,6 +57,50 @@ class DeviceCropContext {
   /// Longitud de la parcela.
   final double? geoLng;
 
+  // ── Tipo de suelo de la parcela ────────────────────────────────────────────
+  //
+  // Decisión de modelo: el tipo de suelo pertenece al **equipo y su parcela**,
+  // no al usuario. Quien tenga tres BIO-G en tres parcelas puede tener tres
+  // tierras distintas, y este objeto ya está namespaceado por dispositivo, así
+  // que eso sale gratis.
+  //
+  // El tipo de suelo NO se toca al cambiar de cultivo: la textura no cambia si
+  // mañana se siembra frijol en vez de maíz. Por eso vive junto a ubicación y
+  // escala, y por eso la cascada de limpieza del wizard no lo incluye.
+
+  /// Textura mineral declarada: `sandy` | `sandyLoam` | `loam` | `clayLoam` |
+  /// `clay` | `unknown`.
+  ///
+  /// **`null` y `'unknown'` NO son lo mismo.** `null` significa «contexto
+  /// anterior a esta versión»; `'unknown'` significa «el productor lo declaró y
+  /// dijo que no sabe». Se miden distinto y sirven para cosas distintas: la
+  /// segunda es una respuesta de primera clase que baja la confianza de la
+  /// recomendación de forma explícita y auditable.
+  ///
+  /// El sustrato de maceta **jamás** se guarda aquí: se deriva del modelo del
+  /// equipo o de la escala en tiempo de resolución (`SoilProfileResolver`).
+  final String? soilTextureId;
+
+  /// De dónde salió [soilTextureId]: `declared` | `guided_estimate` |
+  /// `derived_from_device` | `derived_from_scale` | `unknown`.
+  ///
+  /// La fuente se guarda **aparte del valor**, a propósito: no es lo mismo que
+  /// el productor haya declarado su tierra a que la hayamos deducido del modelo
+  /// del equipo. Hace falta para el historial auditable y para medir adopción.
+  final String? soilTextureSource;
+
+  /// Nombres locales con los que el productor conoce su tierra: `roja`,
+  /// `blanca_caliza`, `negra`, `volcanica`, `otra`.
+  ///
+  /// Es contexto descriptivo y futuro dato de aprendizaje. **No cambian la
+  /// clasificación hidráulica**: ni la retención, ni el drenaje, ni un solo
+  /// número del motor. Selección múltiple: una parcela puede ser conocida como
+  /// "roja" y "volcánica" a la vez.
+  final List<String> soilLocalDescriptors;
+
+  /// Texto libre cuando el productor eligió «Otra». Nunca bloquea el avance.
+  final String? soilLocalOther;
+
   // ── Estado del alta ────────────────────────────────────────────────────────
 
   /// Estado del wizard de configuración: `draft` | `completed`.
@@ -157,6 +201,10 @@ class DeviceCropContext {
     this.locationSource,
     this.geoLat,
     this.geoLng,
+    this.soilTextureId,
+    this.soilTextureSource,
+    this.soilLocalDescriptors = const <String>[],
+    this.soilLocalOther,
     this.setupStatus = kCropSetupDraft,
     this.setupCompletedAt,
   });
@@ -198,6 +246,10 @@ class DeviceCropContext {
     Object? locationSource = _sentinel,
     Object? geoLat = _sentinel,
     Object? geoLng = _sentinel,
+    Object? soilTextureId = _sentinel,
+    Object? soilTextureSource = _sentinel,
+    List<String>? soilLocalDescriptors,
+    Object? soilLocalOther = _sentinel,
     String? setupStatus,
     Object? setupCompletedAt = _sentinel,
   }) {
@@ -287,6 +339,17 @@ class DeviceCropContext {
           : locationSource as String?,
       geoLat: identical(geoLat, _sentinel) ? this.geoLat : geoLat as double?,
       geoLng: identical(geoLng, _sentinel) ? this.geoLng : geoLng as double?,
+      soilTextureId: identical(soilTextureId, _sentinel)
+          ? this.soilTextureId
+          : soilTextureId as String?,
+      soilTextureSource: identical(soilTextureSource, _sentinel)
+          ? this.soilTextureSource
+          : soilTextureSource as String?,
+      soilLocalDescriptors:
+          soilLocalDescriptors ?? this.soilLocalDescriptors,
+      soilLocalOther: identical(soilLocalOther, _sentinel)
+          ? this.soilLocalOther
+          : soilLocalOther as String?,
       setupStatus: setupStatus ?? this.setupStatus,
       setupCompletedAt: identical(setupCompletedAt, _sentinel)
           ? this.setupCompletedAt
@@ -332,6 +395,10 @@ class DeviceCropContext {
       'locationSource': locationSource,
       'geoLat': geoLat,
       'geoLng': geoLng,
+      'soilTextureId': soilTextureId,
+      'soilTextureSource': soilTextureSource,
+      'soilLocalDescriptors': soilLocalDescriptors,
+      'soilLocalOther': soilLocalOther,
       'setupStatus': setupStatus,
       'setupCompletedAt': setupCompletedAt?.toIso8601String(),
     };
@@ -495,6 +562,18 @@ class DeviceCropContext {
       locationSource: json['locationSource'] as String?,
       geoLat: (json['geoLat'] as num?)?.toDouble(),
       geoLng: (json['geoLng'] as num?)?.toDouble(),
+      // Al deserializar se lee SIEMPRE con el conversor del enum, que ya
+      // devuelve «desconocido» ante nulo, cadena vacía o valor no reconocido, y
+      // que además acepta alias en español porque la app y el panel de
+      // administración han usado nombres distintos.
+      //
+      // Aquí se conserva el crudo —no el enum— porque `null` («no había campo»)
+      // y `'unknown'` («lo declaró y no sabe») tienen que seguir siendo
+      // distinguibles al volver a guardar.
+      soilTextureId: _nonEmptyOrNull(json['soilTextureId']),
+      soilTextureSource: _nonEmptyOrNull(json['soilTextureSource']),
+      soilLocalDescriptors: _stringListOrEmpty(json['soilLocalDescriptors']),
+      soilLocalOther: _nonEmptyOrNull(json['soilLocalOther']),
       setupStatus: (json['setupStatus'] as String?) ?? kCropSetupDraft,
       setupCompletedAt: json['setupCompletedAt'] == null
           ? null
@@ -510,6 +589,23 @@ class DeviceCropContext {
 }
 
 const Object _sentinel = Object();
+
+String? _nonEmptyOrNull(Object? raw) {
+  if (raw is! String) return null;
+  final v = raw.trim();
+  return v.isEmpty ? null : v;
+}
+
+List<String> _stringListOrEmpty(Object? raw) {
+  if (raw is! List) return const <String>[];
+  final out = <String>[];
+  for (final e in raw) {
+    if (e is! String) continue;
+    final v = e.trim();
+    if (v.isNotEmpty && !out.contains(v)) out.add(v);
+  }
+  return List<String>.unmodifiable(out);
+}
 
 DateConfidence? _dateConfidenceOrNull(Object? raw) {
   if (raw is! String || raw.isEmpty) return null;

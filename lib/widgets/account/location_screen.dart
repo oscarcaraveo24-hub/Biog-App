@@ -1,11 +1,78 @@
+// lib/widgets/account/location_screen.dart
+//
+// Elegir dónde está la parcela.
+//
+// ═════════════════════════════════════════════════════════════════════════════
+// LO QUE SE ARREGLÓ AQUÍ
+// ═════════════════════════════════════════════════════════════════════════════
+//
+// ── 1. El salto de cámara al abrir ───────────────────────────────────────────
+//
+// El mapa se construía con CDMX como `initialCameraPosition` y las
+// preferencias se leían después, en paralelo. Al volver, `_handleMapCreated`
+// movía la cámara a CDMX y milisegundos más tarde `_loadSavedLocation`
+// la animaba hasta la parcela real. El usuario veía abrirse el Zócalo y
+// después un viaje hasta su terreno. Eso era el «se siente medio bugeado».
+//
+// Ahora el mapa NO se construye hasta saber dónde apuntar. Leer preferencias
+// es una operación de memoria (el `SharedPreferences` ya está instanciado
+// desde `main`), así que la espera dura un fotograma y no hay estado
+// intermedio que enseñar.
+//
+// ── 2. Dos peticiones de geocodificación por cada gesto ──────────────────────
+//
+// `onCameraIdle` dispara `onCenterChanged`, y `onCameraIdle` se emite TAMBIÉN
+// cuando la cámara la movió el propio código. La secuencia real de una
+// búsqueda era:
+//
+//   buscar dirección  → 1 llamada (forward)
+//   mover la cámara   → onCameraIdle → 1 llamada (reverse)  ← sobra
+//
+// Es decir, se le pedía a Google el nombre de un punto cuyo nombre Google
+// acababa de dar. Además provocaba el parpadeo de la etiqueta. `_skipNextIdle`
+// distingue el movimiento programático del dedo del usuario.
+//
+// ── 3. Respuestas fuera de orden ─────────────────────────────────────────────
+//
+// Arrastrando el mapa varias veces seguidas quedaban varias peticiones en
+// vuelo y ganaba la que respondiera última, no la del punto actual. La
+// etiqueta podía acabar mostrando una dirección que el usuario ya había
+// dejado atrás. `_geocodeSeq` descarta toda respuesta que no sea de la última
+// petición emitida.
+//
+// ── 4. Se perdía el nombre bueno cuando fallaba la red ───────────────────────
+//
+// Sin llave o sin conexión, la etiqueta se sobrescribía con «Ubicación
+// seleccionada», pisando un nombre correcto que ya estaba guardado. Ahora un
+// fallo deja intacto lo que hubiera.
+//
+// ── 5. No se guardaba de verdad ──────────────────────────────────────────────
+//
+// `_save` escribía tres claves de preferencias y nada más. La fila «Ubicación»
+// de la Cuenta lee OTRA clave (`profile_location`), así que no se enteraba, y
+// la nube no se enteraba nunca. Todo eso vive ahora en `ParcelLocationStore`,
+// que escribe las dos claves y espeja a Supabase en la misma operación.
+//
+// ── 6. El botón de localizar no localizaba ───────────────────────────────────
+//
+// El icono de la izquierda del buscador es un pin de «llévame a mi posición»
+// y lo único que hacía era recentrar la cámara sobre el punto que ya estaba
+// elegido, un gesto sin efecto visible salvo que hubieras arrastrado el mapa.
+// Ahora pide GPS —igual que el asistente de alta, con el mismo manejo de
+// permisos— y si algo falla recentra como antes, sin bloquear nunca.
+//
+// NADA de la presentación cambió: los mismos widgets, los mismos colores, las
+// mismas medidas.
+
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:bio_g/core/geo/geocoding_service.dart';
+import 'package:bio_g/core/profile/parcel_location_store.dart';
 
 class LocationScreen extends StatefulWidget {
   final String initialValue;
@@ -22,52 +89,80 @@ class LocationScreen extends StatefulWidget {
 }
 
 class _LocationScreenState extends State<LocationScreen> {
-  // ✅ Pasa tu key con --dart-define=GOOGLE_MAPS_API_KEY=xxxx
-  static const String _kMapsKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY');
-
-  // ✅ Pref keys (local)
-  static const String _kPrefLocLabel = 'profile_location_label';
-  static const String _kPrefLocLat = 'profile_location_lat';
-  static const String _kPrefLocLng = 'profile_location_lng';
-
-  // ✅ Default: CDMX (si no hay nada guardado)
-  //
-  // ⚠️ Es SOLO un encuadre inicial del mapa, nunca una ubicación válida para
-  // guardar. `_save` escribía `_center` tal cual, así que un usuario que abría
-  // esta pantalla y tocaba "Guardar" sin mover nada se llevaba CDMX a sus
-  // preferencias — y de ahí al `DeviceCropContext`, al registro auditable y al
-  // motor de riego, que acababa razonando sobre la lluvia de una ciudad ajena
-  // creyendo que era la parcela del agricultor. `_hasExplicitPick` lo impide.
+  /// Encuadre inicial cuando no hay nada guardado: CDMX.
+  ///
+  /// ⚠️ Es SOLO un encuadre, nunca una ubicación válida para guardar. `_save`
+  /// escribía `_center` tal cual, así que quien abriera esta pantalla y tocara
+  /// «Guardar» sin mover nada se llevaba CDMX a sus preferencias — y de ahí al
+  /// `DeviceCropContext`, al registro auditable y al motor de riego, que
+  /// acababa razonando sobre la lluvia de una ciudad ajena creyendo que era la
+  /// parcela del agricultor. `_hasExplicitPick` lo impide.
   static const LatLng _kDefault = LatLng(19.4326, -99.1332);
 
-  /// True cuando las coordenadas de `_center` las eligió el usuario de verdad:
-  /// vienen de sus preferencias, de una búsqueda o de haber movido el mapa.
-  /// Mientras sea false, `_center` es el encuadre por defecto y no se guarda.
-  bool _hasExplicitPick = false;
+  static const double _kZoomSaved = 15.5;
+  static const double _kZoomPicked = 16.0;
 
-  /// Compara contra el encuadre por defecto. 1e-6 grados son ~11 cm: cualquier
-  /// arrastre real del mapa queda por encima, y un `onCameraIdle` disparado al
-  /// asentarse la cámara inicial queda por debajo y no cuenta como elección.
+  /// Cuánto se espera tras soltar el mapa antes de preguntar la dirección.
+  /// Suficiente para que un arrastre en varios tirones cuente como uno solo.
+  static const Duration _kGeocodeDebounce = Duration(milliseconds: 520);
+
+  /// 1e-6 grados son ~11 cm: cualquier arrastre real queda por encima, y un
+  /// `onCameraIdle` disparado al asentarse la cámara inicial queda por debajo
+  /// y no cuenta como elección del usuario.
   static bool _isDefaultCenter(LatLng p) =>
       (p.latitude - _kDefault.latitude).abs() < 1e-6 &&
       (p.longitude - _kDefault.longitude).abs() < 1e-6;
 
   final Completer<GoogleMapController> _mapC = Completer<GoogleMapController>();
   final FocusNode _searchFocus = FocusNode();
+  static const GeocodingService _geocoder = GeocodingService();
 
   late final TextEditingController _searchC = TextEditingController(
     text: widget.initialValue,
   );
 
-  LatLng _center = _kDefault;
+  /// Null hasta que se sabe dónde apuntar. Mientras tanto no hay mapa que
+  /// construir: ver el punto 1 de la cabecera.
+  LatLng? _center;
+
   String _currentLabel = '';
   bool _loadingAddress = false;
+  bool _saving = false;
+  bool _locating = false;
+
+  /// True cuando las coordenadas de `_center` las eligió el usuario de verdad:
+  /// vienen de sus preferencias, de una búsqueda, del GPS o de haber movido el
+  /// mapa. Mientras sea false, `_center` es el encuadre por defecto y no se
+  /// guarda.
+  bool _hasExplicitPick = false;
+
+  ParcelLocationOrigin _origin = ParcelLocationOrigin.map;
 
   Timer? _debounce;
-  bool _loadedPrefs = false;
 
-  // ✅ NUEVO: cuando prefs cargan antes del controller, movemos cámara al crearse
-  bool _pendingMoveToSaved = false;
+  /// Contador de peticiones. Una respuesta solo se aplica si sigue siendo la
+  /// última pedida (punto 3 de la cabecera).
+  int _geocodeSeq = 0;
+
+  /// El siguiente `onCameraIdle` lo provocó el código, no el dedo: se ignora
+  /// (punto 2 de la cabecera).
+  bool _skipNextIdle = false;
+
+  /// Todavía no ha llegado el `onCameraIdle` con el que el mapa anuncia que
+  /// terminó de asentarse al nacer.
+  ///
+  /// Ese primer aviso NO es un gesto: es el mapa diciendo «ya cargué». Si se
+  /// trata como movimiento, abrir la pantalla con una ubicación guardada
+  /// dispara un geocodificado inverso que vuelve a preguntar por un nombre que
+  /// ya se conoce — una llamada de Google regalada y un parpadeo de la
+  /// etiqueta cada vez que se entra.
+  ///
+  /// Se compara contra el punto de partida en vez de ignorar el primer aviso a
+  /// ciegas: si el usuario alcanzó a arrastrar antes de que el mapa terminara
+  /// de cargar, su gesto no se pierde.
+  bool _awaitingFirstIdle = true;
+
+  bool get _ready => _center != null;
 
   @override
   void initState() {
@@ -75,351 +170,321 @@ class _LocationScreenState extends State<LocationScreen> {
     _currentLabel = widget.initialValue.trim().isEmpty
         ? 'Ubicación actual'
         : widget.initialValue.trim();
-    _loadSavedLocation();
+    unawaited(_restoreSavedLocation());
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
+    // Invalida cualquier respuesta en vuelo: al volver ya no hay pantalla que
+    // actualizar y `setState` sobre un State desmontado es un error.
+    _geocodeSeq++;
     _searchC.dispose();
     _searchFocus.dispose();
     super.dispose();
   }
 
-  Future<void> _loadSavedLocation() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final lat = prefs.getDouble(_kPrefLocLat);
-      final lng = prefs.getDouble(_kPrefLocLng);
-      final label = prefs.getString(_kPrefLocLabel);
+  // ── Arranque ───────────────────────────────────────────────────────────────
 
-      if (!mounted) return;
+  Future<void> _restoreSavedLocation() async {
+    final StoredParcelLocation? saved = await ParcelLocationStore.readLocal();
+    if (!mounted) return;
 
-      // ✅ set center desde prefs
-      if (lat != null && lng != null) {
-        _center = LatLng(lat, lng);
-        // Ya tenía ubicación guardada: puede reconfirmarla sin mover el mapa.
-        _hasExplicitPick = true;
-      } else {
-        _center = _kDefault;
-      }
-
-      // ✅ label desde prefs
-      if (label != null && label.trim().isNotEmpty) {
-        _currentLabel = label.trim();
-        _searchC.text = _currentLabel;
-      }
-
-      setState(() => _loadedPrefs = true);
-
-      // ✅ Si el controller ya existe, movemos la cámara ahora.
-      // ✅ Si no existe, marcamos movimiento pendiente para onMapCreated.
-      if (_mapC.isCompleted) {
-        final c = await _mapC.future;
-        await c.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(target: _center, zoom: 15.5),
-          ),
-        );
-      } else {
-        _pendingMoveToSaved = true;
-      }
-
-      // ✅ Refresca dirección
-      _scheduleReverseGeocode(_center);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loadedPrefs = true);
-    }
-  }
-
-  Future<void> _recenterToCurrentCenter() async {
-    try {
-      if (!_mapC.isCompleted) return;
-      final c = await _mapC.future;
-      await c.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: _center, zoom: 16.0),
-        ),
-      );
-    } catch (_) {}
-  }
-
-  void _scheduleReverseGeocode(LatLng target) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 520), () async {
-      await _reverseGeocode(target);
-    });
-  }
-
-  // ---------- helpers para "fix rural" + quitar plus code ----------
-
-  bool _looksLikePlusCode(String s) {
-    final t = s.trim();
-    // Ej: "52JHG+Q8 Chihuahua, Chih., México"
-    return RegExp(r'^[A-Z0-9]{4,}\+[A-Z0-9]{2,}\b').hasMatch(t);
-  }
-
-  String _stripPlusCodePrefix(String s) {
-    var t = s.trim();
-    // Quita "XXXX+XX " o "XXXX+XX, "
-    t = t.replaceFirst(RegExp(r'^[A-Z0-9]{4,}\+[A-Z0-9]{2,}\s*'), '');
-    t = t.replaceFirst(RegExp(r'^[A-Z0-9]{4,}\+[A-Z0-9]{2,}\s*,\s*'), '');
-    return t.trim();
-  }
-
-  String _pickComponent(List comps, List<String> types) {
-    for (final c in comps) {
-      final t =
-          (c['types'] as List?)?.map((e) => e.toString()).toList() ?? const [];
-      final name = (c['long_name'] ?? '').toString().trim();
-      if (name.isEmpty) continue;
-      if (types.any((x) => t.contains(x))) return name;
-    }
-    return '';
-  }
-
-  String _buildRuralLabelFromComponents(List comps) {
-    final route = _pickComponent(comps, const ['route']);
-    final streetNo = _pickComponent(comps, const ['street_number']);
-
-    if (route.isNotEmpty) {
-      final street = streetNo.isNotEmpty ? '$route $streetNo' : route;
-      final locality = _pickComponent(comps, const ['locality']);
-      final admin2 = _pickComponent(comps, const [
-        'administrative_area_level_2',
-      ]);
-      final admin1 = _pickComponent(comps, const [
-        'administrative_area_level_1',
-      ]);
-      final country = _pickComponent(comps, const ['country']);
-
-      final parts = <String>[
-        street,
-        if (locality.isNotEmpty) locality,
-        if (admin2.isNotEmpty && admin2 != locality) admin2,
-        if (admin1.isNotEmpty && admin1 != admin2) admin1,
-        if (country.isNotEmpty) country,
-      ];
-      return parts.join(', ');
-    }
-
-    final locality = _pickComponent(comps, const ['locality']);
-    final admin2 = _pickComponent(comps, const ['administrative_area_level_2']);
-    final admin1 = _pickComponent(comps, const ['administrative_area_level_1']);
-    final country = _pickComponent(comps, const ['country']);
-
-    final parts = <String>[
-      if (locality.isNotEmpty) locality,
-      if (admin2.isNotEmpty && admin2 != locality) admin2,
-      if (admin1.isNotEmpty && admin1 != admin2) admin1,
-      if (country.isNotEmpty) country,
-    ];
-
-    if (parts.isEmpty) return 'Ubicación seleccionada';
-    return parts.join(', ');
-  }
-
-  String _bestLabelFromGeocode(Map<String, dynamic> data) {
-    final results = (data['results'] as List?) ?? const [];
-    if (results.isEmpty) return 'Ubicación seleccionada';
-
-    for (final r in results) {
-      final formatted = (r['formatted_address'] ?? '').toString().trim();
-      final comps = (r['address_components'] as List?) ?? const [];
-
-      if (formatted.isEmpty) continue;
-
-      if (_looksLikePlusCode(formatted)) {
-        final built = _buildRuralLabelFromComponents(comps);
-        if (built.isNotEmpty && built != 'Ubicación seleccionada') return built;
-        final stripped = _stripPlusCodePrefix(formatted);
-        if (stripped.isNotEmpty) return stripped;
-        continue;
-      }
-
-      return formatted;
-    }
-
-    final first = results.first as Map<String, dynamic>;
-    final comps = (first['address_components'] as List?) ?? const [];
-    return _buildRuralLabelFromComponents(comps);
-  }
-
-  // ---------- reverse geocode ----------
-
-  Future<void> _reverseGeocode(LatLng target) async {
-    if (_kMapsKey.isEmpty) {
-      setState(() => _currentLabel = 'Ubicación seleccionada');
+    if (saved == null) {
+      setState(() => _center = _kDefault);
       return;
     }
 
-    setState(() => _loadingAddress = true);
+    setState(() {
+      _center = LatLng(saved.lat, saved.lng);
+      // Ya tenía ubicación guardada: puede reconfirmarla sin mover el mapa.
+      _hasExplicitPick = true;
+      _origin = saved.origin ?? ParcelLocationOrigin.map;
+
+      if (saved.label.isNotEmpty) {
+        _currentLabel = saved.label;
+        if (!_searchFocus.hasFocus) _searchC.text = saved.label;
+      }
+    });
+
+    // Solo se pregunta la dirección si NO había una guardada. Reconsultar un
+    // nombre que ya se conoce gasta una llamada de Google y, cuando falla,
+    // hace parpadear la etiqueta sin aportar nada.
+    if (saved.label.isEmpty) {
+      unawaited(_reverseGeocode(LatLng(saved.lat, saved.lng)));
+    }
+  }
+
+  // ── Cámara ─────────────────────────────────────────────────────────────────
+
+  /// Mueve la cámara marcando el movimiento como programático para que el
+  /// `onCameraIdle` que llegue después no se confunda con un gesto.
+  Future<void> _moveCameraTo(LatLng target, {required double zoom}) async {
+    // Sin mapa todavía no hay cámara que mover, y tampoco hace falta: el mapa
+    // aún no ha nacido y nacerá apuntando a `_center`, que ya vale `target`.
+    // Esperar aquí a un `Completer` que quizá no se complete dejaría colgada
+    // la llamada que nos trajo.
+    if (!_mapC.isCompleted) return;
+
+    _skipNextIdle = true;
+    try {
+      final GoogleMapController c = await _mapC.future;
+      await c.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: target, zoom: zoom),
+        ),
+      );
+    } catch (_) {
+      // El mapa aún no existe o ya se destruyó. La bandera se limpia sola en
+      // el siguiente idle real; dejarla puesta solo costaría ignorar un gesto.
+      _skipNextIdle = false;
+    }
+  }
+
+  void _handleMapCreated(GoogleMapController c) {
+    if (!_mapC.isCompleted) _mapC.complete(c);
+    // No se mueve nada: el mapa ya nació apuntando a `_center`, porque no se
+    // construye hasta conocerlo.
+  }
+
+  void _handleCameraIdle(LatLng target) {
+    if (_skipNextIdle) {
+      _skipNextIdle = false;
+      return;
+    }
+
+    if (_awaitingFirstIdle) {
+      _awaitingFirstIdle = false;
+      final LatLng? origin = _center;
+      final bool sameSpot =
+          origin != null &&
+          (origin.latitude - target.latitude).abs() < 1e-6 &&
+          (origin.longitude - target.longitude).abs() < 1e-6;
+      // El mapa acaba de asentarse donde se le dijo: no hay nada que
+      // recalcular.
+      if (sameSpot) return;
+    }
+
+    _center = target;
+    if (!_isDefaultCenter(target)) {
+      _hasExplicitPick = true;
+      _origin = ParcelLocationOrigin.map;
+    }
+    _scheduleReverseGeocode(target);
+  }
+
+  // ── Dirección a partir del punto ───────────────────────────────────────────
+
+  void _scheduleReverseGeocode(LatLng target) {
+    _debounce?.cancel();
+    _debounce = Timer(_kGeocodeDebounce, () {
+      unawaited(_reverseGeocode(target));
+    });
+  }
+
+  Future<void> _reverseGeocode(LatLng target) async {
+    final int seq = ++_geocodeSeq;
+
+    if (mounted) setState(() => _loadingAddress = true);
 
     try {
-      final uri = Uri.parse(
-        'https://maps.googleapis.com/maps/api/geocode/json'
-        '?latlng=${target.latitude},${target.longitude}'
-        '&key=$_kMapsKey'
-        '&language=es',
+      final String label = await _geocoder.reverseGeocode(
+        target.latitude,
+        target.longitude,
       );
 
-      final res = await http.get(uri);
-      if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
-
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final status = (data['status'] ?? '').toString();
-
-      String label = _currentLabel.isNotEmpty
-          ? _currentLabel
-          : 'Ubicación seleccionada';
-
-      if (status == 'OK') {
-        label = _bestLabelFromGeocode(data);
-        if (label.isEmpty) label = 'Ubicación seleccionada';
-      }
-
-      if (!mounted) return;
+      // Llegó tarde: ya hay otra petición más reciente. Se descarta.
+      if (seq != _geocodeSeq || !mounted) return;
 
       setState(() {
         _currentLabel = label;
         _loadingAddress = false;
-
-        if (!_searchFocus.hasFocus) {
-          _searchC.text = label;
-        }
+        if (!_searchFocus.hasFocus) _searchC.text = label;
       });
-    } catch (_) {
-      if (!mounted) return;
+    } on GeocodingException {
+      // Sin llave, sin red o sin resultado: se conserva la etiqueta que
+      // hubiera. Pisar un nombre bueno con «Ubicación seleccionada» era el
+      // punto 4 de la cabecera.
+      if (seq != _geocodeSeq || !mounted) return;
       setState(() => _loadingAddress = false);
     }
   }
 
-  // ---------- search (address -> coords) ----------
+  // ── Buscar una dirección ───────────────────────────────────────────────────
 
   Future<void> _searchAndGo() async {
-    final q = _searchC.text.trim();
+    final String q = _searchC.text.trim();
     if (q.isEmpty) return;
 
-    if (_kMapsKey.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Falta GOOGLE_MAPS_API_KEY en --dart-define'),
-        ),
-      );
-      return;
-    }
+    _searchFocus.unfocus();
+    _debounce?.cancel();
+
+    final int seq = ++_geocodeSeq;
+    setState(() => _loadingAddress = true);
 
     try {
-      final uri = Uri.parse(
-        'https://maps.googleapis.com/maps/api/geocode/json'
-        '?address=${Uri.encodeComponent(q)}'
-        '&key=$_kMapsKey'
-        '&language=es',
-      );
+      final GeocodedPlace place = await _geocoder.search(q);
+      if (seq != _geocodeSeq || !mounted) return;
 
-      final res = await http.get(uri);
-      if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
+      final LatLng target = LatLng(place.lat, place.lng);
 
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final status = (data['status'] ?? '').toString();
+      setState(() {
+        _center = target;
+        _currentLabel = place.label;
+        _loadingAddress = false;
+        // Buscó una dirección y Google la resolvió: elección explícita.
+        _hasExplicitPick = true;
+        _origin = ParcelLocationOrigin.search;
+        if (!_searchFocus.hasFocus) _searchC.text = place.label;
+      });
 
-      if (status != 'OK') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se encontró esa ubicación')),
-        );
+      // Google ya devolvió el nombre en la misma respuesta: no hace falta
+      // volver a preguntárselo tras mover la cámara.
+      await _moveCameraTo(target, zoom: _kZoomPicked);
+    } on GeocodingException catch (e) {
+      if (seq != _geocodeSeq || !mounted) return;
+      setState(() => _loadingAddress = false);
+      _showMessage(e.userMessage);
+    }
+  }
+
+  // ── Llevarme a donde estoy ─────────────────────────────────────────────────
+
+  /// Pide la posición del GPS y lleva el mapa allí.
+  ///
+  /// Cualquier problema —servicio apagado, permiso denegado, sin señal— se
+  /// resuelve recentrando sobre el punto que ya estaba elegido, que es lo
+  /// único que hacía este botón antes. Nunca deja al usuario sin respuesta.
+  Future<void> _handleLocateTap() async {
+    if (_locating) return;
+    setState(() => _locating = true);
+
+    try {
+      final Position? position = await _tryCurrentPosition();
+      if (!mounted) return;
+
+      if (position == null) {
+        await _recenterToCurrentCenter();
         return;
       }
 
-      final results = (data['results'] as List?) ?? [];
-      if (results.isEmpty) return;
-
-      final loc = results.first['geometry']?['location'];
-      if (loc is! Map) return;
-
-      final lat = (loc['lat'] as num).toDouble();
-      final lng = (loc['lng'] as num).toDouble();
-      final target = LatLng(lat, lng);
-
-      _center = target;
-      // Buscó una dirección y Google la resolvió: elección explícita.
-      _hasExplicitPick = true;
-
-      if (_mapC.isCompleted) {
-        final c = await _mapC.future;
-        await c.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(target: target, zoom: 16.0),
-          ),
-        );
-      } else {
-        _pendingMoveToSaved = true;
+      final LatLng target = LatLng(position.latitude, position.longitude);
+      if (!ParcelLocationStore.areUsableCoordinates(
+        target.latitude,
+        target.longitude,
+      )) {
+        await _recenterToCurrentCenter();
+        return;
       }
 
+      setState(() {
+        _center = target;
+        _hasExplicitPick = true;
+        _origin = ParcelLocationOrigin.gps;
+      });
+
+      await _moveCameraTo(target, zoom: _kZoomPicked);
       _scheduleReverseGeocode(target);
-      _searchFocus.unfocus();
-    } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo buscar. Revisa tu API y conexión.'),
-        ),
-      );
+    } finally {
+      if (mounted) setState(() => _locating = false);
     }
   }
 
-  // ---------- save local ----------
+  /// Devuelve la posición, o null explicando por qué no se pudo.
+  Future<Position?> _tryCurrentPosition() async {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        _showMessage('Activa los servicios de ubicación en tu dispositivo.');
+        return null;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied) {
+        _showMessage('Se necesita permiso de ubicación para localizarte.');
+        return null;
+      }
+      if (permission == LocationPermission.deniedForever) {
+        _showMessage(
+          'Permiso de ubicación denegado permanentemente. '
+          'Habilítalo en ajustes.',
+        );
+        return null;
+      }
+
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+    } catch (_) {
+      _showMessage('No se pudo obtener tu ubicación.');
+      return null;
+    }
+  }
+
+  Future<void> _recenterToCurrentCenter() async {
+    final LatLng? target = _center;
+    if (target == null) return;
+    await _moveCameraTo(target, zoom: _kZoomPicked);
+  }
+
+  // ── Guardar ────────────────────────────────────────────────────────────────
 
   Future<void> _save() async {
+    if (_saving) return;
+
+    final LatLng? target = _center;
+
     // Guardar el encuadre por defecto sería inventarle una parcela al
     // agricultor. Se prefiere no guardar nada a guardar una coordenada falsa.
-    if (!_hasExplicitPick) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Mueve el mapa o busca tu parcela para confirmar la ubicación.',
-          ),
-        ),
+    if (target == null || !_hasExplicitPick) {
+      _showMessage(
+        'Mueve el mapa o busca tu parcela para confirmar la ubicación.',
       );
       return;
     }
 
-    final label = (_currentLabel.trim().isEmpty)
+    final String label = _currentLabel.trim().isEmpty
         ? _searchC.text.trim()
         : _currentLabel.trim();
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kPrefLocLabel, label);
-    await prefs.setDouble(_kPrefLocLat, _center.latitude);
-    await prefs.setDouble(_kPrefLocLng, _center.longitude);
+    setState(() => _saving = true);
 
-    if (!mounted) return;
-    Navigator.pop(context, label);
+    try {
+      final bool mirrored = await ParcelLocationStore.save(
+        lat: target.latitude,
+        lng: target.longitude,
+        label: label,
+        origin: _origin,
+      );
+
+      if (!mounted) return;
+
+      // Lo local ya está escrito pase lo que pase. Si la nube no respondió se
+      // avisa, pero no se deshace nada ni se bloquea la salida: la ubicación
+      // funciona sin red y se espejará en el siguiente guardado.
+      if (!mirrored) {
+        _showMessage('Ubicación guardada en el equipo. Se sincronizará luego.');
+      }
+
+      Navigator.pop(context, label);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      _showMessage('No se pudo guardar la ubicación.');
+    }
   }
 
-  // ✅ NUEVO: handler único para controller + mover a saved center cuando ya exista
-  Future<void> _handleMapCreated(GoogleMapController c) async {
-    if (!_mapC.isCompleted) _mapC.complete(c);
-
-    // Si prefs ya se cargaron pero no existía controller, movemos aquí.
-    if (_pendingMoveToSaved) {
-      _pendingMoveToSaved = false;
-      try {
-        await c.moveCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(target: _center, zoom: 15.5),
-          ),
-        );
-      } catch (_) {}
-    } else {
-      // Asegura que al abrir por primera vez también quede en _center
-      try {
-        await c.moveCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(target: _center, zoom: 15.2),
-          ),
-        );
-      } catch (_) {}
-    }
+  void _showMessage(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
   }
 
   @override
@@ -477,7 +542,7 @@ class _LocationScreenState extends State<LocationScreen> {
                   _SearchBar(
                     controller: _searchC,
                     focusNode: _searchFocus,
-                    onLocate: _recenterToCurrentCenter,
+                    onLocate: _handleLocateTap,
                     onSearch: _searchAndGo,
                     locateIconScale: 2.0,
                   ),
@@ -488,20 +553,18 @@ class _LocationScreenState extends State<LocationScreen> {
                   Expanded(
                     child: _MapCardGoogle(
                       brandMid: widget.brandMid,
-                      mapReady: _loadedPrefs,
+                      mapReady: _ready,
                       currentLabel: _currentLabel,
-                      loadingLabel: _loadingAddress,
+                      loadingLabel: _loadingAddress || _locating,
                       onMapCreated: _handleMapCreated,
-                      initial: _center,
-                      onCenterChanged: (latLng) {
-                        _center = latLng;
-                        // Movió el mapa a un punto distinto del encuadre por
-                        // defecto: a partir de aquí ya eligió.
-                        if (!_isDefaultCenter(latLng)) {
-                          _hasExplicitPick = true;
-                        }
-                        _scheduleReverseGeocode(latLng);
-                      },
+                      initial: _center ?? _kDefault,
+                      onCenterChanged: _handleCameraIdle,
+                      // Antes el mapa nacía en 15.2 y `_handleMapCreated` lo
+                      // reencuadraba a 15.5 en cuanto llegaban las
+                      // preferencias. Ahora nace ya en el zoom final: quien
+                      // tiene parcela guardada la ve de cerca desde el primer
+                      // fotograma, sin acercamiento intermedio.
+                      initialZoom: _hasExplicitPick ? _kZoomSaved : 15.2,
                       pillIconScale: 1.35,
                     ),
                   ),
@@ -760,6 +823,7 @@ class _MapCardGoogle extends StatefulWidget {
   final bool loadingLabel;
 
   final LatLng initial;
+  final double initialZoom;
   final ValueChanged<GoogleMapController> onMapCreated;
   final ValueChanged<LatLng> onCenterChanged;
 
@@ -773,6 +837,7 @@ class _MapCardGoogle extends StatefulWidget {
     required this.initial,
     required this.onMapCreated,
     required this.onCenterChanged,
+    this.initialZoom = 15.2,
     this.pillIconScale = 1.35,
   });
 
@@ -781,13 +846,9 @@ class _MapCardGoogle extends StatefulWidget {
 }
 
 class _MapCardGoogleState extends State<_MapCardGoogle> {
-  LatLng _center = const LatLng(19.4326, -99.1332);
-
-  @override
-  void initState() {
-    super.initState();
-    _center = widget.initial;
-  }
+  /// Último punto que reportó la cámara. Solo sirve para tener algo que
+  /// entregar en `onCameraIdle`, que no trae la posición.
+  late LatLng _center = widget.initial;
 
   @override
   void didUpdateWidget(covariant _MapCardGoogle oldWidget) {
@@ -814,21 +875,31 @@ class _MapCardGoogleState extends State<_MapCardGoogle> {
         borderRadius: BorderRadius.circular(18),
         child: Stack(
           children: [
+            // El mapa NO se construye hasta que se sabe dónde apuntar.
+            //
+            // `GoogleMap` solo lee `initialCameraPosition` una vez, al nacer:
+            // construirlo antes de leer las preferencias obligaba a corregir
+            // la cámara después, y esa corrección era el salto visible desde
+            // CDMX hasta la parcela. Leer preferencias tarda un fotograma
+            // (`SharedPreferences` ya está instanciado desde `main`), así que
+            // este hueco no llega a verse.
             SizedBox.expand(
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: widget.initial,
-                  zoom: 15.2,
-                ),
-                myLocationEnabled: false,
-                myLocationButtonEnabled: false,
-                zoomControlsEnabled: false,
-                compassEnabled: false,
-                mapToolbarEnabled: false,
-                onMapCreated: widget.onMapCreated,
-                onCameraMove: (pos) => _center = pos.target,
-                onCameraIdle: () => widget.onCenterChanged(_center),
-              ),
+              child: widget.mapReady
+                  ? GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: widget.initial,
+                        zoom: widget.initialZoom,
+                      ),
+                      myLocationEnabled: false,
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: false,
+                      compassEnabled: false,
+                      mapToolbarEnabled: false,
+                      onMapCreated: widget.onMapCreated,
+                      onCameraMove: (pos) => _center = pos.target,
+                      onCameraIdle: () => widget.onCenterChanged(_center),
+                    )
+                  : const ColoredBox(color: Color(0xFFEFF3F1)),
             ),
             Positioned(
               top: 12,
@@ -922,6 +993,14 @@ class _LocationSoftBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Aislado en su propia capa: es estático y sus tres manchas son
+    // desenfoques de sigma 34. Sin esto se repintaban cada vez que algo del
+    // resto de la pantalla cambiaba — y encima de esta pantalla hay un mapa
+    // que se mueve.
+    return RepaintBoundary(child: _buildBackground());
+  }
+
+  Widget _buildBackground() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
