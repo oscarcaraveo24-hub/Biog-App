@@ -187,23 +187,35 @@ abstract final class ParcelLocationStore {
     await prefs.setString(_kPrefOrigin, origin.id);
     await prefs.setInt(_kPrefUpdatedAt, now.millisecondsSinceEpoch);
 
-    if (cleanLabel.isEmpty) {
-      await prefs.remove(ParcelLocationKeys.label);
-      await prefs.remove(ProfileLocalService.kLocationKey);
-    } else {
+    // Una etiqueta vacía NO borra la que hubiera.
+    //
+    // Antes sí: se limpiaban las dos claves y, más abajo, se mandaba cadena
+    // vacía a `updateProfile`, que la convierte en NULL. Guardar un punto
+    // válido cuyo nombre no se pudo resolver —sin red, sin llave de Google—
+    // dejaba coordenadas buenas y el sitio sin nombre, en el teléfono y en la
+    // nube. Vacío significa «no tengo nombre nuevo», nunca «olvida el que
+    // había».
+    if (cleanLabel.isNotEmpty) {
       await prefs.setString(ParcelLocationKeys.label, cleanLabel);
       await prefs.setString(ProfileLocalService.kLocationKey, cleanLabel);
     }
 
     // 2) Nube. Best-effort: sin sesión o sin red no hay nada que hacer aquí,
     //    y lo local ya quedó bien.
-    final SupabaseClient client = Supabase.instance.client;
-    if (client.auth.currentUser == null) return false;
-
+    //
+    // El `try` empieza en `Supabase.instance`, no después. Estaba fuera, y
+    // `Supabase.instance` lanza si el cliente todavía no se inicializó: la
+    // excepción salía de `save` y la pantalla de Ubicación la recogía en su
+    // `catch` para decir «No se pudo guardar la ubicación» — sobre un guardado
+    // local que acababa de completarse sin un rasguño. Aquí dentro, cualquier
+    // fallo de nube es lo que siempre quiso ser: un `false`.
     try {
+      final SupabaseClient client = Supabase.instance.client;
+      if (client.auth.currentUser == null) return false;
+
       final ProfileRepository repo = repository ?? ProfileRepository(client);
       await repo.updateProfile(
-        location: cleanLabel,
+        location: cleanLabel.isEmpty ? null : cleanLabel,
         locationLat: lat,
         locationLng: lng,
         locationSource: origin.id,
@@ -285,18 +297,73 @@ abstract final class ParcelLocationStore {
       return remote;
     }
 
-    if (!preferNewest) return local;
+    if (!preferNewest) {
+      await _pushIfDifferent(
+        local,
+        remote,
+        repository: repository,
+        client: client,
+      );
+      return local;
+    }
 
     final DateTime? localAt = local.updatedAt;
     final DateTime? remoteAt = remote.updatedAt;
 
     // Sin marca de tiempo local no se puede comparar, y ante la duda gana el
     // teléfono: es donde el usuario tocó por última vez.
-    if (localAt == null || remoteAt == null) return local;
-    if (!remoteAt.isAfter(localAt)) return local;
+    if (localAt == null || remoteAt == null || !remoteAt.isAfter(localAt)) {
+      await _pushIfDifferent(
+        local,
+        remote,
+        repository: repository,
+        client: client,
+      );
+      return local;
+    }
 
     await _writeLocal(remote);
     return remote;
+  }
+
+  /// Sube al perfil lo que tiene el teléfono cuando la nube dice otra cosa y
+  /// manda el teléfono.
+  ///
+  /// ── El agujero que esto tapa ───────────────────────────────────────────
+  ///
+  /// `save` espeja a Supabase, pero es best-effort: sin cobertura devuelve
+  /// false y la ubicación se queda solo en el teléfono. La rehidratación era
+  /// la única segunda oportunidad, y solo subía cuando la nube no tenía
+  /// NINGUNA coordenada. Si arriba había un punto viejo —el caso normal en
+  /// cuanto el usuario mueve su parcela por segunda vez— la comparación
+  /// concluía «gana el teléfono» y se marchaba sin escribir nada.
+  ///
+  /// El resultado era el peor posible para quien mira desde fuera: la app
+  /// enseña la parcela nueva, el motor de riego usa la parcela nueva, y el
+  /// panel sigue pintando el pin en el sitio anterior. Desde el teléfono es
+  /// indistinguible de «no se guardó».
+  ///
+  /// Solo escribe si de verdad hay diferencia, para que la siguiente
+  /// rehidratación no vuelva a subir lo mismo.
+  static Future<void> _pushIfDifferent(
+    StoredParcelLocation local,
+    StoredParcelLocation remote, {
+    required SupabaseClient client,
+    ProfileRepository? repository,
+  }) async {
+    final String localLabel = local.label.trim();
+
+    final bool sameSpot = local.sameSpotAs(remote.lat, remote.lng);
+
+    // Una etiqueta local vacía no contradice a la de la nube: es «no tengo
+    // nombre», no «el nombre es ninguno». Contarla como diferencia haría subir
+    // un vacío que borraría el nombre bueno que ya está arriba.
+    final bool sameLabel =
+        localLabel.isEmpty || localLabel == remote.label.trim();
+
+    if (sameSpot && sameLabel) return;
+
+    await _backfillToCloud(local, repository: repository, client: client);
   }
 
   static Future<void> _writeLocal(StoredParcelLocation location) async {
@@ -330,8 +397,12 @@ abstract final class ParcelLocationStore {
   }) async {
     try {
       final ProfileRepository repo = repository ?? ProfileRepository(client);
+      final String label = location.label.trim();
       await repo.updateProfile(
-        location: location.label,
+        // Null significa «no toques la etiqueta». Mandar cadena vacía la
+        // pondría a NULL en la fila y dejaría coordenadas buenas con el sitio
+        // sin nombre: un pin anónimo en el panel.
+        location: label.isEmpty ? null : label,
         locationLat: location.lat,
         locationLng: location.lng,
         locationSource: (location.origin ?? ParcelLocationOrigin.map).id,

@@ -61,8 +61,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _deletingAccount = false;
   bool _loadingPrefs = true;
 
+  /// El usuario volvió de la pantalla de Ubicación habiendo guardado.
+  ///
+  /// Hace falta una bandera aparte porque `_hasChanges` compara TEXTOS, y la
+  /// etiqueta puede ser idéntica aunque el punto haya cambiado: en un ejido sin
+  /// calles, dos parcelas a treinta kilómetros una de otra devuelven el mismo
+  /// nombre —el del ejido— porque es lo más fino que Google sabe decir de ahí.
+  /// Comparando solo la cadena, mover la parcela dentro del propio ejido dejaba
+  /// el botón «Guardar» apagado y obligaba a salir por «Cancelar»: justo el
+  /// caso más común para quien de verdad usa esto en el campo.
+  bool _locationTouched = false;
+
   bool get _hasChanges {
-    return _location != _initial.location ||
+    return _locationTouched ||
+        _location != _initial.location ||
         _phone != _initial.phone ||
         _syncActive != _initial.syncActive ||
         (_avatarFile?.path != _initial.avatarPath);
@@ -475,6 +487,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!mounted) return;
       setState(() {
         _saving = false;
+        _locationTouched = false;
         _initial = _InitialProfile(
           location: _location,
           phone: _phone,
@@ -627,21 +640,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         ),
                                       );
                                   if (res == null) return;
+
+                                  // La pantalla de Ubicación ya escribió
+                                  // preferencias y nube por su cuenta, así que
+                                  // el dato no corre ningún riesgo aquí. Aun
+                                  // así, el botón «Guardar» de esta pantalla se
+                                  // deja ENCENDIDO a propósito.
+                                  //
+                                  // Antes se movía también la línea base y el
+                                  // botón se quedaba apagado. Técnicamente
+                                  // correcto —no quedaba nada pendiente— y en
+                                  // la mano, desconcertante: al volver del mapa
+                                  // la única salida visible era «Cancelar», y
+                                  // salir con «Cancelar» de algo que acabas de
+                                  // guardar se lee como que no se guardó. Da
+                                  // igual que el dato ya esté a salvo; lo que
+                                  // el usuario se lleva es el botón que tuvo
+                                  // que pulsar.
+                                  //
+                                  // Con el botón encendido el gesto termina
+                                  // como empezó: guardando. `_save` reescribe
+                                  // la etiqueta y el teléfono, deja las
+                                  // coordenadas intactas —`updateProfile` solo
+                                  // toca lat/lng cuando le llegan las dos— y
+                                  // cierra la pantalla.
                                   setState(() {
                                     _location = res;
-                                    // La pantalla de Ubicación tiene su propio
-                                    // «Guardar» y, cuando devuelve un valor, ya
-                                    // escribió preferencias y nube a través de
-                                    // `ParcelLocationStore`. Mover también la
-                                    // línea base evita el estado incoherente
-                                    // que había antes: el botón «Guardar» de
-                                    // aquí se encendía como si la ubicación
-                                    // estuviera pendiente, y darle a «Cancelar»
-                                    // la devolvía visualmente al valor viejo
-                                    // mientras el motor de riego seguía usando
-                                    // el nuevo, que era el que de verdad se
-                                    // había guardado.
-                                    _initial = _initial.copyWithLocation(res);
+                                    _locationTouched = true;
                                   });
                                 },
                               ),
@@ -2045,17 +2070,4 @@ class _InitialProfile {
     required this.avatarPath,
   });
 
-  /// Mueve solo la línea base de la ubicación.
-  ///
-  /// La pantalla de Ubicación commitea por su cuenta, así que al volver de
-  /// ella la ubicación deja de ser un cambio pendiente. El teléfono, la foto y
-  /// el interruptor de sincronización sí siguen siéndolo y no deben tocarse.
-  _InitialProfile copyWithLocation(String value) {
-    return _InitialProfile(
-      location: value,
-      phone: phone,
-      syncActive: syncActive,
-      avatarPath: avatarPath,
-    );
-  }
 }

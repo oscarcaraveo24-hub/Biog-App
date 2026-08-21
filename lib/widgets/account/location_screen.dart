@@ -99,6 +99,29 @@ class _LocationScreenState extends State<LocationScreen> {
   /// parcela del agricultor. `_hasExplicitPick` lo impide.
   static const LatLng _kDefault = LatLng(19.4326, -99.1332);
 
+  /// Lo que se enseña mientras no se conoce el nombre del sitio.
+  ///
+  /// NO es un nombre, y por eso no se guarda. Se guardaba: abrir la pantalla
+  /// sin ubicación previa, arrastrar el mapa y pulsar «Guardar» con el
+  /// geocodificado caído —sin red o sin llave de Google— escribía literalmente
+  /// «Ubicación actual» como nombre de la parcela, y de ahí pasaba a la fila
+  /// «Ubicación» de la Cuenta y a `profiles.location`, que es lo que lee el
+  /// panel. Un pin llamado «Ubicación actual» no le dice nada a nadie.
+  static const String _kPlaceholderLabel = 'Ubicación actual';
+
+  static bool _isPlaceholderLabel(String value) =>
+      value.isEmpty || value == _kPlaceholderLabel;
+
+  /// Último recurso para el nombre del sitio: las propias coordenadas.
+  ///
+  /// Se usa cuando ni Google ni el usuario dieron un nombre. Son feas de leer,
+  /// pero son ciertas y localizan la parcela; «Ubicación actual» no hace ni lo
+  /// uno ni lo otro. Devolver cadena vacía tampoco valdría: esta pantalla
+  /// contesta con un String al volver, y quien la abrió no sabría distinguir
+  /// «guardé sin nombre» de «cancelé».
+  static String _coordinateLabel(LatLng p) =>
+      '${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}';
+
   static const double _kZoomSaved = 15.5;
   static const double _kZoomPicked = 16.0;
 
@@ -168,7 +191,7 @@ class _LocationScreenState extends State<LocationScreen> {
   void initState() {
     super.initState();
     _currentLabel = widget.initialValue.trim().isEmpty
-        ? 'Ubicación actual'
+        ? _kPlaceholderLabel
         : widget.initialValue.trim();
     unawaited(_restoreSavedLocation());
   }
@@ -449,9 +472,15 @@ class _LocationScreenState extends State<LocationScreen> {
       return;
     }
 
-    final String label = _currentLabel.trim().isEmpty
-        ? _searchC.text.trim()
-        : _currentLabel.trim();
+    // Al reabrir la pantalla con una ubicación ya guardada, `_currentLabel`
+    // trae el nombre bueno, así que el respaldo de coordenadas solo entra
+    // cuando de verdad no hay ningún nombre que guardar.
+    final String shown = _currentLabel.trim();
+    final String typed = _searchC.text.trim();
+    final String picked = _isPlaceholderLabel(shown)
+        ? (_isPlaceholderLabel(typed) ? '' : typed)
+        : shown;
+    final String label = picked.isEmpty ? _coordinateLabel(target) : picked;
 
     setState(() => _saving = true);
 
