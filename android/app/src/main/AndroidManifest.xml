@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.bio_g">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Requerida para TODAS las llamadas de red (Supabase, mapas, etc.).
          Sin esto, los builds release/profile fallan con
@@ -11,8 +11,37 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!-- ===================================================================
+         BLUETOOTH / BLE - preparado para la integracion con el ESP32.
+         La app es CENTRAL (escanea y se conecta); el ESP32 es el periferico
+         que anuncia. Se declaran aqui para que el manifest ya no cambie
+         cuando se agregue el paquete de BLE al proyecto.
+         =================================================================== -->
+
+    <!-- Android 11 (API 30) y anteriores: modelo viejo de permisos. -->
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+
+    <!-- Android 12 (API 31) en adelante: permisos nuevos, se piden en runtime.
+         `neverForLocation` declara que NO derivamos ubicacion del escaneo, asi
+         el sistema no exige permiso de ubicacion solo para escanear.
+         OJO: ACCESS_FINE_LOCATION de arriba se queda SIN maxSdkVersion porque
+         la app si la necesita de verdad (mapas y geolocalizacion). -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="s" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- required=false: la app sigue instalable en equipos sin BLE. -->
+    <uses-feature android:name="android.hardware.bluetooth_le"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth"
+        android:required="false" />
+
     <application
-        android:label="bio_g"
+        android:label="BIO-G"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 

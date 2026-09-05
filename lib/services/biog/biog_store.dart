@@ -12,6 +12,7 @@ import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/services/biog/events/crop_event_local_storage.dart';
 import 'package:bio_g/services/biog/events/crop_event_recorder.dart';
 import 'package:bio_g/services/biog/sync/pending_sync_queue.dart';
+import 'package:bio_g/services/biog/telemetry/ble/ble_telemetry_transport.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/models/yield_projection_config.dart';
@@ -105,6 +106,9 @@ class BioGStore extends ChangeNotifier {
   /// resolved. Once [bindUser] runs with a real userId, the guest
   /// slice is discarded and replaced with the authenticated user's.
   Future<void> init() async {
+    // Enchufa la radio al camino operativo que ya existia: validar -> guardar
+    // local -> marcar pendiente -> subir -> confirmar. Es pasivo: solo escucha.
+    telemetryIngest.bindTransport(bleTransport);
     await _loadLocalCacheFor(userId: null);
     _currentUserId = null;
     notifyListeners();
@@ -575,6 +579,18 @@ class BioGStore extends ChangeNotifier {
   /// `store.telemetryIngest.bindTransport(miTransporteBle)`. Mientras tanto ya
   /// tiene una función real: reintentar las subidas que quedaron pendientes.
   final TelemetryIngestService telemetryIngest = TelemetryIngestService();
+
+  /// Radio BLE real hacia el hardware.
+  ///
+  /// Se construye siempre, pero construirla NO enciende nada: no toca la radio
+  /// ni dispara la peticion de permisos hasta que alguien llama a `scan()`.
+  /// `bindTransport` de abajo solo deja el camino de ingesta escuchando su
+  /// stream de sobres.
+  ///
+  /// La pantalla de Bluetooth toma esta MISMA instancia desde
+  /// `BioGScope.of(context).bleTransport`. Si cada pantalla creara la suya,
+  /// las lecturas del aparato no llegarian a la ingesta.
+  final BleTelemetryTransport bleTransport = BleTelemetryTransport();
 
   /// Bandeja de salida hacia Supabase.
   ///
@@ -1557,6 +1573,7 @@ class BioGStore extends ChangeNotifier {
     }
     _telemetryStreamsByDevice.clear();
     _loggedTelemetryIds.clear();
+    unawaited(bleTransport.dispose());
     unawaited(telemetryIngest.dispose());
     _cropEventRecorder.notifications.dispose();
     _repo.dispose();

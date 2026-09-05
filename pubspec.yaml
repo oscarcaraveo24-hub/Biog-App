@@ -52,6 +52,16 @@ dependencies:
   pdf: ^3.11.0
   printing: ^5.13.0
 
+  # Bluetooth Low Energy: la app actua como CENTRAL y el ESP32 como periferico.
+  # Se agrega antes de escribir la integracion para que el primer APK ya lleve
+  # la capa nativa de BLE compilada y verificada. El simulador de sensores
+  # (services/biog/telemetry/sensor_simulator.dart) sigue intacto: este paquete
+  # todavia no esta cableado a ninguna pantalla.
+  # Si `flutter pub get` se queja de la version, corre:
+  #   flutter pub add flutter_blue_plus
+  # y deja que pub escoja la ultima compatible con tu Flutter.
+  flutter_blue_plus: ^2.3.7
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

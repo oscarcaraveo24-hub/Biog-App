@@ -52,3 +52,12 @@ app.*.map.json
 
 # Archivos de trabajo temporales (no son parte de la app)
 /temp/
+
+# APKs generadas por build_apk.ps1 (copias versionadas, no se versionan)
+/dist/
+
+# Respaldos que dejo la preparacion del build de Android
+*.bak
+
+# Descartes pendientes de borrar a mano (las herramientas no pueden borrar aqui)
+/_to_delete/

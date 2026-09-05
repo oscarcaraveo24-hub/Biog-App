@@ -3,7 +3,25 @@ import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/cultivation_scale.dart';
 import 'package:bio_g/core/hardware/biog_serial.dart';
+import 'package:bio_g/core/telemetry/telemetry_transport.dart';
+import 'package:bio_g/services/biog/biog_store.dart';
+import 'package:bio_g/services/biog/telemetry/ble/ble_telemetry_transport.dart';
 
+/// Escaneo BLE real contra el hardware BIO-G.
+///
+/// La pantalla NO habla con flutter_blue_plus. Usa el `BleTelemetryTransport`
+/// que vive en `BioGStore`, que es el mismo que alimenta la ingesta de
+/// telemetria. Toda la logica de radio esta en la capa de transporte; aqui
+/// solo se pinta lo que esa capa reporta.
+///
+/// El contrato de salida no cambio: sigue devolviendo el mismo
+/// `Map<String, dynamic>` con `id`, `name`, `model`, `serial` y `source` que
+/// ya consumian `add_biog_screen` y el wizard de onboarding.
+///
+/// Lo que SI cambio, y es el punto de todo esto: cuando el dispositivo es
+/// real, `id` es el `deviceId` que el aparato declara en su caracteristica de
+/// Identidad. **La MAC del BLE no se convierte nunca en deviceId**: viaja
+/// aparte, como `transportAddress`, que es lo unico que es.
 class BluetoothScanScreen extends StatefulWidget {
   const BluetoothScanScreen({super.key});
 
@@ -12,10 +30,13 @@ class BluetoothScanScreen extends StatefulWidget {
 }
 
 class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
-  /// Lista simulada. Los nombres ya codificaban el modelo —«Bio-G Field»,
-  /// «Bio-G Huerto», «Bio-G Maceta»— pero el dato se tiraba al seleccionar:
-  /// el mapa que se devolvía no llevaba modelo. Ahora cada equipo trae su serie
-  /// real, y el modelo sale de ahí en vez de adivinarse del nombre.
+  /// Lista simulada, que se conserva como respaldo.
+  ///
+  /// Aparece cuando la radio no esta disponible (sin permisos, Bluetooth
+  /// apagado, telefono sin BLE, o emulador) para que el flujo de alta se pueda
+  /// seguir probando sin hardware. No se muestra junto a los equipos reales:
+  /// mezclar aparatos de verdad con inventados en la misma lista es como se
+  /// acaba dando de alta un fake por accidente.
   final List<Map<String, String>> _devices = <Map<String, String>>[
     <String, String>{
       'id': '1c9a7f30-51b2-4a8e-9b64-2d0f7a51c001',
@@ -37,7 +58,129 @@ class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
     },
   ];
 
-  /// Serie bien formada (con su dígito de control) para cada modelo simulado.
+  BleTelemetryTransport? _transport;
+
+  List<DiscoveredDevice> _found = const <DiscoveredDevice>[];
+  BleUnavailableReason _reason = BleUnavailableReason.none;
+  bool _scanning = false;
+  bool _showFakes = false;
+  String? _connectingAddress;
+  String? _error;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_transport != null) return;
+    _transport = BioGScope.of(context).bleTransport;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startScan());
+  }
+
+  // ── Escaneo ────────────────────────────────────────────────────────────────
+
+  Future<void> _startScan() async {
+    final transport = _transport;
+    if (transport == null || _scanning) return;
+
+    setState(() {
+      _scanning = true;
+      _error = null;
+      _showFakes = false;
+    });
+
+    final reason = await transport.checkAvailability();
+    if (!mounted) return;
+
+    if (reason != BleUnavailableReason.none) {
+      setState(() {
+        _reason = reason;
+        _scanning = false;
+        _found = const <DiscoveredDevice>[];
+        _showFakes = true;
+      });
+      return;
+    }
+
+    final found = await transport.scan();
+    if (!mounted) return;
+
+    setState(() {
+      _reason = BleUnavailableReason.none;
+      _found = found;
+      _scanning = false;
+      // Si la radio fallo, se dice por que en vez de fingir que no habia nadie.
+      _error = found.isEmpty ? transport.lastScanError : null;
+      // Solo se ofrece el respaldo simulado si no aparecio nada real.
+      _showFakes = found.isEmpty;
+    });
+  }
+
+  Future<void> _turnBluetoothOn() async {
+    final transport = _transport;
+    if (transport == null) return;
+    await transport.requestAdapterOn();
+    if (!mounted) return;
+    await _startScan();
+  }
+
+  // ── Seleccion ──────────────────────────────────────────────────────────────
+
+  /// Conecta de verdad, lee Identidad y devuelve el deviceId del aparato.
+  Future<void> _selectReal(DiscoveredDevice d) async {
+    final transport = _transport;
+    if (transport == null || _connectingAddress != null) return;
+
+    setState(() {
+      _connectingAddress = d.transportAddress;
+      _error = null;
+    });
+
+    final ok = await transport.connect(d);
+    if (!mounted) return;
+
+    final identity = transport.connectedIdentity;
+    if (!ok || identity == null) {
+      setState(() {
+        _connectingAddress = null;
+        _error =
+            'Conecte pero el aparato no declaro una identidad valida. '
+            'Revisa que el firmware exponga la caracteristica de Identidad '
+            'con un deviceId en formato UUID.';
+      });
+      return;
+    }
+
+    setState(() => _connectingAddress = null);
+
+    // El MTU acordado y su aviso van a la consola: hoy estas viendo un
+    // `flutter run` con el aparato en la mano, y ahi es donde sirve. Si el
+    // enlace quedo corto, el sobre de telemetria puede llegar cortado y el
+    // codec lo descartaria sin decir por que.
+    final int? mtu = transport.negotiatedMtu;
+    final String? mtuWarning = transport.mtuWarning;
+    debugPrint(
+      '[BIO-G/BLE] conectado a ${d.displayName} (${d.transportAddress}) · '
+      'deviceId=${identity.deviceId} · MTU=$mtu '
+      '(${transport.notificationPayloadBytes} bytes utiles por notificacion)',
+    );
+    if (mtuWarning != null) debugPrint('[BIO-G/BLE] AVISO: $mtuWarning');
+
+    Navigator.pop<Map<String, dynamic>>(context, <String, dynamic>{
+      // El deviceId lo declara el APARATO. La MAC va aparte, abajo.
+      'id': identity.deviceId,
+      'name': d.displayName,
+      'model': identity.deviceModelId,
+      'serial': identity.hardwareSerial,
+      'source': 'bluetooth',
+      // Extras: los consumidores leen por clave, asi que anadirlos es seguro
+      // y sirven para diagnostico del emparejamiento.
+      'transportAddress': d.transportAddress,
+      'firmwareVersion': identity.firmwareVersion,
+      'negotiatedMtu': mtu,
+      'mtuWarning': mtuWarning,
+    });
+  }
+
+  /// Serie bien formada (con su digito de control) para cada modelo simulado.
   String? _serialFor(String? modelId, int index) {
     final model = deviceModelFromId(modelId);
     if (model == null) return null;
@@ -55,15 +198,43 @@ class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
       'id': d['id'] ?? 'BIOG-BLE-XXX',
       'name': d['name'] ?? 'Bio-G',
       // El modelo viaja: es lo que decide el medio de cultivo y lo que hasta
-      // hoy se perdía entre esta pantalla y `addDevice`.
+      // hoy se perdia entre esta pantalla y `addDevice`.
       'model': d['model'],
       'serial': _serialFor(d['model'], index < 0 ? 0 : index),
       'source': 'bluetooth',
     });
   }
 
+  // ── Texto de estado ────────────────────────────────────────────────────────
+
+  String get _statusText {
+    if (_connectingAddress != null) {
+      return 'Conectando y leyendo identidad del aparato...';
+    }
+    if (_scanning) return 'Buscando equipos BIO-G cerca...';
+    if (_error != null) return _error!;
+    switch (_reason) {
+      case BleUnavailableReason.unsupported:
+        return 'Este telefono no tiene Bluetooth de baja energia.\n'
+            'Puedes continuar con un equipo simulado.';
+      case BleUnavailableReason.unauthorized:
+        return 'Falta el permiso de Bluetooth.\n'
+            'Concedelo en Ajustes > Aplicaciones > BIO-G > Permisos y vuelve a buscar.';
+      case BleUnavailableReason.adapterOff:
+        return 'El Bluetooth esta apagado.';
+      case BleUnavailableReason.none:
+        if (_found.isEmpty) {
+          return 'No encontre ningun BIO-G cerca.\n'
+              'Revisa que el aparato este encendido y anunciando.';
+        }
+        return 'Selecciona tu equipo para leer su identidad y vincularlo.';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bool busy = _scanning || _connectingAddress != null;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
@@ -73,76 +244,177 @@ class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
             bottom: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 8,
-                          ),
-                          child: Text(
-                            'Cancelar',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black.withValues(alpha:0.55),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 8,
+                            ),
+                            child: Text(
+                              'Cancelar',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black.withValues(alpha: 0.55),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const Spacer(),
-                      const Text(
-                        'Bluetooth',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0E1A16),
-                        ),
-                      ),
-                      const Spacer(),
-                      const SizedBox(width: 72),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'Stub: aquí irá el escaneo BLE real.\nSelecciona un dispositivo fake para continuar.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black.withValues(alpha:0.55),
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _GlassCard(
-                    radius: 22,
-                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                    child: Column(
-                      children: [
-                        for (int i = 0; i < _devices.length; i++) ...[
-                          _DeviceTile(
-                            name: _devices[i]['name']!,
-                            id: _devices[i]['id']!,
-                            onTap: () => _selectDevice(_devices[i]),
+                        const Spacer(),
+                        const Text(
+                          'Bluetooth',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0E1A16),
                           ),
-                          if (i != _devices.length - 1) const _DividerLine(),
-                        ],
+                        ),
+                        const Spacer(),
+                        SizedBox(
+                          width: 72,
+                          child: busy
+                              ? const Center(
+                                  child: SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              : GestureDetector(
+                                  onTap: _startScan,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 8,
+                                    ),
+                                    child: Text(
+                                      'Buscar',
+                                      textAlign: TextAlign.end,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(
+                                          0xFF3FAF6E,
+                                        ).withValues(alpha: 0.95),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                        ),
                       ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 18),
+                    Text(
+                      _statusText,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black.withValues(alpha: 0.55),
+                        height: 1.4,
+                      ),
+                    ),
+                    if (_reason == BleUnavailableReason.adapterOff) ...[
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: _turnBluetoothOn,
+                        child: Text(
+                          'Encender Bluetooth',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF3FAF6E).withValues(alpha: 0.95),
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+
+                    // ── Equipos reales ────────────────────────────────────
+                    if (_found.isNotEmpty)
+                      _GlassCard(
+                        radius: 22,
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                        child: Column(
+                          children: [
+                            for (int i = 0; i < _found.length; i++) ...[
+                              _DeviceTile(
+                                name: _found[i].displayName,
+                                id: _subtitleFor(_found[i]),
+                                onTap: () => _selectReal(_found[i]),
+                              ),
+                              if (i != _found.length - 1) const _DividerLine(),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                    // ── Respaldo simulado ─────────────────────────────────
+                    if (_showFakes) ...[
+                      if (_found.isNotEmpty) const SizedBox(height: 14),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'Equipos simulados (sin hardware)',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.4,
+                            color: Colors.black.withValues(alpha: 0.40),
+                          ),
+                        ),
+                      ),
+                      _GlassCard(
+                        radius: 22,
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                        child: Column(
+                          children: [
+                            for (int i = 0; i < _devices.length; i++) ...[
+                              _DeviceTile(
+                                name: _devices[i]['name']!,
+                                id: _devices[i]['id']!,
+                                onTap: () => _selectDevice(_devices[i]),
+                              ),
+                              if (i != _devices.length - 1)
+                                const _DividerLine(),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// Subtitulo del renglon: direccion de transporte + potencia.
+  ///
+  /// Se muestra la MAC a proposito, para que en el taller se sepa a que
+  /// aparato fisico corresponde cada renglon. Es informacion de diagnostico,
+  /// no identidad: la identidad se lee al conectar.
+  String _subtitleFor(DiscoveredDevice d) {
+    final rssi = d.rssi;
+    if (_connectingAddress == d.transportAddress) {
+      return '${d.transportAddress}  ·  conectando...';
+    }
+    if (rssi == null) return d.transportAddress;
+    return '${d.transportAddress}  ·  $rssi dBm';
   }
 }
 
