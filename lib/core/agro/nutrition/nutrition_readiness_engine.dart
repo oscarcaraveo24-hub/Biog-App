@@ -1090,7 +1090,10 @@ class NutritionReadinessEngine {
 
     // ── Fuentes y reglas 3R ────────────────────────────────────────────────
     final List<String> sources = <String>[];
-    for (final AgroMetricKey nutrient in nutrients) {
+    for (final AgroMetricKey nutrient in <AgroMetricKey>[
+      ...nutrients,
+      for (final NutrientDose c in companions) c.nutrient,
+    ]) {
       final List<String> forNutrient =
           guide?.sourceOptionsEs[nutrient] ?? const <String>[];
       sources.addAll(forNutrient.isEmpty ? _defaultSources(nutrient) : forNutrient);
