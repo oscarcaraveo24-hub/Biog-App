@@ -9,18 +9,22 @@
 // comerciales y reglas 3R. Nada de esto sale de la sonda.
 //
 // ESTATUS: TODAS las guías entran como `GuideAuditStatus.proposed` con su
-// fuente. El agricultor NO ve rangos de dosis hasta que el equipo revise un
-// cultivo y lo marque `audited` (Guía v0.4, §10). Mientras tanto la app sigue
-// abriendo ventanas por etapa (eso sí se muestra) y explica que la cifra está
-// pendiente de auditoría. Ver `docs/AUDITORIA_GUIAS_NUTRICION_2026-09.md`.
+// fuente. Desde el 6 sep 2026 (decisión de producto) sus rangos SÍ se
+// muestran, siempre como «dosis orientativa (guía curada)» con fuente y
+// reparto a la vista; auditar un cultivo (`audited`) solo cambia ese
+// calificativo. Ver `docs/AUDITORIA_GUIAS_NUTRICION_2026-09.md`.
 //
 // CÓMO LEER UN PLAN DE TEMPORADA
 // ------------------------------
 // · Los rangos son para producción comercial de riego en México a rendimiento
 //   medio (el rendimiento supuesto va en `notesEs`). Temporal o bajo insumo:
 //   tomar el mínimo o menos. Siempre ajustar con análisis de suelo.
-// · `seasonShare` reparte ese plan entre ventanas; la suma por nutriente no
-//   pasa de 1.0. Con la guía auditada, `windowDoseFor` multiplica plan × share.
+// · `seasonShare` reparte ese plan entre etapas; la suma por nutriente no
+//   pasa de 1.0. `windowDoseFor` multiplica plan × share. Un nutriente con
+//   reparto en una etapa pero fuera de `windowNutrients` es un
+//   ACOMPAÑAMIENTO (fertirriego de fondo: «acompaña con K₂O …»): se dosifica,
+//   pero no abre ventana ni pesa en el score; `windowNutrients` marca el foco
+//   de la etapa, que es lo que el sensor observa.
 // · `isCritical` marca la ventana cuyo cierre SIN evidencia de fertilización
 //   puede pesar en el score histórico (Guía v0.4 §6, matiz del 05-sep-2026).
 //   Se reserva a las ventanas donde la literatura documenta pérdida de
@@ -1536,10 +1540,20 @@ const GuideSource _srcTreeRestitution = GuideSource(
 );
 
 /// Reglas de un frutal caducifolio (manzano, peral, durazno, nogal, pistache).
+///
+/// `seasonShare` aquí es la FRACCIÓN DE LA DOSIS ANUAL por restitución que
+/// corresponde a cada ventana del ciclo de carga (suma 1.0 por nutriente en
+/// el año; el establecimiento queda fuera porque es el año de plantación).
+/// Sin ella, brotación y post-cosecha mostraban las dos la dosis anual
+/// completa de N. Reparto orientativo (WSU Tree Fruit / Cornell: N 60–70 %
+/// primavera y 30–40 % post-cosecha; K acompaña al crecimiento del fruto), a
+/// confirmar en la auditoría de guías (Guía v0.4, §34).
 const List<StageNutritionRule> _deciduousTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'planting_transplant', 'root_establishment', 'juvenile_vegetative'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.p},
+    // Sin reparto: el año de plantación no es el ciclo de carga (y sin
+    // cosecha esperada la restitución no da cifra de todos modos).
     labelEs: 'Establecimiento',
     timingEs: 'Al plantar: P en el fondo del cepellón; N ligero y fraccionado el primer año.',
     rationaleEs: 'El árbol joven necesita raíz, no carga; el N alto da madera blanda.',
@@ -1553,6 +1567,7 @@ const List<StageNutritionRule> _deciduousTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'budbreak', 'vegetative_growth'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.n},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.65},
     isCritical: true,
     labelEs: 'Brotación',
     timingEs: 'De brotación a 4–6 semanas después, en fertirriego o banda bajo la copa.',
@@ -1566,6 +1581,7 @@ const List<StageNutritionRule> _deciduousTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'flowering', 'fruit_set'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.k},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.k: 0.30},
     labelEs: 'Floración y cuajado',
     timingEs: 'Tras la caída de pétalos, con el riego.',
     rationaleEs: 'El K arranca aquí para el tamaño del fruto; el N se modera para no tirar fruto.',
@@ -1573,6 +1589,7 @@ const List<StageNutritionRule> _deciduousTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'fruit_fill'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.k},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.k: 0.70},
     isCritical: true,
     labelEs: 'Llenado de fruto',
     timingEs: 'Durante el crecimiento del fruto, fraccionado en el riego.',
@@ -1590,6 +1607,7 @@ const List<StageNutritionRule> _deciduousTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'post_harvest'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.n, AgroMetricKey.p},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.35, AgroMetricKey.p: 1.0},
     labelEs: 'Post-cosecha',
     timingEs: 'Justo después de cosechar, mientras la hoja sigue activa.',
     rationaleEs: 'Repone reservas para la brotación del siguiente ciclo.',
@@ -1597,10 +1615,16 @@ const List<StageNutritionRule> _deciduousTreeRules = <StageNutritionRule>[
 ];
 
 /// Reglas de un frutal perennifolio (cítricos, mango, aguacate).
+///
+/// `seasonShare`: fracción de la dosis anual por restitución en cada ventana
+/// del ciclo de carga (N repartido en tres flujos —Yara/Haifa cítricos—, K
+/// cargado al fruto; suma 1.0 por nutriente; el establecimiento queda
+/// fuera). Orientativo, a confirmar en auditoría.
 const List<StageNutritionRule> _evergreenTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'planting_transplant', 'root_establishment', 'juvenile_vegetative'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.p},
+    // Sin reparto: el año de plantación no es el ciclo de carga.
     labelEs: 'Establecimiento',
     timingEs: 'Al plantar: P en el fondo; N ligero y fraccionado los primeros años.',
     rationaleEs: 'Raíz y estructura antes que carga.',
@@ -1614,6 +1638,7 @@ const List<StageNutritionRule> _evergreenTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'budbreak', 'vegetative_growth', 'flowering'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.n},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.50},
     isCritical: true,
     labelEs: 'Brotación y floración',
     timingEs: 'Antes y durante la floración principal, en fertirriego o banda.',
@@ -1622,6 +1647,7 @@ const List<StageNutritionRule> _evergreenTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'fruit_set'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.n, AgroMetricKey.k},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.20, AgroMetricKey.k: 0.30},
     labelEs: 'Cuajado',
     timingEs: 'Tras el cuajado, fraccionado en el riego.',
     rationaleEs: 'Modera el N para reducir caída de fruto; el K empieza a acompañar.',
@@ -1629,6 +1655,7 @@ const List<StageNutritionRule> _evergreenTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'fruit_fill'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.k},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.k: 0.50},
     isCritical: true,
     labelEs: 'Llenado de fruto',
     timingEs: 'Durante el crecimiento del fruto, fraccionado en el riego.',
@@ -1643,6 +1670,11 @@ const List<StageNutritionRule> _evergreenTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'post_harvest'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.n, AgroMetricKey.p, AgroMetricKey.k},
+    seasonShare: <AgroMetricKey, double>{
+      AgroMetricKey.n: 0.30,
+      AgroMetricKey.p: 1.0,
+      AgroMetricKey.k: 0.20,
+    },
     labelEs: 'Post-cosecha',
     timingEs: 'Después de cosechar, con el flujo vegetativo siguiente.',
     rationaleEs: 'Restitución del ciclo: repone lo que se llevó la fruta.',

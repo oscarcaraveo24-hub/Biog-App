@@ -5,7 +5,15 @@
 //
 // Es la fuente de la recomendación. No la sonda. Una guía dice, para un
 // cultivo, en qué etapas se abre la ventana de cada nutriente, qué fuentes y
-// reglas 3R respalda, y —solo si está auditada— qué rango de dosis sostiene.
+// reglas 3R respalda, y qué rango de dosis (kg/ha por ventana, con su
+// equivalente comercial) sostiene.
+//
+// AUTORIDAD SOBRE EL PERFIL (decisión de producto, 6 sep 2026): cuando un
+// cultivo tiene guía curada, SOLO sus reglas abren ventanas. El perfil
+// fenológico (`StageTargets`) sigue aportando el matiz de prioridad para las
+// pantallas, pero ya no abre por su cuenta una ventana que la guía no
+// contempla (p. ej. K en llenado de grano de cebada, o N en espigamiento de
+// trigo, que el perfil heredado marcaba alto).
 //
 // DOS CAPAS QUE SE SUMAN
 // ----------------------
@@ -19,11 +27,13 @@
 //
 // REGLA DE VISIBILIDAD
 // --------------------
-// Un rango de dosis con `GuideAuditStatus.proposed` vive en el código con su
-// fuente para que pueda revisarse, pero el agricultor NO lo ve. Solo una guía
-// `audited` emite cifras. La app explica el hueco en vez de rellenarlo con la
-// lectura de la sonda (§10).
+// Un rango de dosis vive en el código con su fuente y su estatus. Desde el
+// 6 sep 2026 (decisión de producto) los rangos `proposed` SÍ se muestran,
+// siempre como «orientativos» y con la fuente y el estatus a la vista; solo
+// una guía `pending` calla. Lo que no cambia: la cifra nace de cultivo + etapa
+// + guía + 3R y jamás de la lectura de la sonda (§10).
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/nutrition/fertilizer_products.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 
 /// Fuente citable de una guía.
@@ -81,8 +91,13 @@ class StageNutritionRule {
   final Set<AgroMetricKey> windowNutrients;
 
   /// Fracción del plan de temporada que corresponde a esta ventana, por
-  /// nutriente (0..1). Con el plan auditado produce el rango de la ventana.
+  /// nutriente (0..1). Con el plan produce el rango en kg/ha de la ventana.
+  /// En frutales (restitución) es la fracción de la dosis ANUAL que toca en
+  /// esta ventana; si falta, se asume la dosis anual completa.
   final Map<AgroMetricKey, double> seasonShare;
+
+  /// Fracción de [seasonShare] para [nutrient]; 1.0 cuando no se declara.
+  double shareFor(AgroMetricKey nutrient) => seasonShare[nutrient] ?? 1.0;
 
   /// La ventana es agronómicamente importante: si TERMINA sin que el sensor
   /// haya visto una respuesta compatible con fertilización, el resultado puede
@@ -164,23 +179,45 @@ class NutritionGuide {
   }
 
   /// Próxima regla con ventana para [nutrient] a partir de la etapa actual,
-  /// según el orden declarado en [stageRules].
+  /// según el orden declarado en [stageRules]. Null si la etapa actual no
+  /// está en la guía: sin posición no hay «siguiente».
   StageNutritionRule? nextWindowRuleAfter(String? stageKey, AgroMetricKey nutrient) {
-    int idx = -1;
-    for (int i = 0; i < stageRules.length; i++) {
-      if (stageRules[i].matchesStage(stageKey)) {
-        idx = i;
-        break;
-      }
-    }
+    final int idx = _ruleIndexFor(stageKey);
+    if (idx < 0) return null;
     for (int i = idx + 1; i < stageRules.length; i++) {
       if (stageRules[i].windowNutrients.contains(nutrient)) return stageRules[i];
     }
     return null;
   }
 
-  /// Rango de dosis de la ventana actual para [nutrient], o null si el plan no
-  /// existe, no está auditado o la regla no reparte ese nutriente aquí.
+  /// Próxima regla que abre ventana de cualquier nutriente después de la
+  /// etapa actual (para decir «la próxima ventana es…»). Null si la etapa
+  /// actual no está en la guía.
+  StageNutritionRule? nextWindowRuleAfterAny(String? stageKey) {
+    final int idx = _ruleIndexFor(stageKey);
+    if (idx < 0) return null;
+    for (int i = idx + 1; i < stageRules.length; i++) {
+      if (stageRules[i].windowNutrients.isNotEmpty) return stageRules[i];
+    }
+    return null;
+  }
+
+  int _ruleIndexFor(String? stageKey) {
+    for (int i = 0; i < stageRules.length; i++) {
+      if (stageRules[i].matchesStage(stageKey)) return i;
+    }
+    return -1;
+  }
+
+  /// La guía declara un plan de temporada en kg/ha (cereales, hortalizas).
+  /// Frutales (restitución) y ornamentales no lo tienen.
+  bool get hasSeasonPlan => seasonPlan.isNotEmpty;
+
+  /// Rango de dosis de [nutrient] en la etapa [stageKey], o null si el plan
+  /// no existe, la guía calla (`pending`) o la regla no reparte ese nutriente
+  /// en esa etapa. Cubre tanto los nutrientes que abren ventana como los de
+  /// acompañamiento (reparto sin ventana). Sirve igual para la etapa actual
+  /// y para la que se acerca.
   NutritionDoseRange? windowDoseFor({
     required AgroMetricKey nutrient,
     required String? stageKey,
@@ -193,17 +230,39 @@ class NutritionGuide {
     final double? share = rule?.seasonShare[nutrient];
     if (rule == null || share == null || share <= 0) return null;
 
+    final double minKg = plan.minKgPerHa * share;
+    final double maxKg = plan.maxKgPerHa * share;
+    if (maxKg <= 0) return null;
+    final GuideAuditStatus effective =
+        plan.audit == GuideAuditStatus.audited && auditStatus == GuideAuditStatus.audited
+        ? GuideAuditStatus.audited
+        : GuideAuditStatus.proposed;
+    final String? notes = plan.notesEs?.trim();
     return NutritionDoseRange(
-      min: plan.minKgPerHa * share,
-      max: plan.maxKgPerHa * share,
+      min: minKg,
+      max: maxKg,
       form: plan.form,
       unit: DoseUnit.kgPerHectare,
       sourceEs: plan.sourceEs,
+      commercialEquivalentEs: FertilizerProducts.equivalentEs(
+        form: plan.form,
+        minKg: minKg,
+        maxKg: maxKg,
+        sourceOptionsEs: sourceOptionsEs[nutrient] ?? const <String>[],
+      ),
+      // Un plan con mínimo 0 dice que el nutriente puede no hacer falta: la
+      // única forma honesta de mostrarlo es como condición.
+      conditionEs: plan.minKgPerHa <= 0
+          ? 'solo si tu análisis de suelo sale bajo en '
+                '${nutrient.labelEs.toLowerCase()}'
+          : null,
       transparencyEs:
-          'Rango de la guía de $cropLabelEs: ${_pct(share)} del plan de temporada '
+          'Rango orientativo de la guía de $cropLabelEs (${effective.doseQualifierEs}; '
+          'fuente: ${plan.sourceEs}): ${_pct(share)} del plan de temporada '
           '(${plan.minKgPerHa.round()}–${plan.maxKgPerHa.round()} kg/ha de '
-          '${plan.form.labelEs}) para esta ventana. Es orientativo: ajústalo con '
-          'tu análisis de suelo y tu meta de rendimiento.',
+          '${plan.form.labelEs}) para esta ventana. Ajústalo con tu análisis de '
+          'suelo y tu meta de rendimiento.'
+          '${notes == null || notes.isEmpty ? '' : ' Nota de la guía: $notes'}',
     );
   }
 

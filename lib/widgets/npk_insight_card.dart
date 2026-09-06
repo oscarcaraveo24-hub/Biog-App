@@ -187,9 +187,10 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
                           const SizedBox(height: 3),
                           Text(
                             widget.subtitle,
-                            // Dos líneas: la decisión del motor de nutrición
-                            // («Esta etapa necesita nutrición…») debe leerse
-                            // completa en su primera frase.
+                            // Dos líneas: la primera frase de la decisión del
+                            // motor de nutrición —la dosis orientativa
+                            // («N: 107–161 kg/ha (≈ 235–350 kg/ha de
+                            // urea)»)— debe leerse completa.
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

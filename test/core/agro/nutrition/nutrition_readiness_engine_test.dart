@@ -6,6 +6,8 @@
 import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_guide.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_guides.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_readiness_engine.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_window_ledger.dart';
@@ -112,6 +114,8 @@ BioGTelemetry _live(DateTime at) => BioGTelemetry(
 NutritionReadinessInput _input({
   required DateTime now,
   required StageTargets targets,
+  String cropKey = 'maize',
+  String cropLabel = 'Maíz',
   String stageKey = 'vegMid',
   String stageLabel = 'Vegetativo medio',
   DateTime? stageStartedAt,
@@ -120,25 +124,37 @@ NutritionReadinessInput _input({
   SiteLearningStatus learning = SiteLearningStatus.unknown,
   bool isPlanted = true,
   bool isGuideMode = false,
+  NutritionGuide? guide,
+  BioGTelemetry? live,
+  int daysToStageEnd = 20,
+  String? nextStageKey,
+  String? nextStageLabel,
+  bool isPerennial = false,
+  double? kgFruitPerTree,
 }) {
   return NutritionReadinessInput(
     now: now,
     isPlanted: isPlanted,
     isGuideMode: isGuideMode,
-    cropKey: 'maize',
-    cropLabel: 'Maíz',
+    cropKey: cropKey,
+    cropLabel: cropLabel,
     stageKey: stageKey,
     stageLabelEs: stageLabel,
-    daysToStageEnd: 20,
+    daysToStageEnd: daysToStageEnd,
     stageProgress01: 0.3,
     stageStartedAt: stageStartedAt ?? _t0.add(const Duration(days: 3)),
     targets: targets,
-    live: _live(now),
+    nextStageKey: nextStageKey,
+    nextStageLabelEs: nextStageLabel,
+    guide: guide,
+    live: live ?? _live(now),
     deviceId: 'dev',
-    seasonKey: 'dev|maize|2026-04-01',
+    seasonKey: 'dev|$cropKey|2026-04-01',
     windows: windows,
     history: history,
     learning: learning,
+    isPerennial: isPerennial,
+    kgFruitPerTree: kgFruitPerTree,
   );
 }
 
@@ -173,7 +189,13 @@ void main() {
       final NutritionDecision d = out.decision;
 
       expect(d.state, NutritionState.actionWindow);
-      expect(d.headlineEs, startsWith('Esta etapa necesita nutrición'));
+      // Sin guía curada el titular nombra nutriente y etapa; nunca el
+      // genérico «esta etapa necesita nutrición».
+      expect(d.headlineEs, 'Aplica nitrógeno en «Vegetativo medio»');
+      expect(d.tagEs, 'Aplica N');
+      expect(d.recommendation?.kind, NutritionRecommendationKind.apply);
+      expect(d.recommendation?.hasDose, isFalse, reason: 'sin guía no hay cifra');
+      expect(d.detailEs, contains('no inventa una cifra'));
       expect(d.awaitingEvidence, isTrue);
       expect(d.scoreFactor, 1.0, reason: 'una ventana abierta nunca penaliza');
       expect(d.unattendedCriticalWindows, 0);
@@ -246,6 +268,258 @@ void main() {
     });
   });
 
+  group('NutritionReadinessEngine · guía curada: copy específico y kg/ha', () {
+    final NutritionGuide maize = kNutritionGuides['maize']!;
+
+    test('V6–V8 abre nitrógeno con la ventana de la guía y la dosis en kg/ha', () {
+      final DateTime now = _t0.add(const Duration(days: 5));
+      final NutritionDecision d = NutritionReadinessEngine.evaluate(
+        _input(now: now, targets: _nDemand, guide: maize, history: _history(hours: 24 * 5)),
+      )!.decision;
+
+      expect(d.state, NutritionState.actionWindow);
+      expect(d.headlineEs, 'Aplica nitrógeno: segunda fertilización (V6–V8)');
+      expect(d.tagEs, 'Aplica N');
+      expect(d.window?.windowLabelEs, 'Segunda fertilización (V6–V8)');
+      expect(d.window?.displayLabelEs, 'Segunda fertilización (V6–V8)');
+      expect(d.window?.isCritical, isTrue, reason: 'la regla de la guía la marca importante');
+
+      final NutritionRecommendation rec = d.recommendation!;
+      expect(rec.allNutrients, <AgroMetricKey>[AgroMetricKey.n]);
+      expect(rec.doses.length, 1);
+      final NutritionDoseRange n = rec.doseFor(AgroMetricKey.n)!;
+      expect(n.labelEs, '107–161 kg/ha de N');
+      expect(n.commercialEquivalentEs, '≈ 235–350 kg/ha de urea');
+      expect(rec.doseFor(AgroMetricKey.p), isNull);
+      expect(
+        d.detailEs,
+        startsWith(
+          'Dosis orientativa (guía curada): N: 107–161 kg/ha (≈ 235–350 kg/ha de urea). '
+          'Momento: entre V6 y V8',
+        ),
+      );
+      expect(d.detailEs, contains('Maíz en «Vegetativo medio»: desde V6 hacia floración'));
+      expect(d.detailEs, contains('no necesitas registrar nada'));
+      expect(rec.headlineForNutrient(AgroMetricKey.n), d.headlineEs);
+      expect(d.reasons.first, contains('abre la ventana «Segunda fertilización (V6–V8)»'));
+    });
+
+    test('la fertilización de fondo abre N, P y K; el K condicionado no va en el titular', () {
+      final NutritionDecision d = NutritionReadinessEngine.evaluate(
+        _input(
+          now: _t0.add(const Duration(days: 2)),
+          targets: _quiet,
+          guide: maize,
+          stageKey: 'germination',
+          stageLabel: 'Germinación',
+          stageStartedAt: _t0,
+        ),
+      )!.decision;
+
+      expect(d.state, NutritionState.actionWindow);
+      final NutritionRecommendation rec = d.recommendation!;
+      expect(rec.allNutrients, <AgroMetricKey>[AgroMetricKey.n, AgroMetricKey.p, AgroMetricKey.k]);
+      expect(rec.headlineNutrients, <AgroMetricKey>[AgroMetricKey.n, AgroMetricKey.p]);
+      expect(d.headlineEs, 'Aplica nitrógeno y fósforo: fertilización de fondo');
+      expect(d.tagEs, 'Aplica N + P');
+      expect(rec.doseFor(AgroMetricKey.k)?.isConditional, isTrue);
+      expect(rec.doseFor(AgroMetricKey.p)?.labelEs, '40–80 kg/ha de P₂O₅');
+      expect(rec.headlineForNutrient(AgroMetricKey.p), 'Aplica fósforo: fertilización de fondo');
+      expect(d.detailEs, contains('K₂O: hasta 60 kg/ha'));
+      expect(d.detailEs, contains('solo si tu análisis de suelo sale bajo en potasio'));
+      expect(d.window?.nutrients.length, 3, reason: 'la ventana del libro lleva los tres');
+      expect(d.window?.isCritical, isFalse);
+    });
+
+    test('tomate vegetativo: N es el foco; P y K acompañan con su reparto', () {
+      final NutritionDecision d = NutritionReadinessEngine.evaluate(
+        _input(
+          now: _t0.add(const Duration(days: 20)),
+          targets: _quiet,
+          cropKey: 'tomato',
+          cropLabel: 'Tomate',
+          guide: kNutritionGuides['tomato']!,
+          stageKey: 'vegetativo',
+          stageLabel: 'Vegetativo',
+        ),
+      )!.decision;
+
+      expect(d.state, NutritionState.actionWindow);
+      expect(d.headlineEs, 'Aplica nitrógeno: vegetativo');
+      expect(d.tagEs, 'Aplica N');
+      final NutritionRecommendation rec = d.recommendation!;
+      expect(rec.allNutrients, <AgroMetricKey>[AgroMetricKey.n]);
+      expect(rec.companionNutrients, <AgroMetricKey>[AgroMetricKey.p, AgroMetricKey.k]);
+      expect(rec.coversNutrient(AgroMetricKey.k), isFalse);
+      expect(rec.mentionsNutrient(AgroMetricKey.k), isTrue);
+      expect(rec.doseFor(AgroMetricKey.n)?.labelEs, '45–60 kg/ha de N');
+      expect(rec.doseFor(AgroMetricKey.k)?.labelEs, '38–50 kg/ha de K₂O');
+      expect(rec.headlineForNutrient(AgroMetricKey.k), 'Acompaña con potasio: vegetativo');
+      expect(d.detailEs, startsWith('Dosis orientativa (guía curada): N: 45–60 kg/ha'));
+      expect(d.detailEs, contains('Acompaña con: P₂O₅: 12–20 kg/ha'));
+      expect(d.window?.nutrients, <AgroMetricKey>[AgroMetricKey.n], reason: 'el libro observa solo el foco');
+    });
+
+    test('con guía, el perfil NO abre ventanas que la guía no contempla', () {
+      // El perfil heredado marca N alto en floración; la guía cierra la
+      // ventana desde espigamiento. Antes esto abría una ventana importante
+      // y la sentenciaba «sin evidencia» contra el productor.
+      final NutritionDecision d = NutritionReadinessEngine.evaluate(
+        _input(
+          now: _t0.add(const Duration(days: 40)),
+          targets: _nDemand,
+          guide: maize,
+          stageKey: 'flowerSet',
+          stageLabel: 'Floración',
+          history: _history(hours: 24 * 8),
+        ),
+      )!.decision;
+
+      expect(d.state, NutritionState.monitor);
+      expect(d.window, isNull);
+      expect(d.recommendation, isNull);
+      final NutrientStagePriority n = d.priorities.firstWhere((p) => p.nutrient == AgroMetricKey.n);
+      expect(n.priority, NutritionPriority.medium);
+      expect(n.priority01, lessThan(NutritionPriorityX.kHighPriorityThreshold01));
+      expect(n.isCriticalWindow, isFalse);
+      expect(d.headlineEs, 'Suelo estable, sin necesidades nutrimentales por ahora');
+      expect(d.detailEs, contains('En «Espigamiento y floración» la guía de Maíz no reparte fertilizante'));
+      expect(d.detailEs, contains('No quedan ventanas de fertilización en este ciclo.'));
+      expect(d.reasons.first, contains('no abre ventana'));
+    });
+
+    test('sin guía el perfil sigue mandando (misma etapa abre por prioridad)', () {
+      final NutritionDecision d = NutritionReadinessEngine.evaluate(
+        _input(
+          now: _t0.add(const Duration(days: 40)),
+          targets: _nDemand,
+          stageKey: 'flowerSet',
+          stageLabel: 'Floración',
+        ),
+      )!.decision;
+      expect(d.state, NutritionState.actionWindow);
+      expect(d.headlineEs, 'Aplica nitrógeno en «Floración»');
+    });
+
+    test('suelo seco: la ventana sigue abierta pero el copy dice «prepara»', () {
+      final DateTime now = _t0.add(const Duration(days: 5));
+      final NutritionDecision d = NutritionReadinessEngine.evaluate(
+        _input(
+          now: now,
+          targets: _nDemand,
+          guide: maize,
+          live: _live(now).copyWith(soilMoisturePct: 6),
+        ),
+      )!.decision;
+
+      expect(d.state, NutritionState.prepare);
+      expect(d.awaitingEvidence, isTrue);
+      expect(
+        d.headlineEs,
+        'Prepara nitrógeno: segunda fertilización (V6–V8), todavía no apliques',
+      );
+      expect(d.tagEs, 'Prepara N');
+      expect(d.recommendation?.kind, NutritionRecommendationKind.prepare);
+      expect(d.detailEs, startsWith('Dosis orientativa (guía curada): N: 107–161 kg/ha'));
+      expect(d.detailEs, contains('Todavía no apliques'));
+      expect(d.scoreFactor, 1.0);
+    });
+
+    test('la ventana que se acerca se anuncia con su nombre y su dosis prevista', () {
+      final NutritionGuide apple = kNutritionGuides['apple_tree']!;
+      final NutritionDecision d = NutritionReadinessEngine.evaluate(
+        _input(
+          now: _t0.add(const Duration(days: 5)),
+          targets: _quiet,
+          cropKey: 'apple_tree',
+          cropLabel: 'Manzano',
+          guide: apple,
+          stageKey: 'dormancy',
+          stageLabel: 'Reposo',
+          daysToStageEnd: 6,
+          nextStageKey: 'budbreak',
+          nextStageLabel: 'Brotación',
+          isPerennial: true,
+          kgFruitPerTree: 60,
+        ),
+      )!.decision;
+
+      expect(d.state, NutritionState.prepare);
+      expect(d.awaitingEvidence, isFalse);
+      expect(d.headlineEs, 'Se acerca nitrógeno: brotación');
+      expect(d.tagEs, 'Pronto N');
+      final NutritionRecommendation rec = d.recommendation!;
+      expect(rec.kind, NutritionRecommendationKind.upcoming);
+      expect(rec.inDays, 6);
+      expect(rec.doses.length, 1);
+      final NutritionDoseRange n = rec.doseFor(AgroMetricKey.n)!;
+      expect(n.unit, DoseUnit.gramsPerPlant);
+      expect(n.transparencyEs, contains('65 % de la dosis anual'));
+      expect(d.detailEs, startsWith('En ~6 días entra «Brotación»'));
+      expect(d.detailEs, contains('Dosis orientativa prevista: N:'));
+      expect(d.upcomingWindowInDays, 6);
+    });
+
+    test('frutal: cada ventana lleva su fracción de la dosis anual', () {
+      final NutritionGuide apple = kNutritionGuides['apple_tree']!;
+      NutritionDecision at(String stage, String label) => NutritionReadinessEngine.evaluate(
+        _input(
+          now: _t0.add(const Duration(days: 5)),
+          targets: _quiet,
+          cropKey: 'apple_tree',
+          cropLabel: 'Manzano',
+          guide: apple,
+          stageKey: stage,
+          stageLabel: label,
+          isPerennial: true,
+          kgFruitPerTree: 60,
+        ),
+      )!.decision;
+
+      final NutritionDoseRange spring = at('budbreak', 'Brotación').recommendation!.doseFor(AgroMetricKey.n)!;
+      final NutritionDoseRange autumn = at('post_harvest', 'Post-cosecha').recommendation!.doseFor(AgroMetricKey.n)!;
+      expect(spring.max, greaterThan(autumn.max), reason: '65 % en brotación, 35 % tras cosecha');
+      // Las dos salen de la misma dosis anual (redondeo de presentación aparte).
+      expect((spring.max / 0.65) - (autumn.max / 0.35), closeTo(0, spring.max * 0.25));
+      expect(at('budbreak', 'Brotación').headlineEs, 'Aplica nitrógeno: brotación');
+      expect(
+        at('post_harvest', 'Post-cosecha').headlineEs,
+        'Aplica nitrógeno y fósforo: post-cosecha',
+      );
+    });
+
+    test('cebada en llenado de grano: el perfil alto de K ya no abre ventana', () {
+      const StageTargets kHigh = StageTargets(
+        moistureRaw: _soil,
+        soilTemp: _temp,
+        ph: _ph,
+        ec: _ec,
+        resistance: _res,
+        nIndex: AgroRange(lowMax: 0, optimalMin: 10, optimalMax: 30, highMin: 40),
+        pIndex: AgroRange(lowMax: 0, optimalMin: 10, optimalMax: 30, highMin: 40),
+        kIndex: AgroRange(lowMax: 0, optimalMin: 10, optimalMax: 30, highMin: 40),
+        nPriority: 0.46,
+        pPriority: 0.52,
+        kPriority: 0.80,
+      );
+      final NutritionDecision d = NutritionReadinessEngine.evaluate(
+        _input(
+          now: _t0.add(const Duration(days: 60)),
+          targets: kHigh,
+          cropKey: 'barley',
+          cropLabel: 'Cebada',
+          guide: kNutritionGuides['barley']!,
+          stageKey: 'grainFill',
+          stageLabel: 'Llenado de grano',
+        ),
+      )!.decision;
+      expect(d.window, isNull);
+      expect(d.state, NutritionState.monitor);
+      expect(d.priorities.every((p) => p.priority != NutritionPriority.high), isTrue);
+      expect(d.detailEs, contains('la guía de Cebada no reparte fertilizante'));
+    });
+  });
+
   group('NutritionReadinessEngine · detección automática', () {
     test('un fertirriego dentro de la ventana la deja atendida, sin registro', () {
       // Ventana abre el día 3; el día 6 entra agua con sales.
@@ -282,7 +556,8 @@ void main() {
 
       expect(d.window?.outcome, NutritionWindowOutcome.attendedDetected);
       expect(d.state, NutritionState.monitor);
-      expect(d.headlineEs, startsWith('Nutrición atendida'));
+      expect(d.headlineEs, 'Nutrición atendida: «Vegetativo medio»');
+      expect(d.tagEs, 'Atendida');
       expect(d.response?.verdict, ResponseVerdict.compatible);
       expect(d.window?.responseVerdict, ResponseVerdict.compatible);
     });
@@ -329,10 +604,15 @@ void main() {
       expect(d.unattendedCriticalWindows, 1);
       expect(d.scoreFactor, closeTo(NutritionWindowLedger.kUnattendedWindowScoreFactor, 1e-9));
       expect(d.recentlyUnattendedWindow?.id, open.id);
+      expect(d.headlineEs, 'Sin evidencia de fertilización: «Vegetativo medio»');
+      expect(d.tagEs, 'Sin evidencia');
       expect(
-        d.headlineEs,
-        'Esta ventana nutricional no mostró evidencia suficiente de haber sido atendida',
+        d.detailEs,
+        startsWith(
+          'Esta ventana nutricional no mostró evidencia suficiente de haber sido atendida',
+        ),
       );
+      expect(d.detailEs, contains('No es una certeza de que no fertilizaste'));
     });
 
     test('la misma ventana sin lecturas termina inconclusa y NO pesa', () {

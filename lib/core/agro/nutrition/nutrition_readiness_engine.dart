@@ -27,16 +27,29 @@
 // aprendizaje no bloquea: si hay una ventana abierta en la primera semana, la
 // ventana manda y el aprendizaje se anota como matiz.
 //
-// COPY DEL FLUJO (decisión de producto, sep 2026):
-//   «Esta etapa necesita nutrición.»
-//   «Estoy observando la respuesta del suelo.»
-//   «Respuesta compatible con fertilización detectada.»
-//   «Esta ventana nutricional no mostró evidencia suficiente de haber sido
-//    atendida.»
+// COPY DEL FLUJO (decisión de producto, 6 sep 2026): nada de «esta etapa
+// necesita nutrición». Cada titular nombra el nutriente y la ventana de la
+// guía, y el detalle abre con la dosis orientativa:
+//   «Aplica nitrógeno: segunda fertilización (V6–V8)»
+//     → «Dosis orientativa (guía curada): N: 107–161 kg/ha (≈ 235–350 kg/ha
+//        de urea). Momento: entre V6 y V8 … Cuando apliques no necesitas
+//        registrar nada …»
+//   «Prepara nitrógeno: segunda fertilización (V6–V8), todavía no apliques»
+//   «Se acerca nitrógeno: amacollamiento (primer riego de auxilio)»
+//   «Respuesta compatible con fertilización detectada» (frase oficial; la
+//     ventana va en el detalle)
+//   «Nutrición atendida: segunda fertilización (V6–V8)»
+//   «Sin evidencia de fertilización: segunda fertilización (V6–V8)» (el
+//     detalle conserva la frase oficial «esta ventana nutricional no mostró
+//     evidencia suficiente de haber sido atendida»)
+//   «Tendencia al alza en nitrógeno» / «Suelo estable, sin necesidades
+//     nutrimentales por ahora» en seguimiento.
+// Los titulares de recomendación se arman en `NutritionRecommendation.headlineFor`.
 import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/nutrition/fertilization_signature_scanner.dart';
+import 'package:bio_g/core/agro/nutrition/fertilizer_products.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_guide.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_variety_modifiers.dart';
@@ -168,6 +181,12 @@ class NutritionReadinessEngine {
   /// Días de anticipación con los que una ventana próxima pasa a PREPARE.
   static const int upcomingWindowDays = 10;
 
+  /// Tope de prioridad para un nutriente que la guía curada NO reparte en la
+  /// etapa: justo debajo del umbral de ventana. Sigue pudiendo ser «media»
+  /// (importa, se sigue la tendencia) pero nunca abre ventana ni penaliza.
+  static const double kGuideCappedPriority01 =
+      NutritionPriorityX.kHighPriorityThreshold01 - 0.01;
+
   /// Temperatura de suelo por debajo de la cual la actividad radicular y la
   /// mineralización se frenan: no bloquea, advierte.
   static const double coldSoilCautionC = 10.0;
@@ -218,19 +237,27 @@ class NutritionReadinessEngine {
     final List<NutrientStagePriority> windowCandidates = priorities
         .where((p) => p.priority == NutritionPriority.high)
         .toList();
+    // La ventana se nombra y se dosifica en orden N, P, K, que es como el
+    // agricultor lee una fórmula; la prioridad ordena las pantallas, no esto.
+    final List<AgroMetricKey> windowNutrients = NutritionRecommendation.orderNpk(
+      windowCandidates.map((NutrientStagePriority p) => p.nutrient),
+    );
     final String seasonKey =
         input.seasonKey ?? '${input.deviceId ?? 'device'}|$crop|-';
     final String deviceId = input.deviceId ?? 'device';
     final String stageKey = StageNutritionRule.normalizeStageKey(input.stageKey);
+    final String? guideWindowLabel =
+        (rule != null && rule.windowNutrients.isNotEmpty) ? rule.labelEs : null;
 
     CurrentWindowSpec? spec;
-    if (windowCandidates.isNotEmpty && stageKey.isNotEmpty) {
+    if (windowNutrients.isNotEmpty && stageKey.isNotEmpty) {
       spec = CurrentWindowSpec(
         stageKey: stageKey,
         stageLabelEs: input.stageLabelEs ?? input.stageKey ?? stageKey,
-        nutrients: windowCandidates.map((p) => p.nutrient).toList(),
+        nutrients: windowNutrients,
         isCritical: windowCandidates.any((p) => p.isCriticalWindow),
         startedAt: input.stageStartedAt ?? input.now,
+        labelEs: guideWindowLabel,
       );
     }
     final String? currentId = spec == null
@@ -316,29 +343,34 @@ class NutritionReadinessEngine {
     }
 
     // ── 5. Ventana próxima ───────────────────────────────────────────────
-    final _Upcoming? upcoming = _upcomingWindow(input, variety);
+    // Solo cuando la etapa actual NO abre ventana: con una abierta (aunque el
+    // suelo no deje aplicar) la próxima no debe desplazar su aviso.
+    final _Upcoming? upcoming = spec == null
+        ? _upcomingWindow(input, variety)
+        : null;
 
     // ── 6. Estado ────────────────────────────────────────────────────────
     NutritionState state;
     NutrientStagePriority? focus;
     bool awaitingEvidence = false;
 
-    final String windowStageLabel =
-        window?.stageLabelEs ?? input.stageLabelEs ?? 'esta etapa';
+    final String windowName = window?.displayLabelEs ??
+        input.stageLabelEs ??
+        'esta etapa';
     if (detectedSignature != null && following) {
       state = NutritionState.responseWindow;
       reasons.add(
         'Firma compatible con fertilización detectada el '
         '${_fmtDate(detectedSignature.startedAt)} (confianza '
         '${detectedSignature.confidenceLabelEs}, '
-        '${detectedSignature.kind.labelEs.toLowerCase()}); la ventana de '
-        '«$windowStageLabel» queda atendida y se sigue la respuesta hasta el '
+        '${detectedSignature.kind.labelEs.toLowerCase()}); la ventana '
+        '«$windowName» queda atendida y se sigue la respuesta hasta el '
         '${_fmtDate(detectedSignature.responseHorizonEndsAt)}.',
       );
     } else if (detectedSignature != null) {
       state = NutritionState.monitor;
       reasons.add(
-        'La ventana de «$windowStageLabel» fue atendida (firma del '
+        'La ventana «$windowName» fue atendida (firma del '
         '${_fmtDate(detectedSignature.startedAt)}); la respuesta ya se evaluó: '
         '${response?.verdict.labelEs ?? 'sin veredicto'}.',
       );
@@ -348,12 +380,19 @@ class NutritionReadinessEngine {
       state = conditions.allowsApplication
           ? NutritionState.actionWindow
           : NutritionState.prepare;
+      final String who = NutritionRecommendation.joinNutrientsEs(windowNutrients);
       reasons.add(
-        'La etapa «${spec.stageLabelEs}» tiene prioridad alta de '
-        '${focus.labelEs.toLowerCase()} (${_pct(focus.priority01)})'
-        '${spec.isCritical ? ', ventana agronómicamente importante' : ''}; '
-        'el sensor observa la respuesta del suelo desde el '
-        '${_fmtDate(spec.startedAt)}.',
+        guide != null && guideWindowLabel != null
+            ? 'La guía de ${guide.cropLabelEs} abre la ventana '
+                  '«$guideWindowLabel» de $who en «${spec.stageLabelEs}»'
+                  '${spec.isCritical ? ' (ventana agronómicamente importante)' : ''}; '
+                  'el sensor observa la respuesta del suelo desde el '
+                  '${_fmtDate(spec.startedAt)}.'
+            : 'La etapa «${spec.stageLabelEs}» tiene prioridad alta de $who '
+                  '(${focus.labelEs.toLowerCase()}: ${_pct(focus.priority01)})'
+                  '${spec.isCritical ? ', ventana agronómicamente importante' : ''}; '
+                  'el sensor observa la respuesta del suelo desde el '
+                  '${_fmtDate(spec.startedAt)}.',
       );
       if (possibleSignature != null) {
         reasons.add(
@@ -371,9 +410,9 @@ class NutritionReadinessEngine {
     } else if (upcoming != null) {
       state = NutritionState.prepare;
       reasons.add(
-        'Se aproxima una etapa de alta demanda de '
-        '${upcoming.priority.labelEs.toLowerCase()} '
-        '(${upcoming.stageLabelEs}) en ~${upcoming.inDays} días.',
+        'Se acerca la ventana «${upcoming.windowNameEs}» de '
+        '${NutritionRecommendation.joinNutrientsEs(upcoming.nutrients)} '
+        '(etapa «${upcoming.stageLabelEs}») en ~${upcoming.inDays} días.',
       );
     } else if (input.learning.isLearning) {
       state = NutritionState.learning;
@@ -383,7 +422,16 @@ class NutritionReadinessEngine {
       );
     } else {
       state = NutritionState.monitor;
-      reasons.add('Sin ventana nutricional relevante en la etapa actual.');
+      if (guide != null && rule != null) {
+        final String why = (rule.rationaleEs ?? '').trim();
+        reasons.add(
+          'La guía de ${guide.cropLabelEs} no abre ventana en '
+          '«${rule.labelEs ?? input.stageLabelEs ?? input.stageKey}»'
+          '${why.isEmpty ? '.' : ': ${_lowerFirst(why)}'}',
+        );
+      } else {
+        reasons.add('Sin ventana nutricional relevante en la etapa actual.');
+      }
     }
 
     // ── 7. Memoria del ciclo: lo único que puede pesar en el score ───────
@@ -405,38 +453,33 @@ class NutritionReadinessEngine {
     }
     for (final NutritionWindowRecord r in ledger.justResolved) {
       reasons.add(
-        'Ventana «${r.stageLabelEs}» (${r.nutrientsLabelEs}) cerrada: '
+        'Ventana «${r.displayLabelEs}» (${r.nutrientsLabelEs}) cerrada: '
         '${r.outcome.labelEs.toLowerCase()}.',
       );
     }
 
     // ── 8. Recomendación ─────────────────────────────────────────────────
     NutritionRecommendation? recommendation;
-    if (focus != null) {
+    if (focus != null && spec != null) {
       recommendation = _buildRecommendation(
         input: input,
-        focus: focus,
+        nutrients: windowNutrients,
+        priorities: priorities,
         rule: rule,
         guide: guide,
         variety: variety,
         conditions: conditions,
         limitations: limitations,
         possible: possibleSignature,
+        windowLabelEs: guideWindowLabel,
+        stageLabelEs: spec.stageLabelEs,
       );
     } else if (state == NutritionState.prepare && upcoming != null) {
-      recommendation = NutritionRecommendation(
-        nutrient: upcoming.priority.nutrient,
-        headlineEs:
-            'Se aproxima la ventana de ${upcoming.priority.labelEs.toLowerCase()}',
-        detailEs:
-            'En ~${upcoming.inDays} días entra «${upcoming.stageLabelEs}», etapa de '
-            'alta demanda de ${upcoming.priority.labelEs.toLowerCase()}. '
-            'Revisa que tengas producto y que el suelo llegue con humedad '
-            'pareja; BIO-G abrirá la ventana al entrar la etapa.',
-        audit: audit,
-        timingEs: 'Antes de que empiece «${upcoming.stageLabelEs}».',
-        sourceOptionsEs:
-            guide?.sourceOptionsEs[upcoming.priority.nutrient] ?? const <String>[],
+      recommendation = _buildUpcomingRecommendation(
+        input: input,
+        upcoming: upcoming,
+        guide: guide,
+        limitations: limitations,
       );
     }
 
@@ -447,8 +490,14 @@ class NutritionReadinessEngine {
       );
     } else if (!audit.canShowDose && !guide.usesTreeRestitution) {
       limitations.add(
-        'La guía de ${guide.cropLabelEs} está pendiente de auditoría: los '
-        'rangos de dosis no se muestran hasta que se marque como auditada.',
+        'La guía de ${guide.cropLabelEs} está pendiente: los rangos de dosis '
+        'no se muestran hasta que se cure cultivo por cultivo.',
+      );
+    } else if (rule == null) {
+      limitations.add(
+        'La guía de ${guide.cropLabelEs} no contempla la etapa '
+        '«${input.stageLabelEs ?? input.stageKey}»: no se abre ventana y el '
+        'perfil fenológico solo aporta el matiz de prioridad.',
       );
     }
     if (scan != null && !scan.observability.isOk) {
@@ -491,6 +540,8 @@ class NutritionReadinessEngine {
       upcoming: upcoming,
       possible: possible,
       recentlyUnattended: recentlyUnattended,
+      guide: guide,
+      rule: rule,
     );
 
     final NutritionDecision decision = NutritionDecision(
@@ -573,12 +624,24 @@ class NutritionReadinessEngine {
   // PRIORIDADES
   // ═════════════════════════════════════════════════════════════════════════
 
+  /// Prioridad por nutriente en la etapa, con la regla de autoridad:
+  ///
+  ///   · CON guía curada, SOLO sus reglas abren ventanas. Un nutriente que la
+  ///     regla reparte queda al menos en prioridad alta (y es «importante»
+  ///     solo si la regla lo dice); uno que la regla no reparte se queda por
+  ///     debajo del umbral de ventana aunque el perfil heredado lo marque
+  ///     alto. Sin esto, el perfil abría ventanas que la guía no contempla
+  ///     (K en llenado de cebada, N en espigamiento de trigo o avena…) y las
+  ///     sentenciaba «sin evidencia» contra el productor.
+  ///   · SIN guía, manda el perfil fenológico tal cual (con modificador de
+  ///     variedad), como hasta ahora.
   static List<NutrientStagePriority> _buildPriorities({
     required NutritionReadinessInput input,
     required StageNutritionRule? rule,
     required VarietyNutritionAdjustment variety,
   }) {
     final StageTargets? targets = input.targets;
+    final bool guideDecides = input.guide != null;
     final List<NutrientStagePriority> out = <NutrientStagePriority>[];
 
     for (final AgroMetricKey key in const <AgroMetricKey>[
@@ -591,16 +654,27 @@ class NutritionReadinessEngine {
           .adjustPriority(base, key, input.stageKey)
           .clamp(0.0, 1.0);
       final bool ruleOpens = rule?.windowNutrients.contains(key) ?? false;
-      // La guía curada puede abrir la ventana aunque el perfil quede en medio.
-      final double effective = ruleOpens
-          ? math.max(adjusted, NutritionPriorityX.kHighPriorityThreshold01)
-          : adjusted;
+
+      final double effective;
+      final bool critical;
+      if (guideDecides) {
+        if (ruleOpens) {
+          effective = math.max(
+            adjusted,
+            NutritionPriorityX.kHighPriorityThreshold01,
+          );
+          critical = rule?.isCritical ?? false;
+        } else {
+          effective = math.min(adjusted, kGuideCappedPriority01);
+          critical = false;
+        }
+      } else {
+        effective = adjusted;
+        critical = effective >= NutritionPriorityX.kCriticalPriorityThreshold01;
+      }
       final NutritionPriority level = NutritionPriorityX.fromPriority01(
         effective,
       );
-      final bool critical =
-          (ruleOpens && (rule?.isCritical ?? false)) ||
-          effective >= NutritionPriorityX.kCriticalPriorityThreshold01;
 
       final String window =
           (ruleOpens ? rule?.labelEs : null) ??
@@ -754,57 +828,66 @@ class NutritionReadinessEngine {
   // VENTANA PRÓXIMA
   // ═════════════════════════════════════════════════════════════════════════
 
+  /// Ventana que abre la SIGUIENTE etapa, si el runtime la anticipó y falta
+  /// poco. Con guía curada solo cuentan sus reglas (misma autoridad que en
+  /// la etapa actual); sin guía, el perfil de la etapa siguiente.
   static _Upcoming? _upcomingWindow(
     NutritionReadinessInput input,
     VarietyNutritionAdjustment variety,
   ) {
     final int? days = input.daysToStageEnd;
     if (days == null || days > upcomingWindowDays) return null;
+    final String? nextStageKey = input.nextStageKey;
+    if (nextStageKey == null || nextStageKey.trim().isEmpty) return null;
+    final String nextLabel = input.nextStageLabelEs ?? nextStageKey;
 
-    // Primero la guía curada: siguiente regla con ventana.
     final NutritionGuide? guide = input.guide;
     if (guide != null) {
-      for (final AgroMetricKey key in const <AgroMetricKey>[
-        AgroMetricKey.n,
-        AgroMetricKey.p,
-        AgroMetricKey.k,
-      ]) {
-        final StageNutritionRule? next = guide.nextWindowRuleAfter(
-          input.stageKey,
-          key,
-        );
-        if (next != null &&
-            input.nextStageKey != null &&
-            next.matchesStage(input.nextStageKey)) {
-          return _Upcoming(
-            priority: NutrientStagePriority(
-              nutrient: key,
-              priority: NutritionPriority.high,
-              priority01: NutritionPriorityX.kHighPriorityThreshold01,
-              windowLabelEs: next.labelEs ?? _defaultWindowLabel(key, NutritionPriority.high),
-              rationaleEs: next.rationaleEs ?? '',
-              isCriticalWindow: next.isCritical,
-            ),
-            stageLabelEs: input.nextStageLabelEs ?? input.nextStageKey!,
-            inDays: math.max(1, days),
-          );
-        }
+      final StageNutritionRule? next = guide.ruleForStage(nextStageKey);
+      // La misma regla cubre varias etapas (V6–V8 = vegEarly + vegMid): si la
+      // etapa siguiente cae en la regla actual, no es una ventana nueva.
+      if (next == null ||
+          next.windowNutrients.isEmpty ||
+          next.matchesStage(input.stageKey)) {
+        return null;
       }
+      final List<AgroMetricKey> nutrients = NutritionRecommendation.orderNpk(
+        next.windowNutrients,
+      );
+      final AgroMetricKey first = nutrients.first;
+      return _Upcoming(
+        nutrients: nutrients,
+        rule: next,
+        stageKey: nextStageKey,
+        stageLabelEs: nextLabel,
+        inDays: math.max(1, days),
+        priority: NutrientStagePriority(
+          nutrient: first,
+          priority: NutritionPriority.high,
+          priority01: NutritionPriorityX.kHighPriorityThreshold01,
+          windowLabelEs:
+              next.labelEs ?? _defaultWindowLabel(first, NutritionPriority.high),
+          rationaleEs: next.rationaleEs ?? '',
+          isCriticalWindow: next.isCritical,
+        ),
+      );
     }
 
-    // Después el perfil de la etapa siguiente, si el runtime la anticipó.
+    // Sin guía: el perfil de la etapa siguiente, todos los nutrientes altos.
     final StageTargets? next = input.nextTargets;
     if (next == null) return null;
     NutrientStagePriority? best;
+    final List<AgroMetricKey> high = <AgroMetricKey>[];
     for (final AgroMetricKey key in const <AgroMetricKey>[
       AgroMetricKey.n,
       AgroMetricKey.p,
       AgroMetricKey.k,
     ]) {
       final double p = variety
-          .adjustPriority(next.resolvedPriorityFor(key), key, input.nextStageKey)
+          .adjustPriority(next.resolvedPriorityFor(key), key, nextStageKey)
           .clamp(0.0, 1.0);
       if (p < NutritionPriorityX.kHighPriorityThreshold01) continue;
+      high.add(key);
       if (best == null || p > best.priority01) {
         best = NutrientStagePriority(
           nutrient: key,
@@ -820,9 +903,12 @@ class NutritionReadinessEngine {
     }
     if (best == null) return null;
     return _Upcoming(
-      priority: best,
-      stageLabelEs: input.nextStageLabelEs ?? input.nextStageKey ?? 'siguiente etapa',
+      nutrients: high,
+      rule: null,
+      stageKey: nextStageKey,
+      stageLabelEs: nextLabel,
       inDays: math.max(1, days),
+      priority: best,
     );
   }
 
@@ -940,138 +1026,164 @@ class NutritionReadinessEngine {
   // RECOMENDACIÓN
   // ═════════════════════════════════════════════════════════════════════════
 
+  /// Recomendación de la ventana ABIERTA: todos sus nutrientes (orden N, P,
+  /// K), cada uno con su rango orientativo si la guía lo sostiene, y un
+  /// titular que nombra nutriente y ventana. La dosis nace de cultivo +
+  /// etapa + guía (o restitución en frutales), nunca de la sonda.
   static NutritionRecommendation _buildRecommendation({
     required NutritionReadinessInput input,
-    required NutrientStagePriority focus,
+    required List<AgroMetricKey> nutrients,
+    required List<NutrientStagePriority> priorities,
     required StageNutritionRule? rule,
     required NutritionGuide? guide,
     required VarietyNutritionAdjustment variety,
     required NutritionConditionCheck conditions,
     required List<String> limitations,
     FertilizationSignature? possible,
+    String? windowLabelEs,
+    String? stageLabelEs,
   }) {
-    final AgroMetricKey nutrient = focus.nutrient;
-    final String nutrientName = nutrient.labelEs.toLowerCase();
     final GuideAuditStatus audit = guide?.auditStatus ?? GuideAuditStatus.pending;
+    final AgroMetricKey primary = nutrients.first;
 
-    NutritionDoseRange? dose;
-    String? noDoseReason;
-
-    if (input.isPerennial || (guide?.usesTreeRestitution ?? false)) {
-      final TreeRestitutionResult? r = TreeRestitutionPlanner.compute(
-        nutrient: nutrient,
-        cropKey: input.cropKey,
-        kgFruitPerTree: input.kgFruitPerTree,
-        soilLevel: input.soilSupplyLevel,
-      );
-      if (r != null) {
-        final int lo = TreeRestitutionPlanner.roundForDisplay(
-          r.gramsPerTreeNutrient * 0.85,
-        );
-        final int hi = TreeRestitutionPlanner.roundForDisplay(
-          r.gramsPerTreeNutrient * 1.15,
-        );
-        final int comLo = TreeRestitutionPlanner.roundForDisplay(
-          r.gramsPerTreeCommercial * 0.85,
-        );
-        final int comHi = TreeRestitutionPlanner.roundForDisplay(
-          r.gramsPerTreeCommercial * 1.15,
-        );
-        dose = NutritionDoseRange(
-          min: lo.toDouble(),
-          max: hi.toDouble(),
-          form: switch (nutrient) {
-            AgroMetricKey.p => NutrientForm.p2o5,
-            AgroMetricKey.k => NutrientForm.k2o,
-            _ => NutrientForm.n,
-          },
-          unit: DoseUnit.gramsPerPlant,
-          sourceEs:
-              'Restitución por extracción (${r.coefficients.sourceEs})',
-          commercialEquivalentEs:
-              '≈ $comLo–$comHi g de ${r.commercialSourceEs} por árbol y ciclo',
-          transparencyEs: r.transparencyEs,
-        );
-      } else if (!TreeRestitutionPlanner.hasCoefficients(input.cropKey)) {
-        noDoseReason =
-            'Este cultivo no tiene coeficientes de extracción cargados; la dosis '
-            'queda para la guía auditada.';
-      } else {
-        noDoseReason =
-            'Para calcular gramos por árbol falta la cosecha esperada por árbol. '
-            'Regístrala en la proyección de rendimiento y BIO-G te da la dosis '
-            'por restitución.';
-      }
-    } else if (guide != null) {
-      final NutritionDoseRange? fromGuide = guide.windowDoseFor(
+    // ── Dosis por nutriente ────────────────────────────────────────────────
+    final List<NutrientDose> doses = <NutrientDose>[];
+    final List<String> noDoseReasons = <String>[];
+    for (final AgroMetricKey nutrient in nutrients) {
+      final _DoseLookup d = _doseFor(
+        input: input,
         nutrient: nutrient,
         stageKey: input.stageKey,
+        rule: rule,
+        guide: guide,
+        limitations: limitations,
       );
-      if (fromGuide != null) {
-        dose = _scaleDose(fromGuide, input.cultivationScaleId, limitations);
-      } else if (!audit.canShowDose) {
-        noDoseReason =
-            'La guía de ${guide.cropLabelEs} está pendiente de auditoría: '
-            'BIO-G no muestra un rango de dosis hasta que se valide cultivo por '
-            'cultivo. Usa la etiqueta del producto o tu asesor mientras tanto.';
-      } else {
-        noDoseReason =
-            'La guía auditada no reparte $nutrientName en esta etapa; la '
-            'prioridad es alta pero el rango se define en la ventana que la guía '
-            'sí sostiene.';
+      if (d.range != null) {
+        doses.add(NutrientDose(nutrient: nutrient, range: d.range!));
+      } else if (d.reasonEs != null) {
+        noDoseReasons.add(d.reasonEs!);
       }
-    } else {
-      noDoseReason =
-          'Sin guía curada para este cultivo: BIO-G no inventa una cifra. La '
-          'prioridad es fenológica; la dosis, de tu asesor o la etiqueta del '
-          'producto.';
+    }
+    // Acompañamiento: nutrientes que la guía reparte en esta etapa sin
+    // abrirles ventana (fertirriego de fondo). Se dosifican, no se observan.
+    final List<NutrientDose> companions = <NutrientDose>[];
+    for (final AgroMetricKey nutrient in _companionNutrients(rule, nutrients)) {
+      final _DoseLookup d = _doseFor(
+        input: input,
+        nutrient: nutrient,
+        stageKey: input.stageKey,
+        rule: rule,
+        guide: guide,
+        limitations: limitations,
+      );
+      if (d.range != null) {
+        companions.add(NutrientDose(nutrient: nutrient, range: d.range!));
+      }
+    }
+    NutritionDoseRange? primaryDose;
+    for (final NutrientDose d in doses) {
+      if (d.nutrient == primary) {
+        primaryDose = d.range;
+        break;
+      }
     }
 
-    // Fuentes y reglas 3R.
-    final List<String> sources = <String>[
-      ...(guide?.sourceOptionsEs[nutrient] ?? const <String>[]),
-    ];
-    if (sources.isEmpty) sources.addAll(_defaultSources(nutrient));
+    // ── Fuentes y reglas 3R ────────────────────────────────────────────────
+    final List<String> sources = <String>[];
+    for (final AgroMetricKey nutrient in nutrients) {
+      final List<String> forNutrient =
+          guide?.sourceOptionsEs[nutrient] ?? const <String>[];
+      sources.addAll(forNutrient.isEmpty ? _defaultSources(nutrient) : forNutrient);
+    }
 
     final List<String> rules = <String>[
       ...(rule?.rulesEs ?? const <String>[]),
       ...(guide?.generalRulesEs ?? const <String>[]),
     ];
-    final String? caution = variety.cautionFor(nutrient, input.stageKey);
-    if (caution != null) rules.add(caution);
+    for (final AgroMetricKey nutrient in nutrients) {
+      final String? caution = variety.cautionFor(nutrient, input.stageKey);
+      if (caution != null) rules.add(caution);
+    }
     final BioGTelemetry? t = input.live;
     if (t != null && t.hasPhData) {
       final SoilReaction reaction = soilReactionFromPh(t.ph);
-      final String? urea = ureaVolatilizationWarningEs(
-        nutrient: nutrient,
-        reaction: reaction,
-        ph: t.ph,
-      );
-      if (urea != null) rules.add(urea);
-      final String? pNote = soilReactionNoteEs(
-        nutrient: nutrient,
-        reaction: reaction,
-        ph: t.ph,
-      );
-      if (pNote != null) rules.add(pNote);
+      for (final AgroMetricKey nutrient in nutrients) {
+        final String? urea = ureaVolatilizationWarningEs(
+          nutrient: nutrient,
+          reaction: reaction,
+          ph: t.ph,
+        );
+        if (urea != null) rules.add(urea);
+        final String? pNote = soilReactionNoteEs(
+          nutrient: nutrient,
+          reaction: reaction,
+          ph: t.ph,
+        );
+        if (pNote != null) rules.add(pNote);
+      }
     }
     rules.addAll(conditions.cautionsEs);
 
-    final String headline = conditions.allowsApplication
-        ? 'Esta etapa necesita nutrición: $nutrientName'
-        : 'Esta etapa necesita nutrición: prepara, todavía no apliques';
-    final StringBuffer detail = StringBuffer()
-      ..write(focus.rationaleEs.trim().isEmpty
-          ? 'La etapa demanda $nutrientName.'
-          : focus.rationaleEs.trim());
-    if (dose != null) {
-      detail.write(' Rango orientativo: ${dose.labelEs}.');
-    } else if (noDoseReason != null) {
-      detail.write(' $noDoseReason');
+    // ── Copy ───────────────────────────────────────────────────────────────
+    final NutritionRecommendationKind kind = conditions.allowsApplication
+        ? NutritionRecommendationKind.apply
+        : NutritionRecommendationKind.prepare;
+    // Un nutriente cuyo plan admite «puede no hacer falta» (mínimo 0) no va
+    // en el titular si hay otros firmes: «Aplica nitrógeno y fósforo» y el
+    // potasio condicionado se explica en la dosis.
+    final List<AgroMetricKey> firm = <AgroMetricKey>[
+      for (final AgroMetricKey n in nutrients)
+        if (!doses.any((NutrientDose d) => d.nutrient == n && d.range.isConditional))
+          n,
+    ];
+    final String headline = NutritionRecommendation.headlineFor(
+      kind: kind,
+      nutrients: firm.isEmpty ? nutrients : firm,
+      windowLabelEs: windowLabelEs,
+      stageLabelEs: stageLabelEs,
+    );
+
+    final String? rationale = _windowRationale(rule, priorities, primary);
+    final String crop = input.cropLabel ?? guide?.cropLabelEs ?? 'El cultivo';
+    final String stage = stageLabelEs ?? input.stageLabelEs ?? 'esta etapa';
+    final String qualifier = audit.canShowDose
+        ? (audit == GuideAuditStatus.audited ? 'guía auditada' : 'guía curada')
+        : 'guía';
+
+    final StringBuffer detail = StringBuffer();
+    // 1. Lo que el productor necesita primero: qué y cuánto.
+    if (doses.isNotEmpty) {
+      detail.write(
+        'Dosis orientativa ($qualifier): '
+        '${doses.map((NutrientDose d) => d.lineEs).join('; ')}.',
+      );
     }
+    if (noDoseReasons.isNotEmpty) {
+      if (detail.isNotEmpty) detail.write(' ');
+      detail.write(_dedupe(noDoseReasons).join(' '));
+    }
+    if (companions.isNotEmpty) {
+      detail.write(
+        ' Acompaña con: '
+        '${companions.map((NutrientDose d) => d.lineEs).join('; ')}.',
+      );
+    }
+    // 2. Cuándo, dentro de la ventana.
+    final String? timing = rule?.timingEs?.trim();
+    if (timing != null && timing.isNotEmpty) {
+      detail.write(' Momento: ${_lowerFirst(timing)}');
+      if (!timing.endsWith('.')) detail.write('.');
+    }
+    // 3. Por qué (agronomía de la guía o del perfil).
+    if (rationale != null && rationale.isNotEmpty) {
+      detail.write(' $crop en «$stage»: ${_lowerFirst(rationale)}');
+      if (!rationale.endsWith('.')) detail.write('.');
+    }
+    // 4. Lo que impide aplicar hoy.
     if (!conditions.allowsApplication) {
-      detail.write(' ${conditions.blockersEs.join(' ')}');
+      detail.write(' Todavía no apliques: ${conditions.blockersEs.join(' ')}');
     }
+    // 5. Qué hace BIO-G mientras tanto.
     if (possible != null) {
       detail.write(
         ' Estoy observando la respuesta del suelo: hay un cambio en la zona '
@@ -1086,42 +1198,332 @@ class NutritionReadinessEngine {
     }
 
     return NutritionRecommendation(
-      nutrient: nutrient,
+      nutrient: primary,
+      kind: kind,
+      nutrients: List<AgroMetricKey>.unmodifiable(nutrients),
       headlineEs: headline,
-      detailEs: detail.toString(),
+      detailEs: detail.toString().trim(),
       audit: audit,
-      doseRange: dose,
-      doseUnavailableReasonEs: dose == null ? noDoseReason : null,
-      sourceOptionsEs: List<String>.unmodifiable(sources),
+      doseRange: primaryDose,
+      doses: List<NutrientDose>.unmodifiable(<NutrientDose>[...doses, ...companions]),
+      doseUnavailableReasonEs: doses.isEmpty && noDoseReasons.isNotEmpty
+          ? _dedupe(noDoseReasons).join(' ')
+          : null,
+      sourceOptionsEs: List<String>.unmodifiable(_dedupe(sources)),
       rulesEs: List<String>.unmodifiable(_dedupe(rules)),
       timingEs: rule?.timingEs,
+      windowLabelEs: windowLabelEs,
+      stageLabelEs: stageLabelEs,
+      cropLabelEs: input.cropLabel ?? guide?.cropLabelEs,
     );
   }
 
+  /// Recomendación de la ventana que SE ACERCA: mismo nutriente, ventana y
+  /// dosis que tendrá al abrir, en tono de preparación. Sin días en el
+  /// titular (cambiaría cada día y repetiría avisos); los días van en el
+  /// detalle.
+  static NutritionRecommendation _buildUpcomingRecommendation({
+    required NutritionReadinessInput input,
+    required _Upcoming upcoming,
+    required NutritionGuide? guide,
+    required List<String> limitations,
+  }) {
+    final GuideAuditStatus audit = guide?.auditStatus ?? GuideAuditStatus.pending;
+    final List<NutrientDose> doses = <NutrientDose>[];
+    final List<NutrientDose> companions = <NutrientDose>[];
+    for (final AgroMetricKey nutrient in <AgroMetricKey>[
+      ...upcoming.nutrients,
+      ..._companionNutrients(upcoming.rule, upcoming.nutrients),
+    ]) {
+      final _DoseLookup d = _doseFor(
+        input: input,
+        nutrient: nutrient,
+        stageKey: upcoming.stageKey,
+        rule: upcoming.rule,
+        guide: guide,
+        limitations: limitations,
+      );
+      if (d.range == null) continue;
+      final NutrientDose dose = NutrientDose(nutrient: nutrient, range: d.range!);
+      if (upcoming.nutrients.contains(nutrient)) {
+        doses.add(dose);
+      } else {
+        companions.add(dose);
+      }
+    }
+    final List<String> sources = <String>[
+      for (final AgroMetricKey n in upcoming.nutrients)
+        ...(guide?.sourceOptionsEs[n] ?? _defaultSources(n)),
+    ];
+    final String who = NutritionRecommendation.joinNutrientsEs(upcoming.nutrients);
+    final String days = upcoming.inDays == 1 ? '1 día' : '${upcoming.inDays} días';
+    final String ruleWhy = (upcoming.rule?.rationaleEs ?? '').trim();
+    final String rationale =
+        ruleWhy.isNotEmpty ? ruleWhy : upcoming.priority.rationaleEs.trim();
+
+    // Si la guía llama a la ventana igual que a la etapa («Brotación»), no se
+    // repite el nombre.
+    final String? windowLabel = upcoming.rule?.labelEs;
+    final bool sameName =
+        windowLabel == null ||
+        windowLabel.trim().toLowerCase() == upcoming.stageLabelEs.trim().toLowerCase();
+    final StringBuffer detail = StringBuffer(
+      'En ~$days entra «${upcoming.stageLabelEs}» y BIO-G abre la ventana '
+      '${sameName ? '' : '«$windowLabel» '}de $who.',
+    );
+    if (doses.isNotEmpty) {
+      detail.write(
+        ' Dosis orientativa prevista: '
+        '${doses.map((NutrientDose d) => d.lineEs).join('; ')}.',
+      );
+    }
+    if (companions.isNotEmpty) {
+      detail.write(
+        ' Acompaña con: '
+        '${companions.map((NutrientDose d) => d.lineEs).join('; ')}.',
+      );
+    }
+    if (rationale.isNotEmpty) {
+      detail.write(' $rationale');
+      if (!rationale.endsWith('.')) detail.write('.');
+    }
+    detail.write(
+      ' Ten el producto listo y el suelo con humedad pareja; no hace falta '
+      'registrar nada cuando apliques.',
+    );
+
+    return NutritionRecommendation(
+      nutrient: upcoming.nutrients.first,
+      kind: NutritionRecommendationKind.upcoming,
+      nutrients: List<AgroMetricKey>.unmodifiable(upcoming.nutrients),
+      headlineEs: NutritionRecommendation.headlineFor(
+        kind: NutritionRecommendationKind.upcoming,
+        nutrients: upcoming.nutrients,
+        windowLabelEs: upcoming.rule?.labelEs,
+        stageLabelEs: upcoming.stageLabelEs,
+      ),
+      detailEs: detail.toString(),
+      audit: audit,
+      doseRange: doses.isEmpty ? null : doses.first.range,
+      doses: List<NutrientDose>.unmodifiable(<NutrientDose>[...doses, ...companions]),
+      timingEs:
+          upcoming.rule?.timingEs ??
+          'Antes de que empiece «${upcoming.stageLabelEs}».',
+      sourceOptionsEs: List<String>.unmodifiable(_dedupe(sources)),
+      rulesEs: List<String>.unmodifiable(
+        _dedupe(<String>[
+          ...(upcoming.rule?.rulesEs ?? const <String>[]),
+          ...(guide?.generalRulesEs ?? const <String>[]),
+        ]),
+      ),
+      windowLabelEs: upcoming.rule?.labelEs,
+      stageLabelEs: upcoming.stageLabelEs,
+      cropLabelEs: input.cropLabel ?? guide?.cropLabelEs,
+      inDays: upcoming.inDays,
+    );
+  }
+
+  /// Nutrientes que la regla reparte en la etapa sin abrirles ventana, en
+  /// orden N, P, K. Vacío sin regla o sin reparto.
+  static List<AgroMetricKey> _companionNutrients(
+    StageNutritionRule? rule,
+    List<AgroMetricKey> focus,
+  ) {
+    if (rule == null) return const <AgroMetricKey>[];
+    return NutritionRecommendation.orderNpk(<AgroMetricKey>[
+      for (final MapEntry<AgroMetricKey, double> e in rule.seasonShare.entries)
+        if (e.value > 0 && !focus.contains(e.key)) e.key,
+    ]);
+  }
+
+  /// Rango de UN nutriente para una ventana (actual o próxima), o el motivo
+  /// por el que no hay cifra. Frutales: restitución × fracción de la ventana;
+  /// resto: plan de temporada de la guía × fracción de la ventana; sin guía o
+  /// sin plan, se explica en lenguaje del agricultor.
+  static _DoseLookup _doseFor({
+    required NutritionReadinessInput input,
+    required AgroMetricKey nutrient,
+    required String? stageKey,
+    required StageNutritionRule? rule,
+    required NutritionGuide? guide,
+    required List<String> limitations,
+  }) {
+    final String nutrientName = nutrient.labelEs.toLowerCase();
+    final GuideAuditStatus audit = guide?.auditStatus ?? GuideAuditStatus.pending;
+    final List<String> sources =
+        guide?.sourceOptionsEs[nutrient] ?? _defaultSources(nutrient);
+
+    if (input.isPerennial || (guide?.usesTreeRestitution ?? false)) {
+      final TreeRestitutionResult? r = TreeRestitutionPlanner.compute(
+        nutrient: nutrient,
+        cropKey: input.cropKey,
+        kgFruitPerTree: input.kgFruitPerTree,
+        soilLevel: input.soilSupplyLevel,
+      );
+      if (r != null) {
+        final double share = rule?.shareFor(nutrient) ?? 1.0;
+        final int hi = TreeRestitutionPlanner.roundForDisplay(
+          r.gramsPerTreeNutrient * share * 1.15,
+        );
+        final int comHi = TreeRestitutionPlanner.roundForDisplay(
+          r.gramsPerTreeCommercial * share * 1.15,
+        );
+        // El redondeo de presentación puede dejar el mínimo en 0 en árboles
+        // muy pequeños; un rango «0–10 g» no es una dosis.
+        final int lo = math.max(
+          TreeRestitutionPlanner.roundForDisplay(
+            r.gramsPerTreeNutrient * share * 0.85,
+          ),
+          math.min(5, hi),
+        );
+        final int comLo = math.max(
+          TreeRestitutionPlanner.roundForDisplay(
+            r.gramsPerTreeCommercial * share * 0.85,
+          ),
+          math.min(5, comHi),
+        );
+        final String shareNote = share >= 0.999
+            ? ''
+            : ' Esta ventana lleva el ${(share * 100).round()} % de la dosis '
+                  'anual; el resto se reparte en las otras ventanas del año.';
+        return _DoseLookup(
+          range: NutritionDoseRange(
+            min: lo.toDouble(),
+            max: hi.toDouble(),
+            form: _formFor(nutrient),
+            unit: DoseUnit.gramsPerPlant,
+            sourceEs: 'Restitución por extracción (${r.coefficients.sourceEs})',
+            commercialEquivalentEs:
+                '≈ $comLo–$comHi g de ${r.commercialSourceEs} por árbol',
+            transparencyEs: '${r.transparencyEs}$shareNote',
+          ),
+        );
+      }
+      if (!TreeRestitutionPlanner.hasCoefficients(input.cropKey)) {
+        return const _DoseLookup(
+          reasonEs:
+              'Este frutal no tiene coeficientes de extracción cargados; la '
+              'dosis por árbol queda para la guía curada.',
+        );
+      }
+      // Motivo sin nutriente a propósito: en una ventana de N + P + K se
+      // escribe una sola vez.
+      return const _DoseLookup(
+        reasonEs:
+            'Para calcular gramos por árbol falta la cosecha esperada por '
+            'árbol: regístrala en la proyección de rendimiento y BIO-G te da la '
+            'dosis por restitución.',
+      );
+    }
+
+    if (guide == null) {
+      return const _DoseLookup(
+        reasonEs:
+            'Sin guía curada para este cultivo BIO-G no inventa una cifra: la '
+            'prioridad es fenológica; la dosis, de tu asesor o de la etiqueta '
+            'del producto.',
+      );
+    }
+    if (!audit.canShowDose) {
+      return _DoseLookup(
+        reasonEs:
+            'La guía de ${guide.cropLabelEs} está pendiente: BIO-G no muestra '
+            'rangos hasta que se cure. Usa la etiqueta del producto o tu asesor '
+            'mientras tanto.',
+      );
+    }
+    if (!guide.hasSeasonPlan) {
+      final String notes = (guide.notesEs ?? '').trim();
+      return _DoseLookup(
+        reasonEs:
+            'La guía de ${guide.cropLabelEs} no fija kg/ha: aplica en dosis '
+            'ligera según la etiqueta del producto y con riego.'
+            '${notes.isEmpty ? '' : ' $notes'}',
+      );
+    }
+    final NutritionDoseRange? fromGuide = guide.windowDoseFor(
+      nutrient: nutrient,
+      stageKey: stageKey,
+    );
+    if (fromGuide != null) {
+      return _DoseLookup(
+        range: _scaleDose(fromGuide, input.cultivationScaleId, sources, limitations),
+      );
+    }
+    if (!guide.seasonPlan.containsKey(nutrient)) {
+      return _DoseLookup(
+        reasonEs:
+            'La guía de ${guide.cropLabelEs} no trae plan de $nutrientName en '
+            'kg/ha: decide con tu análisis de suelo.',
+      );
+    }
+    return _DoseLookup(
+      reasonEs:
+          'La guía de ${guide.cropLabelEs} reparte $nutrientName en otra '
+          'ventana del ciclo; aquí no fija cifra.',
+    );
+  }
+
+  static NutrientForm _formFor(AgroMetricKey nutrient) => switch (nutrient) {
+    AgroMetricKey.p => NutrientForm.p2o5,
+    AgroMetricKey.k => NutrientForm.k2o,
+    _ => NutrientForm.n,
+  };
+
+  /// Por qué importa la ventana: la regla de la guía o, sin ella, el porqué
+  /// del nutriente principal en el perfil.
+  static String? _windowRationale(
+    StageNutritionRule? rule,
+    List<NutrientStagePriority> priorities,
+    AgroMetricKey primary,
+  ) {
+    final String fromRule = (rule?.rationaleEs ?? '').trim();
+    if (fromRule.isNotEmpty) return fromRule;
+    for (final NutrientStagePriority p in priorities) {
+      if (p.nutrient == primary && p.rationaleEs.trim().isNotEmpty) {
+        return p.rationaleEs.trim();
+      }
+    }
+    return null;
+  }
+
   /// Traduce un rango en kg/ha a la escala del productor. Campo: igual. Cama:
-  /// g/m². Maceta: no hay conversión defendible sin masa de sustrato.
+  /// g/m² (y el equivalente comercial se recalcula en g/m²). Maceta: no hay
+  /// conversión defendible sin masa de sustrato; se muestra la referencia de
+  /// campo.
   static NutritionDoseRange _scaleDose(
     NutritionDoseRange field,
     String? scaleId,
+    List<String> sourceOptionsEs,
     List<String> limitations,
   ) {
     final String scale = (scaleId ?? '').trim().toLowerCase();
     if (scale == 'bed' || scale == 'huerto' || scale == 'cama') {
+      final double min = field.min * 0.1;
+      final double max = field.max * 0.1;
       return NutritionDoseRange(
-        min: field.min * 0.1,
-        max: field.max * 0.1,
+        min: min,
+        max: max,
         form: field.form,
         unit: DoseUnit.gramsPerSquareMeter,
         sourceEs: field.sourceEs,
-        commercialEquivalentEs: field.commercialEquivalentEs,
+        commercialEquivalentEs: FertilizerProducts.equivalentEs(
+          form: field.form,
+          minKg: min,
+          maxKg: max,
+          sourceOptionsEs: sourceOptionsEs,
+          unitEs: DoseUnit.gramsPerSquareMeter.labelEs,
+        ),
+        conditionEs: field.conditionEs,
         transparencyEs: '${field.transparencyEs ?? ''} (1 kg/ha = 0.1 g/m²).',
       );
     }
     if (scale == 'pot' || scale == 'maceta' || scale == 'contenedor') {
-      limitations.add(
-        'En maceta el rango en kg/ha no se traduce sin conocer el volumen de '
-        'sustrato; se muestra la referencia de campo.',
-      );
+      const String note =
+          'En maceta el rango en kg/ha no se traduce sin conocer el volumen de '
+          'sustrato; se muestra la referencia de campo.';
+      // Se llama una vez por nutriente: la nota va una sola vez.
+      if (!limitations.contains(note)) limitations.add(note);
     }
     return field;
   }
@@ -1174,38 +1576,68 @@ class NutritionReadinessEngine {
     required _Upcoming? upcoming,
     required bool possible,
     required NutritionWindowRecord? recentlyUnattended,
+    required NutritionGuide? guide,
+    required StageNutritionRule? rule,
   }) {
     final String stage = input.stageLabelEs ?? 'esta etapa';
     switch (state) {
       case NutritionState.responseWindow:
+        final String who = window == null
+            ? ''
+            : ' (${NutritionRecommendation.joinNutrientsEs(window.nutrients)})';
+        final String lead = window == null
+            ? ''
+            : 'Ventana «${window.displayLabelEs}»$who atendida'
+                  '${signature == null ? '' : ' desde el ${_fmtDate(signature.startedAt)}'}. ';
         return (
           headline: 'Respuesta compatible con fertilización detectada',
-          detail: response?.summaryEs ??
-              'Estoy observando la respuesta del suelo. Las sales de la zona de '
-                  'raíces subieron de forma compatible con una fertilización; '
-                  'la ventana de «$stage» queda atendida sin que registres nada.',
+          detail:
+              '$lead${response?.summaryEs ?? 'Estoy observando la respuesta del suelo. Las sales de la zona de raíces subieron de forma compatible con una fertilización; no hace falta que registres nada.'}',
         );
       case NutritionState.actionWindow:
         return (
           headline: recommendation?.headlineEs ??
-              'Esta etapa necesita nutrición',
+              NutritionRecommendation.headlineFor(
+                kind: NutritionRecommendationKind.apply,
+                nutrients: <AgroMetricKey>[
+                  if (focus != null) focus.nutrient else AgroMetricKey.n,
+                ],
+                windowLabelEs: window?.windowLabelEs,
+                stageLabelEs: stage,
+              ),
           detail: recommendation?.detailEs ??
               'La etapa abre una ventana de manejo nutricional. Estoy observando '
                   'la respuesta del suelo para reconocer cuándo se atienda.',
         );
       case NutritionState.prepare:
         if (focus != null) {
+          // Ventana abierta pero el suelo no deja aplicar: el titular y el
+          // detalle ya los trae la recomendación (kind = prepare).
           return (
-            headline: 'Esta etapa necesita nutrición: prepara, todavía no apliques',
-            detail:
+            headline: recommendation?.headlineEs ??
+                NutritionRecommendation.headlineFor(
+                  kind: NutritionRecommendationKind.prepare,
+                  nutrients: <AgroMetricKey>[focus.nutrient],
+                  windowLabelEs: window?.windowLabelEs,
+                  stageLabelEs: stage,
+                ),
+            detail: recommendation?.detailEs ??
                 'La etapa «$stage» ya demanda ${focus.labelEs.toLowerCase()}, '
-                'pero las condiciones del suelo aún no son ideales: '
-                '${conditions.blockersEs.join(' ')}'
-                '${possible ? ' Hay además un cambio en la zona de raíces que estoy observando.' : ''}',
+                    'pero las condiciones del suelo aún no son ideales: '
+                    '${conditions.blockersEs.join(' ')}'
+                    '${possible ? ' Hay además un cambio en la zona de raíces que estoy observando.' : ''}',
           );
         }
         return (
-          headline: 'Se aproxima una ventana de ${upcoming?.priority.labelEs.toLowerCase() ?? 'nutrición'}',
+          headline: recommendation?.headlineEs ??
+              (upcoming == null
+                  ? 'Se acerca una ventana de fertilización'
+                  : NutritionRecommendation.headlineFor(
+                      kind: NutritionRecommendationKind.upcoming,
+                      nutrients: upcoming.nutrients,
+                      windowLabelEs: upcoming.rule?.labelEs,
+                      stageLabelEs: upcoming.stageLabelEs,
+                    )),
           detail: recommendation?.detailEs ??
               'En unos días entra una etapa de alta demanda. Ten el producto listo.',
         );
@@ -1224,42 +1656,54 @@ class NutritionReadinessEngine {
             window.outcome == NutritionWindowOutcome.attendedDetected &&
             signature != null) {
           return (
-            headline: 'Nutrición atendida en «${window.stageLabelEs}»',
+            headline: 'Nutrición atendida: ${_windowNameOf(window)}',
             detail: response?.summaryEs ??
                 'Respuesta compatible con fertilización detectada el '
-                    '${_fmtDate(signature.startedAt)}. BIO-G no empuja más dosis '
+                    '${_fmtDate(signature.startedAt)} en la ventana '
+                    '«${window.displayLabelEs}». BIO-G no empuja más dosis '
                     'en esta etapa.',
           );
         }
         if (recentlyUnattended != null) {
           return (
             headline:
-                'Esta ventana nutricional no mostró evidencia suficiente de haber '
-                'sido atendida',
+                'Sin evidencia de fertilización: ${_windowNameOf(recentlyUnattended)}',
             detail:
-                'La ventana de ${recentlyUnattended.nutrientsLabelEs} en '
-                '«${recentlyUnattended.stageLabelEs}» terminó sin que la sonda viera '
-                'una respuesta compatible con fertilización. Pesa en el score '
-                'histórico y en la proyección de este ciclo. No es una certeza de '
-                'que no fertilizaste: el producto pudo quedar fuera del alcance de '
-                'la sonda o llegar con poca agua.',
+                'Esta ventana nutricional no mostró evidencia suficiente de haber '
+                'sido atendida: la ventana «${recentlyUnattended.displayLabelEs}» '
+                '(${NutritionRecommendation.joinNutrientsEs(recentlyUnattended.nutrients)}) '
+                'terminó sin que la sonda viera una respuesta compatible con '
+                'fertilización. Pesa en el score histórico y en la proyección de '
+                'este ciclo. No es una certeza de que no fertilizaste: el producto '
+                'pudo quedar fuera del alcance de la sonda o llegar con poca agua.',
           );
         }
         // Sin ventana abierta: lo que importa es hacia dónde va el suelo. Si
         // un nutriente que pesa en la etapa se mueve, ese es el titular; si
-        // todo está quieto, se dice con claridad que no hace falta nada.
+        // todo está quieto, se dice con claridad que no hace falta nada, con
+        // el porqué de la guía y la próxima ventana del ciclo.
         final NutrientTrend? notable = _notableTrend(priorities, trends);
         final NutrientStagePriority? top = priorities.isEmpty ? null : priorities.first;
+        final String closedNote = _closedWindowNoteEs(guide, rule, input);
+        final String nextNote = _nextWindowNoteEs(guide, input);
         if (notable != null) {
-          final String stageNote = top != null && top.priority == NutritionPriority.medium
-              ? ' En «$stage» el ${top.labelEs.toLowerCase()} importa: ${_lowerFirst(top.rationaleEs)}'
-              : '';
+          final String stageNote = closedNote.isNotEmpty
+              ? ' $closedNote'
+              : (top != null && top.priority == NutritionPriority.medium
+                    ? ' En «$stage» el ${top.labelEs.toLowerCase()} importa: ${_lowerFirst(top.rationaleEs)}'
+                    : '');
           return (
             headline: notable.sentenceEs,
             detail:
                 '${notable.detailEs} No hay ventana de aplicación abierta en '
-                '«$stage»; BIO-G sigue la tendencia y avisará al acercarse la '
-                'próxima.$stageNote',
+                '«$stage»; BIO-G sigue la tendencia.$stageNote$nextNote',
+          );
+        }
+        if (closedNote.isNotEmpty) {
+          return (
+            headline: 'Suelo estable, sin necesidades nutrimentales por ahora',
+            detail:
+                'Las señales del suelo se mantienen estables. $closedNote$nextNote',
           );
         }
         if (top != null && top.priority == NutritionPriority.medium) {
@@ -1269,7 +1713,7 @@ class NutritionReadinessEngine {
                 'Las señales del suelo se mantienen estables en «$stage». El '
                 '${top.labelEs.toLowerCase()} importa en esta etapa '
                 '(${_lowerFirst(top.rationaleEs)}), pero no hay ventana de '
-                'aplicación abierta; BIO-G sigue la tendencia.',
+                'aplicación abierta; BIO-G sigue la tendencia.$nextNote',
           );
         }
         return (
@@ -1277,9 +1721,51 @@ class NutritionReadinessEngine {
           detail:
               'En «$stage» ningún nutriente está en alta demanda y las señales '
               'del suelo se mantienen estables. BIO-G sigue las tendencias y '
-              'avisará al acercarse la próxima ventana.',
+              'avisará al acercarse la próxima ventana.$nextNote',
         );
     }
+  }
+
+  /// «segunda fertilización (V6–V8)» o ««Vegetativo medio»» para titulares.
+  static String _windowNameOf(NutritionWindowRecord w) =>
+      NutritionRecommendation.windowNameFor(
+        windowLabelEs: w.windowLabelEs,
+        stageLabelEs: w.stageLabelEs,
+      );
+
+  /// Por qué la guía cierra la ventana en esta etapa («En «Espigamiento y
+  /// floración» la guía de Maíz no reparte fertilizante: …»). Vacío sin guía
+  /// o sin regla.
+  static String _closedWindowNoteEs(
+    NutritionGuide? guide,
+    StageNutritionRule? rule,
+    NutritionReadinessInput input,
+  ) {
+    if (guide == null || rule == null || rule.windowNutrients.isNotEmpty) {
+      return '';
+    }
+    final String name = rule.labelEs ?? input.stageLabelEs ?? 'esta etapa';
+    final String why = (rule.rationaleEs ?? '').trim();
+    return 'En «$name» la guía de ${guide.cropLabelEs} no reparte fertilizante'
+        '${why.isEmpty ? '.' : ': ${_lowerFirst(why)}${why.endsWith('.') ? '' : '.'}'}';
+  }
+
+  /// « Próxima ventana: amacollamiento (nitrógeno), al entrar la etapa.» o
+  /// « No quedan ventanas de fertilización en este ciclo.» Vacío sin guía.
+  static String _nextWindowNoteEs(NutritionGuide? guide, NutritionReadinessInput input) {
+    // Etapa fuera de la guía (cosecha, fin de ciclo): no hay «siguiente».
+    if (guide == null || guide.ruleForStage(input.stageKey) == null) return '';
+    final StageNutritionRule? next = guide.nextWindowRuleAfterAny(input.stageKey);
+    if (next == null) return ' No quedan ventanas de fertilización en este ciclo.';
+    final String? label = next.labelEs;
+    if (label == null || label.trim().isEmpty) return '';
+    final String who = NutritionRecommendation.joinNutrientsEs(
+      NutritionRecommendation.orderNpk(next.windowNutrients),
+    );
+    final String name = NutritionRecommendation.windowNameFor(
+      windowLabelEs: label,
+    );
+    return ' Próxima ventana: $name ($who), al entrar la etapa.';
   }
 
   /// Nutriente que se mueve y además pesa en la etapa (prioridad media o
@@ -1305,9 +1791,16 @@ class NutritionReadinessEngine {
     return null;
   }
 
+  /// Baja la inicial para encajar la frase tras dos puntos, sin tocar siglas
+  /// ni símbolos («N en espigamiento…», «V6», «MAP»): solo cuando el segundo
+  /// carácter es una letra minúscula.
   static String _lowerFirst(String s) {
     final String t = s.trim();
-    if (t.isEmpty) return t;
+    if (t.length < 2) return t;
+    final String second = t[1];
+    final bool secondIsLowerLetter =
+        second.toLowerCase() == second && second.toUpperCase() != second;
+    if (!secondIsLowerLetter) return t;
     return t[0].toLowerCase() + t.substring(1);
   }
 
@@ -1331,14 +1824,40 @@ class NutritionReadinessEngine {
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
 }
 
+/// Resultado de buscar la dosis de un nutriente: el rango, o por qué no hay.
+class _DoseLookup {
+  const _DoseLookup({this.range, this.reasonEs});
+
+  final NutritionDoseRange? range;
+  final String? reasonEs;
+}
+
 class _Upcoming {
   const _Upcoming({
-    required this.priority,
+    required this.nutrients,
+    required this.rule,
+    required this.stageKey,
     required this.stageLabelEs,
     required this.inDays,
+    required this.priority,
   });
 
-  final NutrientStagePriority priority;
+  /// Nutrientes que abrirá la ventana, en orden N, P, K.
+  final List<AgroMetricKey> nutrients;
+
+  /// Regla de la guía que la abre (null cuando viene del perfil).
+  final StageNutritionRule? rule;
+
+  final String stageKey;
   final String stageLabelEs;
   final int inDays;
+
+  /// Prioridad principal (para pantallas que muestran una sola).
+  final NutrientStagePriority priority;
+
+  /// «amacollamiento (primer riego de auxilio)» o «la etapa «Floración»».
+  String get windowNameEs => NutritionRecommendation.windowNameFor(
+    windowLabelEs: rule?.labelEs,
+    stageLabelEs: stageLabelEs,
+  );
 }

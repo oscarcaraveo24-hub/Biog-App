@@ -41,8 +41,9 @@ enum NutritionState {
 
   /// La etapa abre una ventana de manejo nutricional y el sensor todavía no
   /// ha visto una respuesta compatible con fertilización. Aquí —y solo aquí—
-  /// la app presenta la recomendación (con rango de dosis si la guía auditada
-  /// lo sostiene) mientras observa el suelo para reconocer cuándo se atendió.
+  /// la app presenta la recomendación (con rango de dosis en kg/ha si la guía
+  /// curada lo sostiene) mientras observa el suelo para reconocer cuándo se
+  /// atendió.
   actionWindow,
 
   /// Se detectó una firma compatible con fertilización y el sensor sigue la
@@ -56,16 +57,17 @@ extension NutritionStateX on NutritionState {
     NutritionState.learning => 'Aprendiendo la zona',
     NutritionState.monitor => 'Seguimiento',
     NutritionState.prepare => 'Preparación',
-    NutritionState.actionWindow => 'Esta etapa necesita nutrición',
+    NutritionState.actionWindow => 'Ventana de fertilización abierta',
     NutritionState.responseWindow => 'Observando la respuesta del suelo',
   };
 
-  /// Etiqueta corta para chips y tarjetas.
+  /// Etiqueta corta para chips y tarjetas. La decisión afina la suya con el
+  /// nutriente («Aplica N»); esta es la genérica del estado.
   String get tagEs => switch (this) {
     NutritionState.learning => 'Aprendiendo',
     NutritionState.monitor => 'Seguimiento',
     NutritionState.prepare => 'Prepara',
-    NutritionState.actionWindow => 'Ventana',
+    NutritionState.actionWindow => 'Aplica',
     NutritionState.responseWindow => 'Respuesta',
   };
 
@@ -200,6 +202,7 @@ class NutritionDoseRange {
     required this.sourceEs,
     this.commercialEquivalentEs,
     this.transparencyEs,
+    this.conditionEs,
   });
 
   final double min;
@@ -217,12 +220,27 @@ class NutritionDoseRange {
   /// Frase que declara los supuestos del cálculo.
   final String? transparencyEs;
 
-  String get labelEs {
-    final String lo = _fmt(min);
+  /// Condición bajo la que aplica el rango, cuando la guía admite que puede
+  /// no hacer falta nada («solo si tu análisis de suelo sale bajo en
+  /// potasio»). Es el caso de los planes cuyo mínimo es 0.
+  final String? conditionEs;
+
+  /// El plan admite que el nutriente puede no hacer falta: mínimo 0 con una
+  /// condición declarada. (Un mínimo 0 por redondeo, sin condición, no lo es.)
+  bool get isConditional =>
+      min <= 0 && max > 0 && (conditionEs ?? '').trim().isNotEmpty;
+
+  /// «107–161 kg/ha» o «hasta 60 kg/ha» (sin la forma del nutriente).
+  String get amountEs {
     final String hi = _fmt(max);
+    if (isConditional) return 'hasta $hi ${unit.labelEs}';
+    final String lo = _fmt(min);
     final String range = lo == hi ? lo : '$lo–$hi';
-    return '$range ${unit.labelEs} de ${form.labelEs}';
+    return '$range ${unit.labelEs}';
   }
+
+  /// «107–161 kg/ha de N» o «hasta 60 kg/ha de K₂O».
+  String get labelEs => '$amountEs de ${form.labelEs}';
 
   static String _fmt(double v) {
     if (v >= 100) return v.round().toString();
@@ -233,10 +251,11 @@ class NutritionDoseRange {
 
 /// Estatus de auditoría de una guía o de un rango.
 ///
-/// La Guía v0.4 (§5) exige auditar las guías cultivo por cultivo antes de
-/// confiar en ellas como autoridad. Un rango `proposed` existe en el código
-/// con su fuente, pero **no se muestra al agricultor** hasta que alguien lo
-/// marque `audited`.
+/// La Guía v0.4 (§5) pide auditar las guías cultivo por cultivo. Desde el
+/// 6 sep 2026 (decisión de producto) un rango `proposed` SÍ se muestra al
+/// agricultor, siempre etiquetado como orientativo y con su fuente; auditar
+/// solo cambia el calificativo ([GuideAuditStatusX.doseQualifierEs]). Una
+/// guía `pending` (sin plan) no emite cifras.
 enum GuideAuditStatus { audited, proposed, pending }
 
 extension GuideAuditStatusX on GuideAuditStatus {
@@ -246,36 +265,85 @@ extension GuideAuditStatusX on GuideAuditStatus {
     GuideAuditStatus.pending => 'Guía pendiente',
   };
 
-  bool get canShowDose => this == GuideAuditStatus.audited;
+  /// Decisión de producto (Oscar, 6 sep 2026): los rangos de las guías
+  /// curadas se muestran también en `proposed`, siempre etiquetados como
+  /// orientativos y con su fuente; solo una guía `pending` (sin plan) calla.
+  /// Sustituye la regla estricta de la Guía v0.4 §10 («solo auditada emite
+  /// cifras»): la cifra sigue naciendo de cultivo + etapa + guía + 3R, nunca
+  /// de la sonda.
+  bool get canShowDose =>
+      this == GuideAuditStatus.audited || this == GuideAuditStatus.proposed;
+
+  /// Texto corto con el que se presenta un rango según su estatus.
+  String get doseQualifierEs => switch (this) {
+    GuideAuditStatus.audited => 'guía auditada',
+    GuideAuditStatus.proposed => 'guía curada, pendiente de revisión final',
+    GuideAuditStatus.pending => 'guía pendiente',
+  };
 }
 
-/// Recomendación de manejo nutricional dentro de una ventana abierta.
+/// Qué pide la recomendación: aplicar ya, preparar porque el suelo no deja
+/// aplicar todavía, o tener listo lo de la ventana que se acerca.
+enum NutritionRecommendationKind { apply, prepare, upcoming }
+
+/// Recomendación de manejo nutricional dentro de una ventana abierta (o de
+/// la que se aproxima).
 ///
 /// Puede venir sin rango de dosis: entonces [doseUnavailableReasonEs] explica
 /// por qué la app no emite una cifra todavía (Guía v0.4, §10: «pedir el mínimo
 /// contexto necesario o explicar por qué no puede emitir una cifra; nunca
 /// rellenar el hueco con NPK raw»).
+///
+/// COPY (decisión de producto, 6 sep 2026): nada de «esta etapa necesita
+/// nutrición». El titular nombra el nutriente y la ventana de la guía —
+/// «Aplica nitrógeno: segunda fertilización (V6–V8)»— y el detalle abre con
+/// la dosis orientativa en kg/ha y su equivalente comercial. Los titulares se
+/// arman en un solo sitio, [headlineFor], para que la tarjeta del Panel, la
+/// pantalla de nutrición, los avisos y los reportes digan lo mismo.
 class NutritionRecommendation {
   const NutritionRecommendation({
     required this.nutrient,
     required this.headlineEs,
     required this.detailEs,
     required this.audit,
+    this.kind = NutritionRecommendationKind.apply,
+    this.nutrients = const <AgroMetricKey>[],
     this.doseRange,
+    this.doses = const <NutrientDose>[],
     this.doseUnavailableReasonEs,
     this.sourceOptionsEs = const <String>[],
     this.rulesEs = const <String>[],
     this.timingEs,
+    this.windowLabelEs,
+    this.stageLabelEs,
+    this.cropLabelEs,
+    this.inDays,
   });
 
+  /// Nutriente principal de la ventana (el primero de [nutrients]).
   final AgroMetricKey nutrient;
   final String headlineEs;
   final String detailEs;
   final GuideAuditStatus audit;
+  final NutritionRecommendationKind kind;
 
-  /// Rango de dosis defendible. Null cuando la guía no lo sostiene o no está
-  /// auditada.
+  /// Todos los nutrientes que abre la ventana, en orden N, P, K. Vacío en
+  /// recomendaciones antiguas: entonces solo cuenta [nutrient].
+  final List<AgroMetricKey> nutrients;
+
+  /// Rango de dosis defendible del nutriente principal. Null cuando la guía
+  /// no lo sostiene.
   final NutritionDoseRange? doseRange;
+
+  /// Rango por nutriente: los de la ventana (foco) y, si la guía reparte
+  /// otros nutrientes en la misma etapa (fertirriego de fondo), los de
+  /// acompañamiento. Ver [companionNutrients].
+  final List<NutrientDose> doses;
+
+  /// Nombre de la ventana según la guía («Segunda fertilización (V6–V8)»).
+  final String? windowLabelEs;
+  final String? stageLabelEs;
+  final String? cropLabelEs;
 
   /// Por qué no hay cifra (guía pendiente de auditoría, falta la cosecha
   /// esperada por árbol, falta la escala de cultivo…).
@@ -290,7 +358,202 @@ class NutritionRecommendation {
   /// Cuándo conviene aplicar dentro de la ventana («antes de V8»).
   final String? timingEs;
 
-  bool get hasDose => doseRange != null;
+  /// Días hasta que entre la ventana, solo en [NutritionRecommendationKind.upcoming].
+  final int? inDays;
+
+  bool get hasDose => doseRange != null || doses.isNotEmpty;
+
+  bool get isUpcoming => kind == NutritionRecommendationKind.upcoming;
+
+  /// Nutrientes efectivos de la ventana.
+  List<AgroMetricKey> get allNutrients =>
+      nutrients.isEmpty ? <AgroMetricKey>[nutrient] : nutrients;
+
+  /// El nutriente es foco de la ventana (abre ventana, el sensor lo observa).
+  bool coversNutrient(AgroMetricKey key) => allNutrients.contains(key);
+
+  /// La recomendación dice algo de este nutriente: es foco o lleva dosis de
+  /// acompañamiento.
+  bool mentionsNutrient(AgroMetricKey key) =>
+      coversNutrient(key) || doseFor(key) != null;
+
+  /// Nutrientes con dosis en esta etapa que NO abren ventana: la guía los
+  /// reparte aquí como acompañamiento («acompaña con K₂O …»). Orden N, P, K.
+  List<AgroMetricKey> get companionNutrients => orderNpk(<AgroMetricKey>[
+    for (final NutrientDose d in doses)
+      if (!coversNutrient(d.nutrient)) d.nutrient,
+  ]);
+
+  /// Dosis de los nutrientes foco, en el orden de [allNutrients].
+  List<NutrientDose> get focusDoses => <NutrientDose>[
+    for (final AgroMetricKey k in allNutrients)
+      for (final NutrientDose d in doses)
+        if (d.nutrient == k) d,
+  ];
+
+  /// Dosis de acompañamiento, en orden N, P, K.
+  List<NutrientDose> get companionDoses => <NutrientDose>[
+    for (final AgroMetricKey k in companionNutrients)
+      for (final NutrientDose d in doses)
+        if (d.nutrient == k) d,
+  ];
+
+  /// Rango del nutriente [key], si la etapa lo reparte.
+  NutritionDoseRange? doseFor(AgroMetricKey key) {
+    for (final NutrientDose d in doses) {
+      if (d.nutrient == key) return d.range;
+    }
+    return key == nutrient ? doseRange : null;
+  }
+
+  /// «nitrógeno», «nitrógeno y potasio», «nitrógeno, fósforo y potasio».
+  String get nutrientsSentenceEs => joinNutrientsEs(allNutrients);
+
+  /// Nutrientes que van en el titular: los de dosis firme. Uno cuyo plan
+  /// admite «puede no hacer falta» (rango condicionado, mínimo 0) se queda
+  /// fuera si hay otros; si todos son condicionados, van todos.
+  List<AgroMetricKey> get headlineNutrients {
+    final List<AgroMetricKey> firm = <AgroMetricKey>[
+      for (final AgroMetricKey k in allNutrients)
+        if (!(doseFor(k)?.isConditional ?? false)) k,
+    ];
+    return firm.isEmpty ? allNutrients : firm;
+  }
+
+  /// «N», «N + P»: para el chip de la tarjeta.
+  String get nutrientsShortEs =>
+      headlineNutrients.map((AgroMetricKey k) => k.shortLabel).join(' + ');
+
+  /// Chip corto: «Aplica N», «Prepara N + K», «Pronto N».
+  String get tagEs {
+    final String verb = switch (kind) {
+      NutritionRecommendationKind.apply => 'Aplica',
+      NutritionRecommendationKind.prepare => 'Prepara',
+      NutritionRecommendationKind.upcoming => 'Pronto',
+    };
+    return '$verb $nutrientsShortEs';
+  }
+
+  /// Nombre de la ventana para el titular: el de la guía o, sin guía, la
+  /// etapa entre comillas.
+  String get windowNameEs => windowNameFor(
+    windowLabelEs: windowLabelEs,
+    stageLabelEs: stageLabelEs,
+  );
+
+  /// Titular para un solo nutriente (pestañas N/P/K): el de la ventana si es
+  /// foco; «Acompaña con potasio: vegetativo» si solo lleva dosis de
+  /// acompañamiento.
+  String headlineForNutrient(AgroMetricKey key) {
+    if (coversNutrient(key)) {
+      return headlineFor(
+        kind: kind,
+        nutrients: <AgroMetricKey>[key],
+        windowLabelEs: windowLabelEs,
+        stageLabelEs: stageLabelEs,
+      );
+    }
+    final String who = key.labelEs.toLowerCase();
+    final bool guideNamed = (windowLabelEs ?? '').trim().isNotEmpty;
+    return guideNamed
+        ? 'Acompaña con $who: $windowNameEs'
+        : 'Acompaña con $who en $windowNameEs';
+  }
+
+  /// «N: 107–161 kg/ha (≈ 235–350 kg/ha de urea); K₂O: hasta 60 kg/ha …».
+  String get dosesSentenceEs =>
+      doses.map((NutrientDose d) => d.lineEs).join('; ');
+
+  /// Une nombres de nutrientes en minúsculas con «y».
+  static String joinNutrientsEs(List<AgroMetricKey> keys) {
+    final List<String> names = keys.map((k) => k.labelEs.toLowerCase()).toList();
+    if (names.isEmpty) return '';
+    if (names.length == 1) return names.first;
+    return '${names.sublist(0, names.length - 1).join(', ')} y ${names.last}';
+  }
+
+  /// Orden canónico N, P, K de un conjunto de nutrientes.
+  static List<AgroMetricKey> orderNpk(Iterable<AgroMetricKey> keys) {
+    final Set<AgroMetricKey> set = keys.toSet();
+    return <AgroMetricKey>[
+      for (final AgroMetricKey k in const <AgroMetricKey>[
+        AgroMetricKey.n,
+        AgroMetricKey.p,
+        AgroMetricKey.k,
+      ])
+        if (set.contains(k)) k,
+    ];
+  }
+
+  /// «segunda fertilización (V6–V8)» o «la etapa «Vegetativo medio»».
+  static String windowNameFor({String? windowLabelEs, String? stageLabelEs}) {
+    final String w = (windowLabelEs ?? '').trim();
+    if (w.isNotEmpty) return _lowerFirst(w);
+    final String s = (stageLabelEs ?? '').trim();
+    return s.isEmpty ? 'esta etapa' : '«$s»';
+  }
+
+  /// Único constructor de titulares de recomendación:
+  ///   · apply    → «Aplica nitrógeno: segunda fertilización (V6–V8)»
+  ///   · prepare  → «Prepara nitrógeno: segunda fertilización (V6–V8), todavía
+  ///                 no apliques»
+  ///   · upcoming → «Se acerca nitrógeno: amacollamiento (primer riego de
+  ///                 auxilio)» (los días van en el detalle: el titular debe
+  ///                 ser estable de un día a otro para no repetir avisos).
+  static String headlineFor({
+    required NutritionRecommendationKind kind,
+    required List<AgroMetricKey> nutrients,
+    String? windowLabelEs,
+    String? stageLabelEs,
+  }) {
+    final String who = joinNutrientsEs(orderNpk(nutrients));
+    final String window = windowNameFor(
+      windowLabelEs: windowLabelEs,
+      stageLabelEs: stageLabelEs,
+    );
+    final bool guideNamed = (windowLabelEs ?? '').trim().isNotEmpty;
+    return switch (kind) {
+      NutritionRecommendationKind.apply =>
+        guideNamed ? 'Aplica $who: $window' : 'Aplica $who en $window',
+      NutritionRecommendationKind.prepare =>
+        guideNamed
+            ? 'Prepara $who: $window, todavía no apliques'
+            : 'Prepara $who en $window, todavía no apliques',
+      NutritionRecommendationKind.upcoming =>
+        guideNamed ? 'Se acerca $who: $window' : 'Se acerca $who en $window',
+    };
+  }
+
+  /// Baja la inicial de un nombre de ventana para encajarlo tras dos puntos.
+  /// Siglas y códigos (V6, MAP, «N en…») se dejan como están: solo se baja
+  /// cuando el segundo carácter es una letra minúscula.
+  static String _lowerFirst(String s) {
+    if (s.length < 2) return s;
+    final String second = s[1];
+    final bool secondIsLowerLetter =
+        second.toLowerCase() == second && second.toUpperCase() != second;
+    if (!secondIsLowerLetter) return s;
+    return s[0].toLowerCase() + s.substring(1);
+  }
+}
+
+/// Rango de dosis de un nutriente dentro de una ventana.
+class NutrientDose {
+  const NutrientDose({required this.nutrient, required this.range});
+
+  final AgroMetricKey nutrient;
+  final NutritionDoseRange range;
+
+  /// «N: 107–161 kg/ha (≈ 235–350 kg/ha de urea)» o
+  /// «K₂O: hasta 60 kg/ha (≈ hasta 100 kg/ha de cloruro de potasio), solo si
+  /// tu análisis de suelo sale bajo en potasio».
+  String get lineEs {
+    final String? eq = range.commercialEquivalentEs;
+    final String? cond = range.conditionEs;
+    return '${range.form.labelEs}: ${range.amountEs}'
+        '${eq == null || eq.trim().isEmpty ? '' : ' ($eq)'}'
+        '${cond == null || cond.trim().isEmpty ? '' : ', $cond'}';
+  }
 }
 
 /// Resultado de comprobar si las condiciones físicas permiten aplicar.
@@ -645,11 +908,21 @@ class NutritionWindowRecord {
     this.responseVerdict,
     this.evidenceEs = const <String>[],
     this.epochId,
+    this.windowLabelEs,
   });
 
   /// Identidad estable: temporada + etapa + nutrientes. Reconciliar la misma
   /// ventana mil veces produce una sola fila.
   final String id;
+
+  /// Nombre de la ventana según la guía («Segunda fertilización (V6–V8)»),
+  /// si la guía lo declara; si no, el copy usa la etapa.
+  final String? windowLabelEs;
+
+  /// «Segunda fertilización (V6–V8)» o, sin nombre de guía, «Vegetativo
+  /// medio».
+  String get displayLabelEs =>
+      (windowLabelEs ?? '').trim().isEmpty ? stageLabelEs : windowLabelEs!;
 
   /// `deviceId|cropKey|fechaDeSiembra`: acota el libro a un ciclo de cultivo.
   final String seasonKey;
@@ -733,6 +1006,7 @@ class NutritionWindowRecord {
     List<AgroMetricKey>? nutrients,
     String? stageLabelEs,
     String? epochId,
+    String? windowLabelEs,
     bool reopen = false,
   }) {
     return NutritionWindowRecord(
@@ -754,6 +1028,7 @@ class NutritionWindowRecord {
       responseVerdict: responseVerdict ?? this.responseVerdict,
       evidenceEs: evidenceEs ?? this.evidenceEs,
       epochId: epochId ?? this.epochId,
+      windowLabelEs: windowLabelEs ?? this.windowLabelEs,
     );
   }
 
@@ -776,6 +1051,7 @@ class NutritionWindowRecord {
     'responseVerdict': responseVerdict?.name,
     'evidenceEs': evidenceEs,
     'epochId': epochId,
+    'windowLabelEs': windowLabelEs,
   };
 
   static NutritionWindowRecord? tryFromJson(Map<String, dynamic> json) {
@@ -823,6 +1099,7 @@ class NutritionWindowRecord {
       responseVerdict: _enum(ResponseVerdict.values, json['responseVerdict']),
       evidenceEs: _strings(json['evidenceEs']),
       epochId: json['epochId']?.toString(),
+      windowLabelEs: json['windowLabelEs']?.toString(),
     );
   }
 }
@@ -1102,8 +1379,8 @@ class NutritionDecision {
   final List<NutritionWindowRecord> seasonWindows;
 
   /// Hay una ventana importante abierta y el sensor todavía no ha visto una
-  /// respuesta compatible. NO penaliza nada: es la fase «esta etapa necesita
-  /// nutrición; estoy observando la respuesta del suelo».
+  /// respuesta compatible. NO penaliza nada: es la fase «aplica X: ventana
+  /// Y; estoy observando la respuesta del suelo».
   final bool awaitingEvidence;
 
   /// Ventanas importantes del ciclo que TERMINARON sin evidencia suficiente.
@@ -1158,10 +1435,15 @@ class NutritionDecision {
       priorities.isEmpty ? null : priorities.first;
 
   /// Etiqueta corta para pantalla, afinada a lo que el agricultor debe leer
-  /// de un vistazo: «Atendida» cuando el sensor ya vio la respuesta, «Sin
+  /// de un vistazo: «Aplica N» / «Prepara N» / «Pronto N + K» cuando hay una
+  /// recomendación, «Atendida» cuando el sensor ya vio la respuesta, «Sin
   /// evidencia» los días siguientes a un cierre sin ella, «Estable» en
   /// seguimiento tranquilo; en los demás estados, la del estado.
   String get tagEs {
+    final NutritionRecommendation? rec = recommendation;
+    if (state == NutritionState.actionWindow || state == NutritionState.prepare) {
+      return rec?.tagEs ?? state.tagEs;
+    }
     if (state != NutritionState.monitor) return state.tagEs;
     if (window?.outcome == NutritionWindowOutcome.attendedDetected) {
       return 'Atendida';
@@ -1206,7 +1488,10 @@ class NutritionDecision {
   /// cada reconstrucción y pone la hora del momento; comparar por hora daría
   /// «cambió» siempre y abriría un bucle registro → aviso → rebuild.
   String get identityKey {
-    final String rec = recommendation?.nutrient.name ?? '-';
+    final String rec = recommendation == null
+        ? '-'
+        : '${recommendation!.kind.name}:'
+              '${recommendation!.allNutrients.map((k) => k.name).join('+')}';
     final String resp = response?.verdict.name ?? '-';
     final String win = window?.outcome.name ?? '-';
     final String recent = recentlyUnattendedWindow?.id ?? '-';

@@ -18,7 +18,9 @@ Estado al 6 de septiembre de 2026: **32 guías propuestas, 0 auditadas**. El agr
 - `NutritionGuide` (`lib/core/agro/nutrition/nutrition_guide.dart`): fuentes citables, plan de temporada por nutriente (rango, forma, fuente, estatus), reglas por etapa (`StageNutritionRule`: ventana, reparto del plan, `isCritical`, momento, razón, reglas 3R), fuentes comerciales y reglas generales.
 - `kNutritionGuides` (`nutrition_guides.dart`): la tabla, 32 cultivos.
 - `NutritionGuideCatalog.forCrop` resuelve la clave canónica del catálogo (con o sin `crop_`), alias en español y `CropKey.name`.
-- Visibilidad: `windowDoseFor` solo devuelve rango si **la guía y el plan** están `audited`. Todo entra `proposed`.
+- Visibilidad (actualizado 6 sep, noche, decisión de producto de Oscar): `windowDoseFor` devuelve rango con la guía y el plan en `proposed` **o** `audited` (`GuideAuditStatus.canShowDose`); solo `pending` calla. Todo entra `proposed` y se presenta como «dosis orientativa (guía curada, pendiente de revisión final)», con fuente, reparto y nota del plan en la transparencia. El equivalente comercial se calcula por ventana con `FertilizerProducts` (riquezas de etiqueta; primer producto de `sourceOptionsEs` que aporta la forma). Un plan con mínimo 0 se muestra como condición («hasta 60 kg/ha de K₂O, solo si tu análisis de suelo sale bajo en potasio»).
+- Autoridad: con guía curada, **solo sus reglas abren ventanas** en el motor; el perfil fenológico heredado aporta matiz de prioridad pero ya no abre por su cuenta (cierra las ventanas falsas de la auditoría de perfiles: K en llenado de cebada, N en espigamiento de trigo/avena, etc.).
+- Frutales: `seasonShare` en las reglas de árbol es la fracción de la dosis anual por restitución que toca en cada ventana (caducifolios N 65/35, K 30/70; perennifolios N 50/20/30, K 30/50/20; P 100 %). Reparto orientativo (WSU Tree Fruit, Cornell, Yara/Haifa cítricos) a confirmar.
 - Ventanas críticas (`isCritical`): únicamente donde la literatura documenta pérdida de rendimiento por omisión y donde la ventana cae dentro del periodo en que la sonda ya observa (no en fondo/siembra). Una ventana crítica que cierra sin evidencia de fertilización pesa ×0.94 en el factor de temporada (piso 0.85). Mientras está abierta no pesa nada y nadie registra nada.
 
 ## 2. Inventario cultivo × etapa (propuesta)
@@ -73,11 +75,12 @@ Se marca ✔ lo que se leyó directamente en esta sesión y ✎ lo que se cita c
 3. **Rendimiento supuesto.** Cada plan declara en `notesEs` el rendimiento para el que vale. Temporal o bajo insumo → tomar el mínimo o menos. La app no escala por rendimiento todavía (fase posterior: meta de rendimiento en la proyección).
 4. **P y K en suelos mexicanos.** Muchos suelos agrícolas del centro-norte son ricos en K; el mínimo de K₂O es 0 en cereales a propósito. P siempre por análisis Olsen.
 5. **Formas.** Todo está en N, P₂O₅ y K₂O. Cuando una fuente daba P o K elemental (Intagri frijol, TecnoAgro espinaca, Fitotecnia calabacita) se convirtió (×2.29 P→P₂O₅, ×1.2 K→K₂O) o se dejó como extracción de referencia sin usarla como plan.
-6. **Cómo marcar una guía como auditada.** En `nutrition_guides.dart`, cambiar `auditStatus: GuideAuditStatus.audited` en la guía **y** `audit: GuideAuditStatus.audited` en cada `SeasonNutrientPlan` que se quiera mostrar (se puede auditar N sin auditar K). La prueba `nutrition_guides_test.dart` ("todas las guías y planes entran como proposed") se ajusta entonces por cultivo.
+6. **Cómo marcar una guía como auditada.** En `nutrition_guides.dart`, cambiar `auditStatus: GuideAuditStatus.audited` en la guía **y** `audit: GuideAuditStatus.audited` en cada `SeasonNutrientPlan` (se puede auditar N sin auditar K). Desde el 6 sep los rangos ya se ven en `proposed`; auditar solo cambia el calificativo del copy («guía auditada» en vez de «guía curada, pendiente de revisión final»). La prueba `nutrition_guides_test.dart` ("todas las guías entran como proposed…") se ajusta entonces por cultivo.
+7. **Reparto anual en frutales.** Confirmar las fracciones de `seasonShare` de `_deciduousTreeRules` y `_evergreenTreeRules`; suman 1.0 por nutriente y evitan que brotación y post-cosecha muestren las dos la dosis anual completa.
 
 ## 5. Pendientes de esta fase
 
 - Leer los PDF de INIFAP marcados ✎ (bloquean lectura automática) y confirmar fórmulas regionales.
 - Decidir con el socio agrónomo el estatus de cada guía.
 - Meta de rendimiento por parcela para escalar el plan (fase posterior).
-- Equivalente comercial por ventana («≈ 110–150 kg/ha de urea») cuando la guía esté auditada: `NutritionDoseRange.commercialEquivalentEs` ya existe; falta el cálculo por fuente.
+- ~~Equivalente comercial por ventana~~ — hecho el 6 sep (`FertilizerProducts.equivalentEs`, redondeo a múltiplos de 5 kg/ha; en g/m² al entero). Falta ampliar la tabla de productos si una guía cita uno que no está (entonces cae al producto por defecto de esa forma: urea / MAP / cloruro de potasio).

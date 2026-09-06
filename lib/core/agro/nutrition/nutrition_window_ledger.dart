@@ -37,12 +37,17 @@ class CurrentWindowSpec {
     required this.nutrients,
     required this.isCritical,
     required this.startedAt,
+    this.labelEs,
   });
 
   final String stageKey;
   final String stageLabelEs;
   final List<AgroMetricKey> nutrients;
   final bool isCritical;
+
+  /// Nombre de la ventana según la guía («Segunda fertilización (V6–V8)»),
+  /// si la guía lo declara.
+  final String? labelEs;
 
   /// Inicio estimado de la etapa (o momento en que BIO-G la pudo observar).
   final DateTime startedAt;
@@ -143,6 +148,7 @@ class NutritionWindowLedger {
             openedAt: current.startedAt,
             outcome: NutritionWindowOutcome.open,
             epochId: epochId,
+            windowLabelEs: current.labelEs,
           );
 
       // Lo descriptivo se refresca en cada pase: la identidad de la ventana
@@ -153,6 +159,7 @@ class NutritionWindowLedger {
         isCritical: current.isCritical,
         stageLabelEs: current.stageLabelEs,
         epochId: epochId,
+        windowLabelEs: current.labelEs,
       );
 
       // Si la etapa volvió (p. ej. corrección de fecha de siembra), la ventana
@@ -370,6 +377,7 @@ class NutritionWindowLedger {
     return a.outcome == b.outcome &&
         a.isCritical == b.isCritical &&
         a.stageLabelEs == b.stageLabelEs &&
+        a.windowLabelEs == b.windowLabelEs &&
         a.epochId == b.epochId &&
         a.closedAt == b.closedAt &&
         a.resolvedAt == b.resolvedAt &&

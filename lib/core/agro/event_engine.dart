@@ -783,6 +783,8 @@ class EventEngine {
 
     switch (d.state) {
       case NutritionState.actionWindow:
+        // El título es el de la recomendación —«Aplica nitrógeno: segunda
+        // fertilización (V6–V8)»— y el mensaje abre con la dosis orientativa.
         final NutritionRecommendation? rec = d.recommendation;
         out.add(
           AgronomicEvent(
@@ -790,7 +792,7 @@ class EventEngine {
             severity: (d.window?.isCritical ?? false)
                 ? AgronomicEventSeverity.warning
                 : AgronomicEventSeverity.caution,
-            title: 'Esta etapa necesita nutrición',
+            title: rec?.headlineEs ?? d.headlineEs,
             message: rec?.detailEs ?? d.detailEs,
             timestamp: now,
             deviceId: input.deviceId,
@@ -802,7 +804,10 @@ class EventEngine {
             metadata: <String, Object?>{
               ...trace,
               'nutrient': rec?.nutrient.name,
+              'nutrients': rec?.allNutrients.map((k) => k.name).toList(),
+              'windowLabel': rec?.windowLabelEs,
               'hasDose': rec?.hasDose ?? false,
+              'doses': rec?.doses.map((dose) => dose.lineEs).toList(),
               'guideAudit': d.guideAudit.name,
             },
           ),
@@ -882,14 +887,21 @@ class EventEngine {
     // nutrimental que pesa: se avisa una vez, con su porqué.
     final NutritionWindowRecord? unattended = d.recentlyUnattendedWindow;
     if (unattended != null) {
+      final String windowName = NutritionRecommendation.windowNameFor(
+        windowLabelEs: unattended.windowLabelEs,
+        stageLabelEs: unattended.stageLabelEs,
+      );
+      final String who = NutritionRecommendation.joinNutrientsEs(
+        unattended.nutrients,
+      );
       out.add(
         AgronomicEvent(
           type: AgronomicEventType.nutritionWindowUnattended,
           severity: AgronomicEventSeverity.warning,
-          title:
-              'Esta ventana nutricional no mostró evidencia suficiente de haber sido atendida',
+          title: 'Sin evidencia de fertilización: $windowName',
           message:
-              'La ventana de ${unattended.nutrientsLabelEs} en «${unattended.stageLabelEs}» '
+              'Esta ventana nutricional no mostró evidencia suficiente de haber '
+              'sido atendida: la ventana «${unattended.displayLabelEs}» ($who) '
               'terminó sin que la sonda viera una respuesta compatible con '
               'fertilización. Pesa en el score histórico y en la proyección de este '
               'ciclo. No es una certeza de que no fertilizaste: el producto pudo '

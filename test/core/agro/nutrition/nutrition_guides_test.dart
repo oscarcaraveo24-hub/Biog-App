@@ -1,9 +1,11 @@
 // test/core/agro/nutrition/nutrition_guides_test.dart
 //
-// Invariantes de la tabla de guías curadas (Guía v0.4, fase 2 y §10):
-// todas entran como `proposed`, ningún rango se muestra hasta auditar, los
-// repartos por ventana no rebasan el plan y las claves de etapa coinciden con
-// las que emiten los motores de cada cultivo.
+// Invariantes de la tabla de guías curadas (Guía v0.4, fase 2 y §10, con la
+// decisión de producto del 6 sep 2026): todas entran como `proposed`, sus
+// rangos SÍ se muestran —siempre como orientativos, con fuente y estatus—,
+// los repartos por ventana no rebasan el plan (o la dosis anual en frutales)
+// y las claves de etapa coinciden con las que emiten los motores de cada
+// cultivo.
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_guide.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_guide_catalog.dart';
@@ -81,9 +83,10 @@ void main() {
       }
     });
 
-    test('todas las guías y planes entran como proposed: ningún rango visible', () {
+    test('todas las guías entran como proposed y sus rangos se muestran como orientativos', () {
       for (final NutritionGuide g in kNutritionGuides.values) {
         expect(g.auditStatus, GuideAuditStatus.proposed, reason: g.cropKey);
+        expect(g.auditStatus.canShowDose, isTrue, reason: g.cropKey);
         for (final SeasonNutrientPlan p in g.seasonPlan.values) {
           expect(p.audit, GuideAuditStatus.proposed, reason: '${g.cropKey}/${p.form}');
           expect(p.minKgPerHa, lessThanOrEqualTo(p.maxKgPerHa), reason: g.cropKey);
@@ -97,18 +100,46 @@ void main() {
             AgroMetricKey.k,
           ]) {
             for (final String s in r.stageKeys) {
+              final NutritionDoseRange? d = g.windowDoseFor(nutrient: n, stageKey: s);
+              // Reparto con plan = dosis, abra ventana (foco) o no
+              // (acompañamiento: «acompaña con K₂O …»).
+              final bool expected =
+                  g.seasonPlan.containsKey(n) && (r.seasonShare[n] ?? 0) > 0;
               expect(
-                g.windowDoseFor(nutrient: n, stageKey: s),
-                isNull,
-                reason: '${g.cropKey}/$s/$n no debe emitir dosis sin auditar',
+                d != null,
+                expected,
+                reason: '${g.cropKey}/$s/$n: dosis ${expected ? 'esperada' : 'no esperada'}',
               );
+              if (d == null) continue;
+              expect(d.unit, DoseUnit.kgPerHectare, reason: '${g.cropKey}/$s/$n');
+              expect(d.max, greaterThan(0), reason: '${g.cropKey}/$s/$n');
+              expect(
+                d.transparencyEs,
+                allOf(contains('orientativo'), contains('pendiente de revisión final')),
+                reason: '${g.cropKey}/$s/$n: el rango se etiqueta como orientativo',
+              );
+              expect(
+                d.commercialEquivalentEs,
+                isNotNull,
+                reason: '${g.cropKey}/$s/$n: siempre hay equivalente comercial',
+              );
+              // Un plan con mínimo 0 solo se muestra como condición.
+              expect(
+                d.isConditional,
+                g.seasonPlan[n]!.minKgPerHa <= 0,
+                reason: '${g.cropKey}/$s/$n',
+              );
+              if (d.isConditional) {
+                expect(d.conditionEs, contains('análisis de suelo'));
+                expect(d.labelEs, startsWith('hasta '));
+              }
             }
           }
         }
       }
     });
 
-    test('el reparto por ventana no rebasa el plan de temporada', () {
+    test('el reparto por ventana no rebasa el plan de temporada (ni la dosis anual en frutales)', () {
       for (final NutritionGuide g in kNutritionGuides.values) {
         final Map<AgroMetricKey, double> total = <AgroMetricKey, double>{};
         for (final StageNutritionRule r in g.stageRules) {
@@ -119,13 +150,78 @@ void main() {
         }
         for (final MapEntry<AgroMetricKey, double> e in total.entries) {
           expect(e.value, lessThanOrEqualTo(1.0 + 1e-9), reason: '${g.cropKey}/${e.key}');
-          expect(
-            g.seasonPlan.containsKey(e.key),
-            isTrue,
-            reason: '${g.cropKey}: reparte ${e.key} sin plan de temporada',
-          );
+          if (!g.usesTreeRestitution) {
+            expect(
+              g.seasonPlan.containsKey(e.key),
+              isTrue,
+              reason: '${g.cropKey}: reparte ${e.key} sin plan de temporada',
+            );
+          }
+        }
+        // Con plan en kg/ha, toda ventana que abre un nutriente lo dosifica:
+        // el copy nunca dice «aplica N» sin poder decir cuánto.
+        if (g.hasSeasonPlan) {
+          for (final StageNutritionRule r in g.stageRules) {
+            for (final AgroMetricKey n in r.windowNutrients) {
+              expect(
+                (r.seasonShare[n] ?? 0) > 0 && g.seasonPlan.containsKey(n),
+                isTrue,
+                reason: '${g.cropKey}/${r.labelEs}: abre $n sin reparto o sin plan',
+              );
+            }
+          }
+        }
+        // Frutales: cada ventana del ciclo de carga lleva su fracción de la
+        // dosis anual, así una misma dosis no se repite entera en brotación y
+        // en post-cosecha. El establecimiento (año de plantación) queda fuera.
+        if (g.usesTreeRestitution) {
+          for (final StageNutritionRule r in g.stageRules) {
+            if (r.matchesStage('planting_transplant')) continue;
+            for (final AgroMetricKey n in r.windowNutrients) {
+              expect((r.seasonShare[n] ?? 0) > 0, isTrue, reason: '${g.cropKey}/${r.labelEs}/$n');
+            }
+          }
         }
       }
+    });
+
+    test('maíz V6–V8: 67 % del plan de N con su equivalente en urea', () {
+      final NutritionGuide maize = kNutritionGuides['maize']!;
+      final NutritionDoseRange d = maize.windowDoseFor(
+        nutrient: AgroMetricKey.n,
+        stageKey: 'vegMid',
+      )!;
+      expect(d.min, closeTo(160 * 0.67, 1e-9));
+      expect(d.max, closeTo(240 * 0.67, 1e-9));
+      expect(d.labelEs, '107–161 kg/ha de N');
+      expect(d.commercialEquivalentEs, '≈ 235–350 kg/ha de urea');
+      expect(d.isConditional, isFalse);
+
+      final NutritionDoseRange k = maize.windowDoseFor(
+        nutrient: AgroMetricKey.k,
+        stageKey: 'germination',
+      )!;
+      expect(k.isConditional, isTrue);
+      expect(k.labelEs, 'hasta 60 kg/ha de K₂O');
+      expect(k.commercialEquivalentEs, '≈ hasta 100 kg/ha de cloruro de potasio');
+      expect(
+        NutrientDose(nutrient: AgroMetricKey.k, range: k).lineEs,
+        'K₂O: hasta 60 kg/ha (≈ hasta 100 kg/ha de cloruro de potasio), '
+        'solo si tu análisis de suelo sale bajo en potasio',
+      );
+      expect(maize.nextWindowRuleAfterAny('germination')?.labelEs, 'Segunda fertilización (V6–V8)');
+      expect(maize.nextWindowRuleAfterAny('vegMid'), isNull);
+      expect(maize.nextWindowRuleAfterAny('harvest'), isNull, reason: 'etapa fuera de la guía');
+      expect(maize.nextWindowRuleAfter('harvest', AgroMetricKey.n), isNull);
+    });
+
+    test('tomate vegetativo: N es el foco y P/K acompañan con su reparto', () {
+      final NutritionGuide tomato = kNutritionGuides['tomato']!;
+      final StageNutritionRule veg = tomato.ruleForStage('vegetativo')!;
+      expect(veg.windowNutrients, <AgroMetricKey>{AgroMetricKey.n});
+      expect(tomato.windowDoseFor(nutrient: AgroMetricKey.n, stageKey: 'vegetativo')?.labelEs, '45–60 kg/ha de N');
+      expect(tomato.windowDoseFor(nutrient: AgroMetricKey.k, stageKey: 'vegetativo')?.labelEs, '38–50 kg/ha de K₂O');
+      expect(tomato.windowDoseFor(nutrient: AgroMetricKey.p, stageKey: 'vegetativo')?.labelEs, '12–20 kg/ha de P₂O₅');
     });
 
     test('las claves de etapa existen en el motor del cultivo y no se repiten', () {

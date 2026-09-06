@@ -34,11 +34,12 @@ void main() {
       return NutritionDecision(
         state: state,
         decidedAt: DateTime(2026, 8, 8, 9),
-        headlineEs: 'Esta etapa necesita nutrición: nitrógeno',
+        headlineEs: 'Aplica nitrógeno: floración y cuajado',
         detailEs:
-            'En «Floración» el cultivo toma nitrógeno con fuerza. Cuando '
-            'apliques no necesitas registrar nada: BIO-G observa la respuesta '
-            'del suelo para reconocer cuándo se atendió esta ventana.',
+            'Dosis orientativa (guía curada): N: 40–60 kg/ha (≈ 85–130 kg/ha '
+            'de urea). En «Floración» el cultivo toma nitrógeno con fuerza. '
+            'Cuando apliques no necesitas registrar nada: BIO-G observa la '
+            'respuesta del suelo para reconocer cuándo se atendió esta ventana.',
         priorities: const <NutrientStagePriority>[
           NutrientStagePriority(
             nutrient: AgroMetricKey.n,
@@ -93,9 +94,10 @@ void main() {
 
       expect(data.soilHealth, closeTo(0.81, 0.0001));
       expect(data.soilHealthLabel, 'Estado general del suelo');
-      expect(data.npkTitle, 'Esta etapa necesita nutrición: nitrógeno');
-      expect(data.npkTag, 'Ventana');
-      expect(data.npkSubtitle, startsWith('En «Floración» el cultivo toma'));
+      expect(data.npkTitle, 'Aplica nitrógeno: floración y cuajado');
+      // Sin recomendación adjunta el chip cae al genérico del estado.
+      expect(data.npkTag, 'Aplica');
+      expect(data.npkSubtitle, startsWith('Dosis orientativa (guía curada): N: 40–60 kg/ha'));
       // Ventana abierta sin firma todavía: NO penaliza el anillo.
       expect(data.nutritionDecision?.awaitingEvidence, isTrue);
     });
@@ -144,9 +146,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       const title =
-          'Esta ventana nutricional no mostró evidencia suficiente de haber sido atendida';
+          'Sin evidencia de fertilización: amacollamiento (primer riego de auxilio)';
       const subtitle =
-          'La ventana de N en «Floración» terminó sin que la sonda viera una respuesta compatible con fertilización.';
+          'Esta ventana nutricional no mostró evidencia suficiente de haber sido atendida: la ventana «Amacollamiento» (nitrógeno) terminó sin respuesta compatible.';
 
       await tester.pumpWidget(
         MaterialApp(

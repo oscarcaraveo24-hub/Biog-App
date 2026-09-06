@@ -184,19 +184,20 @@ class QuickReportBuilder {
     required CropRuntimeSnapshot runtime,
   }) {
     if (decision != null) {
+      // El detalle de la decisión ya abre con la dosis orientativa por
+      // nutriente; el reporte solo añade de dónde sale la cifra.
       final StringBuffer body = StringBuffer(decision.detailEs.trim());
       final NutritionRecommendation? rec = decision.recommendation;
-      if (rec != null && rec.doseRange != null) {
-        body.write(' Rango orientativo: ${rec.doseRange!.labelEs}.');
-        if (rec.doseRange!.commercialEquivalentEs != null) {
-          body.write(' ${rec.doseRange!.commercialEquivalentEs}.');
-        }
+      final NutritionDoseRange? primary =
+          rec == null ? null : (rec.doses.isEmpty ? rec.doseRange : rec.doses.first.range);
+      if (primary != null && primary.transparencyEs != null) {
+        body.write(' ${primary.transparencyEs}');
       }
       final NutritionWindowRecord? unattended = decision.recentlyUnattendedWindow;
       if (unattended != null && decision.state != NutritionState.monitor) {
         body.write(
-          ' La ventana de ${unattended.nutrientsLabelEs} en '
-          '«${unattended.stageLabelEs}» terminó sin evidencia suficiente de '
+          ' La ventana «${unattended.displayLabelEs}» '
+          '(${unattended.nutrientsLabelEs}) terminó sin evidencia suficiente de '
           'haber sido atendida.',
         );
       }

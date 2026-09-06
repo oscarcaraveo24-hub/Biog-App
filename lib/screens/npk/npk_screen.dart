@@ -400,10 +400,12 @@ class _NpkContext {
     return null;
   }
 
-  /// Recomendación vigente si es para este nutriente.
+  /// Recomendación vigente si dice algo de este nutriente: es foco de la
+  /// ventana (una ventana puede abrir N, P y K a la vez: «fertilización de
+  /// fondo») o lleva dosis de acompañamiento («acompaña con K₂O …»).
   NutritionRecommendation? recommendationFor(AgroMetricKey nutrient) {
     final rec = decision?.recommendation;
-    if (rec == null || rec.nutrient != nutrient) return null;
+    if (rec == null || !rec.mentionsNutrient(nutrient)) return null;
     return rec;
   }
 }
@@ -753,11 +755,19 @@ class _NutritionDetailSheet extends StatelessWidget {
                   title: 'Recomendación',
                   lines: [
                     rec.headlineEs,
-                    if (rec.doseRange != null)
-                      'Rango orientativo: ${rec.doseRange!.labelEs}'
+                    // Una línea por nutriente de la ventana, con su
+                    // equivalente comercial y su condición si la tiene;
+                    // después, los de acompañamiento.
+                    for (final NutrientDose dose in rec.focusDoses)
+                      'Dosis orientativa · ${dose.lineEs}',
+                    for (final NutrientDose dose in rec.companionDoses)
+                      'Acompaña con · ${dose.lineEs}',
+                    for (final NutrientDose dose in rec.doses)
+                      if (dose.range.transparencyEs != null)
+                        dose.range.transparencyEs!,
+                    if (rec.doses.isEmpty && rec.doseRange != null)
+                      'Dosis orientativa · ${rec.doseRange!.labelEs}'
                           '${rec.doseRange!.commercialEquivalentEs == null ? '' : ' (${rec.doseRange!.commercialEquivalentEs})'}',
-                    if (rec.doseRange?.transparencyEs != null)
-                      rec.doseRange!.transparencyEs!,
                     if (rec.doseUnavailableReasonEs != null)
                       rec.doseUnavailableReasonEs!,
                     if (rec.timingEs != null) 'Momento: ${rec.timingEs}',
@@ -787,7 +797,7 @@ class _NutritionDetailSheet extends StatelessWidget {
                   title: 'Ventanas de este ciclo',
                   lines: [
                     for (final NutritionWindowRecord w in d.seasonWindows)
-                      '«${w.stageLabelEs}» (${w.nutrientsLabelEs}): '
+                      '«${w.displayLabelEs}» (${w.nutrientsLabelEs}): '
                           '${w.outcome.labelEs.toLowerCase()}'
                           '${w.signature != null && w.signature!.isCompatible ? ' · confianza ${w.signature!.confidenceLabelEs}' : ''}'
                           '${w.penalizes ? ' · pesa en el score' : ''}',
@@ -1073,11 +1083,12 @@ class _NpkTabContent extends StatelessWidget {
         ? 'Ventana: se abre con la etapa, después de sembrar'
         : 'Ventana: sin cultivo no hay ventana';
 
-    // Acción: la recomendación si es para este nutriente; si no, el porqué de
-    // la prioridad. Nunca «aplica X por la lectura».
+    // Acción: la recomendación si la ventana reparte este nutriente —con el
+    // titular de ESTE nutriente («Aplica fósforo: fertilización de fondo»)—;
+    // si no, el porqué de la prioridad. Nunca «aplica X por la lectura».
     final String action;
     if (rec != null) {
-      action = rec.headlineEs;
+      action = rec.headlineForNutrient(nutrient);
     } else if (d != null && d.state == NutritionState.responseWindow) {
       action = 'Respuesta compatible con fertilización detectada. Estoy '
           'observando la respuesta del suelo; no hace falta que registres nada.';
@@ -1103,9 +1114,19 @@ class _NpkTabContent extends StatelessWidget {
       action = 'Configura un cultivo para ver la prioridad nutricional.';
     }
 
-    final String? dose = rec?.doseRange?.labelEs;
-    final String? doseNote = rec?.doseRange?.commercialEquivalentEs ??
-        rec?.doseUnavailableReasonEs;
+    // Dosis de ESTE nutriente dentro de la ventana, con su equivalente en
+    // producto comercial y, si el plan admite que puede no hacer falta, la
+    // condición («solo si tu análisis de suelo sale bajo en potasio»).
+    final NutritionDoseRange? doseRange = rec?.doseFor(nutrient);
+    final String? dose = doseRange?.labelEs;
+    final String? doseNote = doseRange != null
+        ? <String>[
+            if (doseRange.commercialEquivalentEs != null)
+              doseRange.commercialEquivalentEs!,
+            if (doseRange.conditionEs != null)
+              '${doseRange.conditionEs![0].toUpperCase()}${doseRange.conditionEs!.substring(1)}.',
+          ].join(' · ')
+        : rec?.doseUnavailableReasonEs;
 
     final String description = priority?.rationaleEs.trim().isNotEmpty == true
         ? priority!.rationaleEs.trim()
