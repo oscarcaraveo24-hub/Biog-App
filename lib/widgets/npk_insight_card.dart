@@ -1,6 +1,23 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+/// Chip de tendencia de un canal nativo para la tarjeta de nutrición.
+///
+/// `direction`: 1 al alza, 0 estable, -1 a la baja. La tarjeta no interpreta
+/// nada: recibe el vocabulario ya decidido por el motor de nutrición.
+class NpkTrendChipData {
+  const NpkTrendChipData({
+    required this.label,
+    required this.direction,
+  });
+
+  final String label;
+  final int direction;
+}
+
+/// Tono con el que se pinta la etiqueta de estado de la tarjeta.
+enum NpkTagTone { neutral, action, response, attended, warning, learning }
+
 class NpkInsightCard extends StatefulWidget {
   final String title;
   final String subtitle;
@@ -10,6 +27,10 @@ class NpkInsightCard extends StatefulWidget {
   /// Etiqueta corta del estado nutricional («Ventana», «Respuesta»…). Vacía
   /// cuando no hay decisión del motor.
   final String tag;
+  final NpkTagTone tagTone;
+
+  /// Tendencia de N, P y K (en ese orden), o vacío cuando no hay lecturas.
+  final List<NpkTrendChipData> trends;
 
   const NpkInsightCard({
     super.key,
@@ -18,6 +39,8 @@ class NpkInsightCard extends StatefulWidget {
     required this.assetIcon,
     this.onTap,
     this.tag = '',
+    this.tagTone = NpkTagTone.neutral,
+    this.trends = const <NpkTrendChipData>[],
   });
 
   @override
@@ -32,12 +55,22 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
     setState(() => _pressed = v);
   }
 
+  Color get _tagColor => switch (widget.tagTone) {
+    NpkTagTone.neutral => const Color(0xFF5B6470),
+    NpkTagTone.action => const Color(0xFFB9761A),
+    NpkTagTone.response => const Color(0xFF1F7FA8),
+    NpkTagTone.attended => const Color(0xFF2E7D5A),
+    NpkTagTone.warning => const Color(0xFFB4433A),
+    NpkTagTone.learning => const Color(0xFF4C63B6),
+  };
+
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onTap != null;
 
     final scale = _pressed ? 1.02 : 1.0;
     final opacity = _pressed ? 0.96 : 1.0;
+    final Color tagColor = _tagColor;
 
     final shell = AnimatedScale(
       scale: scale,
@@ -79,7 +112,7 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 12,
-                ), // Un poquito más de aire vertical
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
                   color: const Color(0xFFF0F2F5).withValues(alpha: 0.94),
@@ -136,15 +169,15 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF2E7D5A).withValues(alpha: 0.10),
+                                    color: tagColor.withValues(alpha: 0.11),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
                                     widget.tag,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w900,
-                                      color: Color(0xFF2E7D5A),
+                                      color: tagColor,
                                     ),
                                   ),
                                 ),
@@ -163,9 +196,20 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
                               fontSize: 12.0,
                               fontWeight: FontWeight.w600,
                               color: Colors.black.withValues(alpha: 0.58),
-                              height: 1.2, // Mejor interlineado para 2 líneas
+                              height: 1.2,
                             ),
                           ),
+                          if (widget.trends.isNotEmpty) ...<Widget>[
+                            const SizedBox(height: 7),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: <Widget>[
+                                for (final NpkTrendChipData t in widget.trends)
+                                  _TrendChip(data: t),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -193,6 +237,51 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
       onTapCancel: () => _setPressed(false),
       onTapUp: (_) => _setPressed(false),
       child: shell,
+    );
+  }
+}
+
+class _TrendChip extends StatelessWidget {
+  const _TrendChip({required this.data});
+
+  final NpkTrendChipData data;
+
+  @override
+  Widget build(BuildContext context) {
+    // Al alza y a la baja se pintan con un acento discreto (no alarman: una
+    // tendencia no es un diagnóstico); estable queda en gris.
+    final Color color = switch (data.direction) {
+      > 0 => const Color(0xFF1F7FA8),
+      < 0 => const Color(0xFFB9761A),
+      _ => const Color(0xFF5B6470),
+    };
+    final IconData icon = switch (data.direction) {
+      > 0 => Icons.north_east_rounded,
+      < 0 => Icons.south_east_rounded,
+      _ => Icons.horizontal_rule_rounded,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 3),
+          Text(
+            data.label,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
+              color: color,
+              height: 1.1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

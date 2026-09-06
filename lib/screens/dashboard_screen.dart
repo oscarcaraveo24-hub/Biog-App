@@ -9,7 +9,6 @@ import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart'
 import 'package:bio_g/core/agro/irrigation/irrigation_coordinator.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
-import 'package:bio_g/services/biog/nutrition/nutrition_coordinator.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/features/reporting/pdf_preview_screen.dart';
 import 'package:bio_g/features/reporting/pdf_report_builder.dart';
@@ -69,10 +68,11 @@ class _DashboardScreenState extends State<DashboardScreen>
         BioGScope.of(context).saveCropContext(healed),
   );
 
-  /// El coordinador de nutrición: etapa → ventana → firma del sensor → libro
-  /// de ventanas → decisión. Mismo ciclo de vida y mismo patrón que el de
-  /// riego; el agricultor no registra nada, la sonda observa.
-  final NutritionCoordinator _nutrition = NutritionCoordinator();
+  // El coordinador de nutrición (etapa → ventana → firma del sensor → libro
+  // de ventanas → decisión) vive en `BioGStore.nutrition`, no aquí: la
+  // decisión debe recalcularse con cada lectura aunque el Panel esté cerrado,
+  // para que los avisos nutricionales existan en segundo plano. Este Panel lo
+  // escucha, lo usa para pintar y le pide sincronizar tras cada cuadro.
 
   late final AnimationController _entranceController;
 
@@ -122,7 +122,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   void dispose() {
     _entranceController.dispose();
     _irrigation.dispose();
-    _nutrition.dispose();
     super.dispose();
   }
 
@@ -230,7 +229,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         _irrigation,
         // La memoria nutricional se lee de disco fuera del frame: cuando el
         // libro de ventanas termina de cargar, la tarjeta debe repintarse.
-        _nutrition,
+        store.nutrition,
         // También la bandeja: un aviso nuevo debe encender la campana sin
         // esperar a que el store notifique por otra razón.
         store.notifications,
@@ -271,7 +270,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         // Decisión de nutrición con la memoria que ya está cargada (libro de
         // ventanas, historial, época). También pura y memoizada: segura
         // dentro de `build`.
-        final NutritionDecision? nutritionDecision = _nutrition.decisionFor(
+        final NutritionDecision? nutritionDecision = store.nutrition.decisionFor(
           runtime,
           now: today,
         );
@@ -299,7 +298,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             _irrigation.sync(runtime: runtime, userId: store.currentUserId),
           );
           unawaited(
-            _nutrition.sync(runtime: runtime, userId: store.currentUserId),
+            store.nutrition.sync(runtime: runtime, userId: store.currentUserId),
           );
         });
 
@@ -505,6 +504,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                             title: viewData.npkTitle,
                             subtitle: viewData.npkSubtitle,
                             tag: viewData.npkTag,
+                            tagTone: viewData.npkTagTone,
+                            trends: viewData.npkTrends,
                           ),
                         ),
                         // El enlace "Ver por que y mas avisos" se retiro: la

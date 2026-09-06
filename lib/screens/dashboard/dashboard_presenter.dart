@@ -19,6 +19,7 @@ import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
+import 'package:bio_g/widgets/npk_insight_card.dart';
 
 class DashboardMetricUiData {
   final String title;
@@ -100,6 +101,10 @@ class DashboardViewData {
 
   /// Etiqueta corta del estado nutricional («Ventana», «Respuesta»…).
   final String npkTag;
+  final NpkTagTone npkTagTone;
+
+  /// Tendencia de N, P y K para los chips de la tarjeta (vacío sin lecturas).
+  final List<NpkTrendChipData> npkTrends;
 
   /// Decisión completa del motor de nutrición, cuando estuvo disponible.
   final NutritionDecision? nutritionDecision;
@@ -134,6 +139,8 @@ class DashboardViewData {
     required this.npkTitle,
     required this.npkSubtitle,
     this.npkTag = '',
+    this.npkTagTone = NpkTagTone.neutral,
+    this.npkTrends = const <NpkTrendChipData>[],
     this.nutritionDecision,
     required this.moisture,
     required this.temperature,
@@ -380,6 +387,8 @@ class DashboardScreenPresenter {
     String npkTitle = 'Nutrición';
     String npkSubtitle = 'Sin evaluación actual';
     String npkTag = '';
+    NpkTagTone npkTagTone = NpkTagTone.neutral;
+    List<NpkTrendChipData> npkTrends = const <NpkTrendChipData>[];
 
     if (isGuide) {
       // Modo guía: las cinco condiciones del suelo SÍ llevan etiqueta, la
@@ -391,11 +400,13 @@ class DashboardScreenPresenter {
     } else if (isPlanted && nutritionDecision != null) {
       npkTitle = nutritionDecision.headlineEs;
       npkSubtitle = _firstSentences(nutritionDecision.detailEs, maxChars: 160);
-      npkTag = nutritionDecision.state.tagEs;
+      npkTag = nutritionDecision.tagEs;
+      npkTagTone = _npkTagTone(nutritionDecision);
+      npkTrends = _npkTrendChips(nutritionDecision);
     } else if (isPlanted && telemetry != null) {
       npkSubtitle =
-          'BIO-G sigue la señal nativa de N, P y K como tendencia. La ventana '
-          'de manejo se evalúa con la etapa del cultivo.';
+          'BIO-G sigue la tendencia de N, P y K de tu suelo. La ventana de '
+          'manejo se evalúa con la etapa del cultivo.';
     } else if (isPlanned) {
       npkSubtitle = isOrnamental
           ? 'Disponible cuando la plantes'
@@ -544,6 +555,8 @@ class DashboardScreenPresenter {
       npkTitle: npkTitle,
       npkSubtitle: npkSubtitle,
       npkTag: npkTag,
+      npkTagTone: npkTagTone,
+      npkTrends: npkTrends,
       nutritionDecision: isPlanted ? nutritionDecision : null,
       moisture: const DashboardMetricUiData(
         title: 'Humedad',
@@ -1441,6 +1454,34 @@ class DashboardScreenPresenter {
     final double mean = scores.reduce((a, b) => a + b) / scores.length;
     return (mean * factor).clamp(0.0, 1.0);
   }
+
+  static NpkTagTone _npkTagTone(NutritionDecision d) => switch (d.state) {
+    NutritionState.learning => NpkTagTone.learning,
+    NutritionState.prepare => NpkTagTone.action,
+    NutritionState.actionWindow => NpkTagTone.action,
+    NutritionState.responseWindow => NpkTagTone.response,
+    NutritionState.monitor =>
+      d.window?.outcome == NutritionWindowOutcome.attendedDetected
+          ? NpkTagTone.attended
+          : (d.recentlyUnattendedWindow != null
+                ? NpkTagTone.warning
+                : NpkTagTone.neutral),
+  };
+
+  /// Chips de tendencia: solo los canales con tendencia conocida.
+  static List<NpkTrendChipData> _npkTrendChips(NutritionDecision d) =>
+      <NpkTrendChipData>[
+        for (final NutrientTrend t in d.trends)
+          if (t.trend.isKnown)
+            NpkTrendChipData(
+              label: t.chipEs,
+              direction: switch (t.trend) {
+                NativeTrend.rising => 1,
+                NativeTrend.falling => -1,
+                _ => 0,
+              },
+            ),
+      ];
 
   /// Recorta un detalle largo a sus primeras frases para la tarjeta.
   static String _firstSentences(String text, {int maxChars = 160}) {

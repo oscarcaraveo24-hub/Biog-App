@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
@@ -98,9 +99,15 @@ class QuickReportBuilder {
       nPercent: _siteScaledPercent(live.hasNitrogenData ? live.n : null, nSeries),
       pPercent: _siteScaledPercent(live.hasPhosphorusData ? live.p : null, pSeries),
       kPercent: _siteScaledPercent(live.hasPotassiumData ? live.k : null, kSeries),
-      nStatus: live.hasNitrogenData ? _trendStatus(nSeries) : '—',
-      pStatus: live.hasPhosphorusData ? _trendStatus(pSeries) : '—',
-      kStatus: live.hasPotassiumData ? _trendStatus(kSeries) : '—',
+      nStatus: live.hasNitrogenData
+          ? _trendStatus(AgroMetricKey.n, history, decision, now)
+          : '—',
+      pStatus: live.hasPhosphorusData
+          ? _trendStatus(AgroMetricKey.p, history, decision, now)
+          : '—',
+      kStatus: live.hasPotassiumData
+          ? _trendStatus(AgroMetricKey.k, history, decision, now)
+          : '—',
       historyLabels: _normalizeStringList(historySeries.labels),
       historyN: _normalizeDoubleList(historySeries.nValues),
       historyP: _normalizeDoubleList(historySeries.pValues),
@@ -139,17 +146,37 @@ class QuickReportBuilder {
     return (level / scale).clamp(0.0, 1.0);
   }
 
-  /// Tendencia de la señal nativa: 3 últimas lecturas contra las 3 anteriores.
-  static String _trendStatus(List<double> series) {
-    if (series.length < 6) return 'Señal nativa';
-    double avg(List<double> xs) => xs.reduce((a, b) => a + b) / xs.length;
-    final double a = avg(series.sublist(series.length - 3));
-    final double b = avg(series.sublist(series.length - 6, series.length - 3));
-    if (b.abs() < 0.0001) return 'Señal nativa';
-    final double pct = ((a - b) / b) * 100.0;
-    if (pct > 4) return 'Subiendo';
-    if (pct < -4) return 'Bajando';
-    return 'Estable';
+  /// Tendencia con el mismo vocabulario y cálculo que el motor de nutrición
+  /// («Al alza», «Estable», «A la baja»): si la decisión ya la trae, se usa;
+  /// si no, se calcula igual desde el historial.
+  static String _trendStatus(
+    AgroMetricKey nutrient,
+    List<BioGTelemetry> history,
+    NutritionDecision? decision,
+    DateTime now,
+  ) {
+    final NutrientTrend? fromDecision = decision?.trendFor(nutrient);
+    if (fromDecision != null) return fromDecision.trend.labelEs;
+    final List<({DateTime at, double value})> samples =
+        <({DateTime at, double value})>[
+          for (final BioGTelemetry t in history)
+            if (switch (nutrient) {
+              AgroMetricKey.n => t.hasNitrogenData,
+              AgroMetricKey.p => t.hasPhosphorusData,
+              _ => t.hasPotassiumData,
+            })
+              (
+                at: t.timestamp,
+                value: switch (nutrient) {
+                  AgroMetricKey.n => t.n.toDouble(),
+                  AgroMetricKey.p => t.p.toDouble(),
+                  _ => t.k.toDouble(),
+                },
+              ),
+        ];
+    return NutrientTrend.compute(nutrient: nutrient, samples: samples, now: now)
+        .trend
+        .labelEs;
   }
 
   MapEntry<String, String> _buildNutritionRecommendation({
@@ -179,7 +206,7 @@ class QuickReportBuilder {
       return const MapEntry(
         'Nutrición sin interpretar',
         'En guía general no hay cultivo declarado: sin etapa no hay ventana de '
-            'manejo nutricional. Las señales N/P/K se imprimen como tendencia.',
+            'manejo nutricional. N, P y K se imprimen como tendencia del suelo.',
       );
     }
     if (runtime.isPlanned) {

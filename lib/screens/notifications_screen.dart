@@ -88,12 +88,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   /// idéntico: no se toca ni un widget. `payload` conserva el tipo y la métrica
   /// del evento de origen, y el `id` de la notificación es `deviceId|dedupKey`,
   /// que es la misma llave con la que el evento quedó archivado en el Historial.
-  static AgronomicEvent _asDisplayEvent(BiogNotification n) {
+  static AgronomicEvent? _asDisplayEvent(BiogNotification n) {
+    // Una notificación guardada con un tipo que ya no existe (los avisos
+    // «N bajo / P crítico» del motor NPK retirado) no se muestra: su texto
+    // afirmaba una suficiencia química que la app ya no sostiene.
+    final String? typeName = n.payload['eventType']?.toString();
+    AgronomicEventType? type;
+    for (final AgronomicEventType t in AgronomicEventType.values) {
+      if (t.name == typeName) {
+        type = t;
+        break;
+      }
+    }
+    if (typeName != null && type == null) return null;
     return AgronomicEvent(
-      type: AgronomicEventType.values.firstWhere(
-        (AgronomicEventType t) => t.name == n.payload['eventType'],
-        orElse: () => AgronomicEventType.genericMode,
-      ),
+      type: type ?? AgronomicEventType.genericMode,
       severity: n.severity,
       title: n.title,
       message: n.body,
@@ -116,6 +125,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               n.state != NotificationDeliveryState.dismissed,
         )
         .map(_asDisplayEvent)
+        .whereType<AgronomicEvent>()
         .toList(growable: false);
   }
 

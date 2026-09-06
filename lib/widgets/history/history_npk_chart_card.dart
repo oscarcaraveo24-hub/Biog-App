@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 
 enum NpkChannel { n, p, k }
@@ -17,14 +18,24 @@ class HistoryNpkChartCard extends StatelessWidget {
     this.liveN,
     this.liveP,
     this.liveK,
+    this.trendN,
+    this.trendP,
+    this.trendK,
   });
 
-  /// Límite inferior de la meta de la etapa
   final String title;
   final List<String> labels;
   final List<double?> nValues;
   final List<double?> pValues;
   final List<double?> kValues;
+
+  /// Tendencia ya decidida por el motor de nutrición (misma vocabulario que
+  /// el Panel y la pantalla de nutrición). Si viene, manda sobre el cálculo
+  /// por cubos del gráfico; si no, se calcula aquí con la misma regla
+  /// relativa.
+  final NativeTrend? trendN;
+  final NativeTrend? trendP;
+  final NativeTrend? trendK;
 
   /// ppm max del chart. Si viene null, se calcula con base a datos.
   final double? yMax;
@@ -50,11 +61,16 @@ class HistoryNpkChartCard extends StatelessWidget {
     final pNow = _clampReading(liveP ?? _lastReading(pValues));
     final kNow = _clampReading(liveK ?? _lastReading(kValues));
 
-    final status = _neutralStatus(nNow, pNow, kNow);
+    final tN = _fromNative(trendN) ?? _trendFromSeries(nValues);
+    final tP = _fromNative(trendP) ?? _trendFromSeries(pValues);
+    final tK = _fromNative(trendK) ?? _trendFromSeries(kValues);
 
-    final tN = _trendFromSeries(nValues);
-    final tP = _trendFromSeries(pValues);
-    final tK = _trendFromSeries(kValues);
+    final status = _trendStatus(
+      hasAny: nNow != null || pNow != null || kNow != null,
+      n: tN,
+      p: tP,
+      k: tK,
+    );
 
     final lr = lastReadingText ?? 'Reciente';
 
@@ -130,12 +146,22 @@ class HistoryNpkChartCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _StatusInlineDot(
-            label: 'Estado actual',
+            label: 'Tendencia',
             value: status.label,
             color: status.color,
           ),
           const SizedBox(height: 8),
           _LastReadingRow(lastReading: lr),
+          const SizedBox(height: 6),
+          Text(
+            kNativeSignalDisclaimerEs,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: Colors.black.withValues(alpha: 0.34),
+              height: 1.2,
+            ),
+          ),
         ],
       ),
     );
@@ -163,35 +189,71 @@ class HistoryNpkChartCard extends StatelessWidget {
     return rounded.clamp(fallback, 999999.0);
   }
 
-  static _NpkState _neutralStatus(double? n, double? p, double? k) {
-    final hasAny = n != null || p != null || k != null;
+  /// Resumen de tendencia con el mismo vocabulario que el motor de nutrición
+  /// («al alza», «estable», «a la baja»); nunca «bajo/alto».
+  static _NpkState _trendStatus({
+    required bool hasAny,
+    required _Trend n,
+    required _Trend p,
+    required _Trend k,
+  }) {
     if (!hasAny) {
       return const _NpkState('Sin señal suficiente', Color(0xFF8A8F98));
     }
-    // Señal nativa: se describe su presencia y tendencia, nunca «bajo/alto».
-    return const _NpkState('Señal nativa reciente', Color(0xFF3E9F86));
+    String word(_Trend t) => switch (t) {
+      _Trend.up => 'al alza',
+      _Trend.down => 'a la baja',
+      _Trend.steady => 'estable',
+      _Trend.unknown => 'sin tendencia aún',
+    };
+    final List<String> moving = <String>[
+      if (n == _Trend.up || n == _Trend.down) 'N ${word(n)}',
+      if (p == _Trend.up || p == _Trend.down) 'P ${word(p)}',
+      if (k == _Trend.up || k == _Trend.down) 'K ${word(k)}',
+    ];
+    if (moving.isEmpty) {
+      final bool anyKnown =
+          n != _Trend.unknown || p != _Trend.unknown || k != _Trend.unknown;
+      return anyKnown
+          ? const _NpkState('Estable en los últimos días', Color(0xFF3E9F86))
+          : const _NpkState(
+              'Sin tendencia aún: faltan lecturas',
+              Color(0xFF8A8F98),
+            );
+    }
+    final bool anyDown = n == _Trend.down || p == _Trend.down || k == _Trend.down;
+    return _NpkState(
+      moving.join(' · '),
+      anyDown ? const Color(0xFFB9761A) : const Color(0xFF1F7FA8),
+    );
   }
 
+  static _Trend? _fromNative(NativeTrend? t) => switch (t) {
+    null => null,
+    NativeTrend.rising => _Trend.up,
+    NativeTrend.falling => _Trend.down,
+    NativeTrend.stable => _Trend.steady,
+    NativeTrend.unknown => _Trend.unknown,
+  };
+
+  /// Respaldo cuando el motor no aportó tendencia: misma regla RELATIVA que
+  /// `NutrientTrend` (umbral en %) sobre los cubos del gráfico; con pocos
+  /// cubos no se afirma nada.
   static _Trend _trendFromSeries(List<double?> values) {
     final List<double> existing = values.whereType<double>().toList();
-    if (existing.length < 2) return _Trend.steady;
+    if (existing.length < NutrientTrend.kMinSamplesPerSide) return _Trend.unknown;
 
     double avg(List<double> xs) =>
         xs.isEmpty ? 0 : xs.reduce((a, b) => a + b) / xs.length;
 
-    if (existing.length >= 6) {
-      final a = avg(existing.sublist(existing.length - 3));
-      final b = avg(existing.sublist(existing.length - 6, existing.length - 3));
-      final diff = a - b;
-      if (diff > 1.2) return _Trend.up;
-      if (diff < -1.2) return _Trend.down;
-      return _Trend.steady;
-    } else {
-      final diff = existing.last - existing[existing.length - 2];
-      if (diff > 1.2) return _Trend.up;
-      if (diff < -1.2) return _Trend.down;
-      return _Trend.steady;
-    }
+    final int half = existing.length ~/ 2;
+    final double recent = avg(existing.sublist(existing.length - half));
+    final double previous = avg(existing.sublist(0, existing.length - half));
+    if (previous.abs() < 1e-6) return _Trend.unknown;
+    final double pct = (recent - previous) / previous.abs() * 100.0;
+    if (pct >= NutrientTrend.kMovingThresholdPct) return _Trend.up;
+    if (pct <= -NutrientTrend.kMovingThresholdPct) return _Trend.down;
+    return _Trend.steady;
   }
 }
 
@@ -201,7 +263,7 @@ class _NpkState {
   const _NpkState(this.label, this.color);
 }
 
-enum _Trend { up, down, steady }
+enum _Trend { up, down, steady, unknown }
 
 class _StatusInlineDot extends StatelessWidget {
   const _StatusInlineDot({
@@ -547,6 +609,11 @@ class _TrendArrowPainter extends CustomPainter {
             ..lineTo(w * 0.66, h * 0.36)
             ..moveTo(w * 0.82, h * 0.52)
             ..lineTo(w * 0.66, h * 0.68);
+        case _Trend.unknown:
+          // Sin tendencia: un guion corto, sin flecha.
+          return Path()
+            ..moveTo(w * 0.34, h * 0.52)
+            ..lineTo(w * 0.66, h * 0.52);
       }
     }
 

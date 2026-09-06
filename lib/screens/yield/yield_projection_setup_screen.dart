@@ -143,6 +143,14 @@ class _YieldProjectionSetupScreenState
   /// densidad por hectárea es el mismo.
   bool get _isTreeCrop => isTreeContext(_readStore().activeCropContext);
 
+  /// Factor del manejo nutricional del ciclo (Guía v0.4, §6): 1.0 sin
+  /// memoria o sin ventanas importantes desatendidas; hasta 0.85 si las hubo.
+  double _nutritionFactor(DateTime now) {
+    final double? f = _readStore().nutritionDecisionAt(now)?.scoreFactor;
+    if (f == null || !f.isFinite) return 1.0;
+    return f.clamp(0.0, 1.0);
+  }
+
   double _getActualHealthScore(BioGStore store) {
     const double fallbackScore = 0.68;
     try {
@@ -179,6 +187,11 @@ class _YieldProjectionSetupScreenState
 
     if (isTreeContext(ctx)) {
       _calculateTreeProjections(area, populationInput, ctx);
+      // Misma memoria nutricional que en anuales: una ventana importante que
+      // cerró sin evidencia descuenta la proyección (nunca la sube).
+      final double nutrition = _nutritionFactor(DateTime.now());
+      _projectedTotalYield *= nutrition;
+      _projectedYieldPerUnit *= nutrition;
       return;
     }
 
@@ -207,6 +220,7 @@ class _YieldProjectionSetupScreenState
       config: tempConfig,
       historicalCareScore01: _readStore().cropCareAverage,
       currentCareScore01: healthScore,
+      nutritionFactor01: _nutritionFactor(now),
     );
 
     if (estimate == null) {

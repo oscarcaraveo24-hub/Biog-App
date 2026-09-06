@@ -16,8 +16,8 @@ class NpkGaugeCard extends StatelessWidget {
     this.targetMax,
     this.statusLabel,
     required this.centerValue,
-    this.centerUnit = 'mg/kg',
-    this.cropCapPpm,
+    this.centerUnit = 'sensor',
+    this.scaleMax,
   });
 
   final NpkChannel channel;
@@ -35,8 +35,11 @@ class NpkGaugeCard extends StatelessWidget {
   final int centerValue;
   final String centerUnit;
 
-  /// Cap de ppm específico por cultivo. Si es null, usa el cap genérico.
-  final double? cropCapPpm;
+  /// Tope de la escala del arco, en la ESCALA DEL SITIO (máximo reciente del
+  /// propio punto × 1.15). No es un objetivo ni un tope por cultivo: solo
+  /// dice qué número corresponde al final del arco. Si es null se deduce de
+  /// [centerValue] y [percent] para que las marcas y la aguja coincidan.
+  final double? scaleMax;
 
   Color _accent() {
     switch (channel) {
@@ -54,17 +57,13 @@ class NpkGaugeCard extends StatelessWidget {
     return [a.withValues(alpha:0.85), a.withValues(alpha:0.98), a.withValues(alpha:0.92)];
   }
 
-  /// Cap efectivo: usa el del cultivo si viene, si no, el genérico del canal.
-  double _effectiveCapPpm() {
-    if (cropCapPpm != null && cropCapPpm! > 0) return cropCapPpm!;
-    switch (channel) {
-      case NpkChannel.n:
-        return 120.0;
-      case NpkChannel.p:
-        return 80.0;
-      case NpkChannel.k:
-        return 140.0;
-    }
+  /// Escala efectiva del arco: la del sitio si viene; si no, la que hace
+  /// coincidir la aguja con el valor central; y como último recurso 100.
+  double _effectiveScaleMax() {
+    if (scaleMax != null && scaleMax! > 0) return scaleMax!;
+    final double pct = percent.clamp(0.0, 1.0);
+    if (pct > 0.01 && centerValue > 0) return centerValue / pct;
+    return 100.0;
   }
 
   @override
@@ -126,7 +125,7 @@ class NpkGaugeCard extends StatelessWidget {
                         gradient: _gradient(),
                         targetMin: targetMin,
                         targetMax: targetMax,
-                        capPpm: _effectiveCapPpm(),
+                        capPpm: _effectiveScaleMax(),
                       ),
                       child: _GaugeCenter(
                         bigText: '$centerValue',

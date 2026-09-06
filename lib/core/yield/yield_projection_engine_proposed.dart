@@ -76,6 +76,12 @@ class YieldProjectionEstimate {
   final double blendedCareScore01;
   final double populationFactor01;
   final double managementFactor01;
+
+  /// Factor ≤ 1 del manejo nutricional del ciclo (`NutritionDecision.scoreFactor`):
+  /// solo baja de 1 cuando una ventana nutricional importante cerró sin que el
+  /// sensor viera una respuesta compatible con fertilización (Guía v0.4, §6).
+  /// Nunca sube la proyección.
+  final double nutritionFactor01;
   final double projectedLowTonPerHa;
   final double projectedHighTonPerHa;
   final double projectedMidTonPerHa;
@@ -90,6 +96,7 @@ class YieldProjectionEstimate {
     required this.blendedCareScore01,
     required this.populationFactor01,
     required this.managementFactor01,
+    this.nutritionFactor01 = 1.0,
     required this.projectedLowTonPerHa,
     required this.projectedHighTonPerHa,
     required this.projectedMidTonPerHa,
@@ -111,6 +118,7 @@ class YieldProjectionEngine {
     required YieldProjectionConfig config,
     double? historicalCareScore01,
     double? currentCareScore01,
+    double nutritionFactor01 = 1.0,
   }) {
     final areaHa = config.areaInHectares;
     final density = config.estimatedPopulationPerHa;
@@ -131,10 +139,16 @@ class YieldProjectionEngine {
       family: _familyFor(reference),
     );
 
+    // El factor nutricional solo puede descontar (piso 0.85 en el libro de
+    // ventanas); un valor fuera de rango se trata como «sin memoria».
+    final double nutrition = nutritionFactor01.isFinite
+        ? nutritionFactor01.clamp(0.0, 1.0)
+        : 1.0;
+
     final yieldLow =
-        _expandedLow(reference) * populationFactor * managementFactor;
+        _expandedLow(reference) * populationFactor * managementFactor * nutrition;
     final yieldHigh =
-        _expandedHigh(reference) * populationFactor * managementFactor;
+        _expandedHigh(reference) * populationFactor * managementFactor * nutrition;
     final yieldMid = (yieldLow + yieldHigh) / 2.0;
 
     return YieldProjectionEstimate(
@@ -144,6 +158,7 @@ class YieldProjectionEngine {
       blendedCareScore01: blendedCare,
       populationFactor01: populationFactor,
       managementFactor01: managementFactor,
+      nutritionFactor01: nutrition,
       projectedLowTonPerHa: yieldLow,
       projectedHighTonPerHa: yieldHigh,
       projectedMidTonPerHa: yieldMid,

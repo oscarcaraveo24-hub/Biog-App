@@ -500,15 +500,16 @@ class EventEngine {
     // agronómico llega ya tomado en [EventEngineInput.nutritionDecision], igual
     // que el riego llega en [EventEngineInput.irrigationDecision].
     if (!input.isGenericMode && input.hasAnyNpk) {
+      final String trendSummary = input.nutritionDecision?.trendSummaryEs ?? '';
       events.add(
         AgronomicEvent(
           type: AgronomicEventType.npkReading,
           severity: AgronomicEventSeverity.info,
-          title: 'Señal nativa N/P/K registrada',
+          title: 'Lectura N/P/K registrada',
           message:
-              'La sonda registró sus canales nativos de N, P y K${_buildNpkInline(input)}. '
-              'Son señales derivadas de la conductividad, útiles para seguir '
-              'tendencias; no equivalen a un análisis de laboratorio.',
+              'La sonda registró N, P y K${_buildNpkInline(input)}.'
+              '${trendSummary.isEmpty ? '' : ' Últimos 7 días: $trendSummary.'}'
+              ' $kNativeSignalDisclaimerEs.',
           timestamp: now,
           deviceId: input.deviceId,
           metricKey: EventMetricKeys.npk,
@@ -1252,7 +1253,7 @@ class EventEngine {
     if (input.k != null) chunks.add('K ${_fmt(input.k)}');
 
     if (chunks.isEmpty) return '';
-    return ' (${chunks.join(' · ')} mg/kg)';
+    return ' (${chunks.join(' · ')})';
   }
 }
 
@@ -1382,9 +1383,6 @@ class EventTelemetryPoint {
     this.ph,
     this.resistance,
     this.soilTemp,
-    this.n,
-    this.p,
-    this.k,
   });
 
   final DateTime timestamp;
@@ -1392,9 +1390,8 @@ class EventTelemetryPoint {
   final double? ph;
   final double? resistance;
   final double? soilTemp;
-  final double? n;
-  final double? p;
-  final double? k;
+  // N/P/K no viajan aquí: el motor de eventos no lee nutrientes del
+  // historial; la nutrición entra ya decidida en `EventEngineInput.nutritionDecision`.
 }
 
 /// ============================================================

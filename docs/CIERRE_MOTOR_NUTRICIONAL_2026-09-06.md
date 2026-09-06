@@ -25,17 +25,18 @@ El motor NPK legado (bandas por lectura cruda, déficit ppm, dosis target − ra
 | 3 Sensor contract | `SoilSensorSpec.sn3002` (registros, unidades, plausibilidad, canales derivados, warm-up); única conversión µS→mS en la frontera; códec BLE resuelve `probe_id` y descarta lo implausible como ausente | `lib/core/telemetry/soil_sensor_spec.dart`, `biog_ble_codec.dart`, `biog_telemetry.dart` |
 | 4 AgroScore limpio | `SoilConditionScore`: media ponderada solo con señales presentes, cobertura «x de 5 señales», penalización crítica una sola vez | `lib/core/agro/soil_condition_score.dart` |
 | 5 Readiness V1 | `NutritionReadinessEngine` → `NutritionDecision` (LEARNING → MONITOR → PREPARE → ACTION WINDOW → RESPONSE WINDOW), prioridades por perfil + guía, 3R, condiciones (humedad, suelo frío, CE), recomendación con dosis solo si guía auditada o restitución de frutales | `lib/core/agro/nutrition/nutrition_readiness_engine.dart`, `nutrition_types.dart` |
-| 6 UI/UX | Panel (tarjeta NPK = decisión; anillo de suelo con cobertura), pantalla NPK (gauge escalado al sitio, tendencia, nota de dato nativo, hoja de detalle), Historial («N/P/K nativos»), informes rápido y PDF («SEÑALES NATIVAS N/P/K» + «MANEJO NUTRICIONAL»), notificaciones | `dashboard_presenter.dart`, `npk_screen.dart`, `history_presenter.dart`, `quick_report_builder.dart`, `pdf_report_builder.dart` |
-| 7 Instalación + memoria | Época de instalación/reubicación (`InstallationEpoch`), 7 días de aprendizaje, baselines por época; `NutritionCoordinator.relocate` (sin UI todavía) | `site_learning.dart`, `nutrition_coordinator.dart`, `nutrition_local_storage.dart` |
+| 6 UI/UX | Panel (tarjeta NPK = decisión; anillo de suelo con cobertura), pantalla NPK (gauge escalado al sitio, tendencia, hoja de detalle), Historial («Tendencia N/P/K»), informes rápido y PDF («TENDENCIA NUTRIMENTAL (N/P/K)» + «MANEJO NUTRICIONAL»), notificaciones | `dashboard_presenter.dart`, `npk_screen.dart`, `history_presenter.dart`, `quick_report_builder.dart`, `pdf_report_builder.dart` |
+| 7 Instalación + memoria | Época de instalación/reubicación (`InstallationEpoch`), 7 días de aprendizaje, baselines por época; `NutritionCoordinator.relocate` con acción «Reubicar Bio-G» en el estado del equipo | `site_learning.dart`, `nutrition_coordinator.dart`, `nutrition_local_storage.dart` |
 | 8 Respuesta | `FertilizationSignatureScanner` (sin anclaje), `NutritionWindowLedger` (open / attendedDetected / unattended / inconclusive / notComparable), `NutritionDecision` publicada por `BioGStore` igual que `IrrigationDecision`; `EventEngine` solo traduce decisiones a eventos | `fertilization_signature_scanner.dart`, `nutrition_window_ledger.dart`, `biog_store.dart`, `crop_event_recorder.dart` |
 | Nube | Migración **propuesta y no aplicada** para `nutrition_windows` e `installation_epochs` | `supabase/migrations/20260906_nutrition_windows_and_epochs.sql` |
+| Integración final (6 sep, tarde) | `NutritionCoordinator` vive en `BioGStore` (`store.nutrition`): la decisión se recalcula con CADA lectura aunque el Panel esté cerrado, antes de registrar eventos → los avisos nutricionales existen en segundo plano. Tendencia N/P/K con un solo vocabulario en toda la app (`NutrientTrend`: «al alza / estable / a la baja»), chips de tendencia en la tarjeta del Panel, etiqueta de estado coloreada («Ventana», «Respuesta», «Atendida», «Sin evidencia», «Estable», «Aprendiendo»), copys de campo («Suelo estable, sin necesidades nutrimentales por ahora», «Tendencia al alza en nitrógeno»), disclaimer reducido a un renglón discreto (`kNativeSignalDisclaimerEs`), factor nutricional en la proyección de rendimiento (anuales y frutales), acción «Reubicar Bio-G» en el estado del equipo, CE alta como evento físico de sales, notificaciones viejas del motor retirado ya no se muestran | `biog_store.dart`, `nutrition_types.dart`, `npk_insight_card.dart`, `dashboard_presenter.dart`, `npk_screen.dart`, `history_npk_chart_card.dart`, `quick_report_*`, `pdf_report_builder.dart`, `yield_projection_*`, `status_biog_screen.dart`, `event_engine.dart`, `notifications_screen.dart` |
 
 ## 3. Criterios de aceptación §36 (revisión estática; confirmar con la suite)
 
 | Criterio | Estado | Dónde se comprueba |
 |---|---|---|
 | N/P/K siguen llegando del sensor y se guardan como raw | ✔ | `BioGTelemetry` conserva `n/p/k`; el códec solo descarta implausibles |
-| History sigue graficándolos | ✔ | `history_npk_chart_card.dart` («Señal nativa reciente») |
+| History sigue graficándolos | ✔ | `history_npk_chart_card.dart` («Tendencia N/P/K», con el vocabulario del motor) |
 | Dashboard no los clasifica como suficiencia química | ✔ | `dashboard_presenter.dart`: tarjeta NPK = `NutritionDecision` |
 | AgroScore no usa N/P/K raw como peso directo | ✔ | `SoilConditionScore` + prueba `soil_condition_score_test.dart` |
 | Ningún motor crea «N bajo / P crítico / K alto» desde raw | ✔ | los tipos `nitrogenLow/High`, `phosphorusLow/High`, `potassiumLow/High`, `nutrientImbalance` ya no existen en el enum; solo quedan nombrados en un comentario histórico de `agronomic_event.dart` |
@@ -59,10 +60,19 @@ Reglas §37 aplicadas explícitamente en código: nunca escalar N/P/K al target 
 1. **Ejecutar la verificación** (§7). Corregir errores de analizador y los desvíos numéricos de pruebas viejas con puntajes fijos.
 2. **Auditar guías** cultivo por cultivo y marcar `audited` (ver documento de auditoría §4.6).
 3. **Migración de Supabase**: decidir si se aplica (solo cuando la app sincronice ventanas; hoy todo es local).
-4. **UI de «Reubicar BIO-G»** (fase 7): el coordinador ya expone `relocate`; falta el botón en Cuenta/Equipo.
-5. Archivo huérfano: `lib/core/agro/barley_crop_definition.dart` (no lo importa nadie). Borrar en una limpieza aparte.
-6. `StageWeights.npk/n/p/k` siguen declarados en los perfiles: hoy no mueven nada; se pueden retirar en una limpieza aparte.
-7. Estatus de auditoría de la restitución de frutales: el planner ya fue auditado en agosto; decidir si sus dosis se muestran desde ya (`usesTreeRestitution` las muestra) o se esperan.
+4. Archivo huérfano: `lib/core/agro/barley_crop_definition.dart` (no lo importa nadie). Borrar en una limpieza aparte. Los `.bak` (`biog_store.dart.bak`, `bluetooth_scan_screen.dart.bak`) se movieron a `_to_delete/`.
+5. `StageWeights.npk/n/p/k` siguen declarados en los perfiles: hoy no mueven nada; se pueden retirar en una limpieza aparte.
+6. Estatus de auditoría de la restitución de frutales: el planner ya fue auditado en agosto; decidir si sus dosis se muestran desde ya (`usesTreeRestitution` las muestra) o se esperan.
+7. Los eventos físicos de frutales en el Panel (`_buildTreeDashboardEvents`) siguen construyéndose a mano, sin pasar por `EventEngine` (diseño anterior, intacto): la nutrición sí pasa por el motor. Unificarlos es una limpieza aparte.
+8. `NutritionReadinessInput.soilSupplyLevel` (restitución de frutales) no lo alimenta nadie: queda para cuando exista análisis de suelo capturado.
+
+## 5b. Copys y UX finales (validación del 6 sep, tarde)
+
+- Titulares por estado: «BIO-G está conociendo tu suelo» (aprendizaje), «Suelo estable, sin necesidades nutrimentales por ahora» (seguimiento tranquilo), «Tendencia al alza en nitrógeno» (seguimiento con un nutriente que se mueve y pesa en la etapa), «Se aproxima la ventana de …», «Esta etapa necesita nutrición: …», «Respuesta compatible con fertilización detectada», «Nutrición atendida en «etapa»», «Esta ventana nutricional no mostró evidencia suficiente de haber sido atendida».
+- Un solo vocabulario de tendencia en Panel, pantalla de nutrición, Historial, informe rápido, PDF y eventos: «al alza / estable / a la baja / sin tendencia aún», calculado igual en todos lados (`NutrientTrend.compute`: medianas de las últimas 48 h contra los días previos, umbral 8 %).
+- El disclaimer bajó a un renglón discreto y único: «Tendencia del sensor · orientativa, no sustituye un análisis de suelo». Nada de «no equivale a un análisis de laboratorio» en titulares.
+- Evidencia de las firmas en lenguaje de campo («Subida clara de las sales en la zona de raíces una vez descontada el agua de riego…», «La señal de nitrógeno acompañó la subida»); la estadística (MAD) se queda en los campos numéricos.
+- Unidades: los medidores dicen «sensor», nunca «ppm»/«mg/kg».
 
 ## 6. Lo que NO cambió a propósito
 

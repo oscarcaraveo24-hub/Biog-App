@@ -143,6 +143,64 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
     }
   }
 
+  /// «Reubicar Bio-G»: la sonda cambió de punto en el terreno. Abre una nueva
+  /// época de instalación en la memoria nutricional (Guía v0.4, §22): el
+  /// historial viejo se conserva, pero deja de compararse como si fuera el
+  /// mismo sitio, y BIO-G vuelve a conocer el suelo unos días.
+  Future<void> _relocateThisBioG() async {
+    final id = _deviceId;
+    final name = (device['name'] ?? 'Bio-G').toString();
+
+    final ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text(
+          '¿Reubicaste este Bio-G?',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+        content: Text(
+          'Si moviste "$name" a otro punto del terreno, BIO-G reinicia la '
+          'referencia de ese suelo: durante unos días vuelve a aprender la '
+          'zona y las comparaciones con el historial anterior se pausan. No '
+          'se borra nada.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Sí, lo reubiqué',
+              style: TextStyle(
+                color: Color(0xFF2E7D5A),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true || !mounted) return;
+
+    final store = BioGScope.of(context);
+    await store.nutrition.relocate(deviceId: id, userId: store.currentUserId);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Listo: BIO-G vuelve a conocer el suelo de "$name" durante los '
+          'próximos días.',
+        ),
+      ),
+    );
+  }
+
   Future<void> _deleteThisBioG() async {
     final id = _deviceId;
     final name = (device['name'] ?? 'Bio-G').toString();
@@ -314,6 +372,12 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
                           health: health,
                           isLoading: isLoading,
                         ),
+                      ),
+                      const SizedBox(height: 14),
+                      _GlassCard(
+                        radius: 22,
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                        child: _RelocateRow(onTap: _relocateThisBioG),
                       ),
                       const SizedBox(height: 24),
                       _DangerButton(
@@ -1603,6 +1667,79 @@ class _GlowBlob extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: _brandMid.withValues(alpha: opacity),
+        ),
+      ),
+    );
+  }
+}
+
+/// Fila «Reubicar Bio-G»: acción secundaria, sin dramatismo (no borra nada).
+class _RelocateRow extends StatelessWidget {
+  const _RelocateRow({required this.onTap});
+
+  final VoidCallback onTap;
+
+  static const Color _green = Color(0xFF2E7D5A);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: _green.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.place_outlined,
+                  color: _green,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Reubicar Bio-G',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0E1A16),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Si lo moviste a otro punto, BIO-G reinicia la referencia '
+                      'del suelo y vuelve a aprender la zona.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        height: 1.25,
+                        color: Colors.black.withValues(alpha: 0.56),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: Colors.black.withValues(alpha: 0.32),
+              ),
+            ],
+          ),
         ),
       ),
     );

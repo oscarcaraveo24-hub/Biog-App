@@ -421,12 +421,16 @@ class DashboardNpkSection extends StatelessWidget {
   final String title;
   final String subtitle;
   final String tag;
+  final NpkTagTone tagTone;
+  final List<NpkTrendChipData> trends;
 
   const DashboardNpkSection({
     super.key,
     required this.title,
     required this.subtitle,
     this.tag = '',
+    this.tagTone = NpkTagTone.neutral,
+    this.trends = const <NpkTrendChipData>[],
   });
 
   @override
@@ -443,6 +447,8 @@ class DashboardNpkSection extends StatelessWidget {
       title: title,
       subtitle: subtitle,
       tag: tag,
+      tagTone: tagTone,
+      trends: trends,
       onTap: () {
         Navigator.of(
           context,

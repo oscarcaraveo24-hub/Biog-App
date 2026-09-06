@@ -111,7 +111,7 @@ class HistoryScreenPresenter {
 
   HistoryNpkChartUiData buildNpkChart({required int rangeIndex}) {
     return HistoryNpkChartUiData(
-      title: 'N/P/K nativos (tendencia · ${_subtitleForRange(rangeIndex)})',
+      title: 'Tendencia N/P/K · ${_subtitleForRange(rangeIndex).toLowerCase()}',
     );
   }
 
@@ -260,9 +260,6 @@ class HistoryScreenPresenter {
             ph: t.hasPhData ? t.ph : null,
             resistance: t.hasResistanceData ? t.resistance : null,
             soilTemp: t.hasSoilTempData ? t.soilTempC : null,
-            n: t.hasNitrogenData ? t.n.toDouble() : null,
-            p: t.hasPhosphorusData ? t.p.toDouble() : null,
-            k: t.hasPotassiumData ? t.k.toDouble() : null,
           ),
         )
         .toList();
@@ -287,7 +284,7 @@ class HistoryScreenPresenter {
     'pH' => 'pH',
     'RT' => 'Resistencia',
     'Temp' => 'Temperatura de suelo',
-    'NPK' => 'N/P/K nativos',
+    'NPK' => 'Tendencia N/P/K',
     _ => metric,
   };
 

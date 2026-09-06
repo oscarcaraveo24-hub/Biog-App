@@ -9,9 +9,12 @@ import 'package:bio_g/core/notifications/notification_dispatcher.dart';
 import 'package:bio_g/core/telemetry/telemetry_ingest_service.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
+import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/services/biog/events/crop_event_local_storage.dart';
 import 'package:bio_g/services/biog/events/crop_event_recorder.dart';
+import 'package:bio_g/services/biog/nutrition/nutrition_coordinator.dart';
 import 'package:bio_g/services/biog/nutrition/nutrition_local_storage.dart';
 import 'package:bio_g/services/biog/sync/pending_sync_queue.dart';
 import 'package:bio_g/services/biog/telemetry/ble/ble_telemetry_transport.dart';
@@ -64,6 +67,7 @@ class BioGStore extends ChangeNotifier {
           // equipo equivocado.
           _lastIrrigationDecision = null;
           _lastNutritionDecision = null;
+          nutrition.reset();
         }
         activeDevice = v;
         notifyListeners();
@@ -75,8 +79,10 @@ class BioGStore extends ChangeNotifier {
         live = v;
         notifyListeners();
         // Deja constancia de los eventos del cultivo aunque nadie tenga la
-        // pantalla abierta. No altera nada de lo que se muestra.
-        unawaited(_cropEventRecorder.recordFromStore(this));
+        // pantalla abierta. No altera nada de lo que se muestra. Antes de
+        // registrar, la decisión de nutrición se recalcula con esta lectura:
+        // así los avisos nutricionales existen aunque el Panel esté cerrado.
+        unawaited(_refreshNutritionThenRecord());
       }),
     );
 
@@ -328,6 +334,7 @@ class BioGStore extends ChangeNotifier {
     // en segundo plano se la colgaría a los eventos del usuario entrante.
     _lastIrrigationDecision = null;
     _lastNutritionDecision = null;
+    nutrition.reset();
     _cropByDevice.clear();
     _yieldByDevice.clear();
     _alertsStateByDevice.clear();
@@ -497,9 +504,47 @@ class BioGStore extends ChangeNotifier {
   final CropEventRecorder _cropEventRecorder = CropEventRecorder();
 
   /// Memoria persistente del motor de nutrición (libro de ventanas y época de
-  /// instalación). El coordinador del Panel escribe en ella; el store solo la
-  /// purga al cerrar sesión o quitar un dispositivo.
+  /// instalación). El coordinador escribe en ella; el store la purga al cerrar
+  /// sesión o quitar un dispositivo.
   final NutritionLocalStorage _nutritionStorage = NutritionLocalStorage();
+
+  /// Coordinador del motor de nutrición. Vive en el store —no en el Panel—
+  /// para que la decisión se recalcule con cada lectura aunque ninguna
+  /// pantalla esté abierta: es lo que permite avisar «esta etapa necesita
+  /// nutrición» o «respuesta detectada» en segundo plano. El Panel lo escucha
+  /// y lo usa para pintar; el registro de eventos lo lee ya decidido.
+  final NutritionCoordinator nutrition = NutritionCoordinator();
+
+  /// Runtime del cultivo activo con lo que el store tiene en memoria. Es la
+  /// misma resolución que hace el Panel; se expone para que los procesos en
+  /// segundo plano (nutrición, registro) no la dupliquen.
+  CropRuntimeSnapshot resolveActiveRuntime({DateTime? now}) {
+    return CropRuntimeResolver.resolve(
+      device: activeDevice,
+      seed: activeSeed,
+      cropContext: activeCropContext,
+      live: live,
+      alertsState: alertsState,
+      now: now ?? DateTime.now(),
+    );
+  }
+
+  /// Recalcula y publica la decisión de nutrición con la lectura recién
+  /// llegada y después deja constancia de los eventos. El orden importa: el
+  /// registro necesita la decisión ya tomada.
+  Future<void> _refreshNutritionThenRecord() async {
+    try {
+      if (activeDevice != null) {
+        final DateTime now = DateTime.now();
+        final CropRuntimeSnapshot runtime = resolveActiveRuntime(now: now);
+        await nutrition.sync(runtime: runtime, userId: _currentUserId);
+        publishNutritionDecision(nutrition.decisionFor(runtime, now: now));
+      }
+    } catch (_) {
+      // La nutrición nunca bloquea el registro de eventos ni el Panel.
+    }
+    await _cropEventRecorder.recordFromStore(this);
+  }
 
   /// Acceso de solo lectura al historial de eventos registrado.
   CropEventLocalStorage get cropEventStorage => _cropEventRecorder.storage;
@@ -1311,6 +1356,7 @@ class BioGStore extends ChangeNotifier {
       _resetAgroState();
       _lastIrrigationDecision = null;
       _lastNutritionDecision = null;
+      nutrition.reset();
     }
 
     notifyListeners();
@@ -1644,6 +1690,7 @@ class BioGStore extends ChangeNotifier {
     unawaited(bleTransport.dispose());
     unawaited(telemetryIngest.dispose());
     _cropEventRecorder.notifications.dispose();
+    nutrition.dispose();
     _repo.dispose();
     super.dispose();
   }

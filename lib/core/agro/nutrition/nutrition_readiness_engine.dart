@@ -357,7 +357,7 @@ class NutritionReadinessEngine {
       );
       if (possibleSignature != null) {
         reasons.add(
-          'Hay un cambio en la zona radicular que podría ser una fertilización '
+          'Hay un cambio en la zona de raíces que podría ser una fertilización '
           '(confianza ${possibleSignature.confidenceLabelEs}); se necesita que '
           'se sostenga para confirmarlo.',
         );
@@ -474,6 +474,9 @@ class NutritionReadinessEngine {
         if (finalWindow != null && r.id == finalWindow.id) finalWindow else r,
     ];
 
+    // ── 9. Tendencia de los canales nativos (única lectura de N/P/K) ────
+    final List<NutrientTrend> trends = nativeTrends(input.history, input.now);
+
     final ({String headline, String detail}) copy = _copyFor(
       state: state,
       input: input,
@@ -484,6 +487,7 @@ class NutritionReadinessEngine {
       window: window,
       conditions: conditions,
       priorities: priorities,
+      trends: trends,
       upcoming: upcoming,
       possible: possible,
       recentlyUnattended: recentlyUnattended,
@@ -514,6 +518,7 @@ class NutritionReadinessEngine {
           : null,
       upcomingWindowLabelEs: upcoming?.stageLabelEs,
       upcomingWindowInDays: upcoming?.inDays,
+      trends: List<NutrientTrend>.unmodifiable(trends),
       reasons: List<String>.unmodifiable(reasons),
       limitations: List<String>.unmodifiable(limitations),
       guideAudit: audit,
@@ -525,6 +530,43 @@ class NutritionReadinessEngine {
       windows: List<NutritionWindowRecord>.unmodifiable(records),
       changedWindows: List<NutritionWindowRecord>.unmodifiable(changed),
     );
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // TENDENCIAS NATIVAS
+  // ═════════════════════════════════════════════════════════════════════════
+
+  /// Tendencia de 7 días de N, P y K a partir del historial, en ese orden.
+  /// Solo entran lecturas con bandera de presencia: un canal ausente no
+  /// fabrica un cero (Guía v0.4, §37.9).
+  static List<NutrientTrend> nativeTrends(
+    List<BioGTelemetry> history,
+    DateTime now,
+  ) {
+    List<({DateTime at, double value})> pick(
+      bool Function(BioGTelemetry) has,
+      num Function(BioGTelemetry) value,
+    ) => <({DateTime at, double value})>[
+      for (final BioGTelemetry t in history)
+        if (has(t)) (at: t.timestamp, value: value(t).toDouble()),
+    ];
+    return <NutrientTrend>[
+      NutrientTrend.compute(
+        nutrient: AgroMetricKey.n,
+        samples: pick((t) => t.hasNitrogenData, (t) => t.n),
+        now: now,
+      ),
+      NutrientTrend.compute(
+        nutrient: AgroMetricKey.p,
+        samples: pick((t) => t.hasPhosphorusData, (t) => t.p),
+        now: now,
+      ),
+      NutrientTrend.compute(
+        nutrient: AgroMetricKey.k,
+        samples: pick((t) => t.hasPotassiumData, (t) => t.k),
+        now: now,
+      ),
+    ];
   }
 
   // ═════════════════════════════════════════════════════════════════════════
@@ -631,8 +673,7 @@ class NutritionReadinessEngine {
     final List<String> evidence = <String>[
       ...signature.evidenceEs,
       if (typical != null)
-        'Respuesta habitual de este sitio: ${_fmtZ(typical)} MAD; esta firma: '
-            '${_fmtZ(signature.ecPeakMad)} MAD.',
+        _compareWithTypicalEs(signature.ecPeakMad, typical),
     ];
 
     if (following) {
@@ -647,8 +688,8 @@ class NutritionReadinessEngine {
         typicalEcPeakMad: typical,
         evidenceEs: evidence,
         summaryEs:
-            'Estoy observando la respuesta del suelo. La carga iónica de la zona '
-            'radicular subió de forma compatible con una fertilización '
+            'Estoy observando la respuesta del suelo. Las sales de la zona de '
+            'raíces subieron de forma compatible con una fertilización '
             '(${signature.kind.labelEs.toLowerCase()}, confianza '
             '${signature.confidenceLabelEs}); la observación sigue '
             '${left <= 0 ? 'unas horas más' : left == 1 ? 'un día más' : '$left días más'} '
@@ -1129,6 +1170,7 @@ class NutritionReadinessEngine {
     required NutritionWindowRecord? window,
     required NutritionConditionCheck conditions,
     required List<NutrientStagePriority> priorities,
+    required List<NutrientTrend> trends,
     required _Upcoming? upcoming,
     required bool possible,
     required NutritionWindowRecord? recentlyUnattended,
@@ -1139,8 +1181,8 @@ class NutritionReadinessEngine {
         return (
           headline: 'Respuesta compatible con fertilización detectada',
           detail: response?.summaryEs ??
-              'Estoy observando la respuesta del suelo. La carga iónica de la '
-                  'zona radicular subió de forma compatible con una fertilización; '
+              'Estoy observando la respuesta del suelo. Las sales de la zona de '
+                  'raíces subieron de forma compatible con una fertilización; '
                   'la ventana de «$stage» queda atendida sin que registres nada.',
         );
       case NutritionState.actionWindow:
@@ -1159,7 +1201,7 @@ class NutritionReadinessEngine {
                 'La etapa «$stage» ya demanda ${focus.labelEs.toLowerCase()}, '
                 'pero las condiciones del suelo aún no son ideales: '
                 '${conditions.blockersEs.join(' ')}'
-                '${possible ? ' Hay además un cambio en la zona radicular que estoy observando.' : ''}',
+                '${possible ? ' Hay además un cambio en la zona de raíces que estoy observando.' : ''}',
           );
         }
         return (
@@ -1168,9 +1210,14 @@ class NutritionReadinessEngine {
               'En unos días entra una etapa de alta demanda. Ten el producto listo.',
         );
       case NutritionState.learning:
+        final int? left = input.learning.isLearning ? input.learning.daysLeft : null;
         return (
-          headline: 'Aprendiendo esta zona',
-          detail: SiteLearningStatus.learningCopyEs,
+          headline: 'BIO-G está conociendo tu suelo',
+          detail: left == null || left <= 0
+              ? SiteLearningStatus.learningCopyEs
+              : 'Primeros días del sensor en esta zona: está construyendo la '
+                  'referencia de tu suelo. En $left día${left == 1 ? '' : 's'} '
+                  'las comparaciones y las tendencias serán confiables.',
         );
       case NutritionState.monitor:
         if (window != null &&
@@ -1198,27 +1245,87 @@ class NutritionReadinessEngine {
                 'la sonda o llegar con poca agua.',
           );
         }
+        // Sin ventana abierta: lo que importa es hacia dónde va el suelo. Si
+        // un nutriente que pesa en la etapa se mueve, ese es el titular; si
+        // todo está quieto, se dice con claridad que no hace falta nada.
+        final NutrientTrend? notable = _notableTrend(priorities, trends);
         final NutrientStagePriority? top = priorities.isEmpty ? null : priorities.first;
+        if (notable != null) {
+          final String stageNote = top != null && top.priority == NutritionPriority.medium
+              ? ' En «$stage» el ${top.labelEs.toLowerCase()} importa: ${_lowerFirst(top.rationaleEs)}'
+              : '';
+          return (
+            headline: notable.sentenceEs,
+            detail:
+                '${notable.detailEs} No hay ventana de aplicación abierta en '
+                '«$stage»; BIO-G sigue la tendencia y avisará al acercarse la '
+                'próxima.$stageNote',
+          );
+        }
         if (top != null && top.priority == NutritionPriority.medium) {
           return (
-            headline: '${top.labelEs} importante en esta etapa',
+            headline: 'Suelo estable, sin necesidades nutrimentales por ahora',
             detail:
-                '${top.rationaleEs} No hay ventana de aplicación abierta; BIO-G '
-                'sigue la tendencia de la zona radicular.',
+                'Las señales del suelo se mantienen estables en «$stage». El '
+                '${top.labelEs.toLowerCase()} importa en esta etapa '
+                '(${_lowerFirst(top.rationaleEs)}), pero no hay ventana de '
+                'aplicación abierta; BIO-G sigue la tendencia.',
           );
         }
         return (
-          headline: 'Sin ventana nutricional en «$stage»',
+          headline: 'Suelo estable, sin necesidades nutrimentales por ahora',
           detail:
-              'Ningún nutriente está en alta demanda ahora. BIO-G sigue las '
-              'tendencias del suelo y avisará al acercarse la próxima ventana.',
+              'En «$stage» ningún nutriente está en alta demanda y las señales '
+              'del suelo se mantienen estables. BIO-G sigue las tendencias y '
+              'avisará al acercarse la próxima ventana.',
         );
     }
   }
 
+  /// Nutriente que se mueve y además pesa en la etapa (prioridad media o
+  /// alta); si ninguno pesa, cualquiera que se mueva.
+  static NutrientTrend? _notableTrend(
+    List<NutrientStagePriority> priorities,
+    List<NutrientTrend> trends,
+  ) {
+    NutrientTrend? find(AgroMetricKey key) {
+      for (final NutrientTrend t in trends) {
+        if (t.nutrient == key && t.trend.isMoving) return t;
+      }
+      return null;
+    }
+    for (final NutrientStagePriority p in priorities) {
+      if (p.priority == NutritionPriority.low) continue;
+      final NutrientTrend? t = find(p.nutrient);
+      if (t != null) return t;
+    }
+    for (final NutrientTrend t in trends) {
+      if (t.trend.isMoving) return t;
+    }
+    return null;
+  }
+
+  static String _lowerFirst(String s) {
+    final String t = s.trim();
+    if (t.isEmpty) return t;
+    return t[0].toLowerCase() + t.substring(1);
+  }
+
   static String _pct(double v) => '${(v * 100).round()} %';
 
-  static String _fmtZ(double z) => (z >= 0 ? '+' : '') + z.toStringAsFixed(1);
+  /// Compara la magnitud de esta firma con la habitual del sitio en lenguaje
+  /// de campo; el número (MAD) se queda en los campos de la firma.
+  static String _compareWithTypicalEs(double peak, double typical) {
+    if (typical <= 0) return 'Es la primera respuesta comparable de este sitio.';
+    final double ratio = peak / typical;
+    if (ratio >= greaterResponseRatio) {
+      return 'La respuesta fue mayor que la habitual de este sitio.';
+    }
+    if (ratio <= minorResponseRatio) {
+      return 'La respuesta fue menor que la habitual de este sitio.';
+    }
+    return 'La respuesta fue parecida a la habitual de este sitio.';
+  }
 
   static String _fmtDate(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';

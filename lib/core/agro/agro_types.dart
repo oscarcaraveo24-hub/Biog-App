@@ -67,7 +67,9 @@ extension AgroMetricKeyX on AgroMetricKey {
       case AgroMetricKey.n:
       case AgroMetricKey.p:
       case AgroMetricKey.k:
-        return 'mg/kg';
+        // Señal nativa de la sonda: sin unidad química en pantalla (Guía
+        // v0.4, §8). «sensor» es lo que muestran los medidores.
+        return 'sensor';
     }
   }
 }
@@ -213,7 +215,7 @@ class AgroMetricEval {
     return AgroMetricEval(
       band: AgroBand.unknown,
       score01: 0.0,
-      labelEs: present ? 'Señal nativa' : AgroBand.unknown.labelEs,
+      labelEs: present ? 'Tendencia del sensor' : AgroBand.unknown.labelEs,
       value: present ? value : null,
       isNativeSignal: true,
     );

@@ -150,8 +150,8 @@ class QuickReportCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             const _SectionTitle(
-                              title: 'Lectura nutricional actual',
-                              subtitle: 'Resumen rápido NPK del lote',
+                              title: 'Tendencia nutrimental',
+                              subtitle: 'N, P y K del suelo en la escala del lote',
                             ),
                             const SizedBox(height: 14),
                             SizedBox(
@@ -164,10 +164,10 @@ class QuickReportCard extends StatelessWidget {
                                         channel: NpkChannel.n,
                                         percent: data.nPercent,
                                         title: 'Nitrógeno',
-                                        description: 'Estado actual del N',
+                                        description: 'Tendencia de N en 7 días',
                                         statusLabel: data.nStatus,
                                         centerValue: data.nValue.round(),
-                                        centerUnit: 'ppm',
+                                        centerUnit: 'sensor',
                                       ),
                                     ),
                                   ),
@@ -178,10 +178,10 @@ class QuickReportCard extends StatelessWidget {
                                         channel: NpkChannel.p,
                                         percent: data.pPercent,
                                         title: 'Fósforo',
-                                        description: 'Estado actual del P',
+                                        description: 'Tendencia de P en 7 días',
                                         statusLabel: data.pStatus,
                                         centerValue: data.pValue.round(),
-                                        centerUnit: 'ppm',
+                                        centerUnit: 'sensor',
                                       ),
                                     ),
                                   ),
@@ -192,10 +192,10 @@ class QuickReportCard extends StatelessWidget {
                                         channel: NpkChannel.k,
                                         percent: data.kPercent,
                                         title: 'Potasio',
-                                        description: 'Estado actual del K',
+                                        description: 'Tendencia de K en 7 días',
                                         statusLabel: data.kStatus,
                                         centerValue: data.kValue.round(),
-                                        centerUnit: 'ppm',
+                                        centerUnit: 'sensor',
                                       ),
                                     ),
                                   ),
@@ -213,8 +213,8 @@ class QuickReportCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               const _SectionTitle(
-                                title: 'Historial NPK · 7 días',
-                                subtitle: 'Tendencia reciente del lote',
+                                title: 'Historial N/P/K · 7 días',
+                                subtitle: 'Hacia dónde va cada señal del suelo',
                               ),
                               const SizedBox(height: 14),
                               Expanded(
@@ -240,8 +240,8 @@ class QuickReportCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             const _SectionTitle(
-                              title: 'Recomendación principal',
-                              subtitle: 'Acción sugerida por BIO-G',
+                              title: 'Manejo nutricional',
+                              subtitle: 'Lo que BIO-G decidió con etapa, guía y sensor',
                             ),
                             const SizedBox(height: 14),
                             Container(

@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/agronomic_event.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -415,6 +417,15 @@ class _HistoryScreenState extends State<HistoryScreen>
           rangeIndex: _renderedRangeIndex,
         );
 
+        // Tendencia N/P/K con el mismo vocabulario que el Panel: la decide el
+        // motor de nutrición (pura y memoizada); si aún no hay decisión, la
+        // tarjeta calcula el respaldo con la misma regla.
+        final NutritionDecision? nutritionForTrends =
+            runtime.isPlanted && !runtime.isGuideMode
+            ? (store.nutrition.decisionFor(runtime) ??
+                  store.nutritionDecisionAt(DateTime.now()))
+            : null;
+
         final HistorySeriesBundle prepared =
             _preparedSeries ??
             _seriesBuilder.buildSeriesBundle(
@@ -521,6 +532,15 @@ class _HistoryScreenState extends State<HistoryScreen>
                                 liveK: live?.hasPotassiumData == true
                                     ? live?.k.toDouble()
                                     : null,
+                                trendN: nutritionForTrends
+                                    ?.trendFor(AgroMetricKey.n)
+                                    ?.trend,
+                                trendP: nutritionForTrends
+                                    ?.trendFor(AgroMetricKey.p)
+                                    ?.trend,
+                                trendK: nutritionForTrends
+                                    ?.trendFor(AgroMetricKey.k)
+                                    ?.trend,
                               ),
                             if (_historyLoading)
                               const Positioned(

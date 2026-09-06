@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/features/reporting/quick_report_data.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 
@@ -251,7 +252,7 @@ class PdfReportBuilder {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: <pw.Widget>[
-        _sectionBar('SEÑALES NATIVAS N/P/K'),
+        _sectionBar('TENDENCIA NUTRIMENTAL (N/P/K)'),
         pw.SizedBox(height: 8),
         pw.Table(
           border: pw.TableBorder.all(color: _border, width: 0.5),
@@ -264,8 +265,8 @@ class PdfReportBuilder {
             pw.TableRow(
               decoration: const pw.BoxDecoration(color: _brand),
               children: <pw.Widget>[
-                _cell('Canal', header: true),
-                _cell('Señal nativa', header: true),
+                _cell('Nutriente', header: true),
+                _cell('Lectura del sensor', header: true),
                 _cell('Tendencia 7 días', header: true),
               ],
             ),
@@ -274,13 +275,12 @@ class PdfReportBuilder {
             _npkRow('Potasio (K)', data.kValue, data.kStatus, false),
           ],
         ),
-        pw.SizedBox(height: 6),
-        // Nota obligatoria junto a cualquier señal nativa (Guía v0.4, §8): la
-        // sonda deriva N/P/K de la conductividad; no son mg/kg de laboratorio.
+        pw.SizedBox(height: 4),
+        // Un renglón discreto junto a las lecturas (Guía v0.4, §8): el mismo
+        // texto que en la app.
         pw.Text(
-          'Datos nativos del sensor utilizados para seguimiento de tendencias. '
-          'No equivalen a un análisis de laboratorio.',
-          style: const pw.TextStyle(fontSize: 8, color: _ink),
+          kNativeSignalDisclaimerEs,
+          style: const pw.TextStyle(fontSize: 7, color: _subtle),
         ),
       ],
     );

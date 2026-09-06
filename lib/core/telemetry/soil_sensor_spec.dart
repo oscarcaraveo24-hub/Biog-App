@@ -68,7 +68,7 @@ class SoilChannelSpec {
   /// Unidad tal como sale del registro («0.1 %», «µS/cm», «0.1 pH»).
   final String rawUnit;
 
-  /// Unidad interna de la app («%», «°C», «mS/cm», «pH», «mg/kg (nativo)»).
+  /// Unidad interna de la app («%», «°C», «mS/cm», «pH», «sensor (nativo)»).
   final String appUnit;
 
   /// Factor que lleva el valor crudo del registro a la unidad de la app.
@@ -235,7 +235,7 @@ class SoilSensorSpec {
         channel: SoilChannel.nitrogen,
         registerHex: '0x0004',
         rawUnit: 'mg/kg (derivado)',
-        appUnit: 'mg/kg (nativo)',
+        appUnit: 'sensor (nativo)',
         rawToApp: 1.0,
         isDerived: true,
         plausibleMin: 0.0,
@@ -246,7 +246,7 @@ class SoilSensorSpec {
         channel: SoilChannel.phosphorus,
         registerHex: '0x0005',
         rawUnit: 'mg/kg (derivado)',
-        appUnit: 'mg/kg (nativo)',
+        appUnit: 'sensor (nativo)',
         rawToApp: 1.0,
         isDerived: true,
         plausibleMin: 0.0,
@@ -257,7 +257,7 @@ class SoilSensorSpec {
         channel: SoilChannel.potassium,
         registerHex: '0x0006',
         rawUnit: 'mg/kg (derivado)',
-        appUnit: 'mg/kg (nativo)',
+        appUnit: 'sensor (nativo)',
         rawToApp: 1.0,
         isDerived: true,
         plausibleMin: 0.0,

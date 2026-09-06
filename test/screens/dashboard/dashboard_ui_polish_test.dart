@@ -128,7 +128,7 @@ void main() {
 
       expect(data.npkTitle, 'Nutrición');
       expect(data.npkTag, isEmpty);
-      expect(data.npkSubtitle.toLowerCase(), contains('señal nativa'));
+      expect(data.npkSubtitle.toLowerCase(), contains('tendencia de n, p y k'));
       expect(data.npkSubtitle, isNot(contains('Bajo')));
       expect(data.npkSubtitle, isNot(contains('Alto')));
     });

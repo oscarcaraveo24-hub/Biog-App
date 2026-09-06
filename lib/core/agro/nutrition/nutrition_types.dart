@@ -887,6 +887,150 @@ class NutritionResponseEvaluation {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// TENDENCIA DE LOS CANALES NATIVOS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Dirección de la señal nativa de un nutriente en los últimos días.
+///
+/// Es la ÚNICA lectura que la app hace de N/P/K: hacia dónde va la señal,
+/// nunca cuánto hay (Guía v0.4, §2 y §8). Todas las pantallas —Panel, pantalla
+/// de nutrición, Historial, informes, eventos— usan este vocabulario.
+enum NativeTrend { rising, stable, falling, unknown }
+
+extension NativeTrendX on NativeTrend {
+  String get labelEs => switch (this) {
+    NativeTrend.rising => 'Al alza',
+    NativeTrend.stable => 'Estable',
+    NativeTrend.falling => 'A la baja',
+    NativeTrend.unknown => 'Sin tendencia aún',
+  };
+
+  bool get isKnown => this != NativeTrend.unknown;
+  bool get isMoving => this == NativeTrend.rising || this == NativeTrend.falling;
+}
+
+/// Tendencia reciente de un canal nativo (N, P o K).
+class NutrientTrend {
+  const NutrientTrend({
+    required this.nutrient,
+    required this.trend,
+    this.changePct,
+    this.samples = 0,
+    this.spanDays = 7,
+  });
+
+  final AgroMetricKey nutrient;
+  final NativeTrend trend;
+
+  /// Cambio relativo (%) de la mediana reciente contra la mediana previa.
+  /// Null cuando no hubo lecturas suficientes.
+  final double? changePct;
+
+  /// Lecturas con las que se calculó.
+  final int samples;
+
+  /// Ventana temporal comparada, en días.
+  final int spanDays;
+
+  /// Umbral de cambio relativo a partir del cual la señal «se mueve».
+  static const double kMovingThresholdPct = 8.0;
+
+  /// Lecturas mínimas por lado (reciente / previo) para hablar de tendencia.
+  static const int kMinSamplesPerSide = 3;
+
+  String get labelEs => nutrient.labelEs;
+
+  /// «N», «P», «K».
+  String get symbolEs => switch (nutrient) {
+    AgroMetricKey.n => 'N',
+    AgroMetricKey.p => 'P',
+    AgroMetricKey.k => 'K',
+    _ => nutrient.name.toUpperCase(),
+  };
+
+  /// «N al alza», «P estable», «K a la baja», «N sin tendencia aún».
+  String get chipEs => '$symbolEs ${trend.labelEs.toLowerCase()}';
+
+  /// Frase completa para encabezados: «Tendencia al alza en nitrógeno».
+  String get sentenceEs {
+    final String n = nutrient.labelEs.toLowerCase();
+    return switch (trend) {
+      NativeTrend.rising => 'Tendencia al alza en $n',
+      NativeTrend.falling => 'Tendencia a la baja en $n',
+      NativeTrend.stable => '$labelEs estable',
+      NativeTrend.unknown => 'Sin tendencia de $n todavía',
+    };
+  }
+
+  /// Detalle con la magnitud, para la pantalla de nutrición.
+  String get detailEs {
+    final String n = nutrient.labelEs.toLowerCase();
+    final String pct = changePct == null
+        ? ''
+        : ' (${changePct! >= 0 ? '+' : ''}${changePct!.round()} % en $spanDays días)';
+    return switch (trend) {
+      NativeTrend.rising => 'La señal de $n viene subiendo$pct.',
+      NativeTrend.falling => 'La señal de $n viene bajando$pct.',
+      NativeTrend.stable => 'La señal de $n se mantiene estable$pct.',
+      NativeTrend.unknown =>
+        'Todavía no hay lecturas suficientes para hablar de tendencia de $n.',
+    };
+  }
+
+  /// Calcula la tendencia comparando la mediana de las últimas 48 h contra la
+  /// mediana de los días previos dentro de [spanDays]. Puro.
+  static NutrientTrend compute({
+    required AgroMetricKey nutrient,
+    required List<({DateTime at, double value})> samples,
+    required DateTime now,
+    int spanDays = 7,
+  }) {
+    final DateTime from = now.subtract(Duration(days: spanDays));
+    final DateTime split = now.subtract(const Duration(hours: 48));
+    final List<double> recent = <double>[];
+    final List<double> previous = <double>[];
+    for (final ({DateTime at, double value}) s in samples) {
+      if (s.at.isBefore(from) || s.at.isAfter(now) || !s.value.isFinite) continue;
+      (s.at.isBefore(split) ? previous : recent).add(s.value);
+    }
+    final int total = recent.length + previous.length;
+    if (recent.length < kMinSamplesPerSide || previous.length < kMinSamplesPerSide) {
+      return NutrientTrend(
+        nutrient: nutrient,
+        trend: NativeTrend.unknown,
+        samples: total,
+        spanDays: spanDays,
+      );
+    }
+    final double a = _median(recent);
+    final double b = _median(previous);
+    final double base = b.abs() < 1e-6 ? 1e-6 : b.abs();
+    final double pct = (a - b) / base * 100.0;
+    final NativeTrend t = pct >= kMovingThresholdPct
+        ? NativeTrend.rising
+        : (pct <= -kMovingThresholdPct ? NativeTrend.falling : NativeTrend.stable);
+    return NutrientTrend(
+      nutrient: nutrient,
+      trend: t,
+      changePct: pct,
+      samples: total,
+      spanDays: spanDays,
+    );
+  }
+
+  static double _median(List<double> values) {
+    final List<double> v = List<double>.of(values)..sort();
+    final int n = v.length;
+    return n.isOdd ? v[n ~/ 2] : (v[n ~/ 2 - 1] + v[n ~/ 2]) / 2.0;
+  }
+}
+
+/// Texto pequeño que acompaña a cualquier lectura N/P/K: un solo renglón,
+/// discreto, y el mismo en toda la app.
+const String kNativeSignalDisclaimerEs =
+    'Tendencia del sensor · orientativa, no sustituye un análisis de suelo';
+
+// ═══════════════════════════════════════════════════════════════════════════
 // DECISIÓN
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -916,6 +1060,7 @@ class NutritionDecision {
     this.learningDaysLeft,
     this.upcomingWindowLabelEs,
     this.upcomingWindowInDays,
+    this.trends = const <NutrientTrend>[],
     this.reasons = const <String>[],
     this.limitations = const <String>[],
     this.guideAudit = GuideAuditStatus.pending,
@@ -983,6 +1128,9 @@ class NutritionDecision {
   final String? upcomingWindowLabelEs;
   final int? upcomingWindowInDays;
 
+  /// Tendencia reciente de cada canal nativo (N, P, K), en ese orden.
+  final List<NutrientTrend> trends;
+
   /// Trazabilidad: por qué se decidió esto.
   final List<String> reasons;
 
@@ -1008,6 +1156,49 @@ class NutritionDecision {
   /// Prioridad más alta de la etapa (la primera de la lista ordenada).
   NutrientStagePriority? get topPriority =>
       priorities.isEmpty ? null : priorities.first;
+
+  /// Etiqueta corta para pantalla, afinada a lo que el agricultor debe leer
+  /// de un vistazo: «Atendida» cuando el sensor ya vio la respuesta, «Sin
+  /// evidencia» los días siguientes a un cierre sin ella, «Estable» en
+  /// seguimiento tranquilo; en los demás estados, la del estado.
+  String get tagEs {
+    if (state != NutritionState.monitor) return state.tagEs;
+    if (window?.outcome == NutritionWindowOutcome.attendedDetected) {
+      return 'Atendida';
+    }
+    if (recentlyUnattendedWindow != null) return 'Sin evidencia';
+    return 'Estable';
+  }
+
+  NutrientTrend? trendFor(AgroMetricKey nutrient) {
+    for (final NutrientTrend t in trends) {
+      if (t.nutrient == nutrient) return t;
+    }
+    return null;
+  }
+
+  /// «N al alza · P estable · K estable». Vacío sin tendencias conocidas.
+  String get trendSummaryEs {
+    final List<String> parts = <String>[
+      for (final NutrientTrend t in trends)
+        if (t.trend.isKnown) t.chipEs,
+    ];
+    return parts.join(' · ');
+  }
+
+  /// La tendencia que más importa ahora: un nutriente que se mueve y además
+  /// pesa en la etapa (prioridad media o alta). Null si nada se mueve.
+  NutrientTrend? get notableTrend {
+    for (final NutrientStagePriority p in priorities) {
+      if (p.priority == NutritionPriority.low) continue;
+      final NutrientTrend? t = trendFor(p.nutrient);
+      if (t != null && t.trend.isMoving) return t;
+    }
+    for (final NutrientTrend t in trends) {
+      if (t.trend.isMoving) return t;
+    }
+    return null;
+  }
 
   /// Identidad estable de la decisión: qué se decidió, no cuándo.
   ///

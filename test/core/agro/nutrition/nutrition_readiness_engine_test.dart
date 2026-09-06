@@ -208,6 +208,41 @@ void main() {
       expect(d.window, isNull);
       expect(d.recommendation, isNull);
       expect(d.scoreFactor, 1.0);
+      expect(d.trends.length, 3);
+      expect(d.trends.every((t) => t.trend == NativeTrend.unknown), isTrue,
+          reason: 'sin historial no hay tendencia');
+      expect(d.headlineEs, 'Suelo estable, sin necesidades nutrimentales por ahora');
+    });
+
+    test('con historial plano el suelo se declara estable; si N sube, lo dice', () {
+      final DateTime now = _t0.add(const Duration(days: 8));
+      final NutritionDecision flat = NutritionReadinessEngine.evaluate(
+        _input(now: now, targets: _quiet, history: _history(hours: 24 * 8)),
+      )!.decision;
+      expect(flat.trendFor(AgroMetricKey.n)?.trend, NativeTrend.stable);
+      expect(flat.trendSummaryEs, 'N estable · P estable · K estable');
+      expect(flat.notableTrend, isNull);
+      expect(flat.headlineEs, 'Suelo estable, sin necesidades nutrimentales por ahora');
+
+      // La señal de N sube 30 % en las últimas 48 h (P y K siguen la CE,
+      // pero aquí se inyecta solo N para aislar la lectura).
+      final List<BioGTelemetry> rising = _history(hours: 24 * 8)
+          .map(
+            (t) => t.timestamp.isAfter(now.subtract(const Duration(hours: 48)))
+                ? t.copyWith(n: t.n * 1.3)
+                : t,
+          )
+          .toList();
+      final NutritionDecision d = NutritionReadinessEngine.evaluate(
+        _input(now: now, targets: _quiet, history: rising),
+      )!.decision;
+      final NutrientTrend n = d.trendFor(AgroMetricKey.n)!;
+      expect(n.trend, NativeTrend.rising);
+      expect(n.changePct, greaterThan(NutrientTrend.kMovingThresholdPct));
+      expect(d.notableTrend?.nutrient, AgroMetricKey.n);
+      expect(d.headlineEs, 'Tendencia al alza en nitrógeno');
+      expect(d.detailEs, contains('viene subiendo'));
+      expect(d.state, NutritionState.monitor, reason: 'una tendencia no abre ventana');
     });
   });
 

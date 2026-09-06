@@ -248,7 +248,7 @@ class FertilizationSignatureScanner {
       return _empty(
         ScanObservability.noReadings,
         'No hubo lecturas de la sonda durante la ventana: no se puede decir '
-        'qué ocurrió en la zona radicular.',
+        'qué ocurrió en la zona de raíces.',
       );
     }
     final List<BioGTelemetry> withEc =
@@ -418,11 +418,13 @@ class FertilizationSignatureScanner {
       'Lecturas en la ventana: ${inRange.length}; utilizables para CE: '
           '${usable.length}; cobertura temporal ${(coverage * 100).round()} %.',
       normalize
-          ? 'Canal primario: carga iónica normalizada por humedad (CE / VWC).'
-          : 'Canal primario: CE bruta (sin humedad suficiente para normalizar; '
-              'un riego con agua sola puede confundirse con fertilización).',
+          ? 'Las sales se leyeron descontando el agua de riego, para no confundir '
+              'un riego con una fertilización.'
+          : 'Sin lectura de humedad suficiente: las sales se leyeron sin descontar '
+              'el agua, así que un riego con agua sola podría parecer fertilización.',
       if (r.siteTypicalEcPeakMad != null)
-        'Respuesta habitual del sitio: ${_fmtZ(r.siteTypicalEcPeakMad!)} MAD.',
+        'BIO-G ya conoce la respuesta habitual de este sitio y la usa para '
+            'comparar la magnitud.',
       if (baselineLess > 0)
         'Lecturas sin referencia previa suficiente: '
             '${(baselineLess * 100).round()} %.',
@@ -515,18 +517,19 @@ class FertilizationSignatureScanner {
       maxConfidence: 1.0,
     );
 
+    // Evidencia en lenguaje de campo: qué se vio y cuándo. Las magnitudes
+    // estadísticas (MAD) viven en los campos numéricos de la firma, no en el
+    // texto que lee el agricultor.
     final List<String> evidence = <String>[
-      'Carga iónica ${normalize ? 'normalizada' : 'bruta'}: '
-          '${_fmtZ(ecPeakMad)} MAD sobre la referencia previa '
-          '(${post.length} lecturas tras el primer salto).',
-      if (ecRawPeakMad != null && normalize)
-        'CE bruta: ${_fmtZ(ecRawPeakMad)} MAD.',
+      '${_magnitudeEs(ecPeakMad)} de las sales en la zona de raíces '
+          '${normalize ? 'una vez descontada el agua de riego' : '(sin descontar el agua: no hubo lectura de humedad suficiente)'}, '
+          'sostenida en ${post.length} lecturas después del primer salto.',
       'Primer salto el ${_fmtDateTime(first.at)}'
-          '${group.length > 1 ? '; ${group.length} saltos relacionados agrupados en una sola firma (último: ${_fmtDateTime(last.at)}).' : '.'}',
+          '${group.length > 1 ? '; ${group.length} aportes relacionados leídos como una sola aplicación (último: ${_fmtDateTime(last.at)}).' : '.'}',
       if (vwcDelta != null)
-        'Humedad: ${vwcDelta >= 0 ? '+' : ''}${vwcDelta.toStringAsFixed(1)} '
-            'puntos de VWC alrededor del salto → ${context.labelEs}.',
-      if (vwcDelta == null) 'Humedad: ${context.labelEs}.',
+        'Humedad del suelo ${vwcDelta >= 0 ? '+' : ''}${vwcDelta.toStringAsFixed(1)} '
+            'puntos alrededor del salto: ${context.labelEs.toLowerCase()}.',
+      if (vwcDelta == null) 'Humedad del suelo: ${context.labelEs.toLowerCase()}.',
       _followLine('N', nZ),
       _followLine('P', pZ),
       _followLine('K', kZ),
@@ -689,12 +692,12 @@ class FertilizationSignatureScanner {
       kFollowMad: kZ,
       vwcDeltaPct: vwcDelta,
       evidenceEs: <String>[
-        'Subida gradual de la carga iónica: ${_fmtZ(zGradual)} MAD en las '
-            'últimas 48 h respecto al inicio de la ventana, sin escalón brusco. '
-            'Patrón compatible con urea u otra fuente de liberación lenta.',
+        '${_magnitudeEs(zGradual)} gradual de las sales en la zona de raíces a lo '
+            'largo de varios días, sin un salto brusco: es el patrón de la urea '
+            'y de otras fuentes de liberación lenta.',
         if (vwcDelta != null)
-          'Humedad: ${vwcDelta >= 0 ? '+' : ''}${vwcDelta.toStringAsFixed(1)} '
-              'puntos de VWC entre inicio y final → ${context.labelEs}.',
+          'Humedad del suelo ${vwcDelta >= 0 ? '+' : ''}${vwcDelta.toStringAsFixed(1)} '
+              'puntos entre inicio y final: ${context.labelEs.toLowerCase()}.',
         _followLine('N', nZ),
         _followLine('P', pZ),
         _followLine('K', kZ),
@@ -956,7 +959,7 @@ class FertilizationSignatureScanner {
             '(confianza ${b.confidenceLabelEs}, ${b.kind.labelEs.toLowerCase()}).';
       }
       if (b.isPossible) {
-        return 'Hay un cambio en la zona radicular que podría corresponder a '
+        return 'Hay un cambio en la zona de raíces que podría corresponder a '
             'una fertilización; hacen falta más lecturas para confirmarlo.';
       }
     }
@@ -973,12 +976,23 @@ class FertilizationSignatureScanner {
 
   static String _followLine(String channel, double? z) {
     if (z == null) return '';
-    final bool follows = z >= 1.0;
-    return 'Canal $channel nativo: ${_fmtZ(z)} MAD '
-        '(${follows ? 'acompaña el salto' : 'no acompaña'}; consistencia, no confirmación).';
+    final String name = switch (channel) {
+      'N' => 'nitrógeno',
+      'P' => 'fósforo',
+      _ => 'potasio',
+    };
+    return z >= 1.0
+        ? 'La señal de $name acompañó la subida.'
+        : 'La señal de $name no acompañó la subida (se toma como consistencia, no como confirmación).';
   }
 
-  static String _fmtZ(double z) => (z >= 0 ? '+' : '') + z.toStringAsFixed(1);
+  /// «Subida fuerte» / «Subida clara» / «Subida leve» según la magnitud en
+  /// MAD, para no mostrar estadística al agricultor.
+  static String _magnitudeEs(double z) {
+    if (z >= strongMad * 2) return 'Subida fuerte';
+    if (z >= strongMad) return 'Subida clara';
+    return 'Subida leve';
+  }
 
   static String _fmtDateTime(DateTime d) {
     final String dd = d.day.toString().padLeft(2, '0');

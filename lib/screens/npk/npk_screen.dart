@@ -9,9 +9,10 @@
 //      autoridad; aquí no se interpreta ninguna lectura.
 //   2. Las señales nativas N/P/K de la sonda como TENDENCIA, en la escala del
 //      propio sitio: sin objetivo, sin «bajo/alto», sin dosis derivada.
-//   3. La nota que acompaña siempre a esas señales: son datos nativos del
-//      sensor, derivados de la conductividad; no equivalen a un análisis de
-//      laboratorio.
+//   3. Un solo renglón discreto que acompaña a esas señales
+//      (`kNativeSignalDisclaimerEs`): son tendencias del sensor, orientativas.
+//      El vocabulario de tendencia («al alza», «estable», «a la baja») es el
+//      mismo que usa el motor en todas las pantallas (`NutrientTrend`).
 //
 // LO QUE YA NO EXISTE AQUÍ (y no debe volver): topes ppm por cultivo, rangos
 // objetivo por etapa sobre la lectura, dosis calculadas desde la sonda,
@@ -31,10 +32,9 @@ import 'package:bio_g/widgets/npk/npk_gauge_card.dart';
 
 enum InsightTone { ok, warn, bad }
 
-/// Nota obligatoria junto a cualquier señal nativa N/P/K (Guía v0.4, §8).
-const String kNativeSignalNoteEs =
-    'Datos nativos del sensor utilizados para seguimiento de tendencias. No '
-    'equivalen a un análisis de laboratorio.';
+/// Renglón discreto junto a las señales N/P/K (Guía v0.4, §8). Vive en
+/// `nutrition_types.dart` para que sea el mismo en toda la app.
+const String kNativeSignalNoteEs = kNativeSignalDisclaimerEs;
 
 class NpkScreen extends StatefulWidget {
   const NpkScreen({super.key});
@@ -66,9 +66,23 @@ class _NpkScreenState extends State<NpkScreen> {
         identical(store, _boundStore) &&
         telemetryDeviceId == _boundTelemetryDeviceId;
     if (sameBinding) return;
+    // La memoria nutricional (libro de ventanas, historial) se carga fuera
+    // del frame; cuando termina, la cabecera debe repintarse.
+    _boundStore?.nutrition.removeListener(_onNutritionChanged);
+    store.nutrition.addListener(_onNutritionChanged);
     _boundStore = store;
     _boundTelemetryDeviceId = telemetryDeviceId;
     _history7dStream = store.watchHistory(const Duration(days: 7));
+  }
+
+  void _onNutritionChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _boundStore?.nutrition.removeListener(_onNutritionChanged);
+    super.dispose();
   }
 
   AgroMetricKey _metricKeyFor(NpkChannel ch) => switch (ch) {
@@ -79,15 +93,23 @@ class _NpkScreenState extends State<NpkScreen> {
 
   int _roundInt(double v) => v.isNaN ? 0 : v.round();
 
-  /// Tendencia: promedio de las 3 últimas lecturas contra las 3 anteriores.
-  double? _trendPctFromSeries(List<double> series) {
-    if (series.length < 6) return null;
-    double avg(List<double> xs) =>
-        xs.isEmpty ? 0.0 : xs.reduce((a, b) => a + b) / xs.length;
-    final a = avg(series.sublist(series.length - 3));
-    final b = avg(series.sublist(series.length - 6, series.length - 3));
-    if (b.abs() < 0.0001) return null;
-    return ((a - b) / b) * 100.0;
+  /// Tendencia con el MISMO cálculo que el motor de nutrición (últimas 48 h
+  /// contra los días previos, medianas), para que Panel y pantalla digan lo
+  /// mismo.
+  NutrientTrend _trendFor(
+    AgroMetricKey nutrient,
+    List<({DateTime at, double value})> samples,
+    DateTime now,
+  ) => NutrientTrend.compute(nutrient: nutrient, samples: samples, now: now);
+
+  /// La del motor si ya sabe algo; si no (memoria aún cargando), la que se
+  /// calcula aquí con los 7 días de la pantalla.
+  NutrientTrend _preferKnown(
+    NutrientTrend? fromDecision,
+    NutrientTrend Function() fallback,
+  ) {
+    if (fromDecision != null && fromDecision.trend.isKnown) return fromDecision;
+    return fallback();
   }
 
   /// Estadística de la señal nativa en la ESCALA DEL SITIO.
@@ -99,7 +121,7 @@ class _NpkScreenState extends State<NpkScreen> {
     required NpkChannel channel,
     required BioGTelemetry? live,
     required List<double> series,
-    required double? trendPct,
+    required NutrientTrend trend,
   }) {
     final bool hasLive = live != null &&
         switch (channel) {
@@ -138,18 +160,15 @@ class _NpkScreenState extends State<NpkScreen> {
       avg7: avg7.isFinite ? _roundInt(avg7) : null,
       rangeMin: minV.isFinite ? _roundInt(minV) : null,
       rangeMax: maxV.isFinite ? _roundInt(maxV) : null,
-      avgTrendPct: trendPct,
+      trend: trend,
       gaugePercent: gaugePercent,
       scale: scale,
     );
   }
 
-  String _trendLabel(double? trendPct, {required bool hasLive}) {
+  String _trendLabel(NutrientTrend trend, {required bool hasLive}) {
     if (!hasLive) return 'Sin señal';
-    if (trendPct == null) return 'Señal nativa';
-    if (trendPct > 4) return 'Subiendo';
-    if (trendPct < -4) return 'Bajando';
-    return 'Estable';
+    return trend.trend.labelEs;
   }
 
   @override
@@ -211,10 +230,13 @@ class _NpkScreenState extends State<NpkScreen> {
                     final bool isPlanted = runtime.isPlanted && !isGuide;
                     final bool isPlanned = runtime.isPlanned;
 
-                    // La decisión la publica el Panel; aquí solo se lee. Si no
-                    // hay decisión vigente, la pantalla lo dice.
+                    // La decisión sale del coordinador del store (pura y
+                    // memoizada: segura en build); si aún no cargó su memoria,
+                    // vale la última publicada. Si no hay ninguna, la pantalla
+                    // lo dice.
                     final NutritionDecision? decision = isPlanted
-                        ? store.nutritionDecisionAt(now)
+                        ? (store.nutrition.decisionFor(runtime, now: now) ??
+                              store.nutritionDecisionAt(now))
                         : null;
 
                     // Una sola ordenación del historial por build.
@@ -223,30 +245,56 @@ class _NpkScreenState extends State<NpkScreen> {
                     final nSeries = <double>[];
                     final pSeries = <double>[];
                     final kSeries = <double>[];
+                    final nSamples = <({DateTime at, double value})>[];
+                    final pSamples = <({DateTime at, double value})>[];
+                    final kSamples = <({DateTime at, double value})>[];
                     for (final t in sortedHistory) {
                       // Solo lo que la sonda midió: ausencia no es cero.
-                      if (t.hasNitrogenData) nSeries.add(math.max(0.0, t.n.toDouble()));
-                      if (t.hasPhosphorusData) pSeries.add(math.max(0.0, t.p.toDouble()));
-                      if (t.hasPotassiumData) kSeries.add(math.max(0.0, t.k.toDouble()));
+                      if (t.hasNitrogenData) {
+                        final double v = math.max(0.0, t.n.toDouble());
+                        nSeries.add(v);
+                        nSamples.add((at: t.timestamp, value: v));
+                      }
+                      if (t.hasPhosphorusData) {
+                        final double v = math.max(0.0, t.p.toDouble());
+                        pSeries.add(v);
+                        pSamples.add((at: t.timestamp, value: v));
+                      }
+                      if (t.hasPotassiumData) {
+                        final double v = math.max(0.0, t.k.toDouble());
+                        kSeries.add(v);
+                        kSamples.add((at: t.timestamp, value: v));
+                      }
                     }
 
+                    // Si el motor ya calculó la tendencia, se reutiliza tal
+                    // cual; si no (sin decisión vigente), se calcula igual.
                     final n = _statsForChannel(
                       channel: NpkChannel.n,
                       live: live,
                       series: nSeries,
-                      trendPct: _trendPctFromSeries(nSeries),
+                      trend: _preferKnown(
+                        decision?.trendFor(AgroMetricKey.n),
+                        () => _trendFor(AgroMetricKey.n, nSamples, now),
+                      ),
                     );
                     final p = _statsForChannel(
                       channel: NpkChannel.p,
                       live: live,
                       series: pSeries,
-                      trendPct: _trendPctFromSeries(pSeries),
+                      trend: _preferKnown(
+                        decision?.trendFor(AgroMetricKey.p),
+                        () => _trendFor(AgroMetricKey.p, pSamples, now),
+                      ),
                     );
                     final k = _statsForChannel(
                       channel: NpkChannel.k,
                       live: live,
                       series: kSeries,
-                      trendPct: _trendPctFromSeries(kSeries),
+                      trend: _preferKnown(
+                        decision?.trendFor(AgroMetricKey.k),
+                        () => _trendFor(AgroMetricKey.k, kSamples, now),
+                      ),
                     );
 
                     final String stageLabel = isPlanted
@@ -281,7 +329,7 @@ class _NpkScreenState extends State<NpkScreen> {
                                   title: 'Nitrógeno',
                                   stats: n,
                                   statusLabel: _trendLabel(
-                                    n.avgTrendPct,
+                                    n.trend,
                                     hasLive: n.hasLive,
                                   ),
                                   ctx: ctx,
@@ -292,7 +340,7 @@ class _NpkScreenState extends State<NpkScreen> {
                                   title: 'Fósforo',
                                   stats: p,
                                   statusLabel: _trendLabel(
-                                    p.avgTrendPct,
+                                    p.trend,
                                     hasLive: p.hasLive,
                                   ),
                                   ctx: ctx,
@@ -303,7 +351,7 @@ class _NpkScreenState extends State<NpkScreen> {
                                   title: 'Potasio',
                                   stats: k,
                                   statusLabel: _trendLabel(
-                                    k.avgTrendPct,
+                                    k.trend,
                                     hasLive: k.hasLive,
                                   ),
                                   ctx: ctx,
@@ -366,7 +414,9 @@ class _NpkStats {
   final int? avg7;
   final int? rangeMin;
   final int? rangeMax;
-  final double? avgTrendPct;
+
+  /// Tendencia de 7 días con el vocabulario del motor.
+  final NutrientTrend trend;
   final double gaugePercent;
 
   /// Escala del sitio (máximo reciente × 1.15).
@@ -378,10 +428,12 @@ class _NpkStats {
     required this.avg7,
     required this.rangeMin,
     required this.rangeMax,
-    required this.avgTrendPct,
+    required this.trend,
     required this.gaugePercent,
     required this.scale,
   });
+
+  double? get avgTrendPct => trend.changePct;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -413,7 +465,7 @@ class _NutritionDecisionCard extends StatelessWidget {
   ({String tag, String headline, String detail}) _copy() {
     final d = ctx.decision;
     if (d != null) {
-      return (tag: d.state.tagEs, headline: d.headlineEs, detail: d.detailEs);
+      return (tag: d.tagEs, headline: d.headlineEs, detail: d.detailEs);
     }
     if (ctx.isGuide) {
       return (
@@ -421,7 +473,7 @@ class _NutritionDecisionCard extends StatelessWidget {
         headline: 'Nutrición sin interpretar',
         detail:
             'Sin saber qué cultivo es ni en qué etapa va no hay ventana de N, '
-            'P o K que abrir. Las señales de abajo se muestran como tendencia.',
+            'P o K que abrir. Abajo ves hacia dónde va cada señal de tu suelo.',
       );
     }
     if (ctx.isPlanned) {
@@ -446,8 +498,8 @@ class _NutritionDecisionCard extends StatelessWidget {
       tag: 'Genérico',
       headline: 'Asigna un cultivo para ver la nutrición',
       detail:
-          'Sin cultivo no hay etapa, y sin etapa no hay ventana de manejo. Las '
-          'señales nativas N/P/K se muestran como tendencia.',
+          'Sin cultivo no hay etapa, y sin etapa no hay ventana de manejo. '
+          'Abajo ves hacia dónde va cada señal de tu suelo.',
     );
   }
 
@@ -457,6 +509,7 @@ class _NutritionDecisionCard extends StatelessWidget {
     final accent = _accent(d);
     final copy = _copy();
     final List<String> chips = <String>[
+      if (d != null && d.trendSummaryEs.isNotEmpty) d.trendSummaryEs,
       if (d != null && d.window != null)
         'Ventana ${d.window!.nutrientsLabelEs}: ${_outcomeShort(d.window!)}',
       if (d != null && d.unattendedCriticalWindows > 0)
@@ -1029,9 +1082,21 @@ class _NpkTabContent extends StatelessWidget {
       action = 'Respuesta compatible con fertilización detectada. Estoy '
           'observando la respuesta del suelo; no hace falta que registres nada.';
     } else if (priority != null) {
-      action = priority.priority == NutritionPriority.high
-          ? 'La etapa demanda $nutrientName; la ventana la lleva la tarjeta de arriba.'
-          : 'Sin ventana de aplicación de $nutrientName en esta etapa.';
+      if (priority.priority == NutritionPriority.high) {
+        action = 'La etapa demanda $nutrientName; la ventana la lleva la tarjeta de arriba.';
+      } else if (stats.hasLive && stats.trend.trend.isKnown) {
+        // Sin ventana: lo útil es hacia dónde va la señal de este nutriente.
+        action = switch (stats.trend.trend) {
+          NativeTrend.rising =>
+            'Sin necesidad de aplicar $nutrientName ahora: la señal viene al alza.',
+          NativeTrend.falling =>
+            'Sin ventana de aplicación de $nutrientName en esta etapa; la señal '
+                'viene a la baja y BIO-G la sigue de cerca.',
+          _ => 'Sin necesidad de aplicar $nutrientName ahora: la señal se mantiene estable.',
+        };
+      } else {
+        action = 'Sin ventana de aplicación de $nutrientName en esta etapa.';
+      }
     } else if (ctx.isPlanned) {
       action = 'Úsalo como línea base antes de sembrar.';
     } else {
@@ -1045,10 +1110,10 @@ class _NpkTabContent extends StatelessWidget {
     final String description = priority?.rationaleEs.trim().isNotEmpty == true
         ? priority!.rationaleEs.trim()
         : ctx.isPlanned
-        ? 'Señal nativa de $nutrientName en pre-siembra: sirve como referencia '
-              'del punto antes de arrancar el ciclo.'
-        : 'Señal nativa de $nutrientName. Asigna un cultivo para que la etapa '
-              'diga cuándo importa.';
+        ? 'Lectura de $nutrientName en pre-siembra: es la referencia de tu '
+              'suelo antes de arrancar el ciclo.'
+        : 'Tendencia de $nutrientName en tu suelo. Asigna un cultivo para que '
+              'la etapa diga cuándo importa.';
 
     final String trendText = _trendSentence(stats, nutrientName);
 
@@ -1078,7 +1143,7 @@ class _NpkTabContent extends StatelessWidget {
                         child: NpkGaugeCard(
                           channel: channel,
                           percent: stats.gaugePercent,
-                          title: '$title · señal nativa',
+                          title: '$title · tendencia',
                           description: description,
                           showDescription: false,
                           // Sin objetivo: la sonda no sostiene «bajo/alto».
@@ -1086,8 +1151,8 @@ class _NpkTabContent extends StatelessWidget {
                           targetMax: null,
                           statusLabel: statusLabel,
                           centerValue: stats.level,
-                          centerUnit: stats.hasLive ? 'nativo' : '—',
-                          cropCapPpm: stats.scale,
+                          centerUnit: stats.hasLive ? 'sensor' : '—',
+                          scaleMax: stats.scale,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1189,7 +1254,7 @@ class _NpkTabContent extends StatelessWidget {
                         child: _MiniMetric(
                           accent: accent,
                           value: stats.hasLive ? '${stats.level}' : '--',
-                          unit: 'nativo',
+                          unit: 'sensor',
                           label: 'Ahora',
                         ),
                       ),
@@ -1202,7 +1267,7 @@ class _NpkTabContent extends StatelessWidget {
                         child: _MiniMetric(
                           accent: accent,
                           value: stats.avg7 == null ? '--' : '${stats.avg7}',
-                          unit: 'nativo',
+                          unit: 'sensor',
                           label: 'Promedio 7 días',
                           trendPct: stats.avgTrendPct,
                         ),
@@ -1218,7 +1283,7 @@ class _NpkTabContent extends StatelessWidget {
                           value: stats.rangeMin == null || stats.rangeMax == null
                               ? '--'
                               : '${stats.rangeMin}–${stats.rangeMax}',
-                          unit: 'nativo',
+                          unit: 'sensor',
                           label: 'Variación 7 días',
                         ),
                       ),
@@ -1235,12 +1300,12 @@ class _NpkTabContent extends StatelessWidget {
 
   static String _trendSentence(_NpkStats s, String nutrientName) {
     if (s.rangeMin == null || s.rangeMax == null) return '';
-    final String trend = s.avgTrendPct == null
-        ? ''
-        : ' (tendencia ${s.avgTrendPct! >= 0 ? '+' : ''}${s.avgTrendPct!.toStringAsFixed(1)} %)';
-    return 'En 7 días la señal nativa de $nutrientName se movió entre '
-        '${s.rangeMin} y ${s.rangeMax}$trend. Un salto sostenido junto con la '
-        'CE es lo que BIO-G lee como respuesta a una fertilización.';
+    final String range = s.rangeMin == s.rangeMax
+        ? 'se mantuvo en ${s.rangeMin}'
+        : 'se movió entre ${s.rangeMin} y ${s.rangeMax}';
+    return '${s.trend.detailEs} En 7 días la lectura $range. Una subida '
+        'sostenida junto con la CE es lo que BIO-G reconoce como respuesta a '
+        'una fertilización.';
   }
 }
 
