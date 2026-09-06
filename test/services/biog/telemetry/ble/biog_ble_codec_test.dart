@@ -126,6 +126,23 @@ void main() {
       expect(e.reading.hasNitrogenData, isTrue);
     });
 
+    test('la CE cruda del registro (µS/cm) se convierte UNA vez a mS/cm', () {
+      // Contrato del sensor (Guia v0.4, fase 3): la unica conversion de CE del
+      // sistema vive en `SoilSensorSpec`, y el codec la aplica en la frontera.
+      final e = decode(<String, Object?>{'ec_us': 1400});
+      expect(e.reading.hasEcData, isTrue);
+      expect(e.reading.ec, closeTo(1.4, 1e-9));
+    });
+
+    test('un valor fuera del rango plausible del contrato es dato AUSENTE', () {
+      // 25 000 µS/cm (25 mS/cm) esta por encima de lo que la sonda puede
+      // medir: sonda descalibrada o payload corrupto, nunca «suelo salino».
+      final e = decode(<String, Object?>{'sm': 34.5, 'ec_us': 25000, 'n': 5000});
+      expect(e.reading.hasEcData, isFalse);
+      expect(e.reading.hasNitrogenData, isFalse);
+      expect(e.reading.hasSoilMoistureData, isTrue);
+    });
+
     test('declara que el reloj no es del aparato', () {
       // El sobre compacto no trae hora de medicion: la pone el telefono.
       // Decir lo contrario seria fechar decisiones agronomicas con una hora

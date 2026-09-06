@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/agro/water/moisture_target_resolver.dart';
 import 'package:bio_g/core/agro/water/soil_profile_resolver.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
@@ -15,7 +14,12 @@ import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
 
-enum _NpkNutrient { n, p, k }
+/// Factores del simulador para derivar N/P/K nominales (mg/kg) de la CE en
+/// µS/cm. Imitan la mecánica de la sonda 7-en-1 (N/P/K = f(CE)); no son sus
+/// coeficientes de fábrica.
+const double _simNFactorPerMicroSiemens = 0.030;
+const double _simPFactorPerMicroSiemens = 0.012;
+const double _simKFactorPerMicroSiemens = 0.050;
 
 /// Temporary, sensor-only simulation of BioG hardware.
 ///
@@ -381,54 +385,6 @@ class SensorSimulator {
     );
   }
 
-  AgroMetricKey _metricKeyFor(_NpkNutrient n) {
-    switch (n) {
-      case _NpkNutrient.n:
-        return AgroMetricKey.n;
-      case _NpkNutrient.p:
-        return AgroMetricKey.p;
-      case _NpkNutrient.k:
-        return AgroMetricKey.k;
-    }
-  }
-
-  String? _resolvedCropKeyForDevice(BioGDevice device) {
-    final SeedInstall? seed = _seedForDevice(device.id);
-    if (seed == null) return null;
-    final String cropKey = _canonicalCropKey(seed.cropKey);
-    return cropKey.isEmpty ? null : cropKey;
-  }
-
-  double _targetPpmForStage(
-    StageTargets targets,
-    _NpkNutrient n, {
-    required String? cropKey,
-  }) {
-    final AgroRange? r = NutrientTargetRangeResolver.comparableRange(
-      nutrient: _metricKeyFor(n),
-      cropKey: cropKey,
-      targets: targets,
-    );
-    if (r == null) return 0.0;
-    return (r.optimalMin + r.optimalMax) / 2.0;
-  }
-
-  double _ampPpmForStage(
-    StageTargets targets,
-    _NpkNutrient n, {
-    required String? cropKey,
-  }) {
-    final AgroRange? r = NutrientTargetRangeResolver.comparableRange(
-      nutrient: _metricKeyFor(n),
-      cropKey: cropKey,
-      targets: targets,
-    );
-    if (r == null) return 3.0;
-    final double optWidthPpm = (r.optimalMax - r.optimalMin).abs();
-    final double base = math.max(3.0, optWidthPpm * 0.18);
-    return base.clamp(3.0, 10.0);
-  }
-
   double _smoothToward({
     required double prev,
     required double target,
@@ -466,8 +422,6 @@ class SensorSimulator {
 
     final double phase = (_phaseByDevice[deviceId] ?? 0.0) + 0.025;
     _phaseByDevice[deviceId] = phase;
-
-    final StageTargets? targets = _resolveStageTargets(device, now);
 
     final double airTempTarget =
         26.0 + 1.8 * math.sin(phase * 0.35) + noise(0.15);
@@ -574,57 +528,29 @@ class SensorSimulator {
       maxDelta: 0.025,
     );
 
-    final String? cropKey = _resolvedCropKeyForDevice(device);
+    // ── N/P/K: la sonda los DERIVA de la conductividad ────────────────────
+    //
+    // Hasta el NPK Interpretation Reset el simulador centraba N/P/K en el
+    // «target» de la etapa del cultivo. Eso escondía la naturaleza del dato: la
+    // sonda 7-en-1 no mide nutrientes, calcula tres funciones de la CE
+    // (coeficiente y offset por canal en sus registros 0x04E8–0x04FE). Aquí se
+    // imita esa mecánica —cada canal sigue a la CE con su propio factor y un
+    // poco de ruido— para que un salto de CE por fertirriego se vea también en
+    // N/P/K, que es exactamente lo que el motor de nutrición observa en una
+    // ventana de respuesta.
+    //
+    // Los factores son del simulador, NO los coeficientes reales de la sonda
+    // (esos se leen por Modbus en banco). Con CE entre 0.8 y 2.0 mS/cm dan
+    // N 24–60, P 10–24 y K 40–100 mg/kg nominales: el orden de magnitud que la
+    // sonda reporta en campo.
+    final double ecMicroSiemens = ec * 1000.0;
+    final double nTarget = ecMicroSiemens * _simNFactorPerMicroSiemens;
+    final double pTarget = ecMicroSiemens * _simPFactorPerMicroSiemens;
+    final double kTarget = ecMicroSiemens * _simKFactorPerMicroSiemens;
 
-    final double nTarget = targets == null
-        ? 60.0
-        : _targetPpmForStage(
-            targets,
-            _NpkNutrient.n,
-            cropKey: cropKey,
-          );
-    final double pTarget = targets == null
-        ? 30.0
-        : _targetPpmForStage(
-            targets,
-            _NpkNutrient.p,
-            cropKey: cropKey,
-          );
-    final double kTarget = targets == null
-        ? 70.0
-        : _targetPpmForStage(
-            targets,
-            _NpkNutrient.k,
-            cropKey: cropKey,
-          );
-
-    final double nAmp = targets == null
-        ? 3.0
-        : (_ampPpmForStage(
-                    targets,
-                    _NpkNutrient.n,
-                    cropKey: cropKey,
-                  ) *
-                  0.45)
-              .clamp(2.0, 5.0);
-    final double pAmp = targets == null
-        ? 2.0
-        : (_ampPpmForStage(
-                    targets,
-                    _NpkNutrient.p,
-                    cropKey: cropKey,
-                  ) *
-                  0.45)
-              .clamp(1.5, 4.0);
-    final double kAmp = targets == null
-        ? 3.0
-        : (_ampPpmForStage(
-                    targets,
-                    _NpkNutrient.k,
-                    cropKey: cropKey,
-                  ) *
-                  0.45)
-              .clamp(2.0, 5.0);
+    const double nAmp = 3.0;
+    const double pAmp = 1.5;
+    const double kAmp = 4.0;
 
     final double prevN = prev?.n.toDouble() ?? nTarget;
     final double prevP = prev?.p.toDouble() ?? pTarget;

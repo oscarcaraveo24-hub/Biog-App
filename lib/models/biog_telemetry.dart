@@ -1,6 +1,8 @@
 // lib/models/biog_telemetry.dart
 import 'package:flutter/foundation.dart';
 
+import 'package:bio_g/core/telemetry/soil_sensor_spec.dart';
+
 enum BioGDeviceStatus { pendingConfig, active, offline }
 
 enum BioGAlertSeverity { info, warning, critical }
@@ -255,6 +257,22 @@ class BioGTelemetry {
     return value;
   }
 
+  /// Misma regla de plausibilidad, para los canales que no pertenecen a la
+  /// sonda de suelo (aire, resistencia, batería) y que el códec BLE debe
+  /// filtrar igual que esta fábrica: el mismo payload corrupto no puede
+  /// entrar por BLE y rechazarse por HTTP.
+  static double? plausibleOrAbsent(double? value, double min, double max) =>
+      _plausible(value, min, max);
+
+  static const double kAirTempMinC = -50.0;
+  static const double kAirTempMaxC = 65.0;
+  static const double kAirHumidityMinPct = 0.0;
+  static const double kAirHumidityMaxPct = 100.0;
+  static const double kResistanceMin = 0.0;
+  static const double kResistanceMax = 10.0;
+  static const double kBatteryMinPct = 0.0;
+  static const double kBatteryMaxPct = 100.0;
+
   static BioGTelemetry? tryFromJson(Map<String, dynamic> json) {
     final String? deviceId = _firstString(<dynamic>[
       json['device_id'],
@@ -350,16 +368,35 @@ class BioGTelemetry {
     // ── Validación de plausibilidad física ────────────────────────────────
     // A partir de aquí se trabaja con los valores saneados. Lo que cae fuera
     // de rango pasa a ser `null` y, por tanto, dato ausente: nunca cero.
-    final double? vAirTempC = _plausible(airTempC, -50.0, 65.0);
-    final double? vAirHumidityPct = _plausible(airHumidityPct, 0.0, 100.0);
-    final double? vSoilMoisturePct = _plausible(soilMoisturePct, 0.0, 100.0);
-    final double? vSoilTempC = _plausible(soilTempC, -40.0, 80.0);
-    final double? vPh = _plausible(ph, 0.0, 14.0);
-    final double? vEc = _plausible(ec, 0.0, 20.0);
-    final double? vResistance = _plausible(resistance, 0.0, 10.0);
-    final double? vN = _plausible(n, 0.0, 2000.0);
-    final double? vP = _plausible(p, 0.0, 1000.0);
-    final double? vK = _plausible(k, 0.0, 3000.0);
+    final double? vAirTempC = _plausible(airTempC, kAirTempMinC, kAirTempMaxC);
+    final double? vAirHumidityPct = _plausible(
+      airHumidityPct,
+      kAirHumidityMinPct,
+      kAirHumidityMaxPct,
+    );
+    // Los límites de suelo viven en el contrato del sensor
+    // (`SoilSensorSpec`), que es el mismo que usa el códec BLE: una sola
+    // fuente para lo que la app considera físicamente posible.
+    final double? vSoilMoisturePct = _plausible(
+      soilMoisturePct,
+      SoilSensorSpec.kSoilMoistureMinPct,
+      SoilSensorSpec.kSoilMoistureMaxPct,
+    );
+    final double? vSoilTempC = _plausible(
+      soilTempC,
+      SoilSensorSpec.kSoilTempMinC,
+      SoilSensorSpec.kSoilTempMaxC,
+    );
+    final double? vPh = _plausible(ph, SoilSensorSpec.kPhMin, SoilSensorSpec.kPhMax);
+    final double? vEc = _plausible(
+      ec,
+      SoilSensorSpec.kEcMinMilliSiemens,
+      SoilSensorSpec.kEcMaxMilliSiemens,
+    );
+    final double? vResistance = _plausible(resistance, kResistanceMin, kResistanceMax);
+    final double? vN = _plausible(n, 0.0, SoilSensorSpec.kNitrogenMaxNative);
+    final double? vP = _plausible(p, 0.0, SoilSensorSpec.kPhosphorusMaxNative);
+    final double? vK = _plausible(k, 0.0, SoilSensorSpec.kPotassiumMaxNative);
 
     final bool? explicitHasNitrogenData = _asBool(
       json['has_nitrogen_data'] ?? json['hasNitrogenData'],
@@ -444,8 +481,8 @@ class BioGTelemetry {
           json['batteryPct'],
           json['battery_percent'],
         ]),
-        0.0,
-        100.0,
+        kBatteryMinPct,
+        kBatteryMaxPct,
       ),
       signalRssi: _firstNullableInt(<dynamic>[
         json['signal_rssi'],

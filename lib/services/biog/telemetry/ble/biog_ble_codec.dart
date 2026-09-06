@@ -12,6 +12,7 @@
 
 import 'dart:convert';
 
+import 'package:bio_g/core/telemetry/soil_sensor_spec.dart';
 import 'package:bio_g/core/telemetry/telemetry_contract.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 
@@ -44,6 +45,11 @@ class BioGBleCodec {
   /// Formato de entrada (JSON compacto del firmware):
   ///   `{"seq":12,"sm":34.5,"st":21.2,"ph":6.8,"ec":1.4,"n":40,"p":18,"k":95}`
   ///
+  /// `ec` viene en mS/cm; si el firmware prefiere reenviar el registro crudo
+  /// de la sonda, manda `ec_us` en µS/cm y la conversion la hace el contrato
+  /// del sensor (`SoilSensorSpec`), una sola vez. `probe` (opcional) declara
+  /// el modelo de sonda.
+  ///
   /// Reglas que NO se pueden relajar:
   ///
   ///  - **Metrica ausente NO es cero.** Lo que el sobre no trae se marca con su
@@ -64,21 +70,62 @@ class BioGBleCodec {
     final json = _decodeJsonObject(bytes);
     if (json == null) return null;
 
+    // Contrato de la sonda (Guia v0.4, fase 3): unidades, conversion unica de
+    // CE y plausibilidad viven en `SoilSensorSpec`. Si el firmware declara el
+    // modelo (`probe`), se usa su contrato; si no, el de la sonda de referencia.
+    final SoilSensorSpec spec =
+        SoilSensorSpec.byId((json['probe'] ?? json['probe_id'])?.toString()) ??
+        SoilSensorSpec.defaultSpec;
+
     // Se aceptan tanto la forma compacta como la larga: asi el mismo codec
     // sirve si el firmware crece y empieza a mandar nombres completos.
-    final double? soilMoisture = _double(json['sm'] ?? json['soil_moisture_pct']);
-    final double? soilTemp = _double(json['st'] ?? json['soil_temp_c']);
-    final double? ph = _double(json['ph']);
-    final double? ec = _double(json['ec']);
-    final double? n = _double(json['n']);
-    final double? p = _double(json['p']);
-    final double? k = _double(json['k']);
+    //
+    // Fuera del rango plausible del contrato, el canal se marca AUSENTE (null):
+    // una sonda descalibrada o un payload corrupto no se interpreta.
+    final double? soilMoisture = spec
+        .channelFor(SoilChannel.moisture)
+        ?.accept(_double(json['sm'] ?? json['soil_moisture_pct']));
+    final double? soilTemp = spec
+        .channelFor(SoilChannel.temperature)
+        ?.accept(_double(json['st'] ?? json['soil_temp_c']));
+    final double? ph = spec.channelFor(SoilChannel.ph)?.accept(_double(json['ph']));
 
-    // Presentes solo si el firmware los manda; hoy no los manda.
-    final double? airTemp = _double(json['at'] ?? json['air_temp_c']);
-    final double? airHumidity = _double(json['ah'] ?? json['air_humidity_pct']);
-    final double? resistance = _double(json['r'] ?? json['resistance']);
-    final double? batteryPct = _double(json['bat'] ?? json['battery_pct']);
+    // CE: el firmware puede mandarla ya en mS/cm (`ec`) o cruda del registro
+    // en µS/cm (`ec_us`). La conversion ocurre aqui, una sola vez.
+    final double? ecRawMicro = _double(json['ec_us'] ?? json['ec_uscm']);
+    final double? ec = ecRawMicro != null
+        ? spec.ecFromMicroSiemens(ecRawMicro)
+        : spec.channelFor(SoilChannel.ec)?.accept(_double(json['ec']));
+
+    // N/P/K: senales derivadas de la CE por la propia sonda. Se transportan
+    // tal cual, con su plausibilidad; la app nunca las interpreta como analisis.
+    final double? n = spec.channelFor(SoilChannel.nitrogen)?.accept(_double(json['n']));
+    final double? p = spec.channelFor(SoilChannel.phosphorus)?.accept(_double(json['p']));
+    final double? k = spec.channelFor(SoilChannel.potassium)?.accept(_double(json['k']));
+
+    // Presentes solo si el firmware los manda; hoy no los manda. Misma
+    // plausibilidad que `BioGTelemetry.tryFromJson`: lo implausible es
+    // ausente, por BLE igual que por HTTP.
+    final double? airTemp = BioGTelemetry.plausibleOrAbsent(
+      _double(json['at'] ?? json['air_temp_c']),
+      BioGTelemetry.kAirTempMinC,
+      BioGTelemetry.kAirTempMaxC,
+    );
+    final double? airHumidity = BioGTelemetry.plausibleOrAbsent(
+      _double(json['ah'] ?? json['air_humidity_pct']),
+      BioGTelemetry.kAirHumidityMinPct,
+      BioGTelemetry.kAirHumidityMaxPct,
+    );
+    final double? resistance = BioGTelemetry.plausibleOrAbsent(
+      _double(json['r'] ?? json['resistance']),
+      BioGTelemetry.kResistanceMin,
+      BioGTelemetry.kResistanceMax,
+    );
+    final double? batteryPct = BioGTelemetry.plausibleOrAbsent(
+      _double(json['bat'] ?? json['battery_pct']),
+      BioGTelemetry.kBatteryMinPct,
+      BioGTelemetry.kBatteryMaxPct,
+    );
 
     final int? sequence = _int(json['seq'] ?? json['sequenceNumber']);
     final String? errorCode = (json['err'] ?? json['error'])?.toString().trim();
