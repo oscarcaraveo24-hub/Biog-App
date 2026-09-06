@@ -354,8 +354,8 @@ class CropContextSupabaseSync {
     if (normalized == 'crop_nopal' ||
         normalized == 'nopal' ||
         normalized == 'orn_nopal') {
-      // `orn_nopal` es el id heredado y sigue vivo: lo reconocen npk_caps,
-      // crop_catalog y crop_registry, y hay una prueba que lo exige. Dejarlo
+      // `orn_nopal` es el id heredado y sigue vivo: lo reconocen crop_catalog
+      // y crop_registry, y hay una prueba que lo exige. Dejarlo
       // fuera habría arreglado el round-trip solo para las fichas nuevas.
       return 'crop_nopal';
     }

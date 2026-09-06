@@ -32,11 +32,36 @@ class BioGEngineVersions {
   /// foto de lo que ya hacía, para que los registros nuevos sean comparables.
   static const String events = '1.0.0';
 
-  /// Motor de score de suelo y nutrientes existente.
-  static const String agroScore = '1.0.0';
+  /// Motor de score de suelo.
+  ///
+  /// 2.0.0 — NPK Interpretation Reset (Guía oficial del nuevo motor
+  ///         nutricional v0.4, §4 y §6). N/P/K crudos salen del score (peso
+  ///         cero); una señal ausente sale del denominador en vez de valer 0 o
+  ///         0.5; la cobertura de evidencia se reporta aparte. MAJOR porque el
+  ///         mismo dato produce otro número y desaparece el score nutricional.
+  static const String agroScore = '2.0.0';
 
-  /// Planificador de fertilización existente.
+  /// Planificador de fertilización por déficit (raw → target → déficit ppm →
+  /// dosis). **Retirado del runtime** en el NPK Interpretation Reset; se
+  /// conserva la constante para poder leer registros antiguos que la citan.
+  /// El último código vivo está en el tag `legacy-npk-v1`.
   static const String fertilization = '1.1.0';
+
+  /// Motor de manejo nutricional (Nutrition Readiness Engine).
+  ///
+  /// 1.0.0 — Primera versión: estados LEARNING → MONITOR → PREPARE → ACTION
+  ///         WINDOW → RESPONSE WINDOW a partir de cultivo, etapa, guía
+  ///         auditada, reglas 3R, historial de aplicaciones y condiciones
+  ///         físicas. Nunca lee N/P/K de la sonda para decidir; solo los usa
+  ///         como firma de respuesta después de una aplicación registrada.
+  static const String nutrition = '1.0.0';
+
+  /// Detector de ventana de respuesta (firma multicanal EC + N/P/K + VWC).
+  ///
+  /// 1.0.0 — Baseline robusto (mediana/MAD) sobre ventana limpia previa,
+  ///         firmas ionicImmediate / ureaDelayed / mixed / unknown, veredicto
+  ///         compatible / menor / inconcluso / no comparable.
+  static const String responseWindow = '1.0.0';
 
   /// Versión del formato del registro auditable de recomendaciones.
   ///

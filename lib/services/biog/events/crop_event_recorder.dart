@@ -1,5 +1,6 @@
 import 'package:bio_g/core/agro/agronomic_event.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/core/notifications/notification_dispatcher.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
@@ -101,6 +102,7 @@ class CropEventRecorder {
       store.activeCropContext?.cropId,
       store.activeCropContext?.updatedAt.millisecondsSinceEpoch,
       BioGStore.irrigationDecisionKey(store.lastIrrigationDecision),
+      BioGStore.nutritionDecisionKey(store.lastNutritionDecision),
     ].join('|');
     if (signature == _lastSignature) return;
 
@@ -126,11 +128,19 @@ class CropEventRecorder {
         live.timestamp,
       );
 
+      // Autoridad única de la nutrición, con la misma regla. Sin decisión no
+      // se emiten eventos nutrimentales: aquí no se ve la etapa a fondo, ni la
+      // guía, ni el libro de ventanas, ni la firma que el sensor detectó.
+      final NutritionDecision? nutritionDecision = store.nutritionDecisionAt(
+        live.timestamp,
+      );
+
       final List<AgronomicEvent> events = _presenter.buildAgronomicEvents(
         store: store,
         runtime: runtime,
         telemetry: history,
         irrigationDecision: irrigationDecision,
+        nutritionDecision: nutritionDecision,
       );
 
       // El `userId` es lo que permite purgar este historial al cerrar sesión.

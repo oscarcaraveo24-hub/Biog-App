@@ -25,6 +25,7 @@ import 'package:bio_g/core/auth/auth_repository.dart';
 import 'package:bio_g/core/telemetry/telemetry_ingest_service.dart';
 import 'package:bio_g/core/weather/weather_snapshot_storage.dart';
 import 'package:bio_g/services/biog/events/crop_event_local_storage.dart';
+import 'package:bio_g/services/biog/nutrition/nutrition_local_storage.dart';
 import 'package:bio_g/services/biog/identity/active_device_store.dart';
 import 'package:bio_g/services/biog/storage/shared_prefs_crop_context_storage.dart';
 import 'package:bio_g/services/biog/storage/shared_prefs_yield_projection_storage.dart';
@@ -100,10 +101,12 @@ class AccountDeletionService {
     WeatherSnapshotStorage? weatherStorage,
     TelemetryIngestService? ingestService,
     RecommendationStore? recommendationStore,
+    NutritionLocalStorage? nutritionStorage,
     Future<void> Function()? clearPendingSync,
   }) : _auth = authRepository,
        _clearPendingSync = clearPendingSync,
        _cropEvents = cropEventStorage ?? CropEventLocalStorage(),
+       _nutrition = nutritionStorage ?? NutritionLocalStorage(),
        _telemetry = telemetryStorage ?? TelemetryLocalStorage(),
        _weather = weatherStorage ?? SharedPrefsWeatherSnapshotStorage(),
        _ingest = ingestService,
@@ -111,6 +114,10 @@ class AccountDeletionService {
 
   final AuthRepository _auth;
   final CropEventLocalStorage _cropEvents;
+
+  /// Libro de ventanas nutricionales y época de instalación
+  /// (`biog_nutrition.db`). Cada fila lleva `user_id`, igual que los eventos.
+  final NutritionLocalStorage _nutrition;
   final TelemetryLocalStorage _telemetry;
   final WeatherSnapshotStorage _weather;
   final TelemetryIngestService? _ingest;
@@ -252,6 +259,18 @@ class AccountDeletionService {
     } catch (_) {
       // Se sigue purgando el resto: un fallo parcial no debe abortar la
       // limpieza entera.
+    }
+
+    // La memoria del motor de nutrición va con el historial agronómico: misma
+    // regla de dueño, misma purga. Un fallo aquí tampoco aborta el resto.
+    try {
+      if (userId != null && userId.isNotEmpty) {
+        await _nutrition.deleteForUser(userId);
+      } else {
+        await _nutrition.deleteAll();
+      }
+    } catch (_) {
+      // Ídem.
     }
 
     for (final deviceId in deviceIds) {

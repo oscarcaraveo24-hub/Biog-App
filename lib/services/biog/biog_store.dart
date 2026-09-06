@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/notifications/notification_dispatcher.dart';
 import 'package:bio_g/core/telemetry/telemetry_ingest_service.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
@@ -11,6 +12,7 @@ import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/services/biog/events/crop_event_local_storage.dart';
 import 'package:bio_g/services/biog/events/crop_event_recorder.dart';
+import 'package:bio_g/services/biog/nutrition/nutrition_local_storage.dart';
 import 'package:bio_g/services/biog/sync/pending_sync_queue.dart';
 import 'package:bio_g/services/biog/telemetry/ble/ble_telemetry_transport.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -54,6 +56,15 @@ class BioGStore extends ChangeNotifier {
 
     _subs.add(
       _repo.watchActiveDevice().listen((v) {
+        if (activeDevice?.id != v?.id) {
+          // Las decisiones publicadas describen al equipo anterior: si
+          // sobrevivieran al cambio, el registro en segundo plano —que corre
+          // con la primera lectura del equipo nuevo, un cuadro antes de que el
+          // Panel republique— les colgaría eventos de riego y nutrición del
+          // equipo equivocado.
+          _lastIrrigationDecision = null;
+          _lastNutritionDecision = null;
+        }
         activeDevice = v;
         notifyListeners();
       }),
@@ -306,11 +317,17 @@ class BioGStore extends ChangeNotifier {
     // en las tiendas.
     final String? outgoingUserId = _currentUserId;
     unawaited(_cropEventRecorder.purgeForUser(outgoingUserId));
+    // La memoria nutricional (libro de ventanas, época de instalación) también
+    // es del usuario que sale.
+    if (outgoingUserId != null && outgoingUserId.isNotEmpty) {
+      unawaited(_nutritionStorage.deleteForUser(outgoingUserId));
+    }
 
     _currentUserId = null;
     // La decisión de riego es del usuario que sale. Si sobrevive, el registro
     // en segundo plano se la colgaría a los eventos del usuario entrante.
     _lastIrrigationDecision = null;
+    _lastNutritionDecision = null;
     _cropByDevice.clear();
     _yieldByDevice.clear();
     _alertsStateByDevice.clear();
@@ -479,6 +496,11 @@ class BioGStore extends ChangeNotifier {
   /// Memoria persistente de los eventos del cultivo.
   final CropEventRecorder _cropEventRecorder = CropEventRecorder();
 
+  /// Memoria persistente del motor de nutrición (libro de ventanas y época de
+  /// instalación). El coordinador del Panel escribe en ella; el store solo la
+  /// purga al cerrar sesión o quitar un dispositivo.
+  final NutritionLocalStorage _nutritionStorage = NutritionLocalStorage();
+
   /// Acceso de solo lectura al historial de eventos registrado.
   CropEventLocalStorage get cropEventStorage => _cropEventRecorder.storage;
 
@@ -554,6 +576,49 @@ class BioGStore extends ChangeNotifier {
     if (decision == null) return null;
     return '${decision.action.name}|${decision.urgency.name}';
   }
+
+  /// Última decisión publicada por `NutritionCoordinator`.
+  ///
+  /// Mismo puente y mismas razones que [lastIrrigationDecision]: el
+  /// coordinador vive en el Panel, el registro de eventos corre en segundo
+  /// plano, y sin este puente volvería a deducir la nutrición por su cuenta
+  /// desde N/P/K crudos —que es exactamente lo que el reset del motor
+  /// nutricional prohíbe (Guía v0.4, §2 y §9).
+  NutritionDecision? get lastNutritionDecision => _lastNutritionDecision;
+  NutritionDecision? _lastNutritionDecision;
+
+  /// La decisión de nutrición, solo si sigue vigente en [now].
+  ///
+  /// Una decisión nutricional describe una etapa y una ventana; caduca más
+  /// despacio que la de riego, pero caduca: pasado un día sin recalcular, la
+  /// etapa pudo cambiar y la ventana pudo cerrar.
+  NutritionDecision? nutritionDecisionAt(DateTime now) {
+    final NutritionDecision? decision = _lastNutritionDecision;
+    if (decision == null) return null;
+    // Solo caduca hacia adelante: el registro en segundo plano evalúa con la
+    // hora de la lectura, que puede ser anterior al momento de decidir.
+    if (now.isAfter(decision.decidedAt.add(kNutritionDecisionValidity))) {
+      return null;
+    }
+    return decision;
+  }
+
+  /// Vigencia de una decisión de nutrición publicada.
+  static const Duration kNutritionDecisionValidity = Duration(hours: 24);
+
+  /// Publica la decisión de nutrición vigente. La llama el Panel tras cada
+  /// evaluación, con las mismas reglas que [publishIrrigationDecision]: sin
+  /// `notifyListeners`, y relanzando el registro solo si cambió el CONTENIDO.
+  void publishNutritionDecision(NutritionDecision? decision) {
+    final String? before = nutritionDecisionKey(_lastNutritionDecision);
+    _lastNutritionDecision = decision;
+    if (nutritionDecisionKey(decision) == before) return;
+    scheduleMicrotask(() => unawaited(_cropEventRecorder.recordFromStore(this)));
+  }
+
+  /// Identidad estable de una decisión de nutrición: qué se decidió, no cuándo.
+  static String? nutritionDecisionKey(NutritionDecision? decision) =>
+      decision?.identityKey;
 
   /// Reintenta la sincronización pendiente.
   ///
@@ -1238,11 +1303,14 @@ class BioGStore extends ChangeNotifier {
     _cropCareAvgByDevice.remove(id);
     await _cropContextStorage.delete(id, userId: _currentUserId);
     await _yieldProjectionStorage.delete(id, userId: _currentUserId);
+    await _nutritionStorage.deleteDevice(id);
     unawaited(_queueCropContextDelete(id));
     unawaited(_queueYieldDelete(id));
 
     if (activeDevice?.id == id) {
       _resetAgroState();
+      _lastIrrigationDecision = null;
+      _lastNutritionDecision = null;
     }
 
     notifyListeners();
