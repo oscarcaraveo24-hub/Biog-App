@@ -26,9 +26,10 @@ import 'package:bio_g/widgets/seeds/tulip_profiles.dart';
 class TulipUniversalProfile {
   const TulipUniversalProfile._();
 
-  /// Rango legacy neutralizado para nIndex/pIndex/kIndex (Documento B §9.7). El
-  /// motor usa los rangos explícitos en mg/kg (`nSoilPpmRange`, …), no estos
-  /// índices; nunca se muestran al usuario.
+  /// Rango neutro para nIndex/pIndex/kIndex (Documento B §9.7). Este perfil
+  /// declara la prioridad fenológica explícita (`nPriority`, …), así que el
+  /// índice heredado no se usa ni como proxy; nunca se muestra al usuario ni se
+  /// compara con la sonda.
   static const AgroRange neutralLegacyNpk = AgroRange(
     lowMax: -1,
     optimalMin: 0,
@@ -663,9 +664,6 @@ StageTargets _buildTargets(
     nIndex: TulipUniversalProfile.neutralLegacyNpk,
     pIndex: TulipUniversalProfile.neutralLegacyNpk,
     kIndex: TulipUniversalProfile.neutralLegacyNpk,
-    nSoilPpmRange: p.nPpm,
-    pSoilPpmRange: p.pPpm,
-    kSoilPpmRange: p.kPpm,
     nPriority: p.nPriority,
     pPriority: p.pPriority,
     kPriority: p.kPriority,

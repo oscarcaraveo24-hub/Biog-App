@@ -12,7 +12,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/crops/cactus/cactus_catalog.dart';
 import 'package:bio_g/core/crops/cactus/cactus_universal_profile.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
@@ -112,20 +111,6 @@ void main() {
       }
     });
 
-    test('NPK en mg/kg, con demanda baja-moderada y K > N', () {
-      for (final stage in _allStages) {
-        final t = resolveSucculentTargets(stage);
-        expect(t.nSoilPpmRange, isNotNull);
-        expect(t.pSoilPpmRange, isNotNull);
-        expect(t.kSoilPpmRange, isNotNull);
-        expect(t.nSoilPpmRange!.optimalMax, lessThanOrEqualTo(45));
-        expect(
-          t.kSoilPpmRange!.optimalMax,
-          greaterThan(t.nSoilPpmRange!.optimalMax),
-        );
-      }
-    });
-
     test('todos los rangos cumplen lowMax < optMin <= optMax < highMin', () {
       for (final stage in _allStages) {
         final t = resolveSucculentTargets(stage);
@@ -135,9 +120,6 @@ void main() {
           t.ph,
           t.ec,
           t.resistance,
-          t.nSoilPpmRange!,
-          t.pSoilPpmRange!,
-          t.kSoilPpmRange!,
         ]) {
           expect(r.lowMax, lessThan(r.optimalMin), reason: 'etapa $stage');
           expect(r.optimalMin, lessThanOrEqualTo(r.optimalMax));
@@ -347,7 +329,7 @@ void main() {
       }
     });
 
-    test('N, P y K reciben interpretación (no se anulan)', () {
+    test('N, P y K son señal nativa: presentes, sin banda ni prioridad', () {
       final out = _evaluate(t: _telemetry());
       for (final key in <AgroMetricKey>[
         AgroMetricKey.n,
@@ -355,34 +337,11 @@ void main() {
         AgroMetricKey.k,
       ]) {
         final m = out.eval.metrics[key];
-        expect(m?.priorityLabel, isNotNull, reason: '$key sin priorityLabel');
-        expect(m!.priorityLabel, isNot(NutrientPriorityLabel.unknown));
+        expect(m?.isNativeSignal, isTrue, reason: '$key debe ser señal nativa');
+        expect(m!.band, AgroBand.unknown, reason: 'la sonda no sostiene bajo/alto');
       }
     });
 
-    test('los caps NPK son propios: N=70 · P=60 · K=240', () {
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'succulent', metricKey: AgroMetricKey.n),
-        70.0,
-      );
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'succulent', metricKey: AgroMetricKey.p),
-        60.0,
-      );
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'succulent', metricKey: AgroMetricKey.k),
-        240.0,
-      );
-    });
-
-    test('los caps NO se heredan del cactus', () {
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'succulent', metricKey: AgroMetricKey.n),
-        isNot(
-          NpkCaps.forCropMetric(cropKey: 'cactus', metricKey: AgroMetricKey.n),
-        ),
-      );
-    });
   });
 
   // ── Agronomía propia (Doc B §8 y §20) ──────────────────────────────────────
@@ -415,9 +374,9 @@ void main() {
         reason: 'El agua y las sales mandan; un N bajo no cambia el veredicto',
       );
       expect(
-        lowN.eval.metrics[AgroMetricKey.n]?.priorityLabel,
-        isNotNull,
-        reason: 'Pero SÍ conserva su banda y su prioridad',
+        lowN.eval.metrics[AgroMetricKey.n]?.isNativeSignal,
+        isTrue,
+        reason: 'Pero SÍ conserva la señal nativa',
       );
       expect(healthy.eval.soilControlScore01, greaterThan(0.6));
     });
@@ -435,27 +394,6 @@ void main() {
         compact.eval.soilControlScore01,
         lessThan(jade.eval.soilControlScore01),
       );
-    });
-
-    test('su_skip topa la prioridad NPK en "revisión"', () {
-      final out = _evaluate(
-        t: _telemetry(n: 1, p: 1, k: 5),
-        profileId: kSuSkip,
-      );
-      for (final key in <AgroMetricKey>[
-        AgroMetricKey.n,
-        AgroMetricKey.p,
-        AgroMetricKey.k,
-      ]) {
-        final label = out.eval.metrics[key]?.priorityLabel;
-        expect(label, isNotNull);
-        expect(
-          label,
-          isNot(NutrientPriorityLabel.actionRecommended),
-          reason: 'Sin perfil confirmado no se escala a acción',
-        );
-        expect(label, isNot(NutrientPriorityLabel.highPriority));
-      }
     });
 
     test('NO copia los targets del cactus (banda hídrica distinta)', () {
@@ -1061,28 +999,13 @@ void main() {
 
   // ── No romper lo que ya existía ────────────────────────────────────────────
   group('El cactus y los demás cultivos siguen intactos', () {
-    test('el cactus conserva su catálogo, su perfil general y sus caps', () {
+    test('el cactus conserva su catálogo y su perfil general', () {
       final profiles = CropCatalog.profilesForCrop(
         CropCatalog.cactusCropId,
         enabledOnly: false,
       );
       expect(profiles.last.id, kCaSkip);
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'cactus', metricKey: AgroMetricKey.n),
-        60.0,
-      );
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'cactus', metricKey: AgroMetricKey.k),
-        220.0,
-      );
       expect(CropCatalog.canonicalCropKey('cactus'), CropCatalog.cactusCropId);
-    });
-
-    test('el frijol no hereda los caps de la suculenta', () {
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'bean', metricKey: AgroMetricKey.n),
-        isNot(70.0),
-      );
     });
 
     test('la categoría ornamental expone cactus y suculenta', () {

@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
+import 'package:bio_g/core/agro/soil_condition_score.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/core/crops/agave/agave_lifecycle.dart';
 import 'package:bio_g/core/crops/agave/agave_universal_profile.dart';
@@ -12,7 +12,7 @@ import 'package:bio_g/models/biog_telemetry.dart';
 ///
 /// Es un ESPEJO ESTRUCTURAL de `AloeAgroScoreEngine` (que a su vez lo es de la
 /// suculenta, el cactus y el frijol): mismas bandas, mismas CLAVES CANÓNICAS de
-/// alerta y el mismo motor de nutrición compartido. Lo único propio es la
+/// alerta y la misma señal nativa N/P/K sin diagnóstico. Lo único propio es la
 /// agronomía (castigos, umbrales de aire y multiplicadores por perfil).
 ///
 /// Nunca emite claves `agave.*`, `mg.*`, `maguey.*`, `tequila.*`, `jima.*` ni
@@ -85,43 +85,30 @@ class AgaveAgroScoreEngine {
       value: moistureRawCal,
       range: targets.moistureRaw,
     );
-    final soilTempEval = _eval(value: t.soilTempC, range: targets.soilTemp);
-    final phEval = _eval(value: t.ph, range: targets.ph);
-    final ecEval = _eval(value: t.ec, range: targets.ec);
-    final resEval = _eval(value: t.resistance, range: targets.resistance);
+    final soilTempEval = _eval(value: t.hasSoilTempData ? t.soilTempC : double.nan, range: targets.soilTemp);
+    final phEval = _eval(value: t.hasPhData ? t.ph : double.nan, range: targets.ph);
+    final ecEval = _eval(value: t.hasEcData ? t.ec : double.nan, range: targets.ec);
+    final resEval = _eval(value: t.hasResistanceData ? t.resistance : double.nan, range: targets.resistance);
 
-    final nMetric = _interpretNutrient(
-      metricKey: AgroMetricKey.n,
+    // ── N/P/K: señal nativa, sin diagnóstico ──────────────────────────────
+    //
+    // La sonda 7-en-1 deriva estos tres canales de la conductividad; no los
+    // mide químicamente. Desde el NPK Interpretation Reset (Guía v0.4, §4) el
+    // motor los conserva como señal cruda —para historial, tendencias y
+    // respuesta a eventos— y no los compara contra ningún objetivo del
+    // cultivo. El manejo nutricional lo decide `NutritionReadinessEngine` con
+    // etapa, guía auditada, historial y condiciones físicas.
+    final nMetric = AgroMetricEval.nativeSignal(
+      value: t.n.toDouble(),
       hasData: t.hasNitrogenData,
-      rawMgKg: t.n.toDouble(),
-      stage: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      t: t,
-      limitToReview: adj.limitNpkPriorityToReview,
     );
-    final pMetric = _interpretNutrient(
-      metricKey: AgroMetricKey.p,
-      rawMgKg: t.p.toDouble(),
+    final pMetric = AgroMetricEval.nativeSignal(
+      value: t.p.toDouble(),
       hasData: t.hasPhosphorusData,
-      stage: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      t: t,
-      limitToReview: adj.limitNpkPriorityToReview,
     );
-    final kMetric = _interpretNutrient(
-      metricKey: AgroMetricKey.k,
-      rawMgKg: t.k.toDouble(),
+    final kMetric = AgroMetricEval.nativeSignal(
+      value: t.k.toDouble(),
       hasData: t.hasPotassiumData,
-      stage: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      t: t,
-      limitToReview: adj.limitNpkPriorityToReview,
     );
 
     final metrics = <AgroMetricKey, AgroMetricEval>{
@@ -129,33 +116,17 @@ class AgaveAgroScoreEngine {
         moistureEval,
         displayValue: moistureRawCal,
       ),
-      AgroMetricKey.soilTemp: _wrap(soilTempEval, displayValue: t.soilTempC),
-      AgroMetricKey.ph: _wrap(phEval, displayValue: t.ph),
-      AgroMetricKey.ec: _wrap(ecEval, displayValue: t.ec),
-      AgroMetricKey.resistance: _wrap(resEval, displayValue: t.resistance),
+      AgroMetricKey.soilTemp: _wrap(soilTempEval, displayValue: t.hasSoilTempData ? t.soilTempC : null),
+      AgroMetricKey.ph: _wrap(phEval, displayValue: t.hasPhData ? t.ph : null),
+      AgroMetricKey.ec: _wrap(ecEval, displayValue: t.hasEcData ? t.ec : null),
+      AgroMetricKey.resistance: _wrap(resEval, displayValue: t.hasResistanceData ? t.resistance : null),
       AgroMetricKey.n: nMetric,
       AgroMetricKey.p: pMetric,
       AgroMetricKey.k: kMetric,
     };
 
-    final nHealthScore = _nutrientHealthScore(nMetric);
-    final pHealthScore = _nutrientHealthScore(pMetric);
-    final kHealthScore = _nutrientHealthScore(kMetric);
-
-    final wSum = math.max(0.0001, weights.sum);
-    final rawSoilControlScore =
-        (weights.moisture * moistureEval.score01 +
-            weights.soilTemp * soilTempEval.score01 +
-            weights.resistance * resEval.score01 +
-            weights.ph * phEval.score01 +
-            weights.ec * ecEval.score01 +
-            weights.nutrientN * nHealthScore +
-            weights.nutrientP * pHealthScore +
-            weights.nutrientK * kHealthScore) /
-        wSum;
-
     final bool coldAndWet = _isColdAndWet(
-      soilTempC: t.soilTempC,
+      soilTempC: t.hasSoilTempData ? t.soilTempC : double.nan,
       moisturePct: moistureRawCal,
       targets: targets,
     );
@@ -211,12 +182,6 @@ class AgaveAgroScoreEngine {
           : _resistanceCriticalPenalty;
     }
 
-    criticalPenalty *= _nutrientPenaltyFactor(
-      nMetric.priorityLabel,
-      highMultiplier: adj.nitrogenHighSeverityMultiplier,
-    );
-    criticalPenalty *= _nutrientPenaltyFactor(pMetric.priorityLabel);
-    criticalPenalty *= _nutrientPenaltyFactor(kMetric.priorityLabel);
 
     // 6) Frío + sustrato húmedo: castigo compuesto (Doc B §8.1, combinación A).
     //    Es el peor caso; MG-03 y MG-04 lo agravan (especies sensibles al frío).
@@ -227,20 +192,16 @@ class AgaveAgroScoreEngine {
       );
     }
 
-    final soilControlScore01 = (rawSoilControlScore * criticalPenalty).clamp(
-      0.0,
-      1.0,
+    // ── Condición del suelo: solo señales físicas presentes ─────────────────
+    //
+    // Los pesos de N/P/K del perfil no entran (peso cero por decisión) y una
+    // señal ausente sale del denominador en vez de valer 0 o 0.5. La
+    // cobertura de evidencia viaja aparte. Ver `SoilConditionScore`.
+    final SoilConditionScoreResult soil = SoilConditionScore.compute(
+      metrics: metrics,
+      weights: weights,
+      criticalPenalty: criticalPenalty,
     );
-
-    final nutrientWeightSum = math.max(
-      0.0001,
-      weights.nutrientN + weights.nutrientP + weights.nutrientK,
-    );
-    final nutrientPriorityScore01 =
-        ((weights.nutrientN * _nutrientSeverityScore(nMetric)) +
-            (weights.nutrientP * _nutrientSeverityScore(pMetric)) +
-            (weights.nutrientK * _nutrientSeverityScore(kMetric))) /
-        nutrientWeightSum;
 
     // Claves CANÓNICAS del AlertsEngine compartido. Mismos mensajes que frijol.
     final suggested = <String>[];
@@ -250,9 +211,6 @@ class AgaveAgroScoreEngine {
     _pushSoilAlert(suggested, 'ec', ecEval, stage);
     _pushSoilAlert(suggested, 'resistance', resEval, stage);
 
-    _pushNutrientAlert(suggested, 'npk.n', nMetric, stage);
-    _pushNutrientAlert(suggested, 'npk.p', pMetric, stage);
-    _pushNutrientAlert(suggested, 'npk.k', kMetric, stage);
     _pushEnvironmentalAlerts(suggested, t);
 
     int severityBump = criticalStages.contains(stage)
@@ -274,9 +232,8 @@ class AgaveAgroScoreEngine {
     );
 
     final eval = AgroEvalResult(
-      soilControlScore01: soilControlScore01,
-      nutrientPriorityScore01: nutrientPriorityScore01.clamp(0.0, 1.0),
-      primaryScoreKind: AgroScoreKind.nutrientPriority,
+      soilControlScore01: soil.score01,
+      soilCoverage: soil.coverage,
       metrics: metrics,
       alerts: built.alerts,
       suggestedAlertKeys: suggested,
@@ -304,141 +261,13 @@ class AgaveAgroScoreEngine {
     return cold && wet;
   }
 
-  static AgroMetricEval _interpretNutrient({
-    required AgroMetricKey metricKey,
-    required double rawMgKg,
-    required bool hasData,
-    required String stage,
-    required String stageLabelEs,
-    required StageTargets targets,
-    required StageWeights weights,
-    required BioGTelemetry t,
-    bool limitToReview = false,
-  }) {
-    // Sin sonda de nutrientes no hay dato, y ausencia NO es cero.
-    //
-    // Un 0 ppm entra en `interpret` y sale como `actionRecommended`, la peor
-    // etiqueta de deficiencia que existe: un equipo sin sonda NPK le decía al
-    // productor «aplica fertilizante ya», en cada lectura, para siempre. El
-    // motor de frutales ya se guardaba de esto desde el principio; el resto no.
-    if (!hasData || rawMgKg <= 0) {
-      return AgroMetricEval(
-        band: AgroBand.unknown,
-        score01: 0.5,
-        labelEs: AgroBand.unknown.labelEs,
-        value: rawMgKg,
-        stageKey: stage,
-        stageLabelEs: stageLabelEs,
-        demandWindowLabelEs: targets.windowLabelFor(metricKey),
-      );
-    }
-
-    final interpretation = NutrientRecommendationEngine.interpret(
-      nutrient: metricKey,
-      rawPpm: rawMgKg,
-      cropKey: 'agave',
-        stageKey: stage,
-      targets: targets,
-      weights: weights,
-      ph: t.ph,
-      ec: t.ec,
-      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
-    );
-
-    final NutrientPriorityLabel label = limitToReview
-        ? _capPriorityToReview(interpretation.label)
-        : interpretation.label;
-
-    return AgroMetricEval(
-      band: interpretation.label.agroBand,
-      score01: label
-          .severityScore01(stagePressure01: interpretation.stagePressure01)
-          .clamp(0.0, 1.0),
-      labelEs: interpretation.labelEs,
-      value: rawMgKg,
-      priorityLabel: label,
-        stageKey: stage,
-        stageLabelEs: stageLabelEs,
-      demandWindowLabelEs: interpretation.demandWindowLabel,
-      shortRecommendationEs: interpretation.shortRecommendation,
-      practicalRecommendationEs: interpretation.practicalRecommendation,
-      doseGuideEs: interpretation.doseGuideEs,
-      fertilizerEquivalentEs: interpretation.fertilizerEquivalentEs,
-      justificationEs: interpretation.justification,
-      stagePressure01: interpretation.stagePressure01,
-      contextModifier01: interpretation.contextModifier01,
-      trendModifier01: interpretation.trendModifier01,
-    );
-  }
-
-  /// MG-SKIP: techo de prioridad = revisión (Doc B §7.5). Con un perfil sin
-  /// confirmar, una lectura de sonda NUNCA se convierte en "acción recomendada".
-  /// La banda y la interpretación se conservan: no se anula el NPK.
-  static NutrientPriorityLabel _capPriorityToReview(
-    NutrientPriorityLabel label,
-  ) {
-    switch (label) {
-      case NutrientPriorityLabel.actionRecommended:
-      case NutrientPriorityLabel.highPriority:
-        return NutrientPriorityLabel.reviewManagement;
-      case NutrientPriorityLabel.reviewAccumulation:
-      case NutrientPriorityLabel.reviewManagement:
-      case NutrientPriorityLabel.possibleExcess:
-      case NutrientPriorityLabel.mediumPriority:
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-        return label;
-    }
-  }
-
-  static AgroMetricEval _wrap(_Eval e, {required double displayValue}) {
+  static AgroMetricEval _wrap(_Eval e, {required double? displayValue}) {
     return AgroMetricEval(
       band: e.band,
       score01: e.score01,
       labelEs: e.band.labelEs,
       value: displayValue,
     );
-  }
-
-  static double _nutrientSeverityScore(AgroMetricEval metric) {
-    final label = metric.priorityLabel;
-    if (label == null) return 0.0;
-    return label.severityScore01(
-      stagePressure01: metric.stagePressure01 ?? 0.0,
-    );
-  }
-
-  static double _nutrientHealthScore(AgroMetricEval metric) {
-    final label = metric.priorityLabel;
-    if (label == null) return metric.score01.clamp(0.0, 1.0);
-    return label.healthScore01(stagePressure01: metric.stagePressure01 ?? 0.0);
-  }
-
-  /// Castigo por nutriente. Una lectura BAJA aislada no aplica castigo compuesto
-  /// (Doc B §8.1): el agua y las sales mandan, y un N bajo por sí solo no vuelve
-  /// "Alerta" un cultivo Óptimo. Solo el exceso compatible con acumulación
-  /// castiga (x0.80, Doc B §8.1).
-  static double _nutrientPenaltyFactor(
-    NutrientPriorityLabel? label, {
-    double highMultiplier = 1.0,
-  }) {
-    if (label == null) return 1.0;
-    switch (label) {
-      case NutrientPriorityLabel.reviewAccumulation:
-        // Acumulación compatible (nutriente alto + sales): castigo notorio.
-        return _scaled(0.80, highMultiplier);
-      case NutrientPriorityLabel.possibleExcess:
-        return _scaled(0.90, highMultiplier);
-      case NutrientPriorityLabel.actionRecommended:
-      case NutrientPriorityLabel.reviewManagement:
-      case NutrientPriorityLabel.highPriority:
-      case NutrientPriorityLabel.mediumPriority:
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-        return 1.0;
-    }
   }
 
   /// Clasificación con la semántica del Doc B §3.3 (bordes INCLUSIVOS):
@@ -535,44 +364,6 @@ class AgaveAgroScoreEngine {
 
     if (isSensitiveStage && e.band == AgroBand.low) out.add('$key.low');
     if (isSensitiveStage && e.band == AgroBand.high) out.add('$key.high');
-  }
-
-  static void _pushNutrientAlert(
-    List<String> out,
-    String key,
-    AgroMetricEval metric,
-    String stage,
-  ) {
-    final label = metric.priorityLabel;
-    if (label == null) return;
-
-    switch (label) {
-      case NutrientPriorityLabel.actionRecommended:
-        out.add('$key.action');
-        return;
-      case NutrientPriorityLabel.reviewManagement:
-        out.add('$key.review');
-        return;
-      case NutrientPriorityLabel.highPriority:
-        out.add('$key.high_priority');
-        return;
-      case NutrientPriorityLabel.possibleExcess:
-        out.add('$key.possible_excess');
-        return;
-      case NutrientPriorityLabel.reviewAccumulation:
-        out.add('$key.review_accumulation');
-        return;
-      case NutrientPriorityLabel.mediumPriority:
-        if (criticalStages.contains(stage) ||
-            semiCriticalStages.contains(stage)) {
-          out.add('$key.medium_priority');
-        }
-        return;
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-        return;
-    }
   }
 
   static void _pushEnvironmentalAlerts(List<String> out, BioGTelemetry t) {

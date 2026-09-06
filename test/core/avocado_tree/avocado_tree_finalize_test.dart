@@ -3,17 +3,16 @@
 // Cierre de integracion del Aguacate: assets finales ic_avocado_* y
 // assets/seeds/avocado, dormancy = reposo funcional NO arbol pelon (es
 // siempreverde), copy propio de etapas (fruit_fill != cosecha; el aguacate
-// madura DESPUES del corte; el aguacate NO es mango/citrico/manzano), NpkCaps
-// (120/95/200, N como default pero P>default y K=naranjo), K protagonista en
-// fruit_fill pero NO al maximo en floracion (primero cuaja), prioridades por
-// etapa, guardas NPK (raiz/EC/humedad/pH mandan; muy sensible a sales; reposo
-// funcional NO se castiga por seco), N tardio (no N en madurez; postcosecha =
-// reservas), rendimiento (floracion fragil, alternancia, cap por densidad) y
-// migracion AG.
+// madura DESPUES del corte; el aguacate NO es mango/citrico/manzano), K
+// protagonista en fruit_fill pero NO al maximo en floracion (primero cuaja),
+// prioridades por etapa, rendimiento (floracion fragil, alternancia, cap por
+// densidad) y migracion AG.
+//
+// Las pruebas de topes ppm y de interpretacion NPK por lectura se retiraron
+// con el reset del motor nutricional (Guia v0.4): la sonda no sostiene
+// «bajo/alto» y el manejo lo decide el motor de nutricion por etapa.
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/avocado_tree/avocado_tree_assets.dart';
 import 'package:bio_g/core/crops/avocado_tree/avocado_tree_catalog.dart';
@@ -181,41 +180,6 @@ void main() {
     });
   });
 
-  group('NpkCaps del aguacate (doc 05 §2): N=120, P=95, K=200', () {
-    test('N=120, P=95, K=200 para todos los alias', () {
-      for (final crop in const <String>[
-        'avocado_tree',
-        'crop_avocado_tree',
-        'crop_avocado',
-        'avocado',
-        'aguacate',
-        'palta',
-        'palto',
-        'persea_americana',
-        'arbol_aguacate',
-        'árbol_aguacate',
-      ]) {
-        expect(NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.n),
-            120.0, reason: '$crop N');
-        expect(NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.p),
-            95.0, reason: '$crop P');
-        expect(NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.k),
-            200.0, reason: '$crop K');
-      }
-    });
-
-    test('K del aguacate (200) = naranjo, < limon (210) y > durazno (180)', () {
-      final avoK = NpkCaps.forCropMetric(
-          cropKey: 'avocado_tree', metricKey: AgroMetricKey.k);
-      expect(avoK,
-          NpkCaps.forCropMetric(cropKey: 'orange_tree', metricKey: AgroMetricKey.k));
-      expect(avoK,
-          lessThan(NpkCaps.forCropMetric(cropKey: 'lemon_tree', metricKey: AgroMetricKey.k)));
-      expect(avoK,
-          greaterThan(NpkCaps.forCropMetric(cropKey: 'peach_tree', metricKey: AgroMetricKey.k)));
-    });
-  });
-
   group('StageTargets del aguacate (doc 05 §5 + §0.0.3 v1.1)', () {
     test('contrato AgroRange: sin rangos pegados en suelo/ambiente', () {
       for (final stage in <String>[
@@ -290,116 +254,6 @@ void main() {
           resolveAvocadoTreeNutritionPriorities(TreeStageIds.fruitFill);
       expect(flowering.kPriority01, lessThan(fruitSet.kPriority01));
       expect(flowering.kPriority01, lessThan(fruitFill.kPriority01));
-    });
-  });
-
-  group('Guardas NPK del aguacate (raiz/EC/humedad/pH mandan antes que NPK)', () {
-    NutrientInterpretationResult interpretK({
-      required double ec,
-      required double soilMoisturePct,
-      required double ph,
-      String stage = TreeStageIds.fruitFill,
-    }) {
-      return NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.k,
-        rawPpm: 20,
-        cropKey: 'avocado_tree',
-        stageKey: stage,
-        profileId: kAg01Hass,
-        targets: resolveAvocadoTreeTargets(stage),
-        weights: resolveAvocadoTreeStageWeights(stage),
-        ph: ph,
-        ec: ec,
-        soilMoisturePct: soilMoisturePct,
-      );
-    }
-
-    test('EC alta en reproduccion (>=1.6) encabeza con guarda de sales', () {
-      final msg = interpretK(ec: 1.7, soilMoisturePct: 70, ph: 7.0)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, anyOf(contains('salinidad'), contains('sales')));
-    });
-
-    test('humedad critica baja en llenado (<50): agua primero', () {
-      final msg = interpretK(ec: 0.5, soilMoisturePct: 45, ph: 7.0)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, contains('humedad'));
-    });
-
-    test('suelo saturado (>=90): raiz/drenaje, no mas fertilizante', () {
-      final msg = interpretK(ec: 0.5, soilMoisturePct: 92, ph: 7.0)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, anyOf(contains('saturado'), contains('drenaje'),
-          contains('raíz')));
-    });
-
-    test('pH alto (>=7.6): advierte Fe/Zn/Mn, no N', () {
-      final msg = interpretK(ec: 0.5, soilMoisturePct: 70, ph: 8.0)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg,
-          anyOf(contains('zinc'), contains('hierro'), contains('nervadura')));
-    });
-
-    test('suelo OK: NO se dispara guarda; habla de potasio/calibre', () {
-      final msg = interpretK(ec: 0.5, soilMoisturePct: 72, ph: 7.0)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, contains('potasio'));
-      expect(msg, isNot(contains('saturado')));
-    });
-
-    test('reposo funcional con seco moderado NO se castiga como estres', () {
-      final msg = NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.k,
-        rawPpm: 40,
-        cropKey: 'avocado_tree',
-        stageKey: TreeStageIds.dormancy,
-        profileId: kAgSkip,
-        targets: resolveAvocadoTreeTargets(TreeStageIds.dormancy),
-        weights: resolveAvocadoTreeStageWeights(TreeStageIds.dormancy),
-        ph: 7.0,
-        ec: 0.5,
-        soilMoisturePct: 45,
-      ).practicalRecommendation.toLowerCase();
-      expect(msg, isNot(contains('estabiliza la humedad')));
-    });
-  });
-
-  group('N por etapa: reposo/madurez/postcosecha (doc 05 §7, §0.0.8)', () {
-    String interpretN(String stage, double rawPpm) {
-      return NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.n,
-        rawPpm: rawPpm,
-        cropKey: 'avocado_tree',
-        stageKey: stage,
-        profileId: kAg01Hass,
-        targets: resolveAvocadoTreeTargets(stage),
-        weights: resolveAvocadoTreeStageWeights(stage),
-        ph: 7.0,
-        ec: 0.5,
-        soilMoisturePct: 70,
-      ).practicalRecommendation.toLowerCase();
-    }
-
-    test('N alto en reposo/induccion advierte brote/floracion', () {
-      final msg = interpretN(TreeStageIds.dormancy, 110);
-      expect(msg, anyOf(contains('brote'), contains('floración')));
-    });
-
-    test('harvest_maturity: no empuja N; deja el ajuste para postcosecha', () {
-      final msg = interpretN(TreeStageIds.harvestMaturity, 8);
-      expect(msg, contains('postcosecha'));
-    });
-
-    test('post_harvest: recuperacion/reservas (no se apaga el arbol)', () {
-      final msg = interpretN(TreeStageIds.postHarvest, 20);
-      expect(msg, contains('postcosecha'));
-      expect(msg, anyOf(contains('reserva'), contains('recuperación'),
-          contains('hoja')));
     });
   });
 

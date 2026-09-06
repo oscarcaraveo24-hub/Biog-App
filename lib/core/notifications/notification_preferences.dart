@@ -69,13 +69,9 @@ extension NotificationCategoryX on NotificationCategory {
 
       case AgronomicEventType.fertilizationRecommended:
       case AgronomicEventType.npkReading:
-      case AgronomicEventType.nutrientImbalance:
-      case AgronomicEventType.nitrogenLow:
-      case AgronomicEventType.nitrogenHigh:
-      case AgronomicEventType.phosphorusLow:
-      case AgronomicEventType.phosphorusHigh:
-      case AgronomicEventType.potassiumLow:
-      case AgronomicEventType.potassiumHigh:
+      case AgronomicEventType.nutritionUpcomingWindow:
+      case AgronomicEventType.nutritionResponseDetected:
+      case AgronomicEventType.nutritionWindowUnattended:
         return NotificationCategory.nutrition;
 
       case AgronomicEventType.frostWarning:
@@ -97,6 +93,7 @@ extension NotificationCategoryX on NotificationCategory {
       case AgronomicEventType.stablePh:
       case AgronomicEventType.soilCompaction:
       case AgronomicEventType.goodSoilStructure:
+      case AgronomicEventType.highSalinity:
       case AgronomicEventType.stableSoilTemp:
       case AgronomicEventType.stableSoil:
       case AgronomicEventType.combinedStress:

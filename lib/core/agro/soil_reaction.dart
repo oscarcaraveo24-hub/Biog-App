@@ -1,39 +1,42 @@
 /// =========================================================================
-/// REACCIÓN DEL SUELO Y CALIBRACIÓN DEL FÓSFORO
+/// REACCIÓN DEL SUELO (pH) COMO CONTEXTO NUTRICIONAL
 /// =========================================================================
 ///
-/// EL PROBLEMA
-/// -----------
-/// Un rango de fósforo en suelo sin declarar el método de extracción del
-/// laboratorio es casi ruido. Para el mismo cultivo y el mismo estado:
+/// QUÉ ES ESTO HOY
+/// ---------------
+/// El pH ya viene en cada lectura del sensor y de él se deduce, sin preguntarle
+/// nada al productor, si el suelo se comporta como ácido, neutro o calcáreo.
+/// Esa reacción es **contexto físico** para el motor de nutrición
+/// (`NutritionReadinessEngine`), en dos frentes con respaldo publicado:
 ///
-///   Olsen ......................... «alto» empieza en 25 ppm
-///   Bray-1 ........................ «alto» empieza en 40 ppm
-///   Mehlich-3, suelo ácido ........ «alto» empieza en 45 ppm
-///   Mehlich-3, suelo calcáreo ..... «alto» empieza en 113 ppm
+///   · Fósforo: en suelo calcáreo el calcio fija el fósforo y baja su
+///     disponibilidad real. UF/IFAS publica dos calibraciones Mehlich-3 del
+///     mismo cultivo —mineral ácido: bajo ≤25 · medio 26–45 · alto >45 ppm;
+///     calcáreo: bajo ≤76 · medio 77–104 · alto >104 ppm— y la diferencia
+///     (~1.75×) es el tamaño del efecto. Chihuahua y buena parte del norte de
+///     México son calcáreos.
+///   · Urea: aplicada en superficie sin incorporar, en suelo calcáreo pierde
+///     alrededor de 40 % (pH 7.0) a 44 % (pH 7.5) en diez días por
+///     volatilización de amoniaco.
 ///
-/// Un abanico de 4.5×. Y no es que unos midan mejor que otros: miden cosas
-/// distintas. En suelo calcáreo el calcio fija el fósforo, así que la misma
-/// cifra de laboratorio representa **menos fósforo disponible** para la
-/// planta. Por eso el umbral tiene que subir.
+/// QUÉ DEJÓ DE SER
+/// ---------------
+/// Hasta el NPK Interpretation Reset (Guía oficial del nuevo motor nutricional
+/// v0.4, §4) este módulo también **desplazaba la banda objetivo de fósforo**
+/// (`adjustRangeForSoilReaction`, factor 1.75) para comparar la lectura cruda
+/// de la sonda contra un target corregido. Ese camino se eliminó del runtime
+/// junto con los targets: la sonda 7-en-1 deriva N/P/K de la conductividad y
+/// no hay banda que corregir. Lo que sobrevive es lo que sí puede afirmarse
+/// desde el pH: la disponibilidad del fósforo es menor en calcáreo (fuente y
+/// colocación importan más) y la urea al voleo se pierde. Eso alimenta las
+/// reglas 3R —fuente, dosis, momento, lugar— de la guía, no una cifra de ppm.
 ///
-/// LA CONSECUENCIA PARA BIO-G
-/// --------------------------
-/// Los rangos de fósforo de los perfiles están calibrados contra la tabla de
-/// suelo mineral. En un suelo calcáreo —Chihuahua lo es, y buena parte del
-/// norte de México también— el motor lee «óptimo» donde el laboratorio local
-/// diría «bajo», y **deja de recomendar fósforo que sí hacía falta**.
-///
-/// No es un error de programación: es una calibración que faltaba.
-///
-/// LA SOLUCIÓN, Y POR QUÉ NO PIDE NADA AL USUARIO
-/// ----------------------------------------------
-/// UF/IFAS publica las dos calibraciones Mehlich-3 del mismo cultivo:
-///
-///   suelo mineral ácido ..... bajo ≤25 · medio 26–45 · alto >45 ppm
-///   suelo calcáreo .......... bajo ≤76 · medio 77–104 · alto >104 ppm
-///
-/// Y el pH ya viene en cada lectura del sensor. No hay que preguntar nada.
+/// NO SE TOCAN NITRÓGENO NI POTASIO
+/// --------------------------------
+/// El efecto de los carbonatos sobre el fósforo está publicado y cuantificado.
+/// Para N y K no existe una calibración calcárea equivalente, así que afirmar
+/// algo sería inventar. Solo se conserva el aviso de volatilización de urea,
+/// que es un hecho de la fuente, no del suelo.
 /// =========================================================================
 library;
 
@@ -64,10 +67,9 @@ enum SoilReaction {
 /// prácticamente siempre significa carbonatos libres, y el pH es lo que el
 /// sensor tiene.
 ///
-/// El corte se puso en 7.3 y no en 7.0 a propósito: se prefiere **no ajustar
-/// de más**. Un suelo neutro clasificado como calcáreo recibiría fósforo de
-/// sobra, y pasarse tiene costo. Quedarse corto solo mantiene el
-/// comportamiento actual.
+/// El corte se puso en 7.3 y no en 7.0 a propósito: se prefiere **no afirmar
+/// de más**. Un suelo neutro clasificado como calcáreo recibiría avisos de
+/// fósforo y urea que no le corresponden.
 SoilReaction soilReactionFromPh(double? ph) {
   if (ph == null || !ph.isFinite) return SoilReaction.unknown;
   if (ph <= 0 || ph >= 14) return SoilReaction.unknown;
@@ -84,62 +86,11 @@ String soilReactionLabelEs(SoilReaction r) => switch (r) {
   SoilReaction.unknown => 'sin determinar',
 };
 
-/// Factor que desplaza la banda objetivo de fósforo según la reacción.
+/// Nota de disponibilidad de fósforo en suelo calcáreo.
 ///
-/// DE DÓNDE SALE EL 1.75
-/// ---------------------
-/// Se calibra contra la banda calcárea publicada por UF/IFAS (medio 77–104,
-/// punto medio 90.5) partiendo del punto medio de la banda de fósforo que
-/// BIO-G usa en la etapa de referencia —floración de hortaliza, 42–62, punto
-/// medio 52:
-///
-///     90.5 ÷ 52 ≈ 1.74  →  se adopta 1.75
-///
-/// Se aplica el **mismo factor a todas las etapas**, no uno por etapa. Así se
-/// conserva intacta la forma de la curva fenológica que ya estaba afinada, y
-/// solo se desplaza el nivel completo. Si algún día se calibra etapa por
-/// etapa, este es el número que hay que sustituir.
-///
-/// NO SE TOCAN NITRÓGENO NI POTASIO
-/// --------------------------------
-/// El efecto de los carbonatos sobre el fósforo está publicado y cuantificado
-/// —son dos tablas distintas del mismo servicio de extensión—. Para N y K no
-/// existe una calibración calcárea equivalente, así que ajustarlos sería
-/// inventar. Se quedan como están.
-const double kPhosphorusCalcareousFactor = 1.75;
-
-double phosphorusTargetFactor(SoilReaction reaction) {
-  return reaction == SoilReaction.calcareous
-      ? kPhosphorusCalcareousFactor
-      : 1.0;
-}
-
-/// Aplica el desplazamiento calcáreo a un rango de fósforo.
-///
-/// Devuelve el mismo rango sin tocar cuando el nutriente no es fósforo o
-/// cuando el suelo no es calcáreo. Es deliberadamente aburrido: un ajuste que
-/// se aplica donde no debe es peor que no tener ajuste.
-AgroRange adjustRangeForSoilReaction({
-  required AgroRange range,
-  required AgroMetricKey nutrient,
-  required SoilReaction reaction,
-}) {
-  if (nutrient != AgroMetricKey.p) return range;
-  final double f = phosphorusTargetFactor(reaction);
-  if (f == 1.0) return range;
-
-  return AgroRange(
-    lowMax: range.lowMax * f,
-    optimalMin: range.optimalMin * f,
-    optimalMax: range.optimalMax * f,
-    highMin: range.highMin * f,
-  );
-}
-
-/// Frase que explica el ajuste, para que el número no aparezca sin motivo.
-///
-/// Devuelve `null` cuando no hubo ajuste: no se le cuenta al agricultor algo
-/// que no pasó.
+/// Devuelve `null` cuando no aplica: no se le cuenta al agricultor algo que no
+/// pasó. No menciona metas ni ppm —ya no existen en el runtime—: habla de
+/// fuente y colocación, que es lo que el productor sí puede decidir.
 String? soilReactionNoteEs({
   required AgroMetricKey nutrient,
   required SoilReaction reaction,
@@ -150,10 +101,9 @@ String? soilReactionNoteEs({
 
   final String phText = ph == null ? '' : ' (pH ${ph.toStringAsFixed(1)})';
   return 'Tu suelo se leyó calcáreo$phText. En suelo calcáreo el calcio fija '
-      'el fósforo, así que hace falta más fósforo en el análisis para que la '
-      'planta tenga el mismo disponible: BIO-G subió la meta de fósforo en '
-      'consecuencia. Si tu laboratorio reporta con método Olsen, compara '
-      'contra su escala, no contra esta.';
+      'el fósforo y la planta dispone de menos de lo que hay: conviene colocar '
+      'el fósforo en banda o cerca de la raíz, no al voleo, y no esperar '
+      'respuesta rápida de una aplicación superficial.';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

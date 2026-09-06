@@ -37,19 +37,17 @@ import 'package:bio_g/widgets/seeds/marigold_profiles.dart';
 class MarigoldUniversalProfile {
   const MarigoldUniversalProfile._();
 
-  /// Caps NPK congelados (Documento B §0, §10.4): N 110 · P 75 · K 280 mg/kg.
-  /// Normalizan el gauge; NO son dosis ni recomendaciones de fertilización.
-  /// Comparación interna (§10.5): el Girasol usa 130/90/300; el Cempasúchil
-  /// baja N por su menor demanda de jardín y su riesgo de exceso vegetativo,
-  /// baja P para que no se lea como "flor booster" y conserva K alto pero por
-  /// debajo del Girasol.
-  static const double capN = 110.0;
-  static const double capP = 75.0;
-  static const double capK = 280.0;
+  // Los «caps NPK» (Documento B §0, §10.4: N 110 · P 75 · K 280 mg/kg) que
+  // normalizaban el gauge se RETIRARON con el NPK Interpretation Reset (Guía
+  // v0.4, §4): un techo por cultivo crea falsa comparabilidad sobre una señal
+  // que la sonda deriva de la conductividad. El gauge se escala ahora contra el
+  // propio historial del sitio. La comparación interna con el Girasol (§10.5)
+  // —menor demanda de jardín, riesgo de exceso vegetativo— sigue viva donde
+  // corresponde: en las prioridades por etapa de este perfil.
 
-  /// Rango legacy neutralizado para nIndex/pIndex/kIndex. El motor usa los
-  /// rangos explícitos en mg/kg (`nSoilPpmRange`, …), no estos índices; nunca
-  /// se muestran al usuario.
+  /// Rango neutro para nIndex/pIndex/kIndex. Este perfil declara la prioridad
+  /// fenológica explícita (`nPriority`, …), así que el índice heredado no se
+  /// usa ni como proxy; nunca se muestra al usuario ni se compara con la sonda.
   static const AgroRange neutralLegacyNpk = AgroRange(
     lowMax: -1,
     optimalMin: 0,
@@ -802,9 +800,6 @@ StageTargets _buildTargets(
     nIndex: MarigoldUniversalProfile.neutralLegacyNpk,
     pIndex: MarigoldUniversalProfile.neutralLegacyNpk,
     kIndex: MarigoldUniversalProfile.neutralLegacyNpk,
-    nSoilPpmRange: nPpm ?? p.nPpm,
-    pSoilPpmRange: pPpm ?? p.pPpm,
-    kSoilPpmRange: kPpm ?? p.kPpm,
     nPriority: cap(p.nPriority),
     pPriority: cap(p.pPriority),
     kPriority: cap(p.kPriority),

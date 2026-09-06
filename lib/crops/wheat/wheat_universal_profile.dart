@@ -16,8 +16,9 @@ import 'package:bio_g/widgets/seeds/wheat_models.dart';
 ///
 /// Nota:
 /// Este archivo solo modela prioridades, ventanas y pesos por etapa.
-/// No realiza conversiones de ppm -> kg/ha -> fuente comercial -> escala de uso.
-/// Eso debe resolverse en fertilization_planner / recommendation_engine.
+/// No convierte lecturas de sonda en dosis: eso ya no existe. Los rangos en
+/// kg/ha salen de la guía curada auditada (`NutritionGuide`) y la decisión de
+/// ventana del `NutritionReadinessEngine`.
 class WheatUniversalProfile {
   const WheatUniversalProfile({required this.byStage, required this.weights});
 

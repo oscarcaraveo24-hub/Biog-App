@@ -2,14 +2,13 @@
 //
 // Cierre de integracion del Naranjo: assets reales (dormancy usa reposo
 // relativo verde, NO arbol pelon, por ser citrico siempreverde), copy citrico
-// de etapas (fruit_fill != harvest; dormancy = reposo relativo), NpkCaps
-// (120/95/200), K protagonista en fruit_fill, prioridades por etapa, guardas NPK
-// (EC/humedad/pH mandan, con umbral de sal MAS BAJO que nogal/pistache porque el
-// citrico es sensible a sales) y migracion de OR.
+// de etapas (fruit_fill != harvest; dormancy = reposo relativo), K protagonista
+// en fruit_fill, prioridades por etapa y migracion de OR.
+//
+// Las pruebas de topes ppm y de interpretacion NPK por lectura se retiraron
+// con el reset del motor nutricional (Guia v0.4).
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/orange_tree/orange_tree_assets.dart';
 import 'package:bio_g/core/crops/orange_tree/orange_tree_catalog.dart';
@@ -169,34 +168,6 @@ void main() {
     });
   });
 
-  group('NpkCaps del naranjo (doc 05 §0.3)', () {
-    test('N=120, P=95, K=200 para todos los alias', () {
-      for (final crop in const <String>[
-        'orange_tree',
-        'crop_orange_tree',
-        'naranjo',
-        'naranja',
-        'orange',
-      ]) {
-        expect(
-          NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.n),
-          120.0,
-          reason: '$crop N',
-        );
-        expect(
-          NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.p),
-          95.0,
-          reason: '$crop P',
-        );
-        expect(
-          NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.k),
-          200.0,
-          reason: '$crop K',
-        );
-      }
-    });
-  });
-
   group('Prioridades NPK por etapa (doc 05 §11)', () {
     test('en fruit_fill K domina sobre N y N sobre P', () {
       final p = resolveOrangeTreeNutritionPriorities(TreeStageIds.fruitFill);
@@ -222,116 +193,6 @@ void main() {
     test('en fruit_set K empieza a mandar sobre N y P', () {
       final p = resolveOrangeTreeNutritionPriorities(TreeStageIds.fruitSet);
       expect(p.dominantNutrient, AgroMetricKey.k);
-    });
-  });
-
-  group('Guardas NPK del naranjo (EC/humedad/pH mandan antes que NPK)', () {
-    NutrientInterpretationResult interpretK({
-      required double ec,
-      required double soilMoisturePct,
-      required double ph,
-      String stage = TreeStageIds.fruitFill,
-    }) {
-      return NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.k,
-        rawPpm: 20, // K bajo
-        cropKey: 'orange_tree',
-        stageKey: stage,
-        profileId: kOr01Valencia,
-        targets: resolveOrangeTreeTargets(stage),
-        weights: resolveOrangeTreeStageWeights(stage),
-        ph: ph,
-        ec: ec,
-        soilMoisturePct: soilMoisturePct,
-      );
-    }
-
-    test('EC alta (>2.0, umbral citrico sensible) encabeza con guarda de sales', () {
-      final r = interpretK(ec: 2.4, soilMoisturePct: 70, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(msg, anyOf(contains('salinidad'), contains('sales')));
-      expect(msg, anyOf(contains('lavado'), contains('drenaje')));
-    });
-
-    test('EC 1.5 NO bloquea aun: habla de potasio (umbral citrico ~2.0)', () {
-      final r = interpretK(ec: 1.5, soilMoisturePct: 70, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(msg, contains('potasio'));
-    });
-
-    test('humedad critica baja: agua primero (raiz estresada)', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 35, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(msg, contains('humedad'));
-      expect(msg, anyOf(contains('naranja'), contains('estabiliza')));
-    });
-
-    test('humedad saturada: gomosis/raiz/drenaje, no mas fertilizante', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 95, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(
-        msg,
-        anyOf(contains('saturado'), contains('gomosis'), contains('drenaje')),
-      );
-    });
-
-    test('pH alto (>8.0): advierte Fe/Zn/Mn, no N', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 70, ph: 8.2);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(
-        msg,
-        anyOf(contains('zinc'), contains('hierro'), contains('nervadura')),
-      );
-    });
-
-    test('suelo OK: NO se dispara guarda; habla de potasio/calibre', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 72, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(msg, contains('potasio'));
-      expect(msg, isNot(contains('saturado')));
-    });
-  });
-
-  group('N bajo tardio: no empujar N en cosecha/postcosecha (doc 05 §8.10)', () {
-    NutrientInterpretationResult interpretLowN(String stage) {
-      return NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.n,
-        rawPpm: 8, // N bajo
-        cropKey: 'orange_tree',
-        stageKey: stage,
-        profileId: kOr02Navel,
-        targets: resolveOrangeTreeTargets(stage),
-        weights: resolveOrangeTreeStageWeights(stage),
-        ph: 7.0,
-        ec: 0.5,
-        soilMoisturePct: 70,
-      );
-    }
-
-    test('harvest_maturity: no empuja N; cuida color/calidad y va a postcosecha', () {
-      final msg = interpretLowN(TreeStageIds.harvestMaturity)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, anyOf(contains('cosecha'), contains('color')));
-      expect(msg, contains('postcosecha'));
-      expect(msg, isNot(contains('aplica una corrección')));
-    });
-
-    test('post_harvest: no asume que el arbol pide N (solo si hoja activa)', () {
-      final msg = interpretLowN(TreeStageIds.postHarvest)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, contains('postcosecha'));
-      expect(msg, anyOf(contains('hoja'), contains('reservas')));
-      expect(msg, isNot(contains('aplica una corrección')));
-    });
-
-    test('fruit_fill: N bajo SI puede corregir ligero (no es etapa tardia)', () {
-      final msg = interpretLowN(TreeStageIds.fruitFill)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, contains('llenado'));
-      expect(msg, isNot(contains('postcosecha')));
     });
   });
 

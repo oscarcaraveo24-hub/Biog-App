@@ -1,5 +1,4 @@
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/core/crops/apple_tree/apple_tree_catalog.dart';
 import 'package:bio_g/core/crops/barley/barley_catalog.dart';
@@ -1395,37 +1394,7 @@ class CropCatalog {
       ),
       nIndex: _shiftRange(baseTargets.nIndex, nDelta, min: 0.0, max: 100.0),
       kIndex: _shiftRange(baseTargets.kIndex, kDelta, min: 0.0, max: 100.0),
-      nSoilPpmRange: _shiftComparableRange(
-        cropId: cropId,
-        nutrient: AgroMetricKey.n,
-        baseRange: baseTargets.nSoilPpmRange,
-        deltaIndex: nDelta,
-      ),
-      kSoilPpmRange: _shiftComparableRange(
-        cropId: cropId,
-        nutrient: AgroMetricKey.k,
-        baseRange: baseTargets.kSoilPpmRange,
-        deltaIndex: kDelta,
-      ),
     );
-  }
-
-  static AgroRange? _shiftComparableRange({
-    required String cropId,
-    required AgroMetricKey nutrient,
-    required AgroRange? baseRange,
-    required double deltaIndex,
-  }) {
-    if (baseRange == null) return null;
-    if (deltaIndex.abs() < 0.0001) return baseRange;
-
-    final double cap = NpkCaps.forCropMetric(
-      cropKey: cropId,
-      metricKey: nutrient,
-    );
-    final double deltaPpm = (deltaIndex / 100.0) * cap;
-
-    return _shiftRange(baseRange, deltaPpm, min: 0.0, max: cap * 1.25);
   }
 
   static bool isGenericAlias(String? raw) {

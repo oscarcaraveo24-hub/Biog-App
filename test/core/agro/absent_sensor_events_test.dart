@@ -62,14 +62,65 @@ void main() {
         evalWithBands(<AgroMetricKey, AgroBand>{
           AgroMetricKey.soilMoisture: AgroBand.critical,
           AgroMetricKey.ph: AgroBand.critical,
-          AgroMetricKey.n: AgroBand.critical,
         }),
         live: allAbsent(),
       );
 
       expect(bands[EventMetricKeys.soilMoisture], AgroBand.unknown);
       expect(bands[EventMetricKeys.ph], AgroBand.unknown);
-      expect(bands[EventMetricKeys.n], AgroBand.unknown);
+    });
+
+    test('N/P/K nunca viajan como banda al motor de eventos', () {
+      // Reset del motor NPK (Guía v0.4, §2 y §8): la sonda deriva N/P/K de la
+      // CE y el motor de eventos ya no los interpreta. Aunque una evaluación
+      // vieja trajera una banda, la fábrica no la propaga.
+      final bands = AgroEventInputFactory.safeCurrentBands(
+        evalWithBands(<AgroMetricKey, AgroBand>{
+          AgroMetricKey.n: AgroBand.critical,
+          AgroMetricKey.p: AgroBand.low,
+          AgroMetricKey.k: AgroBand.optimal,
+        }),
+      );
+      expect(bands.containsKey(EventMetricKeys.n), isFalse);
+      expect(bands.containsKey(EventMetricKeys.p), isFalse);
+      expect(bands.containsKey(EventMetricKeys.k), isFalse);
+    });
+
+    test('la CE sí viaja como banda física, con su bandera de presencia', () {
+      final withEc = AgroEventInputFactory.safeCurrentBands(
+        evalWithBands(<AgroMetricKey, AgroBand>{AgroMetricKey.ec: AgroBand.high}),
+      );
+      expect(withEc[EventMetricKeys.ec], AgroBand.high);
+
+      final absent = AgroEventInputFactory.safeCurrentBands(
+        evalWithBands(<AgroMetricKey, AgroBand>{AgroMetricKey.ec: AgroBand.high}),
+        live: allAbsent(),
+      );
+      expect(absent[EventMetricKeys.ec], AgroBand.unknown);
+    });
+
+    test('una CE alta produce el evento de sales, nunca uno de fertilización', () {
+      final List<AgronomicEvent> events = EventEngine.build(
+        EventEngineInput(
+          timestamp: now,
+          deviceId: deviceId,
+          seedAlias: 'Maíz',
+          stageKey: 'vegMid',
+          stageLabel: 'Vegetativo medio',
+          ec: 3.4,
+          currentBands: const <String, AgroBand>{EventMetricKeys.ec: AgroBand.high},
+        ),
+      );
+      final AgronomicEvent salinity = events.firstWhere(
+        (e) => e.type == AgronomicEventType.highSalinity,
+      );
+      expect(salinity.metricKey, EventMetricKeys.ec);
+      expect(salinity.message, contains('3.4 mS/cm'));
+      expect(salinity.message.toLowerCase(), isNot(contains('fertiliz')));
+      expect(
+        events.any((e) => e.type == AgronomicEventType.fertilizationRecommended),
+        isFalse,
+      );
     });
 
     test('una métrica sí presente conserva su banda', () {
@@ -264,22 +315,10 @@ void main() {
       expect(irrigation.metadata['engineVersion'], 'test');
     });
 
-    test('NPK desconocido NO produce desbalance nutrimental', () {
-      // `unknown` no es `optimal`, así que sin filtrarlo dos nutrientes
-      // ausentes bastaban para emitir "Desbalance nutrimental".
-      final events = buildWith(<String, AgroBand>{
-        EventMetricKeys.n: AgroBand.unknown,
-        EventMetricKeys.p: AgroBand.unknown,
-        EventMetricKeys.k: AgroBand.unknown,
-      });
-
-      expect(
-        events.where((e) => e.type == AgronomicEventType.nutrientImbalance),
-        isEmpty,
-      );
-    });
-
-    test('dos nutrientes realmente bajos SÍ producen desbalance', () {
+    test('bandas viejas de N/P/K no producen ningún evento nutrimental', () {
+      // Aunque un llamador insista en pasar bandas de nutrientes, el motor de
+      // eventos ya no las lee: sin `nutritionDecision` no hay ningún evento de
+      // nutrición, nunca uno deducido desde N/P/K crudos (Guía v0.4, §9).
       final events = buildWith(<String, AgroBand>{
         EventMetricKeys.n: AgroBand.low,
         EventMetricKeys.p: AgroBand.low,
@@ -287,20 +326,13 @@ void main() {
       });
 
       expect(
-        events.where((e) => e.type == AgronomicEventType.nutrientImbalance),
-        isNotEmpty,
-      );
-    });
-
-    test('un nutriente ausente no arrastra a los presentes', () {
-      final events = buildWith(<String, AgroBand>{
-        EventMetricKeys.n: AgroBand.unknown,
-        EventMetricKeys.p: AgroBand.optimal,
-        EventMetricKeys.k: AgroBand.optimal,
-      });
-
-      expect(
-        events.where((e) => e.type == AgronomicEventType.nutrientImbalance),
+        events.where(
+          (e) =>
+              e.type == AgronomicEventType.fertilizationRecommended ||
+              e.type == AgronomicEventType.nutritionWindowUnattended ||
+              e.type == AgronomicEventType.nutritionResponseDetected ||
+              e.type == AgronomicEventType.nutritionUpcomingWindow,
+        ),
         isEmpty,
       );
     });

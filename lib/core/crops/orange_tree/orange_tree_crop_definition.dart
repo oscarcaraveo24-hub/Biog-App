@@ -95,8 +95,9 @@ class OrangeTreeCropDefinition implements CropDefinition {
     required AlertsState alertsState,
   }) {
     // El naranjo es un cultivo de PRIMERA CLASE del pipeline compartido: la
-    // interpretacion NPK y el AgroScore pasan por el motor del arbol (espejo del
-    // de granos): NutrientRecommendationEngine + OrangeTreeAgroScoreEngine.
+    // condición del suelo y las alertas pasan por el motor del árbol (espejo
+    // del de granos): OrangeTreeAgroScoreEngine. N/P/K viajan como señal nativa sin
+    // diagnóstico (NPK Interpretation Reset, Guía v0.4 §4).
     final BioGTelemetry bioTelemetry = telemetry as BioGTelemetry;
     final String stageId = normalizeTreeStageId(stage.stageKey);
     final StageTargets targets =

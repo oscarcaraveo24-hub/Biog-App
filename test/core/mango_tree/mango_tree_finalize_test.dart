@@ -2,18 +2,15 @@
 //
 // Cierre de integracion del Mango: assets reales de Mango (iconos por perfil y
 // etapas en assets/seeds/mango), dormancy = reposo funcional, NO arbol pelon,
-// copy propio de
-// etapas (fruit_fill != cosecha; panicula/manguito; el mango NO es limon/naranjo),
-// NpkCaps (115/95/190, K menor que citricos pero mayor que durazno), K
-// protagonista en fruit_fill, prioridades por etapa, guardas NPK (EC/humedad/pH
-// mandan; reposo funcional NO se castiga por seco), N tardio (no N en madurez de
-// cambio de color; postcosecha = reservas), rendimiento (no-floracion valida,
-// alternancia, cap por densidad) y migracion MG. El mango NO es limon, NO es
-// naranjo, NO es manzano.
+// copy propio de etapas (fruit_fill != cosecha; panicula/manguito; el mango NO
+// es limon/naranjo), K protagonista en fruit_fill, prioridades por etapa,
+// rendimiento (no-floracion valida, alternancia, cap por densidad) y migracion
+// MG. El mango NO es limon, NO es naranjo, NO es manzano.
+//
+// Las pruebas de topes ppm y de interpretacion NPK por lectura se retiraron
+// con el reset del motor nutricional (Guia v0.4).
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/mango_tree/mango_tree_assets.dart';
 import 'package:bio_g/core/crops/mango_tree/mango_tree_catalog.dart';
@@ -209,45 +206,6 @@ void main() {
     });
   });
 
-  group('NpkCaps del mango (doc 05 §2): N=115, P=95, K=190', () {
-    test('N=115, P=95, K=190 para todos los alias', () {
-      for (final crop in const <String>[
-        'mango_tree',
-        'crop_mango_tree',
-        'crop_mango',
-        'mango',
-        'mangos',
-        'mangifera',
-        'mangifera_indica',
-        'arbol_mango',
-        'árbol_mango',
-      ]) {
-        expect(NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.n),
-            115.0, reason: '$crop N');
-        expect(NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.p),
-            95.0, reason: '$crop P');
-        expect(NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.k),
-            190.0, reason: '$crop K');
-      }
-    });
-
-    test('K del mango (190) < citricos (naranjo 200/limon 210) y > durazno (180)',
-        () {
-      final mangoK =
-          NpkCaps.forCropMetric(cropKey: 'mango_tree', metricKey: AgroMetricKey.k);
-      expect(
-        mangoK,
-        lessThan(NpkCaps.forCropMetric(
-            cropKey: 'orange_tree', metricKey: AgroMetricKey.k)),
-      );
-      expect(
-        mangoK,
-        greaterThan(NpkCaps.forCropMetric(
-            cropKey: 'peach_tree', metricKey: AgroMetricKey.k)),
-      );
-    });
-  });
-
   group('StageTargets del mango (doc 05 §5.2 + §0.0.3 v1.1)', () {
     test('contrato AgroRange: sin rangos pegados en suelo/ambiente', () {
       for (final stage in <String>[
@@ -303,118 +261,6 @@ void main() {
     test('en fruit_set K ya manda sobre N y P (cuajado fragil)', () {
       final p = resolveMangoTreeNutritionPriorities(TreeStageIds.fruitSet);
       expect(p.dominantNutrient, AgroMetricKey.k);
-    });
-  });
-
-  group('Guardas NPK del mango (EC/humedad/pH mandan antes que NPK)', () {
-    NutrientInterpretationResult interpretK({
-      required double ec,
-      required double soilMoisturePct,
-      required double ph,
-      String stage = TreeStageIds.fruitFill,
-    }) {
-      return NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.k,
-        rawPpm: 20,
-        cropKey: 'mango_tree',
-        stageKey: stage,
-        profileId: kMg01AtaulfoManila,
-        targets: resolveMangoTreeTargets(stage),
-        weights: resolveMangoTreeStageWeights(stage),
-        ph: ph,
-        ec: ec,
-        soilMoisturePct: soilMoisturePct,
-      );
-    }
-
-    test('EC alta en reproduccion (>=1.8) encabeza con guarda de sales', () {
-      final msg = interpretK(ec: 1.9, soilMoisturePct: 70, ph: 7.0)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, anyOf(contains('salinidad'), contains('sales')));
-    });
-
-    test('humedad critica baja en llenado (<50): agua primero', () {
-      final msg = interpretK(ec: 0.5, soilMoisturePct: 45, ph: 7.0)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, contains('humedad'));
-    });
-
-    test('suelo saturado (>=90): raiz/drenaje, no mas fertilizante', () {
-      final msg = interpretK(ec: 0.5, soilMoisturePct: 92, ph: 7.0)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, anyOf(contains('saturado'), contains('drenaje')));
-    });
-
-    test('pH alto (>=7.8): advierte Fe/Zn/Mn, no N', () {
-      final msg = interpretK(ec: 0.5, soilMoisturePct: 70, ph: 8.0)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg,
-          anyOf(contains('zinc'), contains('hierro'), contains('nervadura')));
-    });
-
-    test('suelo OK: NO se dispara guarda; habla de potasio/calibre', () {
-      final msg = interpretK(ec: 0.5, soilMoisturePct: 72, ph: 7.0)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, contains('potasio'));
-      expect(msg, isNot(contains('saturado')));
-    });
-
-    test('reposo funcional con seco moderado NO se castiga como estres', () {
-      // dormancy no es etapa critica reproductiva: la humedad baja NO dispara
-      // la guarda de agua (doc 05 §0.0.3, §7.4).
-      final msg = NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.k,
-        rawPpm: 40,
-        cropKey: 'mango_tree',
-        stageKey: TreeStageIds.dormancy,
-        profileId: kMgSkip,
-        targets: resolveMangoTreeTargets(TreeStageIds.dormancy),
-        weights: resolveMangoTreeStageWeights(TreeStageIds.dormancy),
-        ph: 7.0,
-        ec: 0.5,
-        soilMoisturePct: 45,
-      ).practicalRecommendation.toLowerCase();
-      expect(msg, isNot(contains('estabiliza la humedad')));
-    });
-  });
-
-  group('N por etapa: reposo/madurez/postcosecha (doc 05 §7, §0.0.2)', () {
-    String interpretN(String stage, double rawPpm) {
-      return NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.n,
-        rawPpm: rawPpm,
-        cropKey: 'mango_tree',
-        stageKey: stage,
-        profileId: kMg03Kent,
-        targets: resolveMangoTreeTargets(stage),
-        weights: resolveMangoTreeStageWeights(stage),
-        ph: 7.0,
-        ec: 0.5,
-        soilMoisturePct: 70,
-      ).practicalRecommendation.toLowerCase();
-    }
-
-    test('N alto en reposo/induccion advierte brote/floracion', () {
-      final msg = interpretN(TreeStageIds.dormancy, 95);
-      expect(msg, anyOf(contains('brote'), contains('inducción'),
-          contains('floración')));
-    });
-
-    test('harvest_maturity: no empuja N; deja el ajuste para postcosecha', () {
-      final msg = interpretN(TreeStageIds.harvestMaturity, 8);
-      expect(msg, contains('postcosecha'));
-    });
-
-    test('post_harvest: recuperacion/reservas (no se apaga el arbol)', () {
-      final msg = interpretN(TreeStageIds.postHarvest, 20);
-      expect(msg, contains('postcosecha'));
-      expect(msg, anyOf(contains('reserva'), contains('recuperación'),
-          contains('hoja')));
     });
   });
 

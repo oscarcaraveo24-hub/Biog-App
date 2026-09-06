@@ -30,15 +30,15 @@ import 'package:bio_g/widgets/seeds/sunflower_profiles.dart';
 class SunflowerUniversalProfile {
   const SunflowerUniversalProfile._();
 
-  /// Caps NPK congelados (Documento B §0.3, §11): N 130 · P 90 · K 300 mg/kg.
-  /// Normalizan el gauge; NO son dosis ni recomendaciones de fertilización.
-  static const double capN = 130.0;
-  static const double capP = 90.0;
-  static const double capK = 300.0;
+  // Los «caps NPK» (Documento B §0.3, §11: N 130 · P 90 · K 300 mg/kg) que
+  // normalizaban el gauge se RETIRARON con el NPK Interpretation Reset (Guía
+  // v0.4, §4): un techo por cultivo crea falsa comparabilidad sobre una señal
+  // que la sonda deriva de la conductividad. El gauge se escala ahora contra el
+  // propio historial del sitio.
 
-  /// Rango legacy neutralizado para nIndex/pIndex/kIndex. El motor usa los
-  /// rangos explícitos en mg/kg (`nSoilPpmRange`, …), no estos índices; nunca se
-  /// muestran al usuario.
+  /// Rango neutro para nIndex/pIndex/kIndex. Este perfil declara la prioridad
+  /// fenológica explícita (`nPriority`, …), así que el índice heredado no se
+  /// usa ni como proxy; nunca se muestra al usuario ni se compara con la sonda.
   static const AgroRange neutralLegacyNpk = AgroRange(
     lowMax: -1,
     optimalMin: 0,
@@ -713,9 +713,6 @@ StageTargets _buildTargets(
     nIndex: SunflowerUniversalProfile.neutralLegacyNpk,
     pIndex: SunflowerUniversalProfile.neutralLegacyNpk,
     kIndex: SunflowerUniversalProfile.neutralLegacyNpk,
-    nSoilPpmRange: nPpm ?? p.nPpm,
-    pSoilPpmRange: pPpm ?? p.pPpm,
-    kSoilPpmRange: kPpm ?? p.kPpm,
     nPriority: p.nPriority,
     pPriority: p.pPriority,
     kPriority: p.kPriority,

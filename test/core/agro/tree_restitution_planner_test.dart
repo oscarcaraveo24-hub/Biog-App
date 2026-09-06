@@ -381,45 +381,10 @@ void main() {
       // Un árbol de 100 g de fruta no merece una recomendación de fósforo.
       expect(call(kg: 0.1, nutrient: AgroMetricKey.p), isNull);
     });
-
-    test('etiqueta desconocida no se traduce a nivel de suelo', () {
-      expect(
-        TreeRestitutionPlanner.soilLevelFor(NutrientPriorityLabel.unknown),
-        isNull,
-      );
-    });
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 6. TRADUCCIÓN DE LA ETIQUETA DEL MOTOR AL NIVEL DE SUELO
-  // ───────────────────────────────────────────────────────────────────────────
-
-  group('Etiqueta del motor → nivel de suelo', () {
-    test('acción recomendada y prioridad alta ⇒ suelo bajo', () {
-      expect(
-        TreeRestitutionPlanner.soilLevelFor(NutrientPriorityLabel.actionRecommended),
-        SoilSupplyLevel.bajo,
-      );
-      expect(
-        TreeRestitutionPlanner.soilLevelFor(NutrientPriorityLabel.highPriority),
-        SoilSupplyLevel.bajo,
-      );
-    });
-
-    test('posible exceso ⇒ suelo alto; acumulación ⇒ muy alto', () {
-      expect(
-        TreeRestitutionPlanner.soilLevelFor(NutrientPriorityLabel.possibleExcess),
-        SoilSupplyLevel.alto,
-      );
-      expect(
-        TreeRestitutionPlanner.soilLevelFor(NutrientPriorityLabel.reviewAccumulation),
-        SoilSupplyLevel.muyAlto,
-      );
-    });
-  });
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // 7. PRESENTACIÓN
+  // 6. PRESENTACIÓN
   // ───────────────────────────────────────────────────────────────────────────
 
   group('Presentación del número', () {

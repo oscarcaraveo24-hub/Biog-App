@@ -6,34 +6,45 @@
 ///
 /// POR QUÉ EXISTE
 /// --------------
-/// El `FertilizationPlanner` convierte un déficit de suelo (mg/kg) a dosis
-/// mediante el puente `× 2.4`. Ese camino está validado en campo para maíz,
-/// pero **ninguna de las nueve guías de fertilización de BIO-G lo respalda
-/// para un árbol**. Las nueve niegan explícitamente que la lectura del sensor
-/// sea una dosis ("Cap NO es dosis" aparece literal en nogal, durazno,
-/// pistache, naranjo, limón y mango).
+/// Las nueve guías de fertilización de frutales de BIO-G niegan explícitamente
+/// que la lectura del sensor sea una dosis ("Cap NO es dosis" aparece literal
+/// en nogal, durazno, pistache, naranjo, limón y mango). Lo que las nueve sí
+/// usan es **restitución**: no se pregunta cuánto le falta al suelo, se
+/// pregunta cuánto se va a llevar la cosecha, y se repone eso.
 ///
-/// Lo que las nueve sí usan es **restitución**: no se pregunta cuánto le falta
-/// al suelo, se pregunta cuánto se va a llevar la cosecha, y se repone eso,
-/// modulado por lo que el suelo ya trae.
+/// Con el NPK Interpretation Reset (Guía oficial del nuevo motor nutricional
+/// v0.4, §4 y §34) este planner quedó como la **guía auditada** de dosis de
+/// los perennes: es el único camino de BIO-G que produce gramos por árbol sin
+/// leer N/P/K de la sonda, y por eso sobrevivió intacto cuando el planner de
+/// anuales (déficit ppm × 2.4) salió del runtime.
 ///
 /// LA CADENA
 /// ---------
 /// ```
 /// remoción   = kg de fruta por árbol × coeficiente de extracción
 /// demanda    = remoción ÷ fracción que va al fruto
-/// aporte     = demanda × factor de suelo        ← aquí entra el sensor BIO-G
+/// aporte     = demanda × factor de suelo   ← análisis de suelo, si existe
 /// dosis      = aporte ÷ eficiencia del fertilizante
 /// ```
 ///
 /// Cada factor tiene nombre, fuente y nivel de confianza. Ninguno es un número
 /// inventado, y los que son derivados están marcados como tales.
 ///
+/// EL FACTOR DE SUELO YA NO SALE DEL SENSOR
+/// ----------------------------------------
+/// Hasta el reset, el nivel de suministro del suelo (`SoilSupplyLevel`) se
+/// deducía de la etiqueta NPK cruda («Urge aplicar» → bajo → ×1.5). La sonda
+/// 7-en-1 deriva N/P/K de la conductividad y no puede sostener esa
+/// afirmación, así que esa traducción **se eliminó**. El nivel de suelo es
+/// ahora un dato de contexto que solo puede venir de un análisis de suelo del
+/// productor; cuando no existe, se repone la demanda completa (factor 1.0) y
+/// el texto de transparencia lo declara. Es la recomendación base de las
+/// propias guías: sin análisis, restituir lo que se va con la cosecha.
+///
 /// QUÉ NO HACE
 /// -----------
-/// No toca el motor de anuales. Maíz, frijol, trigo, cebada y hortalizas
-/// siguen con su camino de siempre. Este es un segundo carril, exclusivo para
-/// perennes, y devuelve `null` en cuanto le falta un dato en vez de inventarlo.
+/// No toca el motor de anuales ni lee la sonda. Devuelve `null` en cuanto le
+/// falta un dato en vez de inventarlo.
 /// =========================================================================
 library;
 
@@ -108,12 +119,12 @@ class TreeExtractionCoefficients {
   };
 }
 
-/// Nivel de suministro del suelo, derivado de la lectura del sensor.
+/// Nivel de suministro del suelo según un **análisis de suelo** del productor.
 ///
-/// Esta es la contribución real de BIO-G al cálculo: nadie más tiene la banda
-/// del suelo medida en la parcela cada dos horas. El sensor no fija la dosis
-/// —eso lo hace la cosecha esperada— pero sí la modula, que es el papel que la
-/// agronomía le reconoce.
+/// No sale del sensor. La regla de las guías («si el nivel de P/K es bajo,
+/// aporte = exportación × 1.5; medio = exportación; alto = 50 %; muy alto =
+/// no aportar») necesita un nivel medido por laboratorio. Cuando no existe,
+/// el planner asume [medio] y lo declara; nunca lo deduce de N/P/K crudos.
 enum SoilSupplyLevel { bajo, medio, alto, muyAlto }
 
 class TreeRestitutionResult {
@@ -126,7 +137,12 @@ class TreeRestitutionResult {
     required this.coefficients,
     required this.soilLevel,
     required this.soilFactor,
+    this.soilLevelAssumed = false,
   });
+
+  /// True cuando no había análisis de suelo y se asumió nivel medio (factor
+  /// 1.0). Viaja hasta la interfaz para que el número no parezca medido.
+  final bool soilLevelAssumed;
 
   /// Nutriente puro, en gramos por árbol y por ciclo.
   final double gramsPerTreeNutrient;
@@ -156,11 +172,16 @@ class TreeRestitutionResult {
       TreeYieldBasis.nuezConCascara => 'nuez con cáscara',
       TreeYieldBasis.secoConCascara => 'producto seco con cáscara',
     };
+    final String soilText = soilLevelAssumed
+        ? 'Sin análisis de suelo se repone la demanda completa (100 %); con '
+              'un análisis, BIO-G la ajusta según el nivel de P y K del suelo.'
+        : 'Según tu análisis de suelo el nivel es ${_soilLabel(soilLevel)}, '
+              'que ajusta la dosis a ${(soilFactor * 100).round()} % de la '
+              'demanda.';
     return 'Calculado sobre ${kgFruitPerTree.toStringAsFixed(0)} kg de $prod '
         'por árbol y una extracción de '
         '${coefficients.forNutrient(nutrient).toStringAsFixed(2)} kg/t '
-        '(${coefficients.sourceEs}). El suelo se leyó ${_soilLabel(soilLevel)}, '
-        'que ajusta la dosis a ${(soilFactor * 100).round()} % de la demanda.';
+        '(${coefficients.sourceEs}). $soilText';
   }
 
   static String _soilLabel(SoilSupplyLevel level) => switch (level) {
@@ -366,7 +387,7 @@ class TreeRestitutionPlanner {
   };
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 3. FACTOR DE SUELO — la contribución del sensor
+  // 3. FACTOR DE SUELO — solo desde un análisis de suelo
   // ══════════════════════════════════════════════════════════════════════════
   //
   // Regla textual de la guía de pera de BIO-G (§14B.4):
@@ -374,31 +395,15 @@ class TreeRestitutionPlanner {
   //    Si el nivel es medio: aporte = exportación. Si el nivel es alto: 50 %.
   //    Si el nivel es muy alto: no aportar.»
   //
-  // Es la única regla completa de ajuste por suelo en las nueve guías, y
-  // necesita exactamente lo que el sensor BIO-G entrega.
+  // Es la única regla completa de ajuste por suelo en las nueve guías. El
+  // nivel lo da un análisis de laboratorio; la sonda 7-en-1 no puede darlo
+  // (ver cabecera). Sin análisis se aplica el factor de nivel medio.
   static const Map<SoilSupplyLevel, double> _soilFactors =
       <SoilSupplyLevel, double>{
         SoilSupplyLevel.bajo: 1.5,
         SoilSupplyLevel.medio: 1.0,
         SoilSupplyLevel.alto: 0.5,
         SoilSupplyLevel.muyAlto: 0.0,
-      };
-
-  /// Traduce la etiqueta de prioridad del motor al nivel de suministro.
-  ///
-  /// Devuelve `null` cuando no hay información suficiente: el motor prefiere
-  /// callarse antes que suponer que el suelo está en rango.
-  static SoilSupplyLevel? soilLevelFor(NutrientPriorityLabel label) =>
-      switch (label) {
-        NutrientPriorityLabel.actionRecommended ||
-        NutrientPriorityLabel.highPriority => SoilSupplyLevel.bajo,
-        NutrientPriorityLabel.mediumPriority ||
-        NutrientPriorityLabel.reviewManagement ||
-        NutrientPriorityLabel.noPriority ||
-        NutrientPriorityLabel.lowPriority => SoilSupplyLevel.medio,
-        NutrientPriorityLabel.possibleExcess => SoilSupplyLevel.alto,
-        NutrientPriorityLabel.reviewAccumulation => SoilSupplyLevel.muyAlto,
-        NutrientPriorityLabel.unknown => null,
       };
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -538,8 +543,12 @@ class TreeRestitutionPlanner {
   /// Devuelve `null` —y esto es una decisión, no un descuido— cuando:
   ///   · el cultivo no tiene coeficientes cargados,
   ///   · no se conoce cuánta fruta va a dar el árbol,
-  ///   · el suelo está muy alto y no toca aplicar nada,
+  ///   · el análisis de suelo dice «muy alto» y no toca aplicar nada,
   ///   · o el resultado es tan pequeño que fingir precisión sería engañoso.
+  ///
+  /// [soilLevel] es el nivel de un análisis de suelo del productor. Cuando no
+  /// hay análisis se pasa `null`, se asume nivel medio (factor 1.0) y el
+  /// resultado lo declara en `soilLevelAssumed`. Nunca se deduce de la sonda.
   ///
   /// El Fundacional 2.1 §9.3 pide exactamente esto: no emitir una dosis
   /// cuando falta el contexto para interpretarla.
@@ -547,14 +556,13 @@ class TreeRestitutionPlanner {
     required AgroMetricKey nutrient,
     required String? cropKey,
     required double? kgFruitPerTree,
-    required SoilSupplyLevel? soilLevel,
+    SoilSupplyLevel? soilLevel,
   }) {
     if (nutrient != AgroMetricKey.n &&
         nutrient != AgroMetricKey.p &&
         nutrient != AgroMetricKey.k) {
       return null;
     }
-    if (soilLevel == null) return null;
 
     final TreeExtractionCoefficients? coef = coefficientsFor(cropKey);
     if (coef == null) return null;
@@ -562,7 +570,9 @@ class TreeRestitutionPlanner {
     final double? kg = kgFruitPerTree;
     if (kg == null || kg <= 0 || !kg.isFinite) return null;
 
-    final double factor = _soilFactors[soilLevel] ?? 0.0;
+    final bool assumed = soilLevel == null;
+    final SoilSupplyLevel level = soilLevel ?? SoilSupplyLevel.medio;
+    final double factor = _soilFactors[level] ?? 0.0;
     if (factor <= 0) return null; // suelo muy alto: no se aporta
 
     // remoción → demanda → aporte → dosis
@@ -582,8 +592,9 @@ class TreeRestitutionPlanner {
       commercialSourceEs: commercial.nombre,
       kgFruitPerTree: kg,
       coefficients: coef,
-      soilLevel: soilLevel,
+      soilLevel: level,
       soilFactor: factor,
+      soilLevelAssumed: assumed,
     );
   }
 

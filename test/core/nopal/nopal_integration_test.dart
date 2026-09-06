@@ -15,7 +15,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_registry.dart';
 import 'package:bio_g/core/crops/crop_types.dart';
@@ -270,7 +269,6 @@ void main() {
       for (final stage in _allStages) {
         final t = resolveNopalTargets(stage);
         expect(t.moistureRaw.optimalMax, greaterThan(t.moistureRaw.optimalMin));
-        expect(t.nSoilPpmRange, isNotNull);
       }
       final unknown = resolveNopalTargets(NopalStageIds.unknown);
       final maintenance = resolveNopalTargets(NopalStageIds.maintenance);
@@ -347,8 +345,8 @@ void main() {
     });
   });
 
-  // ── Pesos y caps (Doc B §10, §14) ──────────────────────────────────────────
-  group('Pesos y NPK caps', () {
+  // ── Pesos (Doc B §10) ──────────────────────────────────────────────────────
+  group('Pesos', () {
     test('cada fila de pesos suma 1.00', () {
       for (final stage in _allStages) {
         for (final profile in <String?>[null, ..._allProfiles]) {
@@ -359,56 +357,6 @@ void main() {
             reason: 'etapa $stage con perfil $profile',
           );
         }
-      }
-    });
-
-    test('caps propios: N 90 · P 60 · K 280', () {
-      double cap(AgroMetricKey k) =>
-          NpkCaps.forCropMetric(cropKey: 'crop_nopal', metricKey: k);
-      expect(cap(AgroMetricKey.n), 90.0);
-      expect(cap(AgroMetricKey.p), 60.0);
-      expect(cap(AgroMetricKey.k), 280.0);
-    });
-
-    test('los caps NO se heredan de cactus, suculenta ni sábila', () {
-      for (final other in <String>['cactus', 'succulent', 'aloe']) {
-        final same =
-            NpkCaps.forCropMetric(
-                  cropKey: other,
-                  metricKey: AgroMetricKey.n,
-                ) ==
-                90.0 &&
-            NpkCaps.forCropMetric(
-                  cropKey: other,
-                  metricKey: AgroMetricKey.p,
-                ) ==
-                60.0;
-        expect(same, isFalse, reason: 'nopal no debe compartir caps con $other');
-      }
-      // Maguey comparte N=90 y K=280, así que la diferencia se prueba con P.
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'maguey', metricKey: AgroMetricKey.p),
-        isNot(
-          NpkCaps.forCropMetric(cropKey: 'nopal', metricKey: AgroMetricKey.p),
-        ),
-      );
-    });
-
-    test('todos los aliases del cultivo devuelven el mismo cap', () {
-      for (final alias in <String>[
-        'nopal',
-        'crop_nopal',
-        'nopales',
-        'opuntia',
-        'orn_nopal',
-        'prickly pear',
-        'cactus pear',
-      ]) {
-        expect(
-          NpkCaps.forCropMetric(cropKey: alias, metricKey: AgroMetricKey.k),
-          280.0,
-          reason: 'alias "$alias"',
-        );
       }
     });
   });
@@ -468,7 +416,6 @@ void main() {
         'resistance.',
         'airTemp.',
         'airHumidity.',
-        'npk.',
         'stage.',
       ];
       final combos = <AgroEvalResult>[

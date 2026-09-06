@@ -1,52 +1,21 @@
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/dose_expression.dart';
-import 'package:bio_g/core/agro/fertilization_planner.dart';
-import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
 import 'package:bio_g/core/agro/soil_reaction.dart';
-import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Congela las dos capas nuevas:
+/// Congela dos capas que sobrevivieron al reset del motor NPK (Guía oficial
+/// del nuevo motor nutricional v0.4):
 ///
-///   1. **La unidad elegible.** El motor calcula una sola cosa —kilos de
-///      nutriente puro por hectárea— y esta capa lo dice en el idioma del
-///      productor. El número no cambia; cambia cómo se dice.
+///   1. **La unidad elegible.** Un rango en kilos de nutriente puro por
+///      hectárea se dice en el idioma del productor. El número no cambia;
+///      cambia cómo se dice.
 ///
 ///   2. **La reacción del suelo.** El pH ya viene en cada lectura, así que el
-///      motor puede saber si el suelo es calcáreo sin preguntar nada, subir la
-///      meta de fósforo en consecuencia, y advertir de la volatilización de
-///      urea.
-///
-/// La prueba más importante de todo el archivo es la primera del grupo 3:
-/// verifica que **el productor de campo abierto no vea ningún cambio.** Una
-/// capa nueva que altera lo que ya funcionaba no es una mejora.
+///      motor puede saber si el suelo es calcáreo sin preguntar nada y
+///      alimentar las reglas 3R: colocación del fósforo y volatilización de
+///      urea. Lo que YA NO hace es desplazar una banda objetivo de fósforo
+///      para comparar la lectura cruda de la sonda: esa banda no existe.
 void main() {
-  const AgroRange dummy = AgroRange(
-    lowMax: 0,
-    optimalMin: 0,
-    optimalMax: 100,
-    highMin: 100,
-  );
-
-  StageTargets targetsFor({
-    AgroRange? n,
-    AgroRange? p,
-    AgroRange? k,
-  }) {
-    return StageTargets(
-      moistureRaw: dummy,
-      soilTemp: dummy,
-      ph: dummy,
-      ec: dummy,
-      resistance: dummy,
-      nIndex: dummy,
-      pIndex: dummy,
-      kIndex: dummy,
-      nSoilPpmRange: n,
-      pSoilPpmRange: p,
-      kSoilPpmRange: k,
-    );
-  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 1. LA ARITMÉTICA DE LA CONVERSIÓN
@@ -231,107 +200,7 @@ void main() {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 3. EL MOTOR, DE PUNTA A PUNTA
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  group('El motor con la unidad elegible', () {
-    final StageTargets t = targetsFor(
-      n: const AgroRange(
-        lowMax: 40,
-        optimalMin: 60,
-        optimalMax: 80,
-        highMin: 100,
-      ),
-    );
-
-    /// **La prueba más importante del archivo.** Si esta falla, la capa nueva
-    /// rompió a los productores que ya tenía BIO-G.
-    test('sin contexto, el campo abierto no cambia ni un carácter', () {
-      final NutrientDoseGuide? g = FertilizationPlanner.buildGuide(
-        nutrient: AgroMetricKey.n,
-        label: NutrientPriorityLabel.actionRecommended,
-        rawPpm: 12.5,
-        cropKey: 'maize',
-        stageKey: 'vegMid',
-        cultivationScaleId: 'field',
-        targets: targetsFor(
-          n: const AgroRange(
-            lowMax: 50,
-            optimalMin: 60,
-            optimalMax: 80,
-            highMin: 90,
-          ),
-        ),
-      );
-
-      // El caso de campo validado del maíz, intacto.
-      expect(g!.doseGuideEs, contains('~138 kg/ha de Nitrógeno puro'));
-      expect(g.fertilizerEquivalentEs, contains('~300 kg/ha de Urea (46-0-0)'));
-    });
-
-    test('con fertirriego y densidad, el mismo cálculo sale por planta', () {
-      final NutrientDoseGuide? g = FertilizationPlanner.buildGuide(
-        nutrient: AgroMetricKey.n,
-        label: NutrientPriorityLabel.actionRecommended,
-        rawPpm: 20.0,
-        cropKey: 'tomato',
-        stageKey: 'floracion',
-        cultivationScaleId: 'field',
-        targets: t,
-        doseContext: const DoseContext(
-          method: ApplicationMethod.fertigation,
-          plantsPerHectare: 25000,
-        ),
-      );
-
-      // meta 70, lectura 20 ⇒ déficit 50 ⇒ 120 kg/ha ⇒ 4.8 g por planta
-      expect(g, isNotNull);
-      expect(g!.doseGuideEs, contains('4.8 g'),
-          reason: '120 kg/ha ÷ 25 000 plantas × 1000 = 4.8 g por planta');
-      expect(g.doseGuideEs, contains('por planta'));
-      expect(g.fertilizerEquivalentEs, contains('25000 plantas por hectárea'),
-          reason: 'la conversión tiene que quedar a la vista');
-    });
-
-    test('fertirriego sin densidad cae a kg/ha y no inventa', () {
-      final NutrientDoseGuide? g = FertilizationPlanner.buildGuide(
-        nutrient: AgroMetricKey.n,
-        label: NutrientPriorityLabel.actionRecommended,
-        rawPpm: 20.0,
-        cropKey: 'tomato',
-        stageKey: 'floracion',
-        cultivationScaleId: 'field',
-        targets: t,
-        doseContext: const DoseContext(
-          method: ApplicationMethod.fertigation,
-        ),
-      );
-      expect(g!.doseGuideEs, contains('kg/ha'));
-      expect(g.doseGuideEs, isNot(contains('por planta')));
-    });
-
-    /// La maceta no pasa por esta capa: su base no es el área sino la masa de
-    /// sustrato. Se verifica que siga intacta.
-    test('la maceta no se ve afectada', () {
-      final NutrientDoseGuide? g = FertilizationPlanner.buildGuide(
-        nutrient: AgroMetricKey.n,
-        label: NutrientPriorityLabel.actionRecommended,
-        rawPpm: 20.0,
-        cropKey: null,
-        stageKey: null,
-        cultivationScaleId: 'pot',
-        targets: t,
-        doseContext: const DoseContext(
-          method: ApplicationMethod.fertigation,
-          plantsPerHectare: 25000,
-        ),
-      );
-      expect(g!.doseGuideEs, contains('por maceta'));
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 4. LA REACCIÓN DEL SUELO
+  // 3. LA REACCIÓN DEL SUELO
   // ═══════════════════════════════════════════════════════════════════════════
 
   group('Reacción del suelo desde el pH', () {
@@ -351,219 +220,77 @@ void main() {
       expect(soilReactionFromPh(15), SoilReaction.unknown);
     });
 
-    /// El factor 1.75 se calibra contra la banda calcárea de UF/IFAS
-    /// (medio 77–104, punto medio 90.5) partiendo del punto medio de la banda
-    /// de fósforo de BIO-G en floración de hortaliza (42–62, medio 52):
-    ///     90.5 ÷ 52 ≈ 1.74
-    test('el desplazamiento del fósforo aterriza en la banda de UF/IFAS', () {
-      const AgroRange base = AgroRange(
-        lowMax: 35,
-        optimalMin: 42,
-        optimalMax: 62,
-        highMin: 72,
-      );
-      final AgroRange ajustado = adjustRangeForSoilReaction(
-        range: base,
+    test('la nota de fósforo solo aparece en calcáreo y solo para P', () {
+      final String? p = soilReactionNoteEs(
         nutrient: AgroMetricKey.p,
         reaction: SoilReaction.calcareous,
+        ph: 7.9,
       );
+      expect(p, isNotNull);
+      expect(p!.toLowerCase(), contains('calcáreo'));
+      expect(p, contains('7.9'));
+      expect(p.toLowerCase(), contains('banda'));
 
-      final double medio = (ajustado.optimalMin + ajustado.optimalMax) / 2;
-      expect(medio, closeTo(91.0, 3.0),
-          reason: 'UF/IFAS pone el medio calcáreo en 77–104, centro 90.5');
-      expect(ajustado.optimalMin, closeTo(73.5, 1.0));
-      expect(ajustado.optimalMax, closeTo(108.5, 1.0));
-    });
-
-    test('solo se toca el fósforo, nunca N ni K', () {
-      const AgroRange base = AgroRange(
-        lowMax: 35,
-        optimalMin: 42,
-        optimalMax: 62,
-        highMin: 72,
+      expect(
+        soilReactionNoteEs(nutrient: AgroMetricKey.n, reaction: SoilReaction.calcareous),
+        isNull,
       );
-      for (final AgroMetricKey nut in <AgroMetricKey>[
-        AgroMetricKey.n,
-        AgroMetricKey.k,
-      ]) {
-        final AgroRange r = adjustRangeForSoilReaction(
-          range: base,
-          nutrient: nut,
-          reaction: SoilReaction.calcareous,
-        );
-        expect(r.optimalMin, base.optimalMin,
-            reason: '${nut.name}: no hay calibración calcárea publicada, '
-                'ajustarlo sería inventar');
-        expect(r.optimalMax, base.optimalMax);
-      }
-    });
-
-    test('en suelo ácido o neutro no se ajusta nada', () {
-      const AgroRange base = AgroRange(
-        lowMax: 35,
-        optimalMin: 42,
-        optimalMax: 62,
-        highMin: 72,
+      expect(
+        soilReactionNoteEs(nutrient: AgroMetricKey.p, reaction: SoilReaction.acidic),
+        isNull,
       );
-      for (final SoilReaction r in <SoilReaction>[
-        SoilReaction.acidic,
-        SoilReaction.neutral,
-        SoilReaction.unknown,
-      ]) {
-        expect(
-          adjustRangeForSoilReaction(
-            range: base,
-            nutrient: AgroMetricKey.p,
-            reaction: r,
-          ).optimalMin,
-          base.optimalMin,
-        );
-      }
-    });
-
-    /// El ajuste vive en un solo lugar —`comparableRange`— para que la banda
-    /// que se pinta en pantalla y la dosis que se calcula salgan del mismo
-    /// número. Si vivieran en dos sitios podrían contradecirse.
-    test('la banda mostrada y la dosis usan el mismo número', () {
-      final StageTargets t = targetsFor(
-        p: const AgroRange(
-          lowMax: 35,
-          optimalMin: 42,
-          optimalMax: 62,
-          highMin: 72,
-        ),
-      );
-
-      final AgroRange? normal = NutrientTargetRangeResolver.comparableRange(
-        nutrient: AgroMetricKey.p,
-        cropKey: 'tomato',
-        targets: t,
-      );
-      final AgroRange? calcareo = NutrientTargetRangeResolver.comparableRange(
-        nutrient: AgroMetricKey.p,
-        cropKey: 'tomato',
-        targets: t,
-        soilReaction: SoilReaction.calcareous,
-      );
-
-      expect(normal!.optimalMin, 42);
-      expect(calcareo!.optimalMin, closeTo(73.5, 0.5));
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 5. LO QUE VE EL PRODUCTOR DE SUELO CALCÁREO
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  group('El motor en suelo calcáreo', () {
-    final StageTargets t = targetsFor(
-      p: const AgroRange(
-        lowMax: 35,
-        optimalMin: 42,
-        optimalMax: 62,
-        highMin: 72,
-      ),
-      n: const AgroRange(
-        lowMax: 40,
-        optimalMin: 60,
-        optimalMax: 80,
-        highMin: 100,
-      ),
-    );
-
-    /// El caso que motivó todo: una lectura de 60 ppm de fósforo.
-    /// En suelo ácido está en el óptimo y no hace falta nada.
-    /// En suelo calcáreo, con la banda de UF/IFAS, todavía es **bajo**.
-    test('60 ppm de P: óptimo en suelo ácido, deficiente en calcáreo', () {
-      final NutrientDoseGuide? acido = FertilizationPlanner.buildGuide(
-        nutrient: AgroMetricKey.p,
-        label: NutrientPriorityLabel.actionRecommended,
-        rawPpm: 60.0,
-        cropKey: 'tomato',
-        stageKey: 'floracion',
-        cultivationScaleId: 'field',
-        targets: t,
-        ph: 6.2,
-      );
-      expect(acido, isNull,
-          reason: 'en suelo ácido 60 ppm está en meta: no hay dosis');
-
-      final NutrientDoseGuide? calcareo = FertilizationPlanner.buildGuide(
-        nutrient: AgroMetricKey.p,
-        label: NutrientPriorityLabel.actionRecommended,
-        rawPpm: 60.0,
-        cropKey: 'tomato',
-        stageKey: 'floracion',
-        cultivationScaleId: 'field',
-        targets: t,
-        ph: 7.8,
-      );
-      expect(calcareo, isNotNull,
-          reason: 'en suelo calcáreo esa misma lectura sí pide fósforo');
-      expect(calcareo!.fertilizerEquivalentEs, contains('calcáreo'));
-      expect(calcareo.fertilizerEquivalentEs, contains('Olsen'),
-          reason: 'hay que avisar que la escala del laboratorio es otra');
     });
 
     /// La urea al voleo en suelo calcáreo pierde 40 % a pH 7.0 y 44 % a
     /// pH 7.5 en diez días. El motor ya lee el pH; ahora lo dice.
     test('avisa de la volatilización de urea', () {
-      final NutrientDoseGuide? g = FertilizationPlanner.buildGuide(
+      final String? warn = ureaVolatilizationWarningEs(
         nutrient: AgroMetricKey.n,
-        label: NutrientPriorityLabel.actionRecommended,
-        rawPpm: 20.0,
-        cropKey: 'maize',
-        stageKey: 'vegMid',
-        cultivationScaleId: 'field',
-        targets: t,
+        reaction: SoilReaction.calcareous,
         ph: 7.8,
       );
-
-      expect(g!.fertilizerEquivalentEs!.toLowerCase(), contains('urea'));
-      expect(g.fertilizerEquivalentEs, contains('44 %'));
-      expect(g.fertilizerEquivalentEs!.toLowerCase(), contains('incorpór'));
+      expect(warn, isNotNull);
+      expect(warn!.toLowerCase(), contains('urea'));
+      expect(warn, contains('44 %'));
+      expect(warn.toLowerCase(), contains('incorpór'));
     });
 
     test('a pH 7.4 el aviso baja al 40 %', () {
-      final NutrientDoseGuide? g = FertilizationPlanner.buildGuide(
+      final String? warn = ureaVolatilizationWarningEs(
         nutrient: AgroMetricKey.n,
-        label: NutrientPriorityLabel.actionRecommended,
-        rawPpm: 20.0,
-        cropKey: 'maize',
-        stageKey: 'vegMid',
-        cultivationScaleId: 'field',
-        targets: t,
+        reaction: SoilReaction.calcareous,
         ph: 7.35,
       );
-      expect(g!.fertilizerEquivalentEs, contains('40 %'));
+      expect(warn, contains('40 %'));
     });
 
-    test('sin pH no aparece ningún aviso de suelo', () {
-      final NutrientDoseGuide? g = FertilizationPlanner.buildGuide(
-        nutrient: AgroMetricKey.n,
-        label: NutrientPriorityLabel.actionRecommended,
-        rawPpm: 20.0,
-        cropKey: 'maize',
-        stageKey: 'vegMid',
-        cultivationScaleId: 'field',
-        targets: t,
+    test('sin suelo calcáreo no aparece ningún aviso de urea', () {
+      expect(
+        ureaVolatilizationWarningEs(
+          nutrient: AgroMetricKey.n,
+          reaction: SoilReaction.unknown,
+        ),
+        isNull,
       );
-      expect(g!.fertilizerEquivalentEs, isNot(contains('calcáreo')));
-      expect(g.fertilizerEquivalentEs, isNot(contains('volatiliza')));
+      expect(
+        ureaVolatilizationWarningEs(
+          nutrient: AgroMetricKey.n,
+          reaction: SoilReaction.acidic,
+          ph: 6.0,
+        ),
+        isNull,
+      );
     });
 
-    test('en suelo ácido tampoco', () {
-      final NutrientDoseGuide? g = FertilizationPlanner.buildGuide(
-        nutrient: AgroMetricKey.n,
-        label: NutrientPriorityLabel.actionRecommended,
-        rawPpm: 20.0,
-        cropKey: 'maize',
-        stageKey: 'vegMid',
-        cultivationScaleId: 'field',
-        targets: t,
-        ph: 6.0,
+    test('el aviso de urea es solo para nitrógeno', () {
+      expect(
+        ureaVolatilizationWarningEs(
+          nutrient: AgroMetricKey.k,
+          reaction: SoilReaction.calcareous,
+          ph: 8.0,
+        ),
+        isNull,
       );
-      expect(g!.fertilizerEquivalentEs, isNot(contains('calcáreo')));
     });
   });
 }

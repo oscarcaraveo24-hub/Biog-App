@@ -105,9 +105,13 @@ const AgroRange _cucumberSoilTempStd = AgroRange(
 //   según Guía Universal Pepino (relación N:K que evoluciona 1:0.7 en
 //   vegetativo → 1:1 en floración → 1:2 en cuajado/llenado → 1:1.5 en
 //   cosecha sostenida).
-// - nSoilPpmRange/pSoilPpmRange/kSoilPpmRange son la referencia comparable
-//   real del suelo (mg/kg) para NPK screen, planner y motores compartidos.
-// - nIndex/pIndex/kIndex se conservan como capa legacy de compatibilidad.
+// - Los rangos comparables de suelo en mg/kg (nSoilPpmRange y hermanos) se
+//   RETIRARON con el NPK Interpretation Reset (Guía v0.4, §4): la sonda 7-en-1
+//   deriva N/P/K de la conductividad y ningún rango del catálogo puede
+//   convertir esa señal en suficiencia química. El historial Git (tag
+//   legacy-npk-v1) conserva los números por si la auditoría de guías los
+//   necesita como referencia.
+// - nIndex/pIndex/kIndex se conservan solo como proxy de prioridad fenológica.
 const CucumberUniversalProfile cucumberUniversalV1 = CucumberUniversalProfile(
   byStage: {
     // =========================
@@ -141,24 +145,6 @@ const CucumberUniversalProfile cucumberUniversalV1 = CucumberUniversalProfile(
         optimalMin: 35,
         optimalMax: 55,
         highMin: 65,
-      ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 22,
-        optimalMin: 28,
-        optimalMax: 50,
-        highMin: 60,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 40,
-        optimalMin: 50,
-        optimalMax: 70,
-        highMin: 80,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 55,
-        optimalMin: 75,
-        optimalMax: 115,
-        highMin: 135,
       ),
       nPriority: 0.20,
       pPriority: 0.78,
@@ -214,24 +200,6 @@ const CucumberUniversalProfile cucumberUniversalV1 = CucumberUniversalProfile(
         optimalMax: 58,
         highMin: 68,
       ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 30,
-        optimalMin: 38,
-        optimalMax: 60,
-        highMin: 72,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 42,
-        optimalMin: 52,
-        optimalMax: 74,
-        highMin: 84,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 65,
-        optimalMin: 80,
-        optimalMax: 120,
-        highMin: 140,
-      ),
       nPriority: 0.40,
       pPriority: 0.82,
       kPriority: 0.38,
@@ -285,24 +253,6 @@ const CucumberUniversalProfile cucumberUniversalV1 = CucumberUniversalProfile(
         optimalMin: 52,
         optimalMax: 72,
         highMin: 82,
-      ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 50,
-        optimalMin: 65,
-        optimalMax: 95,
-        highMin: 110,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 36,
-        optimalMin: 45,
-        optimalMax: 65,
-        highMin: 75,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 80,
-        optimalMin: 100,
-        optimalMax: 140,
-        highMin: 160,
       ),
       nPriority: 0.78,
       pPriority: 0.50,
@@ -360,24 +310,6 @@ const CucumberUniversalProfile cucumberUniversalV1 = CucumberUniversalProfile(
         optimalMin: 58,
         optimalMax: 80,
         highMin: 88,
-      ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 45,
-        optimalMin: 58,
-        optimalMax: 88,
-        highMin: 100,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 35,
-        optimalMin: 42,
-        optimalMax: 62,
-        highMin: 72,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 95,
-        optimalMin: 115,
-        optimalMax: 160,
-        highMin: 180,
       ),
       nPriority: 0.65,
       pPriority: 0.46,
@@ -439,24 +371,6 @@ const CucumberUniversalProfile cucumberUniversalV1 = CucumberUniversalProfile(
         optimalMax: 88,
         highMin: 95,
       ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 40,
-        optimalMin: 50,
-        optimalMax: 78,
-        highMin: 92,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 32,
-        optimalMin: 40,
-        optimalMax: 60,
-        highMin: 70,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 110,
-        optimalMin: 135,
-        optimalMax: 180,
-        highMin: 200,
-      ),
       nPriority: 0.55,
       pPriority: 0.42,
       kPriority: 0.85,
@@ -515,24 +429,6 @@ const CucumberUniversalProfile cucumberUniversalV1 = CucumberUniversalProfile(
         optimalMax: 90,
         highMin: 96,
       ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 35,
-        optimalMin: 45,
-        optimalMax: 70,
-        highMin: 82,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 30,
-        optimalMin: 38,
-        optimalMax: 56,
-        highMin: 65,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 115,
-        optimalMin: 140,
-        optimalMax: 185,
-        highMin: 205,
-      ),
       nPriority: 0.48,
       pPriority: 0.36,
       kPriority: 0.90,
@@ -589,24 +485,6 @@ const CucumberUniversalProfile cucumberUniversalV1 = CucumberUniversalProfile(
         optimalMin: 66,
         optimalMax: 86,
         highMin: 94,
-      ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 32,
-        optimalMin: 42,
-        optimalMax: 68,
-        highMin: 80,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 28,
-        optimalMin: 36,
-        optimalMax: 54,
-        highMin: 62,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 110,
-        optimalMin: 135,
-        optimalMax: 178,
-        highMin: 195,
       ),
       nPriority: 0.50,
       pPriority: 0.34,
@@ -666,24 +544,6 @@ const CucumberUniversalProfile cucumberUniversalV1 = CucumberUniversalProfile(
         optimalMin: 46,
         optimalMax: 68,
         highMin: 78,
-      ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 18,
-        optimalMin: 24,
-        optimalMax: 50,
-        highMin: 62,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 22,
-        optimalMin: 28,
-        optimalMax: 48,
-        highMin: 58,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 75,
-        optimalMin: 92,
-        optimalMax: 135,
-        highMin: 155,
       ),
       nPriority: 0.20,
       pPriority: 0.18,

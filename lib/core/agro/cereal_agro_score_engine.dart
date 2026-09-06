@@ -8,6 +8,7 @@ import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
+import 'package:bio_g/core/agro/soil_condition_score.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 
@@ -16,7 +17,11 @@ class CerealAgroScoreEngine {
   /// [stageKey] es el nombre del enum (e.g. "flowering").
   /// [targets] y [weights] vienen del universal profile del cultivo.
   /// [criticalStageKeys] indica cuáles etapas son críticas para alertas extra.
-  /// [nCapPpm], [pCapPpm], [kCapPpm] permiten configurar los caps de NPK por cultivo.
+  ///
+  /// Los «caps» de NPK por cultivo que recibía este motor se retiraron con el
+  /// NPK Interpretation Reset (Guía v0.4, §4): N/P/K ya no se convierten a un
+  /// índice 0..100 ni se comparan contra la banda del catálogo. Viajan como
+  /// señal nativa.
   static ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluate({
     required BioGTelemetry t,
     required StageTargets targets,
@@ -28,9 +33,6 @@ class CerealAgroScoreEngine {
     Duration alertsCooldown = AlertsEngine.defaultCooldown,
     String? cropLabel,
     String? stageLabel,
-    double nCapPpm = 120.0,
-    double pCapPpm = 80.0,
-    double kCapPpm = 140.0,
   }) {
     // ── La bandera de presencia manda ──────────────────────────────────────
     //
@@ -47,18 +49,12 @@ class CerealAgroScoreEngine {
         : double.nan;
     final moistureRawCal = moisture01 * 100.0;
 
-    final soilTemp = t.soilTempC;
-    final ph = t.ph;
-    final ec = t.ec;
-    final resistance = t.resistance;
-
-    final nRawPpm = _calibrateValue(t.n, cal?.nMinRaw, cal?.nMaxRaw);
-    final pRawPpm = _calibrateValue(t.p, cal?.pMinRaw, cal?.pMaxRaw);
-    final kRawPpm = _calibrateValue(t.k, cal?.kMinRaw, cal?.kMaxRaw);
-
-    final nIndex0to100 = _ppmToIndex0to100(nRawPpm, nCapPpm);
-    final pIndex0to100 = _ppmToIndex0to100(pRawPpm, pCapPpm);
-    final kIndex0to100 = _ppmToIndex0to100(kRawPpm, kCapPpm);
+    // Sin bandera de presencia el canal viaja como NaN: la métrica sale «sin
+    // dato» y fuera del denominador del score (ver `SoilConditionScore`).
+    final soilTemp = t.hasSoilTempData ? t.soilTempC : double.nan;
+    final ph = t.hasPhData ? t.ph : double.nan;
+    final ec = t.hasEcData ? t.ec : double.nan;
+    final resistance = t.hasResistanceData ? t.resistance : double.nan;
 
     final moistureEval = _eval(
       value: moistureRawCal,
@@ -68,23 +64,26 @@ class CerealAgroScoreEngine {
     final phEval = _eval(value: ph, range: targets.ph);
     final ecEval = _eval(value: ec, range: targets.ec);
     final resistanceEval = _eval(value: resistance, range: targets.resistance);
-    // Sin sonda de nutrientes no hay dato, y ausencia NO es cero.
+    // ── N/P/K: señal nativa, sin diagnóstico ──────────────────────────────
     //
-    // Este motor no pasa por `_interpret*Nutrient` —evalúa el índice contra la
-    // banda directamente—, así que la guarda va aquí. Sin ella, un trigo sin
-    // sonda NPK daba índice 0, caía en `critical` contra la banda del catálogo
-    // (lowMax 8) y multiplicaba la penalización crítica tres veces: el
-    // `soilControlScore01` se quedaba en un tercio de forma permanente, con
-    // N, P y K en «Crítico» para siempre.
-    final nEval = t.hasNitrogenData
-        ? _eval(value: nIndex0to100, range: targets.nIndex)
-        : _evalUnknown(nIndex0to100);
-    final pEval = t.hasPhosphorusData
-        ? _eval(value: pIndex0to100, range: targets.pIndex)
-        : _evalUnknown(pIndex0to100);
-    final kEval = t.hasPotassiumData
-        ? _eval(value: kIndex0to100, range: targets.kIndex)
-        : _evalUnknown(kIndex0to100);
+    // La sonda 7-en-1 deriva estos tres canales de la conductividad; no los
+    // mide químicamente. Desde el NPK Interpretation Reset (Guía v0.4, §4) el
+    // motor los conserva como señal cruda —para historial, tendencias y
+    // respuesta a eventos— y no los compara contra ningún objetivo del
+    // cultivo. El manejo nutricional lo decide `NutritionReadinessEngine` con
+    // etapa, guía auditada, historial y condiciones físicas.
+    final nMetric = AgroMetricEval.nativeSignal(
+      value: t.n.toDouble(),
+      hasData: t.hasNitrogenData,
+    );
+    final pMetric = AgroMetricEval.nativeSignal(
+      value: t.p.toDouble(),
+      hasData: t.hasPhosphorusData,
+    );
+    final kMetric = AgroMetricEval.nativeSignal(
+      value: t.k.toDouble(),
+      hasData: t.hasPotassiumData,
+    );
 
     final metrics = <AgroMetricKey, AgroMetricEval>{
       AgroMetricKey.soilMoisture: _wrap(moistureEval),
@@ -92,35 +91,29 @@ class CerealAgroScoreEngine {
       AgroMetricKey.ph: _wrap(phEval),
       AgroMetricKey.ec: _wrap(ecEval),
       AgroMetricKey.resistance: _wrap(resistanceEval),
-      AgroMetricKey.n: _wrap(nEval),
-      AgroMetricKey.p: _wrap(pEval),
-      AgroMetricKey.k: _wrap(kEval),
+      AgroMetricKey.n: nMetric,
+      AgroMetricKey.p: pMetric,
+      AgroMetricKey.k: kMetric,
     };
 
-    final totalW = math.max(0.0001, weights.sum);
-    final rawScore =
-        (weights.moisture * moistureEval.score01 +
-            weights.soilTemp * soilTempEval.score01 +
-            weights.resistance * resistanceEval.score01 +
-            weights.ph * phEval.score01 +
-            weights.ec * ecEval.score01 +
-            weights.nutrientN * nEval.score01 +
-            weights.nutrientP * pEval.score01 +
-            weights.nutrientK * kEval.score01) /
-        totalW;
-
-    // ── Penalización por métricas en estado crítico ──
+    // ── Penalización por métricas físicas en estado crítico ──
     double criticalPenalty = 1.0;
     if (moistureEval.band == AgroBand.critical) criticalPenalty *= 0.45;
     if (soilTempEval.band == AgroBand.critical) criticalPenalty *= 0.50;
     if (phEval.band == AgroBand.critical) criticalPenalty *= 0.45;
     if (ecEval.band == AgroBand.critical) criticalPenalty *= 0.65;
     if (resistanceEval.band == AgroBand.critical) criticalPenalty *= 0.85;
-    if (nEval.band == AgroBand.critical) criticalPenalty *= 0.70;
-    if (pEval.band == AgroBand.critical) criticalPenalty *= 0.70;
-    if (kEval.band == AgroBand.critical) criticalPenalty *= 0.70;
 
-    final soilControlScore01 = rawScore * criticalPenalty;
+    // ── Condición del suelo: solo señales físicas presentes ─────────────────
+    //
+    // Los pesos de N/P/K del perfil no entran (peso cero por decisión) y una
+    // señal ausente sale del denominador en vez de valer 0 o 0.5. La
+    // cobertura de evidencia viaja aparte. Ver `SoilConditionScore`.
+    final SoilConditionScoreResult soil = SoilConditionScore.compute(
+      metrics: metrics,
+      weights: weights,
+      criticalPenalty: criticalPenalty,
+    );
 
     final suggestedAlertKeys = <String>[];
     final isCriticalStage = criticalStageKeys.contains(stageKey);
@@ -145,9 +138,6 @@ class CerealAgroScoreEngine {
       resistanceEval,
       isCriticalStage,
     );
-    _pushAlertsForMetric(suggestedAlertKeys, 'npk.n', nEval, isCriticalStage);
-    _pushAlertsForMetric(suggestedAlertKeys, 'npk.p', pEval, isCriticalStage);
-    _pushAlertsForMetric(suggestedAlertKeys, 'npk.k', kEval, isCriticalStage);
 
     // ── Alertas ambientales (no participan en score, solo notificaciones) ──
     _pushEnvironmentalAlerts(suggestedAlertKeys, t, isCriticalStage);
@@ -167,7 +157,8 @@ class CerealAgroScoreEngine {
     );
 
     final agroEval = AgroEvalResult(
-      soilControlScore01: soilControlScore01.clamp(0.0, 1.0),
+      soilControlScore01: soil.score01,
+      soilCoverage: soil.coverage,
       metrics: metrics,
       alerts: alertsBuild.alerts,
       suggestedAlertKeys: suggestedAlertKeys,
@@ -176,22 +167,12 @@ class CerealAgroScoreEngine {
     return (eval: agroEval, nextAlertsState: alertsBuild.state);
   }
 
-  static double _ppmToIndex0to100(double ppm, double cap) {
-    return ((ppm / cap) * 100.0).clamp(0.0, 100.0);
-  }
-
-  static double _calibrateValue(double value, double? minRaw, double? maxRaw) {
-    if (minRaw == null && maxRaw == null) return value;
-    final lo = minRaw ?? double.negativeInfinity;
-    final hi = maxRaw ?? double.infinity;
-    return value.clamp(lo, hi);
-  }
-
   static AgroMetricEval _wrap(_Eval e) => AgroMetricEval(
     band: e.band,
     score01: e.score01,
     labelEs: _labelEs(e.band),
-    value: e.value,
+    // NaN significa «no llegó»: hacia afuera viaja como null, no como número.
+    value: e.value.isFinite ? e.value : null,
   );
 
   static String _labelEs(AgroBand band) {
@@ -209,15 +190,6 @@ class CerealAgroScoreEngine {
     }
   }
 
-  /// Métrica sin sensor: banda desconocida y puntuación NEUTRA.
-  ///
-  /// El 0.5 importa. `_eval` ya devuelve `unknown` ante NaN, pero con
-  /// `score01: 0.0`, y ese cero entra en el promedio ponderado de la línea 102
-  /// como si el nutriente estuviera en lo peor. Para una sonda ausente lo
-  /// correcto es no opinar: ni premia ni castiga. Es el mismo 0.5 que usa la
-  /// guarda de los otros veintitrés motores.
-  static _Eval _evalUnknown(double value) =>
-      _Eval(value: value, band: AgroBand.unknown, score01: 0.5);
 
   static _Eval _eval({required double value, required AgroRange range}) {
     if (!value.isFinite || value.isNaN) {
@@ -315,12 +287,6 @@ class CerealAgroScoreEngine {
   /// pantalla—.
   static double _normalizeMoisture01(double raw0to100, Calibration? cal) {
     return (raw0to100 / 100.0).clamp(0.0, 1.0);
-  }
-
-  static double _avg(List<double> values) {
-    if (values.isEmpty) return 0.0;
-    final sum = values.fold<double>(0.0, (a, b) => a + b);
-    return (sum / values.length).clamp(0.0, 1.0);
   }
 
   /// Alertas ambientales basadas en airTempC y airHumidityPct.

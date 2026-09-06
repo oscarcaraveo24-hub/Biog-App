@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
+import 'package:bio_g/core/agro/soil_condition_score.dart';
 import 'package:bio_g/core/crops/cactus/cactus_lifecycle.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -10,7 +10,7 @@ import 'package:bio_g/models/biog_telemetry.dart';
 /// Motor AgroScore del Cactus ornamental.
 ///
 /// Es un ESPEJO ESTRUCTURAL de `BeanAgroScoreEngine`: mismas bandas, mismas
-/// claves de alerta, mismo motor de nutrición. Un cactus se lee, se clasifica y
+/// claves de alerta, misma señal nativa N/P/K sin diagnóstico. Un cactus se lee, se clasifica y
 /// se alerta igual que cualquier otro cultivo de BIO-G. Lo único que cambia es
 /// la agronomía (targets bajos, agua dominante) y que la etapa viene del
 /// resolver ornamental en lugar de la fecha de siembra.
@@ -18,7 +18,7 @@ import 'package:bio_g/models/biog_telemetry.dart';
 /// Por qué importa: la versión anterior emitía claves propias
 /// (`cactus.maintenance.moisture.critical`) que el `AlertsEngine` compartido NO
 /// reconoce, así que el cactus NO generaba ninguna alerta. Aquí se usan las
-/// claves canónicas (`soilMoisture.critical`, `ph.low`, `npk.k.action`, …) y el
+/// claves canónicas (`soilMoisture.critical`, `ph.low`, …) y el
 /// agricultor recibe exactamente los mismos mensajes que en frijol.
 class CactusAgroScoreEngine {
   const CactusAgroScoreEngine._();
@@ -69,42 +69,32 @@ class CactusAgroScoreEngine {
       range: targets.moistureRaw,
     );
     final soilTempEval = _evalLegacy(
-      value: t.soilTempC,
+      value: t.hasSoilTempData ? t.soilTempC : double.nan,
       range: targets.soilTemp,
     );
-    final phEval = _evalLegacy(value: t.ph, range: targets.ph);
-    final ecEval = _evalLegacy(value: t.ec, range: targets.ec);
-    final resEval = _evalLegacy(value: t.resistance, range: targets.resistance);
+    final phEval = _evalLegacy(value: t.hasPhData ? t.ph : double.nan, range: targets.ph);
+    final ecEval = _evalLegacy(value: t.hasEcData ? t.ec : double.nan, range: targets.ec);
+    final resEval = _evalLegacy(value: t.hasResistanceData ? t.resistance : double.nan, range: targets.resistance);
 
-    final nMetric = _interpretCactusNutrient(
-      metricKey: AgroMetricKey.n,
+    // ── N/P/K: señal nativa, sin diagnóstico ──────────────────────────────
+    //
+    // La sonda 7-en-1 deriva estos tres canales de la conductividad; no los
+    // mide químicamente. Desde el NPK Interpretation Reset (Guía v0.4, §4) el
+    // motor los conserva como señal cruda —para historial, tendencias y
+    // respuesta a eventos— y no los compara contra ningún objetivo del
+    // cultivo. El manejo nutricional lo decide `NutritionReadinessEngine` con
+    // etapa, guía auditada, historial y condiciones físicas.
+    final nMetric = AgroMetricEval.nativeSignal(
+      value: t.n.toDouble(),
       hasData: t.hasNitrogenData,
-      rawMgKg: t.n.toDouble(),
-      stage: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      t: t,
     );
-    final pMetric = _interpretCactusNutrient(
-      metricKey: AgroMetricKey.p,
-      rawMgKg: t.p.toDouble(),
+    final pMetric = AgroMetricEval.nativeSignal(
+      value: t.p.toDouble(),
       hasData: t.hasPhosphorusData,
-      stage: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      t: t,
     );
-    final kMetric = _interpretCactusNutrient(
-      metricKey: AgroMetricKey.k,
-      rawMgKg: t.k.toDouble(),
+    final kMetric = AgroMetricEval.nativeSignal(
+      value: t.k.toDouble(),
       hasData: t.hasPotassiumData,
-      stage: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      t: t,
     );
 
     final metrics = <AgroMetricKey, AgroMetricEval>{
@@ -114,34 +104,18 @@ class CactusAgroScoreEngine {
       ),
       AgroMetricKey.soilTemp: _wrapLegacy(
         soilTempEval,
-        displayValue: t.soilTempC,
+        displayValue: t.hasSoilTempData ? t.soilTempC : null,
       ),
-      AgroMetricKey.ph: _wrapLegacy(phEval, displayValue: t.ph),
-      AgroMetricKey.ec: _wrapLegacy(ecEval, displayValue: t.ec),
+      AgroMetricKey.ph: _wrapLegacy(phEval, displayValue: t.hasPhData ? t.ph : null),
+      AgroMetricKey.ec: _wrapLegacy(ecEval, displayValue: t.hasEcData ? t.ec : null),
       AgroMetricKey.resistance: _wrapLegacy(
         resEval,
-        displayValue: t.resistance,
+        displayValue: t.hasResistanceData ? t.resistance : null,
       ),
       AgroMetricKey.n: nMetric,
       AgroMetricKey.p: pMetric,
       AgroMetricKey.k: kMetric,
     };
-
-    final nHealthScore = _nutrientHealthScore(nMetric);
-    final pHealthScore = _nutrientHealthScore(pMetric);
-    final kHealthScore = _nutrientHealthScore(kMetric);
-
-    final wSum = math.max(0.0001, weights.sum);
-    final rawSoilControlScore =
-        (weights.moisture * moistureEval.score01 +
-            weights.soilTemp * soilTempEval.score01 +
-            weights.resistance * resEval.score01 +
-            weights.ph * phEval.score01 +
-            weights.ec * ecEval.score01 +
-            weights.nutrientN * nHealthScore +
-            weights.nutrientP * pHealthScore +
-            weights.nutrientK * kHealthScore) /
-        wSum;
 
     double criticalPenalty = 1.0;
     // El exceso de agua es EL riesgo del cactus: pesa más que la falta.
@@ -155,33 +129,26 @@ class CactusAgroScoreEngine {
     if (ecEval.band == AgroBand.critical) criticalPenalty *= 0.60;
     // Sustrato compactado = raíz asfixiada y agua retenida en el cuello.
     if (resEval.band == AgroBand.critical) criticalPenalty *= 0.70;
-    criticalPenalty *= _nutrientPenaltyFactor(nMetric.priorityLabel);
-    criticalPenalty *= _nutrientPenaltyFactor(pMetric.priorityLabel);
-    criticalPenalty *= _nutrientPenaltyFactor(kMetric.priorityLabel);
 
     // Frío + sustrato húmedo: la combinación que pudre la raíz. Castigo extra.
     if (_isColdAndWet(
-      soilTempC: t.soilTempC,
+      soilTempC: t.hasSoilTempData ? t.soilTempC : double.nan,
       moisturePct: moistureRawCal,
       targets: targets,
     )) {
       criticalPenalty *= 0.65;
     }
 
-    final soilControlScore01 = (rawSoilControlScore * criticalPenalty).clamp(
-      0.0,
-      1.0,
+    // ── Condición del suelo: solo señales físicas presentes ─────────────────
+    //
+    // Los pesos de N/P/K del perfil no entran (peso cero por decisión) y una
+    // señal ausente sale del denominador en vez de valer 0 o 0.5. La
+    // cobertura de evidencia viaja aparte. Ver `SoilConditionScore`.
+    final SoilConditionScoreResult soil = SoilConditionScore.compute(
+      metrics: metrics,
+      weights: weights,
+      criticalPenalty: criticalPenalty,
     );
-
-    final nutrientWeightSum = math.max(
-      0.0001,
-      weights.nutrientN + weights.nutrientP + weights.nutrientK,
-    );
-    final nutrientPriorityScore01 =
-        ((weights.nutrientN * _nutrientSeverityScore(nMetric)) +
-            (weights.nutrientP * _nutrientSeverityScore(pMetric)) +
-            (weights.nutrientK * _nutrientSeverityScore(kMetric))) /
-        nutrientWeightSum;
 
     // Claves CANÓNICAS del AlertsEngine compartido. Mismos mensajes que frijol.
     final suggested = <String>[];
@@ -191,9 +158,6 @@ class CactusAgroScoreEngine {
     _pushSoilAlert(suggested, 'ec', ecEval, stage);
     _pushSoilAlert(suggested, 'resistance', resEval, stage);
 
-    _pushNutrientAlert(suggested, 'npk.n', nMetric, stage);
-    _pushNutrientAlert(suggested, 'npk.p', pMetric, stage);
-    _pushNutrientAlert(suggested, 'npk.k', kMetric, stage);
     _pushEnvironmentalAlerts(suggested, t);
 
     final severityBump = criticalStages.contains(stage)
@@ -214,9 +178,8 @@ class CactusAgroScoreEngine {
     );
 
     final eval = AgroEvalResult(
-      soilControlScore01: soilControlScore01,
-      nutrientPriorityScore01: nutrientPriorityScore01.clamp(0.0, 1.0),
-      primaryScoreKind: AgroScoreKind.nutrientPriority,
+      soilControlScore01: soil.score01,
+      soilCoverage: soil.coverage,
       metrics: metrics,
       alerts: built.alerts,
       suggestedAlertKeys: suggested,
@@ -238,111 +201,13 @@ class CactusAgroScoreEngine {
     return cold && wet;
   }
 
-  static AgroMetricEval _interpretCactusNutrient({
-    required AgroMetricKey metricKey,
-    required double rawMgKg,
-    required bool hasData,
-    required String stage,
-    required String stageLabelEs,
-    required StageTargets targets,
-    required StageWeights weights,
-    required BioGTelemetry t,
-  }) {
-    // Sin sonda de nutrientes no hay dato, y ausencia NO es cero.
-    //
-    // Un 0 ppm entra en `interpret` y sale como `actionRecommended`, la peor
-    // etiqueta de deficiencia que existe: un equipo sin sonda NPK le decía al
-    // productor «aplica fertilizante ya», en cada lectura, para siempre. El
-    // motor de frutales ya se guardaba de esto desde el principio; el resto no.
-    if (!hasData || rawMgKg <= 0) {
-      return AgroMetricEval(
-        band: AgroBand.unknown,
-        score01: 0.5,
-        labelEs: AgroBand.unknown.labelEs,
-        value: rawMgKg,
-        stageKey: stage,
-        stageLabelEs: stageLabelEs,
-        demandWindowLabelEs: targets.windowLabelFor(metricKey),
-      );
-    }
-
-    final interpretation = NutrientRecommendationEngine.interpret(
-      nutrient: metricKey,
-      rawPpm: rawMgKg,
-      cropKey: 'cactus',
-        stageKey: stage,
-      targets: targets,
-      weights: weights,
-      ph: t.ph,
-      ec: t.ec,
-      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
-    );
-
-    return AgroMetricEval(
-      band: interpretation.label.agroBand,
-      score01: interpretation.label
-          .severityScore01(stagePressure01: interpretation.stagePressure01)
-          .clamp(0.0, 1.0),
-      labelEs: interpretation.labelEs,
-      value: rawMgKg,
-      priorityLabel: interpretation.label,
-        stageKey: stage,
-        stageLabelEs: stageLabelEs,
-      demandWindowLabelEs: interpretation.demandWindowLabel,
-      shortRecommendationEs: interpretation.shortRecommendation,
-      practicalRecommendationEs: interpretation.practicalRecommendation,
-      doseGuideEs: interpretation.doseGuideEs,
-      fertilizerEquivalentEs: interpretation.fertilizerEquivalentEs,
-      justificationEs: interpretation.justification,
-      stagePressure01: interpretation.stagePressure01,
-      contextModifier01: interpretation.contextModifier01,
-      trendModifier01: interpretation.trendModifier01,
-    );
-  }
-
-  static AgroMetricEval _wrapLegacy(_Eval e, {required double displayValue}) {
+  static AgroMetricEval _wrapLegacy(_Eval e, {required double? displayValue}) {
     return AgroMetricEval(
       band: e.band,
       score01: e.score01,
       labelEs: e.band.labelEs,
       value: displayValue,
     );
-  }
-
-  static double _nutrientSeverityScore(AgroMetricEval metric) {
-    final label = metric.priorityLabel;
-    if (label == null) return 0.0;
-    return label.severityScore01(
-      stagePressure01: metric.stagePressure01 ?? 0.0,
-    );
-  }
-
-  static double _nutrientHealthScore(AgroMetricEval metric) {
-    final label = metric.priorityLabel;
-    if (label == null) return metric.score01.clamp(0.0, 1.0);
-    return label.healthScore01(stagePressure01: metric.stagePressure01 ?? 0.0);
-  }
-
-  static double _nutrientPenaltyFactor(NutrientPriorityLabel? label) {
-    if (label == null) return 1.0;
-    switch (label) {
-      case NutrientPriorityLabel.actionRecommended:
-        return 0.80;
-      case NutrientPriorityLabel.reviewAccumulation:
-        // Acumulación de sales/nutrientes en cactus: castigo notorio.
-        return 0.78;
-      case NutrientPriorityLabel.reviewManagement:
-        return 0.86;
-      case NutrientPriorityLabel.highPriority:
-      case NutrientPriorityLabel.possibleExcess:
-        return 0.90;
-      case NutrientPriorityLabel.mediumPriority:
-        return 0.96;
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-        return 1.0;
-    }
   }
 
   static _Eval _evalLegacy({required double value, required AgroRange range}) {
@@ -425,44 +290,6 @@ class CactusAgroScoreEngine {
 
     if (isSensitiveStage && e.band == AgroBand.low) out.add('$key.low');
     if (isSensitiveStage && e.band == AgroBand.high) out.add('$key.high');
-  }
-
-  static void _pushNutrientAlert(
-    List<String> out,
-    String key,
-    AgroMetricEval metric,
-    String stage,
-  ) {
-    final label = metric.priorityLabel;
-    if (label == null) return;
-
-    switch (label) {
-      case NutrientPriorityLabel.actionRecommended:
-        out.add('$key.action');
-        return;
-      case NutrientPriorityLabel.reviewManagement:
-        out.add('$key.review');
-        return;
-      case NutrientPriorityLabel.highPriority:
-        out.add('$key.high_priority');
-        return;
-      case NutrientPriorityLabel.possibleExcess:
-        out.add('$key.possible_excess');
-        return;
-      case NutrientPriorityLabel.reviewAccumulation:
-        out.add('$key.review_accumulation');
-        return;
-      case NutrientPriorityLabel.mediumPriority:
-        if (criticalStages.contains(stage) ||
-            semiCriticalStages.contains(stage)) {
-          out.add('$key.medium_priority');
-        }
-        return;
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-        return;
-    }
   }
 
   static void _pushEnvironmentalAlerts(List<String> out, BioGTelemetry t) {

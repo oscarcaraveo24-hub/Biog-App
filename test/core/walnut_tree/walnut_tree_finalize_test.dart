@@ -4,13 +4,10 @@
 // ic_walnut_tree_generic; fallback seguro), NG-05 canónico/migración, copy
 // nogalero de etapas y guardas NPK (EC/humedad/pH) en la recomendación práctica.
 
-import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_assets.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_catalog.dart';
-import 'package:bio_g/core/crops/walnut_tree/walnut_tree_universal_profile.dart';
 import 'package:bio_g/core/crops/walnut_tree/walnut_tree_yield_reference.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -174,62 +171,4 @@ void main() {
     });
   });
 
-  group('Guardas NPK del nogal (EC/humedad/pH mandan antes que NPK)', () {
-    NutrientInterpretationResult interpretK({
-      required double ec,
-      required double soilMoisturePct,
-      required double ph,
-      String stage = TreeStageIds.fruitFill,
-    }) {
-      return NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.k,
-        rawPpm: 20, // K bajo
-        cropKey: 'walnut_tree',
-        stageKey: stage,
-        profileId: kNg01Western,
-        targets: resolveWalnutTreeTargets(stage),
-        weights: resolveWalnutTreeStageWeights(stage),
-        ph: ph,
-        ec: ec,
-        soilMoisturePct: soilMoisturePct,
-      );
-    }
-
-    test('EC alta en llenado: la guarda de sales encabeza la recomendación', () {
-      final r = interpretK(ec: 3.0, soilMoisturePct: 70, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      // La guarda manda: habla de salinidad/sales y de no fertilizar fuerte.
-      expect(msg, anyOf(contains('salinidad'), contains('sales')));
-      expect(
-        msg,
-        anyOf(contains('lavado'), contains('lixiviación'), contains('drenaje')),
-      );
-    });
-
-    test('humedad crítica baja: agua primero (raíz estresada)', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 35, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(msg, contains('humedad'));
-      expect(msg, anyOf(contains('llenado de almendra'), contains('estabiliza')));
-    });
-
-    test('humedad saturada: oxígeno/raíz/drenaje, no más fertilizante', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 95, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(msg, anyOf(contains('saturado'), contains('oxígeno'), contains('drenaje')));
-    });
-
-    test('pH alto: advierte disponibilidad de zinc/hierro/fósforo, no N', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 70, ph: 7.9);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(msg, anyOf(contains('zinc'), contains('disponibilidad')));
-    });
-
-    test('suelo OK: NO se dispara guarda; habla de potasio/llenado', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 72, ph: 6.8);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(msg, contains('potasio'));
-      expect(msg, isNot(contains('saturado')));
-    });
-  });
 }

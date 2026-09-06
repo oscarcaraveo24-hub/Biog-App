@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/agronomic_event.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 
 /// ============================================================
 /// EVENT ENGINE
@@ -452,16 +453,62 @@ class EventEngine {
     }
 
     // =========================================================
-    // 6) NPK
+    // 5b) CONDUCTIVIDAD ELÉCTRICA (sales)
     // =========================================================
-    if (input.hasAnyNpk) {
+    //
+    // La CE es la señal física que sustituye a las bandas NPK: se juzga como
+    // salinidad de la zona radicular, nunca como «falta o sobra fertilizante»
+    // (Guía v0.4, §2 y §8). La banda viene del motor de score del cultivo.
+    final ecBand = input.bandOf(EventMetricKeys.ec);
+    if (ecBand != null && ecBand.isHighish) {
+      events.add(
+        AgronomicEvent(
+          type: AgronomicEventType.highSalinity,
+          severity: ecBand.toSeverity(isLow: false),
+          title: 'Sales altas en el suelo',
+          message: input.ec != null
+              ? 'La conductividad eléctrica del suelo está alta (${_fmt(input.ec)} mS/cm). '
+                    'Si se sostiene, conviene revisar la calidad del agua de riego '
+                    'y dar una lámina de lavado antes de cualquier aporte.'
+              : 'La conductividad eléctrica del suelo está por encima del rango '
+                    'esperado para esta etapa.',
+          timestamp: now,
+          deviceId: input.deviceId,
+          metricKey: EventMetricKeys.ec,
+          seedProfileId: input.seedProfileId,
+          seedAlias: input.seedAlias,
+          stageKey: input.stageKey,
+          stageLabel: input.stageLabel,
+          isCritical: ecBand == AgroBand.critical,
+          metadata: {
+            'source': 'event_engine',
+            'group': 'ec',
+            'value': input.ec,
+            'band': ecBand.name,
+          },
+        ),
+      );
+    }
+
+    // =========================================================
+    // 6) NUTRICIÓN
+    // =========================================================
+    //
+    // Este motor NO interpreta N/P/K. La sonda 7-en-1 deriva esos canales de la
+    // CE y no puede sostener «bajo/alto» (Guía v0.4, §2). La única lectura
+    // nutrimental que se emite es la constancia de la señal nativa; el juicio
+    // agronómico llega ya tomado en [EventEngineInput.nutritionDecision], igual
+    // que el riego llega en [EventEngineInput.irrigationDecision].
+    if (!input.isGenericMode && input.hasAnyNpk) {
       events.add(
         AgronomicEvent(
           type: AgronomicEventType.npkReading,
           severity: AgronomicEventSeverity.info,
-          title: 'Lectura NPK reciente',
+          title: 'Señal nativa N/P/K registrada',
           message:
-              'Se registró lectura nutrimental de NPK${_buildNpkInline(input)}.',
+              'La sonda registró sus canales nativos de N, P y K${_buildNpkInline(input)}. '
+              'Son señales derivadas de la conductividad, útiles para seguir '
+              'tendencias; no equivalen a un análisis de laboratorio.',
           timestamp: now,
           deviceId: input.deviceId,
           metricKey: EventMetricKeys.npk,
@@ -476,207 +523,13 @@ class EventEngine {
             'n': input.n,
             'p': input.p,
             'k': input.k,
+            'nativeSignal': true,
           },
         ),
       );
     }
 
-    final nBand = input.bandOf(EventMetricKeys.n);
-    final pBand = input.bandOf(EventMetricKeys.p);
-    final kBand = input.bandOf(EventMetricKeys.k);
-
-    final nIsExcess = input.excessNutrientKeys.contains(EventMetricKeys.n);
-    final pIsExcess = input.excessNutrientKeys.contains(EventMetricKeys.p);
-    final kIsExcess = input.excessNutrientKeys.contains(EventMetricKeys.k);
-
-    // ── Nitrógeno ──
-    if (nBand != null && nBand.isLowish && !nIsExcess) {
-      events.add(
-        AgronomicEvent(
-          type: AgronomicEventType.nitrogenLow,
-          severity: nBand.toSeverity(isLow: true),
-          title: 'Nitrógeno bajo',
-          message: input.n != null
-              ? 'El nitrógeno aparece por debajo del rango esperado (${_fmt(input.n)} mg/kg).'
-              : 'El nitrógeno aparece por debajo del rango esperado.',
-          timestamp: now,
-          deviceId: input.deviceId,
-          metricKey: EventMetricKeys.n,
-          seedProfileId: input.seedProfileId,
-          seedAlias: input.seedAlias,
-          stageKey: input.stageKey,
-          stageLabel: input.stageLabel,
-          isCritical: nBand == AgroBand.critical,
-          metadata: {
-            'source': 'event_engine',
-            'group': 'npk',
-            'value': input.n,
-            'band': nBand.name,
-          },
-        ),
-      );
-    } else if (nBand != null && nIsExcess) {
-      events.add(
-        AgronomicEvent(
-          type: AgronomicEventType.nitrogenHigh,
-          severity: nBand.toSeverity(isLow: false),
-          title: 'Nitrógeno en exceso',
-          message: input.n != null
-              ? 'El nitrógeno aparece por encima del rango esperado (${_fmt(input.n)} mg/kg). Conviene reducir aportes nitrogenados.'
-              : 'El nitrógeno aparece por encima del rango esperado.',
-          timestamp: now,
-          deviceId: input.deviceId,
-          metricKey: EventMetricKeys.n,
-          seedProfileId: input.seedProfileId,
-          seedAlias: input.seedAlias,
-          stageKey: input.stageKey,
-          stageLabel: input.stageLabel,
-          isCritical: false,
-          metadata: {
-            'source': 'event_engine',
-            'group': 'npk',
-            'value': input.n,
-            'band': nBand.name,
-            'excess': true,
-          },
-        ),
-      );
-    }
-
-    // ── Fósforo ──
-    if (pBand != null && pBand.isLowish && !pIsExcess) {
-      events.add(
-        AgronomicEvent(
-          type: AgronomicEventType.phosphorusLow,
-          severity: pBand.toSeverity(isLow: true),
-          title: 'Fósforo bajo',
-          message: input.p != null
-              ? 'El fósforo aparece por debajo del rango esperado (${_fmt(input.p)} mg/kg).'
-              : 'El fósforo aparece por debajo del rango esperado.',
-          timestamp: now,
-          deviceId: input.deviceId,
-          metricKey: EventMetricKeys.p,
-          seedProfileId: input.seedProfileId,
-          seedAlias: input.seedAlias,
-          stageKey: input.stageKey,
-          stageLabel: input.stageLabel,
-          isCritical: pBand == AgroBand.critical,
-          metadata: {
-            'source': 'event_engine',
-            'group': 'npk',
-            'value': input.p,
-            'band': pBand.name,
-          },
-        ),
-      );
-    } else if (pBand != null && pIsExcess) {
-      events.add(
-        AgronomicEvent(
-          type: AgronomicEventType.phosphorusHigh,
-          severity: pBand.toSeverity(isLow: false),
-          title: 'Fósforo en exceso',
-          message: input.p != null
-              ? 'El fósforo aparece por encima del rango esperado (${_fmt(input.p)} mg/kg). Conviene reducir aportes fosfatados.'
-              : 'El fósforo aparece por encima del rango esperado.',
-          timestamp: now,
-          deviceId: input.deviceId,
-          metricKey: EventMetricKeys.p,
-          seedProfileId: input.seedProfileId,
-          seedAlias: input.seedAlias,
-          stageKey: input.stageKey,
-          stageLabel: input.stageLabel,
-          isCritical: false,
-          metadata: {
-            'source': 'event_engine',
-            'group': 'npk',
-            'value': input.p,
-            'band': pBand.name,
-            'excess': true,
-          },
-        ),
-      );
-    }
-
-    // ── Potasio ──
-    if (kBand != null && kBand.isLowish && !kIsExcess) {
-      events.add(
-        AgronomicEvent(
-          type: AgronomicEventType.potassiumLow,
-          severity: kBand.toSeverity(isLow: true),
-          title: 'Potasio bajo',
-          message: input.k != null
-              ? 'El potasio aparece por debajo del rango esperado (${_fmt(input.k)} mg/kg).'
-              : 'El potasio aparece por debajo del rango esperado.',
-          timestamp: now,
-          deviceId: input.deviceId,
-          metricKey: EventMetricKeys.k,
-          seedProfileId: input.seedProfileId,
-          seedAlias: input.seedAlias,
-          stageKey: input.stageKey,
-          stageLabel: input.stageLabel,
-          isCritical: kBand == AgroBand.critical,
-          metadata: {
-            'source': 'event_engine',
-            'group': 'npk',
-            'value': input.k,
-            'band': kBand.name,
-          },
-        ),
-      );
-    } else if (kBand != null && kIsExcess) {
-      events.add(
-        AgronomicEvent(
-          type: AgronomicEventType.potassiumHigh,
-          severity: kBand.toSeverity(isLow: false),
-          title: 'Potasio en exceso',
-          message: input.k != null
-              ? 'El potasio aparece por encima del rango esperado (${_fmt(input.k)} mg/kg). Conviene reducir aportes potásicos.'
-              : 'El potasio aparece por encima del rango esperado.',
-          timestamp: now,
-          deviceId: input.deviceId,
-          metricKey: EventMetricKeys.k,
-          seedProfileId: input.seedProfileId,
-          seedAlias: input.seedAlias,
-          stageKey: input.stageKey,
-          stageLabel: input.stageLabel,
-          isCritical: false,
-          metadata: {
-            'source': 'event_engine',
-            'group': 'npk',
-            'value': input.k,
-            'band': kBand.name,
-            'excess': true,
-          },
-        ),
-      );
-    }
-
-    if (_hasNutrientImbalance(nBand, pBand, kBand)) {
-      events.add(
-        AgronomicEvent(
-          type: AgronomicEventType.nutrientImbalance,
-          severity: _nutrientImbalanceSeverity(nBand, pBand, kBand),
-          title: 'Desbalance nutrimental',
-          message:
-              'Las lecturas NPK muestran desbalance respecto al rango esperado para el cultivo o la etapa.',
-          timestamp: now,
-          deviceId: input.deviceId,
-          metricKey: EventMetricKeys.npk,
-          seedProfileId: input.seedProfileId,
-          seedAlias: input.seedAlias,
-          stageKey: input.stageKey,
-          stageLabel: input.stageLabel,
-          isCritical: [nBand, pBand, kBand].contains(AgroBand.critical),
-          metadata: {
-            'source': 'event_engine',
-            'group': 'npk',
-            'nBand': nBand?.name,
-            'pBand': pBand?.name,
-            'kBand': kBand?.name,
-          },
-        ),
-      );
-    }
+    events.addAll(_nutritionEvents(input));
 
     // =========================================================
     // 7) TENDENCIA Y ESTADO COMBINADO
@@ -864,7 +717,7 @@ class EventEngine {
     // =========================================================
     // 9) RECOMENDACIONES (eventos tipo recomendación)
     // =========================================================
-    if (_shouldRecommendIrrigation(input, moistureBand)) {
+    if (_shouldRecommendIrrigation(input)) {
       // No nulo por construccion: _shouldRecommendIrrigation ya exigio que la
       // decision existiera y que su accion fuera regar.
       final IrrigationDecision decision = input.irrigationDecision!;
@@ -902,42 +755,162 @@ class EventEngine {
       );
     }
 
-    if (_shouldRecommendFertilization(input, nBand, pBand, kBand)) {
-      events.add(
+    // =========================================================
+    // LIMPIEZA FINAL
+    // =========================================================
+    return _dedupeAndSort(events);
+  }
+
+  /// Convierte la decisión del motor de nutrición en eventos. No decide nada:
+  /// traduce (Guía v0.4, §9 y fase 8).
+  static List<AgronomicEvent> _nutritionEvents(EventEngineInput input) {
+    if (input.isGenericMode) return const <AgronomicEvent>[];
+    final NutritionDecision? d = input.nutritionDecision;
+    if (d == null) return const <AgronomicEvent>[];
+
+    final now = input.timestamp;
+    final out = <AgronomicEvent>[];
+    final Map<String, Object?> trace = <String, Object?>{
+      'source': 'event_engine',
+      'group': 'nutrition',
+      'decisionState': d.state.name,
+      'engineVersion': d.engineVersion,
+      'windowOutcome': d.window?.outcome.name,
+      'awaitingEvidence': d.awaitingEvidence,
+      'scoreFactor': d.scoreFactor,
+    };
+
+    switch (d.state) {
+      case NutritionState.actionWindow:
+        final NutritionRecommendation? rec = d.recommendation;
+        out.add(
+          AgronomicEvent(
+            type: AgronomicEventType.fertilizationRecommended,
+            severity: (d.window?.isCritical ?? false)
+                ? AgronomicEventSeverity.warning
+                : AgronomicEventSeverity.caution,
+            title: 'Esta etapa necesita nutrición',
+            message: rec?.detailEs ?? d.detailEs,
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.npk,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            metadata: <String, Object?>{
+              ...trace,
+              'nutrient': rec?.nutrient.name,
+              'hasDose': rec?.hasDose ?? false,
+              'guideAudit': d.guideAudit.name,
+            },
+          ),
+        );
+      case NutritionState.responseWindow:
+        out.add(
+          AgronomicEvent(
+            type: AgronomicEventType.nutritionResponseDetected,
+            severity: AgronomicEventSeverity.info,
+            title: 'Respuesta compatible con fertilización detectada',
+            message: d.detailEs,
+            timestamp: now,
+            deviceId: input.deviceId,
+            metricKey: EventMetricKeys.npk,
+            seedProfileId: input.seedProfileId,
+            seedAlias: input.seedAlias,
+            stageKey: input.stageKey,
+            stageLabel: input.stageLabel,
+            isInformative: true,
+            metadata: <String, Object?>{
+              ...trace,
+              'confidence01': d.signature?.confidence01,
+              'signatureKind': d.signature?.kind.name,
+              'detectedAt': d.signature?.startedAt.toUtc().toIso8601String(),
+            },
+          ),
+        );
+      case NutritionState.prepare:
+        if (d.upcomingWindowInDays != null && d.recommendation != null) {
+          out.add(
+            AgronomicEvent(
+              type: AgronomicEventType.nutritionUpcomingWindow,
+              severity: AgronomicEventSeverity.info,
+              title: d.recommendation!.headlineEs,
+              message: d.recommendation!.detailEs,
+              timestamp: now,
+              deviceId: input.deviceId,
+              metricKey: EventMetricKeys.npk,
+              seedProfileId: input.seedProfileId,
+              seedAlias: input.seedAlias,
+              stageKey: input.stageKey,
+              stageLabel: input.stageLabel,
+              isInformative: true,
+              metadata: <String, Object?>{
+                ...trace,
+                'inDays': d.upcomingWindowInDays,
+                'nextStage': d.upcomingWindowLabelEs,
+              },
+            ),
+          );
+        } else if (d.awaitingEvidence) {
+          // Ventana abierta pero el suelo no permite aplicar todavía: es una
+          // recomendación de preparación, no de aplicación.
+          out.add(
+            AgronomicEvent(
+              type: AgronomicEventType.fertilizationRecommended,
+              severity: AgronomicEventSeverity.caution,
+              title: d.headlineEs,
+              message: d.detailEs,
+              timestamp: now,
+              deviceId: input.deviceId,
+              metricKey: EventMetricKeys.npk,
+              seedProfileId: input.seedProfileId,
+              seedAlias: input.seedAlias,
+              stageKey: input.stageKey,
+              stageLabel: input.stageLabel,
+              metadata: <String, Object?>{...trace, 'blockedByConditions': true},
+            ),
+          );
+        }
+      case NutritionState.monitor:
+      case NutritionState.learning:
+        break;
+    }
+
+    // Una ventana importante que TERMINÓ sin evidencia es el único hecho
+    // nutrimental que pesa: se avisa una vez, con su porqué.
+    final NutritionWindowRecord? unattended = d.recentlyUnattendedWindow;
+    if (unattended != null) {
+      out.add(
         AgronomicEvent(
-          type: AgronomicEventType.fertilizationRecommended,
-          severity: [nBand, pBand, kBand].contains(AgroBand.critical)
-              ? AgronomicEventSeverity.warning
-              : AgronomicEventSeverity.caution,
-          title: _isLettuce(input) ||
-                  _isSpinach(input) ||
-                  _isOnion(input) ||
-                  _isGarlic(input)
-              ? 'Revisión nutricional'
-              : 'Fertilización recomendada',
-          message: _fertilizationRecommendationMessage(input, nBand, pBand, kBand),
-          timestamp: now,
+          type: AgronomicEventType.nutritionWindowUnattended,
+          severity: AgronomicEventSeverity.warning,
+          title:
+              'Esta ventana nutricional no mostró evidencia suficiente de haber sido atendida',
+          message:
+              'La ventana de ${unattended.nutrientsLabelEs} en «${unattended.stageLabelEs}» '
+              'terminó sin que la sonda viera una respuesta compatible con '
+              'fertilización. Pesa en el score histórico y en la proyección de este '
+              'ciclo. No es una certeza de que no fertilizaste: el producto pudo '
+              'quedar fuera del alcance de la sonda o llegar con poca agua.',
+          timestamp: unattended.resolvedAt ?? now,
           deviceId: input.deviceId,
           metricKey: EventMetricKeys.npk,
           seedProfileId: input.seedProfileId,
           seedAlias: input.seedAlias,
-          stageKey: input.stageKey,
-          stageLabel: input.stageLabel,
-          metadata: {
-            'source': 'event_engine',
-            'group': 'recommendation',
-            'nBand': nBand?.name,
-            'pBand': pBand?.name,
-            'kBand': kBand?.name,
+          stageKey: unattended.stageKey,
+          stageLabel: unattended.stageLabelEs,
+          metadata: <String, Object?>{
+            ...trace,
+            'windowId': unattended.id,
+            'nutrients': unattended.nutrients.map((k) => k.name).toList(),
+            'observedFraction': unattended.observedFraction,
           },
         ),
       );
     }
 
-    // =========================================================
-    // LIMPIEZA FINAL
-    // =========================================================
-    return _dedupeAndSort(events);
+    return out;
   }
 
   static bool _hasStageTransition(EventEngineInput input) {
@@ -967,38 +940,6 @@ class EventEngine {
 
     final range = values.reduce(math.max) - values.reduce(math.min);
     return range <= tolerance;
-  }
-
-  static bool _hasNutrientImbalance(
-    AgroBand? nBand,
-    AgroBand? pBand,
-    AgroBand? kBand,
-  ) {
-    // `unknown` significa "no hay dato", no "hay problema".
-    //
-    // `whereType<AgroBand>()` filtra los null pero NO los `unknown`, y como
-    // `unknown != optimal`, dos nutrientes ausentes bastaban para emitir
-    // "Desbalance nutrimental" sobre sensores que no reportaron nada.
-    final bands = [nBand, pBand, kBand]
-        .whereType<AgroBand>()
-        .where((b) => b != AgroBand.unknown)
-        .toList();
-    if (bands.isEmpty) return false;
-
-    final problemCount = bands.where((b) => b != AgroBand.optimal).length;
-    return problemCount >= 2 || bands.contains(AgroBand.critical);
-  }
-
-  static AgronomicEventSeverity _nutrientImbalanceSeverity(
-    AgroBand? nBand,
-    AgroBand? pBand,
-    AgroBand? kBand,
-  ) {
-    final bands = [nBand, pBand, kBand];
-    if (bands.contains(AgroBand.critical)) {
-      return AgronomicEventSeverity.warning;
-    }
-    return AgronomicEventSeverity.caution;
   }
 
   static int _countProblemMetrics(Map<String, AgroBand> bands) {
@@ -1043,29 +984,11 @@ class EventEngine {
   /// `low` o `critical`. Ese atajo ignoraba la lluvia pronosticada, la vigencia
   /// de la lectura y la confianza, así que podía ordenar riego justo cuando el
   /// motor había decidido esperar. Ver la nota de [EventEngineInput.irrigationDecision].
-  static bool _shouldRecommendIrrigation(
-    EventEngineInput input,
-    AgroBand? moistureBand,
-  ) {
+  static bool _shouldRecommendIrrigation(EventEngineInput input) {
     if (input.isGenericMode) return false;
     final IrrigationDecision? decision = input.irrigationDecision;
     if (decision == null) return false;
     return decision.action == IrrigationAction.regar;
-  }
-
-  static bool _shouldRecommendFertilization(
-    EventEngineInput input,
-    AgroBand? nBand,
-    AgroBand? pBand,
-    AgroBand? kBand,
-  ) {
-    if (input.isGenericMode) return false;
-
-    final bands = [nBand, pBand, kBand].whereType<AgroBand>().toList();
-    if (bands.isEmpty) return false;
-
-    final badCount = bands.where((b) => b.isLowish || b.isHighish).length;
-    return badCount >= 1;
   }
 
   static String _highAirTempMessage(
@@ -1232,103 +1155,6 @@ class EventEngine {
     return 'La lectura de humedad$value sugiere que conviene revisar riego o disponibilidad de agua.';
   }
 
-  static String _fertilizationRecommendationMessage(
-    EventEngineInput input,
-    AgroBand? nBand,
-    AgroBand? pBand,
-    AgroBand? kBand,
-  ) {
-    final stage = input.stageLabel?.trim();
-    final shortages = <String>[];
-    final excesses = <String>[];
-
-    void pushMetric(String label, AgroBand? band) {
-      if (band == null) return;
-      if (band.isLowish) shortages.add(label);
-      if (band.isHighish) excesses.add(label);
-    }
-
-    pushMetric('N', nBand);
-    pushMetric('P', pBand);
-    pushMetric('K', kBand);
-
-    final issueText = [
-      if (shortages.isNotEmpty) 'bajos en ${shortages.join('/')}',
-      if (excesses.isNotEmpty) 'altos en ${excesses.join('/')}',
-    ].join(' y ');
-
-    if (_isLettuce(input)) {
-      final stageText = stage != null && stage.isNotEmpty
-          ? ' en $stage'
-          : '';
-      final issue = issueText.isEmpty
-          ? 'un desbalance posible de NPK'
-          : 'niveles $issueText';
-      return 'Las lecturas muestran $issue$stageText. En lechuga BIO-G v1 '
-          'lo interpreta como riesgo de desequilibrio, no como receta de '
-          'dosis: revisa historial, humedad, pH, CE y calidad de hoja antes '
-          'de ajustar el manejo.';
-    }
-    if (_isSpinach(input)) {
-      final stageText = stage != null && stage.isNotEmpty
-          ? ' en $stage'
-          : '';
-      final issue = issueText.isEmpty
-          ? 'un desbalance posible de NPK'
-          : 'niveles $issueText';
-      return 'Las lecturas muestran $issue$stageText. En espinaca BIO-G v1 '
-          'lo interpreta como riesgo de desequilibrio, no como receta de dosis: '
-          'confirma humedad estable, pH, CE y calidad de hoja antes de ajustar.';
-    }
-
-    if (_isOnion(input)) {
-      final stageText = stage != null && stage.isNotEmpty
-          ? ' en $stage'
-          : '';
-      final issue = issueText.isEmpty
-          ? 'un desbalance posible de NPK'
-          : 'niveles $issueText';
-      return 'Las lecturas muestran $issue$stageText. En cebolla BIO-G v1 '
-          'lo interpreta como riesgo de desequilibrio, no como receta de dosis: '
-          'recuerda que el N tardio engruesa cuello y el fotoperiodo manda la '
-          'bulbificacion. Confirma agua, CE, etapa y maduracion antes de ajustar.';
-    }
-
-    if (_isGarlic(input)) {
-      final stageText = stage != null && stage.isNotEmpty
-          ? ' en $stage'
-          : '';
-      final issue = issueText.isEmpty
-          ? 'un desbalance posible de NPK'
-          : 'niveles $issueText';
-      return 'Las lecturas muestran $issue$stageText. En ajo BIO-G v1 '
-          'lo interpreta como riesgo de desequilibrio, no como receta de dosis: '
-          'N tardio puede favorecer escobeteado/canutos, mala maduracion y mal '
-          'curado; la vernalizacion no se corrige con fertilizante. Confirma '
-          'agua, CE, etapa, diente-semilla y sanidad antes de ajustar.';
-    }
-
-    if (stage != null && stage.isNotEmpty) {
-      if (_containsAny(stage.toLowerCase(), const <String>['germin', 'emerg', 'tempr', 'macoll', 'veg'])) {
-        return issueText.isEmpty
-            ? 'Las lecturas nutrimentales sugieren revisar fertilización de arranque o nutrición vegetativa en $stage.'
-            : 'Las lecturas nutrimentales muestran niveles $issueText. Conviene revisar fertilización de arranque o nutrición vegetativa en $stage.';
-      }
-      if (_containsAny(stage.toLowerCase(), const <String>['flor', 'cuaj', 'vaina', 'espig', 'antes', 'llenado'])) {
-        return issueText.isEmpty
-            ? 'Las lecturas nutrimentales sugieren revisar nutrición de soporte para $stage y evitar estrés durante esta fase crítica.'
-            : 'Las lecturas nutrimentales muestran niveles $issueText. Conviene ajustar la estrategia nutricional para sostener $stage.';
-      }
-      return issueText.isEmpty
-          ? 'Las lecturas nutrimentales sugieren revisar fertilización o estrategia de nutrición para $stage.'
-          : 'Las lecturas nutrimentales muestran niveles $issueText. Conviene revisar fertilización o estrategia de nutrición para $stage.';
-    }
-
-    return issueText.isEmpty
-        ? 'Las lecturas nutrimentales sugieren revisar fertilización o estrategia de nutrición.'
-        : 'Las lecturas nutrimentales muestran niveles $issueText. Conviene revisar fertilización o estrategia de nutrición.';
-  }
-
   static bool _containsAny(String value, List<String> patterns) {
     for (final pattern in patterns) {
       if (value.contains(pattern)) return true;
@@ -1451,6 +1277,7 @@ class EventEngineInput {
     this.ph,
     this.resistance,
     this.soilTemp,
+    this.ec,
     this.airTemp,
     this.airHumidity,
     this.n,
@@ -1458,10 +1285,10 @@ class EventEngineInput {
     this.k,
     this.currentBands = const <String, AgroBand>{},
     this.previousBands = const <String, AgroBand>{},
-    this.excessNutrientKeys = const <String>{},
     this.history = const <EventTelemetryPoint>[],
     this.rules = const EventEngineRules(),
     this.irrigationDecision,
+    this.nutritionDecision,
   });
 
   final DateTime timestamp;
@@ -1485,6 +1312,10 @@ class EventEngineInput {
   final double? ph;
   final double? resistance;
   final double? soilTemp;
+
+  /// Conductividad eléctrica del suelo en mS/cm (la única unidad de CE de la
+  /// app, fijada en el contrato del sensor). Null si el canal no reportó.
+  final double? ec;
   final double? airTemp;
   final double? airHumidity;
   final double? n;
@@ -1498,17 +1329,13 @@ class EventEngineInput {
   /// - EventMetricKeys.ph
   /// - EventMetricKeys.resistance
   /// - EventMetricKeys.soilTemp
-  /// - EventMetricKeys.n
-  /// - EventMetricKeys.p
-  /// - EventMetricKeys.k
+  ///
+  /// N/P/K ya no viajan como banda: son señal nativa sin interpretación
+  /// (Guía v0.4, §2 y §8).
   final Map<String, AgroBand> currentBands;
 
   /// Bandas previas opcionales. Útiles para recovery.
   final Map<String, AgroBand> previousBands;
-
-  /// Nutrientes cuya banda es por exceso (no por déficit).
-  /// Keys: EventMetricKeys.n / .p / .k
-  final Set<String> excessNutrientKeys;
 
   /// Historial ya normalizado.
   final List<EventTelemetryPoint> history;
@@ -1528,6 +1355,16 @@ class EventEngineInput {
   /// Null significa "no hay decisión disponible": entonces no se emite consejo
   /// de riego. Callar es correcto; inventar una segunda verdad agronómica, no.
   final IrrigationDecision? irrigationDecision;
+
+  /// Decisión ya tomada por el motor de nutrición. Autoridad única del manejo
+  /// nutricional (Guía v0.4, §9).
+  ///
+  /// Este motor no conoce la etapa fenológica a fondo, ni la guía auditada, ni
+  /// el libro de ventanas, ni la firma que el sensor detectó: con las lecturas
+  /// crudas de N/P/K no puede —ni debe— deducir nada nutrimental. Null significa
+  /// «no hay decisión disponible»: entonces no se emite ningún evento de
+  /// nutrición. Callar es correcto; inventar una segunda verdad, no.
+  final NutritionDecision? nutritionDecision;
 
   AgroBand? bandOf(String key) => currentBands[key];
 
@@ -1622,6 +1459,7 @@ abstract final class EventMetricKeys {
   static const ph = 'ph';
   static const resistance = 'resistance';
   static const soilTemp = 'soilTemp';
+  static const ec = 'ec';
   static const n = 'n';
   static const p = 'p';
   static const k = 'k';

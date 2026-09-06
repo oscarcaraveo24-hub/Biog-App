@@ -156,10 +156,7 @@ class WheatCropDefinition implements CropDefinition {
     if (!usedFallback) return out;
 
     return (
-      eval: AgroEvalResult(
-        soilControlScore01: out.eval.soilControlScore01,
-        metrics: out.eval.metrics,
-        alerts: out.eval.alerts,
+      eval: out.eval.copyWith(
         suggestedAlertKeys: <String>[
           ...out.eval.suggestedAlertKeys,
           'stage.fallback',

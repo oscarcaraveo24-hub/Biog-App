@@ -23,20 +23,24 @@ enum AgronomicEventType {
   soilCompaction,
   goodSoilStructure,
 
+  // Sales (CE): condición física del suelo, no diagnóstico nutrimental.
+  highSalinity,
+
   // Temperatura
   heatStress,
   coldStress,
   stableSoilTemp,
 
-  // Nutrientes
+  // Nutrición.
+  //
+  // Los tipos por banda (nitrogenLow/High, phosphorusLow/High,
+  // potassiumLow/High, nutrientImbalance) se retiraron con el reset del motor
+  // NPK (Guía v0.4, §2 y §8): la sonda no sostiene «bajo/alto». Las filas
+  // guardadas con esos nombres se ignoran al leer (`fromJson` devuelve null).
   npkReading,
-  nutrientImbalance,
-  nitrogenLow,
-  nitrogenHigh,
-  phosphorusLow,
-  phosphorusHigh,
-  potassiumLow,
-  potassiumHigh,
+  nutritionUpcomingWindow,
+  nutritionResponseDetected,
+  nutritionWindowUnattended,
 
   // Tendencia / estado combinado
   stableSoil,

@@ -8,17 +8,12 @@ class StageTargets {
     required this.ec,
     required this.resistance,
 
-    // Legacy / compatibilidad:
+    // Proxy fenologico de prioridad (ver nota en el campo):
     required this.nIndex,
     required this.pIndex,
     required this.kIndex,
 
-    // Targets comparables de suelo (mg/kg / ppm).
-    this.nSoilPpmRange,
-    this.pSoilPpmRange,
-    this.kSoilPpmRange,
-
-    // Nueva semantica NPK:
+    // Semantica NPK por etapa (prioridad, ventana, guia corta):
     this.nPriority,
     this.pPriority,
     this.kPriority,
@@ -78,24 +73,26 @@ class StageTargets {
   final AgroRange ec;
   final AgroRange resistance;
 
-  /// Legacy:
-  /// Estos campos existian como indices interpretativos 0..100 orientados
-  /// a "estado/target" y hoy se mantienen para no romper el proyecto.
+  /// Índices fenológicos 0..100 heredados del primer motor.
   ///
-  /// Nueva lectura recomendada:
-  /// usarlos temporalmente como proxy de presion / prioridad por etapa,
-  /// NO como "ppm optimos universales".
+  /// ── QUÉ SON HOY ─────────────────────────────────────────────────────────
+  /// Un proxy de PRIORIDAD por etapa: el centro del rango, dividido entre 100,
+  /// es la prioridad del nutriente cuando el perfil no declara `nPriority`
+  /// explícito (ver [resolvedNPriority01]). Nada más.
+  ///
+  /// ── QUÉ YA NO SON ───────────────────────────────────────────────────────
+  /// Hasta el NPK Interpretation Reset (Guía v0.4, §4) estos índices se
+  /// traducían a mg/kg con un «techo» por cultivo (`NpkCaps`) y se comparaban
+  /// contra la lectura cruda de la sonda para clasificarla y dosificar. Esa
+  /// traducción **se eliminó del runtime junto con los techos y los rangos
+  /// comparables de suelo (`nSoilPpmRange` y hermanos)**: la sonda 7-en-1
+  /// deriva N/P/K de la conductividad y ningún número de este catálogo puede
+  /// convertir esa señal en suficiencia química. Ningún motor lee estos
+  /// rangos como objetivo; si alguien vuelve a hacerlo, está reabriendo el
+  /// defecto que el reset cerró.
   final AgroRange nIndex;
   final AgroRange pIndex;
   final AgroRange kIndex;
-
-  /// Rangos comparables reales del suelo para N/P/K, en mg/kg (ppm).
-  ///
-  /// Cuando existen, el motor debe usar estos targets para comparar lectura
-  /// actual vs suficiencia de la etapa, sin traducir desde caps.
-  final AgroRange? nSoilPpmRange;
-  final AgroRange? pSoilPpmRange;
-  final AgroRange? kSoilPpmRange;
 
   /// Nueva semantica:
   /// presion / prioridad por etapa para cada nutriente (0..1).
@@ -227,20 +224,6 @@ class StageTargets {
     }
   }
 
-  /// Devuelve el rango comparable explicito de suelo (mg/kg) si existe.
-  AgroRange? soilPpmRangeFor(AgroMetricKey key) {
-    switch (key) {
-      case AgroMetricKey.n:
-        return nSoilPpmRange;
-      case AgroMetricKey.p:
-        return pSoilPpmRange;
-      case AgroMetricKey.k:
-        return kSoilPpmRange;
-      default:
-        return null;
-    }
-  }
-
   StageTargets copyWith({
     AgroRange? moistureRaw,
     AgroRange? soilTemp,
@@ -250,9 +233,6 @@ class StageTargets {
     AgroRange? nIndex,
     AgroRange? pIndex,
     AgroRange? kIndex,
-    AgroRange? nSoilPpmRange,
-    AgroRange? pSoilPpmRange,
-    AgroRange? kSoilPpmRange,
     double? nPriority,
     double? pPriority,
     double? kPriority,
@@ -284,9 +264,6 @@ class StageTargets {
       nIndex: nIndex ?? this.nIndex,
       pIndex: pIndex ?? this.pIndex,
       kIndex: kIndex ?? this.kIndex,
-      nSoilPpmRange: nSoilPpmRange ?? this.nSoilPpmRange,
-      pSoilPpmRange: pSoilPpmRange ?? this.pSoilPpmRange,
-      kSoilPpmRange: kSoilPpmRange ?? this.kSoilPpmRange,
       nPriority: nPriority ?? this.nPriority,
       pPriority: pPriority ?? this.pPriority,
       kPriority: kPriority ?? this.kPriority,
@@ -347,16 +324,18 @@ class StageWeights {
   final double ph;
   final double ec;
 
-  /// Peso legacy combinado para NPK.
+  /// Peso combinado de N/P/K heredado del primer motor.
   ///
-  /// Si [n], [p] y [k] vienen nulos, este valor se reparte automaticamente
-  /// entre los tres nutrientes para mantener compatibilidad.
+  /// **Sin efecto en el score desde el NPK Interpretation Reset.** Las señales
+  /// N/P/K de la sonda son nativas (derivadas de la conductividad) y tienen
+  /// peso cero en la condición del suelo por decisión (Guía v0.4, §6). El
+  /// campo se conserva en el catálogo para no reescribir 40 perfiles en la
+  /// misma cirugía; `SoilConditionScore` no lo lee. La auditoría de guías
+  /// decidirá si se retira del catálogo o se reinterpreta como peso de
+  /// prioridad nutricional dentro de `NutritionDecision`.
   final double? npk;
 
-  /// Pesos explicitos por nutriente.
-  ///
-  /// En el nuevo motor, estos pesan la prioridad/urgencia interpretada,
-  /// no un supuesto "estado optimo".
+  /// Pesos explícitos por nutriente. Misma situación que [npk].
   final double? n;
   final double? p;
   final double? k;
@@ -369,7 +348,13 @@ class StageWeights {
 
   double get nutrientsSum => nutrientN + nutrientP + nutrientK;
 
-  double get sum => moisture + soilTemp + resistance + ph + ec + nutrientsSum;
+  /// Suma de los pesos de las cinco señales físicas: lo único que pondera la
+  /// condición del suelo. Ver `SoilConditionScore`.
+  double get soilSum => moisture + soilTemp + resistance + ph + ec;
+
+  /// Suma de todos los pesos declarados, nutrientes incluidos. Se conserva por
+  /// compatibilidad con perfiles y pruebas; el score NO la usa.
+  double get sum => soilSum + nutrientsSum;
 
   double weightFor(AgroMetricKey key) {
     switch (key) {

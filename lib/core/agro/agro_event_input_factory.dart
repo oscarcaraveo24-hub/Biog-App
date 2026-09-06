@@ -2,6 +2,7 @@ import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
 import 'package:bio_g/core/agro/event_engine_rules_resolver.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
@@ -55,35 +56,16 @@ class AgroEventInputFactory {
         AgroMetricKey.soilTemp,
         !hasLive || live.hasSoilTempData,
       ),
-      EventMetricKeys.n: bandFor(
-        AgroMetricKey.n,
-        !hasLive || live.hasNitrogenData,
+      // La CE sí viaja como banda: es la señal física de sales de la zona
+      // radicular (Guía v0.4, §8), no un juicio nutrimental.
+      EventMetricKeys.ec: bandFor(
+        AgroMetricKey.ec,
+        !hasLive || live.hasEcData,
       ),
-      EventMetricKeys.p: bandFor(
-        AgroMetricKey.p,
-        !hasLive || live.hasPhosphorusData,
-      ),
-      EventMetricKeys.k: bandFor(
-        AgroMetricKey.k,
-        !hasLive || live.hasPotassiumData,
-      ),
+      // N/P/K no viajan como banda: la sonda los deriva de la CE y el motor
+      // de eventos ya no los interpreta (Guía v0.4, §2 y §8). El juicio
+      // nutrimental entra por `nutritionDecision`.
     };
-  }
-
-  /// Devuelve el set de claves de nutrientes cuya interpretación es exceso.
-  static Set<String> safeExcessNutrientKeys(AgroEvalResult? eval) {
-    if (eval == null) return const <String>{};
-    final keys = <String>{};
-    if (eval.metrics[AgroMetricKey.n]?.priorityLabel?.isExcessSide == true) {
-      keys.add(EventMetricKeys.n);
-    }
-    if (eval.metrics[AgroMetricKey.p]?.priorityLabel?.isExcessSide == true) {
-      keys.add(EventMetricKeys.p);
-    }
-    if (eval.metrics[AgroMetricKey.k]?.priorityLabel?.isExcessSide == true) {
-      keys.add(EventMetricKeys.k);
-    }
-    return keys;
   }
 
   static DateTime? eventContextDate(
@@ -129,6 +111,9 @@ class AgroEventInputFactory {
     // Autoridad unica del riego. Opcional a proposito: quien no la tenga
     // simplemente no obtiene eventos de riego, en vez de deducirlos mal.
     IrrigationDecision? irrigationDecision,
+    // Autoridad única de la nutrición, con la misma regla: sin decisión no hay
+    // eventos de nutrición, nunca una deducción desde N/P/K crudos.
+    NutritionDecision? nutritionDecision,
   }) {
     final String? cropId = cropContext?.cropId ?? seed?.cropKey;
 
@@ -159,6 +144,7 @@ class AgroEventInputFactory {
       ph: live?.hasPhData == true ? live!.ph : null,
       resistance: live?.hasResistanceData == true ? live!.resistance : null,
       soilTemp: live?.hasSoilTempData == true ? live!.soilTempC : null,
+      ec: live?.hasEcData == true ? live!.ec : null,
       // Aire con bandera, igual que suelo y NPK. Sin esto, un sensor de aire
       // ausente entra como 0 °C y dispara "Riesgo de helada" con severidad
       // crítica: `frostThresholdC` vale entre 0 y 7 °C según el cultivo, así
@@ -174,9 +160,6 @@ class AgroEventInputFactory {
       currentBands: isGenericMode
           ? const <String, AgroBand>{}
           : safeCurrentBands(effectiveEval, live: live),
-      excessNutrientKeys: isGenericMode
-          ? const <String>{}
-          : safeExcessNutrientKeys(effectiveEval),
       previousBands: previousBands,
       history: history,
       rules: EventEngineRulesResolver.resolve(
@@ -184,6 +167,7 @@ class AgroEventInputFactory {
         stageKey: stageResult?.stageKey,
       ),
       irrigationDecision: irrigationDecision,
+      nutritionDecision: nutritionDecision,
     );
   }
 }

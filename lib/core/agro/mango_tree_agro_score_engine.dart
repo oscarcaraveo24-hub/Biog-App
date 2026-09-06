@@ -1,6 +1,5 @@
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
-import 'package:bio_g/core/agro/mango_tree_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/tree_agro_score_engine.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -8,10 +7,14 @@ import 'package:bio_g/models/biog_telemetry.dart';
 /// Motor AgroScore del Mango.
 ///
 /// Delega en el motor generico [TreeAgroScoreEngine] (mismo pipeline perenne que
-/// manzano/pera/durazno/nogal/pistache/naranjo/limón), resolviendo el
-/// modificador del mango y su `cropKey`. No duplica logica base: solo aporta la
-/// identidad del cultivo (doc 05 §1, §14). El mango NO es limón, NO es naranjo y
-/// NO es manzano: usa su propio modificador y cap (N=115, P=95, K=190).
+/// manzano/pera/durazno/nogal/pistache/naranjo/limón), aportando su
+/// `cropKey`. No duplica logica base: solo aporta la identidad del cultivo
+/// (doc 05 §1, §14). El mango NO es limón, NO es naranjo y NO es manzano: tiene
+/// su propia guía de nutrición y su propio modificador de variedad.
+///
+/// Desde el NPK Interpretation Reset (Guía v0.4, §4) este wrapper ya no resuelve
+/// el modificador nutricional de la variedad: el score del árbol no interpreta
+/// N/P/K. El modificador sigue existiendo y lo consume el motor de nutrición.
 class MangoTreeAgroScoreEngine {
   const MangoTreeAgroScoreEngine._();
 
@@ -36,16 +39,9 @@ class MangoTreeAgroScoreEngine {
     String? varietyId,
     String? varietyAlias,
   }) {
-    final modifier = resolveMangoTreeNutritionModifier(
-      profileId: profileId,
-      varietyId: varietyId,
-      alias: varietyAlias,
-    );
-
     return TreeAgroScoreEngine.evaluate(
       t: t,
       cropKey: 'mango_tree',
-      modifier: modifier,
       stageId: stageId,
       stageLabelEs: stageLabelEs,
       targets: targets,

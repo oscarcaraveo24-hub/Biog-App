@@ -12,7 +12,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_registry.dart';
 import 'package:bio_g/core/crops/crop_types.dart';
@@ -204,16 +203,6 @@ void main() {
         expect(r.lowMax, lessThanOrEqualTo(0.0));
       }
     });
-    test('NPK en mg/kg, demanda baja-moderada y K > N', () {
-      for (final stage in _allStages) {
-        final t = resolveAgaveTargets(stage);
-        expect(t.nSoilPpmRange, isNotNull);
-        expect(t.kSoilPpmRange, isNotNull);
-        expect(t.nSoilPpmRange!.optimalMax, lessThanOrEqualTo(60));
-        expect(t.kSoilPpmRange!.optimalMax,
-            greaterThan(t.nSoilPpmRange!.optimalMax));
-      }
-    });
     test('todos los rangos cumplen lowMax < optMin <= optMax < highMin', () {
       for (final stage in _allStages) {
         final t = resolveAgaveTargets(stage);
@@ -223,9 +212,6 @@ void main() {
           t.ph,
           t.ec,
           t.resistance,
-          t.nSoilPpmRange!,
-          t.pSoilPpmRange!,
-          t.kSoilPpmRange!,
         ]) {
           expect(r.lowMax, lessThan(r.optimalMin), reason: stage);
           expect(r.optimalMin, lessThanOrEqualTo(r.optimalMax));
@@ -235,24 +221,6 @@ void main() {
     });
   });
 
-  // ── NpkCaps propios (Doc B §5) ─────────────────────────────────────────────
-  group('NpkCaps', () {
-    test('crop_agave resuelve N=90 · P=55 · K=280', () {
-      expect(NpkCaps.forCropMetric(cropKey: 'agave', metricKey: AgroMetricKey.n),
-          90.0);
-      expect(NpkCaps.forCropMetric(cropKey: 'agave', metricKey: AgroMetricKey.p),
-          55.0);
-      expect(NpkCaps.forCropMetric(cropKey: 'agave', metricKey: AgroMetricKey.k),
-          280.0);
-    });
-    test('no hereda los caps de cactus/suculenta/sábila', () {
-      final n = NpkCaps.forCropMetric(
-          cropKey: 'agave', metricKey: AgroMetricKey.n);
-      expect(n, isNot(60.0)); // cactus
-      expect(n, isNot(70.0)); // suculenta
-      expect(n, isNot(85.0)); // sábila
-    });
-  });
 
   // ── StageWeights (Doc B §6) ────────────────────────────────────────────────
   group('StageWeights', () {

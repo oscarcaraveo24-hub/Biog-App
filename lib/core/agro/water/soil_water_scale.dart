@@ -55,9 +55,9 @@
 // laboratorio. Trabajo revisado por pares sobre sondas capacitivas encuentra
 // señal significativa solo para potasio; para nitrógeno y fósforo, ninguna.
 //
-// El motor nutrimental sigue siendo válido —la agronomía que hay escrita ahí
-// es buena—, pero su entrada es un índice, no un análisis. Ver los barandales
-// añadidos en `fertilization_planner.dart`.
+// Por eso el motor nutricional (Guía v0.4) trata N/P/K como señal nativa de
+// tendencia y decide por etapa, guía y respuesta observada del suelo, nunca
+// por un «análisis» que la sonda no puede dar.
 
 import 'package:flutter/foundation.dart';
 

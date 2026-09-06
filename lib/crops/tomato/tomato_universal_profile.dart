@@ -97,9 +97,13 @@ const AgroRange _tomatoSoilTempStd = AgroRange(
 
 // Nota de modelado:
 // - nPriority/pPriority/kPriority expresan presion fisiologica por etapa.
-// - nSoilPpmRange/pSoilPpmRange/kSoilPpmRange son la referencia comparable
-//   real del suelo para NPK screen, planner y motores compartidos.
-// - nIndex/pIndex/kIndex se conservan como capa legacy de compatibilidad.
+// - Los rangos comparables de suelo en mg/kg (nSoilPpmRange y hermanos) se
+//   RETIRARON con el NPK Interpretation Reset (Guia v0.4, §4): la sonda 7-en-1
+//   deriva N/P/K de la conductividad y ningun rango del catalogo puede
+//   convertir esa senal en suficiencia quimica. El historial Git (tag
+//   legacy-npk-v1) conserva los numeros por si la auditoria de guias los
+//   necesita como referencia.
+// - nIndex/pIndex/kIndex se conservan solo como proxy de prioridad fenologica.
 const TomatoUniversalProfile tomatoUniversalV1 = TomatoUniversalProfile(
   byStage: {
     // =========================
@@ -135,24 +139,6 @@ const TomatoUniversalProfile tomatoUniversalV1 = TomatoUniversalProfile(
         optimalMin: 40,
         optimalMax: 60,
         highMin: 70,
-      ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 26,
-        optimalMin: 33,
-        optimalMax: 59,
-        highMin: 72,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 41,
-        optimalMin: 50,
-        optimalMax: 72,
-        highMin: 81,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 60,
-        optimalMin: 80,
-        optimalMax: 120,
-        highMin: 140,
       ),
       nPriority: 0.22,
       pPriority: 0.78,
@@ -209,24 +195,6 @@ const TomatoUniversalProfile tomatoUniversalV1 = TomatoUniversalProfile(
         optimalMax: 62,
         highMin: 72,
       ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 33,
-        optimalMin: 42,
-        optimalMax: 65,
-        highMin: 78,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 43,
-        optimalMin: 52,
-        optimalMax: 74,
-        highMin: 83,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 70,
-        optimalMin: 84,
-        optimalMax: 124,
-        highMin: 144,
-      ),
       nPriority: 0.42,
       pPriority: 0.80,
       kPriority: 0.40,
@@ -281,24 +249,6 @@ const TomatoUniversalProfile tomatoUniversalV1 = TomatoUniversalProfile(
         optimalMin: 55,
         optimalMax: 75,
         highMin: 85,
-      ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 46,
-        optimalMin: 59,
-        optimalMax: 88,
-        highMin: 101,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 38,
-        optimalMin: 47,
-        optimalMax: 68,
-        highMin: 77,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 90,
-        optimalMin: 110,
-        optimalMax: 150,
-        highMin: 170,
       ),
       nPriority: 0.72,
       pPriority: 0.52,
@@ -356,24 +306,6 @@ const TomatoUniversalProfile tomatoUniversalV1 = TomatoUniversalProfile(
         optimalMin: 60,
         optimalMax: 82,
         highMin: 90,
-      ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 42,
-        optimalMin: 52,
-        optimalMax: 81,
-        highMin: 94,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 38,
-        optimalMin: 45,
-        optimalMax: 65,
-        highMin: 74,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 100,
-        optimalMin: 120,
-        optimalMax: 164,
-        highMin: 180,
       ),
       nPriority: 0.62,
       pPriority: 0.48,
@@ -433,24 +365,6 @@ const TomatoUniversalProfile tomatoUniversalV1 = TomatoUniversalProfile(
         optimalMax: 85,
         highMin: 92,
       ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 39,
-        optimalMin: 49,
-        optimalMax: 75,
-        highMin: 88,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 36,
-        optimalMin: 43,
-        optimalMax: 63,
-        highMin: 72,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 110,
-        optimalMin: 130,
-        optimalMax: 170,
-        highMin: 184,
-      ),
       nPriority: 0.58,
       pPriority: 0.44,
       kPriority: 0.82,
@@ -509,24 +423,6 @@ const TomatoUniversalProfile tomatoUniversalV1 = TomatoUniversalProfile(
         optimalMax: 88,
         highMin: 95,
       ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 33,
-        optimalMin: 42,
-        optimalMax: 68,
-        highMin: 81,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 34,
-        optimalMin: 41,
-        optimalMax: 59,
-        highMin: 68,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 116,
-        optimalMin: 136,
-        optimalMax: 176,
-        highMin: 190,
-      ),
       nPriority: 0.48,
       pPriority: 0.38,
       kPriority: 0.88,
@@ -583,24 +479,6 @@ const TomatoUniversalProfile tomatoUniversalV1 = TomatoUniversalProfile(
         optimalMax: 88,
         highMin: 95,
       ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 29,
-        optimalMin: 39,
-        optimalMax: 65,
-        highMin: 78,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 32,
-        optimalMin: 38,
-        optimalMax: 56,
-        highMin: 65,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 116,
-        optimalMin: 136,
-        optimalMax: 176,
-        highMin: 190,
-      ),
       nPriority: 0.46,
       pPriority: 0.36,
       kPriority: 0.85,
@@ -655,24 +533,6 @@ const TomatoUniversalProfile tomatoUniversalV1 = TomatoUniversalProfile(
         optimalMin: 48,
         optimalMax: 70,
         highMin: 80,
-      ),
-      nSoilPpmRange: AgroRange(
-        lowMax: 20,
-        optimalMin: 26,
-        optimalMax: 52,
-        highMin: 65,
-      ),
-      pSoilPpmRange: AgroRange(
-        lowMax: 23,
-        optimalMin: 29,
-        optimalMax: 50,
-        highMin: 59,
-      ),
-      kSoilPpmRange: AgroRange(
-        lowMax: 80,
-        optimalMin: 96,
-        optimalMax: 140,
-        highMin: 160,
       ),
       nPriority: 0.22,
       pPriority: 0.20,

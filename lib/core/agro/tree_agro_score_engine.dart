@@ -2,8 +2,7 @@ import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
-import 'package:bio_g/core/agro/tree_nutrition_modifier.dart';
+import 'package:bio_g/core/agro/soil_condition_score.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -21,15 +20,13 @@ import 'package:bio_g/models/biog_telemetry.dart';
 /// pipeline que los granos:
 /// - Suelo (humedad, temp, pH, EC, resistencia) → bandas por [AgroRange] con
 ///   umbrales internos de observación/crítico (5 zonas agronómicas v1.4).
-/// - N/P/K → [NutrientRecommendationEngine.interpret] con el `cropKey` del árbol,
-///   targets/weights del perfil universal y el modificador del árbol.
-///
-/// DECISIÓN DE ÁRBOL (alto útil vs exceso):
-/// - "Alto útil" (`possibleExcess`, entre óptimo y `highMin`) NO penaliza el
-///   score ni alerta.
-/// - "Exceso" real (`reviewAccumulation`, ≥ `highMin`) SÍ baja el score y avisa.
-/// - El N en EXCESO tardío (llenado/madurez) recibe penalización EXTRA según el
-///   modificador del árbol/perfil (color/calidad/almacenamiento).
+/// - N/P/K → señal nativa sin diagnóstico (NPK Interpretation Reset, Guía v0.4
+///   §4). La sonda deriva estos canales de la conductividad; el árbol no los
+///   compara contra ningún objetivo. Lo que antes se decidía aquí sobre «alto
+///   útil», «exceso» o «N alto en brotación» a partir del raw salió del
+///   runtime: el manejo nutricional del frutal lo decide el motor de nutrición
+///   con la etapa, la guía de restitución (`TreeRestitutionPlanner`), el
+///   modificador de variedad y el historial de aplicaciones.
 class TreeAgroScoreEngine {
   const TreeAgroScoreEngine._();
 
@@ -49,7 +46,6 @@ class TreeAgroScoreEngine {
   static ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluate({
     required BioGTelemetry t,
     required String cropKey,
-    required TreeNutritionModifier modifier,
     required String stageId,
     required String stageLabelEs,
     required StageTargets targets,
@@ -86,110 +82,71 @@ class TreeAgroScoreEngine {
     );
     final soilTempEval = _evalTreeSoilMetric(
       metricKey: AgroMetricKey.soilTemp,
-      value: t.soilTempC,
+      value: t.hasSoilTempData ? t.soilTempC : double.nan,
       range: targets.soilTemp,
     );
     final phEval = _evalTreeSoilMetric(
       metricKey: AgroMetricKey.ph,
-      value: t.ph,
+      value: t.hasPhData ? t.ph : double.nan,
       range: targets.ph,
     );
     final ecEval = _evalTreeSoilMetric(
       metricKey: AgroMetricKey.ec,
-      value: t.ec,
+      value: t.hasEcData ? t.ec : double.nan,
       range: targets.ec,
     );
     final resEval = _evalTreeSoilMetric(
       metricKey: AgroMetricKey.resistance,
-      value: t.resistance,
+      value: t.hasResistanceData ? t.resistance : double.nan,
       range: targets.resistance,
     );
 
-    final nMetric = _interpretTreeNutrient(
-      metricKey: AgroMetricKey.n,
-      rawMgKg: t.n.toDouble(),
+    // ── N/P/K: señal nativa, sin diagnóstico ──────────────────────────────
+    //
+    // La sonda 7-en-1 deriva estos tres canales de la conductividad; no los
+    // mide químicamente. Desde el NPK Interpretation Reset (Guía v0.4, §4) el
+    // motor los conserva como señal cruda —para historial, tendencias y
+    // respuesta a eventos— y no los compara contra ningún objetivo del
+    // cultivo. El manejo nutricional lo decide `NutritionReadinessEngine` con
+    // etapa, guía auditada, historial y condiciones físicas.
+    final nMetric = AgroMetricEval.nativeSignal(
+      value: t.n.toDouble(),
       hasData: t.hasNitrogenData,
-      cropKey: cropKey,
-      stageId: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      ph: t.ph,
-      ec: t.ec,
-      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
-      profileId: profileId,
-      varietyId: varietyId,
-      varietyAlias: varietyAlias,
     );
-    final pMetric = _interpretTreeNutrient(
-      metricKey: AgroMetricKey.p,
-      rawMgKg: t.p.toDouble(),
+    final pMetric = AgroMetricEval.nativeSignal(
+      value: t.p.toDouble(),
       hasData: t.hasPhosphorusData,
-      cropKey: cropKey,
-      stageId: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      ph: t.ph,
-      ec: t.ec,
-      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
-      profileId: profileId,
-      varietyId: varietyId,
-      varietyAlias: varietyAlias,
     );
-    final kMetric = _interpretTreeNutrient(
-      metricKey: AgroMetricKey.k,
-      rawMgKg: t.k.toDouble(),
+    final kMetric = AgroMetricEval.nativeSignal(
+      value: t.k.toDouble(),
       hasData: t.hasPotassiumData,
-      cropKey: cropKey,
-      stageId: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      ph: t.ph,
-      ec: t.ec,
-      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
-      profileId: profileId,
-      varietyId: varietyId,
-      varietyAlias: varietyAlias,
     );
 
     final metrics = <AgroMetricKey, AgroMetricEval>{
       AgroMetricKey.soilMoisture: _wrapLegacy(
         moistureEval,
-        displayValue: moistureRawCal,
+        displayValue: t.hasSoilMoistureData ? moistureRawCal : null,
       ),
       AgroMetricKey.soilTemp: _wrapLegacy(
         soilTempEval,
-        displayValue: t.soilTempC,
+        displayValue: t.hasSoilTempData ? t.soilTempC : null,
       ),
-      AgroMetricKey.ph: _wrapLegacy(phEval, displayValue: t.ph),
-      AgroMetricKey.ec: _wrapLegacy(ecEval, displayValue: t.ec),
+      AgroMetricKey.ph: _wrapLegacy(phEval, displayValue: t.hasPhData ? t.ph : null),
+      AgroMetricKey.ec: _wrapLegacy(ecEval, displayValue: t.hasEcData ? t.ec : null),
       AgroMetricKey.resistance: _wrapLegacy(
         resEval,
-        displayValue: t.resistance,
+        displayValue: t.hasResistanceData ? t.resistance : null,
       ),
       AgroMetricKey.n: nMetric,
       AgroMetricKey.p: pMetric,
       AgroMetricKey.k: kMetric,
     };
 
-    final nHealthScore = _treeNutrientHealthScore(nMetric);
-    final pHealthScore = _treeNutrientHealthScore(pMetric);
-    final kHealthScore = _treeNutrientHealthScore(kMetric);
-
-    final wSum = math.max(0.0001, weights.sum);
-    final rawSoilControlScore =
-        (weights.moisture * moistureEval.score01 +
-            weights.soilTemp * soilTempEval.score01 +
-            weights.resistance * resEval.score01 +
-            weights.ph * phEval.score01 +
-            weights.ec * ecEval.score01 +
-            weights.nutrientN * nHealthScore +
-            weights.nutrientP * pHealthScore +
-            weights.nutrientK * kHealthScore) /
-        wSum;
-
+    // ── Condición del suelo: solo señales físicas presentes ─────────────────
+    //
+    // Los pesos de N/P/K del perfil no entran (peso cero por decisión) y una
+    // señal ausente sale del denominador en vez de valer 0 o 0.5. La
+    // cobertura de evidencia viaja aparte. Ver `SoilConditionScore`.
     double criticalPenalty = 1.0;
     if (moistureEval.isCriticalLow) criticalPenalty *= 0.45;
     if (moistureEval.isCriticalHigh) criticalPenalty *= 0.70;
@@ -197,30 +154,12 @@ class TreeAgroScoreEngine {
     if (phEval.isCritical) criticalPenalty *= 0.45;
     if (ecEval.isCritical) criticalPenalty *= 0.65;
     if (resEval.isCritical) criticalPenalty *= 0.85;
-    criticalPenalty *= _treeNutrientPenaltyFactor(nMetric.priorityLabel);
-    criticalPenalty *= _treeNutrientPenaltyFactor(pMetric.priorityLabel);
-    criticalPenalty *= _treeNutrientPenaltyFactor(kMetric.priorityLabel);
 
-    // Penalización EXTRA por N en EXCESO real tardío (llenado/madurez); mayor en
-    // perfiles sensibles a calidad/almacenamiento — vía el modificador del árbol.
-    if (nMetric.priorityLabel == NutrientPriorityLabel.reviewAccumulation) {
-      criticalPenalty *= modifier.lateNitrogenExcessPenaltyFactor(stage);
-    }
-
-    final soilControlScore01 = (rawSoilControlScore * criticalPenalty).clamp(
-      0.0,
-      1.0,
+    final SoilConditionScoreResult soil = SoilConditionScore.compute(
+      metrics: metrics,
+      weights: weights,
+      criticalPenalty: criticalPenalty,
     );
-
-    final nutrientWeightSum = math.max(
-      0.0001,
-      weights.nutrientN + weights.nutrientP + weights.nutrientK,
-    );
-    final nutrientPriorityScore01 =
-        ((weights.nutrientN * _treeNutrientSeverityScore(nMetric)) +
-            (weights.nutrientP * _treeNutrientSeverityScore(pMetric)) +
-            (weights.nutrientK * _treeNutrientSeverityScore(kMetric))) /
-        nutrientWeightSum;
 
     final suggested = <String>['tree.stage.$stage'];
     _pushSoilSuggestedKey(suggested, 'soilMoisture', moistureEval.band, stage);
@@ -228,9 +167,6 @@ class TreeAgroScoreEngine {
     _pushSoilSuggestedKey(suggested, 'ph', phEval.band, stage);
     _pushSoilSuggestedKey(suggested, 'ec', ecEval.band, stage);
     _pushSoilSuggestedKey(suggested, 'resistance', resEval.band, stage);
-    _pushNutrientSuggestedKey(suggested, 'npk.n', nMetric.priorityLabel);
-    _pushNutrientSuggestedKey(suggested, 'npk.p', pMetric.priorityLabel);
-    _pushNutrientSuggestedKey(suggested, 'npk.k', kMetric.priorityLabel);
 
     final alertBuild = _buildTreeAlerts(
       telemetry: t,
@@ -246,165 +182,14 @@ class TreeAgroScoreEngine {
     );
 
     final eval = AgroEvalResult(
-      soilControlScore01: soilControlScore01,
-      nutrientPriorityScore01: nutrientPriorityScore01.clamp(0.0, 1.0),
-      primaryScoreKind: AgroScoreKind.soilControl,
+      soilControlScore01: soil.score01,
+      soilCoverage: soil.coverage,
       metrics: metrics,
       alerts: alertBuild.alerts,
       suggestedAlertKeys: suggested,
     );
 
     return (eval: eval, nextAlertsState: alertBuild.state);
-  }
-
-  // ===========================================================================
-  // NUTRIENTES (N/P/K) — vía motor compartido
-  // ===========================================================================
-  static AgroMetricEval _interpretTreeNutrient({
-    required AgroMetricKey metricKey,
-    required double rawMgKg,
-    required bool hasData,
-    required String cropKey,
-    required String stageId,
-    required String stageLabelEs,
-    required StageTargets targets,
-    required StageWeights weights,
-    double? ph,
-    double? ec,
-    double? soilMoisturePct,
-    String? profileId,
-    String? varietyId,
-    String? varietyAlias,
-  }) {
-    if (!hasData || rawMgKg <= 0) {
-      return AgroMetricEval(
-        band: AgroBand.unknown,
-        score01: 0.5,
-        labelEs: AgroBand.unknown.labelEs,
-        value: rawMgKg,
-        stageKey: stageId,
-        stageLabelEs: stageLabelEs,
-        demandWindowLabelEs:
-            treeCriticalWindowLabel(stageId) ??
-            targets.windowLabelFor(metricKey),
-      );
-    }
-
-    final interpretation = NutrientRecommendationEngine.interpret(
-      nutrient: metricKey,
-      rawPpm: rawMgKg,
-      cropKey: cropKey,
-        stageKey: stageId,
-      profileId: profileId,
-      varietyId: varietyId,
-      varietyAlias: varietyAlias,
-      targets: targets,
-      weights: weights,
-      ph: ph,
-      ec: ec,
-      soilMoisturePct: soilMoisturePct,
-    );
-
-    return AgroMetricEval(
-      band: interpretation.label.agroBand,
-      score01: _treeHealthForLabel(
-        interpretation.label,
-        interpretation.stagePressure01,
-      ),
-      labelEs: interpretation.labelEs,
-      value: rawMgKg,
-      priorityLabel: interpretation.label,
-        stageKey: stageId,
-        stageLabelEs: stageLabelEs,
-      demandWindowLabelEs:
-          treeCriticalWindowLabel(stageId) ?? interpretation.demandWindowLabel,
-      shortRecommendationEs: interpretation.shortRecommendation,
-      practicalRecommendationEs: interpretation.practicalRecommendation,
-      doseGuideEs: interpretation.doseGuideEs,
-      fertilizerEquivalentEs: interpretation.fertilizerEquivalentEs,
-      justificationEs: interpretation.justification,
-      stagePressure01: interpretation.stagePressure01,
-      contextModifier01: interpretation.contextModifier01,
-      trendModifier01: interpretation.trendModifier01,
-    );
-  }
-
-  /// Salud (0..1) para una etiqueta. "Alto útil" (`possibleExcess`) se trata
-  /// como sano (1.0): en árbol estar alto no penaliza el ring.
-  static double _treeHealthForLabel(
-    NutrientPriorityLabel label,
-    double stagePressure01,
-  ) {
-    if (label == NutrientPriorityLabel.possibleExcess) return 1.0;
-    return label
-        .healthScore01(stagePressure01: stagePressure01)
-        .clamp(0.0, 1.0);
-  }
-
-  static double _treeNutrientHealthScore(AgroMetricEval metric) {
-    final label = metric.priorityLabel;
-    if (label == null) return metric.score01.clamp(0.0, 1.0);
-    return _treeHealthForLabel(label, metric.stagePressure01 ?? 0.0);
-  }
-
-  static double _treeNutrientSeverityScore(AgroMetricEval metric) {
-    final label = metric.priorityLabel;
-    if (label == null) return 0.0;
-    if (label == NutrientPriorityLabel.possibleExcess) return 0.0;
-    return label.severityScore01(
-      stagePressure01: metric.stagePressure01 ?? 0.0,
-    );
-  }
-
-  /// Factor de penalización del score por etiqueta de nutriente (árbol).
-  /// "Alto útil" = 1.0 (sin penalización); "Exceso" real sí penaliza.
-  static double _treeNutrientPenaltyFactor(NutrientPriorityLabel? label) {
-    if (label == null) return 1.0;
-    switch (label) {
-      case NutrientPriorityLabel.actionRecommended:
-        return 0.78;
-      case NutrientPriorityLabel.reviewAccumulation:
-        return 0.82;
-      case NutrientPriorityLabel.reviewManagement:
-        return 0.86;
-      case NutrientPriorityLabel.highPriority:
-        return 0.90;
-      case NutrientPriorityLabel.mediumPriority:
-        return 0.96;
-      case NutrientPriorityLabel.possibleExcess:
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-        return 1.0;
-    }
-  }
-
-  static void _pushNutrientSuggestedKey(
-    List<String> out,
-    String key,
-    NutrientPriorityLabel? label,
-  ) {
-    if (label == null) return;
-    switch (label) {
-      case NutrientPriorityLabel.actionRecommended:
-        out.add('$key.action');
-        return;
-      case NutrientPriorityLabel.highPriority:
-        out.add('$key.high_priority');
-        return;
-      case NutrientPriorityLabel.reviewManagement:
-        out.add('$key.review');
-        return;
-      case NutrientPriorityLabel.reviewAccumulation:
-        out.add('$key.review_accumulation');
-        return;
-      case NutrientPriorityLabel.possibleExcess:
-      case NutrientPriorityLabel.mediumPriority:
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-        return;
-    }
   }
 
   static void _pushSoilSuggestedKey(
@@ -425,7 +210,7 @@ class TreeAgroScoreEngine {
   // ===========================================================================
   // SUELO — bandas por AgroRange con zonas documentales del árbol
   // ===========================================================================
-  static AgroMetricEval _wrapLegacy(_Eval e, {required double displayValue}) {
+  static AgroMetricEval _wrapLegacy(_Eval e, {required double? displayValue}) {
     return AgroMetricEval(
       band: e.band,
       score01: e.score01,
@@ -739,13 +524,6 @@ class TreeAgroScoreEngine {
     final resistance = metrics[AgroMetricKey.resistance]?.band;
     final soilTemp = metrics[AgroMetricKey.soilTemp]?.band;
     final ec = metrics[AgroMetricKey.ec]?.band;
-    final nutrientLow =
-        <AgroMetricKey>[AgroMetricKey.n, AgroMetricKey.p, AgroMetricKey.k].any(
-          (key) =>
-              metrics[key]?.band == AgroBand.low ||
-              metrics[key]?.band == AgroBand.critical,
-        );
-
     final moistureLow =
         moisture == AgroBand.low || moisture == AgroBand.critical;
     final moistureHigh =
@@ -787,13 +565,12 @@ class TreeAgroScoreEngine {
         (moisture == AgroBand.critical && !moistureLikelySaturated);
     final compactionHigh =
         resistance == AgroBand.high || resistance == AgroBand.critical;
+    // Con la bandera: sin sensor de temperatura de suelo el 0.0 sintetizado
+    // cumplía `<= 12` y declaraba «raíz lenta» en cada lectura, para siempre.
     final soilTempStress =
         soilTemp == AgroBand.critical ||
-        telemetry.soilTempC <= 12 ||
-        telemetry.soilTempC >= 30;
-    final nLabel = metrics[AgroMetricKey.n]?.priorityLabel;
-    final kLabel = metrics[AgroMetricKey.k]?.priorityLabel;
-
+        (telemetry.hasSoilTempData &&
+            (telemetry.soilTempC <= 12 || telemetry.soilTempC >= 30));
     switch (stageId) {
       case TreeStageIds.plantingTransplant:
         if (moistureLikelySaturated) {
@@ -870,15 +647,10 @@ class TreeAgroScoreEngine {
             body:
                 'El suelo puede estar frenando la absorción. Mantén humedad pareja y evita correcciones fuertes de NPK hasta que el árbol responda.',
           );
-        } else if (nLabel == NutrientPriorityLabel.reviewAccumulation) {
-          push(
-            type: BioGAlertType.stageEvent,
-            severity: BioGAlertSeverity.warning,
-            title: 'N alto en brotación',
-            body:
-                'BioG detecta N alto al arrancar brotación. No apliques más N por ahora: puede empujar brotes tiernos y sombra de más.',
-          );
         }
+        // El aviso «N alto en brotación» que salía de la etiqueta NPK cruda se
+        // retiró con el reset: la sonda no puede afirmar exceso de nitrógeno.
+        // La cautela sobre N en brotación vive ahora en la guía de nutrición.
         break;
       case TreeStageIds.rootEstablishment:
         if (moistureLow) {
@@ -982,23 +754,11 @@ class TreeAgroScoreEngine {
         }
         break;
       case TreeStageIds.harvestMaturity:
-        if (nLabel == NutrientPriorityLabel.reviewAccumulation) {
-          push(
-            type: BioGAlertType.stageEvent,
-            severity: BioGAlertSeverity.warning,
-            title: 'N alto cerca de madurez',
-            body:
-                'BioG detecta N alto cerca de cosecha. Frena N: puede retrasar color, bajar firmeza y afectar la calidad del fruto.',
-          );
-        } else if (kLabel == NutrientPriorityLabel.reviewAccumulation) {
-          push(
-            type: BioGAlertType.stageEvent,
-            severity: BioGAlertSeverity.warning,
-            title: 'K alto cerca de cosecha',
-            body:
-                'BioG detecta K alto. No subas más potasio por ahora: puede subir sales y desbalancear firmeza del fruto.',
-          );
-        }
+        // Los avisos «N alto / K alto cerca de cosecha» que salían de la
+        // etiqueta NPK cruda se retiraron con el reset. La cautela con N y K
+        // tardíos sigue viva en la guía de nutrición del frutal, donde puede
+        // afirmarse con la etapa y el historial de aplicaciones, no con la
+        // sonda.
         if (salinityHigh) {
           push(
             type: BioGAlertType.ecOutOfRange,
@@ -1030,15 +790,13 @@ class TreeAgroScoreEngine {
         }
         break;
       case TreeStageIds.postHarvest:
-        if (moistureLow || nutrientLow) {
+        if (moistureLow) {
           push(
-            type: moistureLow
-                ? BioGAlertType.lowSoilMoisture
-                : BioGAlertType.stageEvent,
+            type: BioGAlertType.lowSoilMoisture,
             severity: BioGAlertSeverity.warning,
             title: 'Post-cosecha con estres',
             body:
-                'Post-cosecha: el árbol repone fuerza para el siguiente ciclo. Mantén riego parejo y corrige NPK solo si BioG lo mantiene bajo.',
+                'Post-cosecha: el árbol repone fuerza para el siguiente ciclo. Mantén riego parejo; la reposición de nutrientes la marca la guía del frutal, no la sonda.',
           );
         }
         break;

@@ -2,14 +2,14 @@
 //
 // Cierre de integracion del Limon: assets (dormancy = reposo relativo verde, NO
 // arbol pelon, por ser citrico siempreverde), copy citrico de etapas (fruit_fill
-// != harvest; harvest puede ser corte verde comercial), NpkCaps (130/95/210, K
-// mas alto que naranjo), K protagonista en fruit_fill, prioridades por etapa,
-// guardas NPK (EC/humedad/pH mandan, umbral de sal citrico sensible) y migracion
-// de LM. El limon NO es un naranjo pequeno.
+// != harvest; harvest puede ser corte verde comercial), K protagonista en
+// fruit_fill, prioridades por etapa y migracion de LM. El limon NO es un
+// naranjo pequeno.
+//
+// Las pruebas de topes ppm y de interpretacion NPK por lectura se retiraron
+// con el reset del motor nutricional (Guia v0.4).
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/lemon_tree/lemon_tree_assets.dart';
 import 'package:bio_g/core/crops/lemon_tree/lemon_tree_catalog.dart';
@@ -143,51 +143,6 @@ void main() {
     });
   });
 
-  group('NpkCaps del limon (doc 05 §2): N=130, P=95, K=210', () {
-    test('N=130, P=95, K=210 para todos los alias (K mayor que naranjo)', () {
-      for (final crop in const <String>[
-        'lemon_tree',
-        'crop_lemon_tree',
-        'lime_tree',
-        'crop_lime_tree',
-        'limon',
-        'limón',
-        'limonero',
-        'lima',
-        'lemon',
-        'lime',
-      ]) {
-        expect(
-          NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.n),
-          130.0,
-          reason: '$crop N',
-        );
-        expect(
-          NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.p),
-          95.0,
-          reason: '$crop P',
-        );
-        expect(
-          NpkCaps.forCropMetric(cropKey: crop, metricKey: AgroMetricKey.k),
-          210.0,
-          reason: '$crop K',
-        );
-      }
-    });
-
-    test('el K del limon (210) es mayor que el del naranjo (200)', () {
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'lemon_tree', metricKey: AgroMetricKey.k),
-        greaterThan(
-          NpkCaps.forCropMetric(
-            cropKey: 'orange_tree',
-            metricKey: AgroMetricKey.k,
-          ),
-        ),
-      );
-    });
-  });
-
   group('Prioridades NPK por etapa (doc 05 §7)', () {
     test('en fruit_fill K domina sobre N y N sobre P', () {
       final p = resolveLemonTreeNutritionPriorities(TreeStageIds.fruitFill);
@@ -213,99 +168,6 @@ void main() {
     test('en fruit_set K empieza a mandar sobre N y P', () {
       final p = resolveLemonTreeNutritionPriorities(TreeStageIds.fruitSet);
       expect(p.dominantNutrient, AgroMetricKey.k);
-    });
-  });
-
-  group('Guardas NPK del limon (EC/humedad/pH mandan antes que NPK)', () {
-    NutrientInterpretationResult interpretK({
-      required double ec,
-      required double soilMoisturePct,
-      required double ph,
-      String stage = TreeStageIds.fruitFill,
-    }) {
-      return NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.k,
-        rawPpm: 20, // K bajo
-        cropKey: 'lemon_tree',
-        stageKey: stage,
-        profileId: kLm01PersaTahiti,
-        targets: resolveLemonTreeTargets(stage),
-        weights: resolveLemonTreeStageWeights(stage),
-        ph: ph,
-        ec: ec,
-        soilMoisturePct: soilMoisturePct,
-      );
-    }
-
-    test('EC alta en reproduccion (>=1.8) encabeza con guarda de sales', () {
-      final r = interpretK(ec: 1.9, soilMoisturePct: 70, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(msg, anyOf(contains('salinidad'), contains('sales')));
-    });
-
-    test('humedad critica baja en llenado (<50): agua primero', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 45, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(msg, contains('humedad'));
-      expect(msg, anyOf(contains('limón'), contains('estabiliza')));
-    });
-
-    test('humedad saturada: gomosis/raiz/drenaje, no mas fertilizante', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 95, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(
-        msg,
-        anyOf(contains('saturado'), contains('gomosis'), contains('drenaje')),
-      );
-    });
-
-    test('pH alto (>=7.8): advierte Fe/Zn/Mn, no N', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 70, ph: 8.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(
-        msg,
-        anyOf(contains('zinc'), contains('hierro'), contains('nervadura')),
-      );
-    });
-
-    test('suelo OK: NO se dispara guarda; habla de potasio/calibre', () {
-      final r = interpretK(ec: 0.5, soilMoisturePct: 72, ph: 7.0);
-      final msg = r.practicalRecommendation.toLowerCase();
-      expect(msg, contains('potasio'));
-      expect(msg, isNot(contains('saturado')));
-    });
-  });
-
-  group('N bajo tardio: no empujar N cerca de corte/postcosecha (doc 05 §7)', () {
-    NutrientInterpretationResult interpretLowN(String stage) {
-      return NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.n,
-        rawPpm: 8, // N bajo
-        cropKey: 'lemon_tree',
-        stageKey: stage,
-        profileId: kLm02MexicanoColima,
-        targets: resolveLemonTreeTargets(stage),
-        weights: resolveLemonTreeStageWeights(stage),
-        ph: 7.0,
-        ec: 0.5,
-        soilMoisturePct: 70,
-      );
-    }
-
-    test('harvest_maturity: no empuja N; deja el ajuste para postcosecha', () {
-      final msg = interpretLowN(TreeStageIds.harvestMaturity)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, contains('postcosecha'));
-      expect(msg, isNot(contains('aplica una corrección')));
-    });
-
-    test('post_harvest: solo si hoja activa (no se apaga el arbol)', () {
-      final msg = interpretLowN(TreeStageIds.postHarvest)
-          .practicalRecommendation
-          .toLowerCase();
-      expect(msg, contains('postcosecha'));
-      expect(msg, anyOf(contains('hoja'), contains('reservas')));
     });
   });
 

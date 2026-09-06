@@ -1,11 +1,10 @@
 // test/core/pear_tree/pear_tree_agro_score_engine_test.dart
 //
-// El motor de la pera delega en el motor genérico de árbol. Reglas: "alto útil"
-// no penaliza ni alerta; solo el exceso real (>= highMin) baja el ring y avisa.
-// Contrato v1.5: fruit_fill NO usa copy de cosecha/madurez; harvest_maturity sí.
+// El motor de la pera espeja al de granos: suelo por AgroRange con presencia
+// de señal. N/P/K ya no se interpretan aquí (Guía v0.4, §2 y §8): son señal
+// nativa; el manejo nutricional lo decide el motor de nutrición por etapa.
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
 import 'package:bio_g/core/agro/pear_tree_agro_score_engine.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_catalog.dart';
 import 'package:bio_g/core/crops/pear_tree/pear_tree_universal_profile.dart';
@@ -56,24 +55,6 @@ BioGTelemetry _tele({
     weights: resolvePearTreeStageWeights(stage),
     profileId: profileId,
   );
-}
-
-String _metricCopy(AgroMetricEval metric) {
-  return [
-    metric.shortRecommendationEs,
-    metric.practicalRecommendationEs,
-  ].whereType<String>().join(' ').toLowerCase();
-}
-
-void _expectNoHarvestCopy(String text) {
-  for (final forbidden in <String>[
-    'cosecha',
-    'madurez',
-    'maduración',
-    'maduracion',
-  ]) {
-    expect(text, isNot(contains(forbidden)), reason: forbidden);
-  }
 }
 
 void main() {
@@ -167,179 +148,4 @@ void main() {
     );
   });
 
-  group('Bandas NPK de la pera (alto útil vs exceso)', () {
-    test('todo en rango → óptimo, sin aviso, ring alto', () {
-      final out = _run(_tele());
-      final n = out.eval.metrics[AgroMetricKey.n]!;
-      expect(n.band, AgroBand.optimal);
-      expect(n.priorityLabel, NutrientPriorityLabel.noPriority);
-      expect(out.eval.soilControlScore01, greaterThan(0.95));
-      expect(
-        out.eval.suggestedAlertKeys.where((k) => k.startsWith('npk.')),
-        isEmpty,
-      );
-    });
-
-    test('N=71 en llenado → EXCESO con aviso y ring más bajo', () {
-      final baseline = _run(_tele()).eval.soilControlScore01;
-      final out = _run(_tele(n: 71));
-      final n = out.eval.metrics[AgroMetricKey.n]!;
-      expect(n.priorityLabel, NutrientPriorityLabel.reviewAccumulation);
-      expect(n.band, AgroBand.high);
-      expect(
-        out.eval.suggestedAlertKeys,
-        contains('npk.n.review_accumulation'),
-      );
-      expect(out.eval.soilControlScore01, lessThan(baseline));
-    });
-
-    test('N=55 alto útil → banda alta SIN aviso ni penalización', () {
-      final baseline = _run(_tele()).eval.soilControlScore01;
-      final out = _run(_tele(n: 55));
-      final n = out.eval.metrics[AgroMetricKey.n]!;
-      expect(n.priorityLabel, NutrientPriorityLabel.possibleExcess);
-      expect(n.band, AgroBand.high);
-      expect(n.labelEs, 'Alto útil');
-      expect(
-        out.eval.suggestedAlertKeys.where((k) => k.startsWith('npk.n')),
-        isEmpty,
-      );
-      expect(out.eval.soilControlScore01, closeTo(baseline, 1e-9));
-    });
-
-    test('K alto útil vs acumulación real en llenado', () {
-      final baseline = _run(_tele()).eval.soilControlScore01;
-      final usefulHigh = _run(_tele(k: 130));
-      final accumulation = _run(_tele(k: 140));
-      final kUseful = usefulHigh.eval.metrics[AgroMetricKey.k]!;
-      final kAccum = accumulation.eval.metrics[AgroMetricKey.k]!;
-      expect(kUseful.priorityLabel, NutrientPriorityLabel.possibleExcess);
-      expect(kUseful.labelEs, 'Alto útil');
-      expect(usefulHigh.eval.soilControlScore01, closeTo(baseline, 1e-9));
-      expect(kAccum.priorityLabel, NutrientPriorityLabel.reviewAccumulation);
-      expect(
-        accumulation.eval.suggestedAlertKeys,
-        contains('npk.k.review_accumulation'),
-      );
-      expect(accumulation.eval.soilControlScore01, lessThan(baseline));
-    });
-
-    test('P por debajo de lowMax en establecimiento → acción recomendada', () {
-      final out = _run(
-        _tele(p: 15, k: 50, n: 30),
-        stage: TreeStageIds.rootEstablishment,
-      );
-      final p = out.eval.metrics[AgroMetricKey.p]!;
-      expect(p.priorityLabel, NutrientPriorityLabel.actionRecommended);
-      expect(p.band, AgroBand.critical);
-      expect(out.eval.suggestedAlertKeys, contains('npk.p.action'));
-    });
-  });
-
-  group('Contrato v1.5: identidad de etapa en copy NPK', () {
-    test('N alto en llenado usa copy de calibre/llenado, NO de cosecha', () {
-      final out = _run(_tele(n: 71), stage: TreeStageIds.fruitFill);
-      final n = out.eval.metrics[AgroMetricKey.n]!;
-      final copy = _metricCopy(n);
-      expect(n.priorityLabel, NutrientPriorityLabel.reviewAccumulation);
-      _expectNoHarvestCopy(copy);
-      expect(copy, contains('llenado'));
-    });
-
-    test('N alto en madurez usa copy propio de cosecha/madurez', () {
-      final out = _run(_tele(n: 71), stage: TreeStageIds.harvestMaturity);
-      final n = out.eval.metrics[AgroMetricKey.n]!;
-      final copy = _metricCopy(n);
-      expect(n.priorityLabel, NutrientPriorityLabel.reviewAccumulation);
-      expect(copy, anyOf(contains('cosecha'), contains('madurez')));
-    });
-
-    test('llenado y madurez generan recomendaciones distintas para N alto', () {
-      final fruitFill = _run(
-        _tele(n: 71),
-        stage: TreeStageIds.fruitFill,
-      ).eval.metrics[AgroMetricKey.n]!;
-      final harvest = _run(
-        _tele(n: 71),
-        stage: TreeStageIds.harvestMaturity,
-      ).eval.metrics[AgroMetricKey.n]!;
-      expect(
-        fruitFill.practicalRecommendationEs,
-        isNot(harvest.practicalRecommendationEs),
-      );
-    });
-
-    test('N alto en vegetativo menciona riesgo de fuego bacteriano', () {
-      final out = _run(_tele(n: 80), stage: TreeStageIds.vegetativeGrowth);
-      final n = out.eval.metrics[AgroMetricKey.n]!;
-      expect(
-        _metricCopy(n),
-        anyOf(contains('fuego bacteriano'), contains('vigor')),
-      );
-    });
-  });
-
-  group('Modificador por perfil PR', () {
-    test('N en exceso tardío penaliza MÁS en Anjou que en perfil general', () {
-      final t = _tele(n: 71);
-      final anjou = _run(
-        t,
-        stage: TreeStageIds.harvestMaturity,
-        profileId: kPr02Anjou,
-      ).eval.soilControlScore01;
-      final generic = _run(
-        t,
-        stage: TreeStageIds.harvestMaturity,
-        profileId: kPrSkip,
-      ).eval.soilControlScore01;
-      expect(anjou, lessThan(generic));
-    });
-  });
-
-  group('Consistencia ring ↔ detalle NPK', () {
-    test('la banda del eval coincide con la etiqueta de interpret()', () {
-      for (final n in <double>[20, 35, 55, 71]) {
-        final t = _tele(n: n);
-        final evalMetric = _run(t).eval.metrics[AgroMetricKey.n]!;
-        final interp = NutrientRecommendationEngine.interpret(
-          nutrient: AgroMetricKey.n,
-          rawPpm: n,
-          cropKey: 'pear_tree',
-          stageKey: TreeStageIds.fruitFill,
-          profileId: kPrSkip,
-          targets: resolvePearTreeTargets(TreeStageIds.fruitFill),
-          weights: resolvePearTreeStageWeights(TreeStageIds.fruitFill),
-          ph: t.ph,
-          ec: t.ec,
-          soilMoisturePct: t.soilMoisturePct,
-        );
-        expect(evalMetric.priorityLabel, interp.label, reason: 'N=$n label');
-        expect(evalMetric.band, interp.label.agroBand, reason: 'N=$n band');
-      }
-    });
-  });
-
-  group('No-regresión: el árbol no afecta a granos', () {
-    test('frijol con los mismos rangos conserva su etiqueta de exceso', () {
-      final targets = resolvePearTreeTargets(TreeStageIds.fruitFill);
-      final beanUsefulHigh = NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.n,
-        rawPpm: 55,
-        cropKey: 'bean',
-        stageKey: 'grainFill',
-        targets: targets,
-      );
-      final pearUsefulHigh = NutrientRecommendationEngine.interpret(
-        nutrient: AgroMetricKey.n,
-        rawPpm: 55,
-        cropKey: 'pear_tree',
-        stageKey: TreeStageIds.fruitFill,
-        targets: targets,
-      );
-      // Misma banda interna, distinto label UX: bean penaliza, pera lo trata útil.
-      expect(beanUsefulHigh.label, NutrientPriorityLabel.possibleExcess);
-      expect(beanUsefulHigh.labelEs, 'Pausar (Exceso)');
-      expect(pearUsefulHigh.labelEs, 'Alto útil');
-    });
-  });
 }

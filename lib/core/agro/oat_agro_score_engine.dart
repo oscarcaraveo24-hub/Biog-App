@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
+import 'package:bio_g/core/agro/soil_condition_score.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/crops/oat/oat_universal_profile.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -38,8 +38,6 @@ class OatAgroScoreEngine {
     if (targets == null || weights == null) {
       final empty = AgroEvalResult(
         soilControlScore01: 0.0,
-        nutrientPriorityScore01: 0.0,
-        primaryScoreKind: AgroScoreKind.nutrientPriority,
         metrics: const {},
         alerts: const [],
         suggestedAlertKeys: const ['stage.unknown'],
@@ -67,84 +65,53 @@ class OatAgroScoreEngine {
       range: targets.moistureRaw,
     );
     final soilTempEval = _evalLegacy(
-      value: t.soilTempC,
+      value: t.hasSoilTempData ? t.soilTempC : double.nan,
       range: targets.soilTemp,
     );
-    final phEval = _evalLegacy(value: t.ph, range: targets.ph);
-    final ecEval = _evalLegacy(value: t.ec, range: targets.ec);
-    final resEval = _evalLegacy(value: t.resistance, range: targets.resistance);
+    final phEval = _evalLegacy(value: t.hasPhData ? t.ph : double.nan, range: targets.ph);
+    final ecEval = _evalLegacy(value: t.hasEcData ? t.ec : double.nan, range: targets.ec);
+    final resEval = _evalLegacy(value: t.hasResistanceData ? t.resistance : double.nan, range: targets.resistance);
 
-    final nMetric = _interpretOatNutrient(
-      metricKey: AgroMetricKey.n,
+    // ── N/P/K: señal nativa, sin diagnóstico ──────────────────────────────
+    //
+    // La sonda 7-en-1 deriva estos tres canales de la conductividad; no los
+    // mide químicamente. Desde el NPK Interpretation Reset (Guía v0.4, §4) el
+    // motor los conserva como señal cruda —para historial, tendencias y
+    // respuesta a eventos— y no los compara contra ningún objetivo del
+    // cultivo. El manejo nutricional lo decide `NutritionReadinessEngine` con
+    // etapa, guía auditada, historial y condiciones físicas.
+    final nMetric = AgroMetricEval.nativeSignal(
+      value: t.n.toDouble(),
       hasData: t.hasNitrogenData,
-      rawMgKg: t.n.toDouble(),
-      stageKey: stageKey,
-      targets: targets,
-      weights: weights,
-      ph: t.ph,
-      ec: t.ec,
-      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
     );
-
-    final pMetric = _interpretOatNutrient(
-      metricKey: AgroMetricKey.p,
-      rawMgKg: t.p.toDouble(),
+    final pMetric = AgroMetricEval.nativeSignal(
+      value: t.p.toDouble(),
       hasData: t.hasPhosphorusData,
-      stageKey: stageKey,
-      targets: targets,
-      weights: weights,
-      ph: t.ph,
-      ec: t.ec,
-      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
     );
-
-    final kMetric = _interpretOatNutrient(
-      metricKey: AgroMetricKey.k,
-      rawMgKg: t.k.toDouble(),
+    final kMetric = AgroMetricEval.nativeSignal(
+      value: t.k.toDouble(),
       hasData: t.hasPotassiumData,
-      stageKey: stageKey,
-      targets: targets,
-      weights: weights,
-      ph: t.ph,
-      ec: t.ec,
-      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
     );
 
     final metrics = <AgroMetricKey, AgroMetricEval>{
       AgroMetricKey.soilMoisture: _wrapLegacy(
         moistureEval,
-        displayValue: moistureRawCal,
+        displayValue: t.hasSoilMoistureData ? moistureRawCal : null,
       ),
       AgroMetricKey.soilTemp: _wrapLegacy(
         soilTempEval,
-        displayValue: t.soilTempC,
+        displayValue: t.hasSoilTempData ? t.soilTempC : null,
       ),
-      AgroMetricKey.ph: _wrapLegacy(phEval, displayValue: t.ph),
-      AgroMetricKey.ec: _wrapLegacy(ecEval, displayValue: t.ec),
+      AgroMetricKey.ph: _wrapLegacy(phEval, displayValue: t.hasPhData ? t.ph : null),
+      AgroMetricKey.ec: _wrapLegacy(ecEval, displayValue: t.hasEcData ? t.ec : null),
       AgroMetricKey.resistance: _wrapLegacy(
         resEval,
-        displayValue: t.resistance,
+        displayValue: t.hasResistanceData ? t.resistance : null,
       ),
       AgroMetricKey.n: nMetric,
       AgroMetricKey.p: pMetric,
       AgroMetricKey.k: kMetric,
     };
-
-    final nHealthScore = _nutrientHealthScore(nMetric);
-    final pHealthScore = _nutrientHealthScore(pMetric);
-    final kHealthScore = _nutrientHealthScore(kMetric);
-
-    final wSum = math.max(0.0001, weights.sum);
-    final rawSoilControlScore =
-        (weights.moisture * moistureEval.score01 +
-            weights.soilTemp * soilTempEval.score01 +
-            weights.resistance * resEval.score01 +
-            weights.ph * phEval.score01 +
-            weights.ec * ecEval.score01 +
-            weights.nutrientN * nHealthScore +
-            weights.nutrientP * pHealthScore +
-            weights.nutrientK * kHealthScore) /
-        wSum;
 
     double criticalPenalty = 1.0;
     if (moistureEval.band == AgroBand.critical) criticalPenalty *= 0.45;
@@ -152,25 +119,17 @@ class OatAgroScoreEngine {
     if (phEval.band == AgroBand.critical) criticalPenalty *= 0.45;
     if (ecEval.band == AgroBand.critical) criticalPenalty *= 0.65;
     if (resEval.band == AgroBand.critical) criticalPenalty *= 0.85;
-    criticalPenalty *= _nutrientPenaltyFactor(nMetric.priorityLabel);
-    criticalPenalty *= _nutrientPenaltyFactor(pMetric.priorityLabel);
-    criticalPenalty *= _nutrientPenaltyFactor(kMetric.priorityLabel);
 
-    final soilControlScore01 = (rawSoilControlScore * criticalPenalty).clamp(
-      0.0,
-      1.0,
+    // ── Condición del suelo: solo señales físicas presentes ─────────────────
+    //
+    // Los pesos de N/P/K del perfil no entran (peso cero por decisión) y una
+    // señal ausente sale del denominador en vez de valer 0 o 0.5. La
+    // cobertura de evidencia viaja aparte. Ver `SoilConditionScore`.
+    final SoilConditionScoreResult soil = SoilConditionScore.compute(
+      metrics: metrics,
+      weights: weights,
+      criticalPenalty: criticalPenalty,
     );
-
-    final nutrientWeightSum = math.max(
-      0.0001,
-      weights.nutrientN + weights.nutrientP + weights.nutrientK,
-    );
-
-    final nutrientPriorityScore01 =
-        ((weights.nutrientN * _nutrientSeverityScore(nMetric)) +
-            (weights.nutrientP * _nutrientSeverityScore(pMetric)) +
-            (weights.nutrientK * _nutrientSeverityScore(kMetric))) /
-        nutrientWeightSum;
 
     final suggested = <String>[];
     _pushLegacyAlertsForMetric(
@@ -184,9 +143,6 @@ class OatAgroScoreEngine {
     _pushLegacyAlertsForMetric(suggested, 'ec', ecEval, stageKey);
     _pushLegacyAlertsForMetric(suggested, 'resistance', resEval, stageKey);
 
-    _pushNutrientAlertsForMetric(suggested, 'npk.n', nMetric, stageKey);
-    _pushNutrientAlertsForMetric(suggested, 'npk.p', pMetric, stageKey);
-    _pushNutrientAlertsForMetric(suggested, 'npk.k', kMetric, stageKey);
     _pushEnvironmentalAlerts(suggested, t, stageKey);
 
     final severityBump = _criticalStages.contains(stageKey)
@@ -207,9 +163,8 @@ class OatAgroScoreEngine {
     );
 
     final eval = AgroEvalResult(
-      soilControlScore01: soilControlScore01,
-      nutrientPriorityScore01: nutrientPriorityScore01.clamp(0.0, 1.0),
-      primaryScoreKind: AgroScoreKind.nutrientPriority,
+      soilControlScore01: soil.score01,
+      soilCoverage: soil.coverage,
       metrics: metrics,
       alerts: built.alerts,
       suggestedAlertKeys: suggested,
@@ -218,111 +173,13 @@ class OatAgroScoreEngine {
     return (eval: eval, nextAlertsState: built.state);
   }
 
-  static AgroMetricEval _interpretOatNutrient({
-    required AgroMetricKey metricKey,
-    required double rawMgKg,
-    required bool hasData,
-    required OatStageKey stageKey,
-    required StageTargets targets,
-    required StageWeights weights,
-    double? ph,
-    double? ec,
-    double? soilMoisturePct,
-  }) {
-    // Sin sonda de nutrientes no hay dato, y ausencia NO es cero.
-    //
-    // Un 0 ppm entra en `interpret` y sale como `actionRecommended`, la peor
-    // etiqueta de deficiencia que existe: un equipo sin sonda NPK le decía al
-    // productor «aplica fertilizante ya», en cada lectura, para siempre. El
-    // motor de frutales ya se guardaba de esto desde el principio; el resto no.
-    if (!hasData || rawMgKg <= 0) {
-      return AgroMetricEval(
-        band: AgroBand.unknown,
-        score01: 0.5,
-        labelEs: AgroBand.unknown.labelEs,
-        value: rawMgKg,
-        stageKey: stageKey.name,
-        stageLabelEs: _stageLabelEs(stageKey),
-        demandWindowLabelEs: targets.windowLabelFor(metricKey),
-      );
-    }
-
-    final interpretation = NutrientRecommendationEngine.interpret(
-      nutrient: metricKey,
-      rawPpm: rawMgKg,
-      cropKey: 'oat',
-        stageKey: stageKey.name,
-      targets: targets,
-      weights: weights,
-      ph: ph,
-      ec: ec,
-      soilMoisturePct: soilMoisturePct,
-    );
-
-    return AgroMetricEval(
-      band: interpretation.label.agroBand,
-      score01: interpretation.label
-          .severityScore01(stagePressure01: interpretation.stagePressure01)
-          .clamp(0.0, 1.0),
-      labelEs: interpretation.labelEs,
-      value: rawMgKg,
-      priorityLabel: interpretation.label,
-        stageKey: stageKey.name,
-        stageLabelEs: _stageLabelEs(stageKey),
-      demandWindowLabelEs: interpretation.demandWindowLabel,
-      shortRecommendationEs: interpretation.shortRecommendation,
-      practicalRecommendationEs: interpretation.practicalRecommendation,
-      doseGuideEs: interpretation.doseGuideEs,
-      fertilizerEquivalentEs: interpretation.fertilizerEquivalentEs,
-      justificationEs: interpretation.justification,
-      stagePressure01: interpretation.stagePressure01,
-      contextModifier01: interpretation.contextModifier01,
-      trendModifier01: interpretation.trendModifier01,
-    );
-  }
-
-  static AgroMetricEval _wrapLegacy(_Eval e, {required double displayValue}) {
+  static AgroMetricEval _wrapLegacy(_Eval e, {required double? displayValue}) {
     return AgroMetricEval(
       band: e.band,
       score01: e.score01,
       labelEs: e.band.labelEs,
       value: displayValue,
     );
-  }
-
-  static double _nutrientSeverityScore(AgroMetricEval metric) {
-    final label = metric.priorityLabel;
-    if (label == null) return 0.0;
-    return label.severityScore01(
-      stagePressure01: metric.stagePressure01 ?? 0.0,
-    );
-  }
-
-  static double _nutrientHealthScore(AgroMetricEval metric) {
-    final label = metric.priorityLabel;
-    if (label == null) return metric.score01.clamp(0.0, 1.0);
-    return label.healthScore01(stagePressure01: metric.stagePressure01 ?? 0.0);
-  }
-
-  static double _nutrientPenaltyFactor(NutrientPriorityLabel? label) {
-    if (label == null) return 1.0;
-    switch (label) {
-      case NutrientPriorityLabel.actionRecommended:
-        return 0.78;
-      case NutrientPriorityLabel.reviewAccumulation:
-        return 0.82;
-      case NutrientPriorityLabel.reviewManagement:
-        return 0.86;
-      case NutrientPriorityLabel.highPriority:
-      case NutrientPriorityLabel.possibleExcess:
-        return 0.90;
-      case NutrientPriorityLabel.mediumPriority:
-        return 0.96;
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-        return 1.0;
-    }
   }
 
   static _Eval _evalLegacy({required double value, required AgroRange range}) {
@@ -406,44 +263,6 @@ class OatAgroScoreEngine {
     if (isCriticalStage && e.band == AgroBand.high) out.add('$key.high');
   }
 
-  static void _pushNutrientAlertsForMetric(
-    List<String> out,
-    String key,
-    AgroMetricEval metric,
-    OatStageKey stage,
-  ) {
-    final label = metric.priorityLabel;
-    if (label == null) return;
-
-    switch (label) {
-      case NutrientPriorityLabel.actionRecommended:
-        out.add('$key.action');
-        return;
-      case NutrientPriorityLabel.reviewManagement:
-        out.add('$key.review');
-        return;
-      case NutrientPriorityLabel.highPriority:
-        out.add('$key.high_priority');
-        return;
-      case NutrientPriorityLabel.possibleExcess:
-        out.add('$key.possible_excess');
-        return;
-      case NutrientPriorityLabel.reviewAccumulation:
-        out.add('$key.review_accumulation');
-        return;
-      case NutrientPriorityLabel.mediumPriority:
-        if (_criticalStages.contains(stage) ||
-            _semiCriticalStages.contains(stage)) {
-          out.add('$key.medium_priority');
-        }
-        return;
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-        return;
-    }
-  }
-
   static void _pushEnvironmentalAlerts(
     List<String> out,
     BioGTelemetry t,
@@ -504,33 +323,6 @@ class OatAgroScoreEngine {
   /// pantalla—.
   static double _normalizeMoisture01(double raw0to100, Calibration? cal) {
     return (raw0to100 / 100.0).clamp(0.0, 1.0);
-  }
-
-  static String _stageLabelEs(OatStageKey stageKey) {
-    switch (stageKey) {
-      case OatStageKey.germination:
-        return 'Germinación';
-      case OatStageKey.emergence:
-        return 'Emergencia';
-      case OatStageKey.vegEarly:
-        return 'Vegetativa temprana';
-      case OatStageKey.tillering:
-        return 'Macollamiento';
-      case OatStageKey.elongation:
-        return 'Elongación';
-      case OatStageKey.booting:
-        return 'Embuche';
-      case OatStageKey.heading:
-        return 'Espigamiento';
-      case OatStageKey.flowering:
-        return 'Floración';
-      case OatStageKey.grainFill:
-        return 'Llenado';
-      case OatStageKey.physiologicalMaturity:
-        return 'Madurez fisiológica';
-      case OatStageKey.harvest:
-        return 'Cosecha';
-    }
   }
 
   static double _invLerp(double a, double b, double v) {

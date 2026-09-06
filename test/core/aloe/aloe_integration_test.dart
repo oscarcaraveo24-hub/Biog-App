@@ -13,7 +13,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/crops/cactus/cactus_universal_profile.dart';
 import 'package:bio_g/core/crops/succulent/succulent_catalog.dart';
 import 'package:bio_g/core/crops/succulent/succulent_universal_profile.dart';
@@ -114,22 +113,6 @@ void main() {
       }
     });
 
-    test('NPK en mg/kg, con demanda baja-moderada y K > N', () {
-      for (final stage in _allStages) {
-        final t = resolveAloeTargets(stage);
-        expect(t.nSoilPpmRange, isNotNull);
-        expect(t.pSoilPpmRange, isNotNull);
-        expect(t.kSoilPpmRange, isNotNull);
-        // La sábila responde a N (Doc B §4.6): su óptimo llega más alto que en
-        // suculenta, pero sigue lejos de un cultivo de rendimiento.
-        expect(t.nSoilPpmRange!.optimalMax, lessThanOrEqualTo(60));
-        expect(
-          t.kSoilPpmRange!.optimalMax,
-          greaterThan(t.nSoilPpmRange!.optimalMax),
-        );
-      }
-    });
-
     test('todos los rangos cumplen lowMax < optMin <= optMax < highMin', () {
       for (final stage in _allStages) {
         final t = resolveAloeTargets(stage);
@@ -139,9 +122,6 @@ void main() {
           t.ph,
           t.ec,
           t.resistance,
-          t.nSoilPpmRange!,
-          t.pSoilPpmRange!,
-          t.kSoilPpmRange!,
         ]) {
           expect(r.lowMax, lessThan(r.optimalMin), reason: 'etapa $stage');
           expect(r.optimalMin, lessThanOrEqualTo(r.optimalMax));
@@ -343,7 +323,7 @@ void main() {
       }
     });
 
-    test('N, P y K reciben interpretación (no se anulan)', () {
+    test('N, P y K son señal nativa: presentes, sin banda ni prioridad', () {
       final out = _evaluate(t: _telemetry());
       for (final key in <AgroMetricKey>[
         AgroMetricKey.n,
@@ -351,39 +331,11 @@ void main() {
         AgroMetricKey.k,
       ]) {
         final m = out.eval.metrics[key];
-        expect(m?.priorityLabel, isNotNull, reason: '$key sin priorityLabel');
-        expect(m!.priorityLabel, isNot(NutrientPriorityLabel.unknown));
+        expect(m?.isNativeSignal, isTrue, reason: '$key debe ser señal nativa');
+        expect(m!.band, AgroBand.unknown, reason: 'la sonda no sostiene bajo/alto');
       }
     });
 
-    test('los caps NPK son propios: N=85 · P=65 · K=270', () {
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'aloe', metricKey: AgroMetricKey.n),
-        85.0,
-      );
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'aloe', metricKey: AgroMetricKey.p),
-        65.0,
-      );
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'aloe', metricKey: AgroMetricKey.k),
-        270.0,
-      );
-    });
-
-    test('los caps NO se heredan de cactus ni suculenta', () {
-      final n = NpkCaps.forCropMetric(cropKey: 'aloe', metricKey: AgroMetricKey.n);
-      expect(
-        n,
-        isNot(NpkCaps.forCropMetric(cropKey: 'cactus', metricKey: AgroMetricKey.n)),
-      );
-      expect(
-        n,
-        isNot(
-          NpkCaps.forCropMetric(cropKey: 'succulent', metricKey: AgroMetricKey.n),
-        ),
-      );
-    });
   });
 
   // ── Agronomía propia (Doc B §8 y §0.5) ─────────────────────────────────────
@@ -419,9 +371,9 @@ void main() {
         reason: 'El agua y las sales mandan; un N bajo no cambia el veredicto',
       );
       expect(
-        lowN.eval.metrics[AgroMetricKey.n]?.priorityLabel,
-        isNotNull,
-        reason: 'Pero SÍ conserva su banda y su prioridad',
+        lowN.eval.metrics[AgroMetricKey.n]?.isNativeSignal,
+        isTrue,
+        reason: 'Pero SÍ conserva la señal nativa',
       );
       expect(healthy.eval.soilControlScore01, greaterThan(0.6));
     });
@@ -439,27 +391,6 @@ void main() {
         small.eval.soilControlScore01,
         lessThan(shrubby.eval.soilControlScore01),
       );
-    });
-
-    test('sa_skip topa la prioridad NPK en "revisión"', () {
-      final out = _evaluate(
-        t: _telemetry(n: 1, p: 1, k: 5),
-        profileId: kSaSkip,
-      );
-      for (final key in <AgroMetricKey>[
-        AgroMetricKey.n,
-        AgroMetricKey.p,
-        AgroMetricKey.k,
-      ]) {
-        final label = out.eval.metrics[key]?.priorityLabel;
-        expect(label, isNotNull);
-        expect(
-          label,
-          isNot(NutrientPriorityLabel.actionRecommended),
-          reason: 'Sin perfil confirmado no se escala a acción',
-        );
-        expect(label, isNot(NutrientPriorityLabel.highPriority));
-      }
     });
 
     test('NO copia los targets del cactus ni de la suculenta', () {
@@ -1080,27 +1011,8 @@ void main() {
 
   // ── No romper lo que ya existía ────────────────────────────────────────────
   group('Cactus y suculenta siguen intactos', () {
-    test('cactus conserva su perfil general y sus caps', () {
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'cactus', metricKey: AgroMetricKey.n),
-        60.0,
-      );
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'cactus', metricKey: AgroMetricKey.k),
-        220.0,
-      );
+    test('cactus conserva su perfil general', () {
       expect(CropCatalog.canonicalCropKey('cactus'), CropCatalog.cactusCropId);
-    });
-
-    test('suculenta conserva sus caps', () {
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'succulent', metricKey: AgroMetricKey.n),
-        70.0,
-      );
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'succulent', metricKey: AgroMetricKey.k),
-        240.0,
-      );
     });
 
     test('la categoría ornamental expone cactus, suculenta y sábila', () {

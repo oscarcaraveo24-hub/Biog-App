@@ -32,11 +32,9 @@ import 'package:bio_g/core/crops/crop_types.dart';
 import 'package:bio_g/core/crops/marigold/marigold_assets.dart';
 import 'package:bio_g/core/crops/marigold/marigold_catalog.dart';
 import 'package:bio_g/core/crops/marigold/marigold_lifecycle.dart';
-import 'package:bio_g/core/crops/marigold/marigold_universal_profile.dart';
 import 'package:bio_g/core/crops/sunflower/sunflower_assets.dart';
 import 'package:bio_g/core/crops/sunflower/sunflower_catalog.dart';
 import 'package:bio_g/core/crops/sunflower/sunflower_lifecycle.dart';
-import 'package:bio_g/core/crops/sunflower/sunflower_universal_profile.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/widgets/seeds/marigold_models.dart';
 import 'package:bio_g/widgets/seeds/marigold_profiles.dart';
@@ -270,13 +268,6 @@ String annualOrnamentalCycleCompleteHelper(String? cropId) =>
         'Esta planta terminó su ciclo. Para cultivar otra, registra una nueva '
             'siembra.',
     };
-
-/// Referencia al cap NPK del cultivo (orientativo, nunca dosis).
-double annualOrnamentalNCap(String? cropId) => switch (_kind(cropId)) {
-  _AnnualOrnamentalKind.sunflower => SunflowerUniversalProfile.capN,
-  _AnnualOrnamentalKind.marigold => MarigoldUniversalProfile.capN,
-  _AnnualOrnamentalKind.unknown => 120.0,
-};
 
 /// True cuando el perfil elegido es de FLOR DE CORTE. Se usa solo para el
 /// rótulo de la línea de ciclo ("Ventana de corte" en vez de "Ventana de

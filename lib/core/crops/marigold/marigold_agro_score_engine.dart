@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
+import 'package:bio_g/core/agro/soil_condition_score.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/core/crops/marigold/marigold_universal_profile.dart';
 import 'package:bio_g/widgets/seeds/marigold_models.dart';
@@ -12,7 +12,7 @@ import 'package:bio_g/models/biog_telemetry.dart';
 ///
 /// ESPEJO ESTRUCTURAL de `SunflowerAgroScoreEngine` / `TulipAgroScoreEngine`:
 /// mismas bandas, mismas claves de alerta CANÓNICAS (`soilMoisture.critical`,
-/// `ph.low`, `npk.k.action`, …), mismo motor de nutrición compartido. Un
+/// `ph.low`, …), sin claves `npk.*` desde el NPK Interpretation Reset. Un
 /// cempasúchil se lee, clasifica y alerta igual que cualquier cultivo de BIO-G.
 /// Lo propio del Cempasúchil son sus castigos (Documento B §16), sus
 /// multiplicadores por perfil (§15) y su doctrina: el agua manda; el NPK
@@ -46,33 +46,11 @@ class MarigoldAgroScoreEngine {
     MarigoldStageIds.unknown,
   };
 
-  /// Etapas donde el N alto es un riesgo estructural directo (Documento B
-  /// §16.1, §16.2): follaje excesivo, tejido blando y retraso de botones.
-  static const Set<String> _nExcessRiskStages = <String>{
-    MarigoldStageIds.activeVegetativeGrowth,
-    MarigoldStageIds.stemElongation,
-    MarigoldStageIds.budFormation,
-  };
-
-  /// Etapas de demanda de cada nutriente: una lectura crítica baja AQUÍ castiga
-  /// levemente el score (Documento B §16.1 última fila). Fuera de ellas, una
-  /// deficiencia se expresa solo como prioridad nutrimental.
-  static const Set<String> _nDemandStages = <String>{
-    MarigoldStageIds.earlyVegetativeGrowth,
-    MarigoldStageIds.activeVegetativeGrowth,
-    MarigoldStageIds.stemElongation,
-  };
-  static const Set<String> _pDemandStages = <String>{
-    MarigoldStageIds.germination,
-    MarigoldStageIds.emergence,
-    MarigoldStageIds.earlyVegetativeGrowth,
-    MarigoldStageIds.budFormation,
-  };
-  static const Set<String> _kDemandStages = <String>{
-    MarigoldStageIds.stemElongation,
-    MarigoldStageIds.budFormation,
-    MarigoldStageIds.flowering,
-  };
+  // Las etapas de riesgo por N alto y las de demanda de N/P/K (Documento B
+  // §16.1, §16.2) ya no viven en el motor de score: con el NPK Interpretation
+  // Reset (Guía v0.4, §4) la etiqueta NPK cruda dejó de castigar el score, y
+  // ese conocimiento fenológico se expresa en la guía de nutrición del
+  // cempasúchil, donde la etapa —no la sonda— decide la prioridad.
 
   static ({AgroEvalResult eval, AlertsState nextAlertsState}) evaluate({
     required BioGTelemetry t,
@@ -112,40 +90,30 @@ class MarigoldAgroScoreEngine {
       value: moistureRawCal,
       range: targets.moistureRaw,
     );
-    final soilTempEval = _evalLegacy(value: t.soilTempC, range: targets.soilTemp);
-    final phEval = _evalLegacy(value: t.ph, range: targets.ph);
-    final ecEval = _evalLegacy(value: t.ec, range: targets.ec);
-    final resEval = _evalLegacy(value: t.resistance, range: targets.resistance);
+    final soilTempEval = _evalLegacy(value: t.hasSoilTempData ? t.soilTempC : double.nan, range: targets.soilTemp);
+    final phEval = _evalLegacy(value: t.hasPhData ? t.ph : double.nan, range: targets.ph);
+    final ecEval = _evalLegacy(value: t.hasEcData ? t.ec : double.nan, range: targets.ec);
+    final resEval = _evalLegacy(value: t.hasResistanceData ? t.resistance : double.nan, range: targets.resistance);
 
-    final nMetric = _interpretNutrient(
-      metricKey: AgroMetricKey.n,
+    // ── N/P/K: señal nativa, sin diagnóstico ──────────────────────────────
+    //
+    // La sonda 7-en-1 deriva estos tres canales de la conductividad; no los
+    // mide químicamente. Desde el NPK Interpretation Reset (Guía v0.4, §4) el
+    // motor los conserva como señal cruda —para historial, tendencias y
+    // respuesta a eventos— y no los compara contra ningún objetivo del
+    // cultivo. El manejo nutricional lo decide `NutritionReadinessEngine` con
+    // etapa, guía auditada, historial y condiciones físicas.
+    final nMetric = AgroMetricEval.nativeSignal(
+      value: t.n.toDouble(),
       hasData: t.hasNitrogenData,
-      rawMgKg: t.n.toDouble(),
-      stage: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      t: t,
     );
-    final pMetric = _interpretNutrient(
-      metricKey: AgroMetricKey.p,
-      rawMgKg: t.p.toDouble(),
+    final pMetric = AgroMetricEval.nativeSignal(
+      value: t.p.toDouble(),
       hasData: t.hasPhosphorusData,
-      stage: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      t: t,
     );
-    final kMetric = _interpretNutrient(
-      metricKey: AgroMetricKey.k,
-      rawMgKg: t.k.toDouble(),
+    final kMetric = AgroMetricEval.nativeSignal(
+      value: t.k.toDouble(),
       hasData: t.hasPotassiumData,
-      stage: stage,
-      stageLabelEs: stageLabelEs,
-      targets: targets,
-      weights: weights,
-      t: t,
     );
 
     final metrics = <AgroMetricKey, AgroMetricEval>{
@@ -153,10 +121,10 @@ class MarigoldAgroScoreEngine {
         moistureEval,
         displayValue: moistureRawCal,
       ),
-      AgroMetricKey.soilTemp: _wrapLegacy(soilTempEval, displayValue: t.soilTempC),
-      AgroMetricKey.ph: _wrapLegacy(phEval, displayValue: t.ph),
-      AgroMetricKey.ec: _wrapLegacy(ecEval, displayValue: t.ec),
-      AgroMetricKey.resistance: _wrapLegacy(resEval, displayValue: t.resistance),
+      AgroMetricKey.soilTemp: _wrapLegacy(soilTempEval, displayValue: t.hasSoilTempData ? t.soilTempC : null),
+      AgroMetricKey.ph: _wrapLegacy(phEval, displayValue: t.hasPhData ? t.ph : null),
+      AgroMetricKey.ec: _wrapLegacy(ecEval, displayValue: t.hasEcData ? t.ec : null),
+      AgroMetricKey.resistance: _wrapLegacy(resEval, displayValue: t.hasResistanceData ? t.resistance : null),
       AgroMetricKey.n: nMetric,
       AgroMetricKey.p: pMetric,
       AgroMetricKey.k: kMetric,
@@ -168,30 +136,12 @@ class MarigoldAgroScoreEngine {
     if (stage == MarigoldStageIds.cycleComplete) {
       final evalDone = AgroEvalResult(
         soilControlScore01: 1.0,
-        nutrientPriorityScore01: 0.0,
-        primaryScoreKind: AgroScoreKind.nutrientPriority,
         metrics: metrics,
         alerts: const <BioGAlert>[],
         suggestedAlertKeys: const <String>[],
       );
       return (eval: evalDone, nextAlertsState: alertsState);
     }
-
-    final nHealthScore = _nutrientHealthScore(nMetric);
-    final pHealthScore = _nutrientHealthScore(pMetric);
-    final kHealthScore = _nutrientHealthScore(kMetric);
-
-    final wSum = math.max(0.0001, weights.sum);
-    final rawSoilControlScore =
-        (weights.moisture * moistureEval.score01 +
-            weights.soilTemp * soilTempEval.score01 +
-            weights.resistance * resEval.score01 +
-            weights.ph * phEval.score01 +
-            weights.ec * ecEval.score01 +
-            weights.nutrientN * nHealthScore +
-            weights.nutrientP * pHealthScore +
-            weights.nutrientK * kHealthScore) /
-        wSum;
 
     // ── Castigos del AgroScore (Documento B §16), en el orden maestro ─────────
     double penalty = 1.0;
@@ -278,24 +228,12 @@ class MarigoldAgroScoreEngine {
       penalty *= f;
     }
 
-    // §16.1 — NPK. Un exceso o una acumulación castiga; una deficiencia solo
-    // castiga levemente cuando la etapa realmente demanda el nutriente.
-    penalty *= _nutrientPenaltyFactor(
-      nMetric.priorityLabel,
-      AgroMetricKey.n,
-      stage: stage,
-      amplifyExcess: (isCutFlower || isCompact) ? 1.10 : 1.0,
-    );
-    penalty *= _nutrientPenaltyFactor(
-      pMetric.priorityLabel,
-      AgroMetricKey.p,
-      stage: stage,
-    );
-    penalty *= _nutrientPenaltyFactor(
-      kMetric.priorityLabel,
-      AgroMetricKey.k,
-      stage: stage,
-    );
+    // §16.1 — NPK. El castigo por exceso/acumulación/deficiencia que salía de la
+    // etiqueta NPK cruda se retiró con el NPK Interpretation Reset (Guía v0.4,
+    // §4): la sonda deriva N/P/K de la conductividad y no puede afirmar ni
+    // exceso ni falta. La sensibilidad del cempasúchil al N alto en
+    // alargamiento/botón sigue viva donde puede afirmarse: en su guía de
+    // nutrición por etapa.
 
     // §16.2 — combinaciones de riesgo. No se duplica el mismo daño: cada
     // combinación aparece una sola vez.
@@ -345,24 +283,19 @@ class MarigoldAgroScoreEngine {
       // el riesgo de follaje mojado sube (§15 CS-04, §16.2).
       penalty *= isLandscape ? 0.68 * 0.90 : 0.68;
     }
-    if (_nExcessRiskStages.contains(stage) && _isExcessLabel(nMetric.priorityLabel)) {
-      penalty *= 0.80; // N alto + alargamiento/botón.
-    }
-
     // §16.2 — no multiplicar indefinidamente: piso 0.08 (§26.9).
     penalty = penalty.clamp(0.08, 1.00);
 
-    final soilControlScore01 = (rawSoilControlScore * penalty).clamp(0.0, 1.0);
-
-    final nutrientWeightSum = math.max(
-      0.0001,
-      weights.nutrientN + weights.nutrientP + weights.nutrientK,
+    // ── Condición del suelo: solo señales físicas presentes ─────────────────
+    //
+    // Los pesos de N/P/K del perfil no entran (peso cero por decisión) y una
+    // señal ausente sale del denominador en vez de valer 0 o 0.5. La
+    // cobertura de evidencia viaja aparte. Ver `SoilConditionScore`.
+    final SoilConditionScoreResult soil = SoilConditionScore.compute(
+      metrics: metrics,
+      weights: weights,
+      criticalPenalty: penalty,
     );
-    final nutrientPriorityScore01 =
-        ((weights.nutrientN * _nutrientSeverityScore(nMetric)) +
-            (weights.nutrientP * _nutrientSeverityScore(pMetric)) +
-            (weights.nutrientK * _nutrientSeverityScore(kMetric))) /
-        nutrientWeightSum;
 
     // Claves CANÓNICAS del AlertsEngine compartido (nunca `marigold.*`).
     final suggested = <String>[];
@@ -372,9 +305,6 @@ class MarigoldAgroScoreEngine {
     _pushSoilAlert(suggested, 'ec', ecEval, stage);
     _pushSoilAlert(suggested, 'resistance', resEval, stage);
 
-    _pushNutrientAlert(suggested, 'npk.n', nMetric, stage);
-    _pushNutrientAlert(suggested, 'npk.p', pMetric, stage);
-    _pushNutrientAlert(suggested, 'npk.k', kMetric, stage);
     _pushEnvironmentalAlerts(suggested, t, stage);
 
     // Severidad por etapa (Documento B §17): crítica 2, semicrítica 1, resto 0,
@@ -398,9 +328,8 @@ class MarigoldAgroScoreEngine {
     );
 
     final eval = AgroEvalResult(
-      soilControlScore01: soilControlScore01,
-      nutrientPriorityScore01: nutrientPriorityScore01.clamp(0.0, 1.0),
-      primaryScoreKind: AgroScoreKind.nutrientPriority,
+      soilControlScore01: soil.score01,
+      soilCoverage: soil.coverage,
       metrics: metrics,
       alerts: built.alerts,
       suggestedAlertKeys: suggested,
@@ -432,9 +361,6 @@ class MarigoldAgroScoreEngine {
     return (1.0 - damage).clamp(0.05, 1.0);
   }
 
-  static bool _isExcessLabel(NutrientPriorityLabel? label) =>
-      label == NutrientPriorityLabel.possibleExcess ||
-      label == NutrientPriorityLabel.reviewAccumulation;
 
   /// §16.1 — humedad crítica por DÉFICIT. Botón y floración son las ventanas
   /// más sensibles (×0.56); el resto de las etapas activas usa ×0.63. En
@@ -495,134 +421,13 @@ class MarigoldAgroScoreEngine {
     }
   }
 
-  /// Factores NPK (Documento B §16.1). El exceso de N castiga más (×0.74) en
-  /// crecimiento activo, alargamiento y botón; una acumulación de cualquier
-  /// nutriente ×0.79; una revisión de manejo ×0.88. Una deficiencia solo
-  /// castiga (×0.85) cuando la etapa realmente demanda ese nutriente: fuera de
-  /// esa ventana se expresa como prioridad nutrimental, no como crisis.
-  static double _nutrientPenaltyFactor(
-    NutrientPriorityLabel? label,
-    AgroMetricKey key, {
-    required String stage,
-    double amplifyExcess = 1.0,
-  }) {
-    if (label == null) return 1.0;
-    switch (label) {
-      case NutrientPriorityLabel.possibleExcess:
-      case NutrientPriorityLabel.reviewAccumulation:
-        if (key == AgroMetricKey.n && _nExcessRiskStages.contains(stage)) {
-          // §15 CS-02/CS-03 — el exceso de N pesa más en corte (tallo blando)
-          // y en maceta (pérdida de forma compacta).
-          return _amplify(0.74, amplifyExcess);
-        }
-        return 0.79;
-      case NutrientPriorityLabel.reviewManagement:
-        return 0.88;
-      case NutrientPriorityLabel.actionRecommended:
-      case NutrientPriorityLabel.highPriority:
-        return _isDemandStageFor(key, stage) ? 0.85 : 1.0;
-      case NutrientPriorityLabel.mediumPriority:
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-        return 1.0;
-    }
-  }
-
-  static bool _isDemandStageFor(AgroMetricKey key, String stage) {
-    switch (key) {
-      case AgroMetricKey.n:
-        return _nDemandStages.contains(stage);
-      case AgroMetricKey.p:
-        return _pDemandStages.contains(stage);
-      case AgroMetricKey.k:
-        return _kDemandStages.contains(stage);
-      default:
-        return false;
-    }
-  }
-
-  static AgroMetricEval _interpretNutrient({
-    required AgroMetricKey metricKey,
-    required double rawMgKg,
-    required bool hasData,
-    required String stage,
-    required String stageLabelEs,
-    required StageTargets targets,
-    required StageWeights weights,
-    required BioGTelemetry t,
-  }) {
-    // Sin sonda de nutrientes no hay dato, y ausencia NO es cero.
-    //
-    // Un 0 ppm entra en `interpret` y sale como `actionRecommended`, la peor
-    // etiqueta de deficiencia que existe: un equipo sin sonda NPK le decía al
-    // productor «aplica fertilizante ya», en cada lectura, para siempre. El
-    // motor de frutales ya se guardaba de esto desde el principio; el resto no.
-    if (!hasData || rawMgKg <= 0) {
-      return AgroMetricEval(
-        band: AgroBand.unknown,
-        score01: 0.5,
-        labelEs: AgroBand.unknown.labelEs,
-        value: rawMgKg,
-        stageKey: stage,
-        stageLabelEs: stageLabelEs,
-        demandWindowLabelEs: targets.windowLabelFor(metricKey),
-      );
-    }
-
-    final interpretation = NutrientRecommendationEngine.interpret(
-      nutrient: metricKey,
-      rawPpm: rawMgKg,
-      cropKey: 'marigold',
-        stageKey: stage,
-      targets: targets,
-      weights: weights,
-      ph: t.ph,
-      ec: t.ec,
-      soilMoisturePct: t.hasSoilMoistureData ? t.soilMoisturePct : null,
-    );
-
-    return AgroMetricEval(
-      band: interpretation.label.agroBand,
-      score01: interpretation.label
-          .severityScore01(stagePressure01: interpretation.stagePressure01)
-          .clamp(0.0, 1.0),
-      labelEs: interpretation.labelEs,
-      value: rawMgKg,
-      priorityLabel: interpretation.label,
-        stageKey: stage,
-        stageLabelEs: stageLabelEs,
-      demandWindowLabelEs: interpretation.demandWindowLabel,
-      shortRecommendationEs: interpretation.shortRecommendation,
-      practicalRecommendationEs: interpretation.practicalRecommendation,
-      doseGuideEs: interpretation.doseGuideEs,
-      fertilizerEquivalentEs: interpretation.fertilizerEquivalentEs,
-      justificationEs: interpretation.justification,
-      stagePressure01: interpretation.stagePressure01,
-      contextModifier01: interpretation.contextModifier01,
-      trendModifier01: interpretation.trendModifier01,
-    );
-  }
-
-  static AgroMetricEval _wrapLegacy(_Eval e, {required double displayValue}) {
+  static AgroMetricEval _wrapLegacy(_Eval e, {required double? displayValue}) {
     return AgroMetricEval(
       band: e.band,
       score01: e.score01,
       labelEs: e.band.labelEs,
       value: displayValue,
     );
-  }
-
-  static double _nutrientSeverityScore(AgroMetricEval metric) {
-    final label = metric.priorityLabel;
-    if (label == null) return 0.0;
-    return label.severityScore01(stagePressure01: metric.stagePressure01 ?? 0.0);
-  }
-
-  static double _nutrientHealthScore(AgroMetricEval metric) {
-    final label = metric.priorityLabel;
-    if (label == null) return metric.score01.clamp(0.0, 1.0);
-    return label.healthScore01(stagePressure01: metric.stagePressure01 ?? 0.0);
   }
 
   static _Eval _evalLegacy({required double value, required AgroRange range}) {
@@ -711,44 +516,6 @@ class MarigoldAgroScoreEngine {
 
     if (isSensitiveStage && e.band == AgroBand.low) out.add('$key.low');
     if (isSensitiveStage && e.band == AgroBand.high) out.add('$key.high');
-  }
-
-  static void _pushNutrientAlert(
-    List<String> out,
-    String key,
-    AgroMetricEval metric,
-    String stage,
-  ) {
-    final label = metric.priorityLabel;
-    if (label == null) return;
-
-    switch (label) {
-      case NutrientPriorityLabel.actionRecommended:
-        out.add('$key.action');
-        return;
-      case NutrientPriorityLabel.reviewManagement:
-        out.add('$key.review');
-        return;
-      case NutrientPriorityLabel.highPriority:
-        out.add('$key.high_priority');
-        return;
-      case NutrientPriorityLabel.possibleExcess:
-        out.add('$key.possible_excess');
-        return;
-      case NutrientPriorityLabel.reviewAccumulation:
-        out.add('$key.review_accumulation');
-        return;
-      case NutrientPriorityLabel.mediumPriority:
-        if (criticalStages.contains(stage) ||
-            semiCriticalStages.contains(stage)) {
-          out.add('$key.medium_priority');
-        }
-        return;
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-        return;
-    }
   }
 
   /// Alertas ambientales (Documento B §18). El frío y el calor elevan la

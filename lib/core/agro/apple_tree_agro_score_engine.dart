@@ -1,6 +1,5 @@
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
-import 'package:bio_g/core/agro/apple_tree_nutrition_modifier.dart';
 import 'package:bio_g/core/agro/tree_agro_score_engine.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -10,9 +9,12 @@ import 'package:bio_g/models/biog_telemetry.dart';
 /// Desde la integración del segundo árbol (pera), la lógica base vive en el
 /// motor genérico [TreeAgroScoreEngine] (estándar BIO-G: "generalizar helpers
 /// hardcodeados a apple_tree antes del segundo árbol"). Este wrapper conserva la
-/// API pública del manzano y solo resuelve el modificador del manzano y su
-/// `cropKey`; el comportamiento es idéntico (las pruebas de regresión del
-/// manzano lo verifican).
+/// API pública del manzano y solo aporta su `cropKey`; el comportamiento es
+/// idéntico (las pruebas de regresión del manzano lo verifican).
+///
+/// Desde el NPK Interpretation Reset (Guía v0.4, §4) este wrapper ya no resuelve
+/// el modificador nutricional de la variedad: el score del árbol no interpreta
+/// N/P/K. El modificador sigue existiendo y lo consume el motor de nutrición.
 class AppleTreeAgroScoreEngine {
   const AppleTreeAgroScoreEngine._();
 
@@ -37,16 +39,9 @@ class AppleTreeAgroScoreEngine {
     String? varietyId,
     String? varietyAlias,
   }) {
-    final modifier = resolveAppleTreeNutritionModifier(
-      profileId: profileId,
-      varietyId: varietyId,
-      alias: varietyAlias,
-    );
-
     return TreeAgroScoreEngine.evaluate(
       t: t,
       cropKey: 'apple_tree',
-      modifier: modifier,
       stageId: stageId,
       stageLabelEs: stageLabelEs,
       targets: targets,

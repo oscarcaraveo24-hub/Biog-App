@@ -14,7 +14,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/crops/cactus/cactus_agro_score_engine.dart';
 import 'package:bio_g/core/crops/cactus/cactus_catalog.dart';
 import 'package:bio_g/core/crops/cactus/cactus_crop_definition.dart';
@@ -105,22 +104,6 @@ void main() {
       }
     });
 
-    test('NPK expone rangos comparables en mg/kg', () {
-      for (final stage in _allStages) {
-        final t = resolveCactusTargets(stage);
-        expect(t.nSoilPpmRange, isNotNull);
-        expect(t.pSoilPpmRange, isNotNull);
-        expect(t.kSoilPpmRange, isNotNull);
-        // Cactus = baja demanda: nunca los targets de un cultivo de grano.
-        expect(t.nSoilPpmRange!.optimalMax, lessThanOrEqualTo(45));
-        // En cactus el K manda sobre el N.
-        expect(
-          t.kSoilPpmRange!.optimalMax,
-          greaterThan(t.nSoilPpmRange!.optimalMax),
-        );
-      }
-    });
-
     test('los pesos de cada etapa suman 1.0', () {
       for (final stage in _allStages) {
         expect(
@@ -159,7 +142,7 @@ void main() {
       expect(out.eval.soilControlScore01, greaterThan(0.7));
     });
 
-    test('interpreta NPK de verdad (no lo anula)', () {
+    test('N, P y K son señal nativa: presentes, sin banda ni prioridad', () {
       final out = _evaluate(t: _telemetry());
       for (final key in <AgroMetricKey>[
         AgroMetricKey.n,
@@ -168,11 +151,11 @@ void main() {
       ]) {
         final m = out.eval.metrics[key];
         expect(
-          m?.priorityLabel,
-          isNotNull,
-          reason: '$key debe recibir interpretación, no "No accionable"',
+          m?.isNativeSignal,
+          isTrue,
+          reason: '$key debe exponerse como señal nativa',
         );
-        expect(m!.priorityLabel, isNot(NutrientPriorityLabel.unknown));
+        expect(m!.band, AgroBand.unknown, reason: 'la sonda no sostiene bajo/alto');
       }
     });
 
@@ -241,18 +224,6 @@ void main() {
       expect(out.eval.suggestedAlertKeys, contains('resistance.critical'));
     });
 
-    test('los caps NPK son bajos y K > N', () {
-      final capN = NpkCaps.forCropMetric(
-        cropKey: 'cactus',
-        metricKey: AgroMetricKey.n,
-      );
-      final capK = NpkCaps.forCropMetric(
-        cropKey: 'cactus',
-        metricKey: AgroMetricKey.k,
-      );
-      expect(capN, lessThan(100), reason: 'Cactus no es un cultivo de grano');
-      expect(capK, greaterThan(capN), reason: 'En cactus el K manda');
-    });
   });
 
   // La planta ornamental de maceta: se planta, arraiga, crece, y se ESTABILIZA

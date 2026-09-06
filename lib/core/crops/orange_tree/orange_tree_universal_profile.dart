@@ -98,10 +98,11 @@ class OrangeTreeStageNutrition {
 
 /// Datos crudos por etapa, transcritos del documento 05 (§6, §7 y §8).
 ///
-/// `nRel/pRel/kRel` son los AgroRange RELATIVOS (escala 0..100). El motor
-/// compartido los convierte a mg/kg comparables con el cap del cultivo
-/// (`NutrientTargetRangeResolver` + `NpkCaps`). Las bandas ya son suaves: no se
-/// dejan rangos pegados optimo→critico.
+/// `nRel/pRel/kRel` (`nIndex/pIndex/kIndex`) son rangos RELATIVOS por etapa
+/// (escala 0..100) que hoy solo sirven como proxy de prioridad fenológica. Con
+/// el NPK Interpretation Reset (Guía v0.4, §4) dejaron de convertirse a mg/kg
+/// y de compararse contra la sonda: la dosis del frutal sale de la restitución
+/// (`TreeRestitutionPlanner`), no de la lectura N/P/K.
 class _OrangeStageProfile {
   const _OrangeStageProfile({
     required this.moisture,
@@ -605,10 +606,10 @@ _OrangeStageProfile _profileForStage(String? stageId) {
 
 /// Targets de sensor por etapa para `resolveTargets` del naranjo (doc 05 §6).
 ///
-/// Los `nIndex/pIndex/kIndex` llevan el rango RELATIVO por etapa (0..100). El
-/// motor compartido (`NutrientTargetRangeResolver`) los convierte a mg/kg con el
-/// cap del cultivo (`NpkCaps`), asi las bandas bajo/optimo/alto-util/exceso ya
-/// quedan suaves sin saltos optimo→critico.
+/// Los `nIndex/pIndex/kIndex` llevan el rango RELATIVO por etapa (0..100) y
+/// solo sirven como proxy de prioridad fenológica: con el NPK Interpretation
+/// Reset (Guía v0.4, §4) ya no se convierten a mg/kg ni se comparan contra la
+/// sonda.
 StageTargets resolveOrangeTreeTargets(String? stageId) {
   final p = _profileForStage(stageId);
   return StageTargets(

@@ -29,6 +29,7 @@ import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/alerts_engine.dart';
+import 'package:bio_g/core/agro/soil_condition_score.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/core/crops/generic/generic_guide.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -55,8 +56,8 @@ class GuideAgroScoreEngine {
     // Cada métrica se evalúa solo si su sensor reportó. `BioGTelemetry`
     // rellena con 0.0 lo que falta, y 0.0 cae en "crítico" en cuatro de los
     // cinco rangos: sin esta comprobación un sensor averiado se leería como
-    // suelo en emergencia. Los motores del catálogo todavía no lo hacen; aquí
-    // sí, porque el archivo es nuevo y no arrastra ese contrato.
+    // suelo en emergencia. Desde el reset los motores del catálogo aplican la
+    // misma guarda en sus cinco canales físicos.
     final _Eval moistureEval = _eval(
       value: moistureRawCal,
       range: targets.moistureRaw,
@@ -93,28 +94,6 @@ class GuideAgroScoreEngine {
           AgroMetricKey.resistance: _wrap(resistanceEval),
         };
 
-    // Solo pesos de suelo —`weights.sum` incluiría los nutrientes— y solo de
-    // las métricas que sí tienen dato. Repartir el peso de un sensor ausente
-    // entre los presentes es la diferencia entre "no lo sé" y "está mal": si
-    // una métrica sin dato entrara con score 0, el anillo de salud caería por
-    // un sensor roto, no por el suelo.
-    double weightedScore = 0.0;
-    double totalW = 0.0;
-
-    void accumulate(_Eval e, double w) {
-      if (e.band == AgroBand.unknown) return;
-      weightedScore += w * e.score01;
-      totalW += w;
-    }
-
-    accumulate(moistureEval, weights.moisture);
-    accumulate(soilTempEval, weights.soilTemp);
-    accumulate(resistanceEval, weights.resistance);
-    accumulate(phEval, weights.ph);
-    accumulate(ecEval, weights.ec);
-
-    final double rawScore = weightedScore / math.max(0.0001, totalW);
-
     // Mismos factores que el motor de cereales para las cinco de suelo.
     double criticalPenalty = 1.0;
     if (moistureEval.band == AgroBand.critical) criticalPenalty *= 0.45;
@@ -123,7 +102,15 @@ class GuideAgroScoreEngine {
     if (ecEval.band == AgroBand.critical) criticalPenalty *= 0.65;
     if (resistanceEval.band == AgroBand.critical) criticalPenalty *= 0.85;
 
-    final double soilControlScore01 = rawScore * criticalPenalty;
+    // Solo pesos de suelo y solo de las métricas que sí tienen dato. Este
+    // motor fue el primero en hacerlo; con el NPK Interpretation Reset la regla
+    // se volvió común a los 26 motores y vive en `SoilConditionScore`, junto
+    // con la cobertura de evidencia que antes no se reportaba.
+    final SoilConditionScoreResult soil = SoilConditionScore.compute(
+      metrics: metrics,
+      weights: weights,
+      criticalPenalty: criticalPenalty,
+    );
 
     final List<String> suggestedAlertKeys = <String>[];
 
@@ -162,7 +149,8 @@ class GuideAgroScoreEngine {
     );
 
     final AgroEvalResult agroEval = AgroEvalResult(
-      soilControlScore01: soilControlScore01.clamp(0.0, 1.0),
+      soilControlScore01: soil.score01,
+      soilCoverage: soil.coverage,
       metrics: metrics,
       alerts: alertsBuild.alerts,
       suggestedAlertKeys: suggestedAlertKeys,
@@ -259,7 +247,8 @@ class GuideAgroScoreEngine {
     band: e.band,
     score01: e.score01,
     labelEs: _labelEs(e.band),
-    value: e.value,
+    // Un canal sin dato viaja como null, no como el 0.0 que rellenó el modelo.
+    value: e.band.isKnown ? e.value : null,
   );
 
   static String _labelEs(AgroBand band) {

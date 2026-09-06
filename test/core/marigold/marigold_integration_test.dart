@@ -15,7 +15,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_registry.dart';
@@ -29,7 +28,6 @@ import 'package:bio_g/core/crops/marigold/marigold_lifecycle.dart';
 import 'package:bio_g/core/crops/marigold/marigold_risk_catalog.dart';
 import 'package:bio_g/core/crops/marigold/marigold_universal_profile.dart';
 import 'package:bio_g/core/crops/sunflower/sunflower_catalog.dart';
-import 'package:bio_g/core/crops/sunflower/sunflower_universal_profile.dart';
 import 'package:bio_g/core/plant_health/catalog/marigold_syndromes.dart';
 import 'package:bio_g/core/plant_health/plant_health_models.dart';
 import 'package:bio_g/core/plant_health/plant_health_registry.dart';
@@ -486,7 +484,7 @@ void main() {
 
   // ═══════════════════════════════════════════════════════════════════════════
   group('Documento B §26.1/§26.2 — Integridad de targets y pesos', () {
-    test('cada etapa expone las ocho métricas con rangos ordenados', () {
+    test('cada etapa expone las cinco señales físicas con rangos ordenados', () {
       for (final stage in _allStages) {
         for (final profileId in _allProfiles) {
           final t = resolveMarigoldTargetsForProfile(stage,
@@ -497,9 +495,6 @@ void main() {
             'pH': t.ph,
             'EC': t.ec,
             'resistencia': t.resistance,
-            'N': t.nSoilPpmRange!,
-            'P': t.pSoilPpmRange!,
-            'K': t.kSoilPpmRange!,
           }.entries) {
             final r = entry.value;
             expect(r.lowMax, lessThanOrEqualTo(r.optimalMin),
@@ -680,37 +675,6 @@ void main() {
 
   // ═══════════════════════════════════════════════════════════════════════════
   group('Documento B §26.8 — NPK', () {
-    test('los caps son 110 / 75 / 280 y coinciden con NpkCaps', () {
-      expect(MarigoldUniversalProfile.capN, 110.0);
-      expect(MarigoldUniversalProfile.capP, 75.0);
-      expect(MarigoldUniversalProfile.capK, 280.0);
-      for (final key in <String>[
-        'marigold',
-        'crop_marigold',
-        'cempasuchil',
-        'cempasúchil',
-        'flor de muerto',
-        'Tagetes erecta',
-      ]) {
-        expect(NpkCaps.forCropMetric(cropKey: key, metricKey: AgroMetricKey.n),
-            110.0, reason: key);
-        expect(NpkCaps.forCropMetric(cropKey: key, metricKey: AgroMetricKey.p),
-            75.0, reason: key);
-        expect(NpkCaps.forCropMetric(cropKey: key, metricKey: AgroMetricKey.k),
-            280.0, reason: key);
-      }
-      expect(annualOrnamentalNCap(kCropMarigold),
-          MarigoldUniversalProfile.capN);
-    });
-
-    test('el Cempasúchil pide menos N y P que el Girasol', () {
-      expect(MarigoldUniversalProfile.capN,
-          lessThan(SunflowerUniversalProfile.capN));
-      expect(MarigoldUniversalProfile.capP,
-          lessThan(SunflowerUniversalProfile.capP));
-      expect(MarigoldUniversalProfile.capK,
-          lessThan(SunflowerUniversalProfile.capK));
-    });
 
     test('cs_skip y la etapa por confirmar limitan la prioridad NPK', () {
       for (final stage in _liveStages) {
@@ -789,7 +753,6 @@ void main() {
       );
       expect(out.eval.alerts, isEmpty);
       expect(out.eval.suggestedAlertKeys, isEmpty);
-      expect(out.eval.nutrientPriorityScore01, 0.0);
       expect(out.eval.soilControlScore01, 1.0);
     });
 
@@ -1060,8 +1023,6 @@ void main() {
           kAnnualOrnamentalGenericPlantFallback);
       expect(annualOrnamentalCycleCompleteHelper(bogus),
           isNot(contains('Girasol')));
-      expect(annualOrnamentalNCap(bogus),
-          isNot(SunflowerUniversalProfile.capN));
     });
 
     test('solo el perfil de corte activa el rótulo de ventana de corte', () {
@@ -1086,13 +1047,10 @@ void main() {
 
   // ═══════════════════════════════════════════════════════════════════════════
   group('Documento A §18.8 / B §26.11 — No regresión del Girasol', () {
-    test('el Girasol conserva sus perfiles, caps y textos', () {
+    test('el Girasol conserva sus perfiles y textos', () {
       expect(CropCatalog.canonicalCropKey('girasol'), kCropSunflower);
       expect(CropRegistry.byKeyName('crop_sunflower')?.cropKey,
           CropKey.sunflower);
-      expect(SunflowerUniversalProfile.capN, 130.0);
-      expect(SunflowerUniversalProfile.capP, 90.0);
-      expect(SunflowerUniversalProfile.capK, 300.0);
       expect(sunflowerProfiles.keys, contains(kGiSkip));
       expect(annualOrnamentalCropDisplayName(kCropSunflower), 'Girasol');
       expect(annualOrnamentalDefaultProfileId(kCropSunflower), kGiSkip);
@@ -1112,20 +1070,6 @@ void main() {
       }
     });
 
-    test('los caps NPK de los demás cultivos no cambian', () {
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'girasol', metricKey: AgroMetricKey.n),
-        130.0,
-      );
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'tulipan', metricKey: AgroMetricKey.n),
-        100.0,
-      );
-      expect(
-        NpkCaps.forCropMetric(cropKey: 'rosal', metricKey: AgroMetricKey.n),
-        120.0,
-      );
-    });
   });
 
   // ═══════════════════════════════════════════════════════════════════════════

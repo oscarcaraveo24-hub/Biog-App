@@ -72,6 +72,15 @@ extension AgroMetricKeyX on AgroMetricKey {
   }
 }
 
+/// Banda de una condición FÍSICA del suelo (humedad, temperatura, pH, CE, RT).
+///
+/// N, P y K ya no tienen banda. Desde el NPK Interpretation Reset (Guía oficial
+/// del nuevo motor nutricional v0.4, §4) esos tres canales viajan como
+/// **señal nativa**: se guardan, se grafican y forman parte de una firma de
+/// tendencia, pero ningún motor los clasifica como bajo/óptimo/alto/crítico.
+/// El único valor que un canal nativo puede llevar aquí es [unknown], y no
+/// significa «sin dato»: significa «sin diagnóstico». Ver
+/// [AgroMetricEval.isNativeSignal].
 enum AgroBand { low, optimal, high, critical, unknown }
 
 extension AgroBandX on AgroBand {
@@ -93,139 +102,59 @@ extension AgroBandX on AgroBand {
   bool get isKnown => this != AgroBand.unknown;
 }
 
-/// Nuevo lenguaje operativo para NPK (PREMIUM Y CORTO)
-enum NutrientPriorityLabel {
-  noPriority,
-  lowPriority,
-  mediumPriority,
-  highPriority,
-  reviewManagement,
-  actionRecommended,
-  possibleExcess,
-  reviewAccumulation,
-  unknown,
-}
+/// Cobertura de evidencia física del suelo: cuántas de las señales evaluables
+/// llegaron con dato en esta lectura.
+///
+/// Existe porque «score» y «cobertura» son dos números distintos y antes eran
+/// uno solo (Guía v0.4, §6 «Score y cobertura se separan»). Un canal ausente no
+/// vale 0 ni 0.5: sale del denominador del score y se cuenta aquí, aparte, para
+/// que el suelo no «empeore» porque un cable dejó de reportar y para que el
+/// agricultor vea con cuánta evidencia se calculó el número que tiene enfrente:
+/// «Condición del suelo 89 % · 4 de 5 señales».
+///
+/// Las cinco señales evaluables son las físicas: humedad, temperatura, pH, CE y
+/// resistencia. N/P/K no entran ni al numerador ni al denominador.
+class SoilSignalCoverage {
+  const SoilSignalCoverage({
+    required this.evaluable,
+    required this.present,
+    this.missing = const <AgroMetricKey>[],
+  });
 
-extension NutrientPriorityLabelX on NutrientPriorityLabel {
+  /// Sin ninguna señal evaluada. Es el valor por omisión de una evaluación
+  /// construida a mano (pruebas, respaldos), nunca el de un motor real.
+  static const SoilSignalCoverage empty = SoilSignalCoverage(
+    evaluable: 0,
+    present: 0,
+  );
+
+  /// Señales que el motor sabe evaluar para este cultivo (normalmente 5).
+  final int evaluable;
+
+  /// Señales que llegaron con dato en esta lectura.
+  final int present;
+
+  /// Señales evaluables que no llegaron, para poder decir cuál falta.
+  final List<AgroMetricKey> missing;
+
+  bool get hasAnySignal => present > 0;
+
+  bool get isComplete => evaluable > 0 && present >= evaluable;
+
+  /// Fracción 0..1 de evidencia disponible.
+  double get coverage01 =>
+      evaluable <= 0 ? 0.0 : (present / evaluable).clamp(0.0, 1.0);
+
+  /// «4 de 5 señales», listo para pantalla.
   String get labelEs {
-    switch (this) {
-      case NutrientPriorityLabel.noPriority:
-        return 'Óptimo'; // Antes: Lectura favorable
-      case NutrientPriorityLabel.lowPriority:
-        return 'Vigilar'; // Antes: Seguimiento activo
-      case NutrientPriorityLabel.mediumPriority:
-        return 'Atención'; // Antes: Punto de atención
-      case NutrientPriorityLabel.highPriority:
-        return 'Falta Nutriente'; // Antes: Nutriente clave
-      case NutrientPriorityLabel.reviewManagement:
-        return 'Ajustar Dosis'; // Antes: Ajuste recomendado
-      case NutrientPriorityLabel.actionRecommended:
-        return 'Urge Aplicar'; // Antes: Acción sugerida
-      case NutrientPriorityLabel.possibleExcess:
-        return 'Pausar (Exceso)'; // Antes: Posible acumulación
-      case NutrientPriorityLabel.reviewAccumulation:
-        return 'Alerta Exceso'; // Antes: Revisar acumulación
-      case NutrientPriorityLabel.unknown:
-        return '—';
-    }
+    if (evaluable <= 0) return 'Sin señales evaluables';
+    return '$present de $evaluable señales';
   }
 
-  int get severityRank {
-    switch (this) {
-      case NutrientPriorityLabel.noPriority:
-        return 0;
-      case NutrientPriorityLabel.lowPriority:
-        return 1;
-      case NutrientPriorityLabel.mediumPriority:
-        return 2;
-      case NutrientPriorityLabel.highPriority:
-        return 3;
-      case NutrientPriorityLabel.reviewManagement:
-        return 4;
-      case NutrientPriorityLabel.actionRecommended:
-        return 5;
-      case NutrientPriorityLabel.possibleExcess:
-        return 4;
-      case NutrientPriorityLabel.reviewAccumulation:
-        return 3;
-      case NutrientPriorityLabel.unknown:
-        return -1;
-    }
-  }
-
-  bool get isKnown => this != NutrientPriorityLabel.unknown;
-  bool get suggestsAction =>
-      this == NutrientPriorityLabel.actionRecommended ||
-      this == NutrientPriorityLabel.highPriority ||
-      this == NutrientPriorityLabel.reviewManagement;
-
-  /// Severidad operativa para scoring global.
-  ///
-  /// A diferencia del motor de interpretación, este helper sí trata
-  /// `noPriority` como 0.0 para que una lectura sana no castigue el score.
-  double severityScore01({double stagePressure01 = 0.0}) {
-    final pressure = stagePressure01.clamp(0.0, 1.0);
-
-    final base = switch (this) {
-      NutrientPriorityLabel.noPriority => 0.00,
-      NutrientPriorityLabel.lowPriority => 0.08,
-      NutrientPriorityLabel.mediumPriority => 0.24,
-      NutrientPriorityLabel.highPriority => 0.48,
-      NutrientPriorityLabel.reviewManagement => 0.58,
-      NutrientPriorityLabel.actionRecommended => 0.78,
-      NutrientPriorityLabel.possibleExcess => 0.46,
-      NutrientPriorityLabel.reviewAccumulation => 0.68,
-      NutrientPriorityLabel.unknown => 1.00,
-    };
-
-    final pressureExtra = switch (this) {
-      NutrientPriorityLabel.noPriority => 0.00,
-      NutrientPriorityLabel.lowPriority => 0.00,
-      NutrientPriorityLabel.mediumPriority => 0.04 * pressure,
-      NutrientPriorityLabel.highPriority => 0.08 * pressure,
-      NutrientPriorityLabel.reviewManagement => 0.06 * pressure,
-      NutrientPriorityLabel.actionRecommended => 0.10 * pressure,
-      NutrientPriorityLabel.possibleExcess => 0.05 * pressure,
-      NutrientPriorityLabel.reviewAccumulation => 0.08 * pressure,
-      NutrientPriorityLabel.unknown => 0.00,
-    };
-
-    return (base + pressureExtra).clamp(0.0, 1.0);
-  }
-
-  double healthScore01({double stagePressure01 = 0.0}) {
-    return (1.0 - severityScore01(stagePressure01: stagePressure01)).clamp(
-      0.0,
-      1.0,
-    );
-  }
-
-  AgroBand get agroBand {
-    switch (this) {
-      case NutrientPriorityLabel.noPriority:
-        return AgroBand.optimal;
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.mediumPriority:
-      case NutrientPriorityLabel.highPriority:
-        return AgroBand.low;
-      case NutrientPriorityLabel.possibleExcess:
-      case NutrientPriorityLabel.reviewAccumulation:
-        return AgroBand.high;
-      case NutrientPriorityLabel.reviewManagement:
-      case NutrientPriorityLabel.actionRecommended:
-        return AgroBand.critical;
-      case NutrientPriorityLabel.unknown:
-        return AgroBand.unknown;
-    }
-  }
-
-  /// True si esta etiqueta es del lado de exceso (no de déficit).
-  bool get isExcessSide =>
-      this == NutrientPriorityLabel.possibleExcess ||
-      this == NutrientPriorityLabel.reviewAccumulation;
+  /// Nombres cortos de lo que falta: «pH, CE».
+  String get missingLabelEs =>
+      missing.map((AgroMetricKey k) => k.shortLabel).join(', ');
 }
-
-enum AgroScoreKind { soilControl, nutrientPriority }
 
 class AgroRange {
   const AgroRange({
@@ -241,102 +170,113 @@ class AgroRange {
   final double highMin;
 }
 
+/// Evaluación de UNA métrica dentro de la capa de interpretación física.
+///
+/// Esta clase es capa 2 de las tres que ordenan BIO-G (Guía v0.4, §2): dato
+/// crudo → **interpretación física** → agronomía y decisión. Por eso aquí solo
+/// cabe lo que se puede afirmar del suelo con la sonda: banda, puntaje y valor.
+/// Lo que antes viajaba en esta misma clase —etiqueta de prioridad, dosis,
+/// equivalente comercial, justificación, presión fenológica— era capa 3
+/// disfrazada de capa 2, y salió del runtime con el NPK Interpretation Reset.
+/// El manejo nutricional vive ahora en `NutritionDecision`
+/// (`lib/core/agro/nutrition/`), que responde otra pregunta y tiene otro
+/// contrato.
 class AgroMetricEval {
   const AgroMetricEval({
     required this.band,
     required this.score01,
     required this.labelEs,
     this.value,
-    this.priorityLabel,
-    this.stageKey,
-    this.stageLabelEs,
-    this.demandWindowLabelEs,
-    this.shortRecommendationEs,
-    this.practicalRecommendationEs,
-    this.doseGuideEs,
-    this.fertilizerEquivalentEs,
-    this.justificationEs,
-    this.stagePressure01,
-    this.contextModifier01,
-    this.trendModifier01,
+    this.isNativeSignal = false,
   });
 
+  /// Canal N, P o K tal como lo reporta la sonda: **señal nativa**.
+  ///
+  /// La banda queda en [AgroBand.unknown] a propósito y NO significa «sin dato»
+  /// —[value] trae la lectura si la hubo—: significa que este número no se
+  /// clasifica. La sonda 7-en-1 deriva N/P/K de la conductividad, no los mide
+  /// químicamente, y compararlos contra un objetivo de cultivo fabricaba
+  /// diagnósticos («N bajo», «P crítico») que el hardware no sostiene.
+  ///
+  /// Dónde SÍ sirve la señal: historial, tendencias dentro del mismo sitio y
+  /// respuesta temporal alrededor de un riego o una fertilización (Guía v0.4,
+  /// §3, §12). Eso lo lee el motor nutricional desde el historial, no desde
+  /// esta evaluación puntual.
+  ///
+  /// `hasData` en falso produce `value == null`; con dato, el valor crudo en
+  /// mg/kg nominales de la sonda.
+  factory AgroMetricEval.nativeSignal({
+    required double? value,
+    required bool hasData,
+  }) {
+    final bool present = hasData && value != null && value.isFinite;
+    return AgroMetricEval(
+      band: AgroBand.unknown,
+      score01: 0.0,
+      labelEs: present ? 'Señal nativa' : AgroBand.unknown.labelEs,
+      value: present ? value : null,
+      isNativeSignal: true,
+    );
+  }
+
   final AgroBand band;
+
+  /// Puntaje 0..1 de la condición física. Para una señal nativa es 0.0 y no se
+  /// usa: N/P/K tienen peso cero en el score por decisión, no por descuido.
   final double score01;
+
   final String labelEs;
   final double? value;
-  final NutrientPriorityLabel? priorityLabel;
-  final String? stageKey;
-  final String? stageLabelEs;
-  final String? demandWindowLabelEs;
-  final String? shortRecommendationEs;
-  final String? practicalRecommendationEs;
-  final String? doseGuideEs;
-  final String? fertilizerEquivalentEs;
-  final String? justificationEs;
-  final double? stagePressure01;
-  final double? contextModifier01;
-  final double? trendModifier01;
 
-  bool get hasNutrientInterpretation => priorityLabel != null;
-  bool get isNutrientActionable =>
-      priorityLabel != null && priorityLabel!.suggestsAction;
+  /// True para N/P/K. Ver [AgroMetricEval.nativeSignal].
+  final bool isNativeSignal;
+
+  /// Hay lectura de la sonda para este canal (banda conocida, o señal nativa
+  /// con valor). Una banda `unknown` de un canal físico significa que el
+  /// sensor no reportó; en una señal nativa la banda siempre es `unknown`, así
+  /// que ahí la verdad está en el valor.
+  bool get hasData => isNativeSignal ? value != null : band.isKnown;
 
   AgroMetricEval copyWith({
     AgroBand? band,
     double? score01,
     String? labelEs,
     double? value,
-    NutrientPriorityLabel? priorityLabel,
-    String? stageKey,
-    String? stageLabelEs,
-    String? demandWindowLabelEs,
-    String? shortRecommendationEs,
-    String? practicalRecommendationEs,
-    String? doseGuideEs,
-    String? fertilizerEquivalentEs,
-    String? justificationEs,
-    double? stagePressure01,
-    double? contextModifier01,
-    double? trendModifier01,
+    bool? isNativeSignal,
   }) {
     return AgroMetricEval(
       band: band ?? this.band,
       score01: score01 ?? this.score01,
       labelEs: labelEs ?? this.labelEs,
       value: value ?? this.value,
-      priorityLabel: priorityLabel ?? this.priorityLabel,
-      stageKey: stageKey ?? this.stageKey,
-      stageLabelEs: stageLabelEs ?? this.stageLabelEs,
-      demandWindowLabelEs: demandWindowLabelEs ?? this.demandWindowLabelEs,
-      shortRecommendationEs:
-          shortRecommendationEs ?? this.shortRecommendationEs,
-      practicalRecommendationEs:
-          practicalRecommendationEs ?? this.practicalRecommendationEs,
-      doseGuideEs: doseGuideEs ?? this.doseGuideEs,
-      fertilizerEquivalentEs:
-          fertilizerEquivalentEs ?? this.fertilizerEquivalentEs,
-      justificationEs: justificationEs ?? this.justificationEs,
-      stagePressure01: stagePressure01 ?? this.stagePressure01,
-      contextModifier01: contextModifier01 ?? this.contextModifier01,
-      trendModifier01: trendModifier01 ?? this.trendModifier01,
+      isNativeSignal: isNativeSignal ?? this.isNativeSignal,
     );
   }
 }
 
+/// Resultado de un motor de score: condición física del suelo + alertas.
+///
+/// El score nutricional (`nutrientPriorityScore01`) y su «tipo de score
+/// primario» desaparecieron con el reset: N/P/K crudos no forman puntaje
+/// alguno. Si alguna vez existe un número de «manejo nutricional», saldrá de
+/// `NutritionDecision`, con otra semántica, y no volverá a mezclarse con la
+/// condición del suelo en el mismo denominador.
 class AgroEvalResult {
   const AgroEvalResult({
     required this.soilControlScore01,
     required this.metrics,
     required this.alerts,
     required this.suggestedAlertKeys,
-    this.primaryScoreKind = AgroScoreKind.soilControl,
-    this.nutrientPriorityScore01,
+    this.soilCoverage = SoilSignalCoverage.empty,
   });
 
+  /// Condición física del suelo, 0..1, calculada SOLO con las señales físicas
+  /// que llegaron con dato. Ver [SoilSignalCoverage].
   final double soilControlScore01;
-  final double? nutrientPriorityScore01;
-  final AgroScoreKind primaryScoreKind;
+
+  /// Con cuánta evidencia se calculó [soilControlScore01].
+  final SoilSignalCoverage soilCoverage;
+
   final Map<AgroMetricKey, AgroMetricEval> metrics;
   final List<BioGAlert> alerts;
   final List<String> suggestedAlertKeys;
@@ -345,6 +285,27 @@ class AgroEvalResult {
   AgroMetricEval? get nitrogen => metrics[AgroMetricKey.n];
   AgroMetricEval? get phosphorus => metrics[AgroMetricKey.p];
   AgroMetricEval? get potassium => metrics[AgroMetricKey.k];
+
+  /// True cuando el score se calculó sin ninguna señal física: en ese caso
+  /// [soilControlScore01] vale 0.0 por construcción y NO debe pintarse como
+  /// «0 % de salud». Las pantallas muestran «sin datos».
+  bool get hasSoilEvidence => soilCoverage.hasAnySignal;
+
+  AgroEvalResult copyWith({
+    double? soilControlScore01,
+    SoilSignalCoverage? soilCoverage,
+    Map<AgroMetricKey, AgroMetricEval>? metrics,
+    List<BioGAlert>? alerts,
+    List<String>? suggestedAlertKeys,
+  }) {
+    return AgroEvalResult(
+      soilControlScore01: soilControlScore01 ?? this.soilControlScore01,
+      soilCoverage: soilCoverage ?? this.soilCoverage,
+      metrics: metrics ?? this.metrics,
+      alerts: alerts ?? this.alerts,
+      suggestedAlertKeys: suggestedAlertKeys ?? this.suggestedAlertKeys,
+    );
+  }
 }
 
 /// Calibración de escalas relativas.
