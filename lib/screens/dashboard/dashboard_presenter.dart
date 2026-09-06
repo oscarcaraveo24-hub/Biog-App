@@ -2,13 +2,11 @@
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_event_input_factory.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/agronomic_event.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart'; // <-- IMPORTANTE: Lo usamos para las dosis en vivo
-import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/agro/water/moisture_target_resolver.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
@@ -83,10 +81,28 @@ class DashboardViewData {
 
   /// Soil-health ring value (0.0–1.0), or `null` when there is no telemetry.
   /// Null renders as "--" instead of a misleading 0%.
+  ///
+  /// Es la CONDICIÓN FÍSICA del suelo (humedad, temperatura, pH, CE,
+  /// resistencia; Guía v0.4, §7) multiplicada por el factor del libro de
+  /// ventanas nutricionales: baja únicamente cuando una ventana importante
+  /// terminó sin evidencia de haber sido atendida. Nunca por N/P/K crudos.
   final double? soilHealth;
   final String soilHealthLabel;
+
+  /// «4 de 5 señales»: cuántas señales físicas sostienen el anillo. Vacío
+  /// cuando no aplica.
+  final String soilCoverageLabel;
+
+  /// Tarjeta de nutrición: titular y detalle vienen del motor de nutrición
+  /// (`NutritionDecision`), nunca de una lectura N/P/K interpretada aquí.
   final String npkTitle;
   final String npkSubtitle;
+
+  /// Etiqueta corta del estado nutricional («Ventana», «Respuesta»…).
+  final String npkTag;
+
+  /// Decisión completa del motor de nutrición, cuando estuvo disponible.
+  final NutritionDecision? nutritionDecision;
   final DashboardMetricUiData moisture;
   final DashboardMetricUiData temperature;
   final DashboardMetricUiData ph;
@@ -114,8 +130,11 @@ class DashboardViewData {
     required this.cropIconAsset,
     required this.soilHealth,
     required this.soilHealthLabel,
+    this.soilCoverageLabel = '',
     required this.npkTitle,
     required this.npkSubtitle,
+    this.npkTag = '',
+    this.nutritionDecision,
     required this.moisture,
     required this.temperature,
     required this.ph,
@@ -140,56 +159,6 @@ class DashboardSyncPlan {
   bool get hasChanges => shouldSetEval || shouldSetAlerts;
 }
 
-class _DashboardNpkCandidate {
-  const _DashboardNpkCandidate({
-    required this.metric,
-    required this.evalMetric,
-    required this.interpretation,
-  });
-
-  final AgroMetricKey metric;
-  final AgroMetricEval? evalMetric;
-  final NutrientInterpretationResult? interpretation;
-
-  /// Estado compacto para el resumen del dashboard.
-  ///
-  /// La banda ya resuelta por el motor es la fuente de verdad. Si existe una
-  /// evaluación (incluso `unknown`) no se reemplaza con el fallback calculado
-  /// desde el valor crudo: hacerlo convertiría un canal ausente en una alerta.
-  String get dashboardStatusEs {
-    final metricEval = evalMetric;
-    if (metricEval != null) return metricEval.band.labelEs;
-
-    return interpretation?.label.agroBand.labelEs ?? AgroBand.unknown.labelEs;
-  }
-
-  /// La interpretación calculada en pantalla gana sobre la del motor:
-  /// es la única que conoce la escala de cultivo (maceta / cama / campo)
-  /// y por tanto la unidad correcta de la dosis.
-  String? get doseGuideEs =>
-      interpretation?.doseGuideEs ?? evalMetric?.doseGuideEs;
-
-  String get shortRecommendation {
-    final fromEval = evalMetric?.shortRecommendationEs;
-    if (fromEval != null && fromEval.trim().isNotEmpty) return fromEval;
-    final fromInterpretation = interpretation?.shortRecommendation;
-    if (fromInterpretation != null && fromInterpretation.trim().isNotEmpty) {
-      return fromInterpretation;
-    }
-    return 'Lectura actual de ${metric.shortLabel} disponible.';
-  }
-
-  double get urgency01 {
-    final label = evalMetric?.priorityLabel;
-    if (label != null) {
-      return label.severityScore01(
-        stagePressure01: evalMetric?.stagePressure01 ?? 0.0,
-      );
-    }
-    return interpretation?.priorityScore01 ?? 0.0;
-  }
-}
-
 class DashboardScreenPresenter {
   static const String kRiegoIcon = 'assets/icons/metrics/ic_riego.png';
 
@@ -204,6 +173,11 @@ class DashboardScreenPresenter {
     /// anterior. Así el presentador sigue funcionando en pruebas y pantallas
     /// que todavía no resuelven clima.
     IrrigationDecision? irrigationDecision,
+
+    /// Decisión ya calculada por el motor de nutrición. Opcional con la misma
+    /// regla: sin ella la tarjeta de nutrición describe la señal nativa y no
+    /// inventa ventana, dosis ni «bajo/alto».
+    NutritionDecision? nutritionDecision,
   }) {
     final BioGTelemetry? telemetry = runtime.live;
     final CropStageResult? stageResult = runtime.stageResult;
@@ -270,6 +244,8 @@ class DashboardScreenPresenter {
       // de eventos volveria a deducir el riego por su cuenta y podria
       // contradecir a la tarjeta que tiene justo encima.
       irrigationDecision: irrigationDecision,
+      // Y la misma decisión que pinta la tarjeta de nutrición.
+      nutritionDecision: nutritionDecision,
     );
 
     final AgronomicEvent? primaryDashboardEvent = _pickPrimaryDashboardEvent(
@@ -295,9 +271,17 @@ class DashboardScreenPresenter {
                   t: telemetry,
                   eval: effectiveEval,
                   targets: targets,
-                  cropKey: runtime.cropKeyName,
+                  nutritionScoreFactor: nutritionDecision?.scoreFactor ?? 1.0,
                 )
               : _calcPreSowingSoilHealth(telemetry, runtime.resolvedMoisture));
+
+    // Cobertura de señales físicas: cuántas de las cinco sostienen el anillo.
+    // Se muestra aparte del número, nunca mezclada en él (Guía v0.4, §7).
+    final SoilSignalCoverage? coverage = effectiveEval?.soilCoverage;
+    final String soilCoverageLabel =
+        (isPlanted && coverage != null && coverage.hasAnySignal && !coverage.isComplete)
+        ? coverage.labelEs
+        : '';
 
     // Sin bandera de presencia el número era un 0 % fabricado, y quedaba junto
     // a un estado que ya decía «—». Dos lecturas del mismo dato en el mismo
@@ -387,105 +371,31 @@ class DashboardScreenPresenter {
         : _preSowingResistanceStatus(telemetry.resistance);
 
     // ==========================================
-    // NUEVA LÓGICA DE TEXTOS NPK EN DASHBOARD
+    // TARJETA DE NUTRICIÓN
     // ==========================================
-    String npkTitle = 'Nutrición (NPK)';
+    //
+    // La tarjeta repite lo que decidió el motor de nutrición; aquí no se
+    // interpreta ninguna lectura N/P/K (Guía v0.4, §2, §8 y §9). Si el motor
+    // no corrió, la tarjeta lo dice en vez de rellenar el hueco.
+    String npkTitle = 'Nutrición';
     String npkSubtitle = 'Sin evaluación actual';
+    String npkTag = '';
 
     if (isGuide) {
       // Modo guía: las cinco condiciones del suelo SÍ llevan etiqueta, la
       // nutrición no. No es una limitación del sensor sino de lo que se puede
       // afirmar: el nitrógeno que sobra en crecimiento falta en llenado, y sin
-      // saber qué planta es ni en qué etapa va no hay ventana que aplicar.
-      // La lectura se sigue mostrando; lo que no se inventa es su lectura
-      // agronómica.
+      // saber qué planta es ni en qué etapa va no hay ventana que abrir.
       npkSubtitle =
-          'Lectura sin interpretar: la nutrición necesita saber qué cultivo es.';
+          'Señal N/P/K sin interpretar: la nutrición necesita saber qué cultivo es.';
+    } else if (isPlanted && nutritionDecision != null) {
+      npkTitle = nutritionDecision.headlineEs;
+      npkSubtitle = _firstSentences(nutritionDecision.detailEs, maxChars: 160);
+      npkTag = nutritionDecision.state.tagEs;
     } else if (isPlanted && telemetry != null) {
-      final scaleId = runtime.cropContext?.cultivationScaleId;
-      final cropContext = runtime.cropContext;
-      final nEvalMetric = effectiveEval?.metrics[AgroMetricKey.n];
-      final pEvalMetric = effectiveEval?.metrics[AgroMetricKey.p];
-      final kEvalMetric = effectiveEval?.metrics[AgroMetricKey.k];
-
-      NutrientInterpretationResult? interpretFallback({
-        required AgroMetricKey nutrient,
-        required double rawPpm,
-        required AgroMetricEval? evalMetric,
-      }) {
-        // Antes devolvía null cuando el motor ya había interpretado, y la
-        // del motor no conoce la escala de cultivo: por eso una maceta
-        // recibía su dosis en kg/ha. Ahora se calcula siempre.
-        return NutrientRecommendationEngine.interpret(
-          nutrient: nutrient,
-          rawPpm: rawPpm,
-          cropKey: runtime.cropKeyName,
-          stageKey: stageResult?.stageKey,
-          profileId: runtime.profile?.id,
-          varietyId: cropContext?.varietyId,
-          varietyAlias: cropContext?.varietyAlias,
-          calendarId: cropContext?.calendarTypeId,
-          targets: targets,
-          cultivationScaleId: scaleId,
-          ph: telemetry.ph,
-          ec: telemetry.ec,
-          soilMoisturePct: telemetry.hasSoilMoistureData ? telemetry.soilMoisturePct : null,
-        );
-      }
-
-      final nInt = interpretFallback(
-        nutrient: AgroMetricKey.n,
-        rawPpm: telemetry.n.toDouble(),
-        evalMetric: nEvalMetric,
-      );
-      final pInt = interpretFallback(
-        nutrient: AgroMetricKey.p,
-        rawPpm: telemetry.p.toDouble(),
-        evalMetric: pEvalMetric,
-      );
-      final kInt = interpretFallback(
-        nutrient: AgroMetricKey.k,
-        rawPpm: telemetry.k.toDouble(),
-        evalMetric: kEvalMetric,
-      );
-
-      final nCandidate = _DashboardNpkCandidate(
-        metric: AgroMetricKey.n,
-        evalMetric: nEvalMetric,
-        interpretation: nInt,
-      );
-      final pCandidate = _DashboardNpkCandidate(
-        metric: AgroMetricKey.p,
-        evalMetric: pEvalMetric,
-        interpretation: pInt,
-      );
-      final kCandidate = _DashboardNpkCandidate(
-        metric: AgroMetricKey.k,
-        evalMetric: kEvalMetric,
-        interpretation: kInt,
-      );
-
-      // El dashboard muestra solo la banda corta ya calculada. La explicación
-      // agronómica completa se conserva por separado en `npkSubtitle`.
-      npkTitle =
-          'N\u00a0—\u00a0${nCandidate.dashboardStatusEs} · '
-          'P\u00a0—\u00a0${pCandidate.dashboardStatusEs} · '
-          'K\u00a0—\u00a0${kCandidate.dashboardStatusEs}';
-
-      // Buscamos el nutriente con más urgencia
-      final allNutrients = [nCandidate, pCandidate, kCandidate]
-        ..sort((a, b) => b.urgency01.compareTo(a.urgency01));
-      final top = allNutrients.first;
-
-      // Si hay una guía de dosis matemática, la mostramos. Si no, mostramos la alerta.
-      final topDoseGuide = top.doseGuideEs;
-      if (topDoseGuide != null && topDoseGuide.isNotEmpty) {
-        npkSubtitle =
-            topDoseGuide.split('.').first +
-            '.'; // Extrae la frase exacta "Aplica ~45 kg/ha..."
-      } else {
-        npkSubtitle = top.shortRecommendation;
-      }
+      npkSubtitle =
+          'BIO-G sigue la señal nativa de N, P y K como tendencia. La ventana '
+          'de manejo se evalúa con la etapa del cultivo.';
     } else if (isPlanned) {
       npkSubtitle = isOrnamental
           ? 'Disponible cuando la plantes'
@@ -630,8 +540,11 @@ class DashboardScreenPresenter {
       cropIconAsset: runtime.cropIconAsset,
       soilHealth: soilHealth,
       soilHealthLabel: 'Estado general del suelo',
+      soilCoverageLabel: soilCoverageLabel,
       npkTitle: npkTitle,
       npkSubtitle: npkSubtitle,
+      npkTag: npkTag,
+      nutritionDecision: isPlanted ? nutritionDecision : null,
       moisture: const DashboardMetricUiData(
         title: 'Humedad',
         value: '',
@@ -802,6 +715,7 @@ class DashboardScreenPresenter {
     required bool isGenericMode,
     required DateTime now,
     IrrigationDecision? irrigationDecision,
+    NutritionDecision? nutritionDecision,
   }) {
     // El cactus usa el EventEngine COMPARTIDO, igual que frijol. Antes tenía su
     // propio generador que solo emitía un evento de contexto con jerga interna
@@ -812,6 +726,7 @@ class DashboardScreenPresenter {
         effectiveEval: effectiveEval,
         stageResult: stageResult,
         now: now,
+        nutritionDecision: nutritionDecision,
       );
     }
 
@@ -829,6 +744,7 @@ class DashboardScreenPresenter {
       previousStageKey: _previousDashboardStage(runtime, now)?.stageKey,
       previousStageLabel: _previousDashboardStage(runtime, now)?.stageLabelEs,
       irrigationDecision: irrigationDecision,
+      nutritionDecision: nutritionDecision,
     );
     return EventEngine.build(input);
   }
@@ -838,6 +754,7 @@ class DashboardScreenPresenter {
     required AgroEvalResult? effectiveEval,
     required CropStageResult? stageResult,
     required DateTime now,
+    NutritionDecision? nutritionDecision,
   }) {
     final context = runtime.cropContext;
     if (context == null) return const <AgronomicEvent>[];
@@ -878,13 +795,8 @@ class DashboardScreenPresenter {
     final soilTemp = metrics[AgroMetricKey.soilTemp]?.band;
     final resistance = metrics[AgroMetricKey.resistance]?.band;
     final ec = metrics[AgroMetricKey.ec]?.band;
-    final nutrientLow =
-        <AgroMetricKey>[AgroMetricKey.n, AgroMetricKey.p, AgroMetricKey.k].any((
-          key,
-        ) {
-          final band = metrics[key]?.band;
-          return band == AgroBand.low || band == AgroBand.critical;
-        });
+    // N/P/K no se leen aquí: la sonda los deriva de la CE y el juicio
+    // nutrimental del árbol llega en `nutritionDecision` (Guía v0.4, §2).
 
     bool lowish(AgroBand? band) =>
         band == AgroBand.low || band == AgroBand.critical;
@@ -1016,7 +928,7 @@ class DashboardScreenPresenter {
         }
         if (highish(ec)) {
           push(
-            type: AgronomicEventType.nutrientImbalance,
+            type: AgronomicEventType.highSalinity,
             severity: severityFor(ec),
             title: 'CE alta en cuajado',
             message:
@@ -1043,32 +955,16 @@ class DashboardScreenPresenter {
                 : EventMetricKeys.soilTemp,
           );
         }
-        if (nutrientLow) {
-          push(
-            type: AgronomicEventType.nutrientImbalance,
-            severity: AgronomicEventSeverity.caution,
-            title: 'Nutrici\u00f3n a revisar',
-            message:
-                'Llenado de fruto: revisa la lectura nutrimental junto con humedad, pH y CE.',
-            metricKey: EventMetricKeys.npk,
-          );
-        }
         break;
       case TreeStageIds.postHarvest:
-        if (lowish(moisture) || nutrientLow) {
+        if (lowish(moisture)) {
           push(
-            type: lowish(moisture)
-                ? AgronomicEventType.lowMoisture
-                : AgronomicEventType.nutrientImbalance,
-            severity: lowish(moisture)
-                ? severityFor(moisture)
-                : AgronomicEventSeverity.caution,
+            type: AgronomicEventType.lowMoisture,
+            severity: severityFor(moisture),
             title: 'Post-cosecha con estr\u00e9s',
             message:
                 'Post-cosecha: el \u00e1rbol recupera reservas para el siguiente ciclo.',
-            metricKey: lowish(moisture)
-                ? EventMetricKeys.soilMoisture
-                : EventMetricKeys.npk,
+            metricKey: EventMetricKeys.soilMoisture,
           );
         }
         break;
@@ -1095,6 +991,34 @@ class DashboardScreenPresenter {
           );
         }
         break;
+    }
+
+    // Nutrición del árbol: la misma autoridad que en los anuales. Se reutiliza
+    // el traductor del EventEngine para no tener dos copys de lo mismo.
+    if (nutritionDecision != null) {
+      events.addAll(
+        EventEngine.build(
+          EventEngineInput(
+            timestamp: now,
+            deviceId: runtime.device?.id,
+            cropId: context.cropId,
+            seedProfileId: context.profileId,
+            seedAlias: treeProfileDisplayName(
+              context.profileId,
+              cropId: context.cropId,
+            ),
+            stageKey: stageId,
+            stageLabel: stageLabel,
+            nutritionDecision: nutritionDecision,
+          ),
+        ).where(
+          (AgronomicEvent e) =>
+              e.type == AgronomicEventType.fertilizationRecommended ||
+              e.type == AgronomicEventType.nutritionUpcomingWindow ||
+              e.type == AgronomicEventType.nutritionResponseDetected ||
+              e.type == AgronomicEventType.nutritionWindowUnattended,
+        ),
+      );
     }
 
     return events;
@@ -1124,8 +1048,10 @@ class DashboardScreenPresenter {
     for (final AgronomicEvent event in events) {
       if (event.type == AgronomicEventType.irrigationRecommended ||
           event.type == AgronomicEventType.fertilizationRecommended ||
+          event.type == AgronomicEventType.nutritionWindowUnattended ||
           event.type == AgronomicEventType.combinedStress ||
           event.type == AgronomicEventType.soilCompaction ||
+          event.type == AgronomicEventType.highSalinity ||
           event.type == AgronomicEventType.heatStress ||
           event.type == AgronomicEventType.coldStress ||
           event.type == AgronomicEventType.lowMoisture ||
@@ -1134,7 +1060,12 @@ class DashboardScreenPresenter {
       }
     }
     for (final AgronomicEvent event in events) {
-      if (event.type != AgronomicEventType.genericMode) return event;
+      // La constancia de señal nativa N/P/K es informativa: nunca encabeza
+      // la tarjeta de riego.
+      if (event.type != AgronomicEventType.genericMode &&
+          event.type != AgronomicEventType.npkReading) {
+        return event;
+      }
     }
     return events.isEmpty ? null : events.first;
   }
@@ -1256,12 +1187,18 @@ class DashboardScreenPresenter {
             mr.highMin,
           );
 
-    final double rest =
-        score(telemetry.ph, 5.8, 7.2, 4.5, 8.8) +
-        score(telemetry.resistance, 0.3, 1.2, 0.1, 2.8) +
-        score(telemetry.ec, 0.8, 2.0, 0.4, 3.2);
-
-    return ((moistureScore + rest) / (hasMoisture ? 4.0 : 3.0)).clamp(0.0, 1.0);
+    // Misma regla para pH, resistencia y CE: sin lectura, fuera del
+    // denominador (Guía v0.4 §7: la ausencia nunca es un cero).
+    final List<double> parts = <double>[
+      if (hasMoisture) moistureScore,
+      if (telemetry.hasPhData) score(telemetry.ph, 5.8, 7.2, 4.5, 8.8),
+      if (telemetry.hasResistanceData)
+        score(telemetry.resistance, 0.3, 1.2, 0.1, 2.8),
+      if (telemetry.hasEcData) score(telemetry.ec, 0.8, 2.0, 0.4, 3.2),
+    ];
+    if (parts.isEmpty) return 0.0;
+    final double sum = parts.fold<double>(0.0, (a, b) => a + b);
+    return (sum / parts.length).clamp(0.0, 1.0);
   }
 
   /// Estado del suelo antes de sembrar, en la escala de SU tierra.
@@ -1321,38 +1258,6 @@ class DashboardScreenPresenter {
     if (plannedDaysLeft <= 0)
       return 'Condiciones cercanas para iniciar siembra';
     return 'Sigue preparando el suelo para la siembra';
-  }
-
-  double _scoreNutrientAgainstTarget({
-    required double value,
-    required AgroMetricKey key,
-    required String? cropKey,
-    required StageTargets targets,
-  }) {
-    final AgroRange? comparableRange =
-        NutrientTargetRangeResolver.comparableRange(
-          nutrient: key,
-          cropKey: cropKey,
-          targets: targets,
-        );
-
-    if (comparableRange != null) {
-      return _scoreFromRawRange(value: value, range: comparableRange);
-    }
-
-    final double cap = NpkCaps.forCropMetric(cropKey: cropKey, metricKey: key);
-    final double index0to100 = cap <= 0
-        ? 0.0
-        : ((value / cap) * 100.0).clamp(0.0, 100.0);
-
-    final AgroRange legacyRange = switch (key) {
-      AgroMetricKey.n => targets.nIndex,
-      AgroMetricKey.p => targets.pIndex,
-      AgroMetricKey.k => targets.kIndex,
-      _ => targets.nIndex,
-    };
-
-    return _scoreFromIndexRange(index0to100: index0to100, range: legacyRange);
   }
 
   String _labelFromRangeTuned({
@@ -1503,50 +1408,58 @@ class DashboardScreenPresenter {
     }
   }
 
-  double _calcSoilHealthRealistic({
+  /// Estado general del suelo del Panel.
+  ///
+  /// Con evaluación del motor: su `soilControlScore01` —condición física con
+  /// presencia de señales— multiplicado por el factor del libro de ventanas
+  /// nutricionales. Sin evaluación pero con objetivos: promedio de las señales
+  /// físicas que SÍ llegaron. N/P/K no entran en ningún caso (Guía v0.4, §7).
+  double? _calcSoilHealthRealistic({
     required BioGTelemetry? t,
     required AgroEvalResult? eval,
     required StageTargets? targets,
-    required String? cropKey,
+    double nutritionScoreFactor = 1.0,
   }) {
-    if (eval != null) return eval.soilControlScore01.clamp(0.0, 1.0);
-    if (t == null || targets == null) return 0.0;
-    return (((_scoreFromRawRange(
-                      value: t.soilMoisturePct,
-                      range: targets.moistureRaw,
-                    ) +
-                    _scoreFromRawRange(
-                      value: t.soilTempC,
-                      range: targets.soilTemp,
-                    ) +
-                    _scoreFromRawRange(value: t.ph, range: targets.ph) +
-                    _scoreFromRawRange(value: t.ec, range: targets.ec) +
-                    _scoreFromRawRange(
-                      value: t.resistance,
-                      range: targets.resistance,
-                    )) /
-                5.0) +
-            ((_scoreNutrientAgainstTarget(
-                          value: t.n.toDouble(),
-                          key: AgroMetricKey.n,
-                          cropKey: cropKey,
-                          targets: targets,
-                        ) +
-                        _scoreNutrientAgainstTarget(
-                          value: t.p.toDouble(),
-                          key: AgroMetricKey.p,
-                          cropKey: cropKey,
-                          targets: targets,
-                        ) +
-                        _scoreNutrientAgainstTarget(
-                          value: t.k.toDouble(),
-                          key: AgroMetricKey.k,
-                          cropKey: cropKey,
-                          targets: targets,
-                        )) /
-                    3.0) /
-                2.0)
-        .clamp(0.0, 1.0);
+    final double factor = nutritionScoreFactor.clamp(0.0, 1.0);
+    if (eval != null) {
+      if (!eval.hasSoilEvidence) return null;
+      return (eval.soilControlScore01.clamp(0.0, 1.0) * factor).clamp(0.0, 1.0);
+    }
+    if (t == null || targets == null) return null;
+
+    final List<double> scores = <double>[
+      if (t.hasSoilMoistureData)
+        _scoreFromRawRange(value: t.soilMoisturePct, range: targets.moistureRaw),
+      if (t.hasSoilTempData)
+        _scoreFromRawRange(value: t.soilTempC, range: targets.soilTemp),
+      if (t.hasPhData) _scoreFromRawRange(value: t.ph, range: targets.ph),
+      if (t.hasEcData) _scoreFromRawRange(value: t.ec, range: targets.ec),
+      if (t.hasResistanceData)
+        _scoreFromRawRange(value: t.resistance, range: targets.resistance),
+    ];
+    if (scores.isEmpty) return null;
+    final double mean = scores.reduce((a, b) => a + b) / scores.length;
+    return (mean * factor).clamp(0.0, 1.0);
+  }
+
+  /// Recorta un detalle largo a sus primeras frases para la tarjeta.
+  static String _firstSentences(String text, {int maxChars = 160}) {
+    final String t = text.trim();
+    if (t.length <= maxChars) return t;
+    final List<String> parts = t.split(RegExp(r'(?<=[.!?])\s+'));
+    final StringBuffer out = StringBuffer();
+    for (final String part in parts) {
+      if (out.isEmpty) {
+        out.write(part);
+        continue;
+      }
+      if (out.length + 1 + part.length > maxChars) break;
+      out.write(' ');
+      out.write(part);
+    }
+    final String result = out.toString();
+    if (result.length <= maxChars) return result;
+    return '${result.substring(0, maxChars - 1).trimRight()}…';
   }
 
   String _soilTempStatus(double value) => value < 14

@@ -26,11 +26,6 @@ class _HistoryEventsListState extends State<HistoryEventsList> {
       'assets/icons/metrics/ic_resistance.png';
   static const String _kNpkIcon = 'assets/icons/metrics/ic_npk.png';
   static const String _kMoistureIcon = 'assets/icons/metrics/ic_moisture.png';
-  static const String _kNitrogenIcon = 'assets/icons/metrics/ic_nitrogen.png';
-  static const String _kPhosphorusIcon =
-      'assets/icons/metrics/ic_phosphorus.png';
-  static const String _kPotassiumIcon =
-      'assets/icons/metrics/ic_potassium.png';
   static const String _kProtectionIcon =
       'assets/icons/metrics/ic_protection.png';
   static const String _kAlertIcon = 'assets/icons/metrics/ic_alert.png';
@@ -145,20 +140,15 @@ class _HistoryEventsListState extends State<HistoryEventsList> {
       case AgronomicEventType.highAirHumidity:
         return _kMoistureIcon;
 
-      case AgronomicEventType.nitrogenLow:
-      case AgronomicEventType.nitrogenHigh:
-        return _kNitrogenIcon;
-      case AgronomicEventType.phosphorusLow:
-      case AgronomicEventType.phosphorusHigh:
-        return _kPhosphorusIcon;
-      case AgronomicEventType.potassiumLow:
-      case AgronomicEventType.potassiumHigh:
-        return _kPotassiumIcon;
-
       case AgronomicEventType.npkReading:
-      case AgronomicEventType.nutrientImbalance:
+      case AgronomicEventType.nutritionUpcomingWindow:
+      case AgronomicEventType.nutritionResponseDetected:
+      case AgronomicEventType.nutritionWindowUnattended:
       case AgronomicEventType.fertilizationRecommended:
         return _kNpkIcon;
+
+      case AgronomicEventType.highSalinity:
+        return _kAlertIcon;
 
       case AgronomicEventType.combinedStress:
         return _kAlertIcon;
@@ -223,16 +213,17 @@ class _HistoryEventsListState extends State<HistoryEventsList> {
       case AgronomicEventType.npkReading:
         return Icons.science_rounded;
 
-      case AgronomicEventType.nutrientImbalance:
-        return Icons.balance_rounded;
+      case AgronomicEventType.nutritionUpcomingWindow:
+        return Icons.schedule_rounded;
 
-      case AgronomicEventType.nitrogenLow:
-      case AgronomicEventType.phosphorusLow:
-      case AgronomicEventType.potassiumLow:
-      case AgronomicEventType.nitrogenHigh:
-      case AgronomicEventType.phosphorusHigh:
-      case AgronomicEventType.potassiumHigh:
+      case AgronomicEventType.nutritionResponseDetected:
+        return Icons.check_circle_outline_rounded;
+
+      case AgronomicEventType.nutritionWindowUnattended:
         return Icons.warning_amber_rounded;
+
+      case AgronomicEventType.highSalinity:
+        return Icons.grain_rounded;
 
       case AgronomicEventType.stableSoil:
         return Icons.trending_up_rounded;

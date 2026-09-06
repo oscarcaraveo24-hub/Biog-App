@@ -8,6 +8,8 @@ import 'package:bio_g/core/crops/seasonal_bulb/seasonal_bulb_crops.dart';
 import 'package:bio_g/core/crops/annual_ornamental/annual_ornamental_crops.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_coordinator.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
+import 'package:bio_g/services/biog/nutrition/nutrition_coordinator.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/features/reporting/pdf_preview_screen.dart';
 import 'package:bio_g/features/reporting/pdf_report_builder.dart';
@@ -67,6 +69,11 @@ class _DashboardScreenState extends State<DashboardScreen>
         BioGScope.of(context).saveCropContext(healed),
   );
 
+  /// El coordinador de nutrición: etapa → ventana → firma del sensor → libro
+  /// de ventanas → decisión. Mismo ciclo de vida y mismo patrón que el de
+  /// riego; el agricultor no registra nada, la sonda observa.
+  final NutritionCoordinator _nutrition = NutritionCoordinator();
+
   late final AnimationController _entranceController;
 
   @override
@@ -115,6 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   void dispose() {
     _entranceController.dispose();
     _irrigation.dispose();
+    _nutrition.dispose();
     super.dispose();
   }
 
@@ -220,6 +228,9 @@ class _DashboardScreenState extends State<DashboardScreen>
       animation: Listenable.merge(<Listenable>[
         store,
         _irrigation,
+        // La memoria nutricional se lee de disco fuera del frame: cuando el
+        // libro de ventanas termina de cargar, la tarjeta debe repintarse.
+        _nutrition,
         // También la bandeja: un aviso nuevo debe encender la campana sin
         // esperar a que el store notifique por otra razón.
         store.notifications,
@@ -257,6 +268,14 @@ class _DashboardScreenState extends State<DashboardScreen>
           now: today,
         );
 
+        // Decisión de nutrición con la memoria que ya está cargada (libro de
+        // ventanas, historial, época). También pura y memoizada: segura
+        // dentro de `build`.
+        final NutritionDecision? nutritionDecision = _nutrition.decisionFor(
+          runtime,
+          now: today,
+        );
+
         // Publica la decisión para el resto del sistema.
         //
         // El coordinador vive aquí, en el estado de esta pantalla, pero el
@@ -269,14 +288,18 @@ class _DashboardScreenState extends State<DashboardScreen>
         // Es una asignación pura, sin `notifyListeners`, así que es segura
         // dentro de `build`.
         store.publishIrrigationDecision(irrigationDecision);
+        store.publishNutritionDecision(nutritionDecision);
 
-        // El refresco de clima y el registro auditable van fuera del frame:
-        // son asíncronos y no deben retrasar el pintado. El coordinador sale
-        // solo si el estado relevante no cambió.
+        // El refresco de clima, la memoria nutricional y el registro auditable
+        // van fuera del frame: son asíncronos y no deben retrasar el pintado.
+        // Cada coordinador sale solo si el estado relevante no cambió.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           unawaited(
             _irrigation.sync(runtime: runtime, userId: store.currentUserId),
+          );
+          unawaited(
+            _nutrition.sync(runtime: runtime, userId: store.currentUserId),
           );
         });
 
@@ -285,6 +308,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           runtime: runtime,
           today: today,
           irrigationDecision: irrigationDecision,
+          nutritionDecision: nutritionDecision,
         );
 
         // Abre la pantalla de Recomendaciones con lo que el Panel ya calculo.
@@ -405,7 +429,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                           beginScale: 0.978,
                           child: DashboardSoilHealthSection(
                             percent: viewData.soilHealth,
-                            label: viewData.soilHealthLabel,
+                            // Cobertura aparte del número: «4 de 5 señales»
+                            // dice cuántas señales físicas lo sostienen.
+                            label: viewData.soilCoverageLabel.isEmpty
+                                ? viewData.soilHealthLabel
+                                : '${viewData.soilHealthLabel} · ${viewData.soilCoverageLabel}',
                             isActive:
                                 widget.currentIndex == _dashboardTabIndex,
                           ),
@@ -476,6 +504,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                           child: DashboardNpkSection(
                             title: viewData.npkTitle,
                             subtitle: viewData.npkSubtitle,
+                            tag: viewData.npkTag,
                           ),
                         ),
                         // El enlace "Ver por que y mas avisos" se retiro: la

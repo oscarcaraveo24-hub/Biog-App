@@ -381,13 +381,9 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
 
   static bool _isNutrition(AgronomicEvent e) => switch (e.type) {
     AgronomicEventType.npkReading ||
-    AgronomicEventType.nutrientImbalance ||
-    AgronomicEventType.nitrogenLow ||
-    AgronomicEventType.nitrogenHigh ||
-    AgronomicEventType.phosphorusLow ||
-    AgronomicEventType.phosphorusHigh ||
-    AgronomicEventType.potassiumLow ||
-    AgronomicEventType.potassiumHigh ||
+    AgronomicEventType.nutritionUpcomingWindow ||
+    AgronomicEventType.nutritionResponseDetected ||
+    AgronomicEventType.nutritionWindowUnattended ||
     AgronomicEventType.fertilizationRecommended => true,
     _ => false,
   };
@@ -2758,7 +2754,8 @@ class _NpkFootnote extends StatelessWidget {
           Expanded(
             child: Text(
               'La nutrición del cultivo —nitrógeno, fósforo y potasio— tiene '
-              'su propia pantalla, con sus dosis y sus ventanas de aplicación.',
+              'su propia pantalla: qué necesita la etapa, qué observa la sonda '
+              'y cómo respondió el suelo.',
               style: TextStyle(
                 fontSize: 12,
                 height: 1.45,

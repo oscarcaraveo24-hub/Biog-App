@@ -7,12 +7,17 @@ class NpkInsightCard extends StatefulWidget {
   final String assetIcon;
   final VoidCallback? onTap;
 
+  /// Etiqueta corta del estado nutricional («Ventana», «Respuesta»…). Vacía
+  /// cuando no hay decisión del motor.
+  final String tag;
+
   const NpkInsightCard({
     super.key,
     required this.title,
     required this.subtitle,
     required this.assetIcon,
     this.onTap,
+    this.tag = '',
   });
 
   @override
@@ -108,20 +113,50 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.title,
-                            softWrap: true,
-                            style: const TextStyle(
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black87,
-                              height: 1.12,
-                            ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  widget.title,
+                                  softWrap: true,
+                                  style: const TextStyle(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.black87,
+                                    height: 1.12,
+                                  ),
+                                ),
+                              ),
+                              if (widget.tag.trim().isNotEmpty) ...<Widget>[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2E7D5A).withValues(alpha: 0.10),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    widget.tag,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF2E7D5A),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 3),
                           Text(
                             widget.subtitle,
-                            // ✅ FIX: Le permitimos 2 líneas para que la recomendación en kg/ha se lea completa
+                            // Dos líneas: la decisión del motor de nutrición
+                            // («Esta etapa necesita nutrición…») debe leerse
+                            // completa en su primera frase.
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

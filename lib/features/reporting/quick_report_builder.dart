@@ -1,8 +1,6 @@
 import 'dart:async';
 
-import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
@@ -64,89 +62,25 @@ class QuickReportBuilder {
       );
     }
 
-    final String? scaleId = runtime.cropContext?.cultivationScaleId;
+    // La nutrición del informe es la misma decisión que ve el Panel: una sola
+    // autoridad (Guía v0.4, §9). Aquí no se interpreta ninguna lectura N/P/K;
+    // los canales nativos se imprimen como señal y tendencia, en la escala del
+    // propio sitio (§8).
+    final NutritionDecision? decision = runtime.isPlanted && !runtime.isGuideMode
+        ? store.nutritionDecisionAt(now)
+        : null;
 
-    final NutrientInterpretationResult nInterpretation =
-        NutrientRecommendationEngine.interpret(
-          nutrient: AgroMetricKey.n,
-          rawPpm: live.n,
-          cropKey: runtime.cropKeyName,
-          stageKey: runtime.stageResult?.stageKey,
-          profileId: runtime.profile?.id,
-          varietyId: runtime.cropContext?.varietyId,
-          varietyAlias: runtime.cropContext?.varietyAlias,
-          calendarId: runtime.cropContext?.calendarTypeId,
-          targets: runtime.targets,
-          cultivationScaleId: scaleId,
-          ph: live.ph,
-          ec: live.ec,
-          soilMoisturePct: live.hasSoilMoistureData ? live.soilMoisturePct : null,
-        );
+    final List<double> nSeries = _nativeSeries(history, (t) => t.hasNitrogenData ? t.n : null);
+    final List<double> pSeries = _nativeSeries(history, (t) => t.hasPhosphorusData ? t.p : null);
+    final List<double> kSeries = _nativeSeries(history, (t) => t.hasPotassiumData ? t.k : null);
 
-    final NutrientInterpretationResult pInterpretation =
-        NutrientRecommendationEngine.interpret(
-          nutrient: AgroMetricKey.p,
-          rawPpm: live.p,
-          cropKey: runtime.cropKeyName,
-          stageKey: runtime.stageResult?.stageKey,
-          profileId: runtime.profile?.id,
-          varietyId: runtime.cropContext?.varietyId,
-          varietyAlias: runtime.cropContext?.varietyAlias,
-          calendarId: runtime.cropContext?.calendarTypeId,
-          targets: runtime.targets,
-          cultivationScaleId: scaleId,
-          ph: live.ph,
-          ec: live.ec,
-          soilMoisturePct: live.hasSoilMoistureData ? live.soilMoisturePct : null,
-        );
-
-    final NutrientInterpretationResult kInterpretation =
-        NutrientRecommendationEngine.interpret(
-          nutrient: AgroMetricKey.k,
-          rawPpm: live.k,
-          cropKey: runtime.cropKeyName,
-          stageKey: runtime.stageResult?.stageKey,
-          profileId: runtime.profile?.id,
-          varietyId: runtime.cropContext?.varietyId,
-          varietyAlias: runtime.cropContext?.varietyAlias,
-          calendarId: runtime.cropContext?.calendarTypeId,
-          targets: runtime.targets,
-          cultivationScaleId: scaleId,
-          ph: live.ph,
-          ec: live.ec,
-          soilMoisturePct: live.hasSoilMoistureData ? live.soilMoisturePct : null,
-        );
-
-    // Solo compiten por el titular los nutrientes que DE VERDAD se midieron.
-    //
-    // Sin sonda NPK, `live.n` vale 0.0, e `interpret` convierte ese 0 en
-    // `actionRecommended` —la peor etiqueta de deficiencia—. Como el informe
-    // titula con `ordered.first`, un equipo sin sonda de nutrientes exportaba
-    // un PDF que le decía al productor «aplica fertilizante ya», en cada
-    // informe. Se filtra aquí y no en `rawPpm` a propósito: meter un NaN dentro
-    // del motor haría falsas todas sus comparaciones y el fallo saldría por
-    // otro lado.
-    final List<NutrientInterpretationResult> medidos =
-        <NutrientInterpretationResult>[
-          if (live.hasNitrogenData) nInterpretation,
-          if (live.hasPhosphorusData) pInterpretation,
-          if (live.hasPotassiumData) kInterpretation,
-        ];
-
-    final List<NutrientInterpretationResult> ordered =
-        (medidos.isEmpty
-            ? <NutrientInterpretationResult>[
-                nInterpretation,
-                pInterpretation,
-                kInterpretation,
-              ]
-            : medidos)
-          ..sort((a, b) => b.priorityScore01.compareTo(a.priorityScore01));
-
-    final NutrientInterpretationResult top = ordered.first;
     final MapEntry<String, String>? climateBanner = _buildClimateBanner(
       runtime: runtime,
       live: live,
+    );
+    final MapEntry<String, String> recommendation = _buildNutritionRecommendation(
+      decision: decision,
+      runtime: runtime,
     );
 
     return QuickReportData(
@@ -158,38 +92,114 @@ class QuickReportBuilder {
       daySinceSowing: runtime.stageResult?.daySinceSowing,
       generatedAt: now,
       readingAt: live.timestamp,
-      nValue: live.n,
-      pValue: live.p,
-      kValue: live.k,
-      nPercent: _normalizeNpkPercent(
-        cropKey: runtime.cropKeyName,
-        metricKey: AgroMetricKey.n,
-        value: live.n,
-      ),
-      pPercent: _normalizeNpkPercent(
-        cropKey: runtime.cropKeyName,
-        metricKey: AgroMetricKey.p,
-        value: live.p,
-      ),
-      kPercent: _normalizeNpkPercent(
-        cropKey: runtime.cropKeyName,
-        metricKey: AgroMetricKey.k,
-        value: live.k,
-      ),
-      nStatus: live.hasNitrogenData ? nInterpretation.labelEs : '—',
-      pStatus: live.hasPhosphorusData ? pInterpretation.labelEs : '—',
-      kStatus: live.hasPotassiumData ? kInterpretation.labelEs : '—',
+      nValue: live.hasNitrogenData ? live.n : 0,
+      pValue: live.hasPhosphorusData ? live.p : 0,
+      kValue: live.hasPotassiumData ? live.k : 0,
+      nPercent: _siteScaledPercent(live.hasNitrogenData ? live.n : null, nSeries),
+      pPercent: _siteScaledPercent(live.hasPhosphorusData ? live.p : null, pSeries),
+      kPercent: _siteScaledPercent(live.hasPotassiumData ? live.k : null, kSeries),
+      nStatus: live.hasNitrogenData ? _trendStatus(nSeries) : '—',
+      pStatus: live.hasPhosphorusData ? _trendStatus(pSeries) : '—',
+      kStatus: live.hasPotassiumData ? _trendStatus(kSeries) : '—',
       historyLabels: _normalizeStringList(historySeries.labels),
       historyN: _normalizeDoubleList(historySeries.nValues),
       historyP: _normalizeDoubleList(historySeries.pValues),
       historyK: _normalizeDoubleList(historySeries.kValues),
-      recommendationTitle: _buildRecommendationTitle(
-        top,
-        cropKey: runtime.cropKeyName,
-      ),
-      recommendationBody: _buildRecommendationBody(top: top, runtime: runtime),
+      recommendationTitle: recommendation.key,
+      recommendationBody: recommendation.value,
       climateBannerTitle: climateBanner?.key,
       climateBannerBody: climateBanner?.value,
+    );
+  }
+
+  /// Serie de 7 días de un canal nativo, solo con lo que la sonda midió.
+  static List<double> _nativeSeries(
+    List<BioGTelemetry> history,
+    double? Function(BioGTelemetry) pick,
+  ) {
+    final List<BioGTelemetry> sorted = <BioGTelemetry>[...history]
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final List<double> out = <double>[];
+    for (final BioGTelemetry t in sorted) {
+      final double? v = pick(t);
+      if (v != null && v.isFinite) out.add(v < 0 ? 0.0 : v);
+    }
+    return out;
+  }
+
+  /// Posición del anillo en la escala del PROPIO sitio (máximo reciente ×
+  /// 1.15). Sin tope por cultivo ni objetivo: la sonda no sostiene «bajo/alto».
+  static double _siteScaledPercent(double? level, List<double> series) {
+    if (level == null || !level.isFinite) return 0.0;
+    double maxV = level;
+    for (final double v in series) {
+      if (v > maxV) maxV = v;
+    }
+    final double scale = maxV * 1.15 < 10.0 ? 10.0 : maxV * 1.15;
+    return (level / scale).clamp(0.0, 1.0);
+  }
+
+  /// Tendencia de la señal nativa: 3 últimas lecturas contra las 3 anteriores.
+  static String _trendStatus(List<double> series) {
+    if (series.length < 6) return 'Señal nativa';
+    double avg(List<double> xs) => xs.reduce((a, b) => a + b) / xs.length;
+    final double a = avg(series.sublist(series.length - 3));
+    final double b = avg(series.sublist(series.length - 6, series.length - 3));
+    if (b.abs() < 0.0001) return 'Señal nativa';
+    final double pct = ((a - b) / b) * 100.0;
+    if (pct > 4) return 'Subiendo';
+    if (pct < -4) return 'Bajando';
+    return 'Estable';
+  }
+
+  MapEntry<String, String> _buildNutritionRecommendation({
+    required NutritionDecision? decision,
+    required CropRuntimeSnapshot runtime,
+  }) {
+    if (decision != null) {
+      final StringBuffer body = StringBuffer(decision.detailEs.trim());
+      final NutritionRecommendation? rec = decision.recommendation;
+      if (rec != null && rec.doseRange != null) {
+        body.write(' Rango orientativo: ${rec.doseRange!.labelEs}.');
+        if (rec.doseRange!.commercialEquivalentEs != null) {
+          body.write(' ${rec.doseRange!.commercialEquivalentEs}.');
+        }
+      }
+      final NutritionWindowRecord? unattended = decision.recentlyUnattendedWindow;
+      if (unattended != null && decision.state != NutritionState.monitor) {
+        body.write(
+          ' La ventana de ${unattended.nutrientsLabelEs} en '
+          '«${unattended.stageLabelEs}» terminó sin evidencia suficiente de '
+          'haber sido atendida.',
+        );
+      }
+      return MapEntry(decision.headlineEs, body.toString());
+    }
+    if (runtime.isGuideMode) {
+      return const MapEntry(
+        'Nutrición sin interpretar',
+        'En guía general no hay cultivo declarado: sin etapa no hay ventana de '
+            'manejo nutricional. Las señales N/P/K se imprimen como tendencia.',
+      );
+    }
+    if (runtime.isPlanned) {
+      return const MapEntry(
+        'Lote en preparación',
+        'El lote está en preparación. La ventana de manejo nutricional se abre '
+            'con la etapa, después de la siembra.',
+      );
+    }
+    if (runtime.isGenericMode) {
+      return const MapEntry(
+        'Configura el cultivo',
+        'El lote está en modo genérico. Con un cultivo configurado BIO-G abre '
+            'ventanas de manejo por etapa y observa la respuesta del suelo.',
+      );
+    }
+    return const MapEntry(
+      'Sin evaluación nutricional vigente',
+      'BIO-G no tenía una decisión de nutrición vigente al generar este informe. '
+          'Abre el Panel para recalcularla con la etapa y el historial.',
     );
   }
 
@@ -428,20 +438,6 @@ class QuickReportBuilder {
     return '$head y ${values.last}';
   }
 
-  double _normalizeNpkPercent({
-    required String? cropKey,
-    required AgroMetricKey metricKey,
-    required double value,
-  }) {
-    final double cap = NpkCaps.forCropMetric(
-      cropKey: cropKey,
-      metricKey: metricKey,
-    );
-
-    if (cap <= 0) return 0.0;
-    return (value / cap).clamp(0.0, 1.0);
-  }
-
   bool _isFruitTreeCrop(String? cropKey) {
     final crop = CropCatalog.canonicalCropKey(cropKey).trim().toLowerCase();
     // Arboles frutales perennes (pepita + hueso/carozo + nuez).
@@ -534,68 +530,6 @@ class QuickReportBuilder {
       CropCatalog.avocadoTreeCropId => 'Aguacate general',
       _ => 'Perfil general',
     };
-  }
-
-  String _buildRecommendationTitle(
-    NutrientInterpretationResult top, {
-    required String? cropKey,
-  }) {
-    final String nutrientName = top.nutrient.labelEs;
-
-    switch (top.label) {
-      case NutrientPriorityLabel.noPriority:
-        return 'Nutrición estable';
-      case NutrientPriorityLabel.lowPriority:
-        return 'Vigilar $nutrientName';
-      case NutrientPriorityLabel.mediumPriority:
-        return 'Atención en $nutrientName';
-      case NutrientPriorityLabel.highPriority:
-        return 'Falta $nutrientName';
-      case NutrientPriorityLabel.reviewManagement:
-        return 'Ajustar dosis de $nutrientName';
-      case NutrientPriorityLabel.actionRecommended:
-        return 'Urge aplicar $nutrientName';
-      case NutrientPriorityLabel.possibleExcess:
-        if (_isFruitTreeCrop(cropKey)) {
-          return '$nutrientName alto útil';
-        }
-        return 'Pausar $nutrientName';
-      case NutrientPriorityLabel.reviewAccumulation:
-        return 'Revisar exceso de $nutrientName';
-      case NutrientPriorityLabel.unknown:
-        return 'Revisar nutrición';
-    }
-  }
-
-  String _buildRecommendationBody({
-    required NutrientInterpretationResult top,
-    required CropRuntimeSnapshot runtime,
-  }) {
-    final String doseGuide = (top.doseGuideEs ?? '').trim();
-    final String practical = top.practicalRecommendation.trim();
-    final String shortRec = top.shortRecommendation.trim();
-
-    if (doseGuide.isNotEmpty) {
-      return doseGuide;
-    }
-
-    if (practical.isNotEmpty) {
-      return practical;
-    }
-
-    if (shortRec.isNotEmpty) {
-      return shortRec;
-    }
-
-    if (runtime.isPlanned) {
-      return 'El lote está en preparación. Mantén seguimiento de suelo y afina la estrategia antes de la siembra.';
-    }
-
-    if (runtime.isGenericMode) {
-      return 'El lote está en modo genérico. Configurar el cultivo mejorará la precisión de la recomendación.';
-    }
-
-    return 'Se recomienda revisar la nutrición actual del lote antes de la siguiente intervención.';
   }
 
   List<String> _normalizeStringList(List<String> source) {

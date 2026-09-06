@@ -6,6 +6,7 @@ import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/agronomic_event.dart';
 import 'package:bio_g/core/agro/event_engine.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/agro/water/moisture_target_resolver.dart';
 import 'package:bio_g/core/agro/water/soil_profile_resolver.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
@@ -110,7 +111,7 @@ class HistoryScreenPresenter {
 
   HistoryNpkChartUiData buildNpkChart({required int rangeIndex}) {
     return HistoryNpkChartUiData(
-      title: 'NPK (Análisis NPK · ${_subtitleForRange(rangeIndex)})',
+      title: 'N/P/K nativos (tendencia · ${_subtitleForRange(rangeIndex)})',
     );
   }
 
@@ -121,6 +122,9 @@ class HistoryScreenPresenter {
     // Decision vigente del motor de riego, si la hay. Sin ella no se emiten
     // eventos de riego: este camino no ve el clima y no puede decidirlo solo.
     IrrigationDecision? irrigationDecision,
+    // Decisión vigente del motor de nutrición, con la misma regla: sin ella no
+    // hay eventos de nutrición; nunca se deducen desde N/P/K crudos.
+    NutritionDecision? nutritionDecision,
   }) {
     final List<BioGTelemetry> sortedTelemetry = [...telemetry]
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
@@ -146,6 +150,7 @@ class HistoryScreenPresenter {
       previousStageKey: previousContext.previousStage?.stageKey,
       previousStageLabel: previousContext.previousStage?.stageLabelEs,
       irrigationDecision: irrigationDecision,
+      nutritionDecision: nutritionDecision,
     );
 
     return EventEngine.build(input);
@@ -248,10 +253,13 @@ class HistoryScreenPresenter {
         .map(
           (t) => EventTelemetryPoint(
             timestamp: t.timestamp,
-            soilMoisture: t.soilMoisturePct,
-            ph: t.ph,
-            resistance: t.resistance,
-            soilTemp: t.soilTempC,
+            // Presencia en todos los canales: un 0.0 fabricado por un canal
+            // ausente rompe los rangos con los que el motor de eventos juzga
+            // «estable» (mismo criterio que en AgroEventInputFactory).
+            soilMoisture: t.hasSoilMoistureData ? t.soilMoisturePct : null,
+            ph: t.hasPhData ? t.ph : null,
+            resistance: t.hasResistanceData ? t.resistance : null,
+            soilTemp: t.hasSoilTempData ? t.soilTempC : null,
             n: t.hasNitrogenData ? t.n.toDouble() : null,
             p: t.hasPhosphorusData ? t.p.toDouble() : null,
             k: t.hasPotassiumData ? t.k.toDouble() : null,
@@ -279,14 +287,16 @@ class HistoryScreenPresenter {
     'pH' => 'pH',
     'RT' => 'Resistencia',
     'Temp' => 'Temperatura de suelo',
-    'NPK' => 'NPK',
+    'NPK' => 'N/P/K nativos',
     _ => metric,
   };
 
   String Function(double) _valueFormatterForMetric(String metric) =>
       switch (metric) {
         'Humedad' => (v) => '${v.round()}%',
-        'NPK' => (v) => '${v.round()} mg/kg',
+        // Señal nativa de la sonda, sin unidad química: los canales N/P/K se
+        // derivan de la CE y no equivalen a mg/kg de laboratorio (Guía v0.4, §2).
+        'NPK' => (v) => '${v.round()}',
         'pH' => (v) => v.toStringAsFixed(1),
         'Temp' => (v) => '${v.round()}°C',
         'RT' => (v) => '${v.toStringAsFixed(1)} MPa',

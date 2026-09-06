@@ -338,6 +338,9 @@ class _HistoryScreenState extends State<HistoryScreen>
         // volveríamos a tener dos verdades. Si no hay decisión vigente, el
         // Historial no inventa un consejo de riego por su cuenta.
         irrigationDecision: store.irrigationDecisionAt(DateTime.now()),
+        // Y la misma autoridad única para la nutrición: el Historial muestra
+        // lo que decidió el motor, nunca una lectura propia de N/P/K.
+        nutritionDecision: store.nutritionDecisionAt(DateTime.now()),
       );
 
       // Lo ya ocurrido, acotado a la ventana que el usuario tiene elegida y

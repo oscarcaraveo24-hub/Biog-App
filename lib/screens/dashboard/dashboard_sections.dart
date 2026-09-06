@@ -420,11 +420,13 @@ class _TreeStatusChip extends StatelessWidget {
 class DashboardNpkSection extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String tag;
 
   const DashboardNpkSection({
     super.key,
     required this.title,
     required this.subtitle,
+    this.tag = '',
   });
 
   @override
@@ -440,6 +442,7 @@ class DashboardNpkSection extends StatelessWidget {
       assetIcon: 'assets/icons/metrics/ic_npk.png',
       title: title,
       subtitle: subtitle,
+      tag: tag,
       onTap: () {
         Navigator.of(
           context,

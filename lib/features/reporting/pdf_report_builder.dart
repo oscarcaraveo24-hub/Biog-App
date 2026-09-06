@@ -251,7 +251,7 @@ class PdfReportBuilder {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: <pw.Widget>[
-        _sectionBar('LECTURA NPK ACTUAL'),
+        _sectionBar('SEÑALES NATIVAS N/P/K'),
         pw.SizedBox(height: 8),
         pw.Table(
           border: pw.TableBorder.all(color: _border, width: 0.5),
@@ -264,15 +264,23 @@ class PdfReportBuilder {
             pw.TableRow(
               decoration: const pw.BoxDecoration(color: _brand),
               children: <pw.Widget>[
-                _cell('Nutriente', header: true),
-                _cell('Valor (ppm)', header: true),
-                _cell('Estado', header: true),
+                _cell('Canal', header: true),
+                _cell('Señal nativa', header: true),
+                _cell('Tendencia 7 días', header: true),
               ],
             ),
             _npkRow('Nitrógeno (N)', data.nValue, data.nStatus, false),
             _npkRow('Fósforo (P)', data.pValue, data.pStatus, true),
             _npkRow('Potasio (K)', data.kValue, data.kStatus, false),
           ],
+        ),
+        pw.SizedBox(height: 6),
+        // Nota obligatoria junto a cualquier señal nativa (Guía v0.4, §8): la
+        // sonda deriva N/P/K de la conductividad; no son mg/kg de laboratorio.
+        pw.Text(
+          'Datos nativos del sensor utilizados para seguimiento de tendencias. '
+          'No equivalen a un análisis de laboratorio.',
+          style: const pw.TextStyle(fontSize: 8, color: _ink),
         ),
       ],
     );
@@ -360,7 +368,7 @@ class PdfReportBuilder {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: <pw.Widget>[
-        _sectionBar('RECOMENDACIÓN PRINCIPAL'),
+        _sectionBar('MANEJO NUTRICIONAL'),
         pw.SizedBox(height: 8),
         pw.Container(
           width: double.infinity,

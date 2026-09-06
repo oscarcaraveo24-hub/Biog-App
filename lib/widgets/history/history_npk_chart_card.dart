@@ -166,9 +166,10 @@ class HistoryNpkChartCard extends StatelessWidget {
   static _NpkState _neutralStatus(double? n, double? p, double? k) {
     final hasAny = n != null || p != null || k != null;
     if (!hasAny) {
-      return const _NpkState('Sin lectura suficiente', Color(0xFF8A8F98));
+      return const _NpkState('Sin señal suficiente', Color(0xFF8A8F98));
     }
-    return const _NpkState('Lectura reciente', Color(0xFF3E9F86));
+    // Señal nativa: se describe su presencia y tendencia, nunca «bajo/alto».
+    return const _NpkState('Señal nativa reciente', Color(0xFF3E9F86));
   }
 
   static _Trend _trendFromSeries(List<double?> values) {

@@ -1,22 +1,40 @@
 // lib/screens/npk/npk_screen.dart
+//
+// PANTALLA DE NUTRICIÓN (Guía oficial del nuevo motor nutricional v0.4, §8,
+// §9 y §17 «UI/UX»).
+//
+// Tres cosas, en este orden, y nada más:
+//   1. Qué decidió el motor de nutrición (`NutritionDecision`): qué necesita la
+//      etapa, qué observa la sonda, cómo respondió el suelo. Una sola
+//      autoridad; aquí no se interpreta ninguna lectura.
+//   2. Las señales nativas N/P/K de la sonda como TENDENCIA, en la escala del
+//      propio sitio: sin objetivo, sin «bajo/alto», sin dosis derivada.
+//   3. La nota que acompaña siempre a esas señales: son datos nativos del
+//      sensor, derivados de la conductividad; no equivalen a un análisis de
+//      laboratorio.
+//
+// LO QUE YA NO EXISTE AQUÍ (y no debe volver): topes ppm por cultivo, rangos
+// objetivo por etapa sobre la lectura, dosis calculadas desde la sonda,
+// «Registrar aplicación». El agricultor no registra nada: la sonda observa.
 import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
-import 'package:bio_g/core/agro/npk_caps.dart';
-import 'package:bio_g/core/agro/nutrient_recommendation_engine.dart';
-import 'package:bio_g/core/agro/nutrient_target_range_resolver.dart';
-import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
-import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/widgets/npk/npk_gauge_card.dart';
 
 enum InsightTone { ok, warn, bad }
+
+/// Nota obligatoria junto a cualquier señal nativa N/P/K (Guía v0.4, §8).
+const String kNativeSignalNoteEs =
+    'Datos nativos del sensor utilizados para seguimiento de tendencias. No '
+    'equivalen a un análisis de laboratorio.';
 
 class NpkScreen extends StatefulWidget {
   const NpkScreen({super.key});
@@ -30,406 +48,108 @@ class _NpkScreenState extends State<NpkScreen> {
   // O1 · El stream del historial se resuelve UNA vez, no en cada `build`.
   // ───────────────────────────────────────────────────────────────────────────
   //
-  // Lo que había: `stream: store.watchHistory(const Duration(days: 7))`
-  // directamente en el `build`. `BioGStore.watchHistory` delega en
-  // `HybridBioGRepository.watchHistory`, que declara su `StreamController`
-  // como variable LOCAL y devuelve `out.stream`: **objeto nuevo en cada
-  // llamada**. `StreamBuilder.didUpdateWidget` compara por identidad
-  // (`oldWidget.stream != widget.stream`), así que veía un stream distinto
-  // cada vez y hacía `_unsubscribe()` + `_subscribe()`.
-  //
-  // El coste real de esa resuscripción, medido en la cadena completa:
-  //   onCancel  → `_maybeStopDevice` CANCELA el timer de refresco cloud.
-  //   onListen  → `_startDevice` + `_startHistory`
-  //             → `_emitLocalHistory` → `TelemetryLocalStorage.loadWindow`
-  //             → una query SQLite + hasta **2000 `jsonDecode`** síncronos
-  //               en el isolate de UI (el tope es `defaultCap = 2000`).
-  //
-  // Y esto ocurría en CADA notificación del store —hay 20 `notifyListeners()`
-  // en `BioGStore`, y con un BioG simulado (`SensorSimulator(tick: 1 s)`) son
-  // ~2 por segundo—. Ese es el bloqueo de hilo principal que el logcat del
-  // Xiaomi reporta como `Skipped 173 frames`.
-  //
-  // Efecto secundario que también desaparece: al reiniciarse el timer de
-  // polling en cada build, el refresco cloud de 10 minutos NUNCA llegaba a
-  // dispararse mientras esta pantalla estuviera abierta.
-  //
-  // Por qué se cachea aquí y no en el store: el store es propiedad de otro
-  // frente de trabajo. Cachear en el `State` da el mismo resultado y no toca
-  // nada compartido.
+  // `BioGStore.watchHistory` devuelve un stream NUEVO en cada llamada y
+  // `StreamBuilder` compara por identidad: pedirlo en el `build` forzaba la
+  // resuscripción completa (query SQLite + hasta 2000 `jsonDecode`) en cada
+  // notificación del store. Ver el historial de este archivo para la medición.
   Stream<List<BioGTelemetry>>? _history7dStream;
-
-  /// Claves de la suscripción vigente. El stream se vuelve a pedir **solo**
-  /// si cambia el store o el dispositivo del que cuelga la telemetría.
   BioGStore? _boundStore;
   String? _boundTelemetryDeviceId;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // Ojo: este método se ejecuta en CADA `notifyListeners()` del store,
-    // porque `BioGScope` es un `InheritedNotifier` y esta pantalla depende de
-    // él. Sin la guarda de abajo, cachear aquí no arreglaría nada: volvería a
-    // pedir un stream nuevo con la misma frecuencia que antes.
     final store = BioGScope.of(context);
-
-    // Se usa `telemetryDeviceId` —y no `activeDevice.id`— porque es
-    // exactamente la clave sobre la que el repositorio enlaza el historial.
     final telemetryDeviceId = store.activeDevice?.telemetryDeviceId;
-
     final bool sameBinding =
         _history7dStream != null &&
         identical(store, _boundStore) &&
         telemetryDeviceId == _boundTelemetryDeviceId;
-
     if (sameBinding) return;
-
     _boundStore = store;
     _boundTelemetryDeviceId = telemetryDeviceId;
     _history7dStream = store.watchHistory(const Duration(days: 7));
   }
 
-  // No hace falta `dispose`: este State no crea controladores ni
-  // suscripciones propias. La única suscripción al stream la abre y la cierra
-  // el `StreamBuilder`, que se desmonta con la pantalla y dispara el
-  // `onCancel` del controlador del repositorio.
-
-  AgroMetricKey _metricKeyFor(NpkChannel ch) {
-    switch (ch) {
-      case NpkChannel.n:
-        return AgroMetricKey.n;
-      case NpkChannel.p:
-        return AgroMetricKey.p;
-      case NpkChannel.k:
-        return AgroMetricKey.k;
-    }
-  }
+  AgroMetricKey _metricKeyFor(NpkChannel ch) => switch (ch) {
+    NpkChannel.n => AgroMetricKey.n,
+    NpkChannel.p => AgroMetricKey.p,
+    NpkChannel.k => AgroMetricKey.k,
+  };
 
   int _roundInt(double v) => v.isNaN ? 0 : v.round();
 
-  bool _isFruitTreeCrop(String? cropKey) {
-    final crop = CropCatalog.canonicalCropKey(cropKey).trim().toLowerCase();
-    return crop == 'apple_tree' ||
-        crop == 'crop_apple_tree' ||
-        crop == 'manzano' ||
-        crop == 'pear_tree' ||
-        crop == 'crop_pear_tree' ||
-        crop == 'pera' ||
-        crop == 'peral' ||
-        crop == 'peach_tree' ||
-        crop == 'crop_peach_tree' ||
-        crop == 'peach' ||
-        crop == 'peachtree' ||
-        crop == 'durazno' ||
-        crop == 'duraznero' ||
-        crop == 'melocoton' ||
-        crop == 'melocotón' ||
-        crop == 'melocotonero' ||
-        crop == 'walnut_tree' ||
-        crop == 'crop_walnut_tree' ||
-        crop == 'walnut' ||
-        crop == 'walnuttree' ||
-        crop == 'nogal' ||
-        crop == 'pecan' ||
-        crop == 'nuez' ||
-        crop == 'pistachio_tree' ||
-        crop == 'crop_pistachio_tree' ||
-        crop == 'pistachio' ||
-        crop == 'pistachiotree' ||
-        crop == 'pistache' ||
-        crop == 'pistacho' ||
-        crop == 'pistachero' ||
-        crop == 'orange_tree' ||
-        crop == 'crop_orange_tree' ||
-        crop == 'orange' ||
-        crop == 'orangetree' ||
-        crop == 'naranjo' ||
-        crop == 'naranja' ||
-        crop == 'lemon_tree' ||
-        crop == 'crop_lemon_tree' ||
-        crop == 'lemontree' ||
-        crop == 'lime_tree' ||
-        crop == 'crop_lime_tree' ||
-        crop == 'lemon' ||
-        crop == 'lime' ||
-        crop == 'limon' ||
-        crop == 'limón' ||
-        crop == 'limonero' ||
-        crop == 'lima' ||
-        crop == 'mango_tree' ||
-        crop == 'crop_mango_tree' ||
-        crop == 'mangotree' ||
-        crop == 'crop_mango' ||
-        crop == 'mango' ||
-        crop == 'mangos' ||
-        crop == 'mangifera' ||
-        crop == 'mangifera_indica' ||
-        crop == 'arbol_mango' ||
-        crop == 'árbol_mango' ||
-        crop == 'avocado_tree' ||
-        crop == 'crop_avocado_tree' ||
-        crop == 'avocadotree' ||
-        crop == 'crop_avocado' ||
-        crop == 'avocado' ||
-        crop == 'avocados' ||
-        crop == 'aguacate' ||
-        crop == 'aguacates' ||
-        crop == 'aguacatero' ||
-        crop == 'palta' ||
-        crop == 'palto' ||
-        crop == 'persea' ||
-        crop == 'persea_americana' ||
-        crop == 'arbol_aguacate' ||
-        crop == 'árbol_aguacate';
-  }
-
+  /// Tendencia: promedio de las 3 últimas lecturas contra las 3 anteriores.
   double? _trendPctFromSeries(List<double> series) {
     if (series.length < 6) return null;
-
     double avg(List<double> xs) =>
         xs.isEmpty ? 0.0 : xs.reduce((a, b) => a + b) / xs.length;
-
     final a = avg(series.sublist(series.length - 3));
     final b = avg(series.sublist(series.length - 6, series.length - 3));
-
     if (b.abs() < 0.0001) return null;
     return ((a - b) / b) * 100.0;
   }
 
-  double _ppmCap(NpkChannel ch, {required String? cropKey}) {
-    return NpkCaps.forCropMetric(
-      cropKey: cropKey,
-      metricKey: _metricKeyFor(ch),
-    );
-  }
-
-  double _ppmToGauge01(NpkChannel ch, double ppm, {required String? cropKey}) {
-    if (!ppm.isFinite) return 0.0;
-    final cap = _ppmCap(ch, cropKey: cropKey);
-    return (ppm / cap).clamp(0.0, 1.0);
-  }
-
-  String _bandLabelEs(_NpkBand b) {
-    switch (b) {
-      case _NpkBand.low:
-        return 'Bajo';
-      case _NpkBand.optimal:
-        return 'Óptimo';
-      case _NpkBand.high:
-        return 'Alto';
-      case _NpkBand.critical:
-        return 'Crítico';
-      case _NpkBand.unknown:
-        return '—';
-    }
-  }
-
-  InsightTone _toneForNutrient({
-    required AgroMetricEval? evalMetric,
-    required NutrientInterpretationResult? interpretation,
-    required String? cropKey,
-  }) {
-    return _toneForPriorityLabel(
-      evalMetric?.priorityLabel ?? interpretation?.label,
-      cropKey: cropKey,
-    );
-  }
-
-  InsightTone _toneForPriorityLabel(
-    NutrientPriorityLabel? label, {
-    required String? cropKey,
-  }) {
-    if (_isFruitTreeCrop(cropKey) &&
-        label == NutrientPriorityLabel.possibleExcess) {
-      return InsightTone.ok;
-    }
-
-    switch (label) {
-      case NutrientPriorityLabel.actionRecommended:
-      case NutrientPriorityLabel.highPriority:
-        return InsightTone.warn;
-      case NutrientPriorityLabel.possibleExcess:
-      case NutrientPriorityLabel.reviewAccumulation:
-      case NutrientPriorityLabel.reviewManagement:
-        return InsightTone.bad;
-      case NutrientPriorityLabel.mediumPriority:
-      case NutrientPriorityLabel.lowPriority:
-      case NutrientPriorityLabel.noPriority:
-      case NutrientPriorityLabel.unknown:
-      case null:
-        return InsightTone.ok;
-    }
-  }
-
-  _NpkBand _bandFromAgroBand(AgroBand band) {
-    switch (band) {
-      case AgroBand.low:
-        return _NpkBand.low;
-      case AgroBand.optimal:
-        return _NpkBand.optimal;
-      case AgroBand.high:
-        return _NpkBand.high;
-      case AgroBand.critical:
-        return _NpkBand.critical;
-      case AgroBand.unknown:
-        return _NpkBand.unknown;
-    }
-  }
-
-  _NpkBand _bandFromPpmUsingComparableRange({
-    required double ppm,
-    required AgroRange comparableRange,
-  }) {
-    if (!ppm.isFinite) return _NpkBand.unknown;
-
-    if (ppm < comparableRange.lowMax) return _NpkBand.critical;
-    if (ppm < comparableRange.optimalMin) return _NpkBand.low;
-    if (ppm <= comparableRange.optimalMax) return _NpkBand.optimal;
-    if (ppm <= comparableRange.highMin) return _NpkBand.high;
-    return _NpkBand.critical;
-  }
-
-  int _ppmToPctForPainter({
-    required NpkChannel ch,
-    required int ppm,
-    required String? cropKey,
-  }) {
-    final cap = _ppmCap(ch, cropKey: cropKey);
-    final pct = (ppm / cap) * 100.0;
-    return pct.round().clamp(0, 100);
-  }
-
-  String? _resolveCultivationScaleId(DeviceCropContext? cropContext) {
-    if (cropContext == null) return null;
-    final v = cropContext.cultivationScaleId;
-    return (v != null && v.trim().isNotEmpty) ? v.trim() : null;
-  }
-
-  /// practicalRecommendation ya puede venir fusionada con doseGuideEs.
-  /// Aquí limpiamos la parte repetida para que la UI no la pinte dos veces.
-  String _cleanMergedActionText(String? actionText, String? doseGuideText) {
-    var text = (actionText ?? '').trim();
-    final dose = (doseGuideText ?? '').trim();
-
-    if (text.isEmpty) return text;
-    if (dose.isEmpty) return text;
-
-    final normalizedText = text.replaceAll('\r\n', '\n');
-    final normalizedDose = dose.replaceAll('\r\n', '\n');
-
-    if (normalizedText.contains('\n\n$normalizedDose')) {
-      text = normalizedText.replaceFirst('\n\n$normalizedDose', '').trim();
-    } else if (normalizedText.contains(normalizedDose)) {
-      text = normalizedText.replaceFirst(normalizedDose, '').trim();
-    }
-
-    text = text.replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
-    return text;
-  }
-
-  /// O3 · Recibe la serie YA ordenada y saneada, y la tendencia YA calculada.
+  /// Estadística de la señal nativa en la ESCALA DEL SITIO.
   ///
-  /// Antes este método ordenaba el historial por su cuenta
-  /// (`[...history7d]..sort(...)`) y se le llamaba **seis** veces por build:
-  /// tres para obtener solo `avgTrendPct` (los antiguos `nBase`/`pBase`/
-  /// `kBase`) y otras tres para el resultado definitivo. Con hasta 2000
-  /// lecturas en ventana eso eran 6 copias de lista, ~131.400 llamadas a
-  /// `DateTime.compareTo` y 24.000 dobles boxeados por build.
-  ///
-  /// Ahora el orden y las tres series se calculan una sola vez en el `build`
-  /// y este método pasa a ser puramente aritmético. El resultado es idéntico:
-  /// `List.sort` de Dart es determinista, así que ordenar una vez y reutilizar
-  /// produce exactamente la misma secuencia que ordenar seis veces la misma
-  /// lista.
+  /// El arco no se compara contra un tope por cultivo ni contra un objetivo:
+  /// se escala al máximo reciente del propio punto, para que lo que se vea sea
+  /// «dónde está hoy respecto a su propia semana». Sin objetivo no hay banda.
   _NpkStats _statsForChannel({
     required NpkChannel channel,
     required BioGTelemetry? live,
     required List<double> series,
     required double? trendPct,
-    required StageTargets? targets,
-    required bool allowStageInterpretation,
-    required String? cropKey,
-    AgroMetricEval? evalMetric,
-    NutrientInterpretationResult? interpretation,
   }) {
-    final level = live == null
-        ? 0.0
+    final bool hasLive = live != null &&
+        switch (channel) {
+          NpkChannel.n => live.hasNitrogenData,
+          NpkChannel.p => live.hasPhosphorusData,
+          NpkChannel.k => live.hasPotassiumData,
+        };
+    final double level = !hasLive
+        ? double.nan
         : switch (channel) {
-            NpkChannel.n => live.n.toDouble(),
-            NpkChannel.p => live.p.toDouble(),
-            NpkChannel.k => live.k.toDouble(),
+            NpkChannel.n => live!.n.toDouble(),
+            NpkChannel.p => live!.p.toDouble(),
+            NpkChannel.k => live!.k.toDouble(),
           };
 
-    final avg7 = series.isEmpty
-        ? 0.0
+    final double avg7 = series.isEmpty
+        ? double.nan
         : series.reduce((a, b) => a + b) / series.length;
+    final double minV = series.isEmpty ? double.nan : series.reduce(math.min);
+    final double maxV = series.isEmpty ? double.nan : series.reduce(math.max);
 
-    final minV = series.isEmpty ? 0.0 : series.reduce(math.min);
-    final maxV = series.isEmpty ? 0.0 : series.reduce(math.max);
-
-    final gaugePercent = _ppmToGauge01(channel, level, cropKey: cropKey);
-
-    final comparableRange = (!allowStageInterpretation || targets == null)
-        ? null
-        : NutrientTargetRangeResolver.comparableRange(
-            nutrient: _metricKeyFor(channel),
-            cropKey: cropKey,
-            targets: targets,
-          );
-
-    final targetMinPpm = comparableRange == null
-        ? null
-        : comparableRange.optimalMin.round();
-
-    final targetMaxPpm = comparableRange == null
-        ? null
-        : comparableRange.optimalMax.round();
-
-    final capPpm = _ppmCap(channel, cropKey: cropKey).round();
-
-    final _NpkBand band = evalMetric != null
-        ? _bandFromAgroBand(evalMetric.band)
-        : (comparableRange == null)
-        ? _NpkBand.unknown
-        : _bandFromPpmUsingComparableRange(
-            ppm: level,
-            comparableRange: comparableRange,
-          );
-
-    final priorityLabel = evalMetric?.priorityLabel ?? interpretation?.label;
-
-    final String bandLabel =
-        evalMetric?.labelEs ?? interpretation?.labelEs ?? _bandLabelEs(band);
-
-    final bool hideShadow =
-        priorityLabel == NutrientPriorityLabel.noPriority ||
-        priorityLabel == NutrientPriorityLabel.lowPriority;
-
-    final targetMinPctPainter =
-        (allowStageInterpretation && !hideShadow && targetMinPpm != null)
-        ? _ppmToPctForPainter(ch: channel, ppm: targetMinPpm, cropKey: cropKey)
-        : null;
-    final targetMaxPctPainter =
-        (allowStageInterpretation && !hideShadow && targetMaxPpm != null)
-        ? _ppmToPctForPainter(ch: channel, ppm: targetMaxPpm, cropKey: cropKey)
-        : null;
+    // Escala del sitio: 15 % por encima del máximo reciente, con un piso para
+    // que una serie plana en cero no divida entre cero.
+    final double siteMax = <double>[
+      if (maxV.isFinite) maxV,
+      if (level.isFinite) level,
+    ].fold<double>(0.0, math.max);
+    final double scale = math.max(10.0, siteMax * 1.15);
+    final double gaugePercent = level.isFinite
+        ? (level / scale).clamp(0.0, 1.0)
+        : 0.0;
 
     return _NpkStats(
-      levelPpm: _roundInt(level),
-      avg7Ppm: _roundInt(avg7),
-      rangeMin: _roundInt(minV),
-      rangeMax: _roundInt(maxV),
+      hasLive: level.isFinite,
+      level: _roundInt(level.isFinite ? level : 0.0),
+      avg7: avg7.isFinite ? _roundInt(avg7) : null,
+      rangeMin: minV.isFinite ? _roundInt(minV) : null,
+      rangeMax: maxV.isFinite ? _roundInt(maxV) : null,
       avgTrendPct: trendPct,
       gaugePercent: gaugePercent,
-      capPpm: capPpm,
-      targetMinPpm: targetMinPpm,
-      targetMaxPpm: targetMaxPpm,
-      targetMinPctPainter: targetMinPctPainter,
-      targetMaxPctPainter: targetMaxPctPainter,
-      band: band,
-      bandLabel: bandLabel,
+      scale: scale,
     );
+  }
+
+  String _trendLabel(double? trendPct, {required bool hasLive}) {
+    if (!hasLive) return 'Sin señal';
+    if (trendPct == null) return 'Señal nativa';
+    if (trendPct > 4) return 'Subiendo';
+    if (trendPct < -4) return 'Bajando';
+    return 'Estable';
   }
 
   @override
@@ -465,504 +185,138 @@ class _NpkScreenState extends State<NpkScreen> {
               bottom: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-                child: Column(
-                  children: [
-                    const _NpkTabsCard(),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: StreamBuilder<List<BioGTelemetry>>(
-                        // O1 · Instancia cacheada en `didChangeDependencies`.
-                        // Nunca `store.watchHistory(...)` aquí: devolvería un
-                        // stream nuevo por build y forzaría la resuscripción
-                        // completa del pipeline (query SQLite + hasta 2000
-                        // `jsonDecode`) en cada notificación del store.
-                        stream: _history7dStream,
-                        builder: (context, snap) {
-                          final history7d =
-                              snap.data ?? const <BioGTelemetry>[];
-                          final live = store.live;
-                          final device = store.activeDevice;
-                          final DeviceCropContext? cropContext =
-                              store.activeCropContext;
-                          final seed = store.activeSeed;
+                child: StreamBuilder<List<BioGTelemetry>>(
+                  stream: _history7dStream,
+                  builder: (context, snap) {
+                    final history7d = snap.data ?? const <BioGTelemetry>[];
+                    final live = store.live;
+                    final device = store.activeDevice;
+                    final DeviceCropContext? cropContext =
+                        store.activeCropContext;
+                    final seed = store.activeSeed;
+                    final DateTime now = DateTime.now();
 
-                          final runtime = CropRuntimeResolver.resolve(
-                            device: device,
-                            seed: seed,
-                            cropContext: cropContext,
-                            live: live,
-                            alertsState: store.alertsState,
-                            now: DateTime.now(),
-                          );
+                    final runtime = CropRuntimeResolver.resolve(
+                      device: device,
+                      seed: seed,
+                      cropContext: cropContext,
+                      live: live,
+                      alertsState: store.alertsState,
+                      now: now,
+                    );
 
-                          // MODO GUÍA GENERAL.
-                          //
-                          // En el runtime la guía SÍ cuenta como plantada: por
-                          // eso el Panel puede etiquetar humedad, pH,
-                          // temperatura y compactación. Pero esta pantalla es
-                          // la de nutrición, y ahí no hay nada que interpretar:
-                          // sin saber qué planta es ni en qué etapa va, no hay
-                          // ventana de demanda de N, P o K.
-                          //
-                          // Se degrada aquí, en un solo sitio, en vez de
-                          // acordarse del modo guía en las veinte ramas de
-                          // abajo. Con esto la pantalla entera cae en los
-                          // textos de "sin cultivo", que es exactamente lo
-                          // correcto: la lectura se muestra, la lectura
-                          // agronómica no se inventa.
-                          final bool isGuide = runtime.isGuideMode;
-                          final isPlanted = runtime.isPlanted && !isGuide;
-                          final isPlanned = runtime.isPlanned;
-                          final targets = runtime.targets;
-                          final eval = runtime.eval;
-                          final nEvalMetric = eval?.metrics[AgroMetricKey.n];
-                          final pEvalMetric = eval?.metrics[AgroMetricKey.p];
-                          final kEvalMetric = eval?.metrics[AgroMetricKey.k];
-                          final stageKey = runtime.stageResult?.stageKey;
-                          // Los pesos de etapa NO están cableados en esta
-                          // pantalla, y decirlo así es más honesto que el
-                          // código que había.
-                          //
-                          // Lo que había: `_resolveRuntimeWeights(dynamic
-                          // runtime)` leía `runtime.weights` por despacho
-                          // dinámico dentro de un `catch (_) {}` vacío.
-                          // `CropRuntimeSnapshot` no tiene un miembro
-                          // `weights`: ni campo, ni getter, ni extensión. Esa
-                          // llamada lanzaba `NoSuchMethodError` en CADA build,
-                          // el `catch` se lo tragaba en silencio y la función
-                          // devolvía siempre null. Aparentaba resolver algo
-                          // que nunca resolvió.
-                          //
-                          // Por qué se deja en null en vez de hacerlo
-                          // funcionar: que los pesos llegaran de verdad al
-                          // motor cambiaría las recomendaciones que hoy ve el
-                          // agricultor. Eso es funcionalidad nueva y no entra
-                          // en esta corrección. El comportamiento en runtime
-                          // es idéntico al actual; lo que desaparece es la
-                          // excepción por build.
-                          //
-                          // DEUDA PENDIENTE: pasar los pesos por etapa al
-                          // motor de nutrición desde esta pantalla.
-                          const StageWeights? weights = null;
-                          final cultivationScaleId = _resolveCultivationScaleId(
-                            cropContext,
-                          );
+                    // MODO GUÍA GENERAL: la lectura se muestra, la lectura
+                    // agronómica no se inventa (sin cultivo no hay ventana).
+                    final bool isGuide = runtime.isGuideMode;
+                    final bool isPlanted = runtime.isPlanted && !isGuide;
+                    final bool isPlanned = runtime.isPlanned;
 
-                          NutrientInterpretationResult?
-                          interpretNutrientFallback({
-                            required AgroMetricKey nutrient,
-                            required double rawPpm,
-                            required bool hasData,
-                            required double? trendPct,
-                            required AgroMetricEval? evalMetric,
-                          }) {
-                            if (!isPlanted || live == null) return null;
-                            // Sin sonda de ese canal no hay dato, y ausencia no
-                            // es cero: un 0 crudo sale de `interpret` como
-                            // `actionRecommended`, la peor etiqueta de
-                            // deficiencia. Devolver null es lo correcto: los
-                            // consumidores de abajo ya tratan el nulo.
-                            if (!hasData) return null;
-                            // Se calcula SIEMPRE, no sólo como respaldo: es
-                            // la única interpretación que recibe la escala
-                            // de cultivo y por tanto la unidad correcta.
-                            return NutrientRecommendationEngine.interpret(
-                              nutrient: nutrient,
-                              rawPpm: rawPpm,
-                              cropKey: runtime.cropKeyName,
-                              stageKey: stageKey,
-                              profileId: runtime.profile?.id,
-                              varietyId: cropContext?.varietyId,
-                              varietyAlias: cropContext?.varietyAlias,
-                              calendarId: cropContext?.calendarTypeId,
-                              targets: targets,
-                              weights: weights,
-                              cultivationScaleId: cultivationScaleId,
-                              ph: live.ph,
-                              ec: live.ec,
-                              soilMoisturePct: live.hasSoilMoistureData ? live.soilMoisturePct : null,
-                              trendPct: trendPct,
-                            );
-                          }
+                    // La decisión la publica el Panel; aquí solo se lee. Si no
+                    // hay decisión vigente, la pantalla lo dice.
+                    final NutritionDecision? decision = isPlanted
+                        ? store.nutritionDecisionAt(now)
+                        : null;
 
-                          // ─────────────────────────────────────────────────
-                          // O3 · Una sola ordenación del historial por build.
-                          // ─────────────────────────────────────────────────
-                          //
-                          // Antes se llamaba seis veces a `_statsForChannel`
-                          // y cada llamada hacía su propio
-                          // `[...history7d]..sort(...)`. Con la ventana llena
-                          // (`TelemetryLocalStorage.defaultCap = 2000`) eso
-                          // era, POR BUILD: 6 copias de lista (12.000
-                          // referencias), 6 ordenaciones ≈ **131.400 llamadas
-                          // a `DateTime.compareTo`** y 12 pasadas
-                          // `map/toList` ≈ 24.000 dobles boxeados. A ~2
-                          // builds/s con BioG simulado, ~264.000
-                          // comparaciones por segundo en el hilo de UI.
-                          //
-                          // Ahora: 1 copia, 1 ordenación, 1 pasada que llena
-                          // las tres series. El orden resultante es el mismo
-                          // —`List.sort` de Dart es determinista— así que
-                          // todas las cifras derivadas salen idénticas.
-                          final sortedHistory = [...history7d]
-                            ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+                    // Una sola ordenación del historial por build.
+                    final sortedHistory = [...history7d]
+                      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+                    final nSeries = <double>[];
+                    final pSeries = <double>[];
+                    final kSeries = <double>[];
+                    for (final t in sortedHistory) {
+                      // Solo lo que la sonda midió: ausencia no es cero.
+                      if (t.hasNitrogenData) nSeries.add(math.max(0.0, t.n.toDouble()));
+                      if (t.hasPhosphorusData) pSeries.add(math.max(0.0, t.p.toDouble()));
+                      if (t.hasPotassiumData) kSeries.add(math.max(0.0, t.k.toDouble()));
+                    }
 
-                          final nSeries = <double>[];
-                          final pSeries = <double>[];
-                          final kSeries = <double>[];
-                          for (final t in sortedHistory) {
-                            // Mismo saneo que hacía el `.map()` anterior:
-                            // los negativos se recortan a 0. NaN no cumple
-                            // `< 0` y pasa tal cual, igual que antes.
-                            final nv = t.n.toDouble();
-                            final pv = t.p.toDouble();
-                            final kv = t.k.toDouble();
-                            nSeries.add(nv < 0 ? 0.0 : nv);
-                            pSeries.add(pv < 0 ? 0.0 : pv);
-                            kSeries.add(kv < 0 ? 0.0 : kv);
-                          }
+                    final n = _statsForChannel(
+                      channel: NpkChannel.n,
+                      live: live,
+                      series: nSeries,
+                      trendPct: _trendPctFromSeries(nSeries),
+                    );
+                    final p = _statsForChannel(
+                      channel: NpkChannel.p,
+                      live: live,
+                      series: pSeries,
+                      trendPct: _trendPctFromSeries(pSeries),
+                    );
+                    final k = _statsForChannel(
+                      channel: NpkChannel.k,
+                      live: live,
+                      series: kSeries,
+                      trendPct: _trendPctFromSeries(kSeries),
+                    );
 
-                          // La tendencia era el ÚNICO dato que se sacaba de
-                          // los antiguos `nBase`/`pBase`/`kBase`: alimentaba
-                          // a `interpret` y volvía a calcularse igual en la
-                          // segunda ronda. Se calcula una vez y se usa en los
-                          // dos sitios; el valor es el mismo porque
-                          // `_trendPctFromSeries` es pura y la serie es la
-                          // misma.
-                          final nTrendPct = _trendPctFromSeries(nSeries);
-                          final pTrendPct = _trendPctFromSeries(pSeries);
-                          final kTrendPct = _trendPctFromSeries(kSeries);
+                    final String stageLabel = isPlanted
+                        ? 'Etapa: ${runtime.stageLabel}'
+                        : isPlanned
+                        ? 'Pre-siembra'
+                        : isGuide
+                        ? 'Guía general'
+                        : 'Modo genérico';
 
-                          final nInterpretation = live == null
-                              ? null
-                              : interpretNutrientFallback(
-                                  nutrient: AgroMetricKey.n,
-                                  rawPpm: live.n.toDouble(),
-                                  hasData: live.hasNitrogenData,
-                                  trendPct: nTrendPct,
-                                  evalMetric: nEvalMetric,
-                                );
+                    final _NpkContext ctx = _NpkContext(
+                      isPlanted: isPlanted,
+                      isPlanned: isPlanned,
+                      isGuide: isGuide,
+                      stageLabel: stageLabel,
+                      decision: decision,
+                    );
 
-                          final pInterpretation = live == null
-                              ? null
-                              : interpretNutrientFallback(
-                                  nutrient: AgroMetricKey.p,
-                                  rawPpm: live.p.toDouble(),
-                                  hasData: live.hasPhosphorusData,
-                                  trendPct: pTrendPct,
-                                  evalMetric: pEvalMetric,
-                                );
-
-                          final kInterpretation = live == null
-                              ? null
-                              : interpretNutrientFallback(
-                                  nutrient: AgroMetricKey.k,
-                                  rawPpm: live.k.toDouble(),
-                                  hasData: live.hasPotassiumData,
-                                  trendPct: kTrendPct,
-                                  evalMetric: kEvalMetric,
-                                );
-
-                          final n = _statsForChannel(
-                            channel: NpkChannel.n,
-                            live: live,
-                            series: nSeries,
-                            trendPct: nTrendPct,
-                            targets: targets,
-                            allowStageInterpretation: isPlanted,
-                            cropKey: runtime.cropKeyName,
-                            evalMetric: nEvalMetric,
-                            interpretation: nInterpretation,
-                          );
-
-                          final p = _statsForChannel(
-                            channel: NpkChannel.p,
-                            live: live,
-                            series: pSeries,
-                            trendPct: pTrendPct,
-                            targets: targets,
-                            allowStageInterpretation: isPlanted,
-                            cropKey: runtime.cropKeyName,
-                            evalMetric: pEvalMetric,
-                            interpretation: pInterpretation,
-                          );
-
-                          final k = _statsForChannel(
-                            channel: NpkChannel.k,
-                            live: live,
-                            series: kSeries,
-                            trendPct: kTrendPct,
-                            targets: targets,
-                            allowStageInterpretation: isPlanted,
-                            cropKey: runtime.cropKeyName,
-                            evalMetric: kEvalMetric,
-                            interpretation: kInterpretation,
-                          );
-
-                          final stageLabel = isPlanted
-                              ? 'Etapa: ${runtime.stageLabel}'
-                              : isPlanned
-                              ? 'Pre-siembra'
-                              : isGuide
-                              ? 'Guía general'
-                              : 'Modo genérico';
-
-                          final nDoseGuide =
-                              nInterpretation?.doseGuideEs ??
-                                    nEvalMetric?.doseGuideEs;
-                          final pDoseGuide =
-                              pInterpretation?.doseGuideEs ??
-                                    pEvalMetric?.doseGuideEs;
-                          final kDoseGuide =
-                              kInterpretation?.doseGuideEs ??
-                                    kEvalMetric?.doseGuideEs;
-
-                          final nFertilizerEquivalent =
-                              nInterpretation?.fertilizerEquivalentEs ??
-                                    nEvalMetric?.fertilizerEquivalentEs;
-                          final pFertilizerEquivalent =
-                              pInterpretation?.fertilizerEquivalentEs ??
-                                    pEvalMetric?.fertilizerEquivalentEs;
-                          final kFertilizerEquivalent =
-                              kInterpretation?.fertilizerEquivalentEs ??
-                                    kEvalMetric?.fertilizerEquivalentEs;
-
-                          // Lenguaje de NPK: estimación, no medición absoluta.
-                          //
-                          // Estos textos decían 'Lectura real de N/P/K'. El
-                          // sensor NPK de Bio-G es aproximado (±10 %): sirve
-                          // para leer tendencias y decidir, no para afirmar el
-                          // contenido exacto del suelo. Llamarlo "real" era
-                          // prometer una precisión que el hardware no da.
-                          //
-                          // Lo que NO se hace aquí, a propósito: mandar al
-                          // agricultor al laboratorio, hablar de validación
-                          // pendiente o sugerir que el dato no es confiable.
-                          // El dato es útil y se presenta como lo que es: una
-                          // estimación por sensor. La honestidad está en la
-                          // palabra "estimado", no en anular la herramienta.
-                          final insightN = isPlanted
-                              ? (nEvalMetric?.shortRecommendationEs ??
-                                    nInterpretation?.shortRecommendation ??
-                                    'Nitrógeno disponible estimado por sensor.')
-                              : isPlanned
-                              ? 'Nitrógeno disponible estimado en pre-siembra.'
-                              : 'Lectura disponible sin cultivo asignado.';
-
-                          final insightP = isPlanted
-                              ? (pEvalMetric?.shortRecommendationEs ??
-                                    pInterpretation?.shortRecommendation ??
-                                    'Fósforo disponible estimado por sensor.')
-                              : isPlanned
-                              ? 'Fósforo disponible estimado en pre-siembra.'
-                              : 'Lectura disponible sin cultivo asignado.';
-
-                          final insightK = isPlanted
-                              ? (kEvalMetric?.shortRecommendationEs ??
-                                    kInterpretation?.shortRecommendation ??
-                                    'Potasio disponible estimado por sensor.')
-                              : isPlanned
-                              ? 'Potasio disponible estimado en pre-siembra.'
-                              : 'Lectura disponible sin cultivo asignado.';
-
-                          final descN = isPlanted
-                              ? (nEvalMetric?.justificationEs ??
-                                    nInterpretation?.justification ??
-                                    'Nitrógeno disponible estimado por sensor.')
-                              : 'Nitrógeno disponible estimado por sensor. Asigna un cultivo para convertirlo en recomendación nutricional.';
-
-                          final descP = isPlanted
-                              ? (pEvalMetric?.justificationEs ??
-                                    pInterpretation?.justification ??
-                                    'Fósforo disponible estimado por sensor.')
-                              : 'Fósforo disponible estimado por sensor. Asigna un cultivo para convertirlo en recomendación nutricional.';
-
-                          final descK = isPlanted
-                              ? (kEvalMetric?.justificationEs ??
-                                    kInterpretation?.justification ??
-                                    'Potasio disponible estimado por sensor.')
-                              : 'Potasio disponible estimado por sensor. Asigna un cultivo para convertirlo en recomendación nutricional.';
-
-                          final actionNRaw = isPlanted
-                              ? (nInterpretation?.practicalRecommendation ??
-                                    nEvalMetric?.practicalRecommendationEs ??
-                                    'Revisa el plan nutricional del lote.')
-                              : isPlanned
-                              ? 'Úsalo como línea base antes de sembrar.'
-                              : 'Configura un cultivo para ver prioridad nutricional.';
-
-                          final actionPRaw = isPlanted
-                              ? (pInterpretation?.practicalRecommendation ??
-                                    pEvalMetric?.practicalRecommendationEs ??
-                                    'Revisa el plan nutricional del lote.')
-                              : isPlanned
-                              ? 'Úsalo como línea base antes de sembrar.'
-                              : 'Configura un cultivo para ver prioridad nutricional.';
-
-                          final actionKRaw = isPlanted
-                              ? (kInterpretation?.practicalRecommendation ??
-                                    kEvalMetric?.practicalRecommendationEs ??
-                                    'Revisa el plan nutricional del lote.')
-                              : isPlanned
-                              ? 'Úsalo como línea base antes de sembrar.'
-                              : 'Configura un cultivo para ver prioridad nutricional.';
-
-                          final actionN = _cleanMergedActionText(
-                            actionNRaw,
-                            nDoseGuide,
-                          );
-                          final actionP = _cleanMergedActionText(
-                            actionPRaw,
-                            pDoseGuide,
-                          );
-                          final actionK = _cleanMergedActionText(
-                            actionKRaw,
-                            kDoseGuide,
-                          );
-
-                          final windowN = isPlanted
-                              ? (nEvalMetric?.demandWindowLabelEs ??
-                                    nInterpretation?.demandWindowLabel ??
-                                    'Ventana activa')
-                              : isPlanned
-                              ? 'Pre-siembra'
-                              : 'Sin cultivo';
-
-                          final windowP = isPlanted
-                              ? (pEvalMetric?.demandWindowLabelEs ??
-                                    pInterpretation?.demandWindowLabel ??
-                                    'Ventana activa')
-                              : isPlanned
-                              ? 'Pre-siembra'
-                              : 'Sin cultivo';
-
-                          final windowK = isPlanted
-                              ? (kEvalMetric?.demandWindowLabelEs ??
-                                    kInterpretation?.demandWindowLabel ??
-                                    'Ventana activa')
-                              : isPlanned
-                              ? 'Pre-siembra'
-                              : 'Sin cultivo';
-
-                          // Chip dentro del gauge. Decía 'Lectura real', que
-                          // es una promesa que el sensor NPK no sostiene: su
-                          // salida es una estimación útil para seguir
-                          // tendencias, no una medición de laboratorio.
-                          // 'Estimado' dice la verdad, cabe en el mismo pill
-                          // (es más corto) y mantiene el registro de las otras
-                          // etiquetas de banda.
-                          final statusN = isPlanted
-                              ? n.bandLabel
-                              : 'Estimado';
-                          final statusP = isPlanted
-                              ? p.bandLabel
-                              : 'Estimado';
-                          final statusK = isPlanted
-                              ? k.bandLabel
-                              : 'Estimado';
-
-                          return _NpkContentCardShell(
+                    return Column(
+                      children: [
+                        _NutritionDecisionCard(ctx: ctx),
+                        const SizedBox(height: 10),
+                        const _NpkTabsCard(),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: _NpkContentCardShell(
                             child: TabBarView(
                               physics: const BouncingScrollPhysics(),
                               children: [
                                 _NpkTabContent(
                                   channel: NpkChannel.n,
-                                  percent: n.gaugePercent,
                                   title: 'Nitrógeno',
-                                  description: descN,
-                                  stageLabel: stageLabel,
-                                  insight: insightN,
-                                  tone: _toneForNutrient(
-                                          evalMetric: nEvalMetric,
-                                          interpretation: nInterpretation,
-                                          cropKey: runtime.cropKeyName,
-                                        ),
-                                  windowLabel: windowN,
-                                  actionText: actionN,
-                                  doseGuideText: nDoseGuide,
-                                  fertilizerEquivalentText:
-                                      nFertilizerEquivalent,
-                                  targetMinPctPainter: n.targetMinPctPainter,
-                                  targetMaxPctPainter: n.targetMaxPctPainter,
-                                  targetMinPpm: n.targetMinPpm,
-                                  targetMaxPpm: n.targetMaxPpm,
-                                  levelPpm: n.levelPpm,
-                                  avg7Ppm: n.avg7Ppm,
-                                  rangeMin: n.rangeMin,
-                                  rangeMax: n.rangeMax,
-                                  avgTrendPct: n.avgTrendPct,
-                                  statusLabel: statusN,
-                                  showStageTargets: isPlanted,
-                                  capPpm: n.capPpm,
+                                  stats: n,
+                                  statusLabel: _trendLabel(
+                                    n.avgTrendPct,
+                                    hasLive: n.hasLive,
+                                  ),
+                                  ctx: ctx,
+                                  nutrient: _metricKeyFor(NpkChannel.n),
                                 ),
                                 _NpkTabContent(
                                   channel: NpkChannel.p,
-                                  percent: p.gaugePercent,
                                   title: 'Fósforo',
-                                  description: descP,
-                                  stageLabel: stageLabel,
-                                  insight: insightP,
-                                  tone: _toneForNutrient(
-                                          evalMetric: pEvalMetric,
-                                          interpretation: pInterpretation,
-                                          cropKey: runtime.cropKeyName,
-                                        ),
-                                  windowLabel: windowP,
-                                  actionText: actionP,
-                                  doseGuideText: pDoseGuide,
-                                  fertilizerEquivalentText:
-                                      pFertilizerEquivalent,
-                                  targetMinPctPainter: p.targetMinPctPainter,
-                                  targetMaxPctPainter: p.targetMaxPctPainter,
-                                  targetMinPpm: p.targetMinPpm,
-                                  targetMaxPpm: p.targetMaxPpm,
-                                  levelPpm: p.levelPpm,
-                                  avg7Ppm: p.avg7Ppm,
-                                  rangeMin: p.rangeMin,
-                                  rangeMax: p.rangeMax,
-                                  avgTrendPct: p.avgTrendPct,
-                                  statusLabel: statusP,
-                                  showStageTargets: isPlanted,
-                                  capPpm: p.capPpm,
+                                  stats: p,
+                                  statusLabel: _trendLabel(
+                                    p.avgTrendPct,
+                                    hasLive: p.hasLive,
+                                  ),
+                                  ctx: ctx,
+                                  nutrient: _metricKeyFor(NpkChannel.p),
                                 ),
                                 _NpkTabContent(
                                   channel: NpkChannel.k,
-                                  percent: k.gaugePercent,
                                   title: 'Potasio',
-                                  description: descK,
-                                  stageLabel: stageLabel,
-                                  insight: insightK,
-                                  tone: _toneForNutrient(
-                                          evalMetric: kEvalMetric,
-                                          interpretation: kInterpretation,
-                                          cropKey: runtime.cropKeyName,
-                                        ),
-                                  windowLabel: windowK,
-                                  actionText: actionK,
-                                  doseGuideText: kDoseGuide,
-                                  fertilizerEquivalentText:
-                                      kFertilizerEquivalent,
-                                  targetMinPctPainter: k.targetMinPctPainter,
-                                  targetMaxPctPainter: k.targetMaxPctPainter,
-                                  targetMinPpm: k.targetMinPpm,
-                                  targetMaxPpm: k.targetMaxPpm,
-                                  levelPpm: k.levelPpm,
-                                  avg7Ppm: k.avg7Ppm,
-                                  rangeMin: k.rangeMin,
-                                  rangeMax: k.rangeMax,
-                                  avgTrendPct: k.avgTrendPct,
-                                  statusLabel: statusK,
-                                  showStageTargets: isPlanted,
-                                  capPpm: k.capPpm,
+                                  stats: k,
+                                  statusLabel: _trendLabel(
+                                    k.avgTrendPct,
+                                    hasLive: k.hasLive,
+                                  ),
+                                  ctx: ctx,
+                                  nutrient: _metricKeyFor(NpkChannel.k),
                                 ),
                               ],
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                    SizedBox(height: 12 + bottomPad),
-                  ],
+                          ),
+                        ),
+                        SizedBox(height: 12 + bottomPad),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -973,39 +327,525 @@ class _NpkScreenState extends State<NpkScreen> {
   }
 }
 
-enum _NpkBand { low, optimal, high, critical, unknown }
+/// Contexto compartido por la cabecera y las tres pestañas.
+class _NpkContext {
+  const _NpkContext({
+    required this.isPlanted,
+    required this.isPlanned,
+    required this.isGuide,
+    required this.stageLabel,
+    required this.decision,
+  });
+
+  final bool isPlanted;
+  final bool isPlanned;
+  final bool isGuide;
+  final String stageLabel;
+  final NutritionDecision? decision;
+
+  NutrientStagePriority? priorityFor(AgroMetricKey nutrient) {
+    final d = decision;
+    if (d == null) return null;
+    for (final NutrientStagePriority p in d.priorities) {
+      if (p.nutrient == nutrient) return p;
+    }
+    return null;
+  }
+
+  /// Recomendación vigente si es para este nutriente.
+  NutritionRecommendation? recommendationFor(AgroMetricKey nutrient) {
+    final rec = decision?.recommendation;
+    if (rec == null || rec.nutrient != nutrient) return null;
+    return rec;
+  }
+}
 
 class _NpkStats {
-  final int levelPpm;
-  final int avg7Ppm;
-  final int rangeMin;
-  final int rangeMax;
+  final bool hasLive;
+  final int level;
+  final int? avg7;
+  final int? rangeMin;
+  final int? rangeMax;
   final double? avgTrendPct;
   final double gaugePercent;
-  final int capPpm;
-  final int? targetMinPpm;
-  final int? targetMaxPpm;
-  final int? targetMinPctPainter;
-  final int? targetMaxPctPainter;
-  final _NpkBand band;
-  final String bandLabel;
+
+  /// Escala del sitio (máximo reciente × 1.15).
+  final double scale;
 
   const _NpkStats({
-    required this.levelPpm,
-    required this.avg7Ppm,
+    required this.hasLive,
+    required this.level,
+    required this.avg7,
     required this.rangeMin,
     required this.rangeMax,
     required this.avgTrendPct,
     required this.gaugePercent,
-    required this.capPpm,
-    required this.targetMinPpm,
-    required this.targetMaxPpm,
-    required this.targetMinPctPainter,
-    required this.targetMaxPctPainter,
-    required this.band,
-    required this.bandLabel,
+    required this.scale,
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CABECERA: LA DECISIÓN
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _NutritionDecisionCard extends StatelessWidget {
+  const _NutritionDecisionCard({required this.ctx});
+
+  final _NpkContext ctx;
+
+  static const Color _green = Color(0xFF2E7D5A);
+  static const Color _amber = Color(0xFFB38A2E);
+  static const Color _red = Color(0xFFC0533F);
+  static const Color _slate = Color(0xFF5F6F69);
+
+  Color _accent(NutritionDecision? d) {
+    if (d == null) return _slate;
+    if (d.recentlyUnattendedWindow != null) return _red;
+    return switch (d.state) {
+      NutritionState.actionWindow => _amber,
+      NutritionState.prepare => _amber,
+      NutritionState.responseWindow => _green,
+      NutritionState.monitor => _green,
+      NutritionState.learning => _slate,
+    };
+  }
+
+  ({String tag, String headline, String detail}) _copy() {
+    final d = ctx.decision;
+    if (d != null) {
+      return (tag: d.state.tagEs, headline: d.headlineEs, detail: d.detailEs);
+    }
+    if (ctx.isGuide) {
+      return (
+        tag: 'Guía',
+        headline: 'Nutrición sin interpretar',
+        detail:
+            'Sin saber qué cultivo es ni en qué etapa va no hay ventana de N, '
+            'P o K que abrir. Las señales de abajo se muestran como tendencia.',
+      );
+    }
+    if (ctx.isPlanned) {
+      return (
+        tag: 'Pre-siembra',
+        headline: 'La nutrición se evalúa al sembrar',
+        detail:
+            'Cuando registres la siembra, BIO-G abrirá las ventanas de manejo '
+            'según la etapa y observará la respuesta del suelo.',
+      );
+    }
+    if (ctx.isPlanted) {
+      return (
+        tag: '—',
+        headline: 'Sin evaluación nutricional todavía',
+        detail:
+            'El Panel calcula la decisión de nutrición con la etapa y el '
+            'historial. Vuelve al Panel un momento y regresa.',
+      );
+    }
+    return (
+      tag: 'Genérico',
+      headline: 'Asigna un cultivo para ver la nutrición',
+      detail:
+          'Sin cultivo no hay etapa, y sin etapa no hay ventana de manejo. Las '
+          'señales nativas N/P/K se muestran como tendencia.',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = ctx.decision;
+    final accent = _accent(d);
+    final copy = _copy();
+    final List<String> chips = <String>[
+      if (d != null && d.window != null)
+        'Ventana ${d.window!.nutrientsLabelEs}: ${_outcomeShort(d.window!)}',
+      if (d != null && d.unattendedCriticalWindows > 0)
+        '${d.unattendedCriticalWindows} sin evidencia este ciclo',
+      if (d != null && d.isLearningSite)
+        'Aprendiendo la zona${d.learningDaysLeft == null ? '' : ' · ${d.learningDaysLeft} d'}',
+      if (d != null && d.hasDetectedSignature)
+        'Firma detectada · confianza ${d.signature!.confidenceLabelEs}',
+    ];
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: d == null ? null : () => _NutritionDetailSheet.show(context, d),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 22,
+              offset: const Offset(0, 14),
+            ),
+            BoxShadow(
+              color: accent.withValues(alpha: 0.12),
+              blurRadius: 60,
+              offset: const Offset(0, 30),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: Colors.white.withValues(alpha: 0.86),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.92)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        margin: const EdgeInsets.only(top: 4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: accent,
+                          boxShadow: [
+                            BoxShadow(
+                              color: accent.withValues(alpha: 0.45),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          copy.headline,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            height: 1.15,
+                            color: Color(0xFF0E1A16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _Pill(text: copy.tag, color: accent),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    copy.detail,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12.6,
+                      fontWeight: FontWeight.w600,
+                      height: 1.32,
+                      color: Colors.black.withValues(alpha: 0.64),
+                    ),
+                  ),
+                  if (chips.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (final String c in chips)
+                          _Pill(text: c, color: accent, subtle: true),
+                      ],
+                    ),
+                  ],
+                  if (d != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Ver por qué y evidencia',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w900,
+                            color: accent.withValues(alpha: 0.9),
+                          ),
+                        ),
+                        Icon(Icons.chevron_right, size: 16, color: accent),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _outcomeShort(NutritionWindowRecord w) => switch (w.outcome) {
+    NutritionWindowOutcome.open => 'observando',
+    NutritionWindowOutcome.attendedDetected => 'atendida',
+    NutritionWindowOutcome.unattended => 'sin evidencia',
+    NutritionWindowOutcome.inconclusive => 'inconclusa',
+    NutritionWindowOutcome.notComparable => 'no comparable',
+  };
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill({required this.text, required this.color, this.subtle = false});
+
+  final String text;
+  final Color color;
+  final bool subtle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: subtle ? 0.08 : 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: subtle ? 0.14 : 0.20)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: subtle ? 10.8 : 11.2,
+          fontWeight: FontWeight.w900,
+          color: color.withValues(alpha: subtle ? 0.85 : 1.0),
+        ),
+      ),
+    );
+  }
+}
+
+/// Hoja con el detalle completo de la decisión: razones, evidencia de la
+/// firma, condiciones, libro de ventanas del ciclo y limitaciones.
+class _NutritionDetailSheet extends StatelessWidget {
+  const _NutritionDetailSheet({required this.decision});
+
+  final NutritionDecision decision;
+
+  static Future<void> show(BuildContext context, NutritionDecision d) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _NutritionDetailSheet(decision: d),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = decision;
+    final NutritionResponseEvaluation? response = d.response;
+    final NutritionRecommendation? rec = d.recommendation;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.72,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (context, controller) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF6FAF8),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+          ),
+          child: ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                d.headlineEs,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0E1A16),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                d.detailEs,
+                style: TextStyle(
+                  fontSize: 13.2,
+                  height: 1.35,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black.withValues(alpha: 0.68),
+                ),
+              ),
+              _Section(
+                title: 'Prioridad de la etapa',
+                lines: [
+                  for (final NutrientStagePriority p in d.priorities)
+                    '${p.labelEs}: ${p.priority.labelEs.toLowerCase()}'
+                        '${p.isCriticalWindow ? ' · ventana importante' : ''} — '
+                        '${p.windowLabelEs}',
+                ],
+              ),
+              if (rec != null)
+                _Section(
+                  title: 'Recomendación',
+                  lines: [
+                    rec.headlineEs,
+                    if (rec.doseRange != null)
+                      'Rango orientativo: ${rec.doseRange!.labelEs}'
+                          '${rec.doseRange!.commercialEquivalentEs == null ? '' : ' (${rec.doseRange!.commercialEquivalentEs})'}',
+                    if (rec.doseRange?.transparencyEs != null)
+                      rec.doseRange!.transparencyEs!,
+                    if (rec.doseUnavailableReasonEs != null)
+                      rec.doseUnavailableReasonEs!,
+                    if (rec.timingEs != null) 'Momento: ${rec.timingEs}',
+                    if (rec.sourceOptionsEs.isNotEmpty)
+                      'Fuentes: ${rec.sourceOptionsEs.join(' · ')}',
+                    ...rec.rulesEs,
+                  ],
+                ),
+              if (response != null)
+                _Section(
+                  title: 'Respuesta del suelo',
+                  lines: [response.summaryEs, ...response.evidenceEs],
+                )
+              else if (d.window?.signature != null)
+                _Section(
+                  title: 'Cambio en observación',
+                  lines: d.window!.signature!.evidenceEs,
+                ),
+              if (d.conditions.blockersEs.isNotEmpty ||
+                  d.conditions.cautionsEs.isNotEmpty)
+                _Section(
+                  title: 'Condiciones del suelo',
+                  lines: [...d.conditions.blockersEs, ...d.conditions.cautionsEs],
+                ),
+              if (d.seasonWindows.isNotEmpty)
+                _Section(
+                  title: 'Ventanas de este ciclo',
+                  lines: [
+                    for (final NutritionWindowRecord w in d.seasonWindows)
+                      '«${w.stageLabelEs}» (${w.nutrientsLabelEs}): '
+                          '${w.outcome.labelEs.toLowerCase()}'
+                          '${w.signature != null && w.signature!.isCompatible ? ' · confianza ${w.signature!.confidenceLabelEs}' : ''}'
+                          '${w.penalizes ? ' · pesa en el score' : ''}',
+                  ],
+                ),
+              _Section(title: 'Por qué', lines: d.reasons),
+              if (d.limitations.isNotEmpty)
+                _Section(title: 'Qué no se pudo saber', lines: d.limitations),
+              const SizedBox(height: 10),
+              Text(
+                '${d.guideAudit.labelEs} · motor ${d.engineVersion} · '
+                'evaluado ${_fmtDateTime(d.decidedAt)}',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black.withValues(alpha: 0.42),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                kNativeSignalNoteEs,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  height: 1.3,
+                  color: Colors.black.withValues(alpha: 0.42),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  static String _fmtDateTime(DateTime d) {
+    final String dd = d.day.toString().padLeft(2, '0');
+    final String mm = d.month.toString().padLeft(2, '0');
+    final String hh = d.hour.toString().padLeft(2, '0');
+    final String mi = d.minute.toString().padLeft(2, '0');
+    return '$dd/$mm $hh:$mi';
+  }
+}
+
+class _Section extends StatelessWidget {
+  const _Section({required this.title, required this.lines});
+
+  final String title;
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> clean =
+        lines.map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    if (clean.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 11,
+              letterSpacing: 0.8,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF2E7D5A),
+            ),
+          ),
+          const SizedBox(height: 6),
+          for (final String line in clean)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withValues(alpha: 0.35),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      line,
+                      style: TextStyle(
+                        fontSize: 12.6,
+                        height: 1.32,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PESTAÑAS
+// ═══════════════════════════════════════════════════════════════════════════
 
 class _NpkTabsCard extends StatelessWidget {
   const _NpkTabsCard();
@@ -1123,70 +963,94 @@ class _NpkContentCardShell extends StatelessWidget {
 }
 
 class _NpkTabContent extends StatelessWidget {
-  final NpkChannel channel;
-  final String title;
-  final double percent;
-  final String description;
-  final String stageLabel;
-  final String insight;
-  final InsightTone tone;
-  final int? targetMinPctPainter;
-  final int? targetMaxPctPainter;
-  final int? targetMinPpm;
-  final int? targetMaxPpm;
-  final int levelPpm;
-  final int avg7Ppm;
-  final int rangeMin;
-  final int rangeMax;
-  final double? avgTrendPct;
-  final String statusLabel;
-  final bool showStageTargets;
-  final String windowLabel;
-  final String actionText;
-  final String? doseGuideText;
-  final String? fertilizerEquivalentText;
-  final int capPpm;
-
   const _NpkTabContent({
     required this.channel,
     required this.title,
-    required this.percent,
-    required this.description,
-    required this.stageLabel,
-    required this.insight,
-    required this.tone,
-    required this.targetMinPctPainter,
-    required this.targetMaxPctPainter,
-    required this.targetMinPpm,
-    required this.targetMaxPpm,
-    required this.levelPpm,
-    required this.avg7Ppm,
-    required this.rangeMin,
-    required this.rangeMax,
+    required this.stats,
     required this.statusLabel,
-    required this.showStageTargets,
-    required this.windowLabel,
-    required this.actionText,
-    this.doseGuideText,
-    this.fertilizerEquivalentText,
-    this.avgTrendPct,
-    required this.capPpm,
+    required this.ctx,
+    required this.nutrient,
   });
 
-  Color _accent() {
-    switch (channel) {
-      case NpkChannel.n:
-        return const Color(0xFFB38A2E);
-      case NpkChannel.p:
-        return const Color(0xFF2FAF63);
-      case NpkChannel.k:
-        return const Color(0xFF2B7EBB);
-    }
-  }
+  final NpkChannel channel;
+  final String title;
+  final _NpkStats stats;
+  final String statusLabel;
+  final _NpkContext ctx;
+  final AgroMetricKey nutrient;
+
+  Color _accent() => switch (channel) {
+    NpkChannel.n => const Color(0xFFB38A2E),
+    NpkChannel.p => const Color(0xFF2FAF63),
+    NpkChannel.k => const Color(0xFF2B7EBB),
+  };
 
   @override
   Widget build(BuildContext context) {
     final accent = _accent();
+    final NutrientStagePriority? priority = ctx.priorityFor(nutrient);
+    final NutritionRecommendation? rec = ctx.recommendationFor(nutrient);
+    final NutritionDecision? d = ctx.decision;
+    final String nutrientName = nutrient.labelEs.toLowerCase();
+
+    // Pill de etapa: la prioridad fenológica, nunca la lectura.
+    final String insight;
+    final InsightTone tone;
+    if (priority != null) {
+      insight = priority.isCriticalWindow
+          ? 'Prioridad ${priority.priority.labelEs.toLowerCase()} · ventana importante'
+          : 'Prioridad ${priority.priority.labelEs.toLowerCase()} en esta etapa';
+      tone = priority.priority == NutritionPriority.high
+          ? InsightTone.warn
+          : InsightTone.ok;
+    } else if (ctx.isPlanned) {
+      insight = 'Prioridad disponible al sembrar';
+      tone = InsightTone.ok;
+    } else if (ctx.isGuide) {
+      insight = 'Sin cultivo declarado: sin prioridad';
+      tone = InsightTone.ok;
+    } else {
+      insight = 'Sin evaluación de etapa';
+      tone = InsightTone.ok;
+    }
+
+    final String windowLine = priority != null
+        ? 'Ventana: ${priority.windowLabelEs}'
+        : ctx.isPlanned
+        ? 'Ventana: se abre con la etapa, después de sembrar'
+        : 'Ventana: sin cultivo no hay ventana';
+
+    // Acción: la recomendación si es para este nutriente; si no, el porqué de
+    // la prioridad. Nunca «aplica X por la lectura».
+    final String action;
+    if (rec != null) {
+      action = rec.headlineEs;
+    } else if (d != null && d.state == NutritionState.responseWindow) {
+      action = 'Respuesta compatible con fertilización detectada. Estoy '
+          'observando la respuesta del suelo; no hace falta que registres nada.';
+    } else if (priority != null) {
+      action = priority.priority == NutritionPriority.high
+          ? 'La etapa demanda $nutrientName; la ventana la lleva la tarjeta de arriba.'
+          : 'Sin ventana de aplicación de $nutrientName en esta etapa.';
+    } else if (ctx.isPlanned) {
+      action = 'Úsalo como línea base antes de sembrar.';
+    } else {
+      action = 'Configura un cultivo para ver la prioridad nutricional.';
+    }
+
+    final String? dose = rec?.doseRange?.labelEs;
+    final String? doseNote = rec?.doseRange?.commercialEquivalentEs ??
+        rec?.doseUnavailableReasonEs;
+
+    final String description = priority?.rationaleEs.trim().isNotEmpty == true
+        ? priority!.rationaleEs.trim()
+        : ctx.isPlanned
+        ? 'Señal nativa de $nutrientName en pre-siembra: sirve como referencia '
+              'del punto antes de arrancar el ciclo.'
+        : 'Señal nativa de $nutrientName. Asigna un cultivo para que la etapa '
+              'diga cuándo importa.';
+
+    final String trendText = _trendSentence(stats, nutrientName);
 
     return Container(
       width: double.infinity,
@@ -1213,16 +1077,17 @@ class _NpkTabContent extends StatelessWidget {
                         height: 286,
                         child: NpkGaugeCard(
                           channel: channel,
-                          percent: percent,
-                          title: title,
+                          percent: stats.gaugePercent,
+                          title: '$title · señal nativa',
                           description: description,
                           showDescription: false,
-                          targetMin: targetMinPctPainter,
-                          targetMax: targetMaxPctPainter,
+                          // Sin objetivo: la sonda no sostiene «bajo/alto».
+                          targetMin: null,
+                          targetMax: null,
                           statusLabel: statusLabel,
-                          centerValue: levelPpm,
-                          centerUnit: 'mg/kg',
-                          cropCapPpm: capPpm.toDouble(),
+                          centerValue: stats.level,
+                          centerUnit: stats.hasLive ? 'nativo' : '—',
+                          cropCapPpm: stats.scale,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1231,24 +1096,18 @@ class _NpkTabContent extends StatelessWidget {
                       _StageInsightPill(
                         accent: accent,
                         headline: insight,
-                        stageLabel: stageLabel,
+                        stageLabel: ctx.stageLabel,
                         tone: tone,
                       ),
                       const SizedBox(height: 6),
-                      _TargetLinePpm(
-                        accent: accent,
-                        minPpm: targetMinPpm,
-                        maxPpm: targetMaxPpm,
-                        showTargets: showStageTargets,
-                        windowLabel: windowLabel,
-                      ),
+                      _WindowLine(accent: accent, text: windowLine),
                       const SizedBox(height: 10),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
                         child: Column(
                           children: [
                             Text(
-                              actionText,
+                              action,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 13.2,
@@ -1257,10 +1116,10 @@ class _NpkTabContent extends StatelessWidget {
                                 color: Colors.black.withValues(alpha: 0.68),
                               ),
                             ),
-                            if ((doseGuideText ?? '').trim().isNotEmpty) ...[
+                            if (dose != null) ...[
                               const SizedBox(height: 8),
                               Text(
-                                doseGuideText!.trim(),
+                                'Rango orientativo: $dose',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 12.2,
@@ -1270,12 +1129,10 @@ class _NpkTabContent extends StatelessWidget {
                                 ),
                               ),
                             ],
-                            if ((fertilizerEquivalentText ?? '')
-                                .trim()
-                                .isNotEmpty) ...[
+                            if ((doseNote ?? '').trim().isNotEmpty) ...[
                               const SizedBox(height: 6),
                               Text(
-                                fertilizerEquivalentText!.trim(),
+                                doseNote!.trim(),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 11.8,
@@ -1296,6 +1153,30 @@ class _NpkTabContent extends StatelessWidget {
                                 color: Colors.black.withValues(alpha: 0.58),
                               ),
                             ),
+                            if (trendText.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                trendText,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12.0,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.28,
+                                  color: Colors.black.withValues(alpha: 0.50),
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            Text(
+                              kNativeSignalNoteEs,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 11.0,
+                                fontWeight: FontWeight.w700,
+                                height: 1.28,
+                                color: Colors.black.withValues(alpha: 0.40),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1307,9 +1188,9 @@ class _NpkTabContent extends StatelessWidget {
                       Expanded(
                         child: _MiniMetric(
                           accent: accent,
-                          value: '$levelPpm',
-                          unit: 'mg/kg',
-                          label: 'Nivel',
+                          value: stats.hasLive ? '${stats.level}' : '--',
+                          unit: 'nativo',
+                          label: 'Ahora',
                         ),
                       ),
                       Container(
@@ -1320,10 +1201,10 @@ class _NpkTabContent extends StatelessWidget {
                       Expanded(
                         child: _MiniMetric(
                           accent: accent,
-                          value: '$avg7Ppm',
-                          unit: 'mg/kg',
+                          value: stats.avg7 == null ? '--' : '${stats.avg7}',
+                          unit: 'nativo',
                           label: 'Promedio 7 días',
-                          trendPct: avgTrendPct,
+                          trendPct: stats.avgTrendPct,
                         ),
                       ),
                       Container(
@@ -1334,9 +1215,11 @@ class _NpkTabContent extends StatelessWidget {
                       Expanded(
                         child: _MiniMetric(
                           accent: accent,
-                          value: '$rangeMin–$rangeMax',
-                          unit: 'mg/kg',
-                          label: 'Variación',
+                          value: stats.rangeMin == null || stats.rangeMax == null
+                              ? '--'
+                              : '${stats.rangeMin}–${stats.rangeMax}',
+                          unit: 'nativo',
+                          label: 'Variación 7 días',
                         ),
                       ),
                     ],
@@ -1348,6 +1231,16 @@ class _NpkTabContent extends StatelessWidget {
         },
       ),
     );
+  }
+
+  static String _trendSentence(_NpkStats s, String nutrientName) {
+    if (s.rangeMin == null || s.rangeMax == null) return '';
+    final String trend = s.avgTrendPct == null
+        ? ''
+        : ' (tendencia ${s.avgTrendPct! >= 0 ? '+' : ''}${s.avgTrendPct!.toStringAsFixed(1)} %)';
+    return 'En 7 días la señal nativa de $nutrientName se movió entre '
+        '${s.rangeMin} y ${s.rangeMax}$trend. Un salto sostenido junto con la '
+        'CE es lo que BIO-G lee como respuesta a una fertilización.';
   }
 }
 
@@ -1439,32 +1332,17 @@ class _StageInsightPill extends StatelessWidget {
   }
 }
 
-class _TargetLinePpm extends StatelessWidget {
-  final Color accent;
-  final int? minPpm;
-  final int? maxPpm;
-  final bool showTargets;
-  final String windowLabel;
+/// Línea de ventana fisiológica. Sustituye a la antigua línea de «objetivo
+/// N–M mg/kg»: aquí no hay objetivo sobre la lectura, hay una ventana de la
+/// etapa.
+class _WindowLine extends StatelessWidget {
+  const _WindowLine({required this.accent, required this.text});
 
-  const _TargetLinePpm({
-    required this.accent,
-    required this.minPpm,
-    required this.maxPpm,
-    required this.showTargets,
-    required this.windowLabel,
-  });
+  final Color accent;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    final hasTargets = showTargets && minPpm != null && maxPpm != null;
-    final text = windowLabel.isEmpty
-        ? (hasTargets
-              ? 'Objetivo etapa: $minPpm–$maxPpm mg/kg'
-              : 'Ventana actual: no disponible')
-        : (hasTargets
-              ? 'Ventana actual: $windowLabel · Objetivo: $minPpm–$maxPpm mg/kg'
-              : 'Ventana actual: $windowLabel');
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
@@ -1529,28 +1407,8 @@ class _TechWaveScanDividerState extends State<_TechWaveScanDivider>
     return SizedBox(
       height: 28,
       width: double.infinity,
-      // ───────────────────────────────────────────────────────────────────
-      // O2 · Aislar este repintado del resto de la pestaña.
-      // ───────────────────────────────────────────────────────────────────
-      //
-      // El controlador de arriba hace `repeat()` y no para nunca: marca este
-      // `CustomPaint` como sucio 60 veces por segundo. Sin frontera de
-      // repintado, `markNeedsPaint` subía hasta la frontera de la página del
-      // `PageView`, que contiene TAMBIÉN el gauge. Y al repintar una capa,
-      // `RenderCustomPaint.paint()` NO consulta `shouldRepaint`: llama a
-      // `painter.paint()` siempre. Resultado: `_NpkGaugePainter` se ejecutaba
-      // 60 veces por segundo aunque su valor no cambiara, con sus 4
-      // `MaskFilter.blur`, 21 `drawLine`, 6 `TextPainter().layout()` (=360
-      // maquetados de texto por segundo) y un `SweepGradient.createShader()`.
-      //
-      // Con la frontera, la capa de este divisor se rasteriza sola y el resto
-      // de la tarjeta reutiliza su capa cacheada.
-      //
-      // No cambia un píxel: `RepaintBoundary` no recorta. El halo del glow
-      // (`MaskFilter.blur` σ30) desborda de sobra estos 28 dp, y sigue
-      // pintándose igual — el rectángulo de la capa es una pista de culling,
-      // no un clip, y Skia/Impeller conservan las órdenes de dibujo cuyos
-      // límites (ya inflados por el desenfoque) intersecan la capa.
+      // O2 · Frontera de repintado: el controlador hace `repeat()` y sin ella
+      // el gauge se repintaba 60 veces por segundo.
       child: RepaintBoundary(
         child: AnimatedBuilder(
           animation: _c,

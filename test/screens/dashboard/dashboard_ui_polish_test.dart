@@ -1,4 +1,5 @@
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -24,95 +25,113 @@ void main() {
       store.dispose();
     });
 
-    test('uses compact NPK bands and preserves the detailed explanation', () {
-      const eval = AgroEvalResult(
-        soilControlScore01: 0.81,
-        metrics: <AgroMetricKey, AgroMetricEval>{
-          AgroMetricKey.n: AgroMetricEval(
-            band: AgroBand.high,
-            score01: 0.72,
-            labelEs: 'Alto útil',
-            priorityLabel: NutrientPriorityLabel.possibleExcess,
-            shortRecommendationEs: 'Nitrógeno alto en mango.',
+    NutritionDecision decision({
+      required NutritionState state,
+      double scoreFactor = 1.0,
+      int unattended = 0,
+      bool awaitingEvidence = false,
+    }) {
+      return NutritionDecision(
+        state: state,
+        decidedAt: DateTime(2026, 8, 8, 9),
+        headlineEs: 'Esta etapa necesita nutrición: nitrógeno',
+        detailEs:
+            'En «Floración» el cultivo toma nitrógeno con fuerza. Cuando '
+            'apliques no necesitas registrar nada: BIO-G observa la respuesta '
+            'del suelo para reconocer cuándo se atendió esta ventana.',
+        priorities: const <NutrientStagePriority>[
+          NutrientStagePriority(
+            nutrient: AgroMetricKey.n,
+            priority: NutritionPriority.high,
+            priority01: 0.8,
+            windowLabelEs: 'Tramo fuerte de N',
+            rationaleEs: 'En «Floración» el cultivo toma nitrógeno con fuerza.',
+            isCriticalWindow: true,
           ),
-          AgroMetricKey.p: AgroMetricEval(
-            band: AgroBand.low,
-            score01: 0.42,
-            labelEs: 'Falta Nutriente',
-            priorityLabel: NutrientPriorityLabel.highPriority,
-            shortRecommendationEs: 'Fósforo bajo en mango.',
-          ),
-          AgroMetricKey.k: AgroMetricEval(
-            band: AgroBand.low,
-            score01: 0.56,
-            labelEs: 'Vigilar',
-            priorityLabel: NutrientPriorityLabel.lowPriority,
-            shortRecommendationEs: 'Potasio bajo en mango.',
-          ),
-        },
-        alerts: <BioGAlert>[],
-        suggestedAlertKeys: <String>[],
+        ],
+        conditions: const NutritionConditionCheck(allowsApplication: true),
+        engineVersion: 'test',
+        scoreFactor: scoreFactor,
+        unattendedCriticalWindows: unattended,
+        awaitingEvidence: awaitingEvidence,
       );
+    }
 
+    const AgroEvalResult eval = AgroEvalResult(
+      soilControlScore01: 0.81,
+      metrics: <AgroMetricKey, AgroMetricEval>{
+        AgroMetricKey.soilMoisture: AgroMetricEval(
+          band: AgroBand.optimal,
+          score01: 1.0,
+          labelEs: 'Óptimo',
+          value: 42,
+        ),
+        // N/P/K viajan como señal nativa: sin banda, sin prioridad.
+        AgroMetricKey.n: AgroMetricEval(
+          band: AgroBand.unknown,
+          score01: 0.0,
+          labelEs: 'Señal nativa',
+          value: 180,
+          isNativeSignal: true,
+        ),
+      },
+      alerts: <BioGAlert>[],
+      suggestedAlertKeys: <String>[],
+      soilCoverage: SoilSignalCoverage(evaluable: 5, present: 5),
+    );
+
+    test('la tarjeta de nutrición repite la decisión del motor, no la lectura', () {
       final data = DashboardScreenPresenter().buildViewData(
         store: store,
         runtime: _runtime(eval: eval, telemetry: _telemetry()),
         today: DateTime(2026, 8, 8),
+        nutritionDecision: decision(
+          state: NutritionState.actionWindow,
+          awaitingEvidence: true,
+        ),
       );
 
-      expect(data.soilHealth, 0.81);
+      expect(data.soilHealth, closeTo(0.81, 0.0001));
       expect(data.soilHealthLabel, 'Estado general del suelo');
-      expect(
-        data.npkTitle,
-        'N\u00a0—\u00a0Alto · P\u00a0—\u00a0Bajo · K\u00a0—\u00a0Bajo',
-      );
-      expect(data.npkSubtitle, 'Fósforo bajo en mango.');
+      expect(data.npkTitle, 'Esta etapa necesita nutrición: nitrógeno');
+      expect(data.npkTag, 'Ventana');
+      expect(data.npkSubtitle, startsWith('En «Floración» el cultivo toma'));
+      // Ventana abierta sin firma todavía: NO penaliza el anillo.
+      expect(data.nutritionDecision?.awaitingEvidence, isTrue);
     });
 
-    test(
-      'keeps an absent nutrient unknown instead of using the raw fallback',
-      () {
-        const eval = AgroEvalResult(
-          soilControlScore01: 0.70,
-          metrics: <AgroMetricKey, AgroMetricEval>{
-            AgroMetricKey.n: AgroMetricEval(
-              band: AgroBand.unknown,
-              score01: 0.5,
-              labelEs: '—',
-            ),
-            AgroMetricKey.p: AgroMetricEval(
-              band: AgroBand.optimal,
-              score01: 1,
-              labelEs: 'Óptimo',
-              priorityLabel: NutrientPriorityLabel.noPriority,
-            ),
-            AgroMetricKey.k: AgroMetricEval(
-              band: AgroBand.optimal,
-              score01: 1,
-              labelEs: 'Óptimo',
-              priorityLabel: NutrientPriorityLabel.noPriority,
-            ),
-          },
-          alerts: <BioGAlert>[],
-          suggestedAlertKeys: <String>[],
-        );
+    test('solo una ventana importante que terminó sin evidencia baja el anillo', () {
+      final data = DashboardScreenPresenter().buildViewData(
+        store: store,
+        runtime: _runtime(eval: eval, telemetry: _telemetry()),
+        today: DateTime(2026, 8, 8),
+        nutritionDecision: decision(
+          state: NutritionState.monitor,
+          scoreFactor: 0.94,
+          unattended: 1,
+        ),
+      );
 
-        final data = DashboardScreenPresenter().buildViewData(
-          store: store,
-          runtime: _runtime(
-            eval: eval,
-            telemetry: _telemetry(n: 0, p: 30, k: 30, hasNitrogenData: false),
-            targets: _targets,
-          ),
-          today: DateTime(2026, 8, 8),
-        );
+      expect(data.soilHealth, closeTo(0.81 * 0.94, 0.0001));
+    });
 
-        expect(
-          data.npkTitle,
-          'N\u00a0—\u00a0— · P\u00a0—\u00a0Óptimo · K\u00a0—\u00a0Óptimo',
-        );
-      },
-    );
+    test('sin decisión no se inventa ninguna lectura N/P/K', () {
+      final data = DashboardScreenPresenter().buildViewData(
+        store: store,
+        runtime: _runtime(
+          eval: eval,
+          telemetry: _telemetry(n: 0, p: 30, k: 30, hasNitrogenData: false),
+          targets: _targets,
+        ),
+        today: DateTime(2026, 8, 8),
+      );
+
+      expect(data.npkTitle, 'Nutrición');
+      expect(data.npkTag, isEmpty);
+      expect(data.npkSubtitle.toLowerCase(), contains('señal nativa'));
+      expect(data.npkSubtitle, isNot(contains('Bajo')));
+      expect(data.npkSubtitle, isNot(contains('Alto')));
+    });
   });
 
   group('Dashboard responsive UI polish', () {
@@ -125,9 +144,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       const title =
-          'N\u00a0—\u00a0Crítico · P\u00a0—\u00a0Crítico · K\u00a0—\u00a0Crítico';
+          'Esta ventana nutricional no mostró evidencia suficiente de haber sido atendida';
       const subtitle =
-          'Potasio bajo en mango. Revisa la recomendación agronómica vigente.';
+          'La ventana de N en «Floración» terminó sin que la sonda viera una respuesta compatible con fertilización.';
 
       await tester.pumpWidget(
         MaterialApp(
@@ -325,9 +344,6 @@ const StageTargets _targets = StageTargets(
   nIndex: _range,
   pIndex: _range,
   kIndex: _range,
-  nSoilPpmRange: _range,
-  pSoilPpmRange: _range,
-  kSoilPpmRange: _range,
 );
 
 class _EmptyBioGRepository implements BioGRepository {
