@@ -4,7 +4,7 @@ Sesión de implementación de la *Guía oficial del nuevo motor nutricional v0.4
 
 ## 0. Estado en una frase
 
-El motor NPK legado (bandas por lectura cruda, déficit ppm, dosis target − raw) está apagado y sustituido por un motor de *preparación nutricional* que decide por etapa y guía, observa la respuesta del suelo con la CE normalizada por humedad y un libro de ventanas persistido, y solo penaliza cuando una ventana importante cierra sin evidencia. Todo compila lógicamente por revisión estática; **`flutter analyze` y `flutter test` siguen pendientes** porque no hay Dart en el entorno de Claude (ver §7).
+El motor NPK legado (bandas por lectura cruda, déficit ppm, dosis target − raw) está apagado y sustituido por un motor de *preparación nutricional* que decide por etapa y guía, observa la respuesta del suelo con la CE normalizada por humedad y un libro de ventanas persistido, y solo penaliza cuando una ventana importante cierra sin evidencia. **Verificado el 6 sep (noche) en la PC de Oscar vía el vigilante: `flutter analyze` sin errores (quedan 41 warnings y ~335 infos de estilo previos, en archivos no tocados) y `flutter test` completo en verde: 1536 pruebas** (commit `f04e611`).
 
 ## 1. Decisiones de diseño que mandan
 
@@ -45,7 +45,7 @@ El motor NPK legado (bandas por lectura cruda, déficit ppm, dosis target − ra
 | No existe dosis derivada de target − raw | ✔ | `FertilizationPlanner` / `NutrientRecommendationEngine` eliminados; dosis solo de guía curada (plan × reparto) o restitución |
 | Recomendaciones visibles vienen de etapa/guía/3R/contexto | ✔ | `NutritionReadinessEngine._buildRecommendation` / `_doseFor` |
 | Pantalla NPK e informes declaran la naturaleza nativa/tendencial | ✔ | `kNativeSignalNoteEs` en pantalla; la misma nota obligatoria en el PDF («Datos nativos… no equivalen a un análisis de laboratorio»); informe rápido con «Señal nativa» y tendencia |
-| Tests de humedad, riego, pH, CE, RT y cultivos siguen pasando | ⏳ | **pendiente de `flutter test`**; se prevén desvíos numéricos en pruebas con puntajes fijos porque N/P/K salieron del denominador |
+| Tests de humedad, riego, pH, CE, RT y cultivos siguen pasando | ✔ | `flutter test` completo: 1536 pruebas en verde (6 sep, noche). Cuatro pruebas desfasadas se alinearon con el código vigente (etiqueta del anillo a 14, humedad óptima 25 en guía genérica, restitución asume «medio» sin análisis, «45–68 %» con espacio) y un desbordamiento real de 94 px en la leyenda del dial de humedad se corrigió con `FittedBox` |
 
 Reglas §37 aplicadas explícitamente en código: nunca escalar N/P/K al target (2, 1), nunca déficit desde una lectura (3), nunca kg/ha desde raw (4), «compatible» ≠ «absoluto» (5), urea sin pico inmediato no es fallo (6: gracia de 4 días + firma gradual), baseline nunca incluye el evento (8: guarda de 30 min y ventana previa), ausencia nunca es cero ni castigo (9), CE compensada una sola vez (10: `ecTemperatureCompensated` en el contrato), sin calibraciones al agricultor (11), dos ubicaciones nunca comparten baseline (13: épocas).
 
@@ -57,7 +57,7 @@ Reglas §37 aplicadas explícitamente en código: nunca escalar N/P/K al target 
 
 ## 5. Pendientes y decisiones para Oscar
 
-1. **Ejecutar la verificación** (§7). Corregir errores de analizador y los desvíos numéricos de pruebas viejas con puntajes fijos.
+1. ~~Ejecutar la verificación~~ — hecha (§0). Queda opcional limpiar los 41 warnings previos del analizador (claves `key` sin uso en `yield_projection_setup_screen`, `?.` innecesarios en `wizard_crop_context_resolver`, etc.), ninguno de esta sesión.
 2. **Auditar guías** cultivo por cultivo y marcar `audited` (ver documento de auditoría §4.6).
 3. **Migración de Supabase**: decidir si se aplica (solo cuando la app sincronice ventanas; hoy todo es local).
 4. Archivo huérfano: `lib/core/agro/barley_crop_definition.dart` (no lo importa nadie). Borrar en una limpieza aparte. Los `.bak` (`biog_store.dart.bak`, `bluetooth_scan_screen.dart.bak`) se movieron a `_to_delete/`.
