@@ -92,7 +92,7 @@ Corrección de Oscar: «Esta etapa necesita nutrición» era ambiguo frente a lo
 
 ## 5d. Pantalla NPK fija, dosis de frutales por guía y asistente automático (7 sep, madrugada)
 
-Correcciones de Oscar tras ver las pantallas:
+Correcciones de Oscar tras ver las pantallas. **Verificado en la PC el 7 sep vía el vigilante: `flutter analyze` sin errores y `flutter test` completo en verde, 1537 pruebas** (commit `306b9f6`).
 
 - **Asistente al agregar un Bio-G.** `AddBioGScreen` activa el equipo recién creado y devuelve su id; `AccountScreen._openAddBioG` abre `ConfigureSeedWizardScreen` de inmediato si ese equipo todavía no tiene cultivo (`store.cropContextForDevice(id) == null`). Volver a escanear un Bio-G ya configurado no relanza el asistente. El alta desde el onboarding ya configuraba el cultivo por su propio borrador y no cambia.
 - **Pantalla NPK sin scroll y con el nutriente arriba.** Se quitó la tarjeta de decisión que encabezaba la pantalla («Aplica fósforo: establecimiento» + biblia). Vuelven las pestañas Nitrógeno / Fósforo / Potasio arriba, como antes, y cada pestaña es una pantalla fija: el arco (título = nombre del nutriente) toma el alto que sobra, debajo el dato crudo en **mg/kg** con la leyenda «Dato crudo del sensor» y nada más, después el bloque de acción en lenguaje de campo (titular ≤ 2 líneas, dosis ≤ 2, nota ≤ 2) y la fila Ahora / Promedio 7 días / Variación 7 días en mg/kg. El detalle técnico (por qué, evidencia, ventanas del ciclo, limitaciones) sigue en la hoja «Ver detalle».
