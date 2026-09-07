@@ -54,9 +54,8 @@ class SunflowerAgroScoreEngine {
     String? profileId,
   }) {
     final stage = normalizeSunflowerStageId(stageId);
-    final bool isTallOrCut =
-        profileId?.trim().toLowerCase() == kGi01TallGarden ||
-        profileId?.trim().toLowerCase() == kGi04CutFlowerSingleStem;
+    // Los perfiles altos o de corte (GI-01, GI-04) solo modulaban el N en
+    // alargamiento; eso lo lleva ahora la guía curada del girasol.
     final bool isCompact =
         profileId?.trim().toLowerCase() == kGi02CompactContainer;
 

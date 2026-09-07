@@ -134,7 +134,7 @@ class _NpkInsightCardState extends State<NpkInsightCard> {
                             widget.assetIcon,
                             fit: BoxFit.contain,
                             filterQuality: FilterQuality.high,
-                            errorBuilder: (_, __, ___) =>
+                            errorBuilder: (_, _, _) =>
                                 const Icon(Icons.eco, size: 26),
                           ),
                         ),

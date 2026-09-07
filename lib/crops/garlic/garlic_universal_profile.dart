@@ -120,13 +120,6 @@ StageTargets _targets({
     highMin: (p * 100 + 22).clamp(0, 100).toDouble(),
   );
 
-  AgroRange ppm(double low, double min, double max) => AgroRange(
-    lowMax: low,
-    optimalMin: min,
-    optimalMax: max,
-    highMin: max + (max - min) * 0.55,
-  );
-
   return StageTargets(
     moistureRaw: moisture,
     soilTemp: soilTemp,

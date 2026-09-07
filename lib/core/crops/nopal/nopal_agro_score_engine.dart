@@ -117,17 +117,9 @@ class NopalAgroScoreEngine {
     final ecEval = _eval(value: t.hasEcData ? t.ec : double.nan, range: targets.ec);
     final resEval = _eval(value: t.hasResistanceData ? t.resistance : double.nan, range: targets.resistance);
 
-    // 6) Interpretar NPK con el motor compartido. Las puertas del Doc B §19.1
-    //    bajan la prioridad cuando el contexto no permite una recomendación
-    //    fuerte; NO apagan la tarjeta.
-    final bool npkGated =
-        adj.limitNpkPriorityToReview ||
-        stage == NopalStageIds.unknown ||
-        stage == NopalStageIds.rest ||
-        moistureEval.band == AgroBand.critical ||
-        soilTempEval.band == AgroBand.critical ||
-        ecEval.band == AgroBand.critical ||
-        phEval.band == AgroBand.critical;
+    // 6) Las puertas NPK del Doc B §19.1 (`limitNpkPriorityToReview`, reposo,
+    //    condiciones críticas) ya no viven aquí: la prioridad nutricional la
+    //    decide el motor de nutrición con la guía curada del nopal.
 
     // ── N/P/K: señal nativa, sin diagnóstico ──────────────────────────────
     //

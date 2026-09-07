@@ -205,12 +205,14 @@ void main() {
       // 50, no 46: el anillo subió el tamaño del porcentaje y la prueba se
       // quedó con la cifra vieja. Se fija el valor que de verdad se envía.
       expect(tester.widget<Text>(find.text('78%')).style?.fontSize, 50);
+      // 14, no 13: la etiqueta del anillo va a 14 desde antes del reset NPK
+      // (`soil_health_ring.dart`); la prueba arrastraba la cifra vieja.
       expect(
         tester
             .widget<Text>(find.text('Estado general del suelo'))
             .style
             ?.fontSize,
-        13,
+        14,
       );
       expect(tester.takeException(), isNull);
     });

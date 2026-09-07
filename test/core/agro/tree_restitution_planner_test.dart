@@ -362,8 +362,16 @@ void main() {
       expect(call(kg: double.infinity), isNull);
     });
 
-    test('sin nivel de suelo no hay dosis', () {
-      expect(call(soil: null), isNull);
+    test('sin nivel de suelo se asume «medio» y se declara', () {
+      // Cambio del NPK Interpretation Reset (Guía v0.4, §10): sin análisis de
+      // suelo el planner ya no calla —el nivel dejaba de existir al retirar
+      // `soilLevelFor` sobre NPK crudo—; asume «medio» y lo dice en la
+      // transparencia, que es lo que ve el productor.
+      final TreeRestitutionResult r = call(soil: null)!;
+      expect(r.soilLevelAssumed, isTrue);
+      expect(r.soilLevel, SoilSupplyLevel.medio);
+      expect(r.transparencyEs, contains('Sin análisis de suelo'));
+      expect(call(soil: SoilSupplyLevel.medio)!.soilLevelAssumed, isFalse);
     });
 
     /// Regla textual de la guía de pera: «si el nivel es muy alto, no aportar».

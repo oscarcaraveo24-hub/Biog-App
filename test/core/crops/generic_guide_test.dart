@@ -325,9 +325,12 @@ void main() {
     test('el peso del sensor ausente se reparte, no hunde el score', () {
       // Con todo óptimo y el pH averiado, el suelo sigue siendo óptimo. Si el
       // pH entrara con score 0, el anillo caería un 20% por un cable suelto.
-      final completo = GuideAgroScoreEngine.evaluate(t: telemetry());
+      // Humedad 25 (óptimo del rango de suelo franco 22–28); el 45 por
+      // omisión de la fábrica ya es encharcamiento crítico en esa escala y
+      // metía una penalización que esta prueba no quiere medir.
+      final completo = GuideAgroScoreEngine.evaluate(t: telemetry(moisture: 25));
       final sinPh = GuideAgroScoreEngine.evaluate(
-        t: telemetry().copyWith(hasPhData: false),
+        t: telemetry(moisture: 25).copyWith(hasPhData: false),
       );
 
       expect(

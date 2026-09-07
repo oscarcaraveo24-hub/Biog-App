@@ -129,12 +129,13 @@ class _NpkScreenState extends State<NpkScreen> {
           NpkChannel.p => live.hasPhosphorusData,
           NpkChannel.k => live.hasPotassiumData,
         };
+    // El analizador promueve `live` a través de `hasLive` (Dart 3.x).
     final double level = !hasLive
         ? double.nan
         : switch (channel) {
-            NpkChannel.n => live!.n.toDouble(),
-            NpkChannel.p => live!.p.toDouble(),
-            NpkChannel.k => live!.k.toDouble(),
+            NpkChannel.n => live.n.toDouble(),
+            NpkChannel.p => live.p.toDouble(),
+            NpkChannel.k => live.k.toDouble(),
           };
 
     final double avg7 = series.isEmpty
@@ -1498,7 +1499,7 @@ class _TechWaveScanDividerState extends State<_TechWaveScanDivider>
       child: RepaintBoundary(
         child: AnimatedBuilder(
           animation: _c,
-          builder: (_, __) => CustomPaint(
+          builder: (_, _) => CustomPaint(
             painter: _TechWaveScanPainter(t: _c.value, accent: widget.accent),
           ),
         ),

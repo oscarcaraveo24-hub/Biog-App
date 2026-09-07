@@ -118,7 +118,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1200));
 
     expect(find.text('Óptimo'), findsWidgets);
-    expect(find.text('45–68%'), findsOneWidget);
+    // Con espacio antes del %: es como lo pinta la pantalla («45–68 %»).
+    expect(find.text('45–68 %'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

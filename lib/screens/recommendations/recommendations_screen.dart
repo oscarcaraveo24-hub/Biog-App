@@ -838,7 +838,14 @@ class _MoistureDialHeroState extends State<_MoistureDialHero>
             ),
           ),
           const SizedBox(height: 7),
-          Row(
+          // `FittedBox`: la leyenda («Actual 60 %» | «Sobra 12 pts») no cabe en
+          // un teléfono angosto con texto grande; se encoge un punto en vez
+          // de romper con la franja de desbordamiento, igual que la cifra de
+          // la tarjeta de abajo.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               _DialLegend(
@@ -880,6 +887,7 @@ class _MoistureDialHeroState extends State<_MoistureDialHero>
                   solid: true,
                 ),
             ],
+            ),
           ),
         ],
       ),
