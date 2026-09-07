@@ -345,8 +345,8 @@ class NutritionRecommendation {
   final String? stageLabelEs;
   final String? cropLabelEs;
 
-  /// Por qué no hay cifra (guía pendiente de auditoría, falta la cosecha
-  /// esperada por árbol, falta la escala de cultivo…).
+  /// Por qué no hay cifra (guía en revisión, cultivo sin plan en kg/ha, el
+  /// nutriente va en otra etapa…). Nunca depende de la cosecha esperada.
   final String? doseUnavailableReasonEs;
 
   /// Fuentes comerciales que la guía respalda para este nutriente/etapa.

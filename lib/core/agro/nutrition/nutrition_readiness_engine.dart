@@ -10,7 +10,8 @@
 // -----------------------
 //   Cultivo y etapa ............. runtime del cultivo (fenología ya resuelta)
 //   Prioridades fenológicas ..... perfil (`StageTargets`) + modificador de variedad
-//   Guía auditada ............... `NutritionGuide` (fuentes, timing, 3R, rangos)
+//   Guía curada ................. `NutritionGuide` (fuentes, timing, 3R, rangos
+//                                 en kg/ha; también en frutales)
 //   Qué ocurrió ................. `FertilizationSignatureScanner` sobre la
 //                                 telemetría (CE normalizada + N/P/K + VWC)
 //   Memoria del ciclo ........... `NutritionWindowLedger` (ventanas atendidas /
@@ -57,7 +58,6 @@ import 'package:bio_g/core/agro/nutrition/nutrition_window_ledger.dart';
 import 'package:bio_g/core/agro/nutrition/site_learning.dart';
 import 'package:bio_g/core/agro/soil_reaction.dart';
 import 'package:bio_g/core/agro/traceability/engine_versions.dart';
-import 'package:bio_g/core/agro/tree_restitution_planner.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 
@@ -89,8 +89,6 @@ class NutritionReadinessInput {
     this.varietyAlias,
     this.calendarId,
     this.isPerennial = false,
-    this.kgFruitPerTree,
-    this.soilSupplyLevel,
     this.deviceId,
     this.seasonKey,
     this.epochId,
@@ -133,13 +131,10 @@ class NutritionReadinessInput {
   final String? varietyAlias;
   final String? calendarId;
 
+  /// Frutal. Informativo: la dosis de un frutal sale de su guía (plan anual
+  /// de huerta × ventana), nunca de la cosecha esperada por árbol (decisión
+  /// de producto, 6 sep 2026).
   final bool isPerennial;
-
-  /// Cosecha esperada por árbol (kg). Solo frutales.
-  final double? kgFruitPerTree;
-
-  /// Nivel de un análisis de suelo del productor, si existe. Nunca de la sonda.
-  final SoilSupplyLevel? soilSupplyLevel;
 
   /// Identidad del sitio y del ciclo, para el libro de ventanas.
   final String? deviceId;
@@ -488,7 +483,7 @@ class NutritionReadinessEngine {
         'Sin guía curada para este cultivo: la prioridad sale del perfil '
         'fenológico y no se emiten rangos de dosis.',
       );
-    } else if (!audit.canShowDose && !guide.usesTreeRestitution) {
+    } else if (!audit.canShowDose) {
       limitations.add(
         'La guía de ${guide.cropLabelEs} está pendiente: los rangos de dosis '
         'no se muestran hasta que se cure cultivo por cultivo.',
@@ -1029,7 +1024,8 @@ class NutritionReadinessEngine {
   /// Recomendación de la ventana ABIERTA: todos sus nutrientes (orden N, P,
   /// K), cada uno con su rango orientativo si la guía lo sostiene, y un
   /// titular que nombra nutriente y ventana. La dosis nace de cultivo +
-  /// etapa + guía (o restitución en frutales), nunca de la sonda.
+  /// etapa + guía (también en frutales: plan anual de huerta), nunca de la
+  /// sonda ni de la cosecha esperada por árbol.
   static NutritionRecommendation _buildRecommendation({
     required NutritionReadinessInput input,
     required List<AgroMetricKey> nutrients,
@@ -1340,9 +1336,9 @@ class NutritionReadinessEngine {
   }
 
   /// Rango de UN nutriente para una ventana (actual o próxima), o el motivo
-  /// por el que no hay cifra. Frutales: restitución × fracción de la ventana;
-  /// resto: plan de temporada de la guía × fracción de la ventana; sin guía o
-  /// sin plan, se explica en lenguaje del agricultor.
+  /// por el que no hay cifra: plan de temporada de la guía × fracción de la
+  /// ventana (también en frutales: plan anual de huerta en producción); sin
+  /// guía o sin plan, se explica en lenguaje del agricultor.
   static _DoseLookup _doseFor({
     required NutritionReadinessInput input,
     required AgroMetricKey nutrient,
@@ -1356,83 +1352,18 @@ class NutritionReadinessEngine {
     final List<String> sources =
         guide?.sourceOptionsEs[nutrient] ?? _defaultSources(nutrient);
 
-    if (input.isPerennial || (guide?.usesTreeRestitution ?? false)) {
-      final TreeRestitutionResult? r = TreeRestitutionPlanner.compute(
-        nutrient: nutrient,
-        cropKey: input.cropKey,
-        kgFruitPerTree: input.kgFruitPerTree,
-        soilLevel: input.soilSupplyLevel,
-      );
-      if (r != null) {
-        final double share = rule?.shareFor(nutrient) ?? 1.0;
-        final int hi = TreeRestitutionPlanner.roundForDisplay(
-          r.gramsPerTreeNutrient * share * 1.15,
-        );
-        final int comHi = TreeRestitutionPlanner.roundForDisplay(
-          r.gramsPerTreeCommercial * share * 1.15,
-        );
-        // El redondeo de presentación puede dejar el mínimo en 0 en árboles
-        // muy pequeños; un rango «0–10 g» no es una dosis.
-        final int lo = math.max(
-          TreeRestitutionPlanner.roundForDisplay(
-            r.gramsPerTreeNutrient * share * 0.85,
-          ),
-          math.min(5, hi),
-        );
-        final int comLo = math.max(
-          TreeRestitutionPlanner.roundForDisplay(
-            r.gramsPerTreeCommercial * share * 0.85,
-          ),
-          math.min(5, comHi),
-        );
-        final String shareNote = share >= 0.999
-            ? ''
-            : ' Esta ventana lleva el ${(share * 100).round()} % de la dosis '
-                  'anual; el resto se reparte en las otras ventanas del año.';
-        return _DoseLookup(
-          range: NutritionDoseRange(
-            min: lo.toDouble(),
-            max: hi.toDouble(),
-            form: _formFor(nutrient),
-            unit: DoseUnit.gramsPerPlant,
-            sourceEs: 'Restitución por extracción (${r.coefficients.sourceEs})',
-            commercialEquivalentEs:
-                '≈ $comLo–$comHi g de ${r.commercialSourceEs} por árbol',
-            transparencyEs: '${r.transparencyEs}$shareNote',
-          ),
-        );
-      }
-      if (!TreeRestitutionPlanner.hasCoefficients(input.cropKey)) {
-        return const _DoseLookup(
-          reasonEs:
-              'Este frutal no tiene coeficientes de extracción cargados; la '
-              'dosis por árbol queda para la guía curada.',
-        );
-      }
-      // Motivo sin nutriente a propósito: en una ventana de N + P + K se
-      // escribe una sola vez.
-      return const _DoseLookup(
-        reasonEs:
-            'Para calcular gramos por árbol falta la cosecha esperada por '
-            'árbol: regístrala en la proyección de rendimiento y BIO-G te da la '
-            'dosis por restitución.',
-      );
-    }
-
     if (guide == null) {
       return const _DoseLookup(
         reasonEs:
-            'Sin guía curada para este cultivo BIO-G no inventa una cifra: la '
-            'prioridad es fenológica; la dosis, de tu asesor o de la etiqueta '
-            'del producto.',
+            'Para este cultivo BIO-G todavía no tiene guía de dosis: usa la '
+            'etiqueta del producto o pregúntale a tu asesor.',
       );
     }
     if (!audit.canShowDose) {
       return _DoseLookup(
         reasonEs:
-            'La guía de ${guide.cropLabelEs} está pendiente: BIO-G no muestra '
-            'rangos hasta que se cure. Usa la etiqueta del producto o tu asesor '
-            'mientras tanto.',
+            'La guía de ${guide.cropLabelEs} todavía está en revisión: usa la '
+            'etiqueta del producto o tu asesor mientras tanto.',
       );
     }
     if (!guide.hasSeasonPlan) {
@@ -1456,22 +1387,16 @@ class NutritionReadinessEngine {
     if (!guide.seasonPlan.containsKey(nutrient)) {
       return _DoseLookup(
         reasonEs:
-            'La guía de ${guide.cropLabelEs} no trae plan de $nutrientName en '
-            'kg/ha: decide con tu análisis de suelo.',
+            'La guía de ${guide.cropLabelEs} no fija cantidad de $nutrientName: '
+            'decide con tu análisis de suelo.',
       );
     }
     return _DoseLookup(
       reasonEs:
-          'La guía de ${guide.cropLabelEs} reparte $nutrientName en otra '
-          'ventana del ciclo; aquí no fija cifra.',
+          'La cantidad de $nutrientName va en otra etapa del ciclo, según la '
+          'guía de ${guide.cropLabelEs}.',
     );
   }
-
-  static NutrientForm _formFor(AgroMetricKey nutrient) => switch (nutrient) {
-    AgroMetricKey.p => NutrientForm.p2o5,
-    AgroMetricKey.k => NutrientForm.k2o,
-    _ => NutrientForm.n,
-  };
 
   /// Por qué importa la ventana: la regla de la guía o, sin ella, el porqué
   /// del nutriente principal en el perfil.

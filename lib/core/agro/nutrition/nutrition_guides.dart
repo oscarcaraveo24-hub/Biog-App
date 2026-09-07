@@ -1520,40 +1520,53 @@ const NutritionGuide _garlic = NutritionGuide(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FRUTALES (dosis por restitución: TreeRestitutionPlanner)
+// FRUTALES (plan anual en kg/ha por huerta en producción)
 // (etapas: planting_transplant, root_establishment, juvenile_vegetative,
 //  dormancy, budbreak, vegetative_growth, flowering, fruit_set, fruit_fill,
 //  harvest_maturity, post_harvest)
+//
+// DECISIÓN DE PRODUCTO (Oscar, 6 sep 2026): la dosis de un frutal sale de la
+// guía de fertilización del cultivo —plan anual de huerta en producción ×
+// fracción de la ventana—, igual que en los demás cultivos, y NO de la cosecha
+// esperada por árbol que el productor captura en la proyección de
+// rendimiento. Las dos cosas no van correlacionadas. `TreeRestitutionPlanner`
+// deja de alimentar al motor de nutrición.
 // ═══════════════════════════════════════════════════════════════════════════
 
 const List<String> _rulesTrees = <String>[
   'Aplica bajo la línea de goteo de la copa, donde están las raíces finas, y '
       'riega enseguida.',
   'N alto cerca de cosecha frena color, baja firmeza y acorta el almacenamiento.',
-  'Árboles jóvenes (sin cosecha): dosis por edad y vigor, no por restitución.',
+  'Árbol joven (sin cosecha): dosis ligera por edad y vigor, en varias tandas.',
 ];
 
-const GuideSource _srcTreeRestitution = GuideSource(
-  labelEs:
-      'Coeficientes de extracción de fruto de BIO-G (WSU Tree Fruit, Cornell, '
-      'Yara, Haifa, UC ANR, IPNI; ver TreeRestitutionPlanner)',
+const GuideSource _srcWsuTreeFruit = GuideSource(
+  labelEs: 'WSU Tree Fruit, Orchard nutrition (N 50–100 lb/acre en manzano y '
+      'peral adultos; K por análisis foliar)',
+  url: 'https://treefruit.wsu.edu/orchard-management/soils-nutrition/',
 );
 
-/// Reglas de un frutal caducifolio (manzano, peral, durazno, nogal, pistache).
+const GuideSource _srcUcanrFruitNut = GuideSource(
+  labelEs: 'UC ANR Fruit & Nut Research and Information Center, Nutrients & '
+      'Fertilization (durazno, pistache, nogal)',
+  url: 'https://fruitsandnuts.ucdavis.edu/nutrients-fertilization',
+);
+
+/// Ventanas de un frutal de hueso o pepita (manzano, peral, durazno).
 ///
-/// `seasonShare` aquí es la FRACCIÓN DE LA DOSIS ANUAL por restitución que
-/// corresponde a cada ventana del ciclo de carga (suma 1.0 por nutriente en
-/// el año; el establecimiento queda fuera porque es el año de plantación).
-/// Sin ella, brotación y post-cosecha mostraban las dos la dosis anual
-/// completa de N. Reparto orientativo (WSU Tree Fruit / Cornell: N 60–70 %
-/// primavera y 30–40 % post-cosecha; K acompaña al crecimiento del fruto), a
-/// confirmar en la auditoría de guías (Guía v0.4, §34).
-const List<StageNutritionRule> _deciduousTreeRules = <StageNutritionRule>[
+/// `seasonShare` es la fracción del plan ANUAL que toca en cada ventana del
+/// ciclo de carga (suma 1.0 por nutriente; el establecimiento —año de
+/// plantación— queda fuera). N sobre todo en primavera con una reserva tras
+/// cosecha (WSU/Cornell: 60–70 % / 30–40 %); K acompaña al crecimiento del
+/// fruto; P de una vez después de cosecha. Orientativo, a confirmar en la
+/// auditoría de guías (Guía v0.4, §34).
+const List<StageNutritionRule> _pomeStoneTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'planting_transplant', 'root_establishment', 'juvenile_vegetative'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.p},
-    // Sin reparto: el año de plantación no es el ciclo de carga (y sin
-    // cosecha esperada la restitución no da cifra de todos modos).
+    // Año de plantación: la mitad del P anual de la huerta va al fondo del
+    // cepellón; queda fuera de la suma del ciclo de carga.
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.p: 0.5},
     labelEs: 'Establecimiento',
     timingEs: 'Al plantar: P en el fondo del cepellón; N ligero y fraccionado el primer año.',
     rationaleEs: 'El árbol joven necesita raíz, no carga; el N alto da madera blanda.',
@@ -1614,17 +1627,89 @@ const List<StageNutritionRule> _deciduousTreeRules = <StageNutritionRule>[
   ),
 ];
 
-/// Reglas de un frutal perennifolio (cítricos, mango, aguacate).
+/// Ventanas de un frutal de nuez (nogal pecanero, pistache).
 ///
-/// `seasonShare`: fracción de la dosis anual por restitución en cada ventana
-/// del ciclo de carga (N repartido en tres flujos —Yara/Haifa cítricos—, K
-/// cargado al fruto; suma 1.0 por nutriente; el establecimiento queda
-/// fuera). Orientativo, a confirmar en auditoría.
+/// La nuez toma la mayor parte del N durante el llenado (CDFA-FREP pistache:
+/// ~30 % en primavera y ~70 % en llenado; Intagri nogal: ~50 % hasta fin de
+/// crecimiento de brote, ~30 % en llenado de almendra), así que el N se
+/// reparte en tres ventanas y el P va con la brotación. Orientativo, a
+/// confirmar en la auditoría de guías.
+const List<StageNutritionRule> _nutTreeRules = <StageNutritionRule>[
+  StageNutritionRule(
+    stageKeys: <String>{'planting_transplant', 'root_establishment', 'juvenile_vegetative'},
+    windowNutrients: <AgroMetricKey>{AgroMetricKey.p},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.p: 0.5},
+    labelEs: 'Establecimiento',
+    timingEs: 'Al plantar: P en el fondo del cepellón; N ligero y fraccionado los primeros años.',
+    rationaleEs: 'El árbol joven necesita raíz y estructura, no carga.',
+  ),
+  StageNutritionRule(
+    stageKeys: <String>{'dormancy'},
+    windowNutrients: <AgroMetricKey>{},
+    labelEs: 'Reposo',
+    rationaleEs: 'Sin hoja no hay absorción: lo que apliques en reposo se lava.',
+  ),
+  StageNutritionRule(
+    stageKeys: <String>{'budbreak', 'vegetative_growth'},
+    windowNutrients: <AgroMetricKey>{AgroMetricKey.n, AgroMetricKey.p},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.45, AgroMetricKey.p: 1.0},
+    isCritical: true,
+    labelEs: 'Brotación',
+    timingEs: 'Desde mediados de marzo, con el brote: fertirriego o banda bajo la copa.',
+    rationaleEs:
+        'El N de primavera arma el brote y la hoja que llenarán la nuez; el P '
+        'va de una vez, cerca de la raíz.',
+    rulesEs: <String>[
+      'En riego rodado y suelo pesado, hasta la mitad del N de la temporada '
+          'puede ir en esta ventana; en suelo arenoso, no más de un tercio.',
+    ],
+  ),
+  StageNutritionRule(
+    stageKeys: <String>{'flowering', 'fruit_set'},
+    windowNutrients: <AgroMetricKey>{AgroMetricKey.k},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.k: 0.30},
+    labelEs: 'Floración y cuajado',
+    timingEs: 'Tras el cuajado, con el riego.',
+    rationaleEs: 'El K empieza a acompañar el crecimiento de la nuez.',
+  ),
+  StageNutritionRule(
+    stageKeys: <String>{'fruit_fill'},
+    windowNutrients: <AgroMetricKey>{AgroMetricKey.n, AgroMetricKey.k},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.40, AgroMetricKey.k: 0.70},
+    isCritical: true,
+    labelEs: 'Llenado de la nuez',
+    timingEs: 'Durante el llenado de la almendra, fraccionado en el riego.',
+    rationaleEs:
+        'La nuez se lleva aquí la mayor parte del N y del K del año: peso, '
+        'llenado y calidad de la almendra.',
+  ),
+  StageNutritionRule(
+    stageKeys: <String>{'harvest_maturity'},
+    windowNutrients: <AgroMetricKey>{},
+    labelEs: 'Cosecha',
+    rationaleEs: 'Ventana cerrada: el N tardío retrasa la apertura del ruezno.',
+  ),
+  StageNutritionRule(
+    stageKeys: <String>{'post_harvest'},
+    windowNutrients: <AgroMetricKey>{AgroMetricKey.n},
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.15},
+    labelEs: 'Post-cosecha',
+    timingEs: 'Justo después de cosechar, mientras la hoja sigue activa.',
+    rationaleEs: 'Una reserva ligera para la brotación del siguiente ciclo.',
+  ),
+];
+
+/// Ventanas de un frutal perennifolio (cítricos, mango, aguacate).
+///
+/// `seasonShare`: fracción del plan anual en cada ventana del ciclo de carga
+/// (N repartido en tres flujos —Yara/Haifa cítricos—, K cargado al fruto;
+/// suma 1.0 por nutriente; el establecimiento queda fuera). Orientativo, a
+/// confirmar en auditoría.
 const List<StageNutritionRule> _evergreenTreeRules = <StageNutritionRule>[
   StageNutritionRule(
     stageKeys: <String>{'planting_transplant', 'root_establishment', 'juvenile_vegetative'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.p},
-    // Sin reparto: el año de plantación no es el ciclo de carga.
+    seasonShare: <AgroMetricKey, double>{AgroMetricKey.p: 0.5},
     labelEs: 'Establecimiento',
     timingEs: 'Al plantar: P en el fondo; N ligero y fraccionado los primeros años.',
     rationaleEs: 'Raíz y estructura antes que carga.',
@@ -1677,31 +1762,251 @@ const List<StageNutritionRule> _evergreenTreeRules = <StageNutritionRule>[
     },
     labelEs: 'Post-cosecha',
     timingEs: 'Después de cosechar, con el flujo vegetativo siguiente.',
-    rationaleEs: 'Restitución del ciclo: repone lo que se llevó la fruta.',
+    rationaleEs: 'Repone lo que se llevó la fruta y arma el flujo que cargará la siguiente.',
   ),
 ];
 
 const Map<AgroMetricKey, List<String>> _treeSources = <AgroMetricKey, List<String>>{
-  AgroMetricKey.n: <String>['Nitrato de calcio', 'Sulfato de amonio (21-0-0-24S)', 'Urea (46-0-0)'],
+  AgroMetricKey.n: <String>['Urea (46-0-0)', 'Sulfato de amonio (21-0-0-24S)', 'Nitrato de calcio'],
   AgroMetricKey.p: <String>['MAP (11-52-0)', 'Ácido fosfórico (fertirriego)'],
   AgroMetricKey.k: <String>['Sulfato de potasio (0-0-50)', 'Nitrato de potasio (13-0-46)'],
 };
 
+/// Plan anual de un frutal en producción. [n], [p] y [k] van en kg/ha de N,
+/// P₂O₅ y K₂O (mínimo, máximo).
 NutritionGuide _treeGuide({
   required String cropKey,
   required String labelEs,
-  required bool deciduous,
+  required List<StageNutritionRule> rules,
+  required List<GuideSource> sources,
+  required (double, double) n,
+  required (double, double) p,
+  required (double, double) k,
+  required String planSourceEs,
+  String? planNotesEs,
   String? notesEs,
 }) => NutritionGuide(
   cropKey: cropKey,
   cropLabelEs: labelEs,
   auditStatus: GuideAuditStatus.proposed,
-  sources: const <GuideSource>[_srcTreeRestitution],
-  stageRules: deciduous ? _deciduousTreeRules : _evergreenTreeRules,
+  sources: sources,
+  seasonPlan: <AgroMetricKey, SeasonNutrientPlan>{
+    AgroMetricKey.n: SeasonNutrientPlan(
+      form: NutrientForm.n,
+      minKgPerHa: n.$1,
+      maxKgPerHa: n.$2,
+      sourceEs: planSourceEs,
+      notesEs: planNotesEs,
+    ),
+    AgroMetricKey.p: SeasonNutrientPlan(
+      form: NutrientForm.p2o5,
+      minKgPerHa: p.$1,
+      maxKgPerHa: p.$2,
+      sourceEs: planSourceEs,
+    ),
+    AgroMetricKey.k: SeasonNutrientPlan(
+      form: NutrientForm.k2o,
+      minKgPerHa: k.$1,
+      maxKgPerHa: k.$2,
+      sourceEs: planSourceEs,
+    ),
+  },
+  stageRules: rules,
   sourceOptionsEs: _treeSources,
   generalRulesEs: _rulesTrees,
-  usesTreeRestitution: true,
   notesEs: notesEs,
+);
+
+final NutritionGuide _appleTree = _treeGuide(
+  cropKey: 'apple_tree',
+  labelEs: 'Manzano',
+  rules: _pomeStoneTreeRules,
+  sources: const <GuideSource>[
+    GuideSource(
+      labelEs:
+          'Revista Mexicana de Ciencias Agrícolas / SciELO, Fertirrigación con '
+          'macronutrientes en manzano Golden Delicious (UACH, Chihuahua): '
+          'óptimo 138 N – 45 P – 40 K – 110 Ca – 20 Mg a 64 t/ha',
+      url: 'https://www.scielo.org.mx/scielo.php?script=sci_arttext&pid=S2007-07052016000100162',
+      year: 2016,
+    ),
+    _srcWsuTreeFruit,
+  ],
+  n: (100.0, 140.0),
+  p: (40.0, 60.0),
+  k: (40.0, 80.0),
+  planSourceEs: 'UACH Chihuahua (138-45-40 en fertirriego) y WSU Tree Fruit',
+  planNotesEs:
+      'Huerta adulta de riego en Chihuahua a 40–60 t/ha. En fertirriego el '
+      'calcio va 1:1 con el N (bitter pit); K solo si el análisis foliar sale '
+      'bajo.',
+  notesEs: 'Plan de huerta en producción; el año de plantación no lleva plan.',
+);
+
+final NutritionGuide _pearTree = _treeGuide(
+  cropKey: 'pear_tree',
+  labelEs: 'Peral',
+  rules: _pomeStoneTreeRules,
+  sources: const <GuideSource>[_srcWsuTreeFruit, _srcUcanrFruitNut],
+  n: (60.0, 110.0),
+  p: (30.0, 60.0),
+  k: (60.0, 120.0),
+  planSourceEs: 'WSU Tree Fruit (50–100 lb N/acre) y UC ANR',
+  planNotesEs: 'Huerta adulta a 30–45 t/ha; el peral pide menos N que el manzano.',
+);
+
+final NutritionGuide _peachTree = _treeGuide(
+  cropKey: 'peach_tree',
+  labelEs: 'Durazno',
+  rules: _pomeStoneTreeRules,
+  sources: const <GuideSource>[_srcUcanrFruitNut, _srcWsuTreeFruit],
+  n: (100.0, 160.0),
+  p: (30.0, 60.0),
+  k: (100.0, 160.0),
+  planSourceEs: 'UC ANR (100–150 lb N/acre en durazno adulto) y WSU',
+  planNotesEs: 'Huerta adulta a 20–30 t/ha; el durazno responde al K en llenado.',
+);
+
+final NutritionGuide _walnutTree = _treeGuide(
+  cropKey: 'walnut_tree',
+  labelEs: 'Nogal',
+  rules: _nutTreeRules,
+  sources: const <GuideSource>[
+    GuideSource(
+      labelEs:
+          'Revista Chapingo Serie Zonas Áridas / SciELO, Fertilización '
+          'nitrogenada en nogal pecanero (Jiménez, Chihuahua): 100 kg N/ha rindió '
+          'igual que 150 y 200, con 100 P y 100 K anuales',
+      url: 'https://www.scielo.org.mx/scielo.php?pid=S1027-152X2020000300163&script=sci_arttext&tlng=es',
+      year: 2020,
+    ),
+    GuideSource(
+      labelEs: 'Intagri, Fenología y nutrición del nogal pecanero (reparto del N '
+          'por etapa en fertirriego)',
+      url: 'https://www.intagri.com/articulos/frutales/fenologia-y-nutricion-del-nogal-pecanero',
+    ),
+  ],
+  n: (100.0, 150.0),
+  p: (40.0, 80.0),
+  k: (60.0, 120.0),
+  planSourceEs: 'Nogal pecanero en Chihuahua (SciELO 2020) e Intagri',
+  planNotesEs:
+      'Huerta pecanera adulta de riego a 1.5–2.5 t/ha de nuez; más de 100–150 '
+      'kg N/ha no dio más nuez en Jiménez. El zinc foliar va aparte.',
+  notesEs: 'Nogal pecanero (Chihuahua); el año de plantación no lleva plan.',
+);
+
+final NutritionGuide _pistachioTree = _treeGuide(
+  cropKey: 'pistachio_tree',
+  labelEs: 'Pistache',
+  rules: _nutTreeRules,
+  sources: const <GuideSource>[
+    GuideSource(
+      labelEs:
+          'CDFA-FREP, Pistachio nitrogen guideline: 56 lb N por tonelada seca '
+          'removida; ~30 % del N en primavera y ~70 % en llenado',
+      url: 'https://www.cdfa.ca.gov/is/ffldrs/frep/FertilizationGuidelines/N_Pistachio.html',
+    ),
+    _srcUcanrFruitNut,
+  ],
+  n: (120.0, 200.0),
+  p: (40.0, 70.0),
+  k: (120.0, 200.0),
+  planSourceEs: 'CDFA-FREP y UC ANR (huerta adulta en año de carga)',
+  planNotesEs:
+      'Huerta adulta en año de carga (2–3 t/ha en seco); en año de descarga '
+      'usa el mínimo. Alternancia marcada.',
+  notesEs: 'Alternancia marcada: en año de carga alta sube el K.',
+);
+
+const GuideSource _srcCitrusVeracruz = GuideSource(
+  labelEs:
+      'Revista Fitotecnia Mexicana, Fertilización integral en naranjo Marrs '
+      '(Cazones, Veracruz): fórmula química 100 N – 22 P₂O₅ – 195 K₂O – 30 MgO',
+  url: 'https://revistafitotecniamexicana.org/documentos/44-1/7a.pdf',
+  year: 2021,
+);
+
+const GuideSource _srcIntagriCitrus = GuideSource(
+  labelEs: 'Intagri, Nutrición de cítricos de alto rendimiento',
+  url: 'https://www.intagri.com/articulos/frutales/nutricion-citricos-alto-rendimiento',
+);
+
+final NutritionGuide _orangeTree = _treeGuide(
+  cropKey: 'orange_tree',
+  labelEs: 'Naranjo',
+  rules: _evergreenTreeRules,
+  sources: const <GuideSource>[_srcCitrusVeracruz, _srcIntagriCitrus],
+  n: (100.0, 180.0),
+  p: (20.0, 60.0),
+  k: (100.0, 200.0),
+  planSourceEs: 'Veracruz (100-22-195) e Intagri cítricos',
+  planNotesEs: 'Huerta adulta a 20–35 t/ha; el N se ajusta con análisis foliar (≈2.5–2.8 %).',
+);
+
+final NutritionGuide _lemonTree = _treeGuide(
+  cropKey: 'lemon_tree',
+  labelEs: 'Limonero',
+  rules: _evergreenTreeRules,
+  sources: const <GuideSource>[_srcCitrusVeracruz, _srcIntagriCitrus],
+  n: (100.0, 180.0),
+  p: (20.0, 60.0),
+  k: (100.0, 180.0),
+  planSourceEs: 'Cítricos de Veracruz e Intagri',
+  planNotesEs: 'Limón persa/mexicano adulto a 20–30 t/ha; flujos de brotación repartidos.',
+);
+
+final NutritionGuide _mangoTree = _treeGuide(
+  cropKey: 'mango_tree',
+  labelEs: 'Mango',
+  rules: _evergreenTreeRules,
+  sources: const <GuideSource>[
+    GuideSource(
+      labelEs:
+          'Revista Mexicana de Ciencias Agrícolas / SciELO, Fertilización de '
+          'sitio específico en mango Kent y Tommy Atkins (Nayarit, 100 árboles/ha): '
+          '550–800 g N, 220–330 g P₂O₅ y 260–570 g K₂O por árbol a 14–19 t/ha',
+      url: 'https://www.scielo.org.mx/scielo.php?script=sci_arttext&pid=S2007-09342014000400009',
+      year: 2014,
+    ),
+    GuideSource(
+      labelEs: 'Intagri, El cultivo de mango y su fertilización',
+      url: 'https://www.intagri.com/articulos/nutricion-vegetal/el-cultivo-de-mango-y-su-fertilizacion',
+    ),
+  ],
+  n: (60.0, 120.0),
+  p: (25.0, 60.0),
+  k: (40.0, 120.0),
+  planSourceEs: 'INIFAP Nayarit (sitio específico) e Intagri',
+  planNotesEs: 'Huerta adulta a 100 árboles/ha y 12–19 t/ha.',
+  notesEs: 'N alto antes de floración favorece flujo vegetativo y menos flor.',
+);
+
+final NutritionGuide _avocadoTree = _treeGuide(
+  cropKey: 'avocado_tree',
+  labelEs: 'Aguacate',
+  rules: _evergreenTreeRules,
+  sources: const <GuideSource>[
+    GuideSource(
+      labelEs:
+          'Agricultura Técnica en México / SciELO, Fertilización de sitio '
+          'específico en aguacate Hass: referencia Michoacán 200 N – 200 P₂O₅ – '
+          '100 K₂O (100 árboles/ha, 16.7 t/ha); Nayarit 334 N – 116 P₂O₅ – '
+          '393 K₂O a 28 t/ha',
+      url: 'https://www.scielo.org.mx/scielo.php?script=sci_arttext&pid=S0568-25172009000400009',
+      year: 2009,
+    ),
+    GuideSource(
+      labelEs: 'Intagri, Concentración de nutrientes en plantas de aguacate',
+      url: 'https://www.intagri.com/articulos/frutales/concentracion-de-nutrientes-en-plantas-de-aguacate',
+    ),
+  ],
+  n: (150.0, 250.0),
+  p: (60.0, 120.0),
+  k: (150.0, 300.0),
+  planSourceEs: 'INIFAP (Michoacán y Nayarit, sitio específico) e Intagri',
+  planNotesEs: 'Huerta Hass adulta a 12–20 t/ha; el aguacate castiga las sales: dosis partidas.',
+  notesEs: 'Raíz superficial y sensible a sales: dosis pequeñas y frecuentes.',
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1907,31 +2212,16 @@ final Map<String, NutritionGuide> kNutritionGuides = Map<String, NutritionGuide>
     'spinach': _spinach,
     'onion': _onion,
     'garlic': _garlic,
-    // Frutales (restitución).
-    'apple_tree': _treeGuide(cropKey: 'apple_tree', labelEs: 'Manzano', deciduous: true),
-    'pear_tree': _treeGuide(cropKey: 'pear_tree', labelEs: 'Peral', deciduous: true),
-    'peach_tree': _treeGuide(cropKey: 'peach_tree', labelEs: 'Durazno', deciduous: true),
-    'walnut_tree': _treeGuide(cropKey: 'walnut_tree', labelEs: 'Nogal', deciduous: true),
-    'pistachio_tree': _treeGuide(
-      cropKey: 'pistachio_tree',
-      labelEs: 'Pistache',
-      deciduous: true,
-      notesEs: 'Alternancia marcada: en año de carga alta sube la restitución de K.',
-    ),
-    'orange_tree': _treeGuide(cropKey: 'orange_tree', labelEs: 'Naranjo', deciduous: false),
-    'lemon_tree': _treeGuide(cropKey: 'lemon_tree', labelEs: 'Limonero', deciduous: false),
-    'mango_tree': _treeGuide(
-      cropKey: 'mango_tree',
-      labelEs: 'Mango',
-      deciduous: false,
-      notesEs: 'N alto antes de floración favorece flujo vegetativo y menos flor.',
-    ),
-    'avocado_tree': _treeGuide(
-      cropKey: 'avocado_tree',
-      labelEs: 'Aguacate',
-      deciduous: false,
-      notesEs: 'Raíz superficial y sensible a sales: dosis pequeñas y frecuentes.',
-    ),
+    // Frutales (plan anual de huerta en producción).
+    'apple_tree': _appleTree,
+    'pear_tree': _pearTree,
+    'peach_tree': _peachTree,
+    'walnut_tree': _walnutTree,
+    'pistachio_tree': _pistachioTree,
+    'orange_tree': _orangeTree,
+    'lemon_tree': _lemonTree,
+    'mango_tree': _mangoTree,
+    'avocado_tree': _avocadoTree,
     // Ornamentales y baja demanda.
     'rose': _rose,
     'sunflower': _sunflower,

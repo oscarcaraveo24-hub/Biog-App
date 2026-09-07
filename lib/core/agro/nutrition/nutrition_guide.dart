@@ -90,14 +90,10 @@ class StageNutritionRule {
   /// Nutrientes cuya ventana de manejo se abre en estas etapas.
   final Set<AgroMetricKey> windowNutrients;
 
-  /// Fracción del plan de temporada que corresponde a esta ventana, por
-  /// nutriente (0..1). Con el plan produce el rango en kg/ha de la ventana.
-  /// En frutales (restitución) es la fracción de la dosis ANUAL que toca en
-  /// esta ventana; si falta, se asume la dosis anual completa.
+  /// Fracción del plan de temporada (en frutales, del plan ANUAL de la huerta)
+  /// que corresponde a esta ventana, por nutriente (0..1). Con el plan produce
+  /// el rango en kg/ha de la ventana.
   final Map<AgroMetricKey, double> seasonShare;
-
-  /// Fracción de [seasonShare] para [nutrient]; 1.0 cuando no se declara.
-  double shareFor(AgroMetricKey nutrient) => seasonShare[nutrient] ?? 1.0;
 
   /// La ventana es agronómicamente importante: si TERMINA sin que el sensor
   /// haya visto una respuesta compatible con fertilización, el resultado puede
@@ -145,7 +141,6 @@ class NutritionGuide {
     this.sourceOptionsEs = const <AgroMetricKey, List<String>>{},
     this.generalRulesEs = const <String>[],
     this.notesEs,
-    this.usesTreeRestitution = false,
   });
 
   final String cropKey;
@@ -166,10 +161,6 @@ class NutritionGuide {
   final List<String> generalRulesEs;
 
   final String? notesEs;
-
-  /// Frutales: la dosis sale de `TreeRestitutionPlanner` (extracción ×
-  /// cosecha esperada), no de un plan de temporada en kg/ha.
-  final bool usesTreeRestitution;
 
   StageNutritionRule? ruleForStage(String? stageKey) {
     for (final StageNutritionRule r in stageRules) {
@@ -209,8 +200,8 @@ class NutritionGuide {
     return -1;
   }
 
-  /// La guía declara un plan de temporada en kg/ha (cereales, hortalizas).
-  /// Frutales (restitución) y ornamentales no lo tienen.
+  /// La guía declara un plan de temporada en kg/ha (cereales, hortalizas y
+  /// frutales en producción). Ornamentales y plantas de baja demanda no.
   bool get hasSeasonPlan => seasonPlan.isNotEmpty;
 
   /// Rango de dosis de [nutrient] en la etapa [stageKey], o null si el plan

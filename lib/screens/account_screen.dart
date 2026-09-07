@@ -391,16 +391,30 @@ class _AccountScreenState extends State<AccountScreen>
         '${profile.texture.shortLabelEs.toLowerCase()}';
   }
 
+  /// Alta de un Bio-G y, acto seguido, el asistente de cultivo.
+  ///
+  /// Un equipo recién agregado no sirve de nada sin cultivo: sin él no hay
+  /// etapa, ni ventanas de riego o nutrición, ni proyección. Por eso el
+  /// asistente se abre solo al terminar el alta (decisión de producto, 6 sep
+  /// 2026). Si el escaneo reconoció un Bio-G que ya tenía cultivo, no se
+  /// relanza: `AddBioGScreen` devuelve el id y aquí se comprueba el contexto.
   Future<void> _openAddBioG() async {
-    final added = await Navigator.of(
+    final String? addedId = await Navigator.of(
       context,
-    ).push<bool>(BioGPageRoute(builder: (_) => const AddBioGScreen()));
+    ).push<String>(BioGPageRoute(builder: (_) => const AddBioGScreen()));
 
-    if (added == true && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Bio-G agregado')));
-    }
+    if (addedId == null || !mounted) return;
+
+    final store = BioGScope.of(context);
+    final bool needsCrop = store.cropContextForDevice(addedId) == null;
+    if (!needsCrop) return;
+
+    await Navigator.of(
+      context,
+    ).push(BioGPageRoute(builder: (_) => const ConfigureSeedWizardScreen()));
+
+    if (!mounted) return;
+    setState(() {});
   }
 
   @override

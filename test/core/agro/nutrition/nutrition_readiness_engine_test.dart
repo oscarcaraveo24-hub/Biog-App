@@ -130,7 +130,6 @@ NutritionReadinessInput _input({
   String? nextStageKey,
   String? nextStageLabel,
   bool isPerennial = false,
-  double? kgFruitPerTree,
 }) {
   return NutritionReadinessInput(
     now: now,
@@ -154,7 +153,6 @@ NutritionReadinessInput _input({
     history: history,
     learning: learning,
     isPerennial: isPerennial,
-    kgFruitPerTree: kgFruitPerTree,
   );
 }
 
@@ -195,7 +193,7 @@ void main() {
       expect(d.tagEs, 'Aplica N');
       expect(d.recommendation?.kind, NutritionRecommendationKind.apply);
       expect(d.recommendation?.hasDose, isFalse, reason: 'sin guía no hay cifra');
-      expect(d.detailEs, contains('no inventa una cifra'));
+      expect(d.detailEs, contains('todavía no tiene guía de dosis'));
       expect(d.awaitingEvidence, isTrue);
       expect(d.scoreFactor, 1.0, reason: 'una ventana abierta nunca penaliza');
       expect(d.unattendedCriticalWindows, 0);
@@ -440,7 +438,6 @@ void main() {
           nextStageKey: 'budbreak',
           nextStageLabel: 'Brotación',
           isPerennial: true,
-          kgFruitPerTree: 60,
         ),
       )!.decision;
 
@@ -452,15 +449,17 @@ void main() {
       expect(rec.kind, NutritionRecommendationKind.upcoming);
       expect(rec.inDays, 6);
       expect(rec.doses.length, 1);
+      // kg/ha de huerta, desde la guía del manzano; nada de cosecha por árbol.
       final NutritionDoseRange n = rec.doseFor(AgroMetricKey.n)!;
-      expect(n.unit, DoseUnit.gramsPerPlant);
-      expect(n.transparencyEs, contains('65 % de la dosis anual'));
+      expect(n.unit, DoseUnit.kgPerHectare);
+      expect(n.labelEs, '65–91 kg/ha de N');
+      expect(n.transparencyEs, contains('65 % del plan de temporada'));
       expect(d.detailEs, startsWith('En ~6 días entra «Brotación»'));
       expect(d.detailEs, contains('Dosis orientativa prevista: N:'));
       expect(d.upcomingWindowInDays, 6);
     });
 
-    test('frutal: cada ventana lleva su fracción de la dosis anual', () {
+    test('frutal: cada ventana lleva su fracción del plan anual de la huerta', () {
       final NutritionGuide apple = kNutritionGuides['apple_tree']!;
       NutritionDecision at(String stage, String label) => NutritionReadinessEngine.evaluate(
         _input(
@@ -472,20 +471,27 @@ void main() {
           stageKey: stage,
           stageLabel: label,
           isPerennial: true,
-          kgFruitPerTree: 60,
         ),
       )!.decision;
 
       final NutritionDoseRange spring = at('budbreak', 'Brotación').recommendation!.doseFor(AgroMetricKey.n)!;
       final NutritionDoseRange autumn = at('post_harvest', 'Post-cosecha').recommendation!.doseFor(AgroMetricKey.n)!;
+      expect(spring.labelEs, '65–91 kg/ha de N');
+      expect(autumn.labelEs, '35–49 kg/ha de N');
       expect(spring.max, greaterThan(autumn.max), reason: '65 % en brotación, 35 % tras cosecha');
-      // Las dos salen de la misma dosis anual (redondeo de presentación aparte).
-      expect((spring.max / 0.65) - (autumn.max / 0.35), closeTo(0, spring.max * 0.25));
+      expect((spring.max / 0.65) - (autumn.max / 0.35), closeTo(0, 1e-9));
       expect(at('budbreak', 'Brotación').headlineEs, 'Aplica nitrógeno: brotación');
       expect(
         at('post_harvest', 'Post-cosecha').headlineEs,
         'Aplica nitrógeno y fósforo: post-cosecha',
       );
+      // Ningún copy pide la cosecha esperada por árbol: la dosis no depende
+      // de ella (decisión de producto, 6 sep 2026).
+      expect(at('budbreak', 'Brotación').detailEs, isNot(contains('cosecha esperada')));
+      final NutritionDecision young = at('planting_transplant', 'Plantación');
+      expect(young.headlineEs, 'Aplica fósforo: establecimiento');
+      expect(young.recommendation!.doseFor(AgroMetricKey.p)?.labelEs, '20–30 kg/ha de P₂O₅');
+      expect(young.detailEs, isNot(contains('cosecha esperada')));
     });
 
     test('cebada en llenado de grano: el perfil alto de K ya no abre ventana', () {

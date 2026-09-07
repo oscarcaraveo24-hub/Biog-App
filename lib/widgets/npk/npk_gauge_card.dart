@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 enum NpkChannel { n, p, k }
@@ -16,7 +15,7 @@ class NpkGaugeCard extends StatelessWidget {
     this.targetMax,
     this.statusLabel,
     required this.centerValue,
-    this.centerUnit = 'sensor',
+    this.centerUnit = 'mg/kg',
     this.scaleMax,
   });
 
@@ -177,55 +176,61 @@ class _GaugeCenter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // `FittedBox`: la pantalla NPK es fija (sin scroll) y el arco toma el alto
+    // que sobra; en un teléfono chico o con texto grande el centro se encoge
+    // con el arco en vez de desbordar.
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.w900,
-                color: Colors.black.withValues(alpha:0.74),
-                height: 1.0,
-                letterSpacing: -0.5,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black.withValues(alpha: 0.74),
+                  height: 1.0,
+                  letterSpacing: -0.5,
+                ),
+                children: [
+                  TextSpan(text: bigText),
+                  TextSpan(
+                    text: ' $unitText',
+                    style: TextStyle(
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black.withValues(alpha: 0.42),
+                    ),
+                  ),
+                ],
               ),
-              children: [
-                TextSpan(text: bigText),
-                TextSpan(
-                  text: ' $unitText',
+            ),
+            if ((statusLabel ?? '').isNotEmpty) const SizedBox(height: 8),
+            if ((statusLabel ?? '').isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: accent.withValues(alpha: 0.08),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.80)),
+                ),
+                child: Text(
+                  statusLabel!,
                   style: TextStyle(
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black.withValues(alpha:0.42),
+                    fontSize: 11.0,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black.withValues(alpha: 0.55),
+                    height: 1.0,
                   ),
                 ),
-              ],
-            ),
-          ),
-          if ((statusLabel ?? '').isNotEmpty) const SizedBox(height: 8),
-          if ((statusLabel ?? '').isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                color: accent.withValues(alpha:0.08),
-                border: Border.all(color: Colors.white.withValues(alpha:0.80)),
               ),
-              child: Text(
-                statusLabel!,
-                style: TextStyle(
-                  fontSize: 11.0,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.black.withValues(alpha:0.55),
-                  height: 1.0,
-                ),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

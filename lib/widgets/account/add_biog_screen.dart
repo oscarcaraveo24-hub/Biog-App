@@ -74,13 +74,23 @@ class AddBioGScreen extends StatelessWidget {
             .trim(),
       );
 
+      // El equipo recién dado de alta pasa a ser el activo: el asistente de
+      // cultivo que Cuenta abre a continuación trabaja sobre el activo, y sin
+      // esto un segundo Bio-G quedaba creado pero sin seleccionar.
+      if (store.activeDevice?.id != created.id) {
+        await store.setActiveDevice(created.id);
+      }
+
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Bio-G agregado: ${created.name}')),
       );
 
-      Navigator.pop(context, true);
+      // Devuelve el id: Cuenta decide si abre el asistente (solo cuando el
+      // equipo todavía no tiene cultivo; volver a escanear uno ya configurado
+      // no lo relanza).
+      Navigator.pop(context, created.id);
     } catch (_) {
       if (!context.mounted) return;
 

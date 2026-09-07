@@ -3,7 +3,7 @@
 // Invariantes de la tabla de guías curadas (Guía v0.4, fase 2 y §10, con la
 // decisión de producto del 6 sep 2026): todas entran como `proposed`, sus
 // rangos SÍ se muestran —siempre como orientativos, con fuente y estatus—,
-// los repartos por ventana no rebasan el plan (o la dosis anual en frutales)
+// los repartos por ventana no rebasan el plan (en frutales, el plan anual de la huerta)
 // y las claves de etapa coinciden con las que emiten los motores de cada
 // cultivo.
 import 'package:bio_g/core/agro/agro_types.dart';
@@ -73,6 +73,20 @@ final Map<String, Set<String>> _validStageKeys = <String, Set<String>>{
     ]),
 };
 
+const List<String> _trees = <String>[
+  'apple_tree',
+  'pear_tree',
+  'peach_tree',
+  'walnut_tree',
+  'pistachio_tree',
+  'orange_tree',
+  'lemon_tree',
+  'mango_tree',
+  'avocado_tree',
+];
+
+bool _isTree(String cropKey) => _trees.contains(cropKey);
+
 void main() {
   group('kNutritionGuides · invariantes', () {
     test('cubre los 32 cultivos del catálogo (todos menos genérico) con claves canónicas', () {
@@ -139,10 +153,13 @@ void main() {
       }
     });
 
-    test('el reparto por ventana no rebasa el plan de temporada (ni la dosis anual en frutales)', () {
+    test('el reparto por ventana no rebasa el plan de temporada (ciclo de carga en frutales)', () {
       for (final NutritionGuide g in kNutritionGuides.values) {
         final Map<AgroMetricKey, double> total = <AgroMetricKey, double>{};
         for (final StageNutritionRule r in g.stageRules) {
+          // Frutales: el establecimiento es el año de plantación, no el ciclo
+          // de carga; su P no suma con las ventanas del año productivo.
+          if (_isTree(g.cropKey) && r.matchesStage('planting_transplant')) continue;
           for (final MapEntry<AgroMetricKey, double> e in r.seasonShare.entries) {
             expect(e.value, greaterThan(0), reason: '${g.cropKey}/${r.labelEs}');
             total[e.key] = (total[e.key] ?? 0) + e.value;
@@ -150,13 +167,11 @@ void main() {
         }
         for (final MapEntry<AgroMetricKey, double> e in total.entries) {
           expect(e.value, lessThanOrEqualTo(1.0 + 1e-9), reason: '${g.cropKey}/${e.key}');
-          if (!g.usesTreeRestitution) {
-            expect(
-              g.seasonPlan.containsKey(e.key),
-              isTrue,
-              reason: '${g.cropKey}: reparte ${e.key} sin plan de temporada',
-            );
-          }
+          expect(
+            g.seasonPlan.containsKey(e.key),
+            isTrue,
+            reason: '${g.cropKey}: reparte ${e.key} sin plan de temporada',
+          );
         }
         // Con plan en kg/ha, toda ventana que abre un nutriente lo dosifica:
         // el copy nunca dice «aplica N» sin poder decir cuánto.
@@ -168,17 +183,6 @@ void main() {
                 isTrue,
                 reason: '${g.cropKey}/${r.labelEs}: abre $n sin reparto o sin plan',
               );
-            }
-          }
-        }
-        // Frutales: cada ventana del ciclo de carga lleva su fracción de la
-        // dosis anual, así una misma dosis no se repite entera en brotación y
-        // en post-cosecha. El establecimiento (año de plantación) queda fuera.
-        if (g.usesTreeRestitution) {
-          for (final StageNutritionRule r in g.stageRules) {
-            if (r.matchesStage('planting_transplant')) continue;
-            for (final AgroMetricKey n in r.windowNutrients) {
-              expect((r.seasonShare[n] ?? 0) > 0, isTrue, reason: '${g.cropKey}/${r.labelEs}/$n');
             }
           }
         }
@@ -249,26 +253,48 @@ void main() {
       }
     });
 
-    test('los frutales usan restitución y no plan en kg/ha', () {
-      for (final String k in <String>[
-        'apple_tree',
-        'pear_tree',
-        'peach_tree',
-        'walnut_tree',
-        'pistachio_tree',
-        'orange_tree',
-        'lemon_tree',
-        'mango_tree',
-        'avocado_tree',
-      ]) {
+    test('los frutales llevan plan anual de huerta en kg/ha, no restitución por cosecha', () {
+      // Decisión de producto (6 sep 2026): la dosis de un frutal sale de su
+      // guía y no de la cosecha esperada por árbol.
+      for (final String k in _trees) {
         final NutritionGuide g = kNutritionGuides[k]!;
-        expect(g.usesTreeRestitution, isTrue, reason: k);
-        expect(g.seasonPlan, isEmpty, reason: k);
+        expect(g.seasonPlan.length, 3, reason: k);
+        expect(g.hasSeasonPlan, isTrue, reason: k);
+        expect(g.sources, isNotEmpty, reason: k);
+        // El ciclo de carga reparte N y K completos; el P va de una vez.
+        for (final AgroMetricKey n in const <AgroMetricKey>[
+          AgroMetricKey.n,
+          AgroMetricKey.p,
+          AgroMetricKey.k,
+        ]) {
+          double sum = 0;
+          for (final StageNutritionRule r in g.stageRules) {
+            if (r.matchesStage('planting_transplant')) continue;
+            sum += r.seasonShare[n] ?? 0;
+          }
+          expect(sum, closeTo(1.0, 1e-9), reason: '$k/$n');
+        }
       }
       for (final String k in <String>['maize', 'tomato', 'onion']) {
-        expect(kNutritionGuides[k]!.usesTreeRestitution, isFalse, reason: k);
         expect(kNutritionGuides[k]!.seasonPlan.length, 3, reason: k);
       }
+    });
+
+    test('manzano: brotación reparte 65 % del N anual con su equivalente', () {
+      final NutritionGuide apple = kNutritionGuides['apple_tree']!;
+      final NutritionDoseRange n = apple.windowDoseFor(
+        nutrient: AgroMetricKey.n,
+        stageKey: 'budbreak',
+      )!;
+      expect(n.labelEs, '65–91 kg/ha de N');
+      expect(n.unit, DoseUnit.kgPerHectare);
+      expect(n.commercialEquivalentEs, isNotNull);
+      expect(n.transparencyEs, contains('65 %'));
+      expect(apple.windowDoseFor(nutrient: AgroMetricKey.k, stageKey: 'budbreak'), isNull);
+      expect(apple.windowDoseFor(nutrient: AgroMetricKey.n, stageKey: 'dormancy'), isNull);
+      // Nogal pecanero: la nuez toma N también en el llenado.
+      final NutritionGuide pecan = kNutritionGuides['walnut_tree']!;
+      expect(pecan.ruleForStage('fruit_fill')!.windowNutrients, contains(AgroMetricKey.n));
     });
 
     test('cada plan de temporada trae fuente y cada guía con plan trae fuentes citables', () {

@@ -27,7 +27,6 @@ import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/core/crops/crop_types.dart';
 import 'package:bio_g/core/telemetry/soil_sensor_spec.dart';
-import 'package:bio_g/core/yield/tree_yield_reference_catalog.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/services/biog/nutrition/nutrition_local_storage.dart';
@@ -338,7 +337,6 @@ class NutritionCoordinator extends ChangeNotifier {
       varietyAlias: runtime.effectiveVarietyAlias,
       calendarId: ctx?.calendarTypeId,
       isPerennial: isPerennial,
-      kgFruitPerTree: isPerennial ? _kgFruitPerTree(runtime) : null,
       deviceId: runtime.device?.id,
       seasonKey: _seasonKeyFor(runtime, now),
       epochId: epoch?.epochId,
@@ -395,24 +393,6 @@ class NutritionCoordinator extends ChangeNotifier {
     final category = runtime.definition?.category;
     if (category == CropCategory.tree || category == CropCategory.fruit) return true;
     return runtime.cropKeyName.endsWith('_tree');
-  }
-
-  /// Cosecha esperada por árbol para la restitución: punto medio de la tabla
-  /// de referencia del cultivo/perfil según el estado productivo declarado.
-  /// Null si el árbol aún no produce o no hay tabla.
-  static double? _kgFruitPerTree(CropRuntimeSnapshot runtime) {
-    final DeviceCropContext? ctx = runtime.cropContext;
-    final tier = TreeYieldReferenceCatalog.tierForPerennialState(
-      ctx?.perennialStateId,
-    );
-    if (tier == null) return null;
-    final TreeYieldReference? ref = TreeYieldReferenceCatalog.referenceFor(
-      cropId: runtime.cropKeyName,
-      profileId: runtime.effectiveProfileId,
-      tier: tier,
-    );
-    if (ref == null) return null;
-    return (ref.kgPerTreeLow + ref.kgPerTreeHigh) / 2.0;
   }
 
   DateTime? _earliestTelemetryAt() {

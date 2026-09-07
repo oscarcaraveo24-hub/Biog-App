@@ -266,7 +266,7 @@ class PdfReportBuilder {
               decoration: const pw.BoxDecoration(color: _brand),
               children: <pw.Widget>[
                 _cell('Nutriente', header: true),
-                _cell('Lectura del sensor', header: true),
+                _cell('Lectura del sensor (mg/kg)', header: true),
                 _cell('Tendencia 7 días', header: true),
               ],
             ),

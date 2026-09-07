@@ -3,20 +3,22 @@
 // PANTALLA DE NUTRICIÓN (Guía oficial del nuevo motor nutricional v0.4, §8,
 // §9 y §17 «UI/UX»).
 //
-// Tres cosas, en este orden, y nada más:
-//   1. Qué decidió el motor de nutrición (`NutritionDecision`): qué necesita la
-//      etapa, qué observa la sonda, cómo respondió el suelo. Una sola
+// Tres pestañas —Nitrógeno, Fósforo, Potasio— y en cada una UNA pantalla fija,
+// sin scroll (decisión de producto, 6 sep 2026):
+//   1. El dato crudo del sensor en mg/kg, como lo entrega la sonda 7-en-1
+//      (registros N/P/K en mg/kg, 0–1999), con su tendencia en la escala del
+//      propio sitio. Sin objetivo, sin «bajo/alto», sin dosis derivada.
+//   2. Qué toca hacer con ESTE nutriente según el motor de nutrición
+//      (`NutritionDecision`), en lenguaje de campo: «Aplica fósforo:
+//      establecimiento» + la dosis orientativa de la guía. Una sola
 //      autoridad; aquí no se interpreta ninguna lectura.
-//   2. Las señales nativas N/P/K de la sonda como TENDENCIA, en la escala del
-//      propio sitio: sin objetivo, sin «bajo/alto», sin dosis derivada.
-//   3. Un solo renglón discreto que acompaña a esas señales
-//      (`kNativeSignalDisclaimerEs`): son tendencias del sensor, orientativas.
-//      El vocabulario de tendencia («al alza», «estable», «a la baja») es el
-//      mismo que usa el motor en todas las pantallas (`NutrientTrend`).
+//   3. Las cifras de la semana (ahora, promedio, variación) y un enlace al
+//      detalle completo (por qué, evidencia, ventanas del ciclo).
 //
 // LO QUE YA NO EXISTE AQUÍ (y no debe volver): topes ppm por cultivo, rangos
 // objetivo por etapa sobre la lectura, dosis calculadas desde la sonda,
-// «Registrar aplicación». El agricultor no registra nada: la sonda observa.
+// «Registrar aplicación», y copys técnicos en la pestaña (prioridad
+// fenológica, firmas): eso vive en la hoja de detalle.
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -29,8 +31,6 @@ import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/widgets/npk/npk_gauge_card.dart';
-
-enum InsightTone { ok, warn, bad }
 
 /// Renglón discreto junto a las señales N/P/K (Guía v0.4, §8). Vive en
 /// `nutrition_types.dart` para que sea el mismo en toda la app.
@@ -298,26 +298,17 @@ class _NpkScreenState extends State<NpkScreen> {
                       ),
                     );
 
-                    final String stageLabel = isPlanted
-                        ? 'Etapa: ${runtime.stageLabel}'
-                        : isPlanned
-                        ? 'Pre-siembra'
-                        : isGuide
-                        ? 'Guía general'
-                        : 'Modo genérico';
-
                     final _NpkContext ctx = _NpkContext(
-                      isPlanted: isPlanted,
                       isPlanned: isPlanned,
                       isGuide: isGuide,
-                      stageLabel: stageLabel,
                       decision: decision,
                     );
 
+                    // Arriba, las tres pestañas (como siempre); la decisión
+                    // del motor vive dentro de cada pestaña, en lenguaje de
+                    // campo, y su detalle completo en la hoja «Ver detalle».
                     return Column(
                       children: [
-                        _NutritionDecisionCard(ctx: ctx),
-                        const SizedBox(height: 10),
                         const _NpkTabsCard(),
                         const SizedBox(height: 10),
                         Expanded(
@@ -376,30 +367,17 @@ class _NpkScreenState extends State<NpkScreen> {
   }
 }
 
-/// Contexto compartido por la cabecera y las tres pestañas.
+/// Contexto compartido por las tres pestañas.
 class _NpkContext {
   const _NpkContext({
-    required this.isPlanted,
     required this.isPlanned,
     required this.isGuide,
-    required this.stageLabel,
     required this.decision,
   });
 
-  final bool isPlanted;
   final bool isPlanned;
   final bool isGuide;
-  final String stageLabel;
   final NutritionDecision? decision;
-
-  NutrientStagePriority? priorityFor(AgroMetricKey nutrient) {
-    final d = decision;
-    if (d == null) return null;
-    for (final NutrientStagePriority p in d.priorities) {
-      if (p.nutrient == nutrient) return p;
-    }
-    return null;
-  }
 
   /// Recomendación vigente si dice algo de este nutriente: es foco de la
   /// ventana (una ventana puede abrir N, P y K a la vez: «fertilización de
@@ -442,240 +420,6 @@ class _NpkStats {
 // ═══════════════════════════════════════════════════════════════════════════
 // CABECERA: LA DECISIÓN
 // ═══════════════════════════════════════════════════════════════════════════
-
-class _NutritionDecisionCard extends StatelessWidget {
-  const _NutritionDecisionCard({required this.ctx});
-
-  final _NpkContext ctx;
-
-  static const Color _green = Color(0xFF2E7D5A);
-  static const Color _amber = Color(0xFFB38A2E);
-  static const Color _red = Color(0xFFC0533F);
-  static const Color _slate = Color(0xFF5F6F69);
-
-  Color _accent(NutritionDecision? d) {
-    if (d == null) return _slate;
-    if (d.recentlyUnattendedWindow != null) return _red;
-    return switch (d.state) {
-      NutritionState.actionWindow => _amber,
-      NutritionState.prepare => _amber,
-      NutritionState.responseWindow => _green,
-      NutritionState.monitor => _green,
-      NutritionState.learning => _slate,
-    };
-  }
-
-  ({String tag, String headline, String detail}) _copy() {
-    final d = ctx.decision;
-    if (d != null) {
-      return (tag: d.tagEs, headline: d.headlineEs, detail: d.detailEs);
-    }
-    if (ctx.isGuide) {
-      return (
-        tag: 'Guía',
-        headline: 'Nutrición sin interpretar',
-        detail:
-            'Sin saber qué cultivo es ni en qué etapa va no hay ventana de N, '
-            'P o K que abrir. Abajo ves hacia dónde va cada señal de tu suelo.',
-      );
-    }
-    if (ctx.isPlanned) {
-      return (
-        tag: 'Pre-siembra',
-        headline: 'La nutrición se evalúa al sembrar',
-        detail:
-            'Cuando registres la siembra, BIO-G abrirá las ventanas de manejo '
-            'según la etapa y observará la respuesta del suelo.',
-      );
-    }
-    if (ctx.isPlanted) {
-      return (
-        tag: '—',
-        headline: 'Sin evaluación nutricional todavía',
-        detail:
-            'El Panel calcula la decisión de nutrición con la etapa y el '
-            'historial. Vuelve al Panel un momento y regresa.',
-      );
-    }
-    return (
-      tag: 'Genérico',
-      headline: 'Asigna un cultivo para ver la nutrición',
-      detail:
-          'Sin cultivo no hay etapa, y sin etapa no hay ventana de manejo. '
-          'Abajo ves hacia dónde va cada señal de tu suelo.',
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final d = ctx.decision;
-    final accent = _accent(d);
-    final copy = _copy();
-    final List<String> chips = <String>[
-      if (d != null && d.trendSummaryEs.isNotEmpty) d.trendSummaryEs,
-      if (d != null && d.window != null)
-        'Ventana ${d.window!.nutrientsLabelEs}: ${_outcomeShort(d.window!)}',
-      if (d != null && d.unattendedCriticalWindows > 0)
-        '${d.unattendedCriticalWindows} sin evidencia este ciclo',
-      if (d != null && d.isLearningSite)
-        'Aprendiendo la zona${d.learningDaysLeft == null ? '' : ' · ${d.learningDaysLeft} d'}',
-      if (d != null && d.hasDetectedSignature)
-        'Firma detectada · confianza ${d.signature!.confidenceLabelEs}',
-    ];
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: d == null ? null : () => _NutritionDetailSheet.show(context, d),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.10),
-              blurRadius: 22,
-              offset: const Offset(0, 14),
-            ),
-            BoxShadow(
-              color: accent.withValues(alpha: 0.12),
-              blurRadius: 60,
-              offset: const Offset(0, 30),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                color: Colors.white.withValues(alpha: 0.86),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.92)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 10,
-                        height: 10,
-                        margin: const EdgeInsets.only(top: 4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: accent,
-                          boxShadow: [
-                            BoxShadow(
-                              color: accent.withValues(alpha: 0.45),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          copy.headline,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            height: 1.15,
-                            color: Color(0xFF0E1A16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _Pill(text: copy.tag, color: accent),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    copy.detail,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.6,
-                      fontWeight: FontWeight.w600,
-                      height: 1.32,
-                      color: Colors.black.withValues(alpha: 0.64),
-                    ),
-                  ),
-                  if (chips.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        for (final String c in chips)
-                          _Pill(text: c, color: accent, subtle: true),
-                      ],
-                    ),
-                  ],
-                  if (d != null) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Ver por qué y evidencia',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w900,
-                            color: accent.withValues(alpha: 0.9),
-                          ),
-                        ),
-                        Icon(Icons.chevron_right, size: 16, color: accent),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  static String _outcomeShort(NutritionWindowRecord w) => switch (w.outcome) {
-    NutritionWindowOutcome.open => 'observando',
-    NutritionWindowOutcome.attendedDetected => 'atendida',
-    NutritionWindowOutcome.unattended => 'sin evidencia',
-    NutritionWindowOutcome.inconclusive => 'inconclusa',
-    NutritionWindowOutcome.notComparable => 'no comparable',
-  };
-}
-
-class _Pill extends StatelessWidget {
-  const _Pill({required this.text, required this.color, this.subtle = false});
-
-  final String text;
-  final Color color;
-  final bool subtle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: subtle ? 0.08 : 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: subtle ? 0.14 : 0.20)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: subtle ? 10.8 : 11.2,
-          fontWeight: FontWeight.w900,
-          color: color.withValues(alpha: subtle ? 0.85 : 1.0),
-        ),
-      ),
-    );
-  }
-}
 
 /// Hoja con el detalle completo de la decisión: razones, evidencia de la
 /// firma, condiciones, libro de ventanas del ciclo y limitaciones.
@@ -1043,6 +787,10 @@ class _NpkTabContent extends StatelessWidget {
   final _NpkContext ctx;
   final AgroMetricKey nutrient;
 
+  /// Unidad con la que la sonda 7-en-1 entrega N, P y K (registros Modbus
+  /// 0x1E–0x20: 0–1999 mg/kg). Se muestra tal cual, sin convertir.
+  static const String _unit = 'mg/kg';
+
   Color _accent() => switch (channel) {
     NpkChannel.n => const Color(0xFFB38A2E),
     NpkChannel.p => const Color(0xFF2FAF63),
@@ -1052,410 +800,370 @@ class _NpkTabContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = _accent();
-    final NutrientStagePriority? priority = ctx.priorityFor(nutrient);
-    final NutritionRecommendation? rec = ctx.recommendationFor(nutrient);
     final NutritionDecision? d = ctx.decision;
-    final String nutrientName = nutrient.labelEs.toLowerCase();
-
-    // Pill de etapa: la prioridad fenológica, nunca la lectura.
-    final String insight;
-    final InsightTone tone;
-    if (priority != null) {
-      insight = priority.isCriticalWindow
-          ? 'Prioridad ${priority.priority.labelEs.toLowerCase()} · ventana importante'
-          : 'Prioridad ${priority.priority.labelEs.toLowerCase()} en esta etapa';
-      tone = priority.priority == NutritionPriority.high
-          ? InsightTone.warn
-          : InsightTone.ok;
-    } else if (ctx.isPlanned) {
-      insight = 'Prioridad disponible al sembrar';
-      tone = InsightTone.ok;
-    } else if (ctx.isGuide) {
-      insight = 'Sin cultivo declarado: sin prioridad';
-      tone = InsightTone.ok;
-    } else {
-      insight = 'Sin evaluación de etapa';
-      tone = InsightTone.ok;
-    }
-
-    final String windowLine = priority != null
-        ? 'Ventana: ${priority.windowLabelEs}'
-        : ctx.isPlanned
-        ? 'Ventana: se abre con la etapa, después de sembrar'
-        : 'Ventana: sin cultivo no hay ventana';
-
-    // Acción: la recomendación si la ventana reparte este nutriente —con el
-    // titular de ESTE nutriente («Aplica fósforo: fertilización de fondo»)—;
-    // si no, el porqué de la prioridad. Nunca «aplica X por la lectura».
-    final String action;
-    if (rec != null) {
-      action = rec.headlineForNutrient(nutrient);
-    } else if (d != null && d.state == NutritionState.responseWindow) {
-      action = 'Respuesta compatible con fertilización detectada. Estoy '
-          'observando la respuesta del suelo; no hace falta que registres nada.';
-    } else if (priority != null) {
-      if (priority.priority == NutritionPriority.high) {
-        action = 'La etapa demanda $nutrientName; la ventana la lleva la tarjeta de arriba.';
-      } else if (stats.hasLive && stats.trend.trend.isKnown) {
-        // Sin ventana: lo útil es hacia dónde va la señal de este nutriente.
-        action = switch (stats.trend.trend) {
-          NativeTrend.rising =>
-            'Sin necesidad de aplicar $nutrientName ahora: la señal viene al alza.',
-          NativeTrend.falling =>
-            'Sin ventana de aplicación de $nutrientName en esta etapa; la señal '
-                'viene a la baja y BIO-G la sigue de cerca.',
-          _ => 'Sin necesidad de aplicar $nutrientName ahora: la señal se mantiene estable.',
-        };
-      } else {
-        action = 'Sin ventana de aplicación de $nutrientName en esta etapa.';
-      }
-    } else if (ctx.isPlanned) {
-      action = 'Úsalo como línea base antes de sembrar.';
-    } else {
-      action = 'Configura un cultivo para ver la prioridad nutricional.';
-    }
-
-    // Dosis de ESTE nutriente dentro de la ventana, con su equivalente en
-    // producto comercial y, si el plan admite que puede no hacer falta, la
-    // condición («solo si tu análisis de suelo sale bajo en potasio»).
-    final NutritionDoseRange? doseRange = rec?.doseFor(nutrient);
-    final String? dose = doseRange?.labelEs;
-    final String? doseNote = doseRange != null
-        ? <String>[
-            if (doseRange.commercialEquivalentEs != null)
-              doseRange.commercialEquivalentEs!,
-            if (doseRange.conditionEs != null)
-              '${doseRange.conditionEs![0].toUpperCase()}${doseRange.conditionEs!.substring(1)}.',
-          ].join(' · ')
-        : rec?.doseUnavailableReasonEs;
-
-    final String description = priority?.rationaleEs.trim().isNotEmpty == true
-        ? priority!.rationaleEs.trim()
-        : ctx.isPlanned
-        ? 'Lectura de $nutrientName en pre-siembra: es la referencia de tu '
-              'suelo antes de arrancar el ciclo.'
-        : 'Tendencia de $nutrientName en tu suelo. Asigna un cultivo para que '
-              'la etapa diga cuándo importa.';
-
-    final String trendText = _trendSentence(stats, nutrientName);
+    final _TabCopy copy = _TabCopy.build(ctx: ctx, nutrient: nutrient, stats: stats);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         color: Colors.white.withValues(alpha: 0.60),
         border: Border.all(color: Colors.white.withValues(alpha: 0.70)),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(
-                        height: 286,
-                        child: NpkGaugeCard(
-                          channel: channel,
-                          percent: stats.gaugePercent,
-                          title: '$title · tendencia',
-                          description: description,
-                          showDescription: false,
-                          // Sin objetivo: la sonda no sostiene «bajo/alto».
-                          targetMin: null,
-                          targetMax: null,
-                          statusLabel: statusLabel,
-                          centerValue: stats.level,
-                          centerUnit: stats.hasLive ? 'sensor' : '—',
-                          scaleMax: stats.scale,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      _TechWaveScanDivider(accent: accent),
-                      const SizedBox(height: 8),
-                      _StageInsightPill(
-                        accent: accent,
-                        headline: insight,
-                        stageLabel: ctx.stageLabel,
-                        tone: tone,
-                      ),
-                      const SizedBox(height: 6),
-                      _WindowLine(accent: accent, text: windowLine),
-                      const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
-                        child: Column(
-                          children: [
-                            Text(
-                              action,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13.2,
-                                fontWeight: FontWeight.w900,
-                                height: 1.28,
-                                color: Colors.black.withValues(alpha: 0.68),
-                              ),
-                            ),
-                            if (dose != null) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                'Rango orientativo: $dose',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 12.2,
-                                  fontWeight: FontWeight.w900,
-                                  height: 1.24,
-                                  color: accent.withValues(alpha: 0.88),
-                                ),
-                              ),
-                            ],
-                            if ((doseNote ?? '').trim().isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                doseNote!.trim(),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 11.8,
-                                  fontWeight: FontWeight.w800,
-                                  height: 1.20,
-                                  color: Colors.black.withValues(alpha: 0.54),
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 8),
-                            Text(
-                              description,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12.8,
-                                fontWeight: FontWeight.w700,
-                                height: 1.30,
-                                color: Colors.black.withValues(alpha: 0.58),
-                              ),
-                            ),
-                            if (trendText.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                trendText,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 12.0,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.28,
-                                  color: Colors.black.withValues(alpha: 0.50),
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 8),
-                            Text(
-                              kNativeSignalNoteEs,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 11.0,
-                                fontWeight: FontWeight.w700,
-                                height: 1.28,
-                                color: Colors.black.withValues(alpha: 0.40),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _MiniMetric(
-                          accent: accent,
-                          value: stats.hasLive ? '${stats.level}' : '--',
-                          unit: 'sensor',
-                          label: 'Ahora',
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 46,
-                        color: Colors.black.withValues(alpha: 0.06),
-                      ),
-                      Expanded(
-                        child: _MiniMetric(
-                          accent: accent,
-                          value: stats.avg7 == null ? '--' : '${stats.avg7}',
-                          unit: 'sensor',
-                          label: 'Promedio 7 días',
-                          trendPct: stats.avgTrendPct,
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 46,
-                        color: Colors.black.withValues(alpha: 0.06),
-                      ),
-                      Expanded(
-                        child: _MiniMetric(
-                          accent: accent,
-                          value: stats.rangeMin == null || stats.rangeMax == null
-                              ? '--'
-                              : '${stats.rangeMin}–${stats.rangeMax}',
-                          unit: 'sensor',
-                          label: 'Variación 7 días',
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  static String _trendSentence(_NpkStats s, String nutrientName) {
-    if (s.rangeMin == null || s.rangeMax == null) return '';
-    final String range = s.rangeMin == s.rangeMax
-        ? 'se mantuvo en ${s.rangeMin}'
-        : 'se movió entre ${s.rangeMin} y ${s.rangeMax}';
-    return '${s.trend.detailEs} En 7 días la lectura $range. Una subida '
-        'sostenida junto con la CE es lo que BIO-G reconoce como respuesta a '
-        'una fertilización.';
-  }
-}
-
-class _StageInsightPill extends StatelessWidget {
-  final Color accent;
-  final String headline;
-  final String stageLabel;
-  final InsightTone tone;
-
-  const _StageInsightPill({
-    required this.accent,
-    required this.headline,
-    required this.stageLabel,
-    required this.tone,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = tone == InsightTone.bad
-        ? Colors.black.withValues(alpha: 0.06)
-        : tone == InsightTone.warn
-        ? accent.withValues(alpha: 0.10)
-        : accent.withValues(alpha: 0.08);
-    final dot = tone == InsightTone.bad
-        ? Colors.black.withValues(alpha: 0.45)
-        : tone == InsightTone.warn
-        ? accent.withValues(alpha: 0.95)
-        : accent.withValues(alpha: 0.90);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: bg,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.70)),
-      ),
-      child: Row(
+      // Pantalla fija: el arco toma el alto que sobra después del bloque de
+      // acción y de la fila de cifras (los dos con líneas acotadas), así que
+      // nunca hay scroll ni desbordamiento; en un teléfono chico el arco se
+      // hace más pequeño, no el texto.
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: dot,
-              boxShadow: [
-                BoxShadow(
-                  color: dot.withValues(alpha: 0.45),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              headline,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12.8,
-                fontWeight: FontWeight.w900,
-                height: 1.15,
-                color: Colors.black.withValues(alpha: 0.62),
-              ),
+            child: NpkGaugeCard(
+              channel: channel,
+              percent: stats.gaugePercent,
+              title: title,
+              description: '',
+              showDescription: false,
+              // Sin objetivo: la sonda no sostiene «bajo/alto».
+              targetMin: null,
+              targetMax: null,
+              statusLabel: statusLabel,
+              centerValue: stats.level,
+              centerUnit: stats.hasLive ? _unit : '—',
+              scaleMax: stats.scale,
             ),
           ),
-          const SizedBox(width: 10),
-          if (stageLabel.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                color: Colors.white.withValues(alpha: 0.55),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.75)),
-              ),
-              child: Text(
-                stageLabel,
-                style: TextStyle(
-                  fontSize: 11.0,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.black.withValues(alpha: 0.55),
+          Text(
+            'Dato crudo del sensor',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.2,
+              color: Colors.black.withValues(alpha: 0.38),
+            ),
+          ),
+          const SizedBox(height: 4),
+          _TechWaveScanDivider(accent: accent),
+          const SizedBox(height: 8),
+          _ActionBlock(
+            accent: accent,
+            copy: copy,
+            onDetail: d == null
+                ? null
+                : () => _NutritionDetailSheet.show(context, d),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _MiniMetric(
+                  accent: accent,
+                  value: stats.hasLive ? '${stats.level}' : '--',
+                  unit: _unit,
+                  label: 'Ahora',
                 ),
               ),
-            ),
+              Container(
+                width: 1,
+                height: 46,
+                color: Colors.black.withValues(alpha: 0.06),
+              ),
+              Expanded(
+                child: _MiniMetric(
+                  accent: accent,
+                  value: stats.avg7 == null ? '--' : '${stats.avg7}',
+                  unit: _unit,
+                  label: 'Promedio 7 días',
+                  trendPct: stats.avgTrendPct,
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 46,
+                color: Colors.black.withValues(alpha: 0.06),
+              ),
+              Expanded(
+                child: _MiniMetric(
+                  accent: accent,
+                  value: stats.rangeMin == null || stats.rangeMax == null
+                      ? '--'
+                      : '${stats.rangeMin}–${stats.rangeMax}',
+                  unit: _unit,
+                  label: 'Variación 7 días',
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-/// Línea de ventana fisiológica. Sustituye a la antigua línea de «objetivo
-/// N–M mg/kg»: aquí no hay objetivo sobre la lectura, hay una ventana de la
-/// etapa.
-class _WindowLine extends StatelessWidget {
-  const _WindowLine({required this.accent, required this.text});
+/// Lo que la pestaña dice de SU nutriente, en lenguaje de campo.
+///
+/// Tres renglones como máximo —qué hacer, cuánto, y un porqué corto— y todos
+/// con líneas acotadas para que la pantalla siga fija. Nada de «prioridad
+/// fenológica» ni «firma»: eso va en la hoja de detalle.
+class _TabCopy {
+  const _TabCopy({
+    required this.headline,
+    this.dose,
+    this.note,
+    this.tone = _TabTone.calm,
+  });
+
+  final String headline;
+
+  /// «40–80 kg/ha de P₂O₅ · ≈ 75–155 kg/ha de MAP».
+  final String? dose;
+
+  /// Una frase corta: cuándo, por qué o qué hace BIO-G mientras tanto.
+  final String? note;
+
+  final _TabTone tone;
+
+  static _TabCopy build({
+    required _NpkContext ctx,
+    required AgroMetricKey nutrient,
+    required _NpkStats stats,
+  }) {
+    final NutritionDecision? d = ctx.decision;
+    final String name = nutrient.labelEs.toLowerCase();
+    final String capName = nutrient.labelEs;
+
+    if (ctx.isGuide) {
+      return _TabCopy(
+        headline: 'Sin cultivo asignado',
+        note: 'Asigna un cultivo y BIO-G te dirá cuándo aplicar $name.',
+      );
+    }
+    if (ctx.isPlanned) {
+      return _TabCopy(
+        headline: 'Referencia antes de sembrar',
+        note: 'Al sembrar, BIO-G te dirá cuándo y cuánto $name aplicar.',
+      );
+    }
+    if (d == null) {
+      return _TabCopy(
+        headline: '$capName en seguimiento',
+        note: 'BIO-G sigue la señal de tu suelo; vuelve al Panel un momento y regresa.',
+      );
+    }
+
+    final NutritionRecommendation? rec = ctx.recommendationFor(nutrient);
+    if (rec != null) {
+      final NutritionDoseRange? range = rec.doseFor(nutrient);
+      final String? dose = range == null ? null : _doseLine(range);
+      final bool focus = rec.coversNutrient(nutrient);
+      switch (rec.kind) {
+        case NutritionRecommendationKind.apply:
+          final String note;
+          if (range == null) {
+            note = 'Cantidad: según la etiqueta del producto o tu asesor.';
+          } else if (range.conditionEs != null) {
+            note = _capitalize('${range.conditionEs}.');
+          } else if (!focus) {
+            note = 'Va junto con lo demás de esta etapa.';
+          } else {
+            note = _shortTiming(rec.timingEs) ??
+                'Cuando apliques no registres nada: BIO-G lo detecta.';
+          }
+          return _TabCopy(
+            headline: rec.headlineForNutrient(nutrient),
+            dose: dose,
+            note: note,
+            tone: _TabTone.action,
+          );
+        case NutritionRecommendationKind.prepare:
+          return _TabCopy(
+            headline: focus
+                ? 'Espera para aplicar $name'
+                : 'Acompaña con $name, pero espera',
+            dose: dose,
+            note: _firstSentence(
+              d.conditions.blockersEs.isEmpty
+                  ? 'El suelo todavía no está listo para recibir fertilizante.'
+                  : d.conditions.blockersEs.first,
+            ),
+            tone: _TabTone.wait,
+          );
+        case NutritionRecommendationKind.upcoming:
+          final int? days = rec.inDays;
+          return _TabCopy(
+            headline: rec.headlineForNutrient(nutrient),
+            dose: dose,
+            note: days == null
+                ? 'Ten el producto listo.'
+                : 'En ~$days día${days == 1 ? '' : 's'}. Ten el producto listo.',
+            tone: _TabTone.action,
+          );
+      }
+    }
+
+    if (d.state == NutritionState.responseWindow) {
+      return const _TabCopy(
+        headline: 'Fertilización detectada',
+        note: 'BIO-G sigue la respuesta del suelo; no tienes que registrar nada.',
+        tone: _TabTone.good,
+      );
+    }
+    if (d.state == NutritionState.learning) {
+      final int? left = d.learningDaysLeft;
+      return _TabCopy(
+        headline: 'Conociendo tu suelo',
+        note: left == null || left <= 0
+            ? 'Primeros días del sensor en esta zona.'
+            : 'Primeros días del sensor: en $left día${left == 1 ? '' : 's'} '
+                  'la tendencia será confiable.',
+      );
+    }
+    final NutritionWindowRecord? window = d.window;
+    if (window != null &&
+        window.outcome == NutritionWindowOutcome.attendedDetected &&
+        window.nutrients.contains(nutrient)) {
+      return _TabCopy(
+        headline: '$capName atendido en esta etapa',
+        note: 'El suelo ya respondió a la fertilización; BIO-G no pide más.',
+        tone: _TabTone.good,
+      );
+    }
+
+    // Sin ventana para este nutriente: hacia dónde va la señal y cuándo toca.
+    final String trendNote = !stats.hasLive || !stats.trend.trend.isKnown
+        ? 'BIO-G te avisa cuando toque aplicarlo.'
+        : switch (stats.trend.trend) {
+            NativeTrend.rising => 'La señal viene al alza: no hace falta más por ahora.',
+            NativeTrend.falling =>
+              'La señal viene a la baja; BIO-G te avisa si toca aplicar.',
+            _ => 'El suelo se mantiene estable en esta etapa.',
+          };
+    return _TabCopy(headline: 'Sin aplicar $name por ahora', note: trendNote);
+  }
+
+  /// «40–80 kg/ha de P₂O₅ · ≈ 75–155 kg/ha de MAP».
+  static String _doseLine(NutritionDoseRange r) {
+    final String? eq = r.commercialEquivalentEs;
+    return eq == null || eq.trim().isEmpty ? r.labelEs : '${r.labelEs} · $eq';
+  }
+
+  /// La primera frase del momento de la guía, para que quepa en dos líneas.
+  static String? _shortTiming(String? timing) {
+    final String t = (timing ?? '').trim();
+    if (t.isEmpty) return null;
+    return _firstSentence(t);
+  }
+
+  static String _firstSentence(String text) {
+    final String t = text.trim();
+    final int cut = t.indexOf(RegExp(r'[.;]\s'));
+    final String first = cut < 0 ? t : t.substring(0, cut + 1);
+    if (first.endsWith(';')) return '${first.substring(0, first.length - 1)}.';
+    return first.endsWith('.') ? first : '$first.';
+  }
+
+  static String _capitalize(String s) =>
+      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+}
+
+enum _TabTone { calm, action, wait, good }
+
+/// El bloque de acción de la pestaña: titular, dosis y una nota, con líneas
+/// acotadas y un enlace discreto al detalle.
+class _ActionBlock extends StatelessWidget {
+  const _ActionBlock({
+    required this.accent,
+    required this.copy,
+    required this.onDetail,
+  });
 
   final Color accent;
-  final String text;
+  final _TabCopy copy;
+  final VoidCallback? onDetail;
+
+  Color _toneColor() => switch (copy.tone) {
+    _TabTone.calm => Colors.black.withValues(alpha: 0.70),
+    _TabTone.action => const Color(0xFF0E1A16),
+    _TabTone.wait => const Color(0xFFB38A2E),
+    _TabTone.good => const Color(0xFF2E7D5A),
+  };
 
   @override
   Widget build(BuildContext context) {
+    final String? dose = copy.dose;
+    final String? note = copy.note;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 1),
-            child: Icon(
-              Icons.timeline_rounded,
-              size: 16,
-              color: accent.withValues(alpha: 0.70),
+          Text(
+            copy.headline,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              height: 1.2,
+              color: _toneColor(),
             ),
           ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              text,
+          if (dose != null && dose.trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              dose,
               textAlign: TextAlign.center,
-              softWrap: true,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 12.0,
+                fontSize: 12.6,
                 fontWeight: FontWeight.w900,
-                color: Colors.black.withValues(alpha: 0.55),
+                height: 1.24,
+                color: accent.withValues(alpha: 0.92),
               ),
             ),
-          ),
+          ],
+          if (note != null && note.trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              note,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.2,
+                fontWeight: FontWeight.w700,
+                height: 1.28,
+                color: Colors.black.withValues(alpha: 0.56),
+              ),
+            ),
+          ],
+          if (onDetail != null) ...[
+            const SizedBox(height: 4),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onDetail,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Ver detalle',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w900,
+                        color: accent.withValues(alpha: 0.9),
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, size: 16, color: accent),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
