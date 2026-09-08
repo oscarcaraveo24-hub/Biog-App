@@ -151,11 +151,13 @@ const NutritionGuide _maize = NutritionGuide(
         AgroMetricKey.k: 1.0,
       },
       labelEs: 'Fertilización de fondo',
-      timingEs: 'Presiembra o a la siembra, en banda a un lado y debajo de la semilla.',
+      timingEs:
+          'Antes de sembrar o al sembrar, en banda a un lado y debajo de la '
+          'semilla.',
       rationaleEs:
-          'El fósforo pesa más al arranque: raíz, energía y uniformidad de '
-          'plantas. Un tercio del N acompaña para que la planta no llegue corta '
-          'a V6.',
+          'El fósforo pesa más al arranque: da raíz, energía y plantas '
+          'parejas. Un tercio del nitrógeno va junto para que la planta no '
+          'llegue corta a las 6 hojas.',
       rulesEs: <String>[
         'No pongas urea en contacto con la semilla: quema la germinación.',
       ],
@@ -167,12 +169,12 @@ const NutritionGuide _maize = NutritionGuide(
       isCritical: true,
       labelEs: 'Segunda fertilización (V6–V8)',
       timingEs:
-          'Entre V6 y V8 (planta de 40–60 cm), antes de que cierre el surco y '
-          'con riego o lluvia enseguida.',
+          'Cuando la planta tiene de 6 a 8 hojas (V6–V8, unos 40–60 cm), antes '
+          'de que cierre el surco y con riego o lluvia enseguida.',
       rationaleEs:
-          'Desde V6 hacia floración el maíz captura más de la mitad del N y el '
-          '80 % del K de todo el ciclo. Llegar corto aquí es lo que más '
-          'rendimiento cuesta.',
+          'De las 6 hojas a la floración el maíz toma más de la mitad del '
+          'nitrógeno y el 80 % del potasio de todo el ciclo. Quedarse corto '
+          'aquí es lo que más rendimiento cuesta.',
       rulesEs: <String>[
         'Incorpora la urea o riega en las 24 h siguientes; en superficie y con '
             'calor se volatiliza.',
@@ -184,8 +186,8 @@ const NutritionGuide _maize = NutritionGuide(
       windowNutrients: <AgroMetricKey>{},
       labelEs: 'Espigamiento y floración',
       rationaleEs:
-          'Todavía hay demanda, pero la utilidad de corregir cae: lo que no '
-          'entró antes de V10 rinde poco.',
+          'Todavía hay demanda, pero corregir ya rinde poco: lo que no entró '
+          'antes de las 10 hojas (V10) casi no se aprovecha.',
       rulesEs: <String>[
         'Evita N tardío en pivote o surco cerrado: no llega y retrasa la madurez.',
       ],
@@ -266,11 +268,11 @@ const NutritionGuide _wheat = NutritionGuide(
         AgroMetricKey.k: 1.0,
       },
       labelEs: 'Fertilización de siembra',
-      timingEs: 'Presiembra o a la siembra, con todo el fósforo.',
+      timingEs: 'Antes de sembrar o al sembrar, con todo el fósforo.',
       rationaleEs:
-          'El P colocado desde siembra da raíz y macollos uniformes; el N de '
-          'arranque no debe pasar de un tercio: el fraccionamiento 30–70 rindió '
-          '8 % más que el 50–50 tradicional en El Bajío.',
+          'El fósforo puesto desde la siembra da raíz y macollos parejos. El '
+          'nitrógeno de arranque no debe pasar de un tercio: repartirlo 30–70 '
+          'rindió 8 % más que el 50–50 tradicional en El Bajío.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'tillering', 'elongation'},
@@ -279,12 +281,12 @@ const NutritionGuide _wheat = NutritionGuide(
       isCritical: true,
       labelEs: 'Amacollamiento (primer riego de auxilio)',
       timingEs:
-          'Al amacollamiento, con el primer riego de auxilio (no más de 45 días '
-          'desde siembra) y antes del encañe.',
+          'Al amacollamiento, con el primer riego de auxilio (no más de 45 '
+          'días desde la siembra) y antes del encañe.',
       rationaleEs:
-          'El N de amacollamiento define cuántas espigas se forman; entre encañe '
-          'y espigamiento el trigo toma ~60 % de su N. Es la ventana que más '
-          'rendimiento decide.',
+          'El nitrógeno del amacollamiento define cuántas espigas se forman; '
+          'entre el encañe y el espigamiento el trigo toma cerca del 60 % de '
+          'su nitrógeno. Es la ventana que más rendimiento decide.',
       rulesEs: <String>[
         'Aplica justo antes del riego para que el N baje a la zona de raíces.',
         'Dosis altas de N sin K suficiente aumentan el acame.',
@@ -295,8 +297,8 @@ const NutritionGuide _wheat = NutritionGuide(
       windowNutrients: <AgroMetricKey>{},
       labelEs: 'Espigamiento y floración',
       rationaleEs:
-          'N en espigamiento ya casi no sube rendimiento; solo proteína, con '
-          'riesgo de acame si te pasas.',
+          'El nitrógeno en espigamiento ya casi no sube el rendimiento: solo '
+          'la proteína del grano, y con riesgo de acame si te pasas.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -363,10 +365,11 @@ const NutritionGuide _barley = NutritionGuide(
         AgroMetricKey.k: 1.0,
       },
       labelEs: 'Fertilización de siembra',
-      timingEs: 'A la siembra, con todo el fósforo y la mitad del N.',
+      timingEs: 'Al sembrar, con todo el fósforo y la mitad del nitrógeno.',
       rationaleEs:
-          'P al arranque para enraizar y macollar parejo; en riego la '
-          'recomendación regional pone la dosis completa a la siembra.',
+          'El fósforo al arranque ayuda a enraizar y macollar parejo; en '
+          'riego, la recomendación regional pone la dosis completa a la '
+          'siembra.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'tillering', 'elongation'},
@@ -374,10 +377,10 @@ const NutritionGuide _barley = NutritionGuide(
       seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.5},
       isCritical: true,
       labelEs: 'Amacollamiento',
-      timingEs: 'Entre amacollamiento e inicio de encañe, con riego.',
+      timingEs: 'Entre el amacollamiento y el inicio del encañe, con riego.',
       rationaleEs:
-          'El N de amacollamiento define macollos y espigas; después de encañe '
-          'solo sube proteína.',
+          'El nitrógeno del amacollamiento define macollos y espigas; después '
+          'del encañe solo sube la proteína.',
       rulesEs: <String>[
         'Cebada maltera: nada de N tardío, la proteína del grano se dispara y '
             'la malta se rechaza.',
@@ -387,7 +390,9 @@ const NutritionGuide _barley = NutritionGuide(
       stageKeys: <String>{'booting', 'heading', 'flowering', 'grainFill'},
       windowNutrients: <AgroMetricKey>{},
       labelEs: 'Espigamiento y llenado',
-      rationaleEs: 'Ventana cerrada para N: en maltera es contraproducente.',
+      rationaleEs:
+          'Ventana cerrada para el nitrógeno: en cebada maltera, aplicarlo '
+          'tarde sube la proteína del grano y perjudica la calidad.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -453,8 +458,10 @@ const NutritionGuide _oat = NutritionGuide(
         AgroMetricKey.k: 1.0,
       },
       labelEs: 'Fertilización de siembra',
-      timingEs: 'A la siembra, con todo el fósforo.',
-      rationaleEs: 'P al arranque favorece raíz y vigor temprano, sobre todo en suelo frío.',
+      timingEs: 'Al sembrar, con todo el fósforo.',
+      rationaleEs:
+          'El fósforo al arranque favorece la raíz y el vigor temprano, sobre '
+          'todo en suelo frío.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'tillering', 'elongation'},
@@ -464,8 +471,8 @@ const NutritionGuide _oat = NutritionGuide(
       labelEs: 'Amacollamiento',
       timingEs: 'Al amacollamiento, con el primer riego de auxilio.',
       rationaleEs:
-          'El N de amacollamiento impulsa macollos y panículas: es donde más '
-          'forraje devuelve cada kilo.',
+          'El nitrógeno del amacollamiento impulsa macollos y panículas: es '
+          'donde más forraje devuelve cada kilo.',
       rulesEs: <String>[
         'N cerca de espigamiento sube proteína pero también el acame si el tallo '
             'no es fuerte.',
@@ -538,10 +545,13 @@ const NutritionGuide _bean = NutritionGuide(
         AgroMetricKey.k: 1.0,
       },
       labelEs: 'Fertilización de siembra',
-      timingEs: 'A la siembra, en banda; todo el P y la mayor parte del N de arranque.',
+      timingEs:
+          'Al sembrar, en banda: todo el fósforo y la mayor parte del '
+          'nitrógeno de arranque.',
       rationaleEs:
-          'El P es vital para que el frijol nodule bien desde el arranque; el N '
-          'de arranque cubre las semanas en que los nódulos aún no fijan.',
+          'El fósforo es clave para que el frijol forme bien sus nódulos desde '
+          'el arranque; el nitrógeno de arranque cubre las semanas en que los '
+          'nódulos todavía no fijan.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'vegEarly', 'vegAdvanced'},
@@ -550,8 +560,8 @@ const NutritionGuide _bean = NutritionGuide(
       labelEs: 'Primera escarda (antes de floración)',
       timingEs: 'En la primera escarda, antes de que abra la primera flor.',
       rationaleEs:
-          'Segunda aplicación de la práctica regional: sostiene el vigor hasta '
-          'floración sin inhibir la nodulación.',
+          'Es la segunda aplicación de la práctica regional: sostiene el vigor '
+          'hasta la floración sin frenar la nodulación.',
       rulesEs: <String>[
         'Con nodulación buena (nódulos rosados por dentro) esta cobertera puede '
             'reducirse: el exceso de N apaga los nódulos.',
@@ -562,8 +572,9 @@ const NutritionGuide _bean = NutritionGuide(
       windowNutrients: <AgroMetricKey>{},
       labelEs: 'Floración y llenado de vaina',
       rationaleEs:
-          'Aquí el frijol usa N para proteína y K para regular agua; lo que '
-          'rinde es no estresar la planta, no fertilizar tarde.',
+          'Aquí el frijol usa el nitrógeno para proteína y el potasio para '
+          'regular el agua; lo que rinde es no estresar la planta, no '
+          'fertilizar tarde.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -649,11 +660,11 @@ const NutritionGuide _tomato = NutritionGuide(
       },
       labelEs: 'Trasplante y arranque',
       timingEs:
-          'Fondo antes del trasplante (todo el P si es riego rodado) y arranque '
-          'suave las dos primeras semanas.',
+          'Fondo antes del trasplante (todo el fósforo si el riego es rodado) '
+          'y arranque suave las dos primeras semanas.',
       rationaleEs:
-          'Menos del 30 % del N se toma antes del cuajado: al arranque manda el '
-          'P para raíz, no el N.',
+          'Antes del cuajado la planta toma menos del 30 % del nitrógeno: al '
+          'arranque manda el fósforo, para la raíz.',
       rulesEs: <String>[
         'Preplantación: no más de 30 kg N/ha; el resto se lava antes de que la '
             'planta lo use.',
@@ -668,8 +679,11 @@ const NutritionGuide _tomato = NutritionGuide(
         AgroMetricKey.k: 0.15,
       },
       labelEs: 'Vegetativo',
-      timingEs: 'Semanal en fertirriego; en rodado, en la primera escarda.',
-      rationaleEs: 'Construye la planta que sostendrá los racimos; sin excesos que retrasen la flor.',
+      timingEs:
+          'Cada semana en fertirriego; en riego rodado, en la primera escarda.',
+      rationaleEs:
+          'Construye la planta que va a sostener los racimos, sin excesos que '
+          'retrasen la flor.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'floracion', 'cuajado'},
@@ -683,8 +697,9 @@ const NutritionGuide _tomato = NutritionGuide(
       labelEs: 'Floración y cuajado',
       timingEs: 'Desde las primeras flores hasta el cuajado del tercer racimo.',
       rationaleEs:
-          'La mayor parte del crecimiento y de la toma de N ocurre entre el '
-          'cuajado temprano y el primer fruto rojo; el K empieza a mandar aquí.',
+          'La mayor parte del crecimiento y de la toma de nitrógeno ocurre '
+          'entre el cuajado temprano y el primer fruto rojo; el potasio '
+          'empieza a mandar aquí.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'llenado', 'cosechaProgresiva'},
@@ -696,10 +711,12 @@ const NutritionGuide _tomato = NutritionGuide(
       },
       isCritical: true,
       labelEs: 'Llenado y cosecha',
-      timingEs: 'Fertirriego continuo hasta que los primeros frutos viran de color.',
+      timingEs:
+          'Fertirriego continuo hasta que los primeros frutos cambian de '
+          'color.',
       rationaleEs:
-          'El K da tamaño, firmeza y color; el N aplicado después del primer '
-          'fruto rojo se queda en el suelo y se lava.',
+          'El potasio da tamaño, firmeza y color; el nitrógeno aplicado '
+          'después del primer fruto rojo se queda en el suelo y se lava.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -767,7 +784,9 @@ const NutritionGuide _chili = NutritionGuide(
       },
       labelEs: 'Trasplante (fórmula de arranque)',
       timingEs: 'Al trasplante, en banda (práctica regional 50-60-50).',
-      rationaleEs: 'Arranque con P para raíz y una fracción de N y K.',
+      rationaleEs:
+          'Arranque con fósforo para la raíz, más una parte del nitrógeno y '
+          'del potasio.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'vegetativo'},
@@ -778,8 +797,11 @@ const NutritionGuide _chili = NutritionGuide(
         AgroMetricKey.k: 0.2,
       },
       labelEs: 'Vegetativo (30 días)',
-      timingEs: 'Unos 30 días después del trasplante (práctica regional 50-00-00).',
-      rationaleEs: 'Sostiene el crecimiento hasta el primer botón sin adelantar exceso de follaje.',
+      timingEs:
+          'Unos 30 días después del trasplante (práctica regional 50-00-00).',
+      rationaleEs:
+          'Sostiene el crecimiento hasta el primer botón sin adelantar un '
+          'exceso de follaje.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'floracion', 'cuajado'},
@@ -790,7 +812,8 @@ const NutritionGuide _chili = NutritionGuide(
       },
       isCritical: true,
       labelEs: 'Inicio de floración',
-      timingEs: 'Al inicio de floración (práctica regional 100-00-00), con riego.',
+      timingEs:
+          'Al inicio de la floración (práctica regional 100-00-00), con riego.',
       rationaleEs:
           'Es la aplicación grande del ciclo: define cuántas flores cuajan y '
           'el tamaño del primer corte.',
@@ -804,7 +827,9 @@ const NutritionGuide _chili = NutritionGuide(
       },
       labelEs: 'Llenado y cortes',
       timingEs: 'Fertirriego ligero entre cortes.',
-      rationaleEs: 'El K sostiene tamaño y color entre cortes; el N alto aquí solo da hoja.',
+      rationaleEs:
+          'El potasio sostiene tamaño y color entre cortes; el nitrógeno alto '
+          'aquí solo da hoja.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -864,8 +889,10 @@ const NutritionGuide _cucumber = NutritionGuide(
         AgroMetricKey.k: 0.2,
       },
       labelEs: 'Fondo y arranque',
-      timingEs: 'Fondo antes de siembra o trasplante; arranque suave.',
-      rationaleEs: 'El pepino arranca rápido: P disponible desde el día uno.',
+      timingEs: 'Fondo antes de la siembra o del trasplante, y arranque suave.',
+      rationaleEs:
+          'El pepino arranca rápido: necesita el fósforo disponible desde el '
+          'primer día.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'vegetativo'},
@@ -876,8 +903,8 @@ const NutritionGuide _cucumber = NutritionGuide(
         AgroMetricKey.k: 0.2,
       },
       labelEs: 'Guía y follaje',
-      timingEs: 'Semanal en fertirriego hasta la primera flor.',
-      rationaleEs: 'Construye la guía que cargará los frutos.',
+      timingEs: 'Cada semana en fertirriego, hasta la primera flor.',
+      rationaleEs: 'Construye la guía que va a cargar los frutos.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'floracion', 'cuajado'},
@@ -890,7 +917,9 @@ const NutritionGuide _cucumber = NutritionGuide(
       isCritical: true,
       labelEs: 'Floración y cuajado',
       timingEs: 'Desde la primera flor hembra, en fertirriego continuo.',
-      rationaleEs: 'La absorción sube al máximo con el cuajado; aquí se decide el número de frutos.',
+      rationaleEs:
+          'La absorción sube al máximo con el cuajado; aquí se decide el '
+          'número de frutos.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'llenado', 'cosechaProgresiva'},
@@ -901,7 +930,9 @@ const NutritionGuide _cucumber = NutritionGuide(
       },
       labelEs: 'Cortes',
       timingEs: 'Fertirriego ligero y constante entre cortes.',
-      rationaleEs: 'Los cortes sacan K cada semana; reponerlo evita frutos deformes.',
+      rationaleEs:
+          'Cada corte se lleva potasio; reponerlo cada semana evita frutos '
+          'deformes.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -958,7 +989,9 @@ const NutritionGuide _eggplant = NutritionGuide(
       },
       labelEs: 'Trasplante y arranque',
       timingEs: 'Fondo antes del trasplante y arranque suave.',
-      rationaleEs: 'P para raíz; el N excesivo al inicio da follaje y retrasa flor y cuajado.',
+      rationaleEs:
+          'Fósforo para la raíz; el nitrógeno en exceso al inicio da follaje y '
+          'retrasa la flor y el cuajado.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'vegetativo'},
@@ -969,8 +1002,9 @@ const NutritionGuide _eggplant = NutritionGuide(
         AgroMetricKey.k: 0.15,
       },
       labelEs: 'Vegetativo',
-      timingEs: 'Semanal en fertirriego.',
-      rationaleEs: 'Planta de alta demanda: construye estructura sin excesos.',
+      timingEs: 'Cada semana en fertirriego.',
+      rationaleEs:
+          'Es una planta de alta demanda: construye su estructura sin excesos.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'floracion', 'cuajado'},
@@ -982,8 +1016,10 @@ const NutritionGuide _eggplant = NutritionGuide(
       },
       isCritical: true,
       labelEs: 'Floración y cuajado',
-      timingEs: 'Desde las primeras flores hasta el cuajado de los primeros frutos.',
-      rationaleEs: 'La demanda sube con el cuajado; el K empieza a mandar.',
+      timingEs:
+          'Desde las primeras flores hasta el cuajado de los primeros frutos.',
+      rationaleEs:
+          'La demanda sube con el cuajado; el potasio empieza a mandar.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'llenado', 'cosechaProgresiva'},
@@ -996,7 +1032,8 @@ const NutritionGuide _eggplant = NutritionGuide(
       isCritical: true,
       labelEs: 'Llenado y cortes',
       timingEs: 'Fertirriego continuo entre cortes.',
-      rationaleEs: 'Los frutos acumulan la mayor parte del K del ciclo al final.',
+      rationaleEs:
+          'Los frutos acumulan la mayor parte del potasio del ciclo al final.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -1059,8 +1096,10 @@ const NutritionGuide _squash = NutritionGuide(
         AgroMetricKey.k: 0.5,
       },
       labelEs: 'Fondo y arranque',
-      timingEs: 'A la siembra o trasplante, todo el P en banda.',
-      rationaleEs: 'Ciclo corto (≈80 días): lo que no está al arranque llega tarde.',
+      timingEs: 'Al sembrar o trasplantar, todo el fósforo en banda.',
+      rationaleEs:
+          'Es un ciclo corto (unos 80 días): lo que no está al arranque llega '
+          'tarde.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'vegetativo'},
@@ -1071,7 +1110,9 @@ const NutritionGuide _squash = NutritionGuide(
       },
       labelEs: 'Guía',
       timingEs: 'Segunda aplicación a las 3–4 semanas, con riego.',
-      rationaleEs: 'La absorción crece de forma lineal: reparte, no concentres.',
+      rationaleEs:
+          'La absorción crece de forma pareja durante el ciclo: reparte, no '
+          'concentres.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'floracion', 'cuajado'},
@@ -1083,13 +1124,16 @@ const NutritionGuide _squash = NutritionGuide(
       isCritical: true,
       labelEs: 'Floración y cuajado',
       timingEs: 'Con las primeras flores hembra.',
-      rationaleEs: 'Sostiene los cortes que vienen: sin N aquí los frutos salen cortos y claros.',
+      rationaleEs:
+          'Sostiene los cortes que vienen: sin nitrógeno aquí los frutos salen '
+          'cortos y claros.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'llenado', 'cosechaProgresiva'},
       windowNutrients: <AgroMetricKey>{},
       labelEs: 'Cortes',
-      rationaleEs: 'Ya no conviene fertilizar al suelo; cuida agua y sanidad.',
+      rationaleEs:
+          'Ya no conviene fertilizar al suelo; cuida el agua y la sanidad.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -1164,8 +1208,12 @@ const NutritionGuide _lettuce = NutritionGuide(
         AgroMetricKey.k: 0.4,
       },
       labelEs: 'Fondo y arranque',
-      timingEs: 'Fondo antes del trasplante y un arranque de ~20 kg N/ha.',
-      rationaleEs: 'El primer mes toma menos del 20 % del N: aquí manda el P para raíz.',
+      timingEs:
+          'Fondo antes del trasplante y un arranque de unos 20 kg/ha de '
+          'nitrógeno.',
+      rationaleEs:
+          'El primer mes la lechuga toma menos del 20 % del nitrógeno: aquí '
+          'manda el fósforo, para la raíz.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'desarrolloVegetativo'},
@@ -1175,7 +1223,7 @@ const NutritionGuide _lettuce = NutritionGuide(
         AgroMetricKey.k: 0.3,
       },
       labelEs: 'Roseta (primera cobertera)',
-      timingEs: 'A las 2–4 hojas verdaderas tras el aclareo, con riego.',
+      timingEs: 'A las 2–4 hojas verdaderas, después del aclareo, con riego.',
       rationaleEs: 'Arma la roseta que después se cierra en cabeza.',
     ),
     StageNutritionRule(
@@ -1187,10 +1235,12 @@ const NutritionGuide _lettuce = NutritionGuide(
       },
       isCritical: true,
       labelEs: 'Acogollado',
-      timingEs: 'Al inicio del acogollado, un mes antes de cosecha; nada en las últimas dos semanas.',
+      timingEs:
+          'Al inicio del acogollado, un mes antes de la cosecha; nada en las '
+          'últimas dos semanas.',
       rationaleEs:
-          'Entre acogollado y cosecha la lechuga toma 3–4 lb N/acre al día: '
-          'el 70–80 % del N del ciclo cae aquí.',
+          'Entre el acogollado y la cosecha la lechuga toma de 3 a 4.5 kg/ha '
+          'de nitrógeno al día: el 70–80 % del nitrógeno del ciclo entra aquí.',
       rulesEs: <String>[
         'Exceso de N retrasa el cierre de la cabeza.',
       ],
@@ -1199,7 +1249,9 @@ const NutritionGuide _lettuce = NutritionGuide(
       stageKeys: <String>{'ventanaCosecha', 'sobremadurez'},
       windowNutrients: <AgroMetricKey>{},
       labelEs: 'Cosecha',
-      rationaleEs: 'Ventana cerrada: cualquier N ahora es nitrato en hoja.',
+      rationaleEs:
+          'Ventana cerrada: cualquier nitrógeno ahora se queda como nitrato en '
+          'la hoja.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -1261,7 +1313,9 @@ const NutritionGuide _spinach = NutritionGuide(
       },
       labelEs: 'Fondo y arranque',
       timingEs: 'Fondo antes de la siembra.',
-      rationaleEs: 'Ciclo corto: P y parte del K entran al fondo.',
+      rationaleEs:
+          'Es un ciclo corto: el fósforo y parte del potasio entran en el '
+          'fondo.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'vegetativoTemprano', 'expansionFoliar'},
@@ -1272,14 +1326,20 @@ const NutritionGuide _spinach = NutritionGuide(
       },
       isCritical: true,
       labelEs: 'Expansión foliar',
-      timingEs: 'Cobertera(s) entre 4 y 6 hojas verdaderas, la última 2 semanas antes de cosecha.',
-      rationaleEs: 'La hoja se construye aquí; después, el N solo acumula nitratos.',
+      timingEs:
+          'Una o dos coberteras entre las 4 y 6 hojas verdaderas; la última, '
+          'dos semanas antes de la cosecha.',
+      rationaleEs:
+          'La hoja se construye aquí; después, el nitrógeno solo acumula '
+          'nitratos.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'madurezComercial', 'ventanaCosecha', 'perdidaCalidad', 'espigadoSenescencia'},
       windowNutrients: <AgroMetricKey>{},
       labelEs: 'Cosecha',
-      rationaleEs: 'Ventana cerrada: N tardío ablanda hoja, sube nitratos y adelanta el espigado.',
+      rationaleEs:
+          'Ventana cerrada: el nitrógeno tardío ablanda la hoja, sube los '
+          'nitratos y adelanta el espigado.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -1357,8 +1417,12 @@ const NutritionGuide _onion = NutritionGuide(
         AgroMetricKey.k: 0.4,
       },
       labelEs: 'Fondo y trasplante',
-      timingEs: 'Antes del trasplante: todo el P (o el 70 %), no más de 1/3 del N y mitad del K.',
-      rationaleEs: 'La primera mitad del ciclo toma menos del 20 % del N; no lo adelantes.',
+      timingEs:
+          'Antes del trasplante: todo el fósforo (o el 70 %), no más de un '
+          'tercio del nitrógeno y la mitad del potasio.',
+      rationaleEs:
+          'En la primera mitad del ciclo la cebolla toma menos del 20 % del '
+          'nitrógeno: no lo adelantes.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'vegetativo'},
@@ -1370,8 +1434,12 @@ const NutritionGuide _onion = NutritionGuide(
       },
       isCritical: true,
       labelEs: 'Desarrollo de hoja (3–4 hojas)',
-      timingEs: 'Segundo tercio del N a las 3–4 hojas, con riego; en fertirriego cada 10–14 días.',
-      rationaleEs: 'Cada hoja es una capa del bulbo: el N de esta etapa fija el tamaño final.',
+      timingEs:
+          'Segundo tercio del nitrógeno a las 3–4 hojas, con riego; en '
+          'fertirriego, cada 10–14 días.',
+      rationaleEs:
+          'Cada hoja es una capa del bulbo: el nitrógeno de esta etapa fija el '
+          'tamaño final.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'induccionBulbificacion', 'inicioBulbo', 'llenadoBulbo'},
@@ -1382,11 +1450,15 @@ const NutritionGuide _onion = NutritionGuide(
       },
       isCritical: true,
       labelEs: 'Inicio y llenado de bulbo',
-      timingEs: 'Último tercio del N y el K restante al inicio del bulbo; nada de N cuando el bulbo pase de 2/3 de su tamaño.',
+      timingEs:
+          'Último tercio del nitrógeno y el potasio restante al inicio del '
+          'bulbo; nada de nitrógeno cuando el bulbo pase de dos tercios de su '
+          'tamaño.',
       rationaleEs:
-          'En llenado activo la cebolla toma 1.5–3.5 lb N/acre al día y el K '
-          'engruesa el bulbo. El fotoperiodo manda la bulbificación; el N tardío '
-          'solo engruesa cuello y retrasa la madurez.',
+          'En llenado activo la cebolla toma de 1.5 a 4 kg/ha de nitrógeno al '
+          'día y el potasio engruesa el bulbo. El bulbo lo manda la duración '
+          'del día, no el fertilizante: el nitrógeno tardío solo engruesa el '
+          'cuello y retrasa la madurez.',
       rulesEs: <String>[
         'N fuerte tardío: cuello grueso, mala maduración y bulbos que no guardan.',
       ],
@@ -1395,7 +1467,7 @@ const NutritionGuide _onion = NutritionGuide(
       stageKeys: <String>{'maduracionCosecha', 'espigado'},
       windowNutrients: <AgroMetricKey>{},
       labelEs: 'Maduración',
-      rationaleEs: 'Ventana cerrada: deja secar el cuello, no fertilices.',
+      rationaleEs: 'Ventana cerrada: deja que seque el cuello y no fertilices.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -1467,8 +1539,10 @@ const NutritionGuide _garlic = NutritionGuide(
         AgroMetricKey.k: 0.5,
       },
       labelEs: 'Plantación',
-      timingEs: 'A la plantación: todo el P, la mitad del N y la mitad del K.',
-      rationaleEs: 'El vigor temprano define el potencial de rendimiento del bulbo.',
+      timingEs:
+          'Al plantar: todo el fósforo, la mitad del nitrógeno y la mitad del '
+          'potasio.',
+      rationaleEs: 'El vigor temprano define cuánto puede rendir el bulbo.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'vegetativeLeafDevelopment', 'coldInductionVernalization'},
@@ -1479,10 +1553,12 @@ const NutritionGuide _garlic = NutritionGuide(
       },
       isCritical: true,
       labelEs: 'Desarrollo de hoja (primera escarda)',
-      timingEs: 'Unos 60 días después de plantar, en la primera escarda, y nunca después de iniciada la formación del bulbo.',
+      timingEs:
+          'Unos 60 días después de plantar, en la primera escarda, y nunca '
+          'después de que empiece a formarse el bulbo.',
       rationaleEs:
-          'Cada hoja formada aquí es un diente después; es el último momento '
-          'útil para el N.',
+          'Cada hoja que se forma aquí es un diente después; es el último '
+          'momento útil para el nitrógeno.',
       rulesEs: <String>[
         'La vernalización no se corrige con fertilizante: si el ajo no recibió '
             'frío, más N no hará bulbo.',
@@ -1493,8 +1569,8 @@ const NutritionGuide _garlic = NutritionGuide(
       windowNutrients: <AgroMetricKey>{},
       labelEs: 'Diferenciación y llenado de bulbo',
       rationaleEs:
-          'Ventana cerrada para N: el N tardío favorece escobeteado y canutos, '
-          'mala maduración y mal curado.',
+          'Ventana cerrada para el nitrógeno: aplicarlo tarde favorece el '
+          'escobeteado y los canutos, y da mala maduración y mal curado.',
       rulesEs: <String>[
         'Si vas a apoyar el llenado, que sea K vía riego y sin N.',
       ],
@@ -1503,7 +1579,7 @@ const NutritionGuide _garlic = NutritionGuide(
       stageKeys: <String>{'bulbMaturation', 'harvest', 'curingRest', 'scapeBrooming'},
       windowNutrients: <AgroMetricKey>{},
       labelEs: 'Maduración y curado',
-      rationaleEs: 'No fertilices: el bulbo se cura con suelo seco.',
+      rationaleEs: 'No fertilices: el bulbo se cura con el suelo seco.',
     ),
   ],
   sourceOptionsEs: <AgroMetricKey, List<String>>{
@@ -1568,14 +1644,20 @@ const List<StageNutritionRule> _pomeStoneTreeRules = <StageNutritionRule>[
     // cepellón; queda fuera de la suma del ciclo de carga.
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.p: 0.5},
     labelEs: 'Establecimiento',
-    timingEs: 'Al plantar: P en el fondo del cepellón; N ligero y fraccionado el primer año.',
-    rationaleEs: 'El árbol joven necesita raíz, no carga; el N alto da madera blanda.',
+    timingEs:
+        'Al plantar: el fósforo en el fondo del cepellón; el nitrógeno ligero '
+        'y repartido el primer año.',
+    rationaleEs:
+        'El árbol joven necesita raíz, no carga: el fósforo casi no se mueve '
+        'en el suelo, por eso va al fondo desde el principio, y el nitrógeno '
+        'alto solo da madera blanda.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'dormancy'},
     windowNutrients: <AgroMetricKey>{},
     labelEs: 'Reposo',
-    rationaleEs: 'Sin hoja no hay absorción: lo que apliques en reposo se lava.',
+    rationaleEs:
+        'Sin hoja no hay absorción: lo que apliques en reposo se lava.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'budbreak', 'vegetative_growth'},
@@ -1583,10 +1665,13 @@ const List<StageNutritionRule> _pomeStoneTreeRules = <StageNutritionRule>[
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.65},
     isCritical: true,
     labelEs: 'Brotación',
-    timingEs: 'De brotación a 4–6 semanas después, en fertirriego o banda bajo la copa.',
+    timingEs:
+        'Desde la brotación y hasta 4–6 semanas después, en fertirriego o en '
+        'banda bajo la copa.',
     rationaleEs:
-        'El N de primavera sostiene brote, hoja y cuajado con las reservas del '
-        'año pasado; es la ventana de N que decide la carga.',
+        'El nitrógeno de primavera sostiene el brote, la hoja y el cuajado '
+        'junto con las reservas del año pasado; es la ventana de nitrógeno que '
+        'decide la carga.',
     rulesEs: <String>[
       'No te pases: N alto en brotación empuja brotes tiernos y sombra de más.',
     ],
@@ -1596,8 +1681,10 @@ const List<StageNutritionRule> _pomeStoneTreeRules = <StageNutritionRule>[
     windowNutrients: <AgroMetricKey>{AgroMetricKey.k},
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.k: 0.30},
     labelEs: 'Floración y cuajado',
-    timingEs: 'Tras la caída de pétalos, con el riego.',
-    rationaleEs: 'El K arranca aquí para el tamaño del fruto; el N se modera para no tirar fruto.',
+    timingEs: 'Después de la caída de pétalos, con el riego.',
+    rationaleEs:
+        'El potasio arranca aquí para el tamaño del fruto; el nitrógeno se '
+        'modera para no tirar fruto.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'fruit_fill'},
@@ -1605,8 +1692,10 @@ const List<StageNutritionRule> _pomeStoneTreeRules = <StageNutritionRule>[
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.k: 0.70},
     isCritical: true,
     labelEs: 'Llenado de fruto',
-    timingEs: 'Durante el crecimiento del fruto, fraccionado en el riego.',
-    rationaleEs: 'El fruto se lleva la mayor parte del K del año: tamaño, color y firmeza.',
+    timingEs: 'Durante el crecimiento del fruto, repartido en el riego.',
+    rationaleEs:
+        'El fruto se lleva la mayor parte del potasio del año: tamaño, color y '
+        'firmeza.',
     rulesEs: <String>[
       'K alto de más sube sales y desbalancea el calcio (firmeza).',
     ],
@@ -1615,7 +1704,9 @@ const List<StageNutritionRule> _pomeStoneTreeRules = <StageNutritionRule>[
     stageKeys: <String>{'harvest_maturity'},
     windowNutrients: <AgroMetricKey>{},
     labelEs: 'Cosecha',
-    rationaleEs: 'Ventana cerrada: N cerca de cosecha retrasa color y baja firmeza.',
+    rationaleEs:
+        'Ventana cerrada: el nitrógeno cerca de la cosecha retrasa el color y '
+        'baja la firmeza.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'post_harvest'},
@@ -1623,7 +1714,8 @@ const List<StageNutritionRule> _pomeStoneTreeRules = <StageNutritionRule>[
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.35, AgroMetricKey.p: 1.0},
     labelEs: 'Post-cosecha',
     timingEs: 'Justo después de cosechar, mientras la hoja sigue activa.',
-    rationaleEs: 'Repone reservas para la brotación del siguiente ciclo.',
+    rationaleEs:
+        'Repone las reservas del árbol para la brotación del siguiente ciclo.',
   ),
 ];
 
@@ -1640,14 +1732,19 @@ const List<StageNutritionRule> _nutTreeRules = <StageNutritionRule>[
     windowNutrients: <AgroMetricKey>{AgroMetricKey.p},
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.p: 0.5},
     labelEs: 'Establecimiento',
-    timingEs: 'Al plantar: P en el fondo del cepellón; N ligero y fraccionado los primeros años.',
-    rationaleEs: 'El árbol joven necesita raíz y estructura, no carga.',
+    timingEs:
+        'Al plantar: el fósforo en el fondo del cepellón; el nitrógeno ligero '
+        'y repartido los primeros años.',
+    rationaleEs:
+        'El árbol joven necesita raíz y estructura, no carga: el fósforo casi '
+        'no se mueve en el suelo, por eso va al fondo desde el principio.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'dormancy'},
     windowNutrients: <AgroMetricKey>{},
     labelEs: 'Reposo',
-    rationaleEs: 'Sin hoja no hay absorción: lo que apliques en reposo se lava.',
+    rationaleEs:
+        'Sin hoja no hay absorción: lo que apliques en reposo se lava.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'budbreak', 'vegetative_growth'},
@@ -1655,10 +1752,12 @@ const List<StageNutritionRule> _nutTreeRules = <StageNutritionRule>[
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.45, AgroMetricKey.p: 1.0},
     isCritical: true,
     labelEs: 'Brotación',
-    timingEs: 'Desde mediados de marzo, con el brote: fertirriego o banda bajo la copa.',
+    timingEs:
+        'Desde mediados de marzo, con el brote: fertirriego o banda bajo la '
+        'copa.',
     rationaleEs:
-        'El N de primavera arma el brote y la hoja que llenarán la nuez; el P '
-        'va de una vez, cerca de la raíz.',
+        'El nitrógeno de primavera arma el brote y la hoja que van a llenar la '
+        'nuez; el fósforo va de una vez, cerca de la raíz.',
     rulesEs: <String>[
       'En riego rodado y suelo pesado, hasta la mitad del N de la temporada '
           'puede ir en esta ventana; en suelo arenoso, no más de un tercio.',
@@ -1669,8 +1768,8 @@ const List<StageNutritionRule> _nutTreeRules = <StageNutritionRule>[
     windowNutrients: <AgroMetricKey>{AgroMetricKey.k},
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.k: 0.30},
     labelEs: 'Floración y cuajado',
-    timingEs: 'Tras el cuajado, con el riego.',
-    rationaleEs: 'El K empieza a acompañar el crecimiento de la nuez.',
+    timingEs: 'Después del cuajado, con el riego.',
+    rationaleEs: 'El potasio empieza a acompañar el crecimiento de la nuez.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'fruit_fill'},
@@ -1678,16 +1777,17 @@ const List<StageNutritionRule> _nutTreeRules = <StageNutritionRule>[
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.40, AgroMetricKey.k: 0.70},
     isCritical: true,
     labelEs: 'Llenado de la nuez',
-    timingEs: 'Durante el llenado de la almendra, fraccionado en el riego.',
+    timingEs: 'Durante el llenado de la almendra, repartido en el riego.',
     rationaleEs:
-        'La nuez se lleva aquí la mayor parte del N y del K del año: peso, '
-        'llenado y calidad de la almendra.',
+        'La nuez se lleva aquí la mayor parte del nitrógeno y del potasio del '
+        'año: peso, llenado y calidad de la almendra.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'harvest_maturity'},
     windowNutrients: <AgroMetricKey>{},
     labelEs: 'Cosecha',
-    rationaleEs: 'Ventana cerrada: el N tardío retrasa la apertura del ruezno.',
+    rationaleEs:
+        'Ventana cerrada: el nitrógeno tardío retrasa la apertura del ruezno.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'post_harvest'},
@@ -1711,14 +1811,21 @@ const List<StageNutritionRule> _evergreenTreeRules = <StageNutritionRule>[
     windowNutrients: <AgroMetricKey>{AgroMetricKey.p},
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.p: 0.5},
     labelEs: 'Establecimiento',
-    timingEs: 'Al plantar: P en el fondo; N ligero y fraccionado los primeros años.',
-    rationaleEs: 'Raíz y estructura antes que carga.',
+    timingEs:
+        'Al plantar: el fósforo en el fondo del hoyo; el nitrógeno ligero y '
+        'repartido los primeros años.',
+    rationaleEs:
+        'El árbol joven necesita echar raíz y armar su estructura antes de '
+        'cargar fruta: el fósforo casi no se mueve en el suelo, por eso va al '
+        'fondo desde el principio.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'dormancy'},
     windowNutrients: <AgroMetricKey>{},
     labelEs: 'Reposo relativo',
-    rationaleEs: 'Con suelo frío o seco la raíz no absorbe: espera al siguiente flujo.',
+    rationaleEs:
+        'Con el suelo frío o seco la raíz no absorbe: espera al siguiente '
+        'flujo de brotación.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'budbreak', 'vegetative_growth', 'flowering'},
@@ -1726,16 +1833,21 @@ const List<StageNutritionRule> _evergreenTreeRules = <StageNutritionRule>[
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.50},
     isCritical: true,
     labelEs: 'Brotación y floración',
-    timingEs: 'Antes y durante la floración principal, en fertirriego o banda.',
-    rationaleEs: 'El N pre-floración sostiene el flujo vegetativo que carga la flor.',
+    timingEs:
+        'Antes y durante la floración principal, en fertirriego o en banda.',
+    rationaleEs:
+        'El nitrógeno antes de la floración sostiene el flujo de brotes que '
+        'carga la flor.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'fruit_set'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.n, AgroMetricKey.k},
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.n: 0.20, AgroMetricKey.k: 0.30},
     labelEs: 'Cuajado',
-    timingEs: 'Tras el cuajado, fraccionado en el riego.',
-    rationaleEs: 'Modera el N para reducir caída de fruto; el K empieza a acompañar.',
+    timingEs: 'Después del cuajado, repartido en el riego.',
+    rationaleEs:
+        'Modera el nitrógeno para reducir la caída de fruto; el potasio '
+        'empieza a acompañar.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'fruit_fill'},
@@ -1743,14 +1855,18 @@ const List<StageNutritionRule> _evergreenTreeRules = <StageNutritionRule>[
     seasonShare: <AgroMetricKey, double>{AgroMetricKey.k: 0.50},
     isCritical: true,
     labelEs: 'Llenado de fruto',
-    timingEs: 'Durante el crecimiento del fruto, fraccionado en el riego.',
-    rationaleEs: 'El fruto se lleva la mayor parte del K del año: calibre y calidad.',
+    timingEs: 'Durante el crecimiento del fruto, repartido en el riego.',
+    rationaleEs:
+        'El fruto se lleva la mayor parte del potasio del año: calibre y '
+        'calidad.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'harvest_maturity'},
     windowNutrients: <AgroMetricKey>{},
     labelEs: 'Cosecha',
-    rationaleEs: 'Ventana cerrada: N cerca de cosecha retrasa color y baja calidad.',
+    rationaleEs:
+        'Ventana cerrada: el nitrógeno cerca de la cosecha retrasa el color y '
+        'baja la calidad.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'post_harvest'},
@@ -1761,8 +1877,10 @@ const List<StageNutritionRule> _evergreenTreeRules = <StageNutritionRule>[
       AgroMetricKey.k: 0.20,
     },
     labelEs: 'Post-cosecha',
-    timingEs: 'Después de cosechar, con el flujo vegetativo siguiente.',
-    rationaleEs: 'Repone lo que se llevó la fruta y arma el flujo que cargará la siguiente.',
+    timingEs: 'Después de cosechar, con el siguiente flujo de brotación.',
+    rationaleEs:
+        'Repone lo que se llevó la fruta y arma el flujo de brotes que cargará '
+        'la siguiente.',
   ),
 ];
 
@@ -2022,21 +2140,22 @@ const NutritionGuide _rose = NutritionGuide(
       stageKeys: <String>{'installation_establishment', 'root_establishment'},
       windowNutrients: <AgroMetricKey>{AgroMetricKey.p},
       labelEs: 'Establecimiento',
-      rationaleEs: 'P para raíz; sin N fuerte hasta que arraigue.',
+      rationaleEs:
+          'Fósforo para la raíz; nada de nitrógeno fuerte hasta que arraigue.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'vegetative_flush'},
       windowNutrients: <AgroMetricKey>{AgroMetricKey.n},
       labelEs: 'Brotación',
-      timingEs: 'Al inicio de cada brotación, dosis ligera y con riego.',
-      rationaleEs: 'El N sostiene el brote que traerá el botón.',
+      timingEs: 'Al inicio de cada brotación, en dosis ligera y con riego.',
+      rationaleEs: 'El nitrógeno sostiene el brote que va a traer el botón.',
       rulesEs: <String>['N alto con brotación muy vigorosa da tallo blando y menos flor.'],
     ),
     StageNutritionRule(
       stageKeys: <String>{'bud_formation'},
       windowNutrients: <AgroMetricKey>{AgroMetricKey.k, AgroMetricKey.p},
       labelEs: 'Botón',
-      rationaleEs: 'P y K para tamaño y color de la flor.',
+      rationaleEs: 'Fósforo y potasio para el tamaño y el color de la flor.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'flowering'},
@@ -2048,7 +2167,7 @@ const NutritionGuide _rose = NutritionGuide(
       stageKeys: <String>{'post_bloom_recovery'},
       windowNutrients: <AgroMetricKey>{AgroMetricKey.n, AgroMetricKey.k},
       labelEs: 'Recuperación tras la floración',
-      timingEs: 'Tras la poda de flores marchitas.',
+      timingEs: 'Después de podar las flores marchitas.',
       rationaleEs: 'Repone lo que gastó la floración y prepara la siguiente.',
     ),
     StageNutritionRule(
@@ -2069,27 +2188,30 @@ const List<StageNutritionRule> _annualOrnamentalRules = <StageNutritionRule>[
     stageKeys: <String>{'sowing', 'germination', 'emergence'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.p},
     labelEs: 'Siembra',
-    rationaleEs: 'P en el fondo para raíz; nada de N sobre la semilla.',
+    rationaleEs:
+        'Fósforo en el fondo para la raíz; nada de nitrógeno sobre la semilla.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'early_vegetative_growth', 'active_vegetative_growth'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.n},
     labelEs: 'Crecimiento vegetativo',
-    timingEs: 'Fraccionado, con riego.',
-    rationaleEs: 'El N construye la planta antes del botón.',
+    timingEs: 'Repartido, con riego.',
+    rationaleEs: 'El nitrógeno construye la planta antes del botón.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'stem_elongation', 'bud_formation'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.k, AgroMetricKey.p},
     labelEs: 'Alargamiento y botón',
-    rationaleEs: 'K para tallo firme y color; el N alto aquí acuesta la planta y retrasa la flor.',
+    rationaleEs:
+        'Potasio para un tallo firme y buen color; el nitrógeno alto aquí '
+        'acuesta la planta y retrasa la flor.',
     rulesEs: <String>['Corta el N al ver el botón.'],
   ),
   StageNutritionRule(
     stageKeys: <String>{'flowering', 'post_bloom', 'senescence', 'cycle_complete'},
     windowNutrients: <AgroMetricKey>{},
     labelEs: 'Floración',
-    rationaleEs: 'Ventana cerrada.',
+    rationaleEs: 'Ventana cerrada: en flor ya no conviene fertilizar.',
   ),
 ];
 
@@ -2120,7 +2242,8 @@ const NutritionGuide _tulip = NutritionGuide(
       stageKeys: <String>{'bulb_planting', 'rooting_chilling'},
       windowNutrients: <AgroMetricKey>{AgroMetricKey.p},
       labelEs: 'Plantación del bulbo',
-      rationaleEs: 'Un poco de P bajo el bulbo; el bulbo trae sus reservas.',
+      rationaleEs:
+          'Un poco de fósforo bajo el bulbo; el bulbo ya trae sus reservas.',
     ),
     StageNutritionRule(
       stageKeys: <String>{'shoot_emergence', 'vegetative_growth', 'stem_elongation', 'bud_formation', 'flowering'},
@@ -2132,7 +2255,7 @@ const NutritionGuide _tulip = NutritionGuide(
       stageKeys: <String>{'bulb_recharge'},
       windowNutrients: <AgroMetricKey>{AgroMetricKey.n, AgroMetricKey.k, AgroMetricKey.p},
       labelEs: 'Recarga del bulbo',
-      timingEs: 'Justo tras la floración, mientras la hoja sigue verde.',
+      timingEs: 'Justo después de la floración, mientras la hoja sigue verde.',
       rationaleEs: 'Lo que absorba ahora es la flor del año que viene.',
     ),
     StageNutritionRule(
@@ -2150,14 +2273,14 @@ const List<StageNutritionRule> _lowDemandRules = <StageNutritionRule>[
     stageKeys: <String>{'installation_establishment', 'root_establishment'},
     windowNutrients: <AgroMetricKey>{},
     labelEs: 'Establecimiento',
-    rationaleEs: 'Sin fertilizar hasta que arraigue; el exceso pudre raíz.',
+    rationaleEs: 'Sin fertilizar hasta que arraigue; el exceso pudre la raíz.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'active_growth'},
     windowNutrients: <AgroMetricKey>{AgroMetricKey.n},
     labelEs: 'Crecimiento activo',
     timingEs: 'Una o dos dosis ligeras en la temporada de crecimiento.',
-    rationaleEs: 'Planta de baja demanda: poco y diluido es suficiente.',
+    rationaleEs: 'Es una planta de baja demanda: poco y diluido es suficiente.',
   ),
   StageNutritionRule(
     stageKeys: <String>{'maintenance', 'rest'},

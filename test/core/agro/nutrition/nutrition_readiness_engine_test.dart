@@ -293,10 +293,13 @@ void main() {
         d.detailEs,
         startsWith(
           'Dosis orientativa (guía curada): N: 107–161 kg/ha (≈ 235–350 kg/ha de urea). '
-          'Momento: entre V6 y V8',
+          'Momento: cuando la planta tiene de 6 a 8 hojas (V6–V8',
         ),
       );
-      expect(d.detailEs, contains('Maíz en «Vegetativo medio»: desde V6 hacia floración'));
+      expect(d.detailEs, contains('Maíz en «Vegetativo medio»: de las 6 hojas a la floración'));
+      // El porqué viaja estructurado para la pestaña N/P/K.
+      expect(rec.rationaleEs, startsWith('De las 6 hojas a la floración'));
+      expect(rec.timingEs, startsWith('Cuando la planta tiene de 6 a 8 hojas'));
       expect(d.detailEs, contains('no necesitas registrar nada'));
       expect(rec.headlineForNutrient(AgroMetricKey.n), d.headlineEs);
       expect(d.reasons.first, contains('abre la ventana «Segunda fertilización (V6–V8)»'));

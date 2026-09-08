@@ -33,8 +33,11 @@
 // guía, y el detalle abre con la dosis orientativa:
 //   «Aplica nitrógeno: segunda fertilización (V6–V8)»
 //     → «Dosis orientativa (guía curada): N: 107–161 kg/ha (≈ 235–350 kg/ha
-//        de urea). Momento: entre V6 y V8 … Cuando apliques no necesitas
-//        registrar nada …»
+//        de urea). Momento: cuando la planta tiene de 6 a 8 hojas … Cuando
+//        apliques no necesitas registrar nada …»
+//     La recomendación lleva además `timingEs` y `rationaleEs` por separado
+//     (el cuándo y el porqué de la guía, en frases completas y sin «N/P/K»
+//     sueltas) para que la pestaña N/P/K arme su resumen de ≤ 50 palabras.
 //   «Prepara nitrógeno: segunda fertilización (V6–V8), todavía no apliques»
 //   «Se acerca nitrógeno: amacollamiento (primer riego de auxilio)»
 //   «Respuesta compatible con fertilización detectada» (frase oficial; la
@@ -564,6 +567,8 @@ class NutritionReadinessEngine {
           : null,
       upcomingWindowLabelEs: upcoming?.stageLabelEs,
       upcomingWindowInDays: upcoming?.inDays,
+      closedWindowNoteEs: _nullIfEmpty(_closedWindowNoteEs(guide, rule, input)),
+      nextWindowNoteEs: _nullIfEmpty(_nextWindowNoteEs(guide, input)),
       trends: List<NutrientTrend>.unmodifiable(trends),
       reasons: List<String>.unmodifiable(reasons),
       limitations: List<String>.unmodifiable(limitations),
@@ -1211,6 +1216,7 @@ class NutritionReadinessEngine {
       sourceOptionsEs: List<String>.unmodifiable(_dedupe(sources)),
       rulesEs: List<String>.unmodifiable(_dedupe(rules)),
       timingEs: rule?.timingEs,
+      rationaleEs: rationale,
       windowLabelEs: windowLabelEs,
       stageLabelEs: stageLabelEs,
       cropLabelEs: input.cropLabel ?? guide?.cropLabelEs,
@@ -1308,6 +1314,7 @@ class NutritionReadinessEngine {
       timingEs:
           upcoming.rule?.timingEs ??
           'Antes de que empiece «${upcoming.stageLabelEs}».',
+      rationaleEs: rationale.isEmpty ? null : rationale,
       sourceOptionsEs: List<String>.unmodifiable(_dedupe(sources)),
       rulesEs: List<String>.unmodifiable(
         _dedupe(<String>[
@@ -1484,6 +1491,13 @@ class NutritionReadinessEngine {
       out.add(t);
     }
     return out;
+  }
+
+  /// Las notas de etapa se arman como texto listo para concatenar (con
+  /// espacio inicial); en la decisión van limpias y, si no hay nada, null.
+  static String? _nullIfEmpty(String s) {
+    final String t = s.trim();
+    return t.isEmpty ? null : t;
   }
 
   // ═════════════════════════════════════════════════════════════════════════

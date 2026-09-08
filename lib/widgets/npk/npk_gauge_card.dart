@@ -14,6 +14,7 @@ class NpkGaugeCard extends StatelessWidget {
     this.targetMin,
     this.targetMax,
     this.statusLabel,
+    this.statusColor,
     required this.centerValue,
     this.centerUnit = 'mg/kg',
     this.scaleMax,
@@ -29,8 +30,15 @@ class NpkGaugeCard extends StatelessWidget {
   final int? targetMin;
   final int? targetMax;
 
+  /// Píldora bajo la cifra («Estable», «Calibrando», «Al alza»…).
   final String? statusLabel;
 
+  /// Color de la píldora. Con él, el texto y el fondo toman ese tono (nada de
+  /// gris); sin él, la píldora queda neutra como en los informes.
+  final Color? statusColor;
+
+  /// Cifra central: el dato crudo del sensor. [centerUnit] es la unidad con
+  /// la que la sonda 7-en-1 entrega N, P y K (mg/kg).
   final int centerValue;
   final String centerUnit;
 
@@ -90,51 +98,38 @@ class NpkGaugeCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  // ─────────────────────────────────────────────────────────
-                  // O2 · Frontera de repintado del gauge.
-                  // ─────────────────────────────────────────────────────────
-                  //
-                  // Este painter es el dibujo más caro de la pantalla NPK: por
-                  // cada `paint()` ejecuta 4 `MaskFilter.blur` (σ18, σ10, σ6,
-                  // σ12), 21 `drawLine` de marcas, 6 `TextPainter().layout()`
-                  // para las etiquetas y un `SweepGradient.createShader()`.
-                  //
-                  // Sin esta frontera compartía capa con
-                  // `_TechWaveScanDivider`, cuyo `AnimationController` hace
-                  // `repeat()` perpetuo: cada tick de la onda re-rasterizaba
-                  // la capa entera y, como al repintar una capa
-                  // `RenderCustomPaint.paint()` llama a `painter.paint()` sin
-                  // consultar `shouldRepaint`, todo ese coste se pagaba 60
-                  // veces por segundo aunque el valor del nutriente no
-                  // cambiara. Ahora el gauge conserva su capa cacheada y solo
-                  // se repinta cuando de verdad cambia.
-                  //
-                  // No cambia un píxel: `RepaintBoundary` no recorta, así que
-                  // los glows y las etiquetas que desbordan el cuadrado del
-                  // `AspectRatio` se siguen pintando igual.
-                  child: RepaintBoundary(
-                    child: CustomPaint(
-                      painter: _NpkGaugePainter(
-                        channel: channel,
-                        percent: v,
-                        accent: accent,
-                        gradient: _gradient(),
-                        targetMin: targetMin,
-                        targetMax: targetMax,
-                        capPpm: _effectiveScaleMax(),
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  // El arco toma el 85 % del lado disponible (decisión de
+                  // producto, 7 sep 2026: un 15 % más chico) y nunca se
+                  // acerca a menos de [_labelOverhang] de un borde: las
+                  // cifras de la escala se pintan FUERA del cuadrado del arco
+                  // (`_NpkGaugePainter._drawLabel`, radio r + 12 más la mitad
+                  // de su ancho) y con el arco a tope se recortaban contra la
+                  // tarjeta. El centro (cifra + píldora) se encoge con él.
+                  final double side = math.min(box.maxWidth, box.maxHeight);
+                  if (!side.isFinite) {
+                    // Sin límites (un padre con scroll sin alto): cuadrado
+                    // por relación de aspecto, como antes.
+                    return Center(
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: _gauge(accent, v),
                       ),
-                      child: _GaugeCenter(
-                        bigText: '$centerValue',
-                        unitText: centerUnit,
-                        accent: accent,
-                        statusLabel: statusLabel,
-                      ),
+                    );
+                  }
+                  final double target = math.max(
+                    0.0,
+                    math.min(side * _ringFraction, side - 2 * _labelOverhang),
+                  );
+                  return Center(
+                    child: SizedBox(
+                      width: target,
+                      height: target,
+                      child: _gauge(accent, v),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 10),
@@ -159,6 +154,56 @@ class NpkGaugeCard extends StatelessWidget {
       },
     );
   }
+
+  /// Fracción del lado disponible que ocupa el arco.
+  static const double _ringFraction = 0.85;
+
+  /// Margen mínimo (px) entre el cuadrado del arco y el borde, para que las
+  /// cifras de la escala no se recorten.
+  static const double _labelOverhang = 26.0;
+
+  Widget _gauge(Color accent, double v) {
+    // ─────────────────────────────────────────────────────────────────────
+    // O2 · Frontera de repintado del gauge.
+    // ─────────────────────────────────────────────────────────────────────
+    //
+    // Este painter es el dibujo más caro de la pantalla NPK: por cada
+    // `paint()` ejecuta 4 `MaskFilter.blur` (σ18, σ10, σ6, σ12), 21
+    // `drawLine` de marcas, 6 `TextPainter().layout()` para las etiquetas y
+    // un `SweepGradient.createShader()`.
+    //
+    // Sin esta frontera compartía capa con `_TechWaveScanDivider`, cuyo
+    // `AnimationController` hace `repeat()` perpetuo: cada tick de la onda
+    // re-rasterizaba la capa entera y, como al repintar una capa
+    // `RenderCustomPaint.paint()` llama a `painter.paint()` sin consultar
+    // `shouldRepaint`, todo ese coste se pagaba 60 veces por segundo aunque
+    // el valor del nutriente no cambiara. Ahora el gauge conserva su capa
+    // cacheada y solo se repinta cuando de verdad cambia.
+    //
+    // No cambia un píxel: `RepaintBoundary` no recorta, así que los glows y
+    // las etiquetas que desbordan el cuadrado del arco se siguen pintando
+    // igual (y ahora, con el margen de arriba, ya no se cortan).
+    return RepaintBoundary(
+      child: CustomPaint(
+        painter: _NpkGaugePainter(
+          channel: channel,
+          percent: v,
+          accent: accent,
+          gradient: _gradient(),
+          targetMin: targetMin,
+          targetMax: targetMax,
+          capPpm: _effectiveScaleMax(),
+        ),
+        child: _GaugeCenter(
+          bigText: '$centerValue',
+          unitText: centerUnit,
+          accent: accent,
+          statusLabel: statusLabel,
+          statusColor: statusColor,
+        ),
+      ),
+    );
+  }
 }
 
 class _GaugeCenter extends StatelessWidget {
@@ -167,12 +212,14 @@ class _GaugeCenter extends StatelessWidget {
     required this.unitText,
     required this.accent,
     this.statusLabel,
+    this.statusColor,
   });
 
   final String bigText;
   final String unitText;
   final Color accent;
   final String? statusLabel;
+  final Color? statusColor;
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +263,11 @@ class _GaugeCenter extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
-                  color: accent.withValues(alpha: 0.08),
+                  // Con color de estado la píldora se pinta en ese tono (nada
+                  // de gris); sin él, neutra en el acento del nutriente.
+                  color: (statusColor ?? accent).withValues(
+                    alpha: statusColor == null ? 0.08 : 0.12,
+                  ),
                   border: Border.all(color: Colors.white.withValues(alpha: 0.80)),
                 ),
                 child: Text(
@@ -224,7 +275,7 @@ class _GaugeCenter extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11.0,
                     fontWeight: FontWeight.w900,
-                    color: Colors.black.withValues(alpha: 0.55),
+                    color: statusColor ?? Colors.black.withValues(alpha: 0.55),
                     height: 1.0,
                   ),
                 ),

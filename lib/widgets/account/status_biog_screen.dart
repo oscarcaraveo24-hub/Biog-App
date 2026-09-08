@@ -27,6 +27,7 @@ class _StatusBioGScreenState extends State<StatusBioGScreen> {
   static const String kIcSensors = 'assets/icons/metrics/ic_riego.png';
   static const String kIcSignal = 'assets/icons/metrics/ic_signal.png';
   static const String kIcSystem = 'assets/icons/metrics/ic_protection.png';
+  static const String kIcLocation = 'assets/icons/metrics/ic_location.png';
 
   static const double kHeroScale = 1.45;
   static const double kHeroHeight = 190;
@@ -1674,12 +1675,14 @@ class _GlowBlob extends StatelessWidget {
 }
 
 /// Fila «Reubicar Bio-G»: acción secundaria, sin dramatismo (no borra nada).
+///
+/// El icono va como en las demás filas de esta pantalla (`_StatusRowAssetPlain`):
+/// el PNG del set de la app (`ic_location.png`), sin caja de fondo y con el
+/// mismo tamaño y escala, para que no desentone.
 class _RelocateRow extends StatelessWidget {
   const _RelocateRow({required this.onTap});
 
   final VoidCallback onTap;
-
-  static const Color _green = Color(0xFF2E7D5A);
 
   @override
   Widget build(BuildContext context) {
@@ -1692,17 +1695,19 @@ class _RelocateRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: _green.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.place_outlined,
-                  color: _green,
-                  size: 20,
+              SizedBox(
+                width: _StatusBioGScreenState.kIconBox,
+                height: _StatusBioGScreenState.kIconBox,
+                child: Center(
+                  child: Transform.scale(
+                    scale: _StatusBioGScreenState.kIconScale,
+                    child: Image.asset(
+                      _StatusBioGScreenState.kIcLocation,
+                      width: _StatusBioGScreenState.kIconSize,
+                      height: _StatusBioGScreenState.kIconSize,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),

@@ -10,15 +10,17 @@
 //      propio sitio. Sin objetivo, sin «bajo/alto», sin dosis derivada.
 //   2. Qué toca hacer con ESTE nutriente según el motor de nutrición
 //      (`NutritionDecision`), en lenguaje de campo: «Aplica fósforo:
-//      establecimiento» + la dosis orientativa de la guía. Una sola
-//      autoridad; aquí no se interpreta ninguna lectura.
+//      establecimiento» + la dosis orientativa de la guía + un resumen de
+//      ≤ 50 palabras con el cuándo y el porqué (`NpkTabCopy`, en su propio
+//      archivo para poder probarlo contra las 32 guías). Una sola autoridad;
+//      aquí no se interpreta ninguna lectura.
 //   3. Las cifras de la semana (ahora, promedio, variación) y un enlace al
 //      detalle completo (por qué, evidencia, ventanas del ciclo).
 //
 // LO QUE YA NO EXISTE AQUÍ (y no debe volver): topes ppm por cultivo, rangos
 // objetivo por etapa sobre la lectura, dosis calculadas desde la sonda,
 // «Registrar aplicación», y copys técnicos en la pestaña (prioridad
-// fenológica, firmas): eso vive en la hoja de detalle.
+// fenológica, firmas, «P» a secas): eso vive en la hoja de detalle.
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -29,6 +31,7 @@ import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
+import 'package:bio_g/screens/npk/npk_tab_copy.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/widgets/npk/npk_gauge_card.dart';
 
@@ -165,11 +168,6 @@ class _NpkScreenState extends State<NpkScreen> {
       gaugePercent: gaugePercent,
       scale: scale,
     );
-  }
-
-  String _trendLabel(NutrientTrend trend, {required bool hasLive}) {
-    if (!hasLive) return 'Sin señal';
-    return trend.trend.labelEs;
   }
 
   @override
@@ -320,10 +318,6 @@ class _NpkScreenState extends State<NpkScreen> {
                                   channel: NpkChannel.n,
                                   title: 'Nitrógeno',
                                   stats: n,
-                                  statusLabel: _trendLabel(
-                                    n.trend,
-                                    hasLive: n.hasLive,
-                                  ),
                                   ctx: ctx,
                                   nutrient: _metricKeyFor(NpkChannel.n),
                                 ),
@@ -331,10 +325,6 @@ class _NpkScreenState extends State<NpkScreen> {
                                   channel: NpkChannel.p,
                                   title: 'Fósforo',
                                   stats: p,
-                                  statusLabel: _trendLabel(
-                                    p.trend,
-                                    hasLive: p.hasLive,
-                                  ),
                                   ctx: ctx,
                                   nutrient: _metricKeyFor(NpkChannel.p),
                                 ),
@@ -342,10 +332,6 @@ class _NpkScreenState extends State<NpkScreen> {
                                   channel: NpkChannel.k,
                                   title: 'Potasio',
                                   stats: k,
-                                  statusLabel: _trendLabel(
-                                    k.trend,
-                                    hasLive: k.hasLive,
-                                  ),
                                   ctx: ctx,
                                   nutrient: _metricKeyFor(NpkChannel.k),
                                 ),
@@ -378,15 +364,6 @@ class _NpkContext {
   final bool isPlanned;
   final bool isGuide;
   final NutritionDecision? decision;
-
-  /// Recomendación vigente si dice algo de este nutriente: es foco de la
-  /// ventana (una ventana puede abrir N, P y K a la vez: «fertilización de
-  /// fondo») o lleva dosis de acompañamiento («acompaña con K₂O …»).
-  NutritionRecommendation? recommendationFor(AgroMetricKey nutrient) {
-    final rec = decision?.recommendation;
-    if (rec == null || !rec.mentionsNutrient(nutrient)) return null;
-    return rec;
-  }
 }
 
 class _NpkStats {
@@ -775,7 +752,6 @@ class _NpkTabContent extends StatelessWidget {
     required this.channel,
     required this.title,
     required this.stats,
-    required this.statusLabel,
     required this.ctx,
     required this.nutrient,
   });
@@ -783,7 +759,6 @@ class _NpkTabContent extends StatelessWidget {
   final NpkChannel channel;
   final String title;
   final _NpkStats stats;
-  final String statusLabel;
   final _NpkContext ctx;
   final AgroMetricKey nutrient;
 
@@ -801,7 +776,19 @@ class _NpkTabContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = _accent();
     final NutritionDecision? d = ctx.decision;
-    final _TabCopy copy = _TabCopy.build(ctx: ctx, nutrient: nutrient, stats: stats);
+    final NpkTabCopy copy = NpkTabCopy.build(
+      nutrient: nutrient,
+      decision: d,
+      isGuide: ctx.isGuide,
+      isPlanned: ctx.isPlanned,
+      hasLive: stats.hasLive,
+      trend: stats.trend,
+    );
+    final NpkTrendPill pill = NpkTrendPill.resolve(
+      hasLive: stats.hasLive,
+      trend: stats.trend,
+      decision: d,
+    );
 
     return Container(
       width: double.infinity,
@@ -828,7 +815,8 @@ class _NpkTabContent extends StatelessWidget {
               // Sin objetivo: la sonda no sostiene «bajo/alto».
               targetMin: null,
               targetMax: null,
-              statusLabel: statusLabel,
+              statusLabel: pill.label,
+              statusColor: pill.color,
               centerValue: stats.level,
               centerUnit: stats.hasLive ? _unit : '—',
               scaleMax: stats.scale,
@@ -902,176 +890,9 @@ class _NpkTabContent extends StatelessWidget {
   }
 }
 
-/// Lo que la pestaña dice de SU nutriente, en lenguaje de campo.
-///
-/// Tres renglones como máximo —qué hacer, cuánto, y un porqué corto— y todos
-/// con líneas acotadas para que la pantalla siga fija. Nada de «prioridad
-/// fenológica» ni «firma»: eso va en la hoja de detalle.
-class _TabCopy {
-  const _TabCopy({
-    required this.headline,
-    this.dose,
-    this.note,
-    this.tone = _TabTone.calm,
-  });
-
-  final String headline;
-
-  /// «40–80 kg/ha de P₂O₅ · ≈ 75–155 kg/ha de MAP».
-  final String? dose;
-
-  /// Una frase corta: cuándo, por qué o qué hace BIO-G mientras tanto.
-  final String? note;
-
-  final _TabTone tone;
-
-  static _TabCopy build({
-    required _NpkContext ctx,
-    required AgroMetricKey nutrient,
-    required _NpkStats stats,
-  }) {
-    final NutritionDecision? d = ctx.decision;
-    final String name = nutrient.labelEs.toLowerCase();
-    final String capName = nutrient.labelEs;
-
-    if (ctx.isGuide) {
-      return _TabCopy(
-        headline: 'Sin cultivo asignado',
-        note: 'Asigna un cultivo y BIO-G te dirá cuándo aplicar $name.',
-      );
-    }
-    if (ctx.isPlanned) {
-      return _TabCopy(
-        headline: 'Referencia antes de sembrar',
-        note: 'Al sembrar, BIO-G te dirá cuándo y cuánto $name aplicar.',
-      );
-    }
-    if (d == null) {
-      return _TabCopy(
-        headline: '$capName en seguimiento',
-        note: 'BIO-G sigue la señal de tu suelo; vuelve al Panel un momento y regresa.',
-      );
-    }
-
-    final NutritionRecommendation? rec = ctx.recommendationFor(nutrient);
-    if (rec != null) {
-      final NutritionDoseRange? range = rec.doseFor(nutrient);
-      final String? dose = range == null ? null : _doseLine(range);
-      final bool focus = rec.coversNutrient(nutrient);
-      switch (rec.kind) {
-        case NutritionRecommendationKind.apply:
-          final String note;
-          if (range == null) {
-            note = 'Cantidad: según la etiqueta del producto o tu asesor.';
-          } else if (range.conditionEs != null) {
-            note = _capitalize('${range.conditionEs}.');
-          } else if (!focus) {
-            note = 'Va junto con lo demás de esta etapa.';
-          } else {
-            note = _shortTiming(rec.timingEs) ??
-                'Cuando apliques no registres nada: BIO-G lo detecta.';
-          }
-          return _TabCopy(
-            headline: rec.headlineForNutrient(nutrient),
-            dose: dose,
-            note: note,
-            tone: _TabTone.action,
-          );
-        case NutritionRecommendationKind.prepare:
-          return _TabCopy(
-            headline: focus
-                ? 'Espera para aplicar $name'
-                : 'Acompaña con $name, pero espera',
-            dose: dose,
-            note: _firstSentence(
-              d.conditions.blockersEs.isEmpty
-                  ? 'El suelo todavía no está listo para recibir fertilizante.'
-                  : d.conditions.blockersEs.first,
-            ),
-            tone: _TabTone.wait,
-          );
-        case NutritionRecommendationKind.upcoming:
-          final int? days = rec.inDays;
-          return _TabCopy(
-            headline: rec.headlineForNutrient(nutrient),
-            dose: dose,
-            note: days == null
-                ? 'Ten el producto listo.'
-                : 'En ~$days día${days == 1 ? '' : 's'}. Ten el producto listo.',
-            tone: _TabTone.action,
-          );
-      }
-    }
-
-    if (d.state == NutritionState.responseWindow) {
-      return const _TabCopy(
-        headline: 'Fertilización detectada',
-        note: 'BIO-G sigue la respuesta del suelo; no tienes que registrar nada.',
-        tone: _TabTone.good,
-      );
-    }
-    if (d.state == NutritionState.learning) {
-      final int? left = d.learningDaysLeft;
-      return _TabCopy(
-        headline: 'Conociendo tu suelo',
-        note: left == null || left <= 0
-            ? 'Primeros días del sensor en esta zona.'
-            : 'Primeros días del sensor: en $left día${left == 1 ? '' : 's'} '
-                  'la tendencia será confiable.',
-      );
-    }
-    final NutritionWindowRecord? window = d.window;
-    if (window != null &&
-        window.outcome == NutritionWindowOutcome.attendedDetected &&
-        window.nutrients.contains(nutrient)) {
-      return _TabCopy(
-        headline: '$capName atendido en esta etapa',
-        note: 'El suelo ya respondió a la fertilización; BIO-G no pide más.',
-        tone: _TabTone.good,
-      );
-    }
-
-    // Sin ventana para este nutriente: hacia dónde va la señal y cuándo toca.
-    final String trendNote = !stats.hasLive || !stats.trend.trend.isKnown
-        ? 'BIO-G te avisa cuando toque aplicarlo.'
-        : switch (stats.trend.trend) {
-            NativeTrend.rising => 'La señal viene al alza: no hace falta más por ahora.',
-            NativeTrend.falling =>
-              'La señal viene a la baja; BIO-G te avisa si toca aplicar.',
-            _ => 'El suelo se mantiene estable en esta etapa.',
-          };
-    return _TabCopy(headline: 'Sin aplicar $name por ahora', note: trendNote);
-  }
-
-  /// «40–80 kg/ha de P₂O₅ · ≈ 75–155 kg/ha de MAP».
-  static String _doseLine(NutritionDoseRange r) {
-    final String? eq = r.commercialEquivalentEs;
-    return eq == null || eq.trim().isEmpty ? r.labelEs : '${r.labelEs} · $eq';
-  }
-
-  /// La primera frase del momento de la guía, para que quepa en dos líneas.
-  static String? _shortTiming(String? timing) {
-    final String t = (timing ?? '').trim();
-    if (t.isEmpty) return null;
-    return _firstSentence(t);
-  }
-
-  static String _firstSentence(String text) {
-    final String t = text.trim();
-    final int cut = t.indexOf(RegExp(r'[.;]\s'));
-    final String first = cut < 0 ? t : t.substring(0, cut + 1);
-    if (first.endsWith(';')) return '${first.substring(0, first.length - 1)}.';
-    return first.endsWith('.') ? first : '$first.';
-  }
-
-  static String _capitalize(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
-}
-
-enum _TabTone { calm, action, wait, good }
-
-/// El bloque de acción de la pestaña: titular, dosis y una nota, con líneas
-/// acotadas y un enlace discreto al detalle.
+/// El bloque de acción de la pestaña: chip de importancia, titular, dosis y
+/// resumen (≤ 50 palabras), con líneas acotadas para que la pantalla siga
+/// fija, y un enlace discreto al detalle. El texto lo arma `NpkTabCopy`.
 class _ActionBlock extends StatelessWidget {
   const _ActionBlock({
     required this.accent,
@@ -1080,24 +901,29 @@ class _ActionBlock extends StatelessWidget {
   });
 
   final Color accent;
-  final _TabCopy copy;
+  final NpkTabCopy copy;
   final VoidCallback? onDetail;
 
   Color _toneColor() => switch (copy.tone) {
-    _TabTone.calm => Colors.black.withValues(alpha: 0.70),
-    _TabTone.action => const Color(0xFF0E1A16),
-    _TabTone.wait => const Color(0xFFB38A2E),
-    _TabTone.good => const Color(0xFF2E7D5A),
+    NpkTabTone.calm => Colors.black.withValues(alpha: 0.70),
+    NpkTabTone.action => const Color(0xFF0E1A16),
+    NpkTabTone.wait => const Color(0xFFB38A2E),
+    NpkTabTone.good => const Color(0xFF2E7D5A),
   };
 
   @override
   Widget build(BuildContext context) {
+    final String? importance = copy.importance;
     final String? dose = copy.dose;
-    final String? note = copy.note;
+    final String? summary = copy.summary;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
       child: Column(
         children: [
+          if (importance != null && importance.trim().isNotEmpty) ...[
+            _ImportanceChip(label: importance, accent: accent),
+            const SizedBox(height: 6),
+          ],
           Text(
             copy.headline,
             textAlign: TextAlign.center,
@@ -1125,18 +951,21 @@ class _ActionBlock extends StatelessWidget {
               ),
             ),
           ],
-          if (note != null && note.trim().isNotEmpty) ...[
+          if (summary != null && summary.trim().isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
-              note,
+              summary,
               textAlign: TextAlign.center,
-              maxLines: 2,
+              // 50 palabras caben en ~7 líneas a este cuerpo; el tope de
+              // palabras vive en `NpkTabCopy.kMaxSummaryWords` y aquí solo
+              // hay una red de seguridad para que la pantalla siga fija.
+              maxLines: 7,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12.2,
                 fontWeight: FontWeight.w700,
                 height: 1.28,
-                color: Colors.black.withValues(alpha: 0.56),
+                color: Colors.black.withValues(alpha: 0.60),
               ),
             ),
           ],
@@ -1164,6 +993,47 @@ class _ActionBlock extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// «Importante en establecimiento»: la ventana de este nutriente pesa en la
+/// etapa. Chip pequeño en el color del nutriente, arriba del titular.
+class _ImportanceChip extends StatelessWidget {
+  const _ImportanceChip({required this.label, required this.accent});
+
+  final String label;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: accent.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.priority_high_rounded, size: 12, color: accent),
+          const SizedBox(width: 3),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.2,
+                color: accent,
+              ),
+            ),
+          ),
         ],
       ),
     );

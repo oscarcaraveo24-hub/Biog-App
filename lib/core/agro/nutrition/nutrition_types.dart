@@ -314,6 +314,7 @@ class NutritionRecommendation {
     this.sourceOptionsEs = const <String>[],
     this.rulesEs = const <String>[],
     this.timingEs,
+    this.rationaleEs,
     this.windowLabelEs,
     this.stageLabelEs,
     this.cropLabelEs,
@@ -357,6 +358,11 @@ class NutritionRecommendation {
 
   /// Cuándo conviene aplicar dentro de la ventana («antes de V8»).
   final String? timingEs;
+
+  /// Por qué importa esta ventana, en una o dos frases y en lenguaje del
+  /// agricultor: el porqué de la regla de la guía o, sin guía, el del perfil
+  /// del cultivo. Es lo que la pestaña N/P/K resume junto a la dosis.
+  final String? rationaleEs;
 
   /// Días hasta que entre la ventana, solo en [NutritionRecommendationKind.upcoming].
   final int? inDays;
@@ -1337,6 +1343,8 @@ class NutritionDecision {
     this.learningDaysLeft,
     this.upcomingWindowLabelEs,
     this.upcomingWindowInDays,
+    this.closedWindowNoteEs,
+    this.nextWindowNoteEs,
     this.trends = const <NutrientTrend>[],
     this.reasons = const <String>[],
     this.limitations = const <String>[],
@@ -1404,6 +1412,17 @@ class NutritionDecision {
   /// Próxima ventana de alta demanda, cuando se aproxima.
   final String? upcomingWindowLabelEs;
   final int? upcomingWindowInDays;
+
+  /// Por qué la guía NO reparte fertilizante en la etapa actual («En «Cosecha»
+  /// la guía de Aguacate no reparte fertilizante: el nitrógeno cerca de la
+  /// cosecha retrasa el color…»). Null cuando la etapa abre ventana o no hay
+  /// guía. Es el «porqué» que la pestaña N/P/K muestra cuando no toca aplicar.
+  final String? closedWindowNoteEs;
+
+  /// «Próxima ventana: brotación (nitrógeno), al entrar la etapa.» o «No
+  /// quedan ventanas de fertilización en este ciclo.» Null sin guía o cuando
+  /// la etapa no está en ella.
+  final String? nextWindowNoteEs;
 
   /// Tendencia reciente de cada canal nativo (N, P, K), en ese orden.
   final List<NutrientTrend> trends;
