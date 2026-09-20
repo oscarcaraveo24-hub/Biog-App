@@ -77,10 +77,12 @@ class BioGDevice {
   /// must not be used for telemetry queries.
   String? get telemetryDeviceId {
     final override = telemetryDeviceIdOverride?.trim();
-    if (override != null && isTelemetryDeviceId(override)) return override;
+    if (override != null && isTelemetryDeviceId(override)) {
+      return override.toLowerCase();
+    }
 
     final normalized = id.trim();
-    if (isTelemetryDeviceId(normalized)) return normalized;
+    if (isTelemetryDeviceId(normalized)) return normalized.toLowerCase();
     return null;
   }
 
@@ -274,7 +276,7 @@ class BioGTelemetry {
   static const double kBatteryMaxPct = 100.0;
 
   static BioGTelemetry? tryFromJson(Map<String, dynamic> json) {
-    final String? deviceId = _firstString(<dynamic>[
+    final String? rawDeviceId = _firstString(<dynamic>[
       json['device_id'],
       json['deviceId'],
     ]);
@@ -285,9 +287,12 @@ class BioGTelemetry {
       json['recorded_at'],
     ]);
 
-    if (deviceId == null || deviceId.isEmpty || timestamp == null) {
+    if (rawDeviceId == null || rawDeviceId.isEmpty || timestamp == null) {
       return null;
     }
+    final String deviceId = BioGDevice.isTelemetryDeviceId(rawDeviceId)
+        ? rawDeviceId.toLowerCase()
+        : rawDeviceId;
 
     final double? airTempC = _firstNullableDouble(<dynamic>[
       json['air_temp_c'],
@@ -387,13 +392,21 @@ class BioGTelemetry {
       SoilSensorSpec.kSoilTempMinC,
       SoilSensorSpec.kSoilTempMaxC,
     );
-    final double? vPh = _plausible(ph, SoilSensorSpec.kPhMin, SoilSensorSpec.kPhMax);
+    final double? vPh = _plausible(
+      ph,
+      SoilSensorSpec.kPhMin,
+      SoilSensorSpec.kPhMax,
+    );
     final double? vEc = _plausible(
       ec,
       SoilSensorSpec.kEcMinMilliSiemens,
       SoilSensorSpec.kEcMaxMilliSiemens,
     );
-    final double? vResistance = _plausible(resistance, kResistanceMin, kResistanceMax);
+    final double? vResistance = _plausible(
+      resistance,
+      kResistanceMin,
+      kResistanceMax,
+    );
     final double? vN = _plausible(n, 0.0, SoilSensorSpec.kNitrogenMaxNative);
     final double? vP = _plausible(p, 0.0, SoilSensorSpec.kPhosphorusMaxNative);
     final double? vK = _plausible(k, 0.0, SoilSensorSpec.kPotassiumMaxNative);
@@ -533,8 +546,7 @@ class BioGTelemetry {
       n: n ?? this.n,
       p: p ?? this.p,
       k: k ?? this.k,
-      hasSoilMoistureData:
-          hasSoilMoistureData ?? this.hasSoilMoistureData,
+      hasSoilMoistureData: hasSoilMoistureData ?? this.hasSoilMoistureData,
       hasSoilTempData: hasSoilTempData ?? this.hasSoilTempData,
       hasPhData: hasPhData ?? this.hasPhData,
       hasResistanceData: hasResistanceData ?? this.hasResistanceData,
@@ -583,7 +595,6 @@ class BioGTelemetry {
     }
     return null;
   }
-
 
   static double? _asNullableDouble(dynamic value) {
     if (value == null) return null;

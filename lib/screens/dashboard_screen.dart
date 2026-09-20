@@ -40,6 +40,15 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen>
     with SingleTickerProviderStateMixin {
+  /// Desplazamiento de la pestaña. Al salir de la pestaña vuelve arriba
+  /// (decisión de producto, 14 sep 2026): el `IndexedStack` conserva las
+  /// pantallas vivas y, sin esto, se volvía a una pantalla a media altura.
+  final ScrollController _tabScroll = ScrollController();
+
+  void _resetTabScroll() {
+    if (_tabScroll.hasClients) _tabScroll.jumpTo(0);
+  }
+
   static const int _dashboardTabIndex = 4;
 
   // Instancia, NO estatica.
@@ -105,6 +114,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     final bool wasActiveBefore = oldWidget.currentIndex == _dashboardTabIndex;
     final bool isActiveNow = widget.currentIndex == _dashboardTabIndex;
 
+    if (wasActiveBefore && !isActiveNow) _resetTabScroll();
+
     if (!wasActiveBefore && isActiveNow) {
       _entranceController
         ..stop()
@@ -120,6 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   void dispose() {
+    _tabScroll.dispose();
     _entranceController.dispose();
     _irrigation.dispose();
     super.dispose();
@@ -380,6 +392,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   top: true,
                   bottom: false,
                   child: SingleChildScrollView(
+                    controller: _tabScroll,
                     padding: const EdgeInsets.fromLTRB(18, 6, 18, 140),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,

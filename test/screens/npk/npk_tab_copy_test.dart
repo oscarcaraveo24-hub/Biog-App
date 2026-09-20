@@ -10,8 +10,10 @@ import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_guide.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_guides.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_readiness_engine.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_season_declaration.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/agro/nutrition/site_learning.dart';
+import 'package:bio_g/core/agro/water/soil_water_scale.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/screens/npk/npk_tab_copy.dart';
@@ -111,6 +113,8 @@ NutritionDecision _decide({
   StageTargets targets = _quiet,
   bool isPerennial = false,
   List<BioGTelemetry> history = const <BioGTelemetry>[],
+  NitrogenPassPlan? passes,
+  SoilTexture soilTexture = SoilTexture.unknown,
 }) {
   final DateTime now = _t0.add(const Duration(days: 5));
   return NutritionReadinessEngine.evaluate(
@@ -118,6 +122,16 @@ NutritionDecision _decide({
       now: now,
       isPlanted: true,
       isGuideMode: false,
+      soilTexture: soilTexture,
+      seasonDeclaration: passes == null
+          ? null
+          : NutritionSeasonDeclaration(
+              deviceId: 'dev',
+              seasonKey: 'dev|$cropKey|2026-04-01',
+              cropKey: cropKey,
+              passes: passes,
+              declaredAt: _t0,
+            ),
       cropKey: cropKey,
       cropLabel: cropLabel,
       stageKey: stageKey,
@@ -275,7 +289,7 @@ void main() {
         trend: _trend(AgroMetricKey.n, NativeTrend.stable),
       );
       expect(c.headline, 'Aplica nitrógeno: segunda fertilización (V6–V8)');
-      expect(c.dose, '107–161 kg/ha de N · ≈ 235–350 kg/ha de urea');
+      expect(c.dose, '64–96 kg/ha de N · ≈ 140–210 kg/ha de urea');
       expect(c.tone, NpkTabTone.action);
       expect(c.importance, 'Importante en vegetativo medio');
       final String s = c.summary!;
@@ -350,6 +364,96 @@ void main() {
       expect(c.headline, 'Sin aplicar nitrógeno por ahora');
       expect(c.summary, contains('el nitrógeno cerca de la cosecha retrasa el color'));
       expect(c.summary, contains('La señal de nitrógeno se mantiene estable.'));
+      expect(NpkTabCopy.wordCount(c.summary!), lessThanOrEqualTo(50));
+    });
+
+    test('ventana plegada por el plan: la pestaña de nitrógeno lo dice con esas palabras', () {
+      // Maíz en V10–V12 con «una sola vez» (arcilla): el N de la temporada
+      // ya se fue a V6–V8. Antes decía «Sin aplicar nitrógeno por ahora ·
+      // la guía de Maíz no reparte fertilizante», que no era cierto.
+      final NutritionDecision d = _decide(
+        cropKey: 'maize',
+        cropLabel: 'Maíz',
+        stageKey: 'vegAdvanced',
+        stageLabel: 'Vegetativa avanzada',
+        targets: _nDemand,
+        passes: NitrogenPassPlan.single,
+        soilTexture: SoilTexture.clay,
+      );
+      expect(d.recommendation, isNull, reason: 'la ventana plegada no abre nada');
+      expect(d.planNoteEs, contains('el nitrógeno de Maíz va en «Segunda fertilización (V6–V8)»'));
+      expect(d.isNitrogenAlreadyDone, isFalse);
+      final NpkTabCopy c = NpkTabCopy.build(
+        nutrient: AgroMetricKey.n,
+        decision: d,
+        isGuide: false,
+        isPlanned: false,
+        hasLive: true,
+        trend: _trend(AgroMetricKey.n, NativeTrend.stable),
+      );
+      expect(c.headline, 'Sin nitrógeno en esta etapa');
+      expect(c.summary, startsWith('Según tu plan (una sola vez), el nitrógeno de Maíz va en «Segunda fertilización (V6–V8)».'));
+      expect(c.summary, contains('icono de ajustes'));
+      expect(c.summary, isNot(contains('no reparte fertilizante')));
+      expect(c.summary, isNot(matches(_bareLetter)));
+      expect(NpkTabCopy.wordCount(c.summary!), lessThanOrEqualTo(50));
+      // El fósforo y el potasio no cambian de discurso: no toca porque van al fondo.
+      final NpkTabCopy p = NpkTabCopy.build(
+        nutrient: AgroMetricKey.p,
+        decision: d,
+        isGuide: false,
+        isPlanned: false,
+        hasLive: true,
+        trend: _trend(AgroMetricKey.p, NativeTrend.stable),
+      );
+      expect(p.headline, 'Sin aplicar fósforo por ahora');
+
+      // Y en V6–V8 la pestaña sí da la dosis completa de la temporada.
+      final NutritionDecision v6 = _decide(
+        cropKey: 'maize',
+        cropLabel: 'Maíz',
+        stageKey: 'vegMid',
+        stageLabel: 'Vegetativa media',
+        targets: _nDemand,
+        passes: NitrogenPassPlan.single,
+        soilTexture: SoilTexture.clay,
+      );
+      final NpkTabCopy open = NpkTabCopy.build(
+        nutrient: AgroMetricKey.n,
+        decision: v6,
+        isGuide: false,
+        isPlanned: false,
+        hasLive: true,
+        trend: _trend(AgroMetricKey.n, NativeTrend.stable),
+      );
+      expect(open.headline, 'Aplica nitrógeno: segunda fertilización (V6–V8)');
+      expect(open.dose, '160–240 kg/ha de N · ≈ 350–520 kg/ha de urea');
+      expect(open.summary, contains('todo el nitrógeno de la temporada'));
+    });
+
+    test('«ya fertilicé»: la pestaña de nitrógeno lo da por hecho y no reprocha nada', () {
+      final NutritionDecision d = _decide(
+        cropKey: 'maize',
+        cropLabel: 'Maíz',
+        stageKey: 'vegMid',
+        stageLabel: 'Vegetativa media',
+        targets: _nDemand,
+        passes: NitrogenPassPlan.alreadyDone,
+      );
+      expect(d.isNitrogenAlreadyDone, isTrue);
+      expect(d.recommendation, isNull);
+      final NpkTabCopy c = NpkTabCopy.build(
+        nutrient: AgroMetricKey.n,
+        decision: d,
+        isGuide: false,
+        isPlanned: false,
+        hasLive: true,
+        trend: _trend(AgroMetricKey.n, NativeTrend.stable),
+      );
+      expect(c.headline, 'Nitrógeno ya aplicado');
+      expect(c.tone, NpkTabTone.good);
+      expect(c.summary, contains('ya fertilizaste'));
+      expect(c.importance, isNull);
       expect(NpkTabCopy.wordCount(c.summary!), lessThanOrEqualTo(50));
     });
 

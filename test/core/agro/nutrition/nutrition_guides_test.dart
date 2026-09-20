@@ -189,16 +189,25 @@ void main() {
       }
     });
 
-    test('maíz V6–V8: 67 % del plan de N con su equivalente en urea', () {
+    test('maíz V6–V8: 40 % del plan de N con su equivalente en urea', () {
       final NutritionGuide maize = kNutritionGuides['maize']!;
       final NutritionDoseRange d = maize.windowDoseFor(
         nutrient: AgroMetricKey.n,
         stageKey: 'vegMid',
       )!;
-      expect(d.min, closeTo(160 * 0.67, 1e-9));
-      expect(d.max, closeTo(240 * 0.67, 1e-9));
-      expect(d.labelEs, '107–161 kg/ha de N');
-      expect(d.commercialEquivalentEs, '≈ 235–350 kg/ha de urea');
+      expect(d.min, closeTo(160 * 0.40, 1e-9));
+      expect(d.max, closeTo(240 * 0.40, 1e-9));
+      expect(d.labelEs, '64–96 kg/ha de N');
+      expect(d.commercialEquivalentEs, '≈ 140–210 kg/ha de urea');
+
+      // La cobertera se partió en dos: el resto entra en V10–V12, que es
+      // donde el maíz tiene su pico de consumo diario.
+      final NutritionDoseRange late = maize.windowDoseFor(
+        nutrient: AgroMetricKey.n,
+        stageKey: 'vegAdvanced',
+      )!;
+      expect(late.min, closeTo(160 * 0.27, 1e-9));
+      expect(late.labelEs, '43–65 kg/ha de N');
       expect(d.isConditional, isFalse);
 
       final NutritionDoseRange k = maize.windowDoseFor(
@@ -214,7 +223,8 @@ void main() {
         'solo si tu análisis de suelo sale bajo en potasio',
       );
       expect(maize.nextWindowRuleAfterAny('germination')?.labelEs, 'Segunda fertilización (V6–V8)');
-      expect(maize.nextWindowRuleAfterAny('vegMid'), isNull);
+      expect(maize.nextWindowRuleAfterAny('vegMid')?.labelEs, 'Tercera fertilización (V10–V12)');
+      expect(maize.nextWindowRuleAfterAny('vegAdvanced'), isNull, reason: 'espigamiento no abre');
       expect(maize.nextWindowRuleAfterAny('harvest'), isNull, reason: 'etapa fuera de la guía');
       expect(maize.nextWindowRuleAfter('harvest', AgroMetricKey.n), isNull);
     });
@@ -223,8 +233,8 @@ void main() {
       final NutritionGuide tomato = kNutritionGuides['tomato']!;
       final StageNutritionRule veg = tomato.ruleForStage('vegetativo')!;
       expect(veg.windowNutrients, <AgroMetricKey>{AgroMetricKey.n});
-      expect(tomato.windowDoseFor(nutrient: AgroMetricKey.n, stageKey: 'vegetativo')?.labelEs, '45–60 kg/ha de N');
-      expect(tomato.windowDoseFor(nutrient: AgroMetricKey.k, stageKey: 'vegetativo')?.labelEs, '38–50 kg/ha de K₂O');
+      expect(tomato.windowDoseFor(nutrient: AgroMetricKey.n, stageKey: 'vegetativo')?.labelEs, '49–65 kg/ha de N');
+      expect(tomato.windowDoseFor(nutrient: AgroMetricKey.k, stageKey: 'vegetativo')?.labelEs, '18–27 kg/ha de K₂O');
       expect(tomato.windowDoseFor(nutrient: AgroMetricKey.p, stageKey: 'vegetativo')?.labelEs, '12–20 kg/ha de P₂O₅');
     });
 
@@ -280,21 +290,35 @@ void main() {
       }
     });
 
-    test('manzano: brotación reparte 65 % del N anual con su equivalente', () {
+    test('manzano: el N va por mitades, primavera y post-cosecha', () {
       final NutritionGuide apple = kNutritionGuides['apple_tree']!;
       final NutritionDoseRange n = apple.windowDoseFor(
         nutrient: AgroMetricKey.n,
         stageKey: 'budbreak',
       )!;
-      expect(n.labelEs, '65–91 kg/ha de N');
+      // Plan 70–140 kg N/ha (17 sep 2026: el mínimo bajó de 100 a 70 con
+      // WSU, Wisconsin y Cornell) × 50 % de la ventana.
+      expect(n.labelEs, '35–70 kg/ha de N');
       expect(n.unit, DoseUnit.kgPerHectare);
       expect(n.commercialEquivalentEs, isNotNull);
-      expect(n.transparencyEs, contains('65 %'));
+      expect(n.transparencyEs, contains('50 %'));
       expect(apple.windowDoseFor(nutrient: AgroMetricKey.k, stageKey: 'budbreak'), isNull);
       expect(apple.windowDoseFor(nutrient: AgroMetricKey.n, stageKey: 'dormancy'), isNull);
-      // Nogal pecanero: la nuez toma N también en el llenado.
+      // Nogal pecanero: la nuez toma N también en el llenado, y la ventana de
+      // post-cosecha se eliminó porque en Chihuahua se cosecha sin hoja.
       final NutritionGuide pecan = kNutritionGuides['walnut_tree']!;
       expect(pecan.ruleForStage('fruit_fill')!.windowNutrients, contains(AgroMetricKey.n));
+      expect(pecan.ruleForStage('post_harvest')!.windowNutrients, isEmpty);
+      expect(
+        pecan.windowDoseFor(nutrient: AgroMetricKey.n, stageKey: 'post_harvest'),
+        isNull,
+        reason: 'sin hoja no hay absorción: el N post-cosecha se fue',
+      );
+      // …y el potasio se movió al reposo, que es cuando toca.
+      expect(
+        pecan.ruleForStage('dormancy')!.windowNutrients,
+        contains(AgroMetricKey.k),
+      );
     });
 
     test('cada plan de temporada trae fuente y cada guía con plan trae fuentes citables', () {

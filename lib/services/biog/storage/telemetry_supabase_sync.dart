@@ -73,7 +73,7 @@ class TelemetrySupabaseSync {
 
   /// Downloads the latest telemetry row for [deviceId].
   Future<BioGTelemetry?> downloadLatest(String deviceId) async {
-    final normalizedDeviceId = deviceId.trim();
+    final normalizedDeviceId = _normalizeDeviceId(deviceId);
     if (normalizedDeviceId.isEmpty) return null;
     if (!isValidTelemetryDeviceId(normalizedDeviceId)) {
       _log(
@@ -149,7 +149,7 @@ class TelemetrySupabaseSync {
     required DateTime since,
     int limit = _defaultLimit,
   }) async {
-    final normalizedDeviceId = deviceId.trim();
+    final normalizedDeviceId = _normalizeDeviceId(deviceId);
     if (normalizedDeviceId.isEmpty) return <BioGTelemetry>[];
     if (!isValidTelemetryDeviceId(normalizedDeviceId)) {
       _log(
@@ -230,7 +230,7 @@ class TelemetrySupabaseSync {
     String deviceId, {
     int limit = allHistoryLimit,
   }) async {
-    final normalizedDeviceId = deviceId.trim();
+    final normalizedDeviceId = _normalizeDeviceId(deviceId);
     if (normalizedDeviceId.isEmpty) return <BioGTelemetry>[];
     if (!isValidTelemetryDeviceId(normalizedDeviceId)) {
       _log(
@@ -302,7 +302,7 @@ class TelemetrySupabaseSync {
     required int limit,
     required String source,
   }) async {
-    final normalizedDeviceId = deviceId.trim();
+    final normalizedDeviceId = _normalizeDeviceId(deviceId);
     if (normalizedDeviceId.isEmpty) return <BioGTelemetry>[];
     if (!isValidTelemetryDeviceId(normalizedDeviceId)) {
       _log(
@@ -457,19 +457,19 @@ class TelemetrySupabaseSync {
     required String source,
     bool preferLatestTimestamp = false,
   }) {
-    final mapped = _mapRow(
-      row,
-      preferLatestTimestamp: preferLatestTimestamp,
-    );
+    final mapped = _mapRow(row, preferLatestTimestamp: preferLatestTimestamp);
     final telemetry = BioGTelemetry.tryFromJson(mapped);
 
-    if (telemetry == null) {
+    if (telemetry == null ||
+        _normalizeDeviceId(telemetry.deviceId) !=
+            _normalizeDeviceId(deviceId)) {
       _log(
         'parse_failed source=$source table=$_table device_id=$deviceId '
         'row_device_id=${row['device_id']} timestamp=${row['timestamp']} '
         'created_at=${row['created_at']} battery_pct=${row['battery_pct']} '
         'signal_rssi=${row['signal_rssi']}',
       );
+      return null;
     }
 
     return telemetry;
@@ -645,6 +645,11 @@ class TelemetrySupabaseSync {
     final text = value.toString().trim();
     if (text.isEmpty || text.toLowerCase() == 'null') return null;
     return double.tryParse(text);
+  }
+
+  static String _normalizeDeviceId(String value) {
+    final trimmed = value.trim();
+    return isValidTelemetryDeviceId(trimmed) ? trimmed.toLowerCase() : trimmed;
   }
 
   static bool _hasAnySensorRawField(Map<String, dynamic> row) {

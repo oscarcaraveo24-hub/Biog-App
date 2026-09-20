@@ -10,7 +10,7 @@ import 'package:bio_g/models/biog_telemetry.dart';
 /// In the current hybrid architecture, [HybridBioGRepository] implements
 /// this interface by combining:
 ///   - a real [DeviceIdentityRepository] for devices / active device
-///   - a [SensorSimulator] for live telemetry / history / alerts
+///   - the offline-first real telemetry pipeline for live/history
 ///
 /// When real hardware replaces the simulator, only the implementation
 /// changes — this contract stays stable.

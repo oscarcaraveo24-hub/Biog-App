@@ -264,14 +264,12 @@ class AccountSectionHeader extends StatelessWidget {
 
 class AccountMyBioGCardSection extends StatelessWidget {
   final String deviceIconAsset;
-  final String errorIconAsset;
   final List<AccountMyBioGItem> items;
   final VoidCallback onAddBioGTap;
 
   const AccountMyBioGCardSection({
     super.key,
     required this.deviceIconAsset,
-    required this.errorIconAsset,
     required this.items,
     required this.onAddBioGTap,
   });
@@ -280,35 +278,38 @@ class AccountMyBioGCardSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-      child: _GlassCard(
-        radius: 22,
-        child: Column(
-          children: <Widget>[
-            if (items.isEmpty) ...<Widget>[
-              _DeviceRow(
-                deviceIconAsset: deviceIconAsset,
-                deviceIconTint: Colors.black38,
-                title: 'Aún no tienes Bio-G agregados',
-                subtitle: 'Agrega uno con QR o Bluetooth',
-                trailingText: '',
-                trailingColor: Colors.black54,
-                errorIconAsset: errorIconAsset,
-                onTap: () {},
-              ),
-            ] else ...<Widget>[
-              for (int i = 0; i < items.length; i++) ...<Widget>[
-                _LiveDeviceRow(
-                  deviceIconAsset: deviceIconAsset,
-                  errorIconAsset: errorIconAsset,
-                  item: items[i],
-                ),
-                if (i != items.length - 1) const _DividerLine(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _GlassCard(
+            radius: 22,
+            child: Column(
+              children: <Widget>[
+                if (items.isEmpty) ...<Widget>[
+                  _DeviceRow(
+                    deviceIconAsset: deviceIconAsset,
+                    deviceIconTint: Colors.black38,
+                    title: 'Aún no tienes Bio-G agregados',
+                    subtitle: 'Agrega uno por Bluetooth',
+                    trailingText: '',
+                    trailingColor: Colors.black54,
+                    onTap: () {},
+                  ),
+                ] else ...<Widget>[
+                  for (int i = 0; i < items.length; i++) ...<Widget>[
+                    _LiveDeviceRow(
+                      deviceIconAsset: deviceIconAsset,
+                      item: items[i],
+                    ),
+                    if (i != items.length - 1) const _DividerLine(),
+                  ],
+                ],
               ],
-            ],
-            const SizedBox(height: 14),
-            BioGButton(label: 'Agregar Bio-G', onTap: onAddBioGTap),
-          ],
-        ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          BioGButton(label: 'Agregar BIO-G', onTap: onAddBioGTap),
+        ],
       ),
     );
   }
@@ -884,14 +885,9 @@ class _NavRowState extends State<_NavRow> {
 
 class _LiveDeviceRow extends StatelessWidget {
   final String deviceIconAsset;
-  final String errorIconAsset;
   final AccountMyBioGItem item;
 
-  const _LiveDeviceRow({
-    required this.deviceIconAsset,
-    required this.errorIconAsset,
-    required this.item,
-  });
+  const _LiveDeviceRow({required this.deviceIconAsset, required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -906,7 +902,6 @@ class _LiveDeviceRow extends StatelessWidget {
         subtitle: item.uiModel.subtitle,
         trailingText: item.uiModel.trailingText,
         trailingColor: item.uiModel.trailingColor,
-        errorIconAsset: errorIconAsset,
         onTap: item.onTap,
       );
     }
@@ -929,7 +924,6 @@ class _LiveDeviceRow extends StatelessWidget {
           subtitle: ui.subtitle,
           trailingText: ui.trailingText,
           trailingColor: ui.trailingColor,
-          errorIconAsset: errorIconAsset,
           onTap: item.onTap,
         );
       },
@@ -954,7 +948,6 @@ class _DeviceRow extends StatefulWidget {
   final String subtitle;
   final String trailingText;
   final Color trailingColor;
-  final String? errorIconAsset;
   final VoidCallback onTap;
 
   const _DeviceRow({
@@ -965,7 +958,6 @@ class _DeviceRow extends StatefulWidget {
     required this.trailingText,
     required this.trailingColor,
     required this.onTap,
-    this.errorIconAsset,
   });
 
   @override
@@ -975,13 +967,6 @@ class _DeviceRow extends StatefulWidget {
 class _DeviceRowState extends State<_DeviceRow> {
   bool _pressed = false;
 
-  bool _isErrorText(String value) {
-    final text = value.trim().toLowerCase();
-    return text.contains('sin señal') ||
-        text.contains('sin senal') ||
-        text.contains('error');
-  }
-
   void _setPressed(bool value) {
     if (_pressed == value) return;
     setState(() => _pressed = value);
@@ -989,11 +974,6 @@ class _DeviceRowState extends State<_DeviceRow> {
 
   @override
   Widget build(BuildContext context) {
-    final hasErrorAsset = (widget.errorIconAsset ?? '').trim().isNotEmpty;
-    final useErrorAsMain =
-        hasErrorAsset &&
-        (_isErrorText(widget.subtitle) || _isErrorText(widget.trailingText));
-
     return GestureDetector(
       onTapDown: (_) => _setPressed(true),
       onTapUp: (_) => _setPressed(false),
@@ -1012,26 +992,19 @@ class _DeviceRowState extends State<_DeviceRow> {
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: <Widget>[
-                  if (useErrorAsMain)
-                    _AssetIcon(
-                      assetPath: widget.errorIconAsset!,
-                      size: 34,
-                      scale: 2.2,
-                    )
-                  else
-                    TweenAnimationBuilder<Color?>(
-                      tween: ColorTween(end: widget.deviceIconTint),
-                      duration: const Duration(milliseconds: 360),
-                      curve: Curves.easeOut,
-                      builder: (context, color, _) {
-                        return _TintedAssetIcon(
-                          assetPath: widget.deviceIconAsset,
-                          tint: color ?? widget.deviceIconTint,
-                          size: 34,
-                          scale: 0.7,
-                        );
-                      },
-                    ),
+                  TweenAnimationBuilder<Color?>(
+                    tween: ColorTween(end: widget.deviceIconTint),
+                    duration: const Duration(milliseconds: 360),
+                    curve: Curves.easeOut,
+                    builder: (context, color, _) {
+                      return _TintedAssetIcon(
+                        assetPath: widget.deviceIconAsset,
+                        tint: color ?? widget.deviceIconTint,
+                        size: 34,
+                        scale: 0.7,
+                      );
+                    },
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

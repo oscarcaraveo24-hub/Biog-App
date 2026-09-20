@@ -207,6 +207,29 @@ class NpkTabCopy {
       );
     }
 
+    // La etapa quedó plegada por el plan del productor: su nitrógeno va en
+    // otra pasada (o ya lo dio). Se dice con esas palabras, antes de mirar
+    // el libro: una ventana plegada puede haber cerrado «sin evidencia» sin
+    // pesar, y eso no es un reproche que mostrar (17 sep 2026).
+    final String? planNote = d.planNoteEs;
+    if (nutrient == AgroMetricKey.n && planNote != null) {
+      return NpkTabCopy(
+        headline: d.isNitrogenAlreadyDone
+            ? 'Nitrógeno ya aplicado'
+            : 'Sin nitrógeno en esta etapa',
+        tone: d.isNitrogenAlreadyDone ? NpkTabTone.good : NpkTabTone.calm,
+        summary: summarize(
+          lead: <String>[
+            planNote,
+            'Si eso cambió, ajusta tu plan con el icono de ajustes de esta '
+                'pantalla.',
+            trendSentence(nutrient, trend, hasLive: hasLive),
+          ],
+          tail: d.nextWindowNoteEs,
+        ),
+      );
+    }
+
     final NutritionWindowRecord? window = d.window;
     if (window != null &&
         window.outcome == NutritionWindowOutcome.attendedDetected &&
@@ -241,12 +264,14 @@ class NpkTabCopy {
     }
 
     // Sin ventana para este nutriente: por qué no toca ahora (la guía), hacia
-    // dónde va la señal y cuándo vuelve a tocar.
+    // dónde va la señal y cuándo vuelve a tocar. Si la etapa quedó plegada
+    // por el plan de nitrógeno, la nota de cierre habla de nitrógeno: para
+    // fósforo y potasio vale más la del perfil de la etapa.
     return NpkTabCopy(
       headline: 'Sin aplicar $name por ahora',
       summary: summarize(
         lead: <String>[
-          d.closedWindowNoteEs ?? _stageNote(d, nutrient),
+          (planNote == null ? d.closedWindowNoteEs : null) ?? _stageNote(d, nutrient),
           trendSentence(nutrient, trend, hasLive: hasLive),
         ],
         tail: d.nextWindowNoteEs,

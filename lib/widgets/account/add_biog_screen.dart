@@ -175,10 +175,7 @@ class AddBioGScreen extends StatelessWidget {
                               ),
                             );
 
-                        if (res == null) return;
-                        // El `context` no puede cruzar el await anterior sin
-                        // comprobar que el widget sigue montado.
-                        if (!context.mounted) return;
+                        if (res == null || !context.mounted) return;
                         await _confirmAndAdd(context, payload: res);
                       },
                     ),

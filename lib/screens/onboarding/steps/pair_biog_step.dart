@@ -38,13 +38,15 @@ class PairBioGStep extends StatelessWidget {
           subtitle: 'Ultimo paso para comenzar a monitorear tu cultivo.',
         ),
         const SizedBox(height: 38),
-        _PairActionCard(
-          title: 'Escanear código QR',
-          subtitle: 'Escanea el código que viene en tu dispositivo Bio-G.',
-          icon: Icons.qr_code_scanner_rounded,
-          onTap: onScanQr,
-        ),
-        const SizedBox(height: 14),
+        if (onScanQr != null) ...<Widget>[
+          _PairActionCard(
+            title: 'Escanear código QR',
+            subtitle: 'Escanea el código que viene en tu dispositivo Bio-G.',
+            icon: Icons.qr_code_scanner_rounded,
+            onTap: onScanQr,
+          ),
+          const SizedBox(height: 14),
+        ],
         _PairActionCard(
           title: 'Conectar por Bluetooth',
           subtitle: 'Busca tu Bio-G cercano y enlázalo automáticamente.',
@@ -179,17 +181,10 @@ class _PairActionCard extends StatelessWidget {
                   gradient: const LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: <Color>[
-                      Color(0xFFF0F7E7),
-                      Color(0xFFE6F0DA),
-                    ],
+                    colors: <Color>[Color(0xFFF0F7E7), Color(0xFFE6F0DA)],
                   ),
                 ),
-                child: Icon(
-                  icon,
-                  size: 24,
-                  color: const Color(0xFF78A15D),
-                ),
+                child: Icon(icon, size: 24, color: const Color(0xFF78A15D)),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -211,7 +206,7 @@ class _PairActionCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13.6,
                         height: 1.45,
-                        color: Colors.black.withValues(alpha:0.44),
+                        color: Colors.black.withValues(alpha: 0.44),
                       ),
                     ),
                   ],

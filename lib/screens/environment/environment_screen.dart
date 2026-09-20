@@ -37,6 +37,15 @@ class EnvironmentScreen extends StatefulWidget {
 
 class _EnvironmentScreenState extends State<EnvironmentScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  /// Desplazamiento de la pestaña. Al salir de la pestaña vuelve arriba
+  /// (decisión de producto, 14 sep 2026): el `IndexedStack` conserva las
+  /// pantallas vivas y, sin esto, se volvía a una pantalla a media altura.
+  final ScrollController _tabScroll = ScrollController();
+
+  void _resetTabScroll() {
+    if (_tabScroll.hasClients) _tabScroll.jumpTo(0);
+  }
+
   static const Duration _cacheTtl = Duration(minutes: 30);
   static const Duration _forecastRetryCooldown = Duration(minutes: 5);
   static const bool _debugEnvironmentLogs = false;
@@ -149,6 +158,8 @@ class _EnvironmentScreenState extends State<EnvironmentScreen>
     final bool wasActiveBefore = oldWidget.isActive;
     final bool isActiveNow = widget.isActive;
 
+    if (wasActiveBefore && !isActiveNow) _resetTabScroll();
+
     if (oldWidget.currentIndex != widget.currentIndex ||
         wasActiveBefore != isActiveNow) {
       _logTabState(reason: 'tab-update');
@@ -173,6 +184,7 @@ class _EnvironmentScreenState extends State<EnvironmentScreen>
 
   @override
   void dispose() {
+    _tabScroll.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _autoRefreshTimer?.cancel();
     _entranceController.dispose();
@@ -666,6 +678,7 @@ class _EnvironmentScreenState extends State<EnvironmentScreen>
                   : RefreshIndicator(
                       onRefresh: _bootstrap,
                       child: CustomScrollView(
+                        controller: _tabScroll,
                         physics: const BouncingScrollPhysics(),
                         slivers: [
                           SliverToBoxAdapter(

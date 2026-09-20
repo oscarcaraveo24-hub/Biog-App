@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
 import 'package:bio_g/core/agro/irrigation/irrigation_types.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_season_declaration.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/notifications/notification_dispatcher.dart';
 import 'package:bio_g/core/telemetry/telemetry_ingest_service.dart';
@@ -68,6 +69,9 @@ class BioGStore extends ChangeNotifier {
           _lastIrrigationDecision = null;
           _lastNutritionDecision = null;
           nutrition.reset();
+          // La selección y el dato visible cambian como una sola transición.
+          // Ningún cuadro puede seguir mostrando la lectura del equipo previo.
+          live = null;
         }
         activeDevice = v;
         notifyListeners();
@@ -76,6 +80,11 @@ class BioGStore extends ChangeNotifier {
 
     _subs.add(
       _repo.watchLiveTelemetry().listen((v) {
+        final String? expectedId = activeDevice?.telemetryDeviceId;
+        if (v != null &&
+            (expectedId == null || v.deviceId.toLowerCase() != expectedId)) {
+          return;
+        }
         live = v;
         notifyListeners();
         // Deja constancia de los eventos del cultivo aunque nadie tenga la
@@ -208,11 +217,7 @@ class BioGStore extends ChangeNotifier {
     //    cache and emits fresh device streams.
     final repo = _repo;
     if (repo is HybridBioGRepository) {
-      await repo.bindUser(
-        userId: userId,
-        seedResolver: (deviceId) => seedInstallForDevice(deviceId),
-        cropContextResolver: (deviceId) => _cropByDevice[deviceId],
-      );
+      await repo.bindUser(userId: userId);
       // 1.5) Si algún dispositivo cambió de id al migrar del formato de texto
       //      antiguo a UUID, hay que mover con él su cultivo y su proyección.
       await _applyLegacyDeviceIdMigration(repo.lastLegacyIdMigration);
@@ -342,6 +347,10 @@ class BioGStore extends ChangeNotifier {
     _cropCareAvgByDevice.clear();
     _telemetryStreamsByDevice.clear();
     _loggedTelemetryIds.clear();
+    devices = const <BioGDevice>[];
+    activeDevice = null;
+    live = null;
+    latestAlerts = const <BioGAlert>[];
     notifyListeners();
   }
 
@@ -447,7 +456,9 @@ class BioGStore extends ChangeNotifier {
   YieldProjectionConfig? get activeYieldProjectionConfig {
     final device = activeDevice;
     if (device == null) return null;
-    if (isEstablishmentMaintenanceContext(_cropByDevice[device.id])) return null;
+    if (isEstablishmentMaintenanceContext(_cropByDevice[device.id])) {
+      return null;
+    }
     return _yieldByDevice[device.id];
   }
 
@@ -546,6 +557,48 @@ class BioGStore extends ChangeNotifier {
     await _cropEventRecorder.recordFromStore(this);
   }
 
+  /// El productor declara cómo va a fertilizar esta temporada (tarjeta de la
+  /// pantalla NPK, hoja del sensor o «Cambiar» en la línea de tiempo). Se
+  /// persiste junto al libro de ventanas, se recalcula la decisión con la guía
+  /// efectiva y se avisa a las pantallas.
+  Future<NutritionSeasonDeclaration?> declareNutritionPlan(
+    NitrogenPassPlan passes, {
+    String sourceId = NutritionDeclarationSources.npkCard,
+  }) async {
+    if (activeDevice == null) return null;
+    final DateTime now = DateTime.now();
+    final CropRuntimeSnapshot runtime = resolveActiveRuntime(now: now);
+    NutritionSeasonDeclaration? declaration;
+    try {
+      declaration = await nutrition.declare(
+        runtime: runtime,
+        passes: passes,
+        sourceId: sourceId,
+        userId: _currentUserId,
+        at: now,
+      );
+      publishNutritionDecision(nutrition.decisionFor(runtime, now: now));
+    } catch (_) {
+      // La declaración nunca puede tumbar la pantalla.
+    }
+    notifyListeners();
+    return declaration;
+  }
+
+  /// Deshace la declaración de la temporada: vuelve el plan de la guía.
+  Future<void> clearNutritionPlan() async {
+    if (activeDevice == null) return;
+    final DateTime now = DateTime.now();
+    final CropRuntimeSnapshot runtime = resolveActiveRuntime(now: now);
+    try {
+      await nutrition.clearDeclaration(runtime: runtime, userId: _currentUserId);
+      publishNutritionDecision(nutrition.decisionFor(runtime, now: now));
+    } catch (_) {
+      // Ídem.
+    }
+    notifyListeners();
+  }
+
   /// Acceso de solo lectura al historial de eventos registrado.
   CropEventLocalStorage get cropEventStorage => _cropEventRecorder.storage;
 
@@ -609,7 +662,9 @@ class BioGStore extends ChangeNotifier {
     // de su primer `await` —resolver el runtime y correr el motor de eventos—,
     // y esto se invoca desde el `build` del Panel: dejarlo en línea metería el
     // motor de eventos en la ruta crítica del dibujado.
-    scheduleMicrotask(() => unawaited(_cropEventRecorder.recordFromStore(this)));
+    scheduleMicrotask(
+      () => unawaited(_cropEventRecorder.recordFromStore(this)),
+    );
   }
 
   /// Identidad estable de una decisión de riego: qué se decidió, no cuándo.
@@ -658,7 +713,9 @@ class BioGStore extends ChangeNotifier {
     final String? before = nutritionDecisionKey(_lastNutritionDecision);
     _lastNutritionDecision = decision;
     if (nutritionDecisionKey(decision) == before) return;
-    scheduleMicrotask(() => unawaited(_cropEventRecorder.recordFromStore(this)));
+    scheduleMicrotask(
+      () => unawaited(_cropEventRecorder.recordFromStore(this)),
+    );
   }
 
   /// Identidad estable de una decisión de nutrición: qué se decidió, no cuándo.
@@ -807,8 +864,9 @@ class BioGStore extends ChangeNotifier {
 
       final YieldProjectionConfig? projection = _yieldByDevice.remove(oldId);
       if (projection != null) {
-        final YieldProjectionConfig movedProjection =
-            projection.copyWith(deviceId: newId);
+        final YieldProjectionConfig movedProjection = projection.copyWith(
+          deviceId: newId,
+        );
         _yieldByDevice[newId] = movedProjection;
         try {
           await _yieldProjectionStorage.save(
@@ -1059,7 +1117,8 @@ class BioGStore extends ChangeNotifier {
         // volvía a `NULL` y el motor de humedad caía al franco de respaldo.
         soilTextureId: previous?.soilTextureId,
         soilTextureSource: previous?.soilTextureSource,
-        soilLocalDescriptors: previous?.soilLocalDescriptors ?? const <String>[],
+        soilLocalDescriptors:
+            previous?.soilLocalDescriptors ?? const <String>[],
         soilLocalOther: previous?.soilLocalOther,
         locationLabel: previous?.locationLabel,
         locationSource: previous?.locationSource,
@@ -1285,7 +1344,9 @@ class BioGStore extends ChangeNotifier {
 
   String? telemetryDeviceIdForDeviceId(String deviceId) {
     final normalized = deviceId.trim();
-    if (BioGDevice.isTelemetryDeviceId(normalized)) return normalized;
+    if (BioGDevice.isTelemetryDeviceId(normalized)) {
+      return normalized.toLowerCase();
+    }
 
     for (final device in devices) {
       if (device.id == normalized) {
@@ -1341,6 +1402,33 @@ class BioGStore extends ChangeNotifier {
   }
 
   Future<void> removeDevice(String id) async {
+    final BioGDevice? device = devices.cast<BioGDevice?>().firstWhere(
+      (BioGDevice? candidate) => candidate?.id == id,
+      orElse: () => null,
+    );
+    final String? telemetryDeviceId = device?.telemetryDeviceId;
+    final bool removedActive = activeDevice?.id == id;
+
+    if (removedActive) {
+      live = null;
+      _resetAgroState();
+      _lastIrrigationDecision = null;
+      _lastNutritionDecision = null;
+      nutrition.reset();
+      notifyListeners();
+    }
+
+    if (telemetryDeviceId != null) {
+      final String? connectedId = bleTransport.connectedIdentity?.deviceId
+          .trim()
+          .toLowerCase();
+      if (connectedId == telemetryDeviceId) {
+        await bleTransport.disconnect();
+      }
+      _telemetryStreamsByDevice.remove(telemetryDeviceId);
+      await telemetryIngest.forgetDevice(telemetryDeviceId);
+    }
+
     _cropByDevice.remove(id);
     _yieldByDevice.remove(id);
     _alertsStateByDevice.remove(id);
@@ -1351,13 +1439,6 @@ class BioGStore extends ChangeNotifier {
     await _nutritionStorage.deleteDevice(id);
     unawaited(_queueCropContextDelete(id));
     unawaited(_queueYieldDelete(id));
-
-    if (activeDevice?.id == id) {
-      _resetAgroState();
-      _lastIrrigationDecision = null;
-      _lastNutritionDecision = null;
-      nutrition.reset();
-    }
 
     notifyListeners();
     await _repo.removeDevice(id);
@@ -1496,11 +1577,13 @@ class BioGStore extends ChangeNotifier {
         requested: context.calendarTypeId,
       ),
       sowingDate:
-          !isOrnamental && context.lifecycleStatus == CropLifecycleStatus.planted
+          !isOrnamental &&
+              context.lifecycleStatus == CropLifecycleStatus.planted
           ? context.sowingDate
           : null,
       plannedSowingDate:
-          !isOrnamental && context.lifecycleStatus == CropLifecycleStatus.planned
+          !isOrnamental &&
+              context.lifecycleStatus == CropLifecycleStatus.planned
           ? context.plannedSowingDate
           : null,
       // ── La escala SÍ aplica a ornamentales ─────────────────────────────────
@@ -1706,8 +1789,8 @@ class BioGStore extends ChangeNotifier {
 }
 
 class BioGScope extends InheritedNotifier<BioGStore> {
-  const BioGScope({super.key, required BioGStore store, required Widget child})
-    : super(notifier: store, child: child);
+  const BioGScope({super.key, required BioGStore store, required super.child})
+    : super(notifier: store);
 
   static BioGStore of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<BioGScope>();

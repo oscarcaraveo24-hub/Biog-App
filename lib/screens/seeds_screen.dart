@@ -1,9 +1,14 @@
+import 'dart:async' show unawaited;
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_plan_resolver.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_timeline_vm.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
+import 'package:bio_g/core/crops/crop_stage_schedule.dart';
 import 'package:bio_g/core/crops/ornamental/ornamental_crops.dart';
 import 'package:bio_g/core/crops/catalog/crop_catalog.dart';
 import 'package:bio_g/core/crops/crop_cycle_display_resolver.dart';
@@ -13,9 +18,13 @@ import 'package:bio_g/core/crops/tree_lifecycle.dart';
 import 'package:bio_g/core/crops/tree_profile_presentation.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
+import 'package:bio_g/screens/npk/npk_screen.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
+import 'package:bio_g/services/biog/nutrition/nutrition_coordinator.dart';
+import 'package:bio_g/widgets/nutrition/nutrition_timeline.dart';
 import 'package:bio_g/widgets/bottom_nav.dart';
 import 'package:bio_g/widgets/shared/bio_g_page_background.dart';
+import 'package:bio_g/widgets/shared/bio_g_page_route.dart';
 import 'package:bio_g/widgets/shared/bio_g_glass_card.dart';
 import 'package:bio_g/widgets/seeds/maize_models.dart';
 
@@ -42,6 +51,35 @@ class SeedsScreen extends StatefulWidget {
 
 class _SeedsScreenState extends State<SeedsScreen>
     with SingleTickerProviderStateMixin {
+  /// Desplazamiento de la pestaña. Al salir de la pestaña vuelve arriba
+  /// (decisión de producto, 14 sep 2026): el `IndexedStack` conserva las
+  /// pantallas vivas y, sin esto, se volvía a una pantalla a media altura.
+  final ScrollController _tabScroll = ScrollController();
+
+  /// La memoria nutricional (libro de ventanas, declaración) se lee fuera del
+  /// cuadro y el store no reenvía esas notificaciones: se escucha al
+  /// coordinador directamente, como en NPK, para que la línea de tiempo deje
+  /// el gris en cuanto se sepa si el productor ya contestó (17 sep 2026).
+  BioGStore? _boundStore;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final store = BioGScope.of(context);
+    if (identical(store, _boundStore)) return;
+    _boundStore?.nutrition.removeListener(_onNutritionChanged);
+    store.nutrition.addListener(_onNutritionChanged);
+    _boundStore = store;
+  }
+
+  void _onNutritionChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _resetTabScroll() {
+    if (_tabScroll.hasClients) _tabScroll.jumpTo(0);
+  }
+
   static const int _seedsTabIndex = 2;
 
   /// Solo vive mientras la app siga abierta.
@@ -85,6 +123,8 @@ class _SeedsScreenState extends State<SeedsScreen>
     final bool wasActiveBefore = oldWidget.currentIndex == _seedsTabIndex;
     final bool isActiveNow = widget.currentIndex == _seedsTabIndex;
 
+    if (wasActiveBefore && !isActiveNow) _resetTabScroll();
+
     if (!wasActiveBefore && isActiveNow) {
       _entranceController
         ..stop()
@@ -100,6 +140,8 @@ class _SeedsScreenState extends State<SeedsScreen>
 
   @override
   void dispose() {
+    _boundStore?.nutrition.removeListener(_onNutritionChanged);
+    _tabScroll.dispose();
     _entranceController.dispose();
     super.dispose();
   }
@@ -224,6 +266,29 @@ class _SeedsScreenState extends State<SeedsScreen>
     final String careScoreText = cropScore != null
         ? '${cropScore.clamp(0, 100)} / 100'
         : '-- / 100';
+
+    // Línea de tiempo del ciclo: fenología del motor + ventanas de la guía
+    // efectiva (plan resuelto con textura y declaración) + libro de ventanas.
+    // Puro y memoizado; sin cultivo o sin calendario queda vacía y no se pinta.
+    final NutritionTimelineVm timelineVm = SeedsScreenLogic.timelineVm(
+      store: store,
+      runtime: runtime,
+      cropContext: cropContext,
+      now: today,
+    );
+    // La memoria del sitio (libro, época, declaración) se lee fuera del
+    // cuadro; si esta es la primera pantalla que se abre, se pide aquí (sale
+    // solo si nada cambió) para que la línea deje el gris en cuanto se sepa.
+    if (timelineVm.awaitingDeclaration &&
+        runtime.isPlanted &&
+        !store.nutrition.memoryLoaded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(
+          store.nutrition.sync(runtime: runtime, userId: store.currentUserId),
+        );
+      });
+    }
 
     late final String stageTitle;
     late final String statusChip;
@@ -461,13 +526,27 @@ class _SeedsScreenState extends State<SeedsScreen>
         .clamp(240.0, size.height);
 
     final panelTop = topBgHeight + SeedsScreenLayout.panelLiftPx;
-    final panelBottom = panelTop + SeedsScreenLayout.panelMinHeight;
+    // La línea de tiempo alarga la tarjeta: su alto entra en el presupuesto
+    // de scroll o la franja de abajo queda inalcanzable.
+    final double timelineBlock =
+        timelineVm.isEmpty ? 0.0 : SeedsScreenLayout.timelineBlockHeight;
+    final panelBottom =
+        panelTop + SeedsScreenLayout.panelMinHeight + timelineBlock;
     final stackHeight =
         (math.max(topBgHeight, panelBottom) + SeedsScreenLayout.extraScrollPx)
             .clamp(240.0, 5000.0);
 
     // Fondo + posicion resueltos por cultivo (cebolla usa onionBg*).
     final bgSpec = SeedsScreenLayout.backgroundSpecForCrop(resolvedCropId);
+
+    // Desplazamiento vertical del hero: se calcula para que el corte
+    // tallo/raíz del PNG (fila `heroAnchorRow`) caiga sobre la línea de
+    // tierra del fondo en cualquier tamaño de pantalla (ver heroDyForAnchor).
+    final double heroDy = SeedsScreenLayout.heroDyForAnchor(
+      screenWidth: size.width,
+      topBgHeight: topBgHeight.toDouble(),
+      bg: bgSpec,
+    );
 
     return Scaffold(
       extendBody: true,
@@ -491,6 +570,7 @@ class _SeedsScreenState extends State<SeedsScreen>
             ),
           ),
           SingleChildScrollView(
+        controller: _tabScroll,
         physics: const BouncingScrollPhysics(),
         child: SizedBox(
           height: stackHeight,
@@ -575,10 +655,7 @@ class _SeedsScreenState extends State<SeedsScreen>
                           child: Align(
                             alignment: Alignment.topCenter,
                             child: Transform.translate(
-                              offset: const Offset(
-                                SeedsScreenLayout.heroDx,
-                                SeedsScreenLayout.heroDy,
-                              ),
+                              offset: Offset(SeedsScreenLayout.heroDx, heroDy),
                               child: Transform.scale(
                                 scale: SeedsScreenLayout.heroScale,
                                 child: ShaderMask(
@@ -629,6 +706,31 @@ class _SeedsScreenState extends State<SeedsScreen>
                       minHeight: SeedsScreenLayout.panelMinHeight,
                     ),
                     child: _StageContainerCard(
+                      stageTimeline: timelineVm.isEmpty
+                          ? null
+                          : _SeedsReveal(
+                              controller: _entranceController,
+                              intervalStart:
+                                  SeedsScreenLayout.timelineRevealStart,
+                              intervalEnd: SeedsScreenLayout.timelineRevealEnd,
+                              yOffset: 12,
+                              beginScale: 0.99,
+                              child: NutritionTimeline(
+                                vm: timelineVm,
+                                accentColor: careColor,
+                                nodeWidth: SeedsScreenLayout.timelineNodeWidth,
+                                // Sin plan elegido, tocar la línea lleva a
+                                // la pregunta de NPK (17 sep 2026).
+                                onNodeTap: timelineVm.awaitingDeclaration
+                                    ? (_) => Navigator.of(context).push(
+                                        BioGPageRoute(
+                                          builder: (_) => const NpkScreen(),
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                      timelineToInnerGap: SeedsScreenLayout.timelineToInnerGap,
                       stageTitle: stageTitle,
                       statusChip: statusChip,
                       outerPadH: SeedsScreenLayout.stageOuterPadH,
@@ -704,6 +806,8 @@ class SeedsBackgroundSpec {
     required this.dy,
     required this.scale,
     required this.alignment,
+    required this.soilRow,
+    this.heroAnchorInset = 0,
     this.blurSigma = 0,
     this.blurStart = 0.5,
   });
@@ -719,6 +823,15 @@ class SeedsBackgroundSpec {
 
   /// Anclaje de la imagen dentro de su marco.
   final Alignment alignment;
+
+  /// Fila (px) de la línea de tierra en el PNG del fondo, medida en la
+  /// columna central, que es donde se dibuja el cultivo. Es la referencia a
+  /// la que `SeedsScreenLayout.heroDyForAnchor` ancla el corte del hero.
+  final double soilRow;
+
+  /// Cuántos px lógicos por DEBAJO de la línea de tierra queda el corte del
+  /// hero. 0 = corte exactamente en la superficie; positivo lo hunde.
+  final double heroAnchorInset;
 
   /// Intensidad del blur del corte inferior (0 = sin blur). Simula que el
   /// cultivo se hunde bajo tierra hacia el corte.
@@ -927,6 +1040,13 @@ class SeedsScreenLayout {
   static const double onionBgScale = 1.0;
   static const Alignment onionBgAlignment = Alignment.topCenter;
 
+  // Línea de tierra del fondo de hortaliza (fila del PNG, columna central) y
+  // hundimiento del corte del hero para cebolla/ajo. 146 px reproduce lo que
+  // se veía con el heroDy fijo de 60 en el teléfono de referencia (412×915):
+  // el bulbo queda bajo la superficie del corte de tierra.
+  static const double onionBgSoilRow = 430;
+  static const double onionHeroAnchorInset = 146;
+
   // Blur del corte inferior SOLO para cebolla (simula el bulbo bajo tierra).
   // Independientes entre si y del resto:
   //   onionBgBlurSigma -> que tan difuminado: 0 = sin blur, 10-16 = fuerte.
@@ -949,6 +1069,8 @@ class SeedsScreenLayout {
             dy: onionBgDy,
             scale: onionBgScale,
             alignment: onionBgAlignment,
+            soilRow: onionBgSoilRow,
+            heroAnchorInset: onionHeroAnchorInset,
             blurSigma: onionBgBlurSigma,
             blurStart: onionBgBlurStart,
           )
@@ -957,6 +1079,8 @@ class SeedsScreenLayout {
             dy: topBgDy,
             scale: topBgScale,
             alignment: topBgAlignment,
+            soilRow: topBgSoilRow,
+            heroAnchorInset: heroAnchorInset,
           );
   }
 
@@ -966,10 +1090,75 @@ class SeedsScreenLayout {
   static const Alignment topBgAlignment = Alignment.topCenter;
   static const double bgFadeStart = 0.70;
 
+  /// Línea de tierra de `bgAsset` (fila del PNG de 1024×1536, medida en la
+  /// columna central; el montículo es ligeramente más bajo hacia los lados).
+  static const double topBgSoilRow = 867;
+
   static const double heroScale = 1.4;
   static const double heroDx = 0;
-  static const double heroDy = 60;
   static const double heroTopPadding = 70;
+
+  // ── Anclaje del hero a la línea de tierra ──────────────────────────────
+  // Los PNG de etapa (assets/seeds) son lienzos de 938×938 con el corte
+  // tallo/raíz alineado en la fila `heroAnchorRow`. Antes el hero se colocaba
+  // con un `heroDy` fijo de 60 px calibrado en un teléfono de 412×915; como
+  // el fondo escala con la ALTURA (BoxFit.cover) y el hero con el ANCHO
+  // (BoxFit.contain), en otras proporciones la planta quedaba flotando o
+  // hundida. `heroDyForAnchor` calcula ese desplazamiento en cada build para
+  // que la fila del corte caiga siempre sobre `SeedsBackgroundSpec.soilRow`.
+  //   heroAnchorRow   -> fila del corte en el PNG (lienzo de 938 px).
+  //   heroAnchorInset -> px bajo la superficie a los que queda el corte
+  //                      (6 reproduce el look del teléfono de referencia).
+  //   heroDy          -> ajuste fino ADICIONAL en px: positivo hunde,
+  //                      negativo levanta. Normalmente 0.
+  static const double heroImageSize = 938;
+  static const double heroAnchorRow = 740;
+  static const double heroAnchorInset = 6;
+  static const double heroDy = 0;
+  static const double bgImageWidth = 1024;
+  static const double bgImageHeight = 1536;
+
+  /// Desplazamiento vertical (px) del `Transform.translate` del hero para que
+  /// la fila [heroAnchorRow] del PNG caiga a [SeedsBackgroundSpec.heroAnchorInset]
+  /// px bajo la línea de tierra del fondo, sin importar el tamaño de pantalla.
+  ///
+  /// Reproduce la geometría real de los widgets de `SeedsScreen`:
+  ///   fondo: `BoxFit.cover` anclado arriba + `Transform.scale` (centro) +
+  ///          `Transform.translate(dy)`, en un marco de
+  ///          [screenWidth] × [topBgHeight];
+  ///   hero:  `BoxFit.contain` anclado arriba en un marco de
+  ///          [screenWidth] × ([topBgHeight] − [heroTopPadding]) +
+  ///          `Transform.scale(heroScale)` (centro) + translate.
+  static double heroDyForAnchor({
+    required double screenWidth,
+    required double topBgHeight,
+    required SeedsBackgroundSpec bg,
+  }) {
+    // 1) Línea de tierra del fondo en px de pantalla.
+    final double bgCover = math.max(
+      screenWidth / bgImageWidth,
+      topBgHeight / bgImageHeight,
+    );
+    final double bgCenter = topBgHeight / 2;
+    final double soilY =
+        bgCenter + bg.scale * (bg.soilRow * bgCover - bgCenter) + bg.dy;
+
+    // 2) Fila de anclaje del hero en px de pantalla, antes del translate.
+    //    El PNG es cuadrado: `contain` lo deja de lado min(ancho, alto, 938).
+    final double heroBoxHeight = topBgHeight - heroTopPadding;
+    final double side = math.min(
+      heroImageSize,
+      math.min(screenWidth, heroBoxHeight),
+    );
+    final double pxPerRow = side / heroImageSize;
+    final double heroCenter = heroTopPadding + side / 2;
+    final double anchorY =
+        heroCenter + heroScale * (heroAnchorRow * pxPerRow - side / 2);
+
+    // 3) Translate que lleva el anclaje a la línea de tierra (+ hundimiento).
+    return soilY + bg.heroAnchorInset - anchorY + heroDy;
+  }
+
   static const double heroFadeStart = 0.55;
   static const double heroFadeEnd = 0.95;
 
@@ -1000,6 +1189,18 @@ class SeedsScreenLayout {
 
   static const double stageToInnerGap = 6;
   static const double innerInsetSide = 0;
+
+  /// Línea de tiempo del ciclo (fenología + nutrición), entre el título de
+  /// etapa y «Cuidado del cultivo». Cada etapa ocupa [timelineNodeWidth] en el
+  /// riel horizontal (se desplaza y se centra solo en la etapa actual).
+  static const double timelineNodeWidth = 78;
+  static const double timelineToInnerGap = 10;
+
+  /// Alto que la línea añade a la tarjeta (cabecera + riel + leyenda + hueco).
+  /// Mantener en sincronía con `NutritionTimeline.blockHeight`.
+  static const double timelineBlockHeight = NutritionTimeline.blockHeight + 10;
+  static const double timelineRevealStart = 0.44;
+  static const double timelineRevealEnd = 0.86;
   static const double stageExtraBottomSpace = 100;
 
   static const double carePadH = 2;
@@ -1026,6 +1227,49 @@ class SeedsScreenLayout {
 }
 
 class SeedsScreenLogic {
+  /// View-model de la línea de tiempo (fenología + nutrición). Nunca lanza:
+  /// cualquier fallo devuelve la línea vacía y la pantalla sigue.
+  static NutritionTimelineVm timelineVm({
+    required BioGStore store,
+    required CropRuntimeSnapshot runtime,
+    required DeviceCropContext? cropContext,
+    required DateTime now,
+  }) {
+    try {
+      if (runtime.isGenericMode || runtime.isGuideMode) {
+        return NutritionTimelineVm.empty;
+      }
+      if (!(runtime.isPlanted || runtime.isPlanned)) {
+        return NutritionTimelineVm.empty;
+      }
+      final CropStageSchedule? schedule = CropStageScheduleResolver.resolve(runtime);
+      if (schedule == null || schedule.isEmpty) return NutritionTimelineVm.empty;
+      final NutritionPlanResolution plan = store.nutrition.planFor(runtime, now: now);
+      final NutritionDecision? decision = runtime.isPlanted
+          ? (store.nutrition.decisionFor(runtime, now: now) ??
+                store.nutritionDecisionAt(now))
+          : null;
+      return NutritionTimelineVm.build(
+        schedule: schedule,
+        currentStageKey: runtime.isPlanted ? runtime.stageResult?.stageKey : null,
+        currentProgress01: runtime.stageResult?.stageProgressPct,
+        plan: plan,
+        windows: store.nutrition.windows,
+        seasonKey: NutritionCoordinator.seasonKeyFor(runtime, now),
+        decision: decision,
+        cultivationScaleId: cropContext?.cultivationScaleId,
+        // La pregunta de NPK solo existe con cultivo sembrado; antes de
+        // sembrar la línea enseña el plan de la guía. Y con cultivo sembrado,
+        // hasta leer la memoria del sitio no se sabe si ya contestó: la línea
+        // sale en gris hasta saberlo.
+        askable: runtime.isPlanted,
+        memoryLoaded: store.nutrition.memoryLoaded,
+      );
+    } catch (_) {
+      return NutritionTimelineVm.empty;
+    }
+  }
+
   static int? resolveCropCareScore({
     required BioGStore store,
     AgroEvalResult? runtimeEval,
@@ -2065,6 +2309,10 @@ class _StageContainerCard extends StatelessWidget {
 
   final Widget innerChild;
 
+  /// Línea de tiempo del ciclo; va entre la cabecera de etapa y [innerChild].
+  final Widget? stageTimeline;
+  final double timelineToInnerGap;
+
   const _StageContainerCard({
     required this.stageTitle,
     required this.statusChip,
@@ -2081,6 +2329,8 @@ class _StageContainerCard extends StatelessWidget {
     required this.chipDotColor,
     required this.chipRevealController,
     required this.innerChild,
+    this.stageTimeline,
+    this.timelineToInnerGap = 8,
   });
 
   @override
@@ -2122,6 +2372,13 @@ class _StageContainerCard extends StatelessWidget {
               ],
             ),
             SizedBox(height: stageToInnerGap),
+            if (stageTimeline != null) ...[
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: innerInsetSide),
+                child: stageTimeline,
+              ),
+              SizedBox(height: timelineToInnerGap),
+            ],
             Padding(
               padding: EdgeInsets.symmetric(horizontal: innerInsetSide),
               child: innerChild,

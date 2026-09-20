@@ -54,7 +54,24 @@ class BioGEngineVersions {
   ///         auditada, reglas 3R, historial de aplicaciones y condiciones
   ///         físicas. Nunca lee N/P/K de la sonda para decidir; solo los usa
   ///         como firma de respuesta después de una aplicación registrada.
-  static const String nutrition = '1.0.0';
+  /// 1.1.0 — Plan de nitrógeno resuelto antes de decidir (13 sep 2026):
+  ///         la guía efectiva sale de guía × textura del suelo × declaración
+  ///         del productor («una sola vez / dos / tres o más»). Las ventanas
+  ///         plegadas dejan de abrir N y de pesar; una respuesta «mayor de lo
+  ///         habitual» degrada la siguiente ventana a orientativa. Nuevas
+  ///         razones legibles por el agricultor. MINOR: misma semántica de
+  ///         estados, otra salida para la misma entrada cuando hay declaración
+  ///         o textura.
+  /// 1.2.0 — Plegado por PRIORIDAD agronómica (17 sep 2026): con k pasadas
+  ///         declaradas el nitrógeno cae en las k mejores ventanas de la guía
+  ///         (`nitrogenPassPriority`, investigada cultivo por cultivo; maíz:
+  ///         V6–V8 antes que la siembra) y el N de las sobrantes va a la
+  ///         ventana conservada anterior más cercana. Nueva declaración «ya
+  ///         fertilicé» (todas las ventanas de N se pliegan). Mínimos de
+  ///         pasadas y planes revisados con ≥3 fuentes (hortalizas 3 → 2,
+  ///         cítricos 3 → 2; nogal 100–200, durazno 60–112, manzano 70–140,
+  ///         ajo K₂O mín. 0). MINOR: otra salida para la misma entrada.
+  static const String nutrition = '1.2.0';
 
   /// Detector de ventana de respuesta (firma multicanal EC + N/P/K + VWC).
   ///

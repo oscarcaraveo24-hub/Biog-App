@@ -21,19 +21,23 @@
 // objetivo por etapa sobre la lectura, dosis calculadas desde la sonda,
 // «Registrar aplicación», y copys técnicos en la pestaña (prioridad
 // fenológica, firmas, «P» a secas): eso vive en la hoja de detalle.
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_plan_resolver.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_season_declaration.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/crops/crop_runtime_resolver.dart';
+import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
-import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/screens/npk/npk_tab_copy.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/widgets/npk/npk_gauge_card.dart';
+import 'package:bio_g/widgets/npk/nutrition_plan_gate.dart';
 
 /// Renglón discreto junto a las señales N/P/K (Guía v0.4, §8). Vive en
 /// `nutrition_types.dart` para que sea el mismo en toda la app.
@@ -80,6 +84,49 @@ class _NpkScreenState extends State<NpkScreen> {
 
   void _onNutritionChanged() {
     if (mounted) setState(() {});
+  }
+
+  /// Guardando la declaración de temporada: la pantalla de la pregunta no
+  /// responde mientras.
+  bool _declaring = false;
+
+  /// El productor ya contestó y vino a cambiar su plan (icono de la barra).
+  bool _gateReopened = false;
+
+  /// Pestillo local: la respuesta se guardó en esta sesión. Si el store
+  /// tardara en reflejarla (o no pudiera), la pregunta no vuelve a atrapar al
+  /// productor: como mucho se ve con su botón de cerrar.
+  bool _answeredHere = false;
+
+  Future<void> _declarePlan(NitrogenPassPlan passes) async {
+    if (_declaring) return;
+    final store = BioGScope.of(context);
+    setState(() => _declaring = true);
+    NutritionSeasonDeclaration? saved;
+    try {
+      saved = await store.declareNutritionPlan(
+        passes,
+        sourceId: NutritionDeclarationSources.npkCard,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _declaring = false;
+          _gateReopened = false;
+          _answeredHere = true;
+        });
+        if (saved == null) {
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+            const SnackBar(
+              content: Text(
+                'No se pudo guardar tu respuesta. Puedes intentarlo de nuevo '
+                'desde el icono de ajustes.',
+              ),
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -175,6 +222,42 @@ class _NpkScreenState extends State<NpkScreen> {
     final bottomPad = MediaQuery.of(context).viewPadding.bottom;
     final store = BioGScope.of(context);
 
+    // «¿Cómo vas a fertilizar esta temporada?» (decisión de producto, 14 sep
+    // 2026): con cultivo sembrado y algo que decidir, la pregunta CUBRE la
+    // pantalla hasta que se contesta. Contestada, la pantalla NPK aparece tal
+    // cual; el icono de ajustes de la barra vuelve a abrir la pregunta.
+    final DateTime gateNow = DateTime.now();
+    final CropRuntimeSnapshot gateRuntime = CropRuntimeResolver.resolve(
+      device: store.activeDevice,
+      seed: store.activeSeed,
+      cropContext: store.activeCropContext,
+      live: store.live,
+      alertsState: store.alertsState,
+      now: gateNow,
+    );
+    final bool gatePlanted = gateRuntime.isPlanted && !gateRuntime.isGuideMode;
+    final NutritionPlanResolution plan = gatePlanted
+        ? store.nutrition.planFor(gateRuntime, now: gateNow)
+        : NutritionPlanResolution.none;
+    // La memoria del sitio (y con ella la declaración guardada) se lee fuera
+    // del cuadro; hasta entonces no se pregunta, para no mostrar la pregunta a
+    // quien ya contestó. El Panel ya sincroniza al construirse; aquí se pide
+    // igual por si NPK es la primera pantalla que se abre (sale solo si nada
+    // cambió).
+    if (gatePlanted && !store.nutrition.memoryLoaded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(
+          store.nutrition.sync(runtime: gateRuntime, userId: store.currentUserId),
+        );
+      });
+    }
+    final bool canAsk = gatePlanted &&
+        store.nutrition.memoryLoaded &&
+        NutritionPlanGate.isRelevant(plan);
+    final bool mustAnswer = canAsk && !plan.declarationApplied && !_answeredHere;
+    final bool showGate = mustAnswer || (canAsk && _gateReopened);
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -195,157 +278,171 @@ class _NpkScreenState extends State<NpkScreen> {
             ),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
+          actions: [
+            if (canAsk && !showGate)
+              IconButton(
+                tooltip: 'Cambiar cómo vas a fertilizar',
+                icon: Icon(
+                  Icons.tune_rounded,
+                  size: 20,
+                  color: Colors.black.withValues(alpha: 0.65),
+                ),
+                onPressed: () => setState(() => _gateReopened = true),
+              ),
+          ],
         ),
         body: Stack(
           children: [
             const _NpkSoftBackground(),
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-                child: StreamBuilder<List<BioGTelemetry>>(
-                  stream: _history7dStream,
-                  builder: (context, snap) {
-                    final history7d = snap.data ?? const <BioGTelemetry>[];
-                    final live = store.live;
-                    final device = store.activeDevice;
-                    final DeviceCropContext? cropContext =
-                        store.activeCropContext;
-                    final seed = store.activeSeed;
-                    final DateTime now = DateTime.now();
+            if (showGate)
+              NutritionPlanGate(
+                plan: plan,
+                cropIconAsset: gateRuntime.cropIconAsset,
+                busy: _declaring,
+                onSelect: _declarePlan,
+                onClose: mustAnswer
+                    ? null
+                    : () => setState(() => _gateReopened = false),
+              )
+            else
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+                  child: StreamBuilder<List<BioGTelemetry>>(
+                    stream: _history7dStream,
+                    builder: (context, snap) {
+                      final history7d = snap.data ?? const <BioGTelemetry>[];
+                      final live = store.live;
+                      final DateTime now = gateNow;
 
-                    final runtime = CropRuntimeResolver.resolve(
-                      device: device,
-                      seed: seed,
-                      cropContext: cropContext,
-                      live: live,
-                      alertsState: store.alertsState,
-                      now: now,
-                    );
+                      // Mismo runtime que resolvió la puerta: un solo
+                      // `CropRuntimeResolver.resolve` por build.
+                      final CropRuntimeSnapshot runtime = gateRuntime;
 
-                    // MODO GUÍA GENERAL: la lectura se muestra, la lectura
-                    // agronómica no se inventa (sin cultivo no hay ventana).
-                    final bool isGuide = runtime.isGuideMode;
-                    final bool isPlanted = runtime.isPlanted && !isGuide;
-                    final bool isPlanned = runtime.isPlanned;
+                      // MODO GUÍA GENERAL: la lectura se muestra, la lectura
+                      // agronómica no se inventa (sin cultivo no hay ventana).
+                      final bool isGuide = runtime.isGuideMode;
+                      final bool isPlanted = runtime.isPlanted && !isGuide;
+                      final bool isPlanned = runtime.isPlanned;
 
-                    // La decisión sale del coordinador del store (pura y
-                    // memoizada: segura en build); si aún no cargó su memoria,
-                    // vale la última publicada. Si no hay ninguna, la pantalla
-                    // lo dice.
-                    final NutritionDecision? decision = isPlanted
-                        ? (store.nutrition.decisionFor(runtime, now: now) ??
-                              store.nutritionDecisionAt(now))
-                        : null;
+                      // La decisión sale del coordinador del store (pura y
+                      // memoizada: segura en build); si aún no cargó su memoria,
+                      // vale la última publicada. Si no hay ninguna, la pantalla
+                      // lo dice.
+                      final NutritionDecision? decision = isPlanted
+                          ? (store.nutrition.decisionFor(runtime, now: now) ??
+                                store.nutritionDecisionAt(now))
+                          : null;
 
-                    // Una sola ordenación del historial por build.
-                    final sortedHistory = [...history7d]
-                      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-                    final nSeries = <double>[];
-                    final pSeries = <double>[];
-                    final kSeries = <double>[];
-                    final nSamples = <({DateTime at, double value})>[];
-                    final pSamples = <({DateTime at, double value})>[];
-                    final kSamples = <({DateTime at, double value})>[];
-                    for (final t in sortedHistory) {
-                      // Solo lo que la sonda midió: ausencia no es cero.
-                      if (t.hasNitrogenData) {
-                        final double v = math.max(0.0, t.n.toDouble());
-                        nSeries.add(v);
-                        nSamples.add((at: t.timestamp, value: v));
+                      // Una sola ordenación del historial por build.
+                      final sortedHistory = [...history7d]
+                        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+                      final nSeries = <double>[];
+                      final pSeries = <double>[];
+                      final kSeries = <double>[];
+                      final nSamples = <({DateTime at, double value})>[];
+                      final pSamples = <({DateTime at, double value})>[];
+                      final kSamples = <({DateTime at, double value})>[];
+                      for (final t in sortedHistory) {
+                        // Solo lo que la sonda midió: ausencia no es cero.
+                        if (t.hasNitrogenData) {
+                          final double v = math.max(0.0, t.n.toDouble());
+                          nSeries.add(v);
+                          nSamples.add((at: t.timestamp, value: v));
+                        }
+                        if (t.hasPhosphorusData) {
+                          final double v = math.max(0.0, t.p.toDouble());
+                          pSeries.add(v);
+                          pSamples.add((at: t.timestamp, value: v));
+                        }
+                        if (t.hasPotassiumData) {
+                          final double v = math.max(0.0, t.k.toDouble());
+                          kSeries.add(v);
+                          kSamples.add((at: t.timestamp, value: v));
+                        }
                       }
-                      if (t.hasPhosphorusData) {
-                        final double v = math.max(0.0, t.p.toDouble());
-                        pSeries.add(v);
-                        pSamples.add((at: t.timestamp, value: v));
-                      }
-                      if (t.hasPotassiumData) {
-                        final double v = math.max(0.0, t.k.toDouble());
-                        kSeries.add(v);
-                        kSamples.add((at: t.timestamp, value: v));
-                      }
-                    }
 
-                    // Si el motor ya calculó la tendencia, se reutiliza tal
-                    // cual; si no (sin decisión vigente), se calcula igual.
-                    final n = _statsForChannel(
-                      channel: NpkChannel.n,
-                      live: live,
-                      series: nSeries,
-                      trend: _preferKnown(
-                        decision?.trendFor(AgroMetricKey.n),
-                        () => _trendFor(AgroMetricKey.n, nSamples, now),
-                      ),
-                    );
-                    final p = _statsForChannel(
-                      channel: NpkChannel.p,
-                      live: live,
-                      series: pSeries,
-                      trend: _preferKnown(
-                        decision?.trendFor(AgroMetricKey.p),
-                        () => _trendFor(AgroMetricKey.p, pSamples, now),
-                      ),
-                    );
-                    final k = _statsForChannel(
-                      channel: NpkChannel.k,
-                      live: live,
-                      series: kSeries,
-                      trend: _preferKnown(
-                        decision?.trendFor(AgroMetricKey.k),
-                        () => _trendFor(AgroMetricKey.k, kSamples, now),
-                      ),
-                    );
+                      // Si el motor ya calculó la tendencia, se reutiliza tal
+                      // cual; si no (sin decisión vigente), se calcula igual.
+                      final n = _statsForChannel(
+                        channel: NpkChannel.n,
+                        live: live,
+                        series: nSeries,
+                        trend: _preferKnown(
+                          decision?.trendFor(AgroMetricKey.n),
+                          () => _trendFor(AgroMetricKey.n, nSamples, now),
+                        ),
+                      );
+                      final p = _statsForChannel(
+                        channel: NpkChannel.p,
+                        live: live,
+                        series: pSeries,
+                        trend: _preferKnown(
+                          decision?.trendFor(AgroMetricKey.p),
+                          () => _trendFor(AgroMetricKey.p, pSamples, now),
+                        ),
+                      );
+                      final k = _statsForChannel(
+                        channel: NpkChannel.k,
+                        live: live,
+                        series: kSeries,
+                        trend: _preferKnown(
+                          decision?.trendFor(AgroMetricKey.k),
+                          () => _trendFor(AgroMetricKey.k, kSamples, now),
+                        ),
+                      );
 
-                    final _NpkContext ctx = _NpkContext(
-                      isPlanned: isPlanned,
-                      isGuide: isGuide,
-                      decision: decision,
-                    );
+                      final _NpkContext ctx = _NpkContext(
+                        isPlanned: isPlanned,
+                        isGuide: isGuide,
+                        decision: decision,
+                      );
 
-                    // Arriba, las tres pestañas (como siempre); la decisión
-                    // del motor vive dentro de cada pestaña, en lenguaje de
-                    // campo, y su detalle completo en la hoja «Ver detalle».
-                    return Column(
-                      children: [
-                        const _NpkTabsCard(),
-                        const SizedBox(height: 10),
-                        Expanded(
-                          child: _NpkContentCardShell(
-                            child: TabBarView(
-                              physics: const BouncingScrollPhysics(),
-                              children: [
-                                _NpkTabContent(
-                                  channel: NpkChannel.n,
-                                  title: 'Nitrógeno',
-                                  stats: n,
-                                  ctx: ctx,
-                                  nutrient: _metricKeyFor(NpkChannel.n),
-                                ),
-                                _NpkTabContent(
-                                  channel: NpkChannel.p,
-                                  title: 'Fósforo',
-                                  stats: p,
-                                  ctx: ctx,
-                                  nutrient: _metricKeyFor(NpkChannel.p),
-                                ),
-                                _NpkTabContent(
-                                  channel: NpkChannel.k,
-                                  title: 'Potasio',
-                                  stats: k,
-                                  ctx: ctx,
-                                  nutrient: _metricKeyFor(NpkChannel.k),
-                                ),
-                              ],
+                      // Arriba, las tres pestañas (como siempre); la decisión
+                      // del motor vive dentro de cada pestaña, en lenguaje de
+                      // campo, y su detalle completo en la hoja «Ver detalle».
+                      return Column(
+                        children: [
+                          const _NpkTabsCard(),
+                          const SizedBox(height: 10),
+                          Expanded(
+                            child: _NpkContentCardShell(
+                              child: TabBarView(
+                                physics: const BouncingScrollPhysics(),
+                                children: [
+                                  _NpkTabContent(
+                                    channel: NpkChannel.n,
+                                    title: 'Nitrógeno',
+                                    stats: n,
+                                    ctx: ctx,
+                                    nutrient: _metricKeyFor(NpkChannel.n),
+                                  ),
+                                  _NpkTabContent(
+                                    channel: NpkChannel.p,
+                                    title: 'Fósforo',
+                                    stats: p,
+                                    ctx: ctx,
+                                    nutrient: _metricKeyFor(NpkChannel.p),
+                                  ),
+                                  _NpkTabContent(
+                                    channel: NpkChannel.k,
+                                    title: 'Potasio',
+                                    stats: k,
+                                    ctx: ctx,
+                                    nutrient: _metricKeyFor(NpkChannel.k),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(height: 12 + bottomPad),
-                      ],
-                    );
-                  },
+                          SizedBox(height: 12 + bottomPad),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -798,97 +895,138 @@ class _NpkTabContent extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.60),
         border: Border.all(color: Colors.white.withValues(alpha: 0.70)),
       ),
-      // Pantalla fija: el arco toma el alto que sobra después del bloque de
-      // acción y de la fila de cifras (los dos con líneas acotadas), así que
-      // nunca hay scroll ni desbordamiento; en un teléfono chico el arco se
-      // hace más pequeño, no el texto.
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: NpkGaugeCard(
-              channel: channel,
-              percent: stats.gaugePercent,
-              title: title,
-              description: '',
-              showDescription: false,
-              // Sin objetivo: la sonda no sostiene «bajo/alto».
-              targetMin: null,
-              targetMax: null,
-              statusLabel: pill.label,
-              statusColor: pill.color,
-              centerValue: stats.level,
-              centerUnit: stats.hasLive ? _unit : '—',
-              scaleMax: stats.scale,
-            ),
-          ),
-          Text(
-            'Dato crudo del sensor',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.2,
-              color: Colors.black.withValues(alpha: 0.38),
-            ),
-          ),
-          const SizedBox(height: 4),
-          _TechWaveScanDivider(accent: accent),
-          const SizedBox(height: 8),
-          _ActionBlock(
-            accent: accent,
-            copy: copy,
-            onDetail: d == null
-                ? null
-                : () => _NutritionDetailSheet.show(context, d),
-          ),
-          const SizedBox(height: 10),
-          Row(
+      // El arco tiene SIEMPRE el mismo tamaño (decisión de producto, 14 sep
+      // 2026): antes tomaba el alto que sobraba y se encogía cuando el texto
+      // crecía. Ahora ocupa una altura fija y lo que queda —bloque de acción
+      // y fila de cifras— se desplaza si no cabe. En el centro va el estado
+      // («Estable», «Al alza», «Calibrando»), no el dato crudo; el crudo baja
+      // a la fila de cifras.
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints box) {
+          // Alto fijo del arco, salvo en una pantalla tan corta que no deje
+          // un mínimo legible abajo: solo entonces cede, y siempre lo mismo
+          // para las tres pestañas y todos los textos.
+          final double gaugeHeight = box.maxHeight.isFinite
+              ? math.min(
+                  kNpkGaugeHeight,
+                  math.max(kNpkGaugeMinHeight, box.maxHeight - kNpkMinLowerBlock),
+                )
+              : kNpkGaugeHeight;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: _MiniMetric(
-                  accent: accent,
-                  value: stats.hasLive ? '${stats.level}' : '--',
-                  unit: _unit,
-                  label: 'Ahora',
+              SizedBox(
+                height: gaugeHeight,
+                child: NpkGaugeCard(
+                  channel: channel,
+                  percent: stats.gaugePercent,
+                  title: title,
+                  description: '',
+                  showDescription: false,
+                  // Sin objetivo: la sonda no sostiene «bajo/alto».
+                  targetMin: null,
+                  targetMax: null,
+                  statusColor: pill.color,
+                  centerValue: stats.level,
+                  centerUnit: stats.hasLive ? _unit : '—',
+                  scaleMax: stats.scale,
+                  centerLabel: pill.label,
+                  centerCaption: stats.hasLive ? 'tendencia de 7 días' : 'sin lectura',
                 ),
               ),
-              Container(
-                width: 1,
-                height: 46,
-                color: Colors.black.withValues(alpha: 0.06),
-              ),
+              const SizedBox(height: 4),
+              _TechWaveScanDivider(accent: accent),
+              const SizedBox(height: 8),
               Expanded(
-                child: _MiniMetric(
-                  accent: accent,
-                  value: stats.avg7 == null ? '--' : '${stats.avg7}',
-                  unit: _unit,
-                  label: 'Promedio 7 días',
-                  trendPct: stats.avgTrendPct,
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 46,
-                color: Colors.black.withValues(alpha: 0.06),
-              ),
-              Expanded(
-                child: _MiniMetric(
-                  accent: accent,
-                  value: stats.rangeMin == null || stats.rangeMax == null
-                      ? '--'
-                      : '${stats.rangeMin}–${stats.rangeMax}',
-                  unit: _unit,
-                  label: 'Variación 7 días',
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _ActionBlock(
+                        accent: accent,
+                        copy: copy,
+                        onDetail: d == null
+                            ? null
+                            : () => _NutritionDetailSheet.show(context, d),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Dato crudo del sensor',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                          color: Colors.black.withValues(alpha: 0.38),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _MiniMetric(
+                              accent: accent,
+                              value: stats.hasLive ? '${stats.level}' : '--',
+                              unit: _unit,
+                              label: 'Ahora',
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 46,
+                            color: Colors.black.withValues(alpha: 0.06),
+                          ),
+                          Expanded(
+                            child: _MiniMetric(
+                              accent: accent,
+                              value: stats.avg7 == null ? '--' : '${stats.avg7}',
+                              unit: _unit,
+                              label: 'Promedio 7 días',
+                              trendPct: stats.avgTrendPct,
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 46,
+                            color: Colors.black.withValues(alpha: 0.06),
+                          ),
+                          Expanded(
+                            child: _MiniMetric(
+                              accent: accent,
+                              value: stats.rangeMin == null || stats.rangeMax == null
+                                  ? '--'
+                                  : '${stats.rangeMin}–${stats.rangeMax}',
+                              unit: _unit,
+                              label: 'Variación 7 días',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 }
+
+/// Alto fijo del bloque del arco en la pantalla NPK (título + arco). Es el
+/// tamaño que tenía el arco cuando el texto de abajo era corto; ya no depende
+/// del texto: lo que no cabe abajo se desplaza.
+const double kNpkGaugeHeight = 292;
+
+/// Por debajo de esto el arco no baja aunque la pantalla sea muy corta.
+const double kNpkGaugeMinHeight = 200;
+
+/// Mínimo que se reserva bajo el arco (divisor + titular + primera línea)
+/// antes de permitir que el arco ceda alto.
+const double kNpkMinLowerBlock = 150;
 
 /// El bloque de acción de la pestaña: chip de importancia, titular, dosis y
 /// resumen (≤ 50 palabras), con líneas acotadas para que la pantalla siga
@@ -956,10 +1094,10 @@ class _ActionBlock extends StatelessWidget {
             Text(
               summary,
               textAlign: TextAlign.center,
-              // 50 palabras caben en ~7 líneas a este cuerpo; el tope de
-              // palabras vive en `NpkTabCopy.kMaxSummaryWords` y aquí solo
-              // hay una red de seguridad para que la pantalla siga fija.
-              maxLines: 7,
+              // El tope de palabras vive en `NpkTabCopy.kMaxSummaryWords`;
+              // el bloque ahora se desplaza si no cabe, así que el texto
+              // completo siempre se puede leer.
+              maxLines: 12,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12.2,

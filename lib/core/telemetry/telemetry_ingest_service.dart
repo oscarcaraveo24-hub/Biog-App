@@ -204,7 +204,7 @@ class TelemetryIngestService {
       );
     }
 
-    final deviceId = envelope.identity.deviceId.trim();
+    final deviceId = _normalizeDeviceId(envelope.identity.deviceId);
 
     // 2) Duplicados por número de secuencia.
     final seq = envelope.sequenceNumber;
@@ -220,7 +220,7 @@ class TelemetryIngestService {
       }
     }
 
-    final reading = envelope.toReading();
+    final reading = envelope.toReading().copyWith(deviceId: deviceId);
 
     // 3) Local primero. Si esto falla, no se sigue: la fuente de verdad de la
     //    app es el almacenamiento local, y una lectura que no queda ahí es una
@@ -346,8 +346,10 @@ class TelemetryIngestService {
   /// Olvida los pendientes de un dispositivo. Se llama al desvincularlo.
   Future<void> forgetDevice(String deviceId) async {
     await hydrate();
-    _pending.remove(deviceId);
-    _lastSequence.remove(deviceId);
+    final normalizedDeviceId = _normalizeDeviceId(deviceId);
+    _pending.remove(normalizedDeviceId);
+    _lastSequence.remove(normalizedDeviceId);
+    await _local.delete(normalizedDeviceId);
     await _persistPending();
     await _persistSequences();
   }
@@ -406,5 +408,12 @@ class TelemetryIngestService {
   TelemetryIngestResult _emit(TelemetryIngestResult result) {
     if (!_results.isClosed) _results.add(result);
     return result;
+  }
+
+  String _normalizeDeviceId(String value) {
+    final trimmed = value.trim();
+    return BioGDevice.isTelemetryDeviceId(trimmed)
+        ? trimmed.toLowerCase()
+        : trimmed;
   }
 }

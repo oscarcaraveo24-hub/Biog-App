@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:bio_g/models/biog_telemetry.dart';
@@ -42,6 +43,17 @@ class TelemetryLocalStorage {
   static const String _table = 'telemetry';
   static const String _dbName = 'biog_telemetry.db';
 
+  /// Process-wide commit bus shared by every storage instance.
+  ///
+  /// The ingest service and the offline-first reader are intentionally
+  /// separate objects, but they write/read the same SQLite database. Without
+  /// this bus, a BLE append was invisible to an already-open live stream until
+  /// its next Supabase poll. The event carries the post-commit latest value so
+  /// listeners never have to publish the incoming row blindly (a cloud row
+  /// can be older than what SQLite already contains).
+  static final StreamController<_TelemetryLocalCommit> _commits =
+      StreamController<_TelemetryLocalCommit>.broadcast(sync: true);
+
   final int cap;
 
   TelemetryLocalStorage({this.cap = defaultCap});
@@ -49,6 +61,17 @@ class TelemetryLocalStorage {
   static Future<Database>? _dbFuture;
 
   Future<Database> get _db => _dbFuture ??= _openDb();
+
+  /// Emits after a successful local commit for [deviceId].
+  ///
+  /// This stream does not replay. Call [latest] for the initial snapshot, then
+  /// keep this subscription alive for BLE/local commits.
+  Stream<BioGTelemetry?> watchLatest(String deviceId) {
+    final String normalized = _normalizeDeviceId(deviceId);
+    return _commits.stream
+        .where((_TelemetryLocalCommit event) => event.deviceId == normalized)
+        .map((_TelemetryLocalCommit event) => event.latest);
+  }
 
   static Future<Database> _openDb() async {
     final String dir = await getDatabasesPath();
@@ -102,9 +125,9 @@ class TelemetryLocalStorage {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(_migrationFlag) == true) return;
 
-    final Iterable<String> legacyKeys = prefs
-        .getKeys()
-        .where((String k) => k.startsWith(_legacyPrefix));
+    final Iterable<String> legacyKeys = prefs.getKeys().where(
+      (String k) => k.startsWith(_legacyPrefix),
+    );
 
     for (final String key in legacyKeys) {
       final String deviceId = key.substring(_legacyPrefix.length);
@@ -148,13 +171,14 @@ class TelemetryLocalStorage {
 
   /// Todo el historial de [deviceId], ordenado por fecha ascendente.
   Future<List<BioGTelemetry>> load(String deviceId) async {
+    final String normalizedDeviceId = _normalizeDeviceId(deviceId);
     try {
       final Database db = await _db;
       final List<Map<String, Object?>> rows = await db.query(
         _table,
         columns: <String>['payload'],
         where: 'device_id = ?',
-        whereArgs: <Object?>[deviceId],
+        whereArgs: <Object?>[normalizedDeviceId],
         orderBy: 'ts ASC',
       );
       return _decodeRows(rows);
@@ -173,6 +197,7 @@ class TelemetryLocalStorage {
     String deviceId, {
     required Duration window,
   }) async {
+    final String normalizedDeviceId = _normalizeDeviceId(deviceId);
     final DateTime since = DateTime.now().toUtc().subtract(window);
     try {
       final Database db = await _db;
@@ -180,7 +205,7 @@ class TelemetryLocalStorage {
         _table,
         columns: <String>['payload'],
         where: 'device_id = ? AND ts >= ?',
-        whereArgs: <Object?>[deviceId, since.millisecondsSinceEpoch],
+        whereArgs: <Object?>[normalizedDeviceId, since.millisecondsSinceEpoch],
         orderBy: 'ts ASC',
       );
       return _decodeRows(rows);
@@ -191,13 +216,14 @@ class TelemetryLocalStorage {
 
   /// Última lectura persistida de [deviceId]. Una fila, no todo el historial.
   Future<BioGTelemetry?> latest(String deviceId) async {
+    final String normalizedDeviceId = _normalizeDeviceId(deviceId);
     try {
       final Database db = await _db;
       final List<Map<String, Object?>> rows = await db.query(
         _table,
         columns: <String>['payload'],
         where: 'device_id = ?',
-        whereArgs: <Object?>[deviceId],
+        whereArgs: <Object?>[normalizedDeviceId],
         orderBy: 'ts DESC',
         limit: 1,
       );
@@ -212,8 +238,9 @@ class TelemetryLocalStorage {
   ///
   /// Descarta duplicados por deviceId + fecha, igual que antes.
   Future<void> save(String deviceId, List<BioGTelemetry> history) async {
+    final String normalizedDeviceId = _normalizeDeviceId(deviceId);
     final List<BioGTelemetry> toSave = _trimToCap(
-      _normalize(deviceId, history),
+      _normalize(normalizedDeviceId, history),
     );
     try {
       final Database db = await _db;
@@ -221,15 +248,19 @@ class TelemetryLocalStorage {
         await txn.delete(
           _table,
           where: 'device_id = ?',
-          whereArgs: <Object?>[deviceId],
+          whereArgs: <Object?>[normalizedDeviceId],
         );
         final Batch batch = txn.batch();
         for (final BioGTelemetry t in toSave) {
-          batch.insert(_table, _rowFor(t),
-              conflictAlgorithm: ConflictAlgorithm.replace);
+          batch.insert(
+            _table,
+            _rowFor(t),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
         }
         await batch.commit(noResult: true);
       });
+      _publishCommit(normalizedDeviceId, toSave.isEmpty ? null : toSave.last);
     } catch (_) {
       // Sin persistencia local la app sigue funcionando con lo que ya tiene
       // en memoria; no se interrumpe al usuario por un fallo de disco.
@@ -243,22 +274,34 @@ class TelemetryLocalStorage {
   /// duplica lecturas.
   Future<List<BioGTelemetry>> mergeAndSave(
     String deviceId,
-    List<BioGTelemetry> incoming,
-  ) async {
-    if (incoming.isEmpty) return load(deviceId);
+    List<BioGTelemetry> incoming, {
+    bool overwriteExisting = true,
+  }) async {
+    final String normalizedDeviceId = _normalizeDeviceId(deviceId);
+    if (incoming.isEmpty) return load(normalizedDeviceId);
 
     try {
       final Database db = await _db;
       final Batch batch = db.batch();
-      for (final BioGTelemetry t in _normalize(deviceId, incoming)) {
-        batch.insert(_table, _rowFor(t),
-            conflictAlgorithm: ConflictAlgorithm.replace);
+      for (final BioGTelemetry t in _normalize(normalizedDeviceId, incoming)) {
+        batch.insert(
+          _table,
+          _rowFor(t),
+          // Cloud refreshes use IGNORE: a row already committed locally for
+          // the same measurement timestamp cannot be replaced by a delayed
+          // response. BLE/local appends keep REPLACE for idempotent retries.
+          conflictAlgorithm: overwriteExisting
+              ? ConflictAlgorithm.replace
+              : ConflictAlgorithm.ignore,
+        );
       }
       await batch.commit(noResult: true);
-      await _enforceCap(db, deviceId);
-      return load(deviceId);
+      await _enforceCap(db, normalizedDeviceId);
+      final List<BioGTelemetry> merged = await load(normalizedDeviceId);
+      _publishCommit(normalizedDeviceId, merged.isEmpty ? null : merged.last);
+      return merged;
     } catch (_) {
-      return load(deviceId);
+      return load(normalizedDeviceId);
     }
   }
 
@@ -269,13 +312,15 @@ class TelemetryLocalStorage {
 
   /// Borra lo persistido de un dispositivo.
   Future<void> delete(String deviceId) async {
+    final String normalizedDeviceId = _normalizeDeviceId(deviceId);
     try {
       final Database db = await _db;
       await db.delete(
         _table,
         where: 'device_id = ?',
-        whereArgs: <Object?>[deviceId],
+        whereArgs: <Object?>[normalizedDeviceId],
       );
+      _publishCommit(normalizedDeviceId, null);
     } catch (_) {
       // Ídem: un fallo al limpiar no debe propagarse a la interfaz.
     }
@@ -321,12 +366,17 @@ class TelemetryLocalStorage {
   ) {
     final Map<String, BioGTelemetry> byKey = <String, BioGTelemetry>{};
     for (final BioGTelemetry reading in readings) {
-      if (reading.deviceId != deviceId) continue;
-      byKey[_readingKey(reading)] = reading;
+      if (_normalizeDeviceId(reading.deviceId) != deviceId) continue;
+      final BioGTelemetry normalizedReading = reading.deviceId == deviceId
+          ? reading
+          : reading.copyWith(deviceId: deviceId);
+      byKey[_readingKey(normalizedReading)] = normalizedReading;
     }
     final List<BioGTelemetry> normalized = byKey.values.toList()
-      ..sort((BioGTelemetry a, BioGTelemetry b) =>
-          a.timestamp.compareTo(b.timestamp));
+      ..sort(
+        (BioGTelemetry a, BioGTelemetry b) =>
+            a.timestamp.compareTo(b.timestamp),
+      );
     return normalized;
   }
 
@@ -338,4 +388,23 @@ class TelemetryLocalStorage {
   String _readingKey(BioGTelemetry reading) {
     return '${reading.deviceId}_${reading.timestamp.toUtc().toIso8601String()}';
   }
+
+  void _publishCommit(String deviceId, BioGTelemetry? latest) {
+    if (_commits.isClosed) return;
+    _commits.add(_TelemetryLocalCommit(deviceId: deviceId, latest: latest));
+  }
+
+  static String _normalizeDeviceId(String value) {
+    final String trimmed = value.trim();
+    return BioGDevice.isTelemetryDeviceId(trimmed)
+        ? trimmed.toLowerCase()
+        : trimmed;
+  }
+}
+
+class _TelemetryLocalCommit {
+  const _TelemetryLocalCommit({required this.deviceId, required this.latest});
+
+  final String deviceId;
+  final BioGTelemetry? latest;
 }

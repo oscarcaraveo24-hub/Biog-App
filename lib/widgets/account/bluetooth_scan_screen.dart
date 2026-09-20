@@ -1,8 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import 'package:bio_g/core/agro/cultivation_scale.dart';
-import 'package:bio_g/core/hardware/biog_serial.dart';
 import 'package:bio_g/core/telemetry/telemetry_transport.dart';
 import 'package:bio_g/services/biog/biog_store.dart';
 import 'package:bio_g/services/biog/telemetry/ble/ble_telemetry_transport.dart';
@@ -30,40 +28,11 @@ class BluetoothScanScreen extends StatefulWidget {
 }
 
 class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
-  /// Lista simulada, que se conserva como respaldo.
-  ///
-  /// Aparece cuando la radio no esta disponible (sin permisos, Bluetooth
-  /// apagado, telefono sin BLE, o emulador) para que el flujo de alta se pueda
-  /// seguir probando sin hardware. No se muestra junto a los equipos reales:
-  /// mezclar aparatos de verdad con inventados en la misma lista es como se
-  /// acaba dando de alta un fake por accidente.
-  final List<Map<String, String>> _devices = <Map<String, String>>[
-    <String, String>{
-      'id': '1c9a7f30-51b2-4a8e-9b64-2d0f7a51c001',
-      'name': 'Bio-G Campo #001',
-      'model': 'campo',
-      'serial': 'BIOG-C-2632-000001-?',
-    },
-    <String, String>{
-      'id': '1c9a7f30-51b2-4a8e-9b64-2d0f7a51c002',
-      'name': 'Bio-G Huerto #002',
-      'model': 'huerto',
-      'serial': 'BIOG-H-2632-000002-?',
-    },
-    <String, String>{
-      'id': '1c9a7f30-51b2-4a8e-9b64-2d0f7a51c003',
-      'name': 'Bio-G Maceta #003',
-      'model': 'maceta',
-      'serial': 'BIOG-M-2632-000003-?',
-    },
-  ];
-
   BleTelemetryTransport? _transport;
 
   List<DiscoveredDevice> _found = const <DiscoveredDevice>[];
   BleUnavailableReason _reason = BleUnavailableReason.none;
   bool _scanning = false;
-  bool _showFakes = false;
   String? _connectingAddress;
   String? _error;
 
@@ -84,7 +53,6 @@ class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
     setState(() {
       _scanning = true;
       _error = null;
-      _showFakes = false;
     });
 
     final reason = await transport.checkAvailability();
@@ -95,7 +63,6 @@ class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
         _reason = reason;
         _scanning = false;
         _found = const <DiscoveredDevice>[];
-        _showFakes = true;
       });
       return;
     }
@@ -109,8 +76,6 @@ class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
       _scanning = false;
       // Si la radio fallo, se dice por que en vez de fingir que no habia nadie.
       _error = found.isEmpty ? transport.lastScanError : null;
-      // Solo se ofrece el respaldo simulado si no aparecio nada real.
-      _showFakes = found.isEmpty;
     });
   }
 
@@ -180,31 +145,6 @@ class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
     });
   }
 
-  /// Serie bien formada (con su digito de control) para cada modelo simulado.
-  String? _serialFor(String? modelId, int index) {
-    final model = deviceModelFromId(modelId);
-    if (model == null) return null;
-    return BioGSerial.build(
-      model: model,
-      year: 2026,
-      isoWeek: 32,
-      sequenceNumber: index + 1,
-    ).raw;
-  }
-
-  void _selectDevice(Map<String, String> d) {
-    final index = _devices.indexOf(d);
-    Navigator.pop<Map<String, dynamic>>(context, <String, dynamic>{
-      'id': d['id'] ?? 'BIOG-BLE-XXX',
-      'name': d['name'] ?? 'Bio-G',
-      // El modelo viaja: es lo que decide el medio de cultivo y lo que hasta
-      // hoy se perdia entre esta pantalla y `addDevice`.
-      'model': d['model'],
-      'serial': _serialFor(d['model'], index < 0 ? 0 : index),
-      'source': 'bluetooth',
-    });
-  }
-
   // ── Texto de estado ────────────────────────────────────────────────────────
 
   String get _statusText {
@@ -215,8 +155,7 @@ class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
     if (_error != null) return _error!;
     switch (_reason) {
       case BleUnavailableReason.unsupported:
-        return 'Este telefono no tiene Bluetooth de baja energia.\n'
-            'Puedes continuar con un equipo simulado.';
+        return 'Este telefono no tiene Bluetooth de baja energia.';
       case BleUnavailableReason.unauthorized:
         return 'Falta el permiso de Bluetooth.\n'
             'Concedelo en Ajustes > Aplicaciones > BIO-G > Permisos y vuelve a buscar.';
@@ -333,7 +272,9 @@ class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w900,
-                            color: const Color(0xFF3FAF6E).withValues(alpha: 0.95),
+                            color: const Color(
+                              0xFF3FAF6E,
+                            ).withValues(alpha: 0.95),
                           ),
                         ),
                       ),
@@ -358,41 +299,6 @@ class _BluetoothScanScreenState extends State<BluetoothScanScreen> {
                           ],
                         ),
                       ),
-
-                    // ── Respaldo simulado ─────────────────────────────────
-                    if (_showFakes) ...[
-                      if (_found.isNotEmpty) const SizedBox(height: 14),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'Equipos simulados (sin hardware)',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.4,
-                            color: Colors.black.withValues(alpha: 0.40),
-                          ),
-                        ),
-                      ),
-                      _GlassCard(
-                        radius: 22,
-                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                        child: Column(
-                          children: [
-                            for (int i = 0; i < _devices.length; i++) ...[
-                              _DeviceTile(
-                                name: _devices[i]['name']!,
-                                id: _devices[i]['id']!,
-                                onTap: () => _selectDevice(_devices[i]),
-                              ),
-                              if (i != _devices.length - 1)
-                                const _DividerLine(),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -444,13 +350,13 @@ class _DeviceTile extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: const Color(0xFF3FAF6E).withValues(alpha:0.18),
+                color: const Color(0xFF3FAF6E).withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.black.withValues(alpha:0.06)),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
               ),
               child: Icon(
                 Icons.bluetooth_rounded,
-                color: const Color(0xFF3FAF6E).withValues(alpha:0.95),
+                color: const Color(0xFF3FAF6E).withValues(alpha: 0.95),
                 size: 22,
               ),
             ),
@@ -473,7 +379,7 @@ class _DeviceTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: Colors.black.withValues(alpha:0.55),
+                      color: Colors.black.withValues(alpha: 0.55),
                     ),
                   ),
                 ],
@@ -481,7 +387,7 @@ class _DeviceTile extends StatelessWidget {
             ),
             Icon(
               Icons.chevron_right_rounded,
-              color: Colors.black.withValues(alpha:0.25),
+              color: Colors.black.withValues(alpha: 0.25),
             ),
           ],
         ),
@@ -500,7 +406,7 @@ class _DividerLine extends StatelessWidget {
       child: Container(
         height: 1,
         width: double.infinity,
-        color: Colors.black.withValues(alpha:0.06),
+        color: Colors.black.withValues(alpha: 0.06),
       ),
     );
   }
@@ -526,7 +432,7 @@ class _GlassCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.14),
+            color: Colors.black.withValues(alpha: 0.14),
             blurRadius: 30,
             offset: const Offset(0, 18),
           ),
@@ -538,9 +444,9 @@ class _GlassCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha:0.62),
+              color: Colors.white.withValues(alpha: 0.62),
               borderRadius: BorderRadius.circular(radius),
-              border: Border.all(color: Colors.white.withValues(alpha:0.55)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.55)),
             ),
             padding: padding,
             child: child,
@@ -604,7 +510,7 @@ class _GlowBlob extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: _brandMid.withValues(alpha:opacity),
+          color: _brandMid.withValues(alpha: opacity),
         ),
       ),
     );

@@ -190,7 +190,6 @@ class CerealAgroScoreEngine {
     }
   }
 
-
   static _Eval _eval({required double value, required AgroRange range}) {
     if (!value.isFinite || value.isNaN) {
       return _Eval(value: value, band: AgroBand.unknown, score01: 0.0);

@@ -13,15 +13,23 @@
 //
 // NO HAY REGISTRO MANUAL. Aquí no existe ningún método «registrar aplicación»:
 // la única fuente de «se fertilizó» es la firma que el sensor detecta.
+//
+// LA ÚNICA ENTRADA MANUAL es la declaración de temporada ([declare]): cómo
+// piensa fertilizar el productor (una sola vez, dos, tres o más). No registra
+// nada que haya pasado; reparte el plan de la guía de otra forma (decisión de
+// producto, 13 sep 2026; ver `NutritionWindowPlanResolver`).
 import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
 import 'package:bio_g/core/agro/nutrition/nutrition_guide_catalog.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_plan_resolver.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_readiness_engine.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_season_declaration.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/agro/nutrition/site_learning.dart';
+import 'package:bio_g/core/agro/water/soil_water_scale.dart';
 import 'package:bio_g/core/crops/crop_runtime_snapshot.dart';
 import 'package:bio_g/core/crops/crop_stage_models.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
@@ -57,6 +65,7 @@ class NutritionCoordinator extends ChangeNotifier {
   List<NutritionWindowRecord> _windows = const <NutritionWindowRecord>[];
   List<BioGTelemetry> _history = const <BioGTelemetry>[];
   InstallationEpoch? _epoch;
+  NutritionSeasonDeclaration? _declaration;
 
   /// Memoización de [decisionFor]: barrer la telemetría cuesta, y el Panel
   /// reconstruye a menudo.
@@ -73,6 +82,36 @@ class NutritionCoordinator extends ChangeNotifier {
 
   /// Época de instalación vigente del dispositivo activo.
   InstallationEpoch? get epoch => _epoch;
+
+  /// Declaración de la temporada cargada (null si el productor no ha dicho
+  /// cómo va a fertilizar).
+  NutritionSeasonDeclaration? get declaration => _declaration;
+
+  /// [sync] ya leyó la memoria del sitio (libro, época, declaración). Antes de
+  /// esto, «sin declaración» solo significa «todavía no sé».
+  bool get memoryLoaded => _memoryKey != null;
+
+  /// Plan de nitrógeno resuelto para el runtime (guía efectiva, opciones de
+  /// la tarjeta, ventanas plegadas). Síncrono y memoizado como [decisionFor].
+  NutritionPlanResolution planFor(
+    CropRuntimeSnapshot runtime, {
+    DateTime? now,
+  }) {
+    if (runtime.device == null) return NutritionPlanResolution.none;
+    final DateTime at = now ?? _now();
+    final NutritionEvaluation? eval = _evaluate(runtime, at);
+    if (eval != null) return eval.plan;
+    // Sin evaluación (cultivo no sembrado, modo guía…) el plan se resuelve
+    // igual, para que la pantalla pueda explicar la guía.
+    return NutritionWindowPlanResolver.resolve(
+      guide: NutritionGuideCatalog.forCrop(runtime.cropKeyName),
+      texture: soilTextureFor(runtime),
+      declaration: _declaration,
+      windows: _windows,
+      seasonKey: seasonKeyFor(runtime, at),
+      currentStageKey: runtime.stageResult?.stageKey,
+    );
+  }
 
   /// Calcula la decisión con la memoria que YA está cargada.
   ///
@@ -106,7 +145,7 @@ class NutritionCoordinator extends ChangeNotifier {
     try {
       final DateTime now = _now();
       final String? telemetryId = device.telemetryDeviceId;
-      final String seasonKey = _seasonKeyFor(runtime, now);
+      final String seasonKey = seasonKeyFor(runtime, now);
       final String memoryKey = '${device.id}|$seasonKey|${userId ?? '-'}';
 
       final int bucket =
@@ -137,6 +176,21 @@ class NutritionCoordinator extends ChangeNotifier {
           userId: userId,
         );
         _epoch = await _storage.currentEpoch(device.id, userId: userId);
+        // La declaración en memoria manda mientras dure la sesión: si el
+        // disco no la devuelve (guardado fallido, sesión que cambió de dueño
+        // a medio camino) no se vuelve a preguntar lo que ya se contestó.
+        final NutritionSeasonDeclaration? stored = await _storage.loadDeclaration(
+          deviceId: device.id,
+          seasonKey: seasonKey,
+          userId: userId,
+        );
+        final NutritionSeasonDeclaration? held = _declaration;
+        _declaration = stored ??
+            ((held != null &&
+                    held.deviceId == device.id &&
+                    held.seasonKey == seasonKey)
+                ? held
+                : null);
         if (_epoch == null) {
           // Primera vez que vemos este dispositivo: abre la época inicial.
           // Sin esto no hay LEARNING ni «desde cuándo» para el sitio. Se ancla
@@ -187,6 +241,76 @@ class NutritionCoordinator extends ChangeNotifier {
     return sync(runtime: runtime, userId: userId, force: true);
   }
 
+  /// El productor declara cómo va a fertilizar esta temporada. Se persiste,
+  /// se recalcula con la guía efectiva y se avisa. Es idempotente: volver a
+  /// declarar reemplaza.
+  Future<NutritionSeasonDeclaration?> declare({
+    required CropRuntimeSnapshot runtime,
+    required NitrogenPassPlan passes,
+    String sourceId = NutritionDeclarationSources.npkCard,
+    String? userId,
+    DateTime? at,
+  }) async {
+    final device = runtime.device;
+    if (device == null) return null;
+    final DateTime when = at ?? _now();
+    final NutritionSeasonDeclaration declaration = NutritionSeasonDeclaration(
+      deviceId: device.id,
+      seasonKey: seasonKeyFor(runtime, when),
+      cropKey: runtime.cropKeyName,
+      passes: passes,
+      declaredAt: when,
+      sourceId: sourceId,
+    );
+    await _storage.saveDeclaration(declaration, userId: userId);
+    _declaration = declaration;
+    _evalKey = null;
+    _lastSyncKey = null;
+    notifyListeners();
+    if (kDebugMode) {
+      final NutritionSeasonDeclaration? check = await _storage.loadDeclaration(
+        deviceId: device.id,
+        seasonKey: declaration.seasonKey,
+        userId: userId,
+      );
+      debugPrint(
+        '[nutrition] declaración ${declaration.passes.id} para '
+        '${declaration.seasonKey} (usuario ${userId ?? '-'}): '
+        '${check == null ? 'NO persistió' : 'persistida'}',
+      );
+    }
+    await sync(runtime: runtime, userId: userId, force: true);
+    if (kDebugMode) {
+      // Si aquí sale «NO aplica», la declaración se guardó pero el plan no la
+      // reconoce (temporada o cultivo distintos): la pregunta volvería a salir.
+      final bool applied = planFor(runtime, now: when).declarationApplied;
+      debugPrint(
+        '[nutrition] plan efectivo tras declarar: '
+        '${applied ? 'aplica la declaración' : 'NO aplica la declaración'}',
+      );
+    }
+    return declaration;
+  }
+
+  /// Deshace la declaración de la temporada: vuelve el plan de la guía.
+  Future<void> clearDeclaration({
+    required CropRuntimeSnapshot runtime,
+    String? userId,
+  }) async {
+    final device = runtime.device;
+    if (device == null) return;
+    await _storage.deleteDeclaration(
+      deviceId: device.id,
+      seasonKey: seasonKeyFor(runtime, _now()),
+      userId: userId,
+    );
+    _declaration = null;
+    _evalKey = null;
+    _lastSyncKey = null;
+    notifyListeners();
+    await sync(runtime: runtime, userId: userId, force: true);
+  }
+
   /// «Reubicar BIO-G»: la sonda cambió de punto. Cierra la época anterior y
   /// abre una nueva; el historial viejo se conserva pero deja de compararse
   /// como si fuera el mismo sitio (Guía v0.4, §22).
@@ -218,6 +342,7 @@ class NutritionCoordinator extends ChangeNotifier {
     _windows = const <NutritionWindowRecord>[];
     _history = const <BioGTelemetry>[];
     _epoch = null;
+    _declaration = null;
     _evalKey = null;
     _eval = null;
     notifyListeners();
@@ -252,6 +377,8 @@ class NutritionCoordinator extends ChangeNotifier {
       _memoryKey,
       _history.length,
       _windows.length,
+      _declaration?.passes.id,
+      _declaration?.declaredAt.millisecondsSinceEpoch,
       bucket,
     ].join('|');
     if (key == _evalKey && _eval != null) return _eval;
@@ -262,6 +389,7 @@ class NutritionCoordinator extends ChangeNotifier {
       windows: _windows,
       history: _history,
       epoch: _epoch,
+      declaration: _declaration,
     );
     final NutritionEvaluation? eval = NutritionReadinessEngine.evaluate(input);
     _evalKey = key;
@@ -277,6 +405,7 @@ class NutritionCoordinator extends ChangeNotifier {
     List<NutritionWindowRecord> windows = const <NutritionWindowRecord>[],
     List<BioGTelemetry> history = const <BioGTelemetry>[],
     InstallationEpoch? epoch,
+    NutritionSeasonDeclaration? declaration,
   }) {
     final CropStageResult? stage = runtime.stageResult;
     final DeviceCropContext? ctx = runtime.cropContext;
@@ -338,7 +467,7 @@ class NutritionCoordinator extends ChangeNotifier {
       calendarId: ctx?.calendarTypeId,
       isPerennial: isPerennial,
       deviceId: runtime.device?.id,
-      seasonKey: _seasonKeyFor(runtime, now),
+      seasonKey: seasonKeyFor(runtime, now),
       epochId: epoch?.epochId,
       windows: windows,
       history: history,
@@ -349,7 +478,18 @@ class NutritionCoordinator extends ChangeNotifier {
       // aquí con `SoilSensorSpec.byId`.
       compensateEcTemperature:
           !SoilSensorSpec.defaultSpec.ecTemperatureCompensated,
+      soilTexture: soilTextureFor(runtime),
+      seasonDeclaration: declaration,
     );
+  }
+
+  /// Textura de la parcela para el plan de N: la resuelta por el motor de
+  /// riego (coherente con la humedad objetivo) y, si no la hay, la declarada
+  /// en el onboarding.
+  static SoilTexture soilTextureFor(CropRuntimeSnapshot runtime) {
+    final SoilTexture? resolved = runtime.resolvedMoisture?.texture;
+    if (resolved != null && resolved != SoilTexture.unknown) return resolved;
+    return SoilTexture.fromId(runtime.cropContext?.soilTextureId);
   }
 
   /// Inicio estimado de la etapa actual a partir de su progreso y de los días
@@ -373,7 +513,7 @@ class NutritionCoordinator extends ChangeNotifier {
   /// Identidad de la temporada: anuales por fecha de siembra; perennes y
   /// ornamentales por ciclo anual (febrero a enero), para que la memoria de
   /// ventanas no arrastre penalizaciones de años anteriores.
-  static String _seasonKeyFor(CropRuntimeSnapshot runtime, DateTime now) {
+  static String seasonKeyFor(CropRuntimeSnapshot runtime, DateTime now) {
     final String device = runtime.device?.id ?? 'device';
     final String crop = runtime.cropKeyName.isEmpty ? 'crop' : runtime.cropKeyName;
     if (_isPerennial(runtime) || runtime.definition?.category == CropCategory.ornamental) {

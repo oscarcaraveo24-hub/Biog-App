@@ -39,6 +39,8 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
   final Map<String, StreamController<List<BioGTelemetry>>> _historyControllers =
       {};
   final Map<String, Timer> _pollingTimers = {};
+  final Map<String, StreamSubscription<BioGTelemetry?>>
+  _localLatestSubscriptions = <String, StreamSubscription<BioGTelemetry?>>{};
   final Map<String, _CachedTelemetry> _latestCache =
       <String, _CachedTelemetry>{};
   final Map<String, Future<BioGTelemetry?>> _inFlightLatestRequests =
@@ -50,12 +52,13 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
       <String, List<BioGTelemetry>>{};
   final Set<String> _loggedInvalidTelemetryIds = <String>{};
   final Set<String> _loggedFlowStates = <String>{};
+  final Map<String, int> _deviceGeneration = <String, int>{};
 
   bool _disposed = false;
 
   @override
   Stream<BioGTelemetry?> watchLive(String deviceId) {
-    final normalizedDeviceId = deviceId.trim();
+    final normalizedDeviceId = _normalizeDeviceId(deviceId);
     final controller = _liveControllers.putIfAbsent(
       normalizedDeviceId,
       () => StreamController<BioGTelemetry?>.broadcast(
@@ -103,7 +106,7 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
     String deviceId, {
     required Duration? window,
   }) {
-    final normalizedDeviceId = deviceId.trim();
+    final normalizedDeviceId = _normalizeDeviceId(deviceId);
     final key = _historyKey(normalizedDeviceId, window);
 
     final controller = _historyControllers.putIfAbsent(
@@ -154,7 +157,15 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
   Future<void> _startDevice(String deviceId) async {
     if (_disposed) return;
 
-    _emitLocalLatest(deviceId, emitNull: true);
+    _localLatestSubscriptions.putIfAbsent(
+      deviceId,
+      () => _localStorage.watchLatest(deviceId).listen((BioGTelemetry? latest) {
+        _acceptLatest(deviceId, latest, fetchedAt: DateTime.now().toUtc());
+        unawaited(_emitAllLocalHistory(deviceId));
+      }),
+    );
+
+    await _emitLocalLatest(deviceId, emitNull: true);
     unawaited(_refreshLatestIfNeeded(deviceId));
 
     _pollingTimers.putIfAbsent(
@@ -190,12 +201,14 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
 
     final timer = _pollingTimers.remove(deviceId);
     timer?.cancel();
+    final localSubscription = _localLatestSubscriptions.remove(deviceId);
+    unawaited(localSubscription?.cancel());
   }
 
   Future<BioGTelemetry?> _refreshLatestIfNeeded(String deviceId) async {
     if (_disposed) return null;
 
-    final normalizedDeviceId = deviceId.trim();
+    final normalizedDeviceId = _normalizeDeviceId(deviceId);
     if (normalizedDeviceId.isEmpty) return null;
 
     if (!TelemetrySupabaseSync.isValidTelemetryDeviceId(normalizedDeviceId)) {
@@ -241,35 +254,46 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
       return inFlight;
     }
 
-    final future = _fetchLatest(normalizedDeviceId);
+    final generation = _deviceGeneration[normalizedDeviceId] ?? 0;
+    final future = _fetchLatest(normalizedDeviceId, generation: generation);
     _inFlightLatestRequests[normalizedDeviceId] = future;
 
     try {
       return await future;
     } finally {
-      _inFlightLatestRequests.remove(normalizedDeviceId);
+      if (identical(_inFlightLatestRequests[normalizedDeviceId], future)) {
+        _inFlightLatestRequests.remove(normalizedDeviceId);
+      }
     }
   }
 
-  Future<BioGTelemetry?> _fetchLatest(String deviceId) async {
+  Future<BioGTelemetry?> _fetchLatest(
+    String deviceId, {
+    required int generation,
+  }) async {
     _log('remote fetch start device_id=$deviceId');
 
     try {
       final cloudLatest = await _cloudSync
           .downloadLatest(deviceId)
           .timeout(_remoteLatestTimeout);
+      if (!_isCurrentGeneration(deviceId, generation)) return null;
+
       if (cloudLatest != null) {
         await _localStorage.mergeAndSave(deviceId, <BioGTelemetry>[
           cloudLatest,
-        ]);
+        ], overwriteExisting: false);
       }
 
-      final latest = cloudLatest ?? await _localStorage.latest(deviceId);
-      _latestCache[deviceId] = _CachedTelemetry(
-        telemetry: latest,
-        fetchedAt: DateTime.now().toUtc(),
-      );
-      _emitLatestValue(deviceId, latest);
+      if (!_isCurrentGeneration(deviceId, generation)) return null;
+
+      // Re-read local after the merge. A BLE reading may have arrived while
+      // the cloud request was in flight, and must win if its measurement time
+      // is newer.
+      final localLatest = await _localStorage.latest(deviceId);
+      if (!_isCurrentGeneration(deviceId, generation)) return null;
+      final latest = _newest(localLatest, cloudLatest);
+      _acceptLatest(deviceId, latest, fetchedAt: DateTime.now().toUtc());
 
       _log(
         'remote fetch success device_id=$deviceId hasData=${latest != null} '
@@ -286,11 +310,8 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
         'type=${e.runtimeType} message=$e',
       );
       final latest = await _localStorage.latest(deviceId);
-      _latestCache[deviceId] = _CachedTelemetry(
-        telemetry: latest,
-        fetchedAt: DateTime.now().toUtc(),
-      );
-      _emitLatestValue(deviceId, latest);
+      if (!_isCurrentGeneration(deviceId, generation)) return null;
+      _acceptLatest(deviceId, latest, fetchedAt: DateTime.now().toUtc());
       return latest;
     }
   }
@@ -301,7 +322,7 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
   }) async {
     if (_disposed) return const <BioGTelemetry>[];
 
-    final normalizedDeviceId = deviceId.trim();
+    final normalizedDeviceId = _normalizeDeviceId(deviceId);
     if (normalizedDeviceId.isEmpty) return const <BioGTelemetry>[];
 
     if (!TelemetrySupabaseSync.isValidTelemetryDeviceId(normalizedDeviceId)) {
@@ -332,19 +353,27 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
       return inFlight;
     }
 
-    final future = _fetchHistory(normalizedDeviceId, window: window);
+    final generation = _deviceGeneration[normalizedDeviceId] ?? 0;
+    final future = _fetchHistory(
+      normalizedDeviceId,
+      window: window,
+      generation: generation,
+    );
     _inFlightHistoryRequests[key] = future;
 
     try {
       return await future;
     } finally {
-      _inFlightHistoryRequests.remove(key);
+      if (identical(_inFlightHistoryRequests[key], future)) {
+        _inFlightHistoryRequests.remove(key);
+      }
     }
   }
 
   Future<List<BioGTelemetry>> _fetchHistory(
     String deviceId, {
     required Duration? window,
+    required int generation,
   }) async {
     _log(
       'fetching history telemetry device_id=$deviceId '
@@ -364,13 +393,24 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
             .timeout(_remoteHistoryTimeout);
       }
 
+      if (!_isCurrentGeneration(deviceId, generation)) {
+        return const <BioGTelemetry>[];
+      }
+
       if (cloudHistory.isNotEmpty) {
-        await _localStorage.mergeAndSave(deviceId, cloudHistory);
-        _latestCache[deviceId] = _CachedTelemetry(
-          telemetry: cloudHistory.last,
-          fetchedAt: DateTime.now().toUtc(),
+        await _localStorage.mergeAndSave(
+          deviceId,
+          cloudHistory,
+          overwriteExisting: false,
         );
-        _emitLatestValue(deviceId, cloudHistory.last);
+        if (!_isCurrentGeneration(deviceId, generation)) {
+          return const <BioGTelemetry>[];
+        }
+        final latest = await _localStorage.latest(deviceId);
+        if (!_isCurrentGeneration(deviceId, generation)) {
+          return const <BioGTelemetry>[];
+        }
+        _acceptLatest(deviceId, latest, fetchedAt: DateTime.now().toUtc());
       }
 
       _historyFetchedAtByKey[_historyKey(deviceId, window)] = DateTime.now()
@@ -378,17 +418,26 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
 
       if (window == null && cloudHistory.isNotEmpty) {
         final localHistory = await _localStorage.load(deviceId);
-        final allHistory = _mergeHistoryForRead(
-          deviceId,
-          <BioGTelemetry>[...localHistory, ...cloudHistory],
-        );
+        if (!_isCurrentGeneration(deviceId, generation)) {
+          return const <BioGTelemetry>[];
+        }
+        final allHistory = _mergeHistoryForRead(deviceId, <BioGTelemetry>[
+          ...localHistory,
+          ...cloudHistory,
+        ]);
         _emitHistoryValue(deviceId, window, allHistory);
         return allHistory;
       }
 
+      if (!_isCurrentGeneration(deviceId, generation)) {
+        return const <BioGTelemetry>[];
+      }
       await _emitLocalHistory(deviceId, window: window);
       return _loadLocalHistory(deviceId, window: window);
     } catch (e) {
+      if (!_isCurrentGeneration(deviceId, generation)) {
+        return const <BioGTelemetry>[];
+      }
       _log(
         'history cloud error device_id=$deviceId '
         'window=${_historyWindowLabel(window)} fallback=local error=$e',
@@ -402,6 +451,9 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
 
   void _emitLatestValue(String deviceId, BioGTelemetry? latest) {
     if (_disposed) return;
+    if (latest != null && _normalizeDeviceId(latest.deviceId) != deviceId) {
+      return;
+    }
     final controller = _liveControllers[deviceId];
     if (controller == null || controller.isClosed) return;
     controller.add(latest);
@@ -422,7 +474,8 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
 
     try {
       final cached = _latestCache[deviceId];
-      final latest = cached?.telemetry ?? await _localStorage.latest(deviceId);
+      final localLatest = await _localStorage.latest(deviceId);
+      final latest = _newest(localLatest, cached?.telemetry);
       if (_disposed || listener.isClosed || !shouldEmit()) return;
       listener.add(latest);
       _logOnce(
@@ -450,9 +503,7 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
     try {
       final latest = await _localStorage.latest(deviceId);
       if (latest == null && !emitNull) return;
-      if (!controller.isClosed) {
-        controller.add(latest);
-      }
+      _acceptLatest(deviceId, latest, fetchedAt: DateTime.now().toUtc());
     } catch (_) {
       if (!emitNull) return;
       if (!controller.isClosed) {
@@ -474,9 +525,7 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
       final history =
           _historyCacheByKey[key] ??
           await _loadLocalHistory(deviceId, window: window);
-      final bool hasStableEmptyResult = _historyFetchedAtByKey.containsKey(
-        key,
-      );
+      final bool hasStableEmptyResult = _historyFetchedAtByKey.containsKey(key);
       final bool hasStableAllResult =
           window != null ||
           hasStableEmptyResult ||
@@ -554,7 +603,7 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
   ) {
     final byTimestamp = <String, BioGTelemetry>{};
     for (final reading in readings) {
-      if (reading.deviceId != deviceId) continue;
+      if (_normalizeDeviceId(reading.deviceId) != deviceId) continue;
       byTimestamp[reading.timestamp.toUtc().toIso8601String()] = reading;
     }
     return byTimestamp.values.toList()
@@ -574,6 +623,90 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
 
   String _historyKey(String deviceId, Duration? window) {
     return '$deviceId|${window?.inSeconds ?? 'all'}';
+  }
+
+  Future<void> _emitAllLocalHistory(String deviceId) async {
+    final String prefix = '$deviceId|';
+    final keys = _historyControllers.keys
+        .where((String key) => key.startsWith(prefix))
+        .toList(growable: false);
+    for (final String key in keys) {
+      final String rawWindow = key.substring(prefix.length);
+      final Duration? window = rawWindow == 'all'
+          ? null
+          : Duration(seconds: int.tryParse(rawWindow) ?? 0);
+      await _emitLocalHistory(deviceId, window: window);
+    }
+  }
+
+  void _acceptLatest(
+    String deviceId,
+    BioGTelemetry? candidate, {
+    required DateTime fetchedAt,
+  }) {
+    if (_disposed) return;
+    if (candidate != null &&
+        _normalizeDeviceId(candidate.deviceId) != deviceId) {
+      return;
+    }
+
+    final BioGTelemetry? current = _latestCache[deviceId]?.telemetry;
+    final BioGTelemetry? winner = _newest(current, candidate);
+
+    // A transient empty result must not erase a committed reading. Explicit
+    // deletion removes the cache first in forgetDevice().
+    if (winner == null && current != null) return;
+    if (candidate != null && !identical(winner, candidate)) return;
+
+    _latestCache[deviceId] = _CachedTelemetry(
+      telemetry: winner,
+      fetchedAt: fetchedAt,
+    );
+    _emitLatestValue(deviceId, winner);
+  }
+
+  BioGTelemetry? _newest(BioGTelemetry? a, BioGTelemetry? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return b.timestamp.toUtc().isAfter(a.timestamp.toUtc()) ? b : a;
+  }
+
+  bool _isCurrentGeneration(String deviceId, int generation) {
+    return !_disposed && (_deviceGeneration[deviceId] ?? 0) == generation;
+  }
+
+  String _normalizeDeviceId(String value) {
+    final String trimmed = value.trim();
+    return BioGDevice.isTelemetryDeviceId(trimmed)
+        ? trimmed.toLowerCase()
+        : trimmed;
+  }
+
+  @override
+  Future<void> forgetDevice(String deviceId) async {
+    final String normalizedDeviceId = _normalizeDeviceId(deviceId);
+    _deviceGeneration[normalizedDeviceId] =
+        (_deviceGeneration[normalizedDeviceId] ?? 0) + 1;
+
+    _pollingTimers.remove(normalizedDeviceId)?.cancel();
+    await _localLatestSubscriptions.remove(normalizedDeviceId)?.cancel();
+
+    _latestCache.remove(normalizedDeviceId);
+    _inFlightLatestRequests.remove(normalizedDeviceId);
+    _loggedInvalidTelemetryIds.remove(normalizedDeviceId);
+
+    final String prefix = '$normalizedDeviceId|';
+    _historyFetchedAtByKey.removeWhere((key, _) => key.startsWith(prefix));
+    _inFlightHistoryRequests.removeWhere((key, _) => key.startsWith(prefix));
+    _historyCacheByKey.removeWhere((key, _) => key.startsWith(prefix));
+
+    await _localStorage.delete(normalizedDeviceId);
+    _emitLatestValue(normalizedDeviceId, null);
+    for (final entry in _historyControllers.entries) {
+      if (entry.key.startsWith(prefix) && !entry.value.isClosed) {
+        entry.value.add(const <BioGTelemetry>[]);
+      }
+    }
   }
 
   void _logInvalidTelemetryId(String uiDeviceId) {
@@ -606,6 +739,10 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
       timer.cancel();
     }
 
+    for (final subscription in _localLatestSubscriptions.values) {
+      unawaited(subscription.cancel());
+    }
+
     for (final controller in _liveControllers.values) {
       controller.close();
     }
@@ -615,6 +752,7 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
     }
 
     _pollingTimers.clear();
+    _localLatestSubscriptions.clear();
     _liveControllers.clear();
     _historyControllers.clear();
     _latestCache.clear();
@@ -624,6 +762,7 @@ class OfflineFirstTelemetrySource implements TelemetrySource {
     _historyCacheByKey.clear();
     _loggedInvalidTelemetryIds.clear();
     _loggedFlowStates.clear();
+    _deviceGeneration.clear();
   }
 }
 

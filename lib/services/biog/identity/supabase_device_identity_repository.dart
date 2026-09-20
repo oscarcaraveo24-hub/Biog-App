@@ -28,8 +28,8 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
   SupabaseDeviceIdentityRepository({
     SupabaseClient? client,
     ActiveDeviceStore? activeDeviceStore,
-  })  : _client = client ?? Supabase.instance.client,
-        _activeDeviceStore = activeDeviceStore ?? ActiveDeviceStore();
+  }) : _client = client ?? Supabase.instance.client,
+       _activeDeviceStore = activeDeviceStore ?? ActiveDeviceStore();
 
   static const String _devicesTable = 'devices';
   static const String _membershipsTable = 'device_memberships';
@@ -85,6 +85,12 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
     _inMemoryByUser[_userKey(userId)] = devices;
 
     _cachedActiveDeviceId = await _activeDeviceStore.load(userId: userId);
+    // Para una cuenta autenticada la caché local puede estar vacía mientras
+    // Supabase todavía contiene el dispositivo activo. Se valida después de
+    // reconciliar ambas listas, no prematuramente aquí.
+    if (userId == null || userId.isEmpty) {
+      await _ensureActiveBelongsTo(userId: userId, devices: devices);
+    }
 
     return List<BioGDevice>.unmodifiable(devices);
   }
@@ -97,8 +103,9 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
       await loadLocalCache(userId: userId);
     }
 
-    final List<BioGDevice> local =
-        List<BioGDevice>.from(_inMemoryByUser[_userKey(userId)] ?? const []);
+    final List<BioGDevice> local = List<BioGDevice>.from(
+      _inMemoryByUser[_userKey(userId)] ?? const [],
+    );
 
     _logHardwareFlow(
       'account hardware load started has_session=${userId != null && userId.isNotEmpty} '
@@ -111,6 +118,7 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
         'account hardware load local_only reason=no_session '
         'devices=${local.length}',
       );
+      await _ensureActiveBelongsTo(userId: userId, devices: local);
       return List<BioGDevice>.unmodifiable(local);
     }
 
@@ -156,6 +164,7 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
 
       _inMemoryByUser[_userKey(userId)] = merged;
       await _writeLocalCache(userId, merged);
+      await _ensureActiveBelongsTo(userId: userId, devices: merged);
 
       // Push back any local-wins or local-only records so remote catches up.
       final Map<String, BioGDevice> remoteById = <String, BioGDevice>{
@@ -174,6 +183,7 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
         'remote devices failed fallback=local type=${e.runtimeType} message=$e',
       );
       // Network / RLS / schema error — stick with local cache.
+      await _ensureActiveBelongsTo(userId: userId, devices: local);
       return List<BioGDevice>.unmodifiable(local);
     }
   }
@@ -193,8 +203,9 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
     );
 
     final key = _userKey(userId);
-    final List<BioGDevice> list =
-        List<BioGDevice>.from(_inMemoryByUser[key] ?? const <BioGDevice>[]);
+    final List<BioGDevice> list = List<BioGDevice>.from(
+      _inMemoryByUser[key] ?? const <BioGDevice>[],
+    );
 
     final int idx = list.indexWhere((d) => d.id == stamped.id);
     if (idx >= 0) {
@@ -219,8 +230,9 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
     required String deviceId,
   }) async {
     final key = _userKey(userId);
-    final List<BioGDevice> list =
-        List<BioGDevice>.from(_inMemoryByUser[key] ?? const <BioGDevice>[]);
+    final List<BioGDevice> list = List<BioGDevice>.from(
+      _inMemoryByUser[key] ?? const <BioGDevice>[],
+    );
     list.removeWhere((d) => d.id == deviceId);
     _inMemoryByUser[key] = list;
     await _writeLocalCache(userId, list);
@@ -237,22 +249,8 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
       }
     }
 
-    if (userId == null || userId.isEmpty) return;
-
-    try {
-      await _client
-          .from(_membershipsTable)
-          .delete()
-          .eq('user_id', userId)
-          .eq('device_id', deviceId);
-    } catch (_) {
-      // Best-effort.
-    }
-
-    try {
-      await _client.from(_devicesTable).delete().eq('id', deviceId);
-    } catch (_) {
-      // Best-effort; device may still be referenced by other users.
+    if (userId != null && userId.isNotEmpty) {
+      unawaited(_deleteRemoteDevice(userId, deviceId));
     }
   }
 
@@ -266,6 +264,12 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
   }
 
   @override
+  Future<void> clearActiveDeviceId({required String? userId}) async {
+    _cachedActiveDeviceId = null;
+    await _activeDeviceStore.clear(userId: userId);
+  }
+
+  @override
   void clearInMemory() {
     _inMemoryByUser.clear();
     _cachedActiveDeviceId = null;
@@ -274,6 +278,38 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
   // ---------------------------------------------------------------------------
   // Internals
   // ---------------------------------------------------------------------------
+
+  Future<void> _deleteRemoteDevice(String userId, String deviceId) async {
+    try {
+      await _client
+          .from(_membershipsTable)
+          .delete()
+          .eq('user_id', userId)
+          .eq('device_id', deviceId);
+    } catch (_) {
+      // Best-effort. El cache local ya refleja la eliminación solicitada.
+    }
+
+    try {
+      await _client.from(_devicesTable).delete().eq('id', deviceId);
+    } catch (_) {
+      // The row may be shared or protected by RLS; removing the membership is
+      // sufficient to keep it outside this account.
+    }
+  }
+
+  Future<void> _ensureActiveBelongsTo({
+    required String? userId,
+    required List<BioGDevice> devices,
+  }) async {
+    final String? activeId = _cachedActiveDeviceId;
+    if (activeId == null ||
+        devices.any((BioGDevice device) => device.id == activeId)) {
+      return;
+    }
+    _cachedActiveDeviceId = null;
+    await _activeDeviceStore.clear(userId: userId);
+  }
 
   Future<void> _writeLocalCache(
     String? userId,
@@ -430,9 +466,7 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
   }
 
   DateTime _lwwStamp(BioGDevice d) {
-    return d.updatedAt ??
-        d.createdAt ??
-        DateTime.fromMillisecondsSinceEpoch(0);
+    return d.updatedAt ?? d.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   BioGDevice? _fromSupabaseRow(Map<String, dynamic> row) {
@@ -474,20 +508,20 @@ class SupabaseDeviceIdentityRepository implements DeviceIdentityRepository {
   }
 
   Map<String, dynamic> _toCacheJson(BioGDevice d) => <String, dynamic>{
-        'id': d.id,
-        'name': d.name,
-        'location_name': d.locationName,
-        'seed_id': d.seedId,
-        'profile_id': d.profileId,
-        // Se persiste el modelo: es lo que decide si el equipo ocupa plaza
-        // fija en el plan. Antes solo vivía en memoria, así que el primer
-        // reinicio lo perdía y todos los equipos pasaban a contar como fijos.
-        'device_model_id': d.deviceModelId,
-        'telemetry_device_id': d.telemetryDeviceIdOverride,
-        'status': _statusToDb(d.status),
-        'created_at': d.createdAt?.toIso8601String(),
-        'updated_at': d.updatedAt?.toIso8601String(),
-      };
+    'id': d.id,
+    'name': d.name,
+    'location_name': d.locationName,
+    'seed_id': d.seedId,
+    'profile_id': d.profileId,
+    // Se persiste el modelo: es lo que decide si el equipo ocupa plaza
+    // fija en el plan. Antes solo vivía en memoria, así que el primer
+    // reinicio lo perdía y todos los equipos pasaban a contar como fijos.
+    'device_model_id': d.deviceModelId,
+    'telemetry_device_id': d.telemetryDeviceIdOverride,
+    'status': _statusToDb(d.status),
+    'created_at': d.createdAt?.toIso8601String(),
+    'updated_at': d.updatedAt?.toIso8601String(),
+  };
 
   BioGDevice? _fromCacheJson(Map<String, dynamic> json) {
     try {

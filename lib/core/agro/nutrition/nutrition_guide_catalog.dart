@@ -27,6 +27,22 @@ class NutritionGuideCatalog {
   /// Cultivos con guía registrada (para la auditoría y las pruebas).
   static Iterable<String> get cropKeys => kNutritionGuides.keys;
 
+  /// Clave canónica de guía para cualquier forma de nombrar el cultivo:
+  /// `crop_avocado_tree`, `avocadoTree`, `aguacate` y `avocado_tree` dan todas
+  /// `avocado_tree`. Sin guía registrada devuelve la clave normalizada tal
+  /// cual, para que dos nombres iguales sigan comparando iguales.
+  ///
+  /// Es la comparación que deben usar la declaración de temporada y cualquier
+  /// otro dato guardado con el id de cultivo de la app: la app guarda
+  /// `crop_avocado_tree` y la guía se llama `avocado_tree`; comparar los
+  /// textos crudos hacía que la respuesta del productor «no aplicara» nunca.
+  static String canonicalKey(String? cropKey) {
+    final String key = _normalize(cropKey);
+    if (key.isEmpty) return '';
+    if (kNutritionGuides.containsKey(key)) return key;
+    return _aliases[key] ?? key;
+  }
+
   static String _normalize(String? raw) {
     String k = (raw ?? '').trim().toLowerCase();
     if (k.startsWith('crop_')) k = k.substring(5);

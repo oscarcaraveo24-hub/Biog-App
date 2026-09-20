@@ -134,7 +134,7 @@ class TelemetryDeviceIdentity {
     final calibratedRaw = json['calibratedAt'] ?? json['calibrated_at'];
 
     return TelemetryDeviceIdentity(
-      deviceId: id,
+      deviceId: isValidDeviceId(id) ? id.toLowerCase() : id,
       hardwareSerial: (json['hardwareSerial'] ?? json['hardware_serial'])
           ?.toString(),
       deviceModelId: (json['deviceModelId'] ?? json['device_model_id'])

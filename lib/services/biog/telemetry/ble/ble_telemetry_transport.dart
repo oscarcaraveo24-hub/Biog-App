@@ -299,9 +299,8 @@ class BleTelemetryTransport implements TelemetryTransport {
       final services = await target.discoverServices();
       final service = services.firstWhere(
         (s) => s.uuid == BioGBleConfig.serviceUuid,
-        orElse: () => throw StateError(
-          'El aparato no expone el servicio de BIO-G',
-        ),
+        orElse: () =>
+            throw StateError('El aparato no expone el servicio de BIO-G'),
       );
 
       final identityChr = _findCharacteristic(
@@ -423,9 +422,17 @@ class BleTelemetryTransport implements TelemetryTransport {
   Future<void> _teardownConnection() async {
     await _notifySub?.cancel();
     _notifySub = null;
+    final BluetoothCharacteristic? telemetryChr = _telemetryChr;
+    _telemetryChr = null;
+    if (telemetryChr != null) {
+      try {
+        await telemetryChr.setNotifyValue(false);
+      } catch (_) {
+        // Puede haberse desconectado antes de desactivar Notify.
+      }
+    }
     await _connSub?.cancel();
     _connSub = null;
-    _telemetryChr = null;
     _identity = null;
 
     final d = _device;

@@ -10,9 +10,8 @@ import 'package:bio_g/models/biog_telemetry.dart';
 ///     before any remote call completes
 ///
 /// Everything in this layer is keyed by [BioGDevice.id] (the master
-/// deviceId). The telemetry/history/alerts streams are NOT this layer's
-/// responsibility — they belong to the sensor simulator (or, in the
-/// future, to a real hardware driver).
+/// deviceId). Telemetry/history streams use [BioGDevice.telemetryDeviceId]
+/// and belong to the real hardware/offline-first pipeline.
 abstract class DeviceIdentityRepository {
   /// Synchronously return the cached devices list for [userId] (or the
   /// last known list when [userId] is null). Used to render UI
@@ -49,6 +48,9 @@ abstract class DeviceIdentityRepository {
     required String? userId,
     required String deviceId,
   });
+
+  /// Persist that the user currently has no active device.
+  Future<void> clearActiveDeviceId({required String? userId});
 
   /// Clear the in-memory cache for the given user (e.g. on sign-out).
   /// Local persisted cache is preserved so the same user gets an

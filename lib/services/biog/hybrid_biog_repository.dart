@@ -4,13 +4,10 @@ import 'package:flutter/foundation.dart';
 
 import 'package:bio_g/core/util/uuid_v4.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
-import 'package:bio_g/models/device_crop_context.dart';
-import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/services/biog/biog_repository.dart';
 import 'package:bio_g/services/biog/identity/device_identity_repository.dart';
 import 'package:bio_g/services/biog/identity/supabase_device_identity_repository.dart';
 import 'package:bio_g/services/biog/telemetry/offline_first_telemetry_source.dart';
-import 'package:bio_g/services/biog/telemetry/sensor_simulator.dart';
 import 'package:bio_g/services/biog/telemetry/telemetry_source.dart';
 
 const bool kBioGHardwareFlowRepositoryDebugLogs = true;
@@ -22,11 +19,8 @@ const bool kBioGHardwareFlowRepositoryDebugLogs = true;
 ///
 ///   - an OFFLINE-FIRST [TelemetrySource] for: live telemetry and history.
 ///
-///   - a SIMULATED [SensorSimulator] for: derived alerts while the alert
-///     engine is still being extracted from simulator code.
-///
 /// This keeps the app offline-first:
-///   Supabase/Bluetooth/future hardware -> local cache -> repository -> UI.
+///   Bluetooth -> local cache -> repository/UI, then Supabase sync.
 ///
 /// Active device is owned by the identity layer. This repo re-emits
 /// active-device-scoped telemetry streams whenever the active device changes,
@@ -34,32 +28,11 @@ const bool kBioGHardwareFlowRepositoryDebugLogs = true;
 class HybridBioGRepository implements BioGRepository {
   HybridBioGRepository({
     DeviceIdentityRepository? identity,
-    SensorSimulator? simulator,
     TelemetrySource? telemetrySource,
   }) : _identity = identity ?? SupabaseDeviceIdentityRepository(),
-       _simulator = simulator ?? SensorSimulator(),
        _telemetrySource = telemetrySource ?? OfflineFirstTelemetrySource();
 
   final DeviceIdentityRepository _identity;
-
-  /// Interruptor del simulador de sensor.
-  ///
-  /// El simulador tickea cada segundo, fabrica telemetría sintética y produce
-  /// alertas que terminan en `BioGStore.latestAlerts`, un campo que hoy no lee
-  /// ninguna pantalla: lo que ve el agricultor sale de `EventEngine` sobre
-  /// telemetría real. Mantenerlo encendido en producción gasta batería del
-  /// teléfono para llenar un buzón que nadie abre.
-  ///
-  /// Se deja apagado por defecto. Cámbialo a `true` para desarrollo local si
-  /// necesitas datos sintéticos.
-  static const bool kEnableSensorSimulator = false;
-
-  /// Temporary alert source.
-  ///
-  /// Live telemetry and history no longer come from this simulator.
-  /// It remains only to avoid breaking watchAlerts until alerts are moved
-  /// to a dedicated alert/evaluation engine.
-  final SensorSimulator _simulator;
 
   /// Offline-first telemetry source.
   ///
@@ -75,11 +48,11 @@ class HybridBioGRepository implements BioGRepository {
   List<BioGDevice> _devices = const <BioGDevice>[];
   BioGDevice? _activeDevice;
   String? _currentUserId;
-  bool _simulatorStarted = false;
+  int _bindGeneration = 0;
+  int _selectionRevision = 0;
   final Set<String> _loggedHardwareFlowStates = <String>{};
 
   DeviceIdentityRepository get identity => _identity;
-  SensorSimulator get simulator => _simulator;
   TelemetrySource get telemetrySource => _telemetrySource;
 
   /// Expose the current active device id synchronously. Used by the
@@ -93,35 +66,30 @@ class HybridBioGRepository implements BioGRepository {
   ///   1. Load local cache instantly → emit so UI has data.
   ///   2. Load remote devices → LWW merge → emit again.
   ///   3. Restore the persisted active-device selection.
-  ///   4. Keep simulator alive only for alert generation fallback.
-  ///   5. Refresh telemetry source for the active device.
-  Future<void> bindUser({
-    required String? userId,
-    SeedInstall? Function(String deviceId)? seedResolver,
-    DeviceCropContext? Function(String deviceId)? cropContextResolver,
-  }) async {
+  ///   4. Refresh telemetry source for the active device.
+  Future<void> bindUser({required String? userId}) async {
+    final int generation = ++_bindGeneration;
     _currentUserId = userId;
-
-    if (seedResolver != null) {
-      _simulator.attachSeedResolver(seedResolver);
-    }
-    if (cropContextResolver != null) {
-      _simulator.attachCropContextResolver(cropContextResolver);
-    }
+    _selectionRevision++;
+    _activeDevice = null;
+    _activeDeviceCtrl.add(null);
 
     // 1) Local cache first (instant render).
     final identity = _identity;
     if (identity is SupabaseDeviceIdentityRepository) {
       final cached = await identity.loadLocalCache(userId: userId);
-      _publishDevices(cached, preserveActive: true);
+      if (!_isCurrentBind(generation, userId)) return;
+      _publishDevices(cached, preserveActive: false, resolveActive: false);
     }
 
     // 2) Remote load (LWW merge against local).
     final fresh = await _identity.loadDevices(userId: userId);
-    _publishDevices(fresh, preserveActive: true);
+    if (!_isCurrentBind(generation, userId)) return;
+    _publishDevices(fresh, preserveActive: false, resolveActive: false);
 
     // 2.5) Reasignar UUID a los dispositivos con id de texto heredado.
     _lastLegacyIdMigration = await _migrateLegacyDeviceIds(userId);
+    if (!_isCurrentBind(generation, userId)) return;
 
     // 3) Restore active device selection.
     final persistedActiveId = _identity.cachedActiveDeviceId();
@@ -149,6 +117,8 @@ class HybridBioGRepository implements BioGRepository {
 
       await _identity.setActiveDeviceId(userId: userId, deviceId: active.id);
 
+      if (!_isCurrentBind(generation, userId)) return;
+
       _refreshTelemetryForDevice(active);
     } else {
       _activeDevice = null;
@@ -158,22 +128,15 @@ class HybridBioGRepository implements BioGRepository {
         onceKey: 'active:none',
       );
     }
-
-    // 4) Keep simulator configured for alert fallback only.
-    _simulator.configureDevices(_devices);
-
-    if (kEnableSensorSimulator && !_simulatorStarted) {
-      _simulator.start();
-      _simulatorStarted = true;
-    }
   }
 
   /// Drop every user-scoped state. Local caches are preserved so the
   /// same user can re-hydrate instantly next time.
   void unbindUser() {
+    _bindGeneration++;
+    _selectionRevision++;
     _currentUserId = null;
     _identity.clearInMemory();
-    _simulator.configureDevices(const <BioGDevice>[]);
 
     _devices = const <BioGDevice>[];
     _activeDevice = null;
@@ -185,12 +148,12 @@ class HybridBioGRepository implements BioGRepository {
   void _publishDevices(
     List<BioGDevice> devices, {
     required bool preserveActive,
+    bool resolveActive = true,
   }) {
     _devices = List<BioGDevice>.unmodifiable(devices);
     _devicesCtrl.add(_devices);
 
-    // Simulator stays configured for temporary alert fallback.
-    _simulator.configureDevices(_devices);
+    if (!resolveActive) return;
 
     if (preserveActive && _activeDevice != null) {
       // Keep the active device pinned if it still exists.
@@ -228,6 +191,10 @@ class HybridBioGRepository implements BioGRepository {
       return;
     }
     unawaited(_telemetrySource.refresh(telemetryDeviceId, window: window));
+  }
+
+  bool _isCurrentBind(int generation, String? userId) {
+    return generation == _bindGeneration && _currentUserId == userId;
   }
 
   void _logHardwareFlowOnce(String message, {required String onceKey}) {
@@ -304,7 +271,9 @@ class HybridBioGRepository implements BioGRepository {
           .watchLive(nextId)
           .listen(
             (t) {
-              if (boundTelemetryId == nextId && !out.isClosed) out.add(t);
+              if (boundTelemetryId != nextId || out.isClosed) return;
+              if (t != null && t.deviceId.toLowerCase() != nextId) return;
+              out.add(t);
             },
             onError: (Object _, StackTrace _) {
               if (boundTelemetryId == nextId && !out.isClosed) out.add(null);
@@ -369,7 +338,15 @@ class HybridBioGRepository implements BioGRepository {
           .watchHistory(nextId, window: window)
           .listen(
             (list) {
-              if (boundTelemetryId == nextId && !out.isClosed) out.add(list);
+              if (boundTelemetryId != nextId || out.isClosed) return;
+              out.add(
+                List<BioGTelemetry>.unmodifiable(
+                  list.where(
+                    (BioGTelemetry sample) =>
+                        sample.deviceId.toLowerCase() == nextId,
+                  ),
+                ),
+              );
             },
             onError: (Object _, StackTrace _) {
               if (boundTelemetryId == nextId && !out.isClosed) {
@@ -397,59 +374,9 @@ class HybridBioGRepository implements BioGRepository {
 
   @override
   Stream<List<BioGAlert>> watchAlerts({int limit = 50}) {
-    // TEMPORARY: alerts still come from SensorSimulator until the alert engine
-    // is extracted. Same stale-state fix as the telemetry streams — swap the
-    // alert subscription the moment the active device changes so a newly
-    // selected BioG never inherits the previous device's alerts.
-    late final StreamController<List<BioGAlert>> out;
-    StreamSubscription<BioGDevice?>? activeSub;
-    StreamSubscription<List<BioGAlert>>? alertsSub;
-    String? boundDeviceId;
-    bool bound = false;
-
-    void bindActive(BioGDevice? active) {
-      if (out.isClosed) return;
-
-      final String? nextId = active?.id;
-
-      if (bound && nextId == boundDeviceId) return;
-      bound = true;
-
-      alertsSub?.cancel();
-      alertsSub = null;
-      boundDeviceId = nextId;
-      out.add(const <BioGAlert>[]);
-
-      if (nextId == null) return;
-
-      alertsSub = _simulator
-          .watchAlerts(nextId, limit: limit)
-          .listen(
-            (list) {
-              if (boundDeviceId == nextId && !out.isClosed) out.add(list);
-            },
-            onError: (Object _, StackTrace _) {
-              if (boundDeviceId == nextId && !out.isClosed) {
-                out.add(const <BioGAlert>[]);
-              }
-            },
-          );
-    }
-
-    out = StreamController<List<BioGAlert>>(
-      onListen: () {
-        bindActive(_activeDevice);
-        activeSub = _activeDeviceCtrl.stream.listen(bindActive);
-      },
-      onCancel: () async {
-        await activeSub?.cancel();
-        await alertsSub?.cancel();
-        activeSub = null;
-        alertsSub = null;
-      },
-    );
-
-    return out.stream;
+    // Alerts are derived by BioGStore from real measurements. There is no
+    // synthetic runtime fallback here.
+    return Stream<List<BioGAlert>>.value(const <BioGAlert>[]);
   }
 
   @override
@@ -457,15 +384,28 @@ class HybridBioGRepository implements BioGRepository {
     final match = _devices.where((d) => d.id == deviceId);
     if (match.isEmpty) return;
 
-    _activeDevice = match.first;
-    _activeDeviceCtrl.add(_activeDevice);
+    final int revision = ++_selectionRevision;
+    final BioGDevice selected = match.first;
+    _activeDevice = selected;
+    _activeDeviceCtrl.add(selected);
+    _refreshTelemetryForDevice(selected);
 
     await _identity.setActiveDeviceId(
       userId: _currentUserId,
       deviceId: deviceId,
     );
 
-    _refreshTelemetryForDevice(_activeDevice!);
+    if (revision != _selectionRevision) {
+      final BioGDevice? current = _activeDevice;
+      if (current == null) {
+        await _identity.clearActiveDeviceId(userId: _currentUserId);
+      } else {
+        await _identity.setActiveDeviceId(
+          userId: _currentUserId,
+          deviceId: current.id,
+        );
+      }
+    }
   }
 
   /// Mapa `idViejo -> idNuevo` de la última migración de ids heredados.
@@ -515,7 +455,7 @@ class HybridBioGRepository implements BioGRepository {
         );
       }
 
-      _publishDevices(next, preserveActive: false);
+      _publishDevices(next, preserveActive: false, resolveActive: false);
 
       final String? remappedActive = previousActiveId == null
           ? null
@@ -622,10 +562,8 @@ class HybridBioGRepository implements BioGRepository {
     final next = List<BioGDevice>.from(_devices)..add(device);
     _publishDevices(next, preserveActive: true);
 
-    // Auto-select if this is the first device.
-    if (_activeDevice == null) {
-      await setActiveDevice(device.id);
-    }
+    // An explicit add/pair action always selects the device just added.
+    await setActiveDevice(device.id);
 
     return device;
   }
@@ -644,11 +582,19 @@ class HybridBioGRepository implements BioGRepository {
 
   @override
   Future<void> removeDevice(String deviceId) async {
-    if (_devices.length <= 1) return;
+    final BioGDevice? removed = _devices.cast<BioGDevice?>().firstWhere(
+      (BioGDevice? device) => device?.id == deviceId,
+      orElse: () => null,
+    );
+    if (removed == null) return;
+    _selectionRevision++;
+
+    final String? telemetryDeviceId = removed.telemetryDeviceId;
+    if (telemetryDeviceId != null) {
+      await _telemetrySource.forgetDevice(telemetryDeviceId);
+    }
 
     await _identity.removeDevice(userId: _currentUserId, deviceId: deviceId);
-
-    _simulator.forgetDevice(deviceId);
 
     final next = _devices
         .where((d) => d.id != deviceId)
@@ -664,29 +610,21 @@ class HybridBioGRepository implements BioGRepository {
       );
 
       _refreshTelemetryForDevice(_activeDevice!);
+    } else if (removedActive) {
+      await _identity.clearActiveDeviceId(userId: _currentUserId);
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Simulator control pass-through
-  // ---------------------------------------------------------------------------
+  // Compatibility no-ops retained for the existing app lifecycle API.
+  bool get isPaused => false;
 
-  bool get isPaused => _simulator.isPaused;
+  void pause() {}
 
-  /// Pauses only the temporary simulator alert fallback.
-  ///
-  /// Offline-first telemetry from Supabase/local storage is not paused here.
-  void pause() => _simulator.pause();
-
-  /// Resumes only the temporary simulator alert fallback.
-  ///
-  /// Offline-first telemetry from Supabase/local storage is not paused here.
-  void resume() => _simulator.resume();
+  void resume() {}
 
   @override
   void dispose() {
     _telemetrySource.dispose();
-    _simulator.dispose();
     _devicesCtrl.close();
     _activeDeviceCtrl.close();
     _loggedHardwareFlowStates.clear();

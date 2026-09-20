@@ -47,7 +47,8 @@ CultivationScale? cultivationScaleFromId(String? id) {
   return switch (normalized) {
     'field' || 'campo' => CultivationScale.field,
     'bed' || 'orchard' || 'huerto' || 'cama' || 'm2' => CultivationScale.bed,
-    'pot' || 'maceta' || 'plant' || 'planta' => CultivationScale.pot,
+    'pot' || 'maceta' || 'contenedor' || 'plant' || 'planta' =>
+      CultivationScale.pot,
     _ => null,
   };
 }

@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:bio_g/models/biog_telemetry.dart';
 import 'package:bio_g/models/device_crop_context.dart';
 import 'package:bio_g/models/seed_install.dart';
 import 'package:bio_g/screens/account/account_screen_presenter.dart';
@@ -191,51 +193,36 @@ void main() {
 
   group('isFallowMode', () {
     test('returns true when cropContext has fallow lifecycle', () {
-      final ctx = _makeCropContext(
-        lifecycleStatus: CropLifecycleStatus.fallow,
-      );
-      expect(
-        presenter.isFallowMode(cropContext: ctx, seed: null),
-        isTrue,
-      );
+      final ctx = _makeCropContext(lifecycleStatus: CropLifecycleStatus.fallow);
+      expect(presenter.isFallowMode(cropContext: ctx, seed: null), isTrue);
     });
 
     test('returns false when cropContext has planted lifecycle', () {
       final ctx = _makeCropContext(
         lifecycleStatus: CropLifecycleStatus.planted,
       );
-      expect(
-        presenter.isFallowMode(cropContext: ctx, seed: null),
-        isFalse,
-      );
+      expect(presenter.isFallowMode(cropContext: ctx, seed: null), isFalse);
     });
 
     test('returns false when cropContext has planned lifecycle', () {
       final ctx = _makeCropContext(
         lifecycleStatus: CropLifecycleStatus.planned,
       );
-      expect(
-        presenter.isFallowMode(cropContext: ctx, seed: null),
-        isFalse,
-      );
+      expect(presenter.isFallowMode(cropContext: ctx, seed: null), isFalse);
     });
 
     test('returns true with legacy seed skip status and no cropContext', () {
       final seed = _makeSeedSkip();
-      expect(
-        presenter.isFallowMode(cropContext: null, seed: seed),
-        isTrue,
-      );
+      expect(presenter.isFallowMode(cropContext: null, seed: seed), isTrue);
     });
 
-    test('returns false with legacy seed planted status and no cropContext',
-        () {
-      final seed = _makeSeedPlanted();
-      expect(
-        presenter.isFallowMode(cropContext: null, seed: seed),
-        isFalse,
-      );
-    });
+    test(
+      'returns false with legacy seed planted status and no cropContext',
+      () {
+        final seed = _makeSeedPlanted();
+        expect(presenter.isFallowMode(cropContext: null, seed: seed), isFalse);
+      },
+    );
 
     test('cropContext takes precedence over seed', () {
       // Context says planted, seed says skip.
@@ -243,17 +230,11 @@ void main() {
         lifecycleStatus: CropLifecycleStatus.planted,
       );
       final seed = _makeSeedSkip();
-      expect(
-        presenter.isFallowMode(cropContext: ctx, seed: seed),
-        isFalse,
-      );
+      expect(presenter.isFallowMode(cropContext: ctx, seed: seed), isFalse);
     });
 
     test('returns false when both are null', () {
-      expect(
-        presenter.isFallowMode(cropContext: null, seed: null),
-        isFalse,
-      );
+      expect(presenter.isFallowMode(cropContext: null, seed: null), isFalse);
     });
   });
 
@@ -277,19 +258,13 @@ void main() {
 
     test('returns true when cropContext is provided', () {
       final ctx = _makeCropContext();
-      expect(
-        presenter.hasConfiguredCrop(cropContext: ctx, seed: null),
-        isTrue,
-      );
+      expect(presenter.hasConfiguredCrop(cropContext: ctx, seed: null), isTrue);
     });
 
     test('returns true when both are provided', () {
       final ctx = _makeCropContext();
       final seed = _makeSeedPlanted();
-      expect(
-        presenter.hasConfiguredCrop(cropContext: ctx, seed: seed),
-        isTrue,
-      );
+      expect(presenter.hasConfiguredCrop(cropContext: ctx, seed: seed), isTrue);
     });
   });
 
@@ -304,9 +279,7 @@ void main() {
     });
 
     test('returns "Descanso del suelo" when fallow via context', () {
-      final ctx = _makeCropContext(
-        lifecycleStatus: CropLifecycleStatus.fallow,
-      );
+      final ctx = _makeCropContext(lifecycleStatus: CropLifecycleStatus.fallow);
       expect(
         presenter.cropHeadline(cropContext: ctx, seed: null),
         'Descanso del suelo',
@@ -342,9 +315,7 @@ void main() {
     });
 
     test('returns "Descanso del suelo" when fallow via context', () {
-      final ctx = _makeCropContext(
-        lifecycleStatus: CropLifecycleStatus.fallow,
-      );
+      final ctx = _makeCropContext(lifecycleStatus: CropLifecycleStatus.fallow);
       expect(
         presenter.cropStageLabel(cropContext: ctx, seed: null),
         'Descanso del suelo',
@@ -530,7 +501,10 @@ void main() {
 
   group('stableHash', () {
     test('same input produces same output', () {
-      expect(presenter.stableHash('device-abc'), presenter.stableHash('device-abc'));
+      expect(
+        presenter.stableHash('device-abc'),
+        presenter.stableHash('device-abc'),
+      );
     });
 
     test('different inputs produce different outputs', () {
@@ -570,6 +544,36 @@ void main() {
 
     test('value equal to max returns max', () {
       expect(presenter.clampInt(100, 0, 100), 100);
+    });
+  });
+
+  group('active device leaf', () {
+    test('active is green and every non-active BIO-G is gray', () {
+      final device = BioGDevice(
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        name: 'BIO-G A',
+        locationName: 'Parcela',
+        seedId: 'UNCONFIGURED',
+        profileId: 'unconfigured',
+      );
+
+      final active = presenter.deviceCardUiModelFromTelemetry(
+        device: device,
+        cropContext: null,
+        seed: null,
+        isActive: true,
+        telemetry: null,
+      );
+      final inactive = presenter.deviceCardUiModelFromTelemetry(
+        device: device,
+        cropContext: null,
+        seed: null,
+        isActive: false,
+        telemetry: null,
+      );
+
+      expect(active.deviceIconTint, AccountScreenPresenter.kBrandMid);
+      expect(inactive.deviceIconTint, Colors.black38);
     });
   });
 }

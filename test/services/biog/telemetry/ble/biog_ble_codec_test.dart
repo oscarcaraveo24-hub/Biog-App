@@ -95,6 +95,13 @@ void main() {
       expect(e.reading.signalRssi, -57);
     });
 
+    test('N/P/K del BIO-G físico se conservan RAW sin escalado', () {
+      final e = decode(<String, Object?>{'st': 24, 'n': 12, 'p': 6, 'k': 18});
+
+      expect((e.reading.n, e.reading.p, e.reading.k), (12, 6, 18));
+      expect(e.reading.soilTempC, 24);
+    });
+
     test('el deviceId sale de la identidad, nunca del transporte', () {
       final e = decode(<String, Object?>{'sm': 30.0});
       expect(e.identity.deviceId, _kDeviceId);
@@ -137,7 +144,11 @@ void main() {
     test('un valor fuera del rango plausible del contrato es dato AUSENTE', () {
       // 25 000 µS/cm (25 mS/cm) esta por encima de lo que la sonda puede
       // medir: sonda descalibrada o payload corrupto, nunca «suelo salino».
-      final e = decode(<String, Object?>{'sm': 34.5, 'ec_us': 25000, 'n': 5000});
+      final e = decode(<String, Object?>{
+        'sm': 34.5,
+        'ec_us': 25000,
+        'n': 5000,
+      });
       expect(e.reading.hasEcData, isFalse);
       expect(e.reading.hasNitrogenData, isFalse);
       expect(e.reading.hasSoilMoistureData, isTrue);
@@ -155,7 +166,10 @@ void main() {
 
     test('el sobre resultante pasa la validacion del contrato', () {
       final e = decode(<String, Object?>{'sm': 34.5, 'ph': 6.8, 'seq': 3});
-      expect(e.validate(now: receivedAt.add(const Duration(seconds: 1))), isNull);
+      expect(
+        e.validate(now: receivedAt.add(const Duration(seconds: 1))),
+        isNull,
+      );
     });
 
     test('un sobre sin ninguna metrica lo rechaza el contrato', () {

@@ -102,11 +102,9 @@ class AccountScreenPresenter {
       ),
       trailingText: trailingText,
       trailingColor: trailingColor,
-      deviceIconTint: deviceIconTintFromHealth(
-        cropContext: cropContext,
-        seed: seed,
-        status: health.status,
-      ),
+      // La hoja representa selección, no salud. Es el mismo [isActive] que
+      // determina qué stream de telemetría alimenta Dashboard.
+      deviceIconTint: isActive ? kBrandMid : Colors.black38,
     );
   }
 

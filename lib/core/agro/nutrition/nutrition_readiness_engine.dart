@@ -32,7 +32,7 @@
 // necesita nutrición». Cada titular nombra el nutriente y la ventana de la
 // guía, y el detalle abre con la dosis orientativa:
 //   «Aplica nitrógeno: segunda fertilización (V6–V8)»
-//     → «Dosis orientativa (guía curada): N: 107–161 kg/ha (≈ 235–350 kg/ha
+//     → «Dosis orientativa (guía curada): N: 64–96 kg/ha (≈ 140–210 kg/ha
 //        de urea). Momento: cuando la planta tiene de 6 a 8 hojas … Cuando
 //        apliques no necesitas registrar nada …»
 //     La recomendación lleva además `timingEs` y `rationaleEs` por separado
@@ -52,15 +52,19 @@
 import 'dart:math' as math;
 
 import 'package:bio_g/core/agro/agro_types.dart';
+import 'package:bio_g/core/agro/cultivation_scale.dart';
 import 'package:bio_g/core/agro/nutrition/fertilization_signature_scanner.dart';
 import 'package:bio_g/core/agro/nutrition/fertilizer_products.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_guide.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_plan_resolver.dart';
+import 'package:bio_g/core/agro/nutrition/nutrition_season_declaration.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_types.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_variety_modifiers.dart';
 import 'package:bio_g/core/agro/nutrition/nutrition_window_ledger.dart';
 import 'package:bio_g/core/agro/nutrition/site_learning.dart';
 import 'package:bio_g/core/agro/soil_reaction.dart';
 import 'package:bio_g/core/agro/traceability/engine_versions.dart';
+import 'package:bio_g/core/agro/water/soil_water_scale.dart';
 import 'package:bio_g/core/crops/crop_target_models.dart';
 import 'package:bio_g/models/biog_telemetry.dart';
 
@@ -99,6 +103,8 @@ class NutritionReadinessInput {
     this.history = const <BioGTelemetry>[],
     this.learning = SiteLearningStatus.unknown,
     this.compensateEcTemperature = false,
+    this.soilTexture = SoilTexture.unknown,
+    this.seasonDeclaration,
   });
 
   final DateTime now;
@@ -154,6 +160,58 @@ class NutritionReadinessInput {
 
   /// Contrato del sensor: la CE llega sin compensar por temperatura.
   final bool compensateEcTemperature;
+
+  /// Textura del suelo de la parcela, ya resuelta (la misma que usa el motor
+  /// de riego). Modula cuántas aplicaciones de N son defendibles
+  /// (`NutritionWindowPlanResolver`). Nunca cambia el plan en kg/ha.
+  final SoilTexture soilTexture;
+
+  /// Cómo declaró el productor que va a fertilizar esta temporada, si lo
+  /// hizo. Es la única entrada manual del motor.
+  final NutritionSeasonDeclaration? seasonDeclaration;
+
+  /// Misma entrada con la guía efectiva del resolver y, si hace falta, el
+  /// libro ajustado (ventanas plegadas ya abiertas que no deben pesar).
+  NutritionReadinessInput withPlan({
+    required NutritionGuide? guide,
+    required List<NutritionWindowRecord> windows,
+  }) {
+    return NutritionReadinessInput(
+      now: now,
+      isPlanted: isPlanted,
+      isGuideMode: isGuideMode,
+      isGenericMode: isGenericMode,
+      cropKey: cropKey,
+      cropLabel: cropLabel,
+      stageKey: stageKey,
+      stageLabelEs: stageLabelEs,
+      daysToStageEnd: daysToStageEnd,
+      stageProgress01: stageProgress01,
+      stageStartedAt: stageStartedAt,
+      targets: targets,
+      nextStageKey: nextStageKey,
+      nextStageLabelEs: nextStageLabelEs,
+      nextTargets: nextTargets,
+      guide: guide,
+      live: live,
+      eval: eval,
+      cultivationScaleId: cultivationScaleId,
+      profileId: profileId,
+      varietyId: varietyId,
+      varietyAlias: varietyAlias,
+      calendarId: calendarId,
+      isPerennial: isPerennial,
+      deviceId: deviceId,
+      seasonKey: seasonKey,
+      epochId: epochId,
+      windows: windows,
+      history: history,
+      learning: learning,
+      compensateEcTemperature: compensateEcTemperature,
+      soilTexture: soilTexture,
+      seasonDeclaration: seasonDeclaration,
+    );
+  }
 }
 
 /// Salida del motor: la decisión y el libro de ventanas reconciliado.
@@ -162,9 +220,14 @@ class NutritionEvaluation {
     required this.decision,
     required this.windows,
     required this.changedWindows,
+    this.plan = NutritionPlanResolution.none,
   });
 
   final NutritionDecision decision;
+
+  /// Plan de nitrógeno resuelto (guía efectiva, opciones de la tarjeta,
+  /// ventanas plegadas). Lo consumen la tarjeta de NPK y la línea de tiempo.
+  final NutritionPlanResolution plan;
 
   /// Libro completo de la temporada tras esta evaluación.
   final List<NutritionWindowRecord> windows;
@@ -196,13 +259,82 @@ class NutritionReadinessEngine {
   static const double minorResponseRatio = 0.6;
 
   static NutritionEvaluation? evaluate(NutritionReadinessInput input) {
+    // El plan se resuelve ANTES de decidir: el motor trabaja con la guía
+    // efectiva (reparto plegado a la declaración del productor, criticidad
+    // modulada por la textura y por la respuesta anterior del sitio) y no se
+    // entera de cómo se produjo.
+    final NutritionPlanResolution plan = NutritionWindowPlanResolver.resolve(
+      guide: input.guide,
+      texture: input.soilTexture,
+      declaration: input.seasonDeclaration,
+      windows: input.windows,
+      seasonKey: input.seasonKey,
+      currentStageKey: input.stageKey,
+    );
+    final List<NutritionWindowRecord> windows = neutralizeFoldedWindows(
+      input.windows,
+      plan,
+    );
+    final bool untouched =
+        identical(plan.guide, input.guide) && identical(windows, input.windows);
+    final NutritionReadinessInput resolved = untouched
+        ? input
+        : input.withPlan(guide: plan.guide, windows: windows);
+    return _evaluateResolved(resolved, plan);
+  }
+
+  /// Una ventana que YA estaba abierta cuando el productor declaró (p. ej.
+  /// V6–V8 abierta y declara «una sola vez») deja de abrir nitrógeno en la
+  /// guía efectiva; el libro la cerrará en el siguiente pase como etapa
+  /// anterior. Si cerrara «sin evidencia» siendo importante, penalizaría lo
+  /// que el productor acaba de decir que no va a hacer. Aquí se le quita la
+  /// importancia ANTES de reconciliar: cierra, consta, no pesa. Público para
+  /// las pruebas.
+  static List<NutritionWindowRecord> neutralizeFoldedWindows(
+    List<NutritionWindowRecord> windows,
+    NutritionPlanResolution plan,
+  ) {
+    final NutritionGuide? guide = plan.guide;
+    if (guide == null || plan.foldedStageKeys.isEmpty || windows.isEmpty) {
+      return windows;
+    }
+    List<NutritionWindowRecord>? out;
+    for (int i = 0; i < windows.length; i++) {
+      final NutritionWindowRecord w = windows[i];
+      if (!w.isCritical || w.resolvedAt != null) continue;
+      if (!w.nutrients.contains(AgroMetricKey.n)) continue;
+      final StageNutritionRule? rule = guide.ruleForStage(w.stageKey);
+      if (rule == null || !plan.foldedStageKeys.contains(rule.primaryStageKey)) {
+        continue;
+      }
+      out ??= List<NutritionWindowRecord>.of(windows);
+      out[i] = w.copyWith(
+        isCritical: false,
+        // Se evalúa con cada lectura: la nota entra una sola vez.
+        evidenceEs: w.evidenceEs.contains(foldedWindowNoteEs)
+            ? w.evidenceEs
+            : <String>[...w.evidenceEs, foldedWindowNoteEs],
+      );
+    }
+    return out ?? windows;
+  }
+
+  /// Evidencia que se anota en una ventana plegada por la declaración.
+  static const String foldedWindowNoteEs =
+      'El nitrógeno de esta ventana quedó cubierto por tu plan de temporada; '
+      'no pesa en el estado general.';
+
+  static NutritionEvaluation? _evaluateResolved(
+    NutritionReadinessInput input,
+    NutritionPlanResolution plan,
+  ) {
     final String crop = (input.cropKey ?? '').trim().toLowerCase();
     if (!input.isPlanted || input.isGuideMode || input.isGenericMode) {
       return null;
     }
     if (crop.isEmpty) return null;
 
-    final List<String> reasons = <String>[];
+    final List<String> reasons = <String>[...plan.reasonsEs];
     final List<String> limitations = <String>[];
     final NutritionGuide? guide = input.guide;
     final GuideAuditStatus audit = guide?.auditStatus ?? GuideAuditStatus.pending;
@@ -540,7 +672,14 @@ class NutritionReadinessEngine {
       recentlyUnattended: recentlyUnattended,
       guide: guide,
       rule: rule,
+      plan: plan,
     );
+
+    // La etapa actual quedó plegada por la declaración del productor (su N
+    // va en otra pasada, o ya fertilizó): la pestaña de nitrógeno lo dice
+    // con esas palabras, no como «la guía no reparte».
+    final bool stageFolded = rule != null &&
+        plan.foldedStageKeys.contains(rule.primaryStageKey);
 
     final NutritionDecision decision = NutritionDecision(
       state: state,
@@ -567,8 +706,12 @@ class NutritionReadinessEngine {
           : null,
       upcomingWindowLabelEs: upcoming?.stageLabelEs,
       upcomingWindowInDays: upcoming?.inDays,
-      closedWindowNoteEs: _nullIfEmpty(_closedWindowNoteEs(guide, rule, input)),
+      closedWindowNoteEs: _nullIfEmpty(
+        _closedWindowNoteEs(guide, rule, input, plan: plan),
+      ),
       nextWindowNoteEs: _nullIfEmpty(_nextWindowNoteEs(guide, input)),
+      planNoteEs: stageFolded ? plan.planNoteEs : null,
+      isNitrogenAlreadyDone: plan.isAlreadyDone,
       trends: List<NutrientTrend>.unmodifiable(trends),
       reasons: List<String>.unmodifiable(reasons),
       limitations: List<String>.unmodifiable(limitations),
@@ -580,6 +723,7 @@ class NutritionReadinessEngine {
       decision: decision,
       windows: List<NutritionWindowRecord>.unmodifiable(records),
       changedWindows: List<NutritionWindowRecord>.unmodifiable(changed),
+      plan: plan,
     );
   }
 
@@ -1081,6 +1225,34 @@ class NutritionReadinessEngine {
         companions.add(NutrientDose(nutrient: nutrient, range: d.range!));
       }
     }
+    // ── Descuento del N que traen el fosfatado y el potásico ──────────────
+    // El MAP lleva 11 % de N, el DAP 18 % y el nitrato de potasio 13 %. Ese
+    // nitrógeno entra al suelo en la misma aplicación: sin descontarlo la
+    // recomendación se pasa —en la siembra de frijol el DAP que cubre el
+    // fósforo ya aporta 16–23 kg N/ha sobre una ventana de 18–36—.
+    //
+    // Lo que cambia es el EQUIVALENTE COMERCIAL, nunca la dosis: los kg/ha de
+    // nitrógeno siguen naciendo de la guía (Guía v0.4, §10).
+    final CarriedNitrogen carriedNitrogen =
+        FertilizerProducts.nitrogenCarriedBy(<FertilizerRequirement>[
+          for (final NutrientDose d in <NutrientDose>[...doses, ...companions])
+            if (d.nutrient != AgroMetricKey.n)
+              FertilizerRequirement(
+                form: d.range.form,
+                minKg: d.range.min,
+                maxKg: d.range.max,
+                sourceOptionsEs:
+                    guide?.sourceOptionsEs[d.nutrient] ??
+                    _defaultSources(d.nutrient),
+              ),
+        ]);
+    final String? carriedNitrogenNoteEs = _netCarriedNitrogen(
+      carried: carriedNitrogen,
+      doses: doses,
+      companions: companions,
+      guide: guide,
+    );
+
     NutritionDoseRange? primaryDose;
     for (final NutrientDose d in doses) {
       if (d.nutrient == primary) {
@@ -1101,6 +1273,7 @@ class NutritionReadinessEngine {
     }
 
     final List<String> rules = <String>[
+      if (carriedNitrogenNoteEs != null) carriedNitrogenNoteEs,
       ...(rule?.rulesEs ?? const <String>[]),
       ...(guide?.generalRulesEs ?? const <String>[]),
     ];
@@ -1256,6 +1429,23 @@ class NutritionReadinessEngine {
         companions.add(dose);
       }
     }
+    final String? carriedNitrogenNoteEs = _netCarriedNitrogen(
+      carried: FertilizerProducts.nitrogenCarriedBy(<FertilizerRequirement>[
+        for (final NutrientDose d in <NutrientDose>[...doses, ...companions])
+          if (d.nutrient != AgroMetricKey.n)
+            FertilizerRequirement(
+              form: d.range.form,
+              minKg: d.range.min,
+              maxKg: d.range.max,
+              sourceOptionsEs:
+                  guide?.sourceOptionsEs[d.nutrient] ??
+                  _defaultSources(d.nutrient),
+            ),
+      ]),
+      doses: doses,
+      companions: companions,
+      guide: guide,
+    );
     final List<String> sources = <String>[
       for (final AgroMetricKey n in upcoming.nutrients)
         ...(guide?.sourceOptionsEs[n] ?? _defaultSources(n)),
@@ -1318,6 +1508,7 @@ class NutritionReadinessEngine {
       sourceOptionsEs: List<String>.unmodifiable(_dedupe(sources)),
       rulesEs: List<String>.unmodifiable(
         _dedupe(<String>[
+          if (carriedNitrogenNoteEs != null) carriedNitrogenNoteEs,
           ...(upcoming.rule?.rulesEs ?? const <String>[]),
           ...(guide?.generalRulesEs ?? const <String>[]),
         ]),
@@ -1405,6 +1596,56 @@ class NutritionReadinessEngine {
     );
   }
 
+  /// Reescribe el equivalente comercial del nitrogenado descontando el N que
+  /// traen el fosfatado y el potásico de la MISMA aplicación, y devuelve la
+  /// frase que lo explica.
+  ///
+  /// Trabaja sobre las listas que `_buildRecommendation` todavía está armando:
+  /// la dosis de nitrógeno puede estar entre las de foco o entre las de
+  /// acompañamiento, y en los dos casos es la misma cifra la que hay que
+  /// corregir. Devuelve null cuando no hay nada que descontar o cuando el
+  /// arrastre es tan pequeño que no cambia lo que el agricultor compra.
+  static String? _netCarriedNitrogen({
+    required CarriedNitrogen carried,
+    required List<NutrientDose> doses,
+    required List<NutrientDose> companions,
+    required NutritionGuide? guide,
+  }) {
+    for (final List<NutrientDose> list in <List<NutrientDose>>[
+      doses,
+      companions,
+    ]) {
+      final int i = list.indexWhere(
+        (NutrientDose d) => d.nutrient == AgroMetricKey.n,
+      );
+      if (i < 0) continue;
+      final NutritionDoseRange n = list[i].range;
+      if (!FertilizerProducts.shouldNetNitrogen(carried, n.max)) return null;
+      final List<String> sources =
+          guide?.sourceOptionsEs[AgroMetricKey.n] ??
+          _defaultSources(AgroMetricKey.n);
+      list[i] = NutrientDose(
+        nutrient: AgroMetricKey.n,
+        range: n.withCommercialEquivalentEs(
+          FertilizerProducts.nitrogenEquivalentEs(
+            minKg: n.min,
+            maxKg: n.max,
+            sourceOptionsEs: sources,
+            carried: carried,
+            unitEs: n.unit.labelEs,
+          ),
+        ),
+      );
+      return FertilizerProducts.carriedNitrogenNoteEs(
+        carried: carried,
+        nitrogenMaxKg: n.max,
+        nitrogenSourceOptionsEs: sources,
+        unitEs: n.unit.labelEs,
+      );
+    }
+    return null;
+  }
+
   /// Por qué importa la ventana: la regla de la guía o, sin ella, el porqué
   /// del nutriente principal en el perfil.
   static String? _windowRationale(
@@ -1422,18 +1663,34 @@ class NutritionReadinessEngine {
     return null;
   }
 
-  /// Traduce un rango en kg/ha a la escala del productor. Campo: igual. Cama:
-  /// g/m² (y el equivalente comercial se recalcula en g/m²). Maceta: no hay
-  /// conversión defendible sin masa de sustrato; se muestra la referencia de
-  /// campo.
+  /// Traduce un rango en kg/ha a la escala del productor. Campo: igual.
+  /// Huerto o cama: g/m², con el equivalente comercial recalculado en esa
+  /// unidad. Maceta: no hay conversión defendible sin volumen de sustrato, así
+  /// que se muestra la referencia de campo y se dice por qué.
+  ///
+  /// La escala se resuelve SIEMPRE con `cultivationScaleFromId`, que es la
+  /// única tabla de alias del proyecto. Antes esta función comparaba cadenas
+  /// por su cuenta y se le escapaba `orchard` —el id que el onboarding guarda
+  /// para «Huerto»—, así que el usuario de huerto recibía el rango de campo
+  /// abierto sin convertir: 88–115 kg/ha donde tocaba 8.8–11.5 g/m².
+  /// Traduce un rango de campo (kg/ha) a la escala de cultivo del sitio.
+  /// Público para que la línea de tiempo muestre las ventanas futuras con la
+  /// misma regla que la recomendación de hoy.
+  static NutritionDoseRange scaleDose(
+    NutritionDoseRange field,
+    String? scaleId,
+    List<String> sourceOptionsEs,
+    List<String> limitations,
+  ) => _scaleDose(field, scaleId, sourceOptionsEs, limitations);
+
   static NutritionDoseRange _scaleDose(
     NutritionDoseRange field,
     String? scaleId,
     List<String> sourceOptionsEs,
     List<String> limitations,
   ) {
-    final String scale = (scaleId ?? '').trim().toLowerCase();
-    if (scale == 'bed' || scale == 'huerto' || scale == 'cama') {
+    final CultivationScale? scale = cultivationScaleFromId(scaleId);
+    if (scale == CultivationScale.bed) {
       final double min = field.min * 0.1;
       final double max = field.max * 0.1;
       return NutritionDoseRange(
@@ -1453,7 +1710,7 @@ class NutritionReadinessEngine {
         transparencyEs: '${field.transparencyEs ?? ''} (1 kg/ha = 0.1 g/m²).',
       );
     }
-    if (scale == 'pot' || scale == 'maceta' || scale == 'contenedor') {
+    if (scale == CultivationScale.pot) {
       const String note =
           'En maceta el rango en kg/ha no se traduce sin conocer el volumen de '
           'sustrato; se muestra la referencia de campo.';
@@ -1520,6 +1777,7 @@ class NutritionReadinessEngine {
     required NutritionWindowRecord? recentlyUnattended,
     required NutritionGuide? guide,
     required StageNutritionRule? rule,
+    required NutritionPlanResolution plan,
   }) {
     final String stage = input.stageLabelEs ?? 'esta etapa';
     switch (state) {
@@ -1626,7 +1884,7 @@ class NutritionReadinessEngine {
         // el porqué de la guía y la próxima ventana del ciclo.
         final NutrientTrend? notable = _notableTrend(priorities, trends);
         final NutrientStagePriority? top = priorities.isEmpty ? null : priorities.first;
-        final String closedNote = _closedWindowNoteEs(guide, rule, input);
+        final String closedNote = _closedWindowNoteEs(guide, rule, input, plan: plan);
         final String nextNote = _nextWindowNoteEs(guide, input);
         if (notable != null) {
           final String stageNote = closedNote.isNotEmpty
@@ -1681,10 +1939,18 @@ class NutritionReadinessEngine {
   static String _closedWindowNoteEs(
     NutritionGuide? guide,
     StageNutritionRule? rule,
-    NutritionReadinessInput input,
-  ) {
+    NutritionReadinessInput input, {
+    required NutritionPlanResolution plan,
+  }) {
     if (guide == null || rule == null || rule.windowNutrients.isNotEmpty) {
       return '';
+    }
+    // Ventana plegada por la declaración: no es que la guía no reparta, es
+    // que el productor puso su nitrógeno en otra pasada (o ya lo dio). El
+    // resolver dejó la explicación en la regla efectiva.
+    if (plan.foldedStageKeys.contains(rule.primaryStageKey)) {
+      final String why = (rule.rationaleEs ?? '').trim();
+      return why.isEmpty ? (plan.planNoteEs ?? '') : why;
     }
     final String name = rule.labelEs ?? input.stageLabelEs ?? 'esta etapa';
     final String why = (rule.rationaleEs ?? '').trim();

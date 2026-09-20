@@ -278,7 +278,12 @@ class _StatusInlineDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // El texto de tendencia puede ser largo («N al alza · P a la baja · K a
+    // la baja», «Sin tendencia aún: faltan lecturas»): va flexible y con
+    // hasta dos renglones, nunca fijo (desbordaba la tarjeta por la derecha
+    // en pantallas angostas).
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
@@ -294,13 +299,17 @@ class _StatusInlineDot extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 15.5,
-            fontWeight: FontWeight.w900,
-            color: color.withValues(alpha: 0.95),
-            height: 1.0,
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w900,
+              color: color.withValues(alpha: 0.95),
+              height: 1.1,
+            ),
           ),
         ),
       ],

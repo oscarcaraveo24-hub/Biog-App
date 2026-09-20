@@ -18,6 +18,8 @@ class NpkGaugeCard extends StatelessWidget {
     required this.centerValue,
     this.centerUnit = 'mg/kg',
     this.scaleMax,
+    this.centerLabel,
+    this.centerCaption,
   });
 
   final NpkChannel channel;
@@ -30,7 +32,8 @@ class NpkGaugeCard extends StatelessWidget {
   final int? targetMin;
   final int? targetMax;
 
-  /// Píldora bajo la cifra («Estable», «Calibrando», «Al alza»…).
+  /// Píldora bajo la cifra («Estable», «Calibrando», «Al alza»…). En modo
+  /// [centerLabel] no se pinta: el estado ya es el centro.
   final String? statusLabel;
 
   /// Color de la píldora. Con él, el texto y el fondo toman ese tono (nada de
@@ -38,9 +41,18 @@ class NpkGaugeCard extends StatelessWidget {
   final Color? statusColor;
 
   /// Cifra central: el dato crudo del sensor. [centerUnit] es la unidad con
-  /// la que la sonda 7-en-1 entrega N, P y K (mg/kg).
+  /// la que la sonda 7-en-1 entrega N, P y K (mg/kg). Con [centerLabel] la
+  /// cifra deja de pintarse (sigue sirviendo para la escala del arco).
   final int centerValue;
   final String centerUnit;
+
+  /// Modo «estado» del centro (pantalla NPK, decisión de producto 13 sep
+  /// 2026): en vez del dato crudo, la palabra que el agricultor entiende
+  /// («Estable», «Al alza», «Calibrando»), en el color de [statusColor], con
+  /// [centerCaption] debajo («tendencia de 7 días»). El dato crudo baja a la
+  /// fila de cifras. Los informes siguen mostrando la cifra.
+  final String? centerLabel;
+  final String? centerCaption;
 
   /// Tope de la escala del arco, en la ESCALA DEL SITIO (máximo reciente del
   /// propio punto × 1.15). No es un objetivo ni un tope por cultivo: solo
@@ -194,12 +206,88 @@ class NpkGaugeCard extends StatelessWidget {
           targetMax: targetMax,
           capPpm: _effectiveScaleMax(),
         ),
-        child: _GaugeCenter(
-          bigText: '$centerValue',
-          unitText: centerUnit,
-          accent: accent,
-          statusLabel: statusLabel,
-          statusColor: statusColor,
+        child: centerLabel != null
+            ? _GaugeStateCenter(
+                label: centerLabel!,
+                caption: centerCaption,
+                color: statusColor ?? accent,
+              )
+            : _GaugeCenter(
+                bigText: '$centerValue',
+                unitText: centerUnit,
+                accent: accent,
+                statusLabel: statusLabel,
+                statusColor: statusColor,
+              ),
+      ),
+    );
+  }
+}
+
+/// Centro en modo «estado»: la palabra grande en el color de la tendencia y
+/// una línea chica debajo. Sin cifra.
+class _GaugeStateCenter extends StatelessWidget {
+  const _GaugeStateCenter({
+    required this.label,
+    required this.color,
+    this.caption,
+  });
+
+  final String label;
+  final Color color;
+  final String? caption;
+
+  @override
+  Widget build(BuildContext context) {
+    final String? cap = caption?.trim();
+    return Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: color.withValues(alpha: 0.12),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.85)),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.18),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.2,
+                  color: color,
+                  height: 1.0,
+                ),
+              ),
+            ),
+            if (cap != null && cap.isNotEmpty) ...[
+              const SizedBox(height: 7),
+              Text(
+                cap,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                  color: Colors.black.withValues(alpha: 0.42),
+                  height: 1.0,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

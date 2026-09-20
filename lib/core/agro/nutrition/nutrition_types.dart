@@ -242,6 +242,24 @@ class NutritionDoseRange {
   /// «107–161 kg/ha de N» o «hasta 60 kg/ha de K₂O».
   String get labelEs => '$amountEs de ${form.labelEs}';
 
+  /// El mismo rango con otro equivalente comercial, o sin ninguno.
+  ///
+  /// La cantidad de nutriente NO cambia —sigue naciendo de la guía—; cambia
+  /// cuánto producto hay que comprar. Se usa para descontar del nitrogenado
+  /// el nitrógeno que ya traen el fosfatado y el potásico de la misma
+  /// aplicación (MAP 11 %, DAP 18 %, nitrato de potasio 13 %).
+  NutritionDoseRange withCommercialEquivalentEs(String? equivalentEs) =>
+      NutritionDoseRange(
+        min: min,
+        max: max,
+        form: form,
+        unit: unit,
+        sourceEs: sourceEs,
+        commercialEquivalentEs: equivalentEs,
+        transparencyEs: transparencyEs,
+        conditionEs: conditionEs,
+      );
+
   static String _fmt(double v) {
     if (v >= 100) return v.round().toString();
     if (v >= 10) return v.toStringAsFixed(0);
@@ -1345,6 +1363,8 @@ class NutritionDecision {
     this.upcomingWindowInDays,
     this.closedWindowNoteEs,
     this.nextWindowNoteEs,
+    this.planNoteEs,
+    this.isNitrogenAlreadyDone = false,
     this.trends = const <NutrientTrend>[],
     this.reasons = const <String>[],
     this.limitations = const <String>[],
@@ -1423,6 +1443,17 @@ class NutritionDecision {
   /// quedan ventanas de fertilización en este ciclo.» Null sin guía o cuando
   /// la etapa no está en ella.
   final String? nextWindowNoteEs;
+
+  /// La etapa actual quedó PLEGADA por la declaración del productor (su
+  /// nitrógeno va en otra pasada, o ya fertilizó): «Según tu plan (una sola
+  /// vez), el nitrógeno de Maíz va en «Segunda fertilización (V6–V8)».» Null
+  /// cuando la etapa no fue plegada. Es lo que la pestaña de nitrógeno dice
+  /// en vez de «la guía no reparte» (17 sep 2026).
+  final String? planNoteEs;
+
+  /// El productor declaró «ya fertilicé»: no queda nitrógeno por aplicar
+  /// esta temporada; BIO-G solo observa.
+  final bool isNitrogenAlreadyDone;
 
   /// Tendencia reciente de cada canal nativo (N, P, K), en ese orden.
   final List<NutrientTrend> trends;

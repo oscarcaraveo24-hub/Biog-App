@@ -39,6 +39,15 @@ class AccountScreen extends StatefulWidget {
 
 class _AccountScreenState extends State<AccountScreen>
     with SingleTickerProviderStateMixin {
+  /// Desplazamiento de la pestaña. Al salir de la pestaña vuelve arriba
+  /// (decisión de producto, 14 sep 2026): el `IndexedStack` conserva las
+  /// pantallas vivas y, sin esto, se volvía a una pantalla a media altura.
+  final ScrollController _tabScroll = ScrollController();
+
+  void _resetTabScroll() {
+    if (_tabScroll.hasClients) _tabScroll.jumpTo(0);
+  }
+
   static const int _accountTabIndex = 1;
 
   // Instancia, NO estatica.
@@ -65,7 +74,6 @@ class _AccountScreenState extends State<AccountScreen>
   static const String kIcHelp = 'assets/icons/metrics/ic_help.png';
   static const String kIcManual = 'assets/icons/metrics/ic_manual.png';
   static const String kIcContact = 'assets/icons/metrics/ic_contact.png';
-  static const String kIcError = 'assets/icons/metrics/ic_error.png';
   static const String kLeafDeviceIcon = 'assets/icons/metrics/nav_power.png';
 
   final ProfileLocalService _profileLocalService = const ProfileLocalService();
@@ -117,6 +125,8 @@ class _AccountScreenState extends State<AccountScreen>
     final bool wasActiveBefore = oldWidget.currentIndex == _accountTabIndex;
     final bool isActiveNow = widget.currentIndex == _accountTabIndex;
 
+    if (wasActiveBefore && !isActiveNow) _resetTabScroll();
+
     if (!wasActiveBefore && isActiveNow) {
       _entranceController
         ..stop()
@@ -132,6 +142,7 @@ class _AccountScreenState extends State<AccountScreen>
 
   @override
   void dispose() {
+    _tabScroll.dispose();
     _entranceController.dispose();
     super.dispose();
   }
@@ -444,6 +455,7 @@ class _AccountScreenState extends State<AccountScreen>
                 top: true,
                 bottom: false,
                 child: CustomScrollView(
+                  controller: _tabScroll,
                   physics: const BouncingScrollPhysics(),
                   slivers: <Widget>[
                     SliverToBoxAdapter(
@@ -500,7 +512,6 @@ class _AccountScreenState extends State<AccountScreen>
                         shadowOpacityEnd: 0.08,
                         child: AccountMyBioGCardSection(
                           deviceIconAsset: kLeafDeviceIcon,
-                          errorIconAsset: kIcError,
                           items: biogItems,
                           onAddBioGTap: _openAddBioG,
                         ),

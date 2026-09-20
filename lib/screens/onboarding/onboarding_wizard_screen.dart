@@ -133,6 +133,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   /// Guía general: "Otro". Ni cultivo, ni variedad, ni etapa, ni fecha.
   bool get _isGuideDraft =>
       isGuideCropId(_draft.cropId) || isGuideCropId(_draft.cropCategory);
+
   /// Ornamental de establecimiento + mantenimiento (cactus, suculenta…).
   bool get _isOrnamentalDraft => isEstablishmentMaintenanceCrop(
     cropId: _draft.cropId,
@@ -795,8 +796,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                   crop.subtitle ??
                   (crop.enabled ? 'Disponible ahora' : 'Próximamente'),
               iconPath: _cropIconPath(crop.cropId),
-              fallbackAsset:
-                  isEstablishmentMaintenanceCrop(cropId: crop.cropId)
+              fallbackAsset: isEstablishmentMaintenanceCrop(cropId: crop.cropId)
                   ? kOrnamentalGenericPlantFallback
                   // Tulipán (seasonal_bulb): planta genérica ornamental, no árbol.
                   : isSeasonalBulbCrop(cropId: crop.cropId)
@@ -1834,7 +1834,8 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
             child: _wizardPill(
               iconPath: ConfigureSeedWizardAssets.categoryOrnamental,
               title: 'Planta ornamental',
-              subtitle: 'Cactus, suculentas y sábila · más ornamentales próximamente',
+              subtitle:
+                  'Cactus, suculentas y sábila · más ornamentales próximamente',
               selected: category == 'ornamental',
               enabled: true,
               onTap: () => _onSelectCategory('ornamental'),

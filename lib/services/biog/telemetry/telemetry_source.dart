@@ -31,6 +31,12 @@ abstract class TelemetrySource {
     Duration? window = const Duration(days: 7),
   });
 
+  /// Removes every local/runtime telemetry trace for one device.
+  ///
+  /// Implementations must also invalidate in-flight cloud responses so a
+  /// late request cannot recreate data after the device was unlinked.
+  Future<void> forgetDevice(String deviceId);
+
   /// Release stream controllers, timers, and subscriptions.
   void dispose();
 }

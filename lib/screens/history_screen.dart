@@ -42,6 +42,15 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen>
     with SingleTickerProviderStateMixin {
+  /// Desplazamiento de la pestaña. Al salir de la pestaña vuelve arriba
+  /// (decisión de producto, 14 sep 2026): el `IndexedStack` conserva las
+  /// pantallas vivas y, sin esto, se volvía a una pantalla a media altura.
+  final ScrollController _tabScroll = ScrollController();
+
+  void _resetTabScroll() {
+    if (_tabScroll.hasClients) _tabScroll.jumpTo(0);
+  }
+
   static const int _historyTabIndex = 0;
 
   // Instancia, NO estatica.
@@ -163,6 +172,8 @@ class _HistoryScreenState extends State<HistoryScreen>
     final bool wasActiveBefore = oldWidget.currentIndex == _historyTabIndex;
     final bool isActiveNow = widget.currentIndex == _historyTabIndex;
 
+    if (wasActiveBefore && !isActiveNow) _resetTabScroll();
+
     if (!wasActiveBefore && isActiveNow) {
       _playEntranceOnceIfNeeded();
     }
@@ -170,6 +181,7 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   @override
   void dispose() {
+    _tabScroll.dispose();
     _store?.removeListener(_handleStoreChanged);
     unawaited(_historySubscription?.cancel());
     _entranceController.dispose();
@@ -451,6 +463,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                 top: true,
                 bottom: false,
                 child: SingleChildScrollView(
+                  controller: _tabScroll,
                   padding: EdgeInsets.fromLTRB(18, 14, 18, bottomPad),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

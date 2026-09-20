@@ -130,6 +130,7 @@ NutritionReadinessInput _input({
   String? nextStageKey,
   String? nextStageLabel,
   bool isPerennial = false,
+  String? cultivationScaleId,
 }) {
   return NutritionReadinessInput(
     now: now,
@@ -153,6 +154,7 @@ NutritionReadinessInput _input({
     history: history,
     learning: learning,
     isPerennial: isPerennial,
+    cultivationScaleId: cultivationScaleId,
   );
 }
 
@@ -286,13 +288,13 @@ void main() {
       expect(rec.allNutrients, <AgroMetricKey>[AgroMetricKey.n]);
       expect(rec.doses.length, 1);
       final NutritionDoseRange n = rec.doseFor(AgroMetricKey.n)!;
-      expect(n.labelEs, '107–161 kg/ha de N');
-      expect(n.commercialEquivalentEs, '≈ 235–350 kg/ha de urea');
+      expect(n.labelEs, '64–96 kg/ha de N');
+      expect(n.commercialEquivalentEs, '≈ 140–210 kg/ha de urea');
       expect(rec.doseFor(AgroMetricKey.p), isNull);
       expect(
         d.detailEs,
         startsWith(
-          'Dosis orientativa (guía curada): N: 107–161 kg/ha (≈ 235–350 kg/ha de urea). '
+          'Dosis orientativa (guía curada): N: 64–96 kg/ha (≈ 140–210 kg/ha de urea). '
           'Momento: cuando la planta tiene de 6 a 8 hojas (V6–V8',
         ),
       );
@@ -324,12 +326,59 @@ void main() {
       expect(d.headlineEs, 'Aplica nitrógeno y fósforo: fertilización de fondo');
       expect(d.tagEs, 'Aplica N + P');
       expect(rec.doseFor(AgroMetricKey.k)?.isConditional, isTrue);
-      expect(rec.doseFor(AgroMetricKey.p)?.labelEs, '40–80 kg/ha de P₂O₅');
+      expect(rec.doseFor(AgroMetricKey.p)?.labelEs, '50–80 kg/ha de P₂O₅');
       expect(rec.headlineForNutrient(AgroMetricKey.p), 'Aplica fósforo: fertilización de fondo');
       expect(d.detailEs, contains('K₂O: hasta 60 kg/ha'));
       expect(d.detailEs, contains('solo si tu análisis de suelo sale bajo en potasio'));
       expect(d.window?.nutrients.length, 3, reason: 'la ventana del libro lleva los tres');
       expect(d.window?.isCritical, isFalse);
+    });
+
+    test('en el fondo, la urea descuenta el nitrógeno que ya trae el MAP', () {
+      final NutritionDecision d = NutritionReadinessEngine.evaluate(
+        _input(
+          now: _t0.add(const Duration(days: 2)),
+          targets: _quiet,
+          guide: maize,
+          stageKey: 'germination',
+          stageLabel: 'Germinación',
+          stageStartedAt: _t0,
+        ),
+      )!.decision;
+
+      final NutritionRecommendation rec = d.recommendation!;
+      // La dosis de la guía no se toca: sigue siendo el 33 % del plan de N.
+      expect(rec.doseFor(AgroMetricKey.n)!.labelEs, '53–79 kg/ha de N');
+      // Lo que cambia es el saco: el MAP que cubre el fósforo lleva 11 % de N.
+      expect(
+        rec.doseFor(AgroMetricKey.n)!.commercialEquivalentEs,
+        '≈ 90–135 kg/ha de urea',
+      );
+      expect(
+        rec.rulesEs.first,
+        'El MAP de esta aplicación ya aporta 11–17 kg/ha de nitrógeno; la '
+        'cifra de urea de arriba ya lo tiene descontado.',
+      );
+    });
+
+    test('en BIO-G Huerto la misma dosis se dice en g/m²', () {
+      final NutritionDecision d = NutritionReadinessEngine.evaluate(
+        _input(
+          now: _t0.add(const Duration(days: 5)),
+          targets: _nDemand,
+          guide: maize,
+          history: _history(hours: 24 * 5),
+          // «orchard» es el id que el onboarding guarda para «Huerto»: antes
+          // se le escapaba a la conversión y el huerto veía kg/ha de campo.
+          cultivationScaleId: 'orchard',
+        ),
+      )!.decision;
+
+      final NutritionDoseRange n = d.recommendation!.doseFor(AgroMetricKey.n)!;
+      expect(n.unit, DoseUnit.gramsPerSquareMeter);
+      expect(n.labelEs, '6.4–9.6 g/m² de N');
+      expect(n.commercialEquivalentEs, '≈ 14–21 g/m² de urea');
+      expect(n.transparencyEs, contains('1 kg/ha = 0.1 g/m²'));
     });
 
     test('tomate vegetativo: N es el foco; P y K acompañan con su reparto', () {
@@ -353,8 +402,8 @@ void main() {
       expect(rec.companionNutrients, <AgroMetricKey>[AgroMetricKey.p, AgroMetricKey.k]);
       expect(rec.coversNutrient(AgroMetricKey.k), isFalse);
       expect(rec.mentionsNutrient(AgroMetricKey.k), isTrue);
-      expect(rec.doseFor(AgroMetricKey.n)?.labelEs, '45–60 kg/ha de N');
-      expect(rec.doseFor(AgroMetricKey.k)?.labelEs, '38–50 kg/ha de K₂O');
+      expect(rec.doseFor(AgroMetricKey.n)?.labelEs, '49–65 kg/ha de N');
+      expect(rec.doseFor(AgroMetricKey.k)?.labelEs, '18–27 kg/ha de K₂O');
       expect(rec.headlineForNutrient(AgroMetricKey.k), 'Acompaña con potasio: vegetativo');
       expect(d.detailEs, startsWith('Dosis orientativa (guía curada): N: 45–60 kg/ha'));
       expect(d.detailEs, contains('Acompaña con: P₂O₅: 12–20 kg/ha'));
@@ -421,7 +470,7 @@ void main() {
       );
       expect(d.tagEs, 'Prepara N');
       expect(d.recommendation?.kind, NutritionRecommendationKind.prepare);
-      expect(d.detailEs, startsWith('Dosis orientativa (guía curada): N: 107–161 kg/ha'));
+      expect(d.detailEs, startsWith('Dosis orientativa (guía curada): N: 64–96 kg/ha'));
       expect(d.detailEs, contains('Todavía no apliques'));
       expect(d.scoreFactor, 1.0);
     });
@@ -446,7 +495,7 @@ void main() {
 
       expect(d.state, NutritionState.prepare);
       expect(d.awaitingEvidence, isFalse);
-      expect(d.headlineEs, 'Se acerca nitrógeno: brotación');
+      expect(d.headlineEs, 'Se acerca nitrógeno: después de floración');
       expect(d.tagEs, 'Pronto N');
       final NutritionRecommendation rec = d.recommendation!;
       expect(rec.kind, NutritionRecommendationKind.upcoming);
@@ -455,8 +504,8 @@ void main() {
       // kg/ha de huerta, desde la guía del manzano; nada de cosecha por árbol.
       final NutritionDoseRange n = rec.doseFor(AgroMetricKey.n)!;
       expect(n.unit, DoseUnit.kgPerHectare);
-      expect(n.labelEs, '65–91 kg/ha de N');
-      expect(n.transparencyEs, contains('65 % del plan de temporada'));
+      expect(n.labelEs, '35–70 kg/ha de N');
+      expect(n.transparencyEs, contains('50 % del plan de temporada'));
       expect(d.detailEs, startsWith('En ~6 días entra «Brotación»'));
       expect(d.detailEs, contains('Dosis orientativa prevista: N:'));
       expect(d.upcomingWindowInDays, 6);
@@ -479,11 +528,17 @@ void main() {
 
       final NutritionDoseRange spring = at('budbreak', 'Brotación').recommendation!.doseFor(AgroMetricKey.n)!;
       final NutritionDoseRange autumn = at('post_harvest', 'Post-cosecha').recommendation!.doseFor(AgroMetricKey.n)!;
-      expect(spring.labelEs, '65–91 kg/ha de N');
-      expect(autumn.labelEs, '35–49 kg/ha de N');
-      expect(spring.max, greaterThan(autumn.max), reason: '65 % en brotación, 35 % tras cosecha');
-      expect((spring.max / 0.65) - (autumn.max / 0.35), closeTo(0, 1e-9));
-      expect(at('budbreak', 'Brotación').headlineEs, 'Aplica nitrógeno: brotación');
+      expect(spring.labelEs, '35–70 kg/ha de N');
+      expect(autumn.labelEs, '35–70 kg/ha de N');
+      expect(
+        spring.max,
+        closeTo(autumn.max, 1e-9),
+        reason: 'NMSU: la mitad tras floración y la mitad tras cosecha',
+      );
+      expect(
+        at('budbreak', 'Brotación').headlineEs,
+        'Aplica nitrógeno: después de floración',
+      );
       expect(
         at('post_harvest', 'Post-cosecha').headlineEs,
         'Aplica nitrógeno y fósforo: post-cosecha',
@@ -493,7 +548,13 @@ void main() {
       expect(at('budbreak', 'Brotación').detailEs, isNot(contains('cosecha esperada')));
       final NutritionDecision young = at('planting_transplant', 'Plantación');
       expect(young.headlineEs, 'Aplica fósforo: establecimiento');
-      expect(young.recommendation!.doseFor(AgroMetricKey.p)?.labelEs, '20–30 kg/ha de P₂O₅');
+      // El fósforo del frutal quedó condicionado al análisis foliar: NMSU es
+      // categórico en que los frutales no responden a la fertilización
+      // fosfatada, así que el plan arranca en 0 y se muestra como condición.
+      expect(
+        young.recommendation!.doseFor(AgroMetricKey.p)?.labelEs,
+        'hasta 30 kg/ha de P₂O₅',
+      );
       expect(young.detailEs, isNot(contains('cosecha esperada')));
     });
 
